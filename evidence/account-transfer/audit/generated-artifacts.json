@@ -1,11 +1,14 @@
 {
   "artifacts": [
-    "/app/dist/cobol/ACCOUNT-TRANSFER.cbl",
-    "/app/dist/maps/source-map.json",
-    "/app/dist/audit/diagnostics.json",
-    "/app/dist/audit/source-map.json",
-    "/app/dist/audit/decimal-analysis.json",
-    "/app/dist/audit/transaction-analysis.json",
-    "/app/dist/audit/copybook-layout.json"
+    "/workspace/dist/cobol/ACCOUNT-TRANSFER.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/jcl/ACCOUNT-TRANSFER.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/copybook-layout.md"
   ]
 }
