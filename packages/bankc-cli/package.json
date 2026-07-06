@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/bankc-cli",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

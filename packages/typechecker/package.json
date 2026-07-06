@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/typechecker",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

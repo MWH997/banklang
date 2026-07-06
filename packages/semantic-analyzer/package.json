@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/semantic-analyzer",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

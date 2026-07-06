@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/cobol-backend",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

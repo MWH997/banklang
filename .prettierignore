@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+pnpm-lock.yaml
+.pnpm-store/
+tests/fixtures/**/*.cbl
+examples/**/*.bank.ts
+evidence/**/*.bank.ts
+evidence/**/*.cbl
+evidence/**/*.cpy

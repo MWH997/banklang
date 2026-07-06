@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/verifier",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

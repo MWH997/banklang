@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/cobol-ir",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

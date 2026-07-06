@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/copybook",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}
