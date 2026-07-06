@@ -151,9 +151,18 @@ export interface ReturnStatementNode extends NodeBase {
   expression: ExpressionNode;
 }
 
+export interface IfStatementNode extends NodeBase {
+  kind: "IfStatement";
+  condition: ExpressionNode;
+  thenBranch: BlockNode;
+  elseBranch: BlockNode | null;
+}
+
+export type StatementNode = ReturnStatementNode | IfStatementNode;
+
 export interface BlockNode extends NodeBase {
   kind: "Block";
-  statements: ReturnStatementNode[];
+  statements: StatementNode[];
 }
 
 export interface FunctionDeclarationNode extends NodeBase {

@@ -25,6 +25,8 @@ import {
   type TypeNode,
   type TypeReferenceNode,
   type BoolTypeNode,
+  type StatementNode,
+  type IfStatementNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -47,6 +49,8 @@ const KEYWORDS = new Set([
   "decimal",
   "string",
   "bool",
+  "if",
+  "else",
 ]);
 
 class Lexer {
@@ -509,10 +513,10 @@ class Parser {
       "{",
       "Expected `{` to start function body.",
     );
-    const statements: ReturnStatementNode[] = [];
+    const statements: StatementNode[] = [];
 
     while (!this.is("eof") && !this.matchPunctuation("}")) {
-      const statement = this.parseReturnStatement();
+      const statement = this.parseStatement();
       if (!statement) {
         this.synchronizeToStatementOrBlockEnd();
         continue;
@@ -536,11 +540,25 @@ class Parser {
     };
   }
 
-  private parseReturnStatement(): ReturnStatementNode | null {
-    const returnToken = this.expectKeyword(
-      "return",
-      "Expected `return` statement.",
+  private parseStatement(): StatementNode | null {
+    if (this.matchKeyword("return")) {
+      return this.parseReturnStatement();
+    }
+
+    if (this.matchKeyword("if")) {
+      return this.parseIfStatement();
+    }
+
+    this.errorAtCurrent(
+      "BANK-SYN-002",
+      `Unexpected token ${this.current.text}.`,
+      "Expected a statement.",
     );
+    return null;
+  }
+
+  private parseReturnStatement(): ReturnStatementNode | null {
+    const returnToken = this.previous;
     if (!returnToken) {
       return null;
     }
@@ -561,6 +579,40 @@ class Parser {
         sourceFile: returnToken.span.sourceFile,
         start: returnToken.span.start,
         end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseIfStatement(): IfStatementNode | null {
+    const ifToken = this.previous;
+    if (!ifToken) {
+      return null;
+    }
+
+    const condition = this.parseExpression();
+    const thenBranch = this.parseBlock();
+    let elseBranch: BlockNode | null = null;
+
+    if (this.matchKeyword("else")) {
+      elseBranch = this.parseBlock();
+      if (!elseBranch) {
+        return null;
+      }
+    }
+
+    if (!condition || !thenBranch) {
+      return null;
+    }
+
+    return {
+      kind: "IfStatement",
+      condition,
+      thenBranch,
+      elseBranch,
+      span: {
+        sourceFile: ifToken.span.sourceFile,
+        start: ifToken.span.start,
+        end: (elseBranch ?? thenBranch).span.end,
       },
     };
   }
@@ -872,7 +924,12 @@ class Parser {
 
   private synchronizeToStatementOrBlockEnd(): void {
     while (!this.is("eof")) {
-      if (this.current.kind === "keyword" && this.current.text === "return") {
+      if (
+        this.current.kind === "keyword" &&
+        (this.current.text === "return" ||
+          this.current.text === "if" ||
+          this.current.text === "else")
+      ) {
         return;
       }
       if (this.current.kind === "punctuation" && this.current.text === "}") {

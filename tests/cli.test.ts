@@ -21,6 +21,9 @@ describe("bankc cli", () => {
     expect(result.stdout).toContain("copybook diff");
     expect(result.stdout).toContain("build <project>");
     expect(result.stdout).toContain("layout <project>");
+    expect(result.stdout).toContain("emit jcl");
+    expect(result.stdout).toContain("verify <project>");
+    expect(result.stdout).toContain("test <project>");
   });
 
   it("prints doctor output", () => {
@@ -50,9 +53,59 @@ describe("bankc cli", () => {
       expect(
         existsSync(join(outDir, "copybooks", "TRANSFER-REQUEST.cpy")),
       ).toBe(true);
+      expect(existsSync(join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl"))).toBe(
+        true,
+      );
       expect(existsSync(join(outDir, "audit", "validation-matrix.md"))).toBe(
         true,
       );
+      expect(existsSync(join(outDir, "audit", "verification-report.md"))).toBe(
+        true,
+      );
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("verifies the account-transfer example", () => {
+    const outDir = mkdtempSync(join(tmpdir(), "banklang-verify-"));
+
+    try {
+      const result = runBankc([
+        "verify",
+        "examples/account-transfer",
+        "--out",
+        outDir,
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(existsSync(join(outDir, "audit", "verification-report.md"))).toBe(
+        true,
+      );
+      expect(
+        readFileSync(join(outDir, "audit", "verification-report.md"), "utf8"),
+      ).toContain("Audit schema | passed");
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("emits JCL for the account-transfer example", () => {
+    const outDir = mkdtempSync(join(tmpdir(), "banklang-jcl-"));
+
+    try {
+      const result = runBankc([
+        "emit",
+        "jcl",
+        "examples/account-transfer",
+        "--out",
+        outDir,
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      const jclPath = join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl");
+      expect(existsSync(jclPath)).toBe(true);
+      expect(readFileSync(jclPath, "utf8")).toContain("ACCOUNTT JOB");
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
@@ -160,6 +213,26 @@ describe("bankc cli", () => {
       expect(diffResult.exitCode).toBe(1);
       expect(diffResult.stdout).toContain("Identical: no");
       expect(diffResult.stdout).toContain("Layout differences");
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs the project-specific test command", () => {
+    const outDir = mkdtempSync(join(tmpdir(), "banklang-test-"));
+
+    try {
+      const result = runBankc([
+        "test",
+        "examples/account-transfer",
+        "--out",
+        outDir,
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(existsSync(join(outDir, "audit", "gnucobol-validation.md"))).toBe(
+        true,
+      );
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }

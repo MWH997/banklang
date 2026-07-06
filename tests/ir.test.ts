@@ -17,25 +17,26 @@ describe("ir", () => {
       precision: 18,
       scale: 2,
     });
-    expect(ir.program?.functions[0]?.body[0]?.expression).toMatchObject({
-      kind: "BinaryComparison",
-      resolvedType: { kind: "bool" },
-    });
-    expect(ir.program?.functions[0]?.body[0]?.expression).toMatchObject({
-      left: {
-        kind: "Identifier",
-        resolvedType: {
-          kind: "decimal",
-          precision: 18,
-          scale: 2,
+    expect(ir.program?.functions[0]?.body.statements[0]).toMatchObject({
+      kind: "ReturnStatement",
+      expression: {
+        kind: "BinaryComparison",
+        resolvedType: { kind: "bool" },
+        left: {
+          kind: "Identifier",
+          resolvedType: {
+            kind: "decimal",
+            precision: 18,
+            scale: 2,
+          },
         },
-      },
-      right: {
-        kind: "DecimalLiteral",
-        resolvedType: {
-          kind: "decimal",
-          precision: 3,
-          scale: 2,
+        right: {
+          kind: "DecimalLiteral",
+          resolvedType: {
+            kind: "decimal",
+            precision: 3,
+            scale: 2,
+          },
         },
       },
     });

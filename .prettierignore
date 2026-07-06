@@ -8,3 +8,5 @@ examples/**/*.bank.ts
 evidence/**/*.bank.ts
 evidence/**/*.cbl
 evidence/**/*.cpy
+tmp/
+*.jcl
