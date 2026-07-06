@@ -6,17 +6,21 @@ import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
 
-export function exampleSourceFile(): string {
-  return resolve(process.cwd(), "examples/account-transfer/src/main.bank.ts");
+export function exampleSourceFile(
+  examplePath = "examples/account-transfer",
+): string {
+  return resolve(process.cwd(), examplePath, "src/main.bank.ts");
 }
 
-export function loadExampleSource(): string {
-  return readFileSync(exampleSourceFile(), "utf8");
+export function loadExampleSource(
+  examplePath = "examples/account-transfer",
+): string {
+  return readFileSync(exampleSourceFile(examplePath), "utf8");
 }
 
-export function compileExample() {
-  const sourceFile = exampleSourceFile();
-  const sourceText = loadExampleSource();
+export function compileExample(examplePath = "examples/account-transfer") {
+  const sourceFile = exampleSourceFile(examplePath);
+  const sourceText = loadExampleSource(examplePath);
   const parsed = parseBankTs(sourceText, sourceFile);
   const typechecked = typecheckProgram(parsed.program);
   const ir = lowerProgramToIR(typechecked);

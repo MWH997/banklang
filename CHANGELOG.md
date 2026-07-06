@@ -4,6 +4,13 @@
 
 ### Added
 
+- Added `bankc verify <project>` to write a deterministic verification report alongside the emitted COBOL, copybooks, source map, and JCL.
+- Added `bankc test <project>` to run the verification flow and record the local GnuCOBOL validation report under `dist/audit/gnucobol-validation.md`.
+- Added `bankc emit jcl <project>` to emit a readable JCL skeleton for the generated COBOL artifact.
+- Added `bankc copybook inspect --json` / `types --json` / `diff --json` output for the generated copybook subset.
+- Added `examples/batch-interest-accrual` as a second BankTS example that exercises deterministic `if` / `else` control flow.
+- Added a control-flow expansion through the parser, typechecker, IR, and COBOL backend for the narrow `if` / `else` subset used by the second example.
+- Added verification and GnuCOBOL evidence to the account-transfer bundle, including `dist/jcl/ACCOUNT-TRANSFER.jcl`, `dist/audit/verification-report.md`, and `dist/audit/gnucobol-validation.md`.
 - Added `bankc layout <project>` to emit a deterministic copybook layout report in `dist/layout/copybook-layout.md` and `dist/layout/copybook-layout.json`, and wired the audit bundle to include `dist/audit/copybook-layout.md`.
 - Added `bankc copybook types <file>` for the generated copybook subset, with a field type summary and CLI/unit coverage against `TRANSFER-REQUEST.cpy`.
 - Added `bankc copybook diff <left> <right>` for the generated copybook subset, with identical/different exit handling and layout comparison tests for generated copybooks.
@@ -28,12 +35,22 @@
 
 ### Changed
 
+- Hardened the audit bundle and verification flow so build/verify/test output includes JCL, verification evidence, and the generated-artifacts list for the current compiler slice.
+- Updated the account-transfer example and evidence bundle to surface the new JCL and verification artifacts.
+- Updated the repository formatter ignore list to exclude scratch `tmp/` outputs and generated `.jcl` files.
+- Enabled pnpm workspace build approval for `esbuild` so Docker-based install/verification can complete without the interactive purge gate.
+
 ### Fixed
+
+- Fixed `bankc layout <project>` so it writes the JSON layout report as well as the markdown report.
+- Fixed the command help text and CLI routing so the new commands are discoverable and executable.
 
 ### Security
 
 ### Testing
 
+- Verified the new command surface with `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm bankc build examples/account-transfer`, `pnpm bankc verify examples/account-transfer`, `pnpm bankc test examples/account-transfer`, and `pnpm test:gnucobol` in Docker.
+- Added tests for the second BankTS example, JCL emission, verification output, copybook JSON output, and the expanded CLI surface.
 - Verified the current compiler slice with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and the `bankc` help/doctor/check/build/layout/emit cobol/emit copybooks/audit-report commands in Docker.
 - Verified copybook emission with `pnpm bankc emit copybooks examples/account-transfer` in Docker and added golden coverage for `TRANSFER-REQUEST.cpy`.
 - Verified the local GnuCOBOL smoke lane with `pnpm test:gnucobol` and a direct `cobc` compile of the generated COBOL.
@@ -41,6 +58,8 @@
 
 ### Documentation
 
+- Expanded `examples/account-transfer/README.md`, `examples/account-transfer/expected/README.md`, and `evidence/account-transfer/README.md` to reflect the new JCL, verification, and GnuCOBOL artifacts.
+- Added a second example README and a command-surface feature proposal/tester-note trail.
 - Expanded `README.md` with the current command inventory, generated artifact map, evidence directories, validation commands, and AI review workflow.
 - Expanded the README scope/status language to reflect the current account-transfer slice and the local validation path.
 - Added a concrete BankTS example to `README.md` and defined BankTS inline so the repository entry point is self-contained.
@@ -48,3 +67,6 @@
 ### Documentation
 
 ### Internal
+
+- Added an `allowBuilds` entry for `esbuild` in `pnpm-workspace.yaml` so Docker-based pnpm verification can proceed non-interactively.
+- Added a feature proposal and AI review trail for the command-surface and control-flow expansion work.

@@ -9,6 +9,7 @@ import { emitCobol } from "../packages/cobol-backend/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
+import { toCobolProgramId } from "../packages/cobol-ir/src/index";
 
 export interface GnucobolValidationSummary {
   backendProfile: "gnucobol-local";
@@ -37,8 +38,10 @@ interface ValidationArtifacts {
 
 export function runGnucobolValidation(
   cwd = process.cwd(),
+  projectPath = "examples/account-transfer",
+  outputRoot = resolve(cwd, "dist"),
 ): GnucobolValidationSummary {
-  const sourceFile = resolve(cwd, "examples/account-transfer/src/main.bank.ts");
+  const sourceFile = resolve(cwd, projectPath, "src/main.bank.ts");
   const sourceText = readFileSync(sourceFile, "utf8");
   const sourceArtifactHash = hashText(sourceText);
 
@@ -59,12 +62,13 @@ export function runGnucobolValidation(
     throw new Error(renderDiagnostics(ir.diagnostics));
   }
 
-  const outputRoot = resolve(cwd, "dist/gnucobol");
+  const gnucobolRoot = join(outputRoot, "gnucobol");
+  const moduleArtifactName = toCobolProgramId(ir.program.moduleName);
   const artifacts = {
     sourceFile,
-    sourceMapPath: join(outputRoot, "maps", "source-map.json"),
-    cobolPath: join(outputRoot, "cobol", "ACCOUNT-TRANSFER.cbl"),
-    binaryPath: join(outputRoot, "bin", "account-transfer"),
+    sourceMapPath: join(gnucobolRoot, "maps", "source-map.json"),
+    cobolPath: join(gnucobolRoot, "cobol", `${moduleArtifactName}.cbl`),
+    binaryPath: join(gnucobolRoot, "bin", moduleArtifactName.toLowerCase()),
   } satisfies ValidationArtifacts;
 
   const emit = emitCobol(ir.program, {
@@ -139,7 +143,7 @@ export function runGnucobolValidation(
     ],
   };
 
-  const reportPath = join(cwd, "dist", "audit", "gnucobol-validation.md");
+  const reportPath = join(outputRoot, "audit", "gnucobol-validation.md");
   mkdirSync(dirname(reportPath), { recursive: true });
   writeFileSync(reportPath, buildGnucobolValidationReport(summary), "utf8");
 

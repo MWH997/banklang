@@ -4,6 +4,8 @@ import {
   type DecimalLiteralNode,
   type ExpressionNode,
   type IdentifierNode,
+  type IfStatementNode,
+  type StatementNode,
   type ReturnStatementNode,
   type SourceSpan,
 } from "../../ast/src/index";
@@ -45,7 +47,7 @@ export interface IRFunction {
   span: SourceSpan;
   parameters: IRParameter[];
   returnType: IRType;
-  body: IRReturnStatement[];
+  body: IRBlock;
 }
 
 export interface IRParameter {
@@ -55,10 +57,26 @@ export interface IRParameter {
   type: IRType;
 }
 
+export interface IRBlock {
+  kind: "Block";
+  span: SourceSpan;
+  statements: IRStatement[];
+}
+
+export type IRStatement = IRReturnStatement | IRIfStatement;
+
 export interface IRReturnStatement {
   kind: "ReturnStatement";
   span: SourceSpan;
   expression: IRExpression;
+}
+
+export interface IRIfStatement {
+  kind: "IfStatement";
+  span: SourceSpan;
+  condition: IRExpression;
+  thenBranch: IRBlock;
+  elseBranch: IRBlock | null;
 }
 
 export type IRExpression =
@@ -192,10 +210,33 @@ function lowerFunction(fn: ResolvedFunction): IRFunction {
       type: lowerType(parameter.type),
     })),
     returnType: lowerType(fn.returnType),
-    body: fn.body.statements.map((statement) =>
-      lowerReturnStatement(statement, parameterTypes),
+    body: lowerBlock(fn.body, parameterTypes),
+  };
+}
+
+function lowerBlock(
+  block: { span: SourceSpan; statements: StatementNode[] },
+  parameterTypes: Map<string, IRType>,
+): IRBlock {
+  return {
+    kind: "Block",
+    span: block.span,
+    statements: block.statements.map((statement) =>
+      lowerStatement(statement, parameterTypes),
     ),
   };
+}
+
+function lowerStatement(
+  statement: StatementNode,
+  parameterTypes: Map<string, IRType>,
+): IRStatement {
+  switch (statement.kind) {
+    case "ReturnStatement":
+      return lowerReturnStatement(statement, parameterTypes);
+    case "IfStatement":
+      return lowerIfStatement(statement, parameterTypes);
+  }
 }
 
 function lowerReturnStatement(
@@ -206,6 +247,21 @@ function lowerReturnStatement(
     kind: "ReturnStatement",
     span: statement.span,
     expression: lowerExpression(statement.expression, parameterTypes),
+  };
+}
+
+function lowerIfStatement(
+  statement: IfStatementNode,
+  parameterTypes: Map<string, IRType>,
+): IRIfStatement {
+  return {
+    kind: "IfStatement",
+    span: statement.span,
+    condition: lowerExpression(statement.condition, parameterTypes),
+    thenBranch: lowerBlock(statement.thenBranch, parameterTypes),
+    elseBranch: statement.elseBranch
+      ? lowerBlock(statement.elseBranch, parameterTypes)
+      : null,
   };
 }
 

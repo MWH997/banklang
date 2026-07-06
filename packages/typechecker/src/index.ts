@@ -11,6 +11,7 @@ import {
   type FieldDeclarationNode,
   type FunctionDeclarationNode,
   type IdentifierNode,
+  type IfStatementNode,
   type ParameterNode,
   type ProgramNode,
   type RecordDeclarationNode,
@@ -21,6 +22,7 @@ import {
   type TypeNode,
   type TypeReferenceNode,
   type BoolTypeNode,
+  type StatementNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -257,9 +259,9 @@ function validateFunctionBody(
         id: "BANK-TYPE-004",
         severity: "error",
         message:
-          "Functions in the initial subset must contain exactly one return statement.",
+          "Functions in the initial subset must contain exactly one top-level statement.",
         span: body.span,
-        hint: "Keep the account-transfer example to a single return expression.",
+        hint: "Use a single return statement or a single if statement with return branches.",
         backendProfile: null,
       }),
     );
@@ -267,32 +269,176 @@ function validateFunctionBody(
   }
 
   const statement = body.statements[0];
-  const expressionType = inferExpressionType(
-    statement.expression,
+  const resolvedStatementType = resolveStatementType(
+    statement,
     parameterMap,
     aliases,
     recordMap,
     diagnostics,
   );
 
-  if (!expressionType) {
+  if (!resolvedStatementType) {
     return diagnostics;
   }
 
-  if (!typesCompatible(returnType, expressionType)) {
+  if (!typesCompatible(returnType, resolvedStatementType)) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `Return expression type does not match declared return type.`,
+        message: `Return path type does not match declared return type.`,
         span: statement.span,
-        hint: "Make the expression type align with the function return type.",
+        hint: "Make every return path align with the declared function return type.",
         backendProfile: null,
       }),
     );
   }
 
   return diagnostics;
+}
+
+function resolveStatementType(
+  statement: StatementNode,
+  parameterMap: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  switch (statement.kind) {
+    case "ReturnStatement":
+      return inferExpressionType(
+        statement.expression,
+        parameterMap,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+    case "IfStatement":
+      return resolveIfStatementType(
+        statement,
+        parameterMap,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+  }
+}
+
+function resolveIfStatementType(
+  statement: IfStatementNode,
+  parameterMap: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  const conditionType = inferExpressionType(
+    statement.condition,
+    parameterMap,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (!conditionType) {
+    return null;
+  }
+
+  if (!isBoolType(conditionType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "If conditions must be bool in the initial subset.",
+        span: statement.condition.span,
+        hint: "Compare a decimal expression or use a bool value in the condition.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  const thenType = resolveBlockReturnType(
+    statement.thenBranch,
+    parameterMap,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (!thenType) {
+    return null;
+  }
+
+  if (!statement.elseBranch) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-004",
+        severity: "error",
+        message:
+          "If statements used as function bodies must include an else branch.",
+        span: statement.span,
+        hint: "Add an else branch so every path returns a value.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  const elseType = resolveBlockReturnType(
+    statement.elseBranch,
+    parameterMap,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (!elseType) {
+    return null;
+  }
+
+  if (!typesCompatible(thenType, elseType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "If branches must return the same type.",
+        span: statement.span,
+        hint: "Make the then and else branches return matching types.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  return thenType;
+}
+
+function resolveBlockReturnType(
+  block: BlockNode,
+  parameterMap: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  if (block.statements.length !== 1) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-004",
+        severity: "error",
+        message:
+          "Branch blocks must contain exactly one statement in the initial subset.",
+        span: block.span,
+        hint: "Keep each branch to a single return statement or a nested if statement.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  return resolveStatementType(
+    block.statements[0],
+    parameterMap,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
 }
 
 function inferExpressionType(
@@ -518,6 +664,10 @@ function inferDecimalLiteral(node: DecimalLiteralNode): DecimalType {
 
 function isDecimalType(type: ResolvedType): type is DecimalType {
   return type.kind === "decimal";
+}
+
+function isBoolType(type: ResolvedType): type is BoolType {
+  return type.kind === "bool";
 }
 
 function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
