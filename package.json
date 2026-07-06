@@ -1,0 +1,23 @@
+{
+  "name": "banklang",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bankc": "tsx packages/bankc-cli/src/bin.ts",
+    "doctor": "pnpm bankc doctor",
+    "emit:cobol": "pnpm bankc emit cobol examples/account-transfer",
+    "emit:copybooks": "pnpm bankc emit copybooks examples/account-transfer",
+    "lint": "prettier --check . --ignore-path .prettierignore",
+    "test:gnucobol": "tsx tools/gnucobol-validation.ts",
+    "test": "vitest run",
+    "test:determinism": "vitest run tests/determinism.test.ts",
+    "typecheck": "tsc -p tsconfig.base.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

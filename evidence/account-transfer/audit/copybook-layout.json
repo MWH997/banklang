@@ -1,0 +1,30 @@
+[
+  {
+    "name": "TransferRequest",
+    "cobolName": "TRANSFER-REQUEST",
+    "totalLength": 42,
+    "fields": [
+      {
+        "name": "debitAccount",
+        "cobolName": "DEBIT-ACCOUNT",
+        "offset": 0,
+        "length": 16,
+        "picture": "PIC X(16)"
+      },
+      {
+        "name": "creditAccount",
+        "cobolName": "CREDIT-ACCOUNT",
+        "offset": 16,
+        "length": 16,
+        "picture": "PIC X(16)"
+      },
+      {
+        "name": "amount",
+        "cobolName": "AMOUNT",
+        "offset": 32,
+        "length": 10,
+        "picture": "PIC S9(16)V99 COMP-3"
+      }
+    ]
+  }
+]

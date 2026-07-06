@@ -1,0 +1,897 @@
+import {
+  astToJson,
+  createDiagnostic,
+  type BlockNode,
+  type BooleanLiteralNode,
+  type BinaryExpressionNode,
+  type DeclarationNode,
+  type DecimalLiteralNode,
+  type DecimalTypeNode,
+  type Diagnostic,
+  type ExpressionNode,
+  type FieldDeclarationNode,
+  type FunctionDeclarationNode,
+  type IdentifierNode,
+  type ModuleDeclarationNode,
+  type ParsedProgram,
+  type ParameterNode,
+  type ProgramNode,
+  type RecordDeclarationNode,
+  type ReturnStatementNode,
+  type SourcePosition,
+  type SourceSpan,
+  type StringTypeNode,
+  type TypeAliasDeclarationNode,
+  type TypeNode,
+  type TypeReferenceNode,
+  type BoolTypeNode,
+} from "../../ast/src/index";
+
+type TokenKind =
+  "identifier" | "number" | "string" | "keyword" | "punctuation" | "eof";
+
+interface Token {
+  kind: TokenKind;
+  text: string;
+  span: SourceSpan;
+}
+
+const KEYWORDS = new Set([
+  "module",
+  "type",
+  "record",
+  "function",
+  "return",
+  "true",
+  "false",
+  "decimal",
+  "string",
+  "bool",
+]);
+
+class Lexer {
+  private readonly source: string;
+  private readonly sourceFile: string;
+  private offset = 0;
+  private line = 1;
+  private column = 1;
+
+  public constructor(source: string, sourceFile: string) {
+    this.source = source;
+    this.sourceFile = sourceFile;
+  }
+
+  public nextToken(): Token {
+    this.skipTrivia();
+
+    if (this.offset >= this.source.length) {
+      return this.makeToken(
+        "eof",
+        "",
+        this.line,
+        this.column,
+        this.line,
+        this.column,
+      );
+    }
+
+    const startLine = this.line;
+    const startColumn = this.column;
+    const char = this.source[this.offset];
+
+    if (this.isIdentifierStart(char)) {
+      let text = "";
+      while (
+        this.offset < this.source.length &&
+        this.isIdentifierPart(this.source[this.offset])
+      ) {
+        text += this.source[this.offset];
+        this.advance(this.source[this.offset]);
+      }
+      const kind = KEYWORDS.has(text) ? "keyword" : "identifier";
+      return this.makeToken(
+        kind,
+        text,
+        startLine,
+        startColumn,
+        this.line,
+        this.column,
+      );
+    }
+
+    if (this.isDigit(char)) {
+      let text = "";
+      while (
+        this.offset < this.source.length &&
+        this.isDigit(this.source[this.offset])
+      ) {
+        text += this.source[this.offset];
+        this.advance(this.source[this.offset]);
+      }
+      if (this.source[this.offset] === ".") {
+        text += ".";
+        this.advance(".");
+        while (
+          this.offset < this.source.length &&
+          this.isDigit(this.source[this.offset])
+        ) {
+          text += this.source[this.offset];
+          this.advance(this.source[this.offset]);
+        }
+      }
+      return this.makeToken(
+        "number",
+        text,
+        startLine,
+        startColumn,
+        this.line,
+        this.column,
+      );
+    }
+
+    if (char === '"') {
+      this.advance(char);
+      let text = "";
+      while (
+        this.offset < this.source.length &&
+        this.source[this.offset] !== '"'
+      ) {
+        const current = this.source[this.offset];
+        if (current === "\n") {
+          break;
+        }
+        text += current;
+        this.advance(current);
+      }
+      if (this.source[this.offset] !== '"') {
+        return this.makeToken(
+          "string",
+          text,
+          startLine,
+          startColumn,
+          this.line,
+          this.column,
+        );
+      }
+      this.advance('"');
+      return this.makeToken(
+        "string",
+        text,
+        startLine,
+        startColumn,
+        this.line,
+        this.column,
+      );
+    }
+
+    this.advance(char);
+    return this.makeToken(
+      "punctuation",
+      char,
+      startLine,
+      startColumn,
+      this.line,
+      this.column,
+    );
+  }
+
+  private skipTrivia(): void {
+    while (this.offset < this.source.length) {
+      const char = this.source[this.offset];
+
+      if (char === " " || char === "\t" || char === "\r") {
+        this.advance(char);
+        continue;
+      }
+
+      if (char === "\n") {
+        this.advance(char);
+        continue;
+      }
+
+      if (char === "/" && this.source[this.offset + 1] === "/") {
+        while (
+          this.offset < this.source.length &&
+          this.source[this.offset] !== "\n"
+        ) {
+          this.advance(this.source[this.offset]);
+        }
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  private advance(char: string): void {
+    this.offset += 1;
+    if (char === "\n") {
+      this.line += 1;
+      this.column = 1;
+      return;
+    }
+
+    this.column += 1;
+  }
+
+  private makeToken(
+    kind: TokenKind,
+    text: string,
+    startLine: number,
+    startColumn: number,
+    endLine: number,
+    endColumn: number,
+  ): Token {
+    return {
+      kind,
+      text,
+      span: {
+        sourceFile: this.sourceFile,
+        start: { line: startLine, column: startColumn },
+        end: { line: endLine, column: endColumn },
+      },
+    };
+  }
+
+  private isIdentifierStart(char: string): boolean {
+    return /[A-Za-z_]/.test(char);
+  }
+
+  private isIdentifierPart(char: string): boolean {
+    return /[A-Za-z0-9_]/.test(char);
+  }
+
+  private isDigit(char: string | undefined): boolean {
+    return char !== undefined && /[0-9]/.test(char);
+  }
+}
+
+class Parser {
+  private readonly lexer: Lexer;
+  private current: Token;
+  private next: Token;
+  private previous: Token | null = null;
+  private readonly diagnostics: Diagnostic[] = [];
+
+  public constructor(source: string, sourceFile: string) {
+    this.lexer = new Lexer(source, sourceFile);
+    this.current = this.lexer.nextToken();
+    this.next = this.lexer.nextToken();
+  }
+
+  public parseProgram(): ParsedProgram {
+    const declarations: DeclarationNode[] = [];
+    const moduleDeclaration = this.parseModuleDeclaration();
+    if (!moduleDeclaration) {
+      return { program: null, diagnostics: this.diagnostics };
+    }
+
+    while (!this.is("eof")) {
+      const declaration = this.parseDeclaration();
+      if (!declaration) {
+        this.synchronizeToDeclaration();
+        continue;
+      }
+      declarations.push(declaration);
+    }
+
+    const program: ProgramNode = {
+      kind: "Program",
+      span: {
+        sourceFile: moduleDeclaration.span.sourceFile,
+        start: moduleDeclaration.span.start,
+        end: this.currentEnd(),
+      },
+      module: moduleDeclaration,
+      declarations,
+    };
+
+    if (this.diagnostics.length > 0) {
+      return { program: null, diagnostics: this.diagnostics };
+    }
+
+    return {
+      program,
+      diagnostics: this.diagnostics,
+    };
+  }
+
+  private parseModuleDeclaration(): ModuleDeclarationNode | null {
+    const moduleToken = this.expectKeyword(
+      "module",
+      "Expected module declaration at the top of the file.",
+    );
+    if (!moduleToken) {
+      return null;
+    }
+
+    const nameToken = this.expectIdentifier(
+      "Expected module name after `module`.",
+    );
+    this.expectPunctuation(";", "Expected `;` after module declaration.");
+    if (!nameToken) {
+      return null;
+    }
+
+    return {
+      kind: "ModuleDeclaration",
+      name: nameToken.text,
+      span: {
+        sourceFile: moduleToken.span.sourceFile,
+        start: moduleToken.span.start,
+        end: nameToken.span.end,
+      },
+    };
+  }
+
+  private parseDeclaration(): DeclarationNode | null {
+    if (this.matchKeyword("type")) {
+      return this.parseTypeAliasDeclaration();
+    }
+
+    if (this.matchKeyword("record")) {
+      return this.parseRecordDeclaration();
+    }
+
+    if (this.matchKeyword("function")) {
+      return this.parseFunctionDeclaration();
+    }
+
+    this.errorAtCurrent(
+      "BANK-SYN-002",
+      `Unexpected token ${this.current.text}.`,
+      "Expected a declaration.",
+    );
+    return null;
+  }
+
+  private parseTypeAliasDeclaration(): TypeAliasDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected type alias name.");
+    this.expectPunctuation("=", "Expected `=` in type alias declaration.");
+    const type = this.parseTypeNode();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after type alias declaration.",
+    );
+
+    if (!nameToken || !type || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "TypeAliasDeclaration",
+      name: nameToken.text,
+      type,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseRecordDeclaration(): RecordDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected record name.");
+    const openBrace = this.expectPunctuation(
+      "{",
+      "Expected `{` to start record body.",
+    );
+    const fields: FieldDeclarationNode[] = [];
+
+    while (!this.is("eof") && !this.matchPunctuation("}")) {
+      const field = this.parseFieldDeclaration();
+      if (!field) {
+        this.synchronizeToFieldOrRecordEnd();
+        continue;
+      }
+      fields.push(field);
+    }
+
+    const endToken = this.previous ?? openBrace ?? nameToken;
+    if (!nameToken || !openBrace || !endToken) {
+      return null;
+    }
+
+    return {
+      kind: "RecordDeclaration",
+      name: nameToken.text,
+      fields,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: endToken.span.end,
+      },
+    };
+  }
+
+  private parseFieldDeclaration(): FieldDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected field name.");
+    this.expectPunctuation(":", "Expected `:` after field name.");
+    const type = this.parseTypeNode();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after field declaration.",
+    );
+
+    if (!nameToken || !type || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "FieldDeclaration",
+      name: nameToken.text,
+      type,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseFunctionDeclaration(): FunctionDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected function name.");
+    const openParen = this.expectPunctuation(
+      "(",
+      "Expected `(` after function name.",
+    );
+    const parameters = this.parseParameters();
+    const closeParen = this.expectPunctuation(
+      ")",
+      "Expected `)` after parameter list.",
+    );
+    this.expectPunctuation(":", "Expected `:` before function return type.");
+    const returnType = this.parseTypeNode();
+    const body = this.parseBlock();
+
+    if (!nameToken || !openParen || !closeParen || !returnType || !body) {
+      return null;
+    }
+
+    return {
+      kind: "FunctionDeclaration",
+      name: nameToken.text,
+      parameters,
+      returnType,
+      body,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: body.span.end,
+      },
+    };
+  }
+
+  private parseParameters(): ParameterNode[] {
+    const parameters: ParameterNode[] = [];
+    if (this.isPunctuation(")")) {
+      return parameters;
+    }
+
+    while (!this.is("eof") && !this.isPunctuation(")")) {
+      const parameter = this.parseParameter();
+      if (!parameter) {
+        this.synchronizeToParameterOrEnd();
+        continue;
+      }
+      parameters.push(parameter);
+      if (!this.matchPunctuation(",")) {
+        break;
+      }
+    }
+
+    return parameters;
+  }
+
+  private parseParameter(): ParameterNode | null {
+    const nameToken = this.expectIdentifier("Expected parameter name.");
+    this.expectPunctuation(":", "Expected `:` after parameter name.");
+    const type = this.parseTypeNode();
+
+    if (!nameToken || !type) {
+      return null;
+    }
+
+    return {
+      kind: "Parameter",
+      name: nameToken.text,
+      type,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: type.span.end,
+      },
+    };
+  }
+
+  private parseBlock(): BlockNode | null {
+    const openBrace = this.expectPunctuation(
+      "{",
+      "Expected `{` to start function body.",
+    );
+    const statements: ReturnStatementNode[] = [];
+
+    while (!this.is("eof") && !this.matchPunctuation("}")) {
+      const statement = this.parseReturnStatement();
+      if (!statement) {
+        this.synchronizeToStatementOrBlockEnd();
+        continue;
+      }
+      statements.push(statement);
+    }
+
+    const endToken = this.previous ?? openBrace;
+    if (!openBrace || !endToken) {
+      return null;
+    }
+
+    return {
+      kind: "Block",
+      statements,
+      span: {
+        sourceFile: openBrace.span.sourceFile,
+        start: openBrace.span.start,
+        end: endToken.span.end,
+      },
+    };
+  }
+
+  private parseReturnStatement(): ReturnStatementNode | null {
+    const returnToken = this.expectKeyword(
+      "return",
+      "Expected `return` statement.",
+    );
+    if (!returnToken) {
+      return null;
+    }
+
+    const expression = this.parseExpression();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after return statement.",
+    );
+    if (!expression || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "ReturnStatement",
+      expression,
+      span: {
+        sourceFile: returnToken.span.sourceFile,
+        start: returnToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseExpression(): ExpressionNode | null {
+    const left = this.parsePrimaryExpression();
+    if (!left) {
+      return null;
+    }
+
+    if (this.matchPunctuation(">")) {
+      const operatorToken = this.previous;
+      const right = this.parsePrimaryExpression();
+      if (!right || !operatorToken) {
+        return null;
+      }
+
+      return {
+        kind: "BinaryExpression",
+        operator: ">",
+        left,
+        right,
+        span: {
+          sourceFile: left.span.sourceFile,
+          start: left.span.start,
+          end: right.span.end,
+        },
+      };
+    }
+
+    return left;
+  }
+
+  private parsePrimaryExpression(): ExpressionNode | null {
+    if (this.matchKeyword("true")) {
+      const token = this.previous;
+      if (!token) {
+        return null;
+      }
+      return {
+        kind: "BooleanLiteral",
+        value: true,
+        span: token.span,
+      } satisfies BooleanLiteralNode;
+    }
+
+    if (this.matchKeyword("false")) {
+      const token = this.previous;
+      if (!token) {
+        return null;
+      }
+      return {
+        kind: "BooleanLiteral",
+        value: false,
+        span: token.span,
+      } satisfies BooleanLiteralNode;
+    }
+
+    if (this.is("number")) {
+      const token = this.advance();
+      return {
+        kind: "DecimalLiteral",
+        text: token.text,
+        span: token.span,
+      } satisfies DecimalLiteralNode;
+    }
+
+    if (this.is("identifier")) {
+      const token = this.advance();
+      return {
+        kind: "Identifier",
+        name: token.text,
+        span: token.span,
+      } satisfies IdentifierNode;
+    }
+
+    if (this.matchPunctuation("(")) {
+      const expression = this.parseExpression();
+      this.expectPunctuation(
+        ")",
+        "Expected `)` after parenthesized expression.",
+      );
+      return expression;
+    }
+
+    this.errorAtCurrent(
+      "BANK-SYN-002",
+      `Unexpected token ${this.current.text}.`,
+      "Expected an expression.",
+    );
+    return null;
+  }
+
+  private parseTypeNode(): TypeNode | null {
+    if (this.matchKeyword("decimal")) {
+      const keyword = this.previous;
+      const openAngle = this.expectPunctuation(
+        "<",
+        "Expected `<` after `decimal`.",
+      );
+      const precisionToken = this.expectNumber("Expected decimal precision.");
+      this.expectPunctuation(",", "Expected `,` between precision and scale.");
+      const scaleToken = this.expectNumber("Expected decimal scale.");
+      const closeAngle = this.expectPunctuation(
+        ">",
+        "Expected `>` to close decimal type.",
+      );
+      if (
+        !keyword ||
+        !openAngle ||
+        !precisionToken ||
+        !scaleToken ||
+        !closeAngle
+      ) {
+        return null;
+      }
+      return {
+        kind: "DecimalType",
+        precision: Number(precisionToken.text),
+        scale: Number(scaleToken.text),
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: closeAngle.span.end,
+        },
+      } satisfies DecimalTypeNode;
+    }
+
+    if (this.matchKeyword("string")) {
+      const keyword = this.previous;
+      const openAngle = this.expectPunctuation(
+        "<",
+        "Expected `<` after `string`.",
+      );
+      const lengthToken = this.expectNumber("Expected string length.");
+      const closeAngle = this.expectPunctuation(
+        ">",
+        "Expected `>` to close string type.",
+      );
+      if (!keyword || !openAngle || !lengthToken || !closeAngle) {
+        return null;
+      }
+      return {
+        kind: "StringType",
+        length: Number(lengthToken.text),
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: closeAngle.span.end,
+        },
+      } satisfies StringTypeNode;
+    }
+
+    if (this.matchKeyword("bool")) {
+      const keyword = this.previous;
+      if (!keyword) {
+        return null;
+      }
+      return {
+        kind: "BoolType",
+        span: keyword.span,
+      } satisfies BoolTypeNode;
+    }
+
+    if (this.is("identifier")) {
+      const token = this.advance();
+      return {
+        kind: "TypeReference",
+        name: token.text,
+        span: token.span,
+      } satisfies TypeReferenceNode;
+    }
+
+    this.errorAtCurrent(
+      "BANK-SYN-002",
+      `Unexpected token ${this.current.text}.`,
+      "Expected a type annotation.",
+    );
+    return null;
+  }
+
+  private expectKeyword(keyword: string, message: string): Token | null {
+    if (this.matchKeyword(keyword)) {
+      return this.previous;
+    }
+    this.errorAtCurrent(
+      "BANK-SYN-001",
+      message,
+      `Expected keyword \`${keyword}\`.`,
+    );
+    return null;
+  }
+
+  private expectIdentifier(message: string): Token | null {
+    if (this.is("identifier")) {
+      return this.advance();
+    }
+    this.errorAtCurrent("BANK-SYN-001", message, "Expected an identifier.");
+    return null;
+  }
+
+  private expectNumber(message: string): Token | null {
+    if (this.is("number")) {
+      return this.advance();
+    }
+    this.errorAtCurrent("BANK-SYN-001", message, "Expected a number.");
+    return null;
+  }
+
+  private expectPunctuation(symbol: string, message: string): Token | null {
+    if (this.matchPunctuation(symbol)) {
+      return this.previous;
+    }
+    this.errorAtCurrent("BANK-SYN-001", message, `Expected \`${symbol}\`.`);
+    return null;
+  }
+
+  private matchKeyword(keyword: string): boolean {
+    if (this.current.kind === "keyword" && this.current.text === keyword) {
+      this.advance();
+      return true;
+    }
+    return false;
+  }
+
+  private matchPunctuation(symbol: string): boolean {
+    if (this.current.kind === "punctuation" && this.current.text === symbol) {
+      this.advance();
+      return true;
+    }
+    return false;
+  }
+
+  private is(kind: TokenKind): boolean {
+    return this.current.kind === kind;
+  }
+
+  private isPunctuation(symbol: string): boolean {
+    return this.current.kind === "punctuation" && this.current.text === symbol;
+  }
+
+  private advance(): Token {
+    const token = this.current;
+    this.previous = token;
+    this.current = this.next;
+    this.next = this.lexer.nextToken();
+    return token;
+  }
+
+  private errorAtCurrent(id: string, message: string, hint?: string): void {
+    this.diagnostics.push(
+      createDiagnostic({
+        id,
+        severity: "error",
+        message,
+        span:
+          this.current.kind === "eof"
+            ? (this.previous?.span ?? null)
+            : this.current.span,
+        hint: hint ?? null,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  private synchronizeToDeclaration(): void {
+    while (!this.is("eof")) {
+      if (
+        this.current.kind === "keyword" &&
+        ["type", "record", "function"].includes(this.current.text)
+      ) {
+        return;
+      }
+      this.advance();
+    }
+  }
+
+  private synchronizeToFieldOrRecordEnd(): void {
+    while (!this.is("eof")) {
+      if (this.current.kind === "punctuation" && this.current.text === "}") {
+        return;
+      }
+      if (
+        this.current.kind === "identifier" &&
+        this.next.kind === "punctuation" &&
+        this.next.text === ":"
+      ) {
+        return;
+      }
+      this.advance();
+    }
+  }
+
+  private synchronizeToParameterOrEnd(): void {
+    while (!this.is("eof")) {
+      if (
+        this.current.kind === "identifier" &&
+        this.next.kind === "punctuation" &&
+        this.next.text === ":"
+      ) {
+        return;
+      }
+      if (this.current.kind === "punctuation" && this.current.text === ")") {
+        return;
+      }
+      this.advance();
+    }
+  }
+
+  private synchronizeToStatementOrBlockEnd(): void {
+    while (!this.is("eof")) {
+      if (this.current.kind === "keyword" && this.current.text === "return") {
+        return;
+      }
+      if (this.current.kind === "punctuation" && this.current.text === "}") {
+        return;
+      }
+      this.advance();
+    }
+  }
+
+  private currentEnd(): SourcePosition {
+    return this.previous?.span.end ?? this.current.span.end;
+  }
+}
+
+export function parseBankTs(source: string, sourceFile: string): ParsedProgram {
+  const parser = new Parser(source, sourceFile);
+  return parser.parseProgram();
+}
+
+export function parseBankTsToJson(source: string, sourceFile: string): unknown {
+  return astToJson(parseBankTs(source, sourceFile));
+}

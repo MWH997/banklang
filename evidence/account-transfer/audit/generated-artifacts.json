@@ -1,0 +1,11 @@
+{
+  "artifacts": [
+    "/app/dist/cobol/ACCOUNT-TRANSFER.cbl",
+    "/app/dist/maps/source-map.json",
+    "/app/dist/audit/diagnostics.json",
+    "/app/dist/audit/source-map.json",
+    "/app/dist/audit/decimal-analysis.json",
+    "/app/dist/audit/transaction-analysis.json",
+    "/app/dist/audit/copybook-layout.json"
+  ]
+}
