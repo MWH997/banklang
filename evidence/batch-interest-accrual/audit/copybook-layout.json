@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "InterestAccount",
+      "cobolName": "INTEREST-ACCOUNT",
+      "totalLength": 26,
+      "entries": [
+        {
+          "order": 1,
+          "path": "INTEREST-ACCOUNT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "INTEREST-ACCOUNT.BALANCE",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        }
+      ]
+    }
+  ]
+}

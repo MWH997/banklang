@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "entries": [
+    {
+      "category": "record-field",
+      "owner": "InterestAccount",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+        "start": {
+          "line": 7,
+          "column": 3
+        },
+        "end": {
+          "line": 7,
+          "column": 21
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "isEligibleForInterest",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+        "start": {
+          "line": 10,
+          "column": 32
+        },
+        "end": {
+          "line": 10,
+          "column": 49
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "local-declaration",
+      "owner": "isEligibleForInterest",
+      "symbol": "projectedBalance",
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+        "start": {
+          "line": 11,
+          "column": 3
+        },
+        "end": {
+          "line": 11,
+          "column": 66
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "isEligibleForInterest",
+      "symbol": "0000000000000025.00",
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+        "start": {
+          "line": 11,
+          "column": 46
+        },
+        "end": {
+          "line": 11,
+          "column": 65
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "isEligibleForInterest",
+      "symbol": "1000.00",
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+        "start": {
+          "line": 13,
+          "column": 25
+        },
+        "end": {
+          "line": 13,
+          "column": 32
+        }
+      },
+      "precision": 6,
+      "scale": 2,
+      "packedBytes": 4,
+      "picture": "PIC S9(4)V99 COMP-3"
+    }
+  ]
+}

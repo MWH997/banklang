@@ -26,7 +26,7 @@ export function compileExample(examplePath = "examples/account-transfer") {
   const ir = lowerProgramToIR(typechecked);
 
   if (!ir.program) {
-    throw new Error("Expected the account-transfer example to compile.");
+    throw new Error(`Expected ${examplePath} to compile.`);
   }
 
   const emit = emitCobol(ir.program);

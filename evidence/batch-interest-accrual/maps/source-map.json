@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+  "artifact": "/workspace/dist/maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 28
+      },
+      "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+      "targetStartLine": 4,
+      "targetEndLine": 5,
+      "category": "module",
+      "symbol": "BatchInterestAccrual"
+    },
+    {
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceStart": {
+        "line": 5,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 8,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+      "targetStartLine": 9,
+      "targetEndLine": 11,
+      "category": "record",
+      "symbol": "InterestAccount"
+    },
+    {
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceStart": {
+        "line": 6,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 6,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+      "targetStartLine": 10,
+      "targetEndLine": 10,
+      "category": "field",
+      "symbol": "accountId"
+    },
+    {
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceStart": {
+        "line": 7,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 7,
+        "column": 21
+      },
+      "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+      "targetStartLine": 11,
+      "targetEndLine": 11,
+      "category": "field",
+      "symbol": "balance"
+    },
+    {
+      "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceStart": {
+        "line": 10,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 18,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+      "targetStartLine": 16,
+      "targetEndLine": 24,
+      "category": "function",
+      "symbol": "isEligibleForInterest"
+    }
+  ]
+}

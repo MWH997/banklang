@@ -10,7 +10,7 @@ The input program lives in `src/main.bank.ts` and uses:
 - a module declaration
 - a decimal type alias
 - a record declaration
-- a branch-based function that validates an interest threshold
+- a local decimal variable, arithmetic, and a branch-based function that validates an interest threshold
 
 ## Expected artifacts
 
@@ -28,7 +28,20 @@ The `build` command produces a full bundle:
 - `dist/audit/transaction-analysis.json`
 - `dist/audit/copybook-layout.json`
 - `dist/audit/verification-report.md`
+- `dist/audit/verification-report.json`
+- `dist/audit/gnucobol-validation.md`
+- `dist/audit/bankc-test-report.md`
 - `dist/audit/validation-matrix.md`
+
+The narrower emit and validation commands still write their respective outputs:
+
+- `pnpm bankc verify examples/batch-interest-accrual` writes
+  `dist/audit/verification-report.md` and `dist/audit/verification-report.json`
+- `pnpm bankc test examples/batch-interest-accrual` runs `check`, `build`, and
+  `verify`, then writes `dist/audit/bankc-test-report.md` plus the local
+  GnuCOBOL report in `dist/audit/gnucobol-validation.md`
+- `pnpm bankc emit jcl examples/batch-interest-accrual` writes
+  `dist/jcl/BATCH-INTEREST-ACCRUAL.jcl`
 
 ## Notes
 
