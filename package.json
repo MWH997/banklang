@@ -2,6 +2,7 @@
   "name": "banklang",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
     "bankc": "tsx packages/bankc-cli/src/bin.ts",
     "doctor": "pnpm bankc doctor",
