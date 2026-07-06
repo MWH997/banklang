@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "1 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "/workspace/dist/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "/workspace/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "/workspace/dist/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "skipped",
+      "details": "No local cobc executable was available."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/INTEREST-ACCOUNT.cpy",
+    "/workspace/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "gnucobolValidation": {
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/batch-interest-accrual/src/main.bank.ts",
+    "sourceArtifactHash": "271e70e778647fe020d67b563de3036df6c562b56471c1c3f4c1aed4bc0e95a2",
+    "generatedArtifact": "dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+    "generatedArtifactHash": "db207dd6b44d6a34f26492623a05249d6fe4c40bc765bcc97622c702620385f2",
+    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "935567d4d4bb4e3be4c302c2375dcbb93a96afa035794640fb523a4357cb5413",
+    "compilerExecutable": null,
+    "compilerVersion": null,
+    "compilerCommand": "cobc not found",
+    "compilerExitCode": null,
+    "compilerStatus": "skipped",
+    "compilerOutput": null,
+    "validatedWithGnucobol": false,
+    "knownBackendGaps": [
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}
