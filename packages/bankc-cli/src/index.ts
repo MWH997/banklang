@@ -1391,6 +1391,21 @@ function walkStatement(
   symbol: string,
 ): void {
   switch (statement.kind) {
+    case "LetStatement":
+      if (statement.declaredType.kind === "decimal") {
+        rows.push(
+          describeDecimal(
+            statement.name,
+            statement.declaredType,
+            statement.span,
+            "local-declaration",
+            sourceFile,
+            symbol,
+          ),
+        );
+      }
+      walkExpression(statement.initializer, rows, sourceFile, symbol);
+      return;
     case "ReturnStatement":
       walkExpression(statement.expression, rows, sourceFile, symbol);
       return;
@@ -1426,6 +1441,10 @@ function walkExpression(
           symbol,
         ),
       );
+      return;
+    case "BinaryArithmetic":
+      walkExpression(expression.left, rows, sourceFile, symbol);
+      walkExpression(expression.right, rows, sourceFile, symbol);
       return;
     case "BinaryComparison":
       walkExpression(expression.left, rows, sourceFile, symbol);

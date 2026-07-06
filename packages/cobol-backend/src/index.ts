@@ -1,6 +1,7 @@
 import type { SourcePosition, SourceSpan } from "../../ast/src/index";
 import type {
   IRBinaryComparisonExpression,
+  IRBinaryArithmeticExpression,
   IRBlock,
   IRBooleanLiteralExpression,
   IRDecimalLiteralExpression,
@@ -9,6 +10,7 @@ import type {
   IRIfStatement,
   IRFunction,
   IRIdentifierExpression,
+  IRLetStatement,
   IRProgram,
   IRRecord,
   IRType,
@@ -135,7 +137,14 @@ export function emitCobol(
   }
 
   for (const fn of program.functions) {
-    addLine(`       01  ${functionResultName(fn.name)} PIC X VALUE 'N'.`);
+    addLine(
+      `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
+    );
+    for (const local of collectFunctionLocals(fn.body)) {
+      addLine(
+        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      );
+    }
   }
   addLine("");
   addLine(`       PROCEDURE DIVISION.`);
@@ -251,6 +260,9 @@ function emitStatement(
   const indent = " ".repeat(indentLevel);
   for (const statement of block.statements) {
     switch (statement.kind) {
+      case "LetStatement":
+        emitLetStatement(statement, addLine, indent);
+        break;
       case "ReturnStatement":
         emitReturnStatement(statement, addLine, indent, resultName);
         break;
@@ -261,6 +273,26 @@ function emitStatement(
   }
 }
 
+function emitLetStatement(
+  statement: IRLetStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (statement.declaredType.kind === "bool") {
+    emitBooleanAssignment(
+      indent,
+      toCobolFieldName(statement.name),
+      statement.initializer,
+      addLine,
+    );
+    return;
+  }
+
+  addLine(
+    `${indent}COMPUTE ${toCobolFieldName(statement.name)} = ${renderDecimalExpression(statement.initializer)}`,
+  );
+}
+
 function emitIfStatement(
   statement: IRIfStatement,
   addLine: (line?: string) => void,
@@ -268,7 +300,7 @@ function emitIfStatement(
   resultName: string,
 ): void {
   const indent = " ".repeat(indentLevel);
-  addLine(`${indent}IF ${renderExpression(statement.condition)}`);
+  addLine(`${indent}IF ${renderCondition(statement.condition)}`);
   emitStatement(statement.thenBranch, addLine, indentLevel + 4, resultName);
   if (statement.elseBranch) {
     addLine(`${indent}ELSE`);
@@ -284,25 +316,15 @@ function emitReturnStatement(
   resultName: string,
 ): void {
   const expression = statement.expression;
-  if (expression.kind === "BooleanLiteral") {
-    addLine(`${indent}MOVE '${expression.value ? "Y" : "N"}' TO ${resultName}`);
+  if (expression.resolvedType.kind === "bool") {
+    emitBooleanAssignment(indent, resultName, expression, addLine);
     addLine(`${indent}GOBACK.`);
     return;
   }
 
-  if (expression.kind === "BinaryComparison") {
-    const left = renderExpression(expression.left);
-    const right = renderExpression(expression.right);
-    addLine(`${indent}IF ${left} ${expression.operator} ${right}`);
-    addLine(`${indent}    MOVE 'Y' TO ${resultName}`);
-    addLine(`${indent}ELSE`);
-    addLine(`${indent}    MOVE 'N' TO ${resultName}`);
-    addLine(`${indent}END-IF`);
-    addLine(`${indent}GOBACK.`);
-    return;
-  }
-
-  addLine(`${indent}MOVE ${renderExpression(expression)} TO ${resultName}`);
+  addLine(
+    `${indent}COMPUTE ${resultName} = ${renderDecimalExpression(expression)}`,
+  );
   addLine(`${indent}GOBACK.`);
 }
 
@@ -316,7 +338,82 @@ function renderExpression(expression: IRExpression): string {
       return expression.value ? "TRUE" : "FALSE";
     case "BinaryComparison":
       return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
+    case "BinaryArithmetic":
+      return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
   }
+}
+
+function renderDecimalExpression(expression: IRExpression): string {
+  switch (expression.kind) {
+    case "Identifier":
+      return toCobolFieldName(expression.name);
+    case "DecimalLiteral":
+      return expression.text;
+    case "BinaryArithmetic":
+      return `${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)}`;
+    default:
+      return renderExpression(expression);
+  }
+}
+
+function renderCondition(expression: IRExpression): string {
+  switch (expression.kind) {
+    case "BooleanLiteral":
+      return expression.value ? "1 = 1" : "1 = 0";
+    case "Identifier":
+      return expression.resolvedType.kind === "bool"
+        ? `${toCobolFieldName(expression.name)} = 'Y'`
+        : toCobolFieldName(expression.name);
+    case "BinaryComparison":
+      return `${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)}`;
+    default:
+      return renderExpression(expression);
+  }
+}
+
+function emitBooleanAssignment(
+  indent: string,
+  targetName: string,
+  expression: IRExpression,
+  addLine: (line?: string) => void,
+): void {
+  if (expression.kind === "BooleanLiteral") {
+    addLine(`${indent}MOVE '${expression.value ? "Y" : "N"}' TO ${targetName}`);
+    return;
+  }
+
+  addLine(`${indent}IF ${renderCondition(expression)}`);
+  addLine(`${indent}    MOVE 'Y' TO ${targetName}`);
+  addLine(`${indent}ELSE`);
+  addLine(`${indent}    MOVE 'N' TO ${targetName}`);
+  addLine(`${indent}END-IF`);
+}
+
+function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
+  const locals: IRLetStatement[] = [];
+  const seen = new Set<string>();
+
+  const visit = (current: IRBlock): void => {
+    for (const statement of current.statements) {
+      if (statement.kind === "LetStatement") {
+        if (!seen.has(statement.name)) {
+          seen.add(statement.name);
+          locals.push(statement);
+        }
+        continue;
+      }
+
+      if (statement.kind === "IfStatement") {
+        visit(statement.thenBranch);
+        if (statement.elseBranch) {
+          visit(statement.elseBranch);
+        }
+      }
+    }
+  };
+
+  visit(block);
+  return locals;
 }
 
 function functionResultName(functionName: string): string {
