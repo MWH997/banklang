@@ -49,6 +49,7 @@
 
 - Fixed `bankc layout <project>` so it writes the JSON layout report as well as the markdown report.
 - Fixed the command help text and CLI routing so the new commands are discoverable and executable.
+- Fixed GitHub Actions CI so pnpm is installed before `actions/setup-node` tries to resolve `cache: "pnpm"`.
 
 ### Security
 
