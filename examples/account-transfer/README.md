@@ -18,6 +18,7 @@ The `build` command produces a full bundle:
 
 - `dist/cobol/ACCOUNT-TRANSFER.cbl`
 - `dist/copybooks/TRANSFER-REQUEST.cpy`
+- `dist/jcl/ACCOUNT-TRANSFER.jcl`
 - `dist/maps/source-map.json`
 - `dist/audit/copybook-layout.md`
 - `dist/audit/diagnostics.json`
@@ -26,6 +27,8 @@ The `build` command produces a full bundle:
 - `dist/audit/decimal-analysis.json`
 - `dist/audit/transaction-analysis.json`
 - `dist/audit/copybook-layout.json`
+- `dist/audit/verification-report.md`
+- `dist/audit/gnucobol-validation.md`
 - `dist/audit/validation-matrix.md`
 
 The narrower emit commands still write their respective outputs:
@@ -34,7 +37,13 @@ The narrower emit commands still write their respective outputs:
   `dist/cobol/ACCOUNT-TRANSFER.cbl` and `dist/maps/source-map.json`
 - `pnpm bankc emit copybooks examples/account-transfer` writes
   `dist/copybooks/TRANSFER-REQUEST.cpy`
+- `pnpm bankc emit jcl examples/account-transfer` writes
+  `dist/jcl/ACCOUNT-TRANSFER.jcl`
 - `pnpm bankc audit-report examples/account-transfer` writes the audit bundle
+- `pnpm bankc verify examples/account-transfer` writes a verification report in
+  `dist/audit/verification-report.md`
+- `pnpm bankc test examples/account-transfer` writes the verification report
+  plus the local GnuCOBOL report in `dist/audit/gnucobol-validation.md`
 - `pnpm bankc layout examples/account-transfer` writes
   `dist/layout/copybook-layout.md` and `dist/layout/copybook-layout.json`
 

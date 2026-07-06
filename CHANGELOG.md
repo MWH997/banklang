@@ -58,6 +58,7 @@
 
 ### Documentation
 
+- Refreshed the account-transfer evidence bundle, tester notes, and AI review trail to include the emitted JCL and verification reports.
 - Expanded `examples/account-transfer/README.md`, `examples/account-transfer/expected/README.md`, and `evidence/account-transfer/README.md` to reflect the new JCL, verification, and GnuCOBOL artifacts.
 - Added a second example README and a command-surface feature proposal/tester-note trail.
 - Expanded `README.md` with the current command inventory, generated artifact map, evidence directories, validation commands, and AI review workflow.
