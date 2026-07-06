@@ -12,6 +12,7 @@ import {
   type FunctionDeclarationNode,
   type IdentifierNode,
   type IfStatementNode,
+  type LetStatementNode,
   type ParameterNode,
   type ProgramNode,
   type RecordDeclarationNode,
@@ -71,8 +72,15 @@ export interface ResolvedFunction {
   name: string;
   span: SourceSpan;
   parameters: ResolvedParameter[];
+  locals: ResolvedLocal[];
   returnType: ResolvedType;
   body: BlockNode;
+}
+
+export interface ResolvedLocal {
+  name: string;
+  span: SourceSpan;
+  type: ResolvedType;
 }
 
 export interface TypeCheckResult {
@@ -194,7 +202,8 @@ function resolveFunction(
   diagnostics: Diagnostic[],
 ): ResolvedFunction | null {
   const parameters: ResolvedParameter[] = [];
-  const parameterMap = new Map<string, ResolvedType>();
+  const scope = new Map<string, ResolvedType>();
+  const locals: ResolvedLocal[] = [];
 
   for (const parameter of declaration.parameters) {
     const resolved = resolveTypeNode(
@@ -207,7 +216,7 @@ function resolveFunction(
     if (!resolved) {
       continue;
     }
-    parameterMap.set(parameter.name, resolved);
+    declareSymbol(parameter.name, resolved, parameter.span, scope, diagnostics);
     parameters.push({
       name: parameter.name,
       span: parameter.span,
@@ -226,19 +235,21 @@ function resolveFunction(
     return null;
   }
 
-  const bodyDiagnostics = validateFunctionBody(
+  validateFunctionBody(
     declaration.body,
-    parameterMap,
     returnType,
+    scope,
     aliases,
     recordMap,
+    locals,
+    diagnostics,
   );
-  diagnostics.push(...bodyDiagnostics);
 
   return {
     name: declaration.name,
     span: declaration.span,
     parameters,
+    locals,
     returnType,
     body: declaration.body,
   };
@@ -246,94 +257,156 @@ function resolveFunction(
 
 function validateFunctionBody(
   body: BlockNode,
-  parameterMap: Map<string, ResolvedType>,
   returnType: ResolvedType,
+  scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
-): Diagnostic[] {
-  const diagnostics: Diagnostic[] = [];
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  return validateBlock(
+    body,
+    returnType,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+  );
+}
 
-  if (body.statements.length !== 1) {
+function validateBlock(
+  block: BlockNode,
+  returnType: ResolvedType,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  let terminalType: ResolvedType | null = null;
+  let terminalSeen = false;
+
+  for (const statement of block.statements) {
+    if (terminalSeen) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-004",
+          severity: "error",
+          message: "Statements cannot follow a terminal statement.",
+          span: statement.span,
+          hint: "Move declarations before the final return or if statement.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+
+    if (statement.kind === "LetStatement") {
+      validateLetStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      continue;
+    }
+
+    terminalSeen = true;
+    terminalType = resolveTerminalStatementType(
+      statement,
+      returnType,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+    );
+  }
+
+  if (!terminalSeen) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-004",
         severity: "error",
-        message:
-          "Functions in the initial subset must contain exactly one top-level statement.",
-        span: body.span,
-        hint: "Use a single return statement or a single if statement with return branches.",
+        message: "Function blocks must end with a return or if statement.",
+        span: block.span,
+        hint: "Add a terminal statement after any local declarations.",
         backendProfile: null,
       }),
     );
-    return diagnostics;
+    return null;
   }
 
-  const statement = body.statements[0];
-  const resolvedStatementType = resolveStatementType(
-    statement,
-    parameterMap,
-    aliases,
-    recordMap,
-    diagnostics,
-  );
-
-  if (!resolvedStatementType) {
-    return diagnostics;
-  }
-
-  if (!typesCompatible(returnType, resolvedStatementType)) {
-    diagnostics.push(
-      createDiagnostic({
-        id: "BANK-TYPE-003",
-        severity: "error",
-        message: `Return path type does not match declared return type.`,
-        span: statement.span,
-        hint: "Make every return path align with the declared function return type.",
-        backendProfile: null,
-      }),
-    );
-  }
-
-  return diagnostics;
+  return terminalType;
 }
 
-function resolveStatementType(
+function resolveTerminalStatementType(
   statement: StatementNode,
-  parameterMap: Map<string, ResolvedType>,
+  returnType: ResolvedType,
+  scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
   switch (statement.kind) {
-    case "ReturnStatement":
-      return inferExpressionType(
+    case "ReturnStatement": {
+      const resolved = inferExpressionType(
         statement.expression,
-        parameterMap,
+        scope,
         aliases,
         recordMap,
         diagnostics,
       );
+      if (!resolved) {
+        return null;
+      }
+
+      if (!typesCompatible(returnType, resolved)) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: "Return path type does not match declared return type.",
+            span: statement.span,
+            hint: "Make every return path align with the declared function return type.",
+            backendProfile: null,
+          }),
+        );
+      }
+
+      return resolved;
+    }
     case "IfStatement":
       return resolveIfStatementType(
         statement,
-        parameterMap,
+        returnType,
+        scope,
         aliases,
         recordMap,
+        locals,
         diagnostics,
       );
+    case "LetStatement":
+      return null;
   }
 }
 
 function resolveIfStatementType(
   statement: IfStatementNode,
-  parameterMap: Map<string, ResolvedType>,
+  returnType: ResolvedType,
+  scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
   const conditionType = inferExpressionType(
     statement.condition,
-    parameterMap,
+    scope,
     aliases,
     recordMap,
     diagnostics,
@@ -347,7 +420,7 @@ function resolveIfStatementType(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: "If conditions must be bool in the initial subset.",
+        message: "If conditions must be bool.",
         span: statement.condition.span,
         hint: "Compare a decimal expression or use a bool value in the condition.",
         backendProfile: null,
@@ -356,11 +429,13 @@ function resolveIfStatementType(
     return null;
   }
 
-  const thenType = resolveBlockReturnType(
+  const thenType = validateBlock(
     statement.thenBranch,
-    parameterMap,
+    returnType,
+    scope,
     aliases,
     recordMap,
+    locals,
     diagnostics,
   );
   if (!thenType) {
@@ -382,11 +457,13 @@ function resolveIfStatementType(
     return null;
   }
 
-  const elseType = resolveBlockReturnType(
+  const elseType = validateBlock(
     statement.elseBranch,
-    parameterMap,
+    returnType,
+    scope,
     aliases,
     recordMap,
+    locals,
     diagnostics,
   );
   if (!elseType) {
@@ -407,43 +484,87 @@ function resolveIfStatementType(
     return null;
   }
 
-  return thenType;
-}
-
-function resolveBlockReturnType(
-  block: BlockNode,
-  parameterMap: Map<string, ResolvedType>,
-  aliases: Record<string, ResolvedType>,
-  recordMap: Map<string, ResolvedRecord>,
-  diagnostics: Diagnostic[],
-): ResolvedType | null {
-  if (block.statements.length !== 1) {
+  if (!typesCompatible(returnType, thenType)) {
     diagnostics.push(
       createDiagnostic({
-        id: "BANK-TYPE-004",
+        id: "BANK-TYPE-003",
         severity: "error",
-        message:
-          "Branch blocks must contain exactly one statement in the initial subset.",
-        span: block.span,
-        hint: "Keep each branch to a single return statement or a nested if statement.",
+        message: "Return path type does not match declared return type.",
+        span: statement.span,
+        hint: "Make every return path align with the declared function return type.",
         backendProfile: null,
       }),
     );
-    return null;
   }
 
-  return resolveStatementType(
-    block.statements[0],
-    parameterMap,
+  return thenType;
+}
+
+function validateLetStatement(
+  statement: LetStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): void {
+  const declaredType = resolveTypeNode(
+    statement.type,
+    aliases,
+    recordMap,
+    diagnostics,
+    statement.type.span,
+  );
+  if (!declaredType) {
+    return;
+  }
+
+  const initializerType = inferExpressionType(
+    statement.expression,
+    scope,
     aliases,
     recordMap,
     diagnostics,
   );
+  if (!initializerType) {
+    return;
+  }
+
+  if (!typesCompatible(declaredType, initializerType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "Let initializer type does not match the declared type.",
+        span: statement.expression.span,
+        hint: "Make the let declaration type and initializer resolve to the same BankLang type.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (
+    !declareSymbol(
+      statement.name,
+      declaredType,
+      statement.span,
+      scope,
+      diagnostics,
+    )
+  ) {
+    return;
+  }
+
+  locals.push({
+    name: statement.name,
+    span: statement.span,
+    type: declaredType,
+  });
 }
 
 function inferExpressionType(
   expression: ExpressionNode,
-  parameterMap: Map<string, ResolvedType>,
+  scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
@@ -454,7 +575,7 @@ function inferExpressionType(
     case "DecimalLiteral":
       return inferDecimalLiteral(expression);
     case "Identifier": {
-      const resolved = parameterMap.get(expression.name);
+      const resolved = scope.get(expression.name);
       if (!resolved) {
         diagnostics.push(
           createDiagnostic({
@@ -473,7 +594,7 @@ function inferExpressionType(
     case "BinaryExpression": {
       return inferBinaryExpressionType(
         expression,
-        parameterMap,
+        scope,
         aliases,
         recordMap,
         diagnostics,
@@ -484,21 +605,21 @@ function inferExpressionType(
 
 function inferBinaryExpressionType(
   expression: BinaryExpressionNode,
-  parameterMap: Map<string, ResolvedType>,
+  scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
   const left = inferExpressionType(
     expression.left,
-    parameterMap,
+    scope,
     aliases,
     recordMap,
     diagnostics,
   );
   const right = inferExpressionType(
     expression.right,
-    parameterMap,
+    scope,
     aliases,
     recordMap,
     diagnostics,
@@ -507,36 +628,70 @@ function inferBinaryExpressionType(
     return null;
   }
 
+  if (expression.operator === ">") {
+    if (!isDecimalType(left) || !isDecimalType(right)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message:
+            "Comparison operator > requires decimal operands in the current subset.",
+          span: expression.span,
+          hint: "Use decimal values or decimal literals in the comparison.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+
+    if (left.scale !== right.scale) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message:
+            "Decimal comparison requires matching scale in the current subset.",
+          span: expression.span,
+          hint: "Make both sides use the same decimal scale.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+
+    return { kind: "bool" };
+  }
+
   if (!isDecimalType(left) || !isDecimalType(right)) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `Comparison operator ${expression.operator} requires decimal operands in the initial subset.`,
+        message: `Arithmetic operator ${expression.operator} requires decimal operands in the current subset.`,
         span: expression.span,
-        hint: "Use decimal values or decimal literals in the comparison.",
+        hint: "Use decimal values or decimal literals in the arithmetic expression.",
         backendProfile: null,
       }),
     );
     return null;
   }
 
-  if (left.scale !== right.scale) {
+  if (left.precision !== right.precision || left.scale !== right.scale) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
         message:
-          "Decimal comparison requires matching scale in the initial subset.",
+          "Decimal arithmetic requires matching precision and scale in the current subset.",
         span: expression.span,
-        hint: "Make both sides use the same decimal scale.",
+        hint: "Make both operands use the same decimal precision and scale.",
         backendProfile: null,
       }),
     );
     return null;
   }
 
-  return { kind: "bool" };
+  return left;
 }
 
 function resolveTypeNode(
@@ -668,6 +823,31 @@ function isDecimalType(type: ResolvedType): type is DecimalType {
 
 function isBoolType(type: ResolvedType): type is BoolType {
   return type.kind === "bool";
+}
+
+function declareSymbol(
+  name: string,
+  type: ResolvedType,
+  span: SourceSpan,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+): boolean {
+  if (scope.has(name)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-005",
+        severity: "error",
+        message: `Duplicate symbol: ${name}.`,
+        span,
+        hint: "Use a unique parameter or local variable name.",
+        backendProfile: null,
+      }),
+    );
+    return false;
+  }
+
+  scope.set(name, type);
+  return true;
 }
 
 function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {

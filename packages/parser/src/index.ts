@@ -14,6 +14,7 @@ import {
   type IdentifierNode,
   type ModuleDeclarationNode,
   type ParsedProgram,
+  type LetStatementNode,
   type ParameterNode,
   type ProgramNode,
   type RecordDeclarationNode,
@@ -49,6 +50,7 @@ const KEYWORDS = new Set([
   "decimal",
   "string",
   "bool",
+  "let",
   "if",
   "else",
 ]);
@@ -541,6 +543,10 @@ class Parser {
   }
 
   private parseStatement(): StatementNode | null {
+    if (this.matchKeyword("let")) {
+      return this.parseLetStatement();
+    }
+
     if (this.matchKeyword("return")) {
       return this.parseReturnStatement();
     }
@@ -555,6 +561,39 @@ class Parser {
       "Expected a statement.",
     );
     return null;
+  }
+
+  private parseLetStatement(): LetStatementNode | null {
+    const letToken = this.previous;
+    if (!letToken) {
+      return null;
+    }
+
+    const nameToken = this.expectIdentifier("Expected local variable name.");
+    this.expectPunctuation(":", "Expected `:` after local variable name.");
+    const type = this.parseTypeNode();
+    this.expectPunctuation("=", "Expected `=` in let declaration.");
+    const expression = this.parseExpression();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after let declaration.",
+    );
+
+    if (!nameToken || !type || !expression || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "LetStatement",
+      name: nameToken.text,
+      type,
+      expression,
+      span: {
+        sourceFile: letToken.span.sourceFile,
+        start: letToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
   }
 
   private parseReturnStatement(): ReturnStatementNode | null {
@@ -618,14 +657,18 @@ class Parser {
   }
 
   private parseExpression(): ExpressionNode | null {
-    const left = this.parsePrimaryExpression();
+    return this.parseComparisonExpression();
+  }
+
+  private parseComparisonExpression(): ExpressionNode | null {
+    const left = this.parseAdditiveExpression();
     if (!left) {
       return null;
     }
 
     if (this.matchPunctuation(">")) {
       const operatorToken = this.previous;
-      const right = this.parsePrimaryExpression();
+      const right = this.parseAdditiveExpression();
       if (!right || !operatorToken) {
         return null;
       }
@@ -644,6 +687,35 @@ class Parser {
     }
 
     return left;
+  }
+
+  private parseAdditiveExpression(): ExpressionNode | null {
+    let expression = this.parsePrimaryExpression();
+    if (!expression) {
+      return null;
+    }
+
+    while (this.isPunctuation("+") || this.isPunctuation("-")) {
+      const operatorToken = this.advance();
+      const right = this.parsePrimaryExpression();
+      if (!right) {
+        return null;
+      }
+
+      expression = {
+        kind: "BinaryExpression",
+        operator: operatorToken.text as "+" | "-",
+        left: expression,
+        right,
+        span: {
+          sourceFile: expression.span.sourceFile,
+          start: expression.span.start,
+          end: right.span.end,
+        },
+      };
+    }
+
+    return expression;
   }
 
   private parsePrimaryExpression(): ExpressionNode | null {

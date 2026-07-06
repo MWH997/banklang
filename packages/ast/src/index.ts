@@ -135,9 +135,16 @@ export interface BooleanLiteralNode extends NodeBase {
 
 export interface BinaryExpressionNode extends NodeBase {
   kind: "BinaryExpression";
-  operator: ">";
+  operator: ">" | "+" | "-";
   left: ExpressionNode;
   right: ExpressionNode;
+}
+
+export interface LetStatementNode extends NodeBase {
+  kind: "LetStatement";
+  name: string;
+  type: TypeNode;
+  expression: ExpressionNode;
 }
 
 export type ExpressionNode =
@@ -145,6 +152,9 @@ export type ExpressionNode =
   | DecimalLiteralNode
   | BooleanLiteralNode
   | BinaryExpressionNode;
+
+export type StatementNode =
+  LetStatementNode | ReturnStatementNode | IfStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
@@ -157,8 +167,6 @@ export interface IfStatementNode extends NodeBase {
   thenBranch: BlockNode;
   elseBranch: BlockNode | null;
 }
-
-export type StatementNode = ReturnStatementNode | IfStatementNode;
 
 export interface BlockNode extends NodeBase {
   kind: "Block";

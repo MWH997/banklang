@@ -27,6 +27,14 @@ describe("control flow example", () => {
     expect(checked.diagnostics).toEqual([]);
     expect(ir.program?.functions[0]?.body.kind).toBe("Block");
     expect(ir.program?.functions[0]?.body.statements[0]).toMatchObject({
+      kind: "LetStatement",
+      declaredType: {
+        kind: "decimal",
+        precision: 18,
+        scale: 2,
+      },
+    });
+    expect(ir.program?.functions[0]?.body.statements[1]).toMatchObject({
       kind: "IfStatement",
     });
   });

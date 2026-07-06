@@ -5,6 +5,7 @@ import {
   type ExpressionNode,
   type IdentifierNode,
   type IfStatementNode,
+  type LetStatementNode,
   type StatementNode,
   type ReturnStatementNode,
   type SourceSpan,
@@ -14,6 +15,7 @@ import type {
   ResolvedField,
   ResolvedFunction,
   ResolvedRecord,
+  ResolvedLocal,
   ResolvedType,
   TypeCheckResult,
 } from "../../typechecker/src/index";
@@ -63,7 +65,15 @@ export interface IRBlock {
   statements: IRStatement[];
 }
 
-export type IRStatement = IRReturnStatement | IRIfStatement;
+export type IRStatement = IRLetStatement | IRReturnStatement | IRIfStatement;
+
+export interface IRLetStatement {
+  kind: "LetStatement";
+  span: SourceSpan;
+  name: string;
+  declaredType: IRType;
+  initializer: IRExpression;
+}
 
 export interface IRReturnStatement {
   kind: "ReturnStatement";
@@ -83,7 +93,8 @@ export type IRExpression =
   | IRIdentifierExpression
   | IRDecimalLiteralExpression
   | IRBooleanLiteralExpression
-  | IRBinaryComparisonExpression;
+  | IRBinaryComparisonExpression
+  | IRBinaryArithmeticExpression;
 
 export interface IRIdentifierExpression {
   kind: "Identifier";
@@ -113,6 +124,15 @@ export interface IRBinaryComparisonExpression {
   left: IRExpression;
   right: IRExpression;
   resolvedType: BoolIRType;
+}
+
+export interface IRBinaryArithmeticExpression {
+  kind: "BinaryArithmetic";
+  span: SourceSpan;
+  operator: "+" | "-";
+  left: IRExpression;
+  right: IRExpression;
+  resolvedType: DecimalIRType;
 }
 
 export type IRType = DecimalIRType | StringIRType | BoolIRType | RecordIRType;
@@ -194,9 +214,12 @@ function lowerRecord(
 }
 
 function lowerFunction(fn: ResolvedFunction): IRFunction {
-  const parameterTypes = new Map<string, IRType>();
+  const scopeTypes = new Map<string, IRType>();
   for (const parameter of fn.parameters) {
-    parameterTypes.set(parameter.name, lowerType(parameter.type));
+    scopeTypes.set(parameter.name, lowerType(parameter.type));
+  }
+  for (const local of fn.locals) {
+    scopeTypes.set(local.name, lowerType(local.type));
   }
 
   return {
@@ -210,82 +233,102 @@ function lowerFunction(fn: ResolvedFunction): IRFunction {
       type: lowerType(parameter.type),
     })),
     returnType: lowerType(fn.returnType),
-    body: lowerBlock(fn.body, parameterTypes),
+    body: lowerBlock(fn.body, scopeTypes),
   };
 }
 
 function lowerBlock(
   block: { span: SourceSpan; statements: StatementNode[] },
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRBlock {
   return {
     kind: "Block",
     span: block.span,
     statements: block.statements.map((statement) =>
-      lowerStatement(statement, parameterTypes),
+      lowerStatement(statement, scopeTypes),
     ),
   };
 }
 
 function lowerStatement(
   statement: StatementNode,
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRStatement {
   switch (statement.kind) {
+    case "LetStatement":
+      return lowerLetStatement(statement, scopeTypes);
     case "ReturnStatement":
-      return lowerReturnStatement(statement, parameterTypes);
+      return lowerReturnStatement(statement, scopeTypes);
     case "IfStatement":
-      return lowerIfStatement(statement, parameterTypes);
+      return lowerIfStatement(statement, scopeTypes);
   }
+}
+
+function lowerLetStatement(
+  statement: LetStatementNode,
+  scopeTypes: Map<string, IRType>,
+): IRLetStatement {
+  const declaredType = scopeTypes.get(statement.name);
+  if (!declaredType) {
+    throw new Error(`Unresolved local during IR lowering: ${statement.name}`);
+  }
+
+  return {
+    kind: "LetStatement",
+    span: statement.span,
+    name: statement.name,
+    declaredType,
+    initializer: lowerExpression(statement.expression, scopeTypes),
+  };
 }
 
 function lowerReturnStatement(
   statement: ReturnStatementNode,
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRReturnStatement {
   return {
     kind: "ReturnStatement",
     span: statement.span,
-    expression: lowerExpression(statement.expression, parameterTypes),
+    expression: lowerExpression(statement.expression, scopeTypes),
   };
 }
 
 function lowerIfStatement(
   statement: IfStatementNode,
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRIfStatement {
   return {
     kind: "IfStatement",
     span: statement.span,
-    condition: lowerExpression(statement.condition, parameterTypes),
-    thenBranch: lowerBlock(statement.thenBranch, parameterTypes),
+    condition: lowerExpression(statement.condition, scopeTypes),
+    thenBranch: lowerBlock(statement.thenBranch, scopeTypes),
     elseBranch: statement.elseBranch
-      ? lowerBlock(statement.elseBranch, parameterTypes)
+      ? lowerBlock(statement.elseBranch, scopeTypes)
       : null,
   };
 }
 
 function lowerExpression(
   expression: ExpressionNode,
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRExpression {
   switch (expression.kind) {
     case "Identifier":
-      return lowerIdentifierExpression(expression, parameterTypes);
+      return lowerIdentifierExpression(expression, scopeTypes);
     case "DecimalLiteral":
       return lowerDecimalLiteralExpression(expression);
     case "BooleanLiteral":
       return lowerBooleanLiteralExpression(expression);
     case "BinaryExpression":
-      return lowerBinaryExpression(expression, parameterTypes);
+      return lowerBinaryExpression(expression, scopeTypes);
   }
 }
 
 function lowerIdentifierExpression(
   expression: IdentifierNode,
-  parameterTypes: Map<string, IRType>,
+  scopeTypes: Map<string, IRType>,
 ): IRIdentifierExpression {
-  const resolvedType = parameterTypes.get(expression.name);
+  const resolvedType = scopeTypes.get(expression.name);
   if (!resolvedType) {
     throw new Error(
       `Unresolved identifier during IR lowering: ${expression.name}`,
@@ -328,16 +371,57 @@ function lowerBooleanLiteralExpression(
 
 function lowerBinaryExpression(
   expression: BinaryExpressionNode,
-  parameterTypes: Map<string, IRType>,
-): IRBinaryComparisonExpression {
+  scopeTypes: Map<string, IRType>,
+): IRBinaryComparisonExpression | IRBinaryArithmeticExpression {
+  const left = lowerExpression(expression.left, scopeTypes);
+  const right = lowerExpression(expression.right, scopeTypes);
+
+  if (expression.operator === ">") {
+    return {
+      kind: "BinaryComparison",
+      span: expression.span,
+      operator: expression.operator,
+      left,
+      right,
+      resolvedType: { kind: "bool" },
+    };
+  }
+
   return {
-    kind: "BinaryComparison",
+    kind: "BinaryArithmetic",
     span: expression.span,
     operator: expression.operator,
-    left: lowerExpression(expression.left, parameterTypes),
-    right: lowerExpression(expression.right, parameterTypes),
-    resolvedType: { kind: "bool" },
+    left,
+    right,
+    resolvedType: decimalExpressionType(left, right),
   };
+}
+
+function decimalExpressionType(
+  left: IRExpression,
+  right: IRExpression,
+): DecimalIRType {
+  const leftType = expressionDecimalType(left);
+  const rightType = expressionDecimalType(right);
+  return leftType ?? rightType ?? { kind: "decimal", precision: 18, scale: 2 };
+}
+
+function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
+  if (
+    expression.kind === "DecimalLiteral" ||
+    expression.kind === "BinaryArithmetic"
+  ) {
+    return expression.resolvedType;
+  }
+
+  if (
+    expression.kind === "Identifier" &&
+    expression.resolvedType.kind === "decimal"
+  ) {
+    return expression.resolvedType;
+  }
+
+  return null;
 }
 
 function lowerType(type: ResolvedType): IRType {

@@ -41,4 +41,32 @@ describe("ir", () => {
       },
     });
   });
+
+  it("lowers local variables and decimal arithmetic", () => {
+    const parsed = parseBankTs(
+      loadExampleSource("examples/batch-interest-accrual"),
+      exampleSourceFile("examples/batch-interest-accrual"),
+    );
+    const checked = typecheckProgram(parsed.program);
+    const ir = lowerProgramToIR(checked);
+
+    expect(ir.program).not.toBeNull();
+    expect(ir.program?.functions[0]?.body.statements[0]).toMatchObject({
+      kind: "LetStatement",
+      declaredType: {
+        kind: "decimal",
+        precision: 18,
+        scale: 2,
+      },
+      initializer: {
+        kind: "BinaryArithmetic",
+        operator: "+",
+        resolvedType: {
+          kind: "decimal",
+          precision: 18,
+          scale: 2,
+        },
+      },
+    });
+  });
 });
