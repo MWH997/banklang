@@ -184,6 +184,58 @@ describe("bankc cli", () => {
     }
   });
 
+  it("emits copybook JSON reports", () => {
+    const outDir = mkdtempSync(join(tmpdir(), "banklang-copybook-json-"));
+
+    try {
+      const buildResult = runBankc([
+        "build",
+        "examples/account-transfer",
+        "--out",
+        outDir,
+      ]);
+      expect(buildResult.exitCode).toBe(0);
+
+      const copybookPath = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const inspectResult = runBankc([
+        "copybook",
+        "inspect",
+        copybookPath,
+        "--json",
+      ]);
+      const typesResult = runBankc([
+        "copybook",
+        "types",
+        copybookPath,
+        "--json",
+      ]);
+      const diffResult = runBankc([
+        "copybook",
+        "diff",
+        copybookPath,
+        copybookPath,
+        "--json",
+      ]);
+
+      expect(inspectResult.exitCode).toBe(0);
+      expect(typesResult.exitCode).toBe(0);
+      expect(diffResult.exitCode).toBe(0);
+      expect(JSON.parse(inspectResult.stdout)).toMatchObject({
+        recordName: "TRANSFER-REQUEST",
+        totalLength: 42,
+      });
+      expect(JSON.parse(typesResult.stdout)).toMatchObject({
+        cobolName: "TRANSFER-REQUEST",
+        totalLength: 42,
+      });
+      expect(JSON.parse(diffResult.stdout)).toMatchObject({
+        identical: true,
+      });
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it("diffs identical generated copybooks as clean", () => {
     const outDir = mkdtempSync(join(tmpdir(), "banklang-copybook-diff-"));
 

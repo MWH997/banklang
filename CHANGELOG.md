@@ -10,8 +10,10 @@
 - Added `bankc test <project>` to run `check`, `build`, and `verify`, then record the local GnuCOBOL validation report under `dist/audit/gnucobol-validation.md` and the command-level report under `dist/audit/bankc-test-report.md`.
 - Added `bankc emit jcl <project>` to emit a readable JCL skeleton for the generated COBOL artifact.
 - Added `bankc copybook inspect --json` / `types --json` / `diff --json` output for the generated copybook subset.
-- Added `examples/batch-interest-accrual` as a second BankTS example that exercises deterministic `if` / `else` control flow.
-- Added a control-flow expansion through the parser, typechecker, IR, and COBOL backend for the narrow `if` / `else` subset used by the second example.
+- Added `examples/batch-interest-accrual` as a second BankTS example that exercises deterministic `if` / `else` control flow, local variables, and exact decimal arithmetic.
+- Added a control-flow and local-variable expansion through the parser, typechecker, IR, and COBOL backend for the narrow `if` / `else` subset used by the second example.
+- Added a checked-in `evidence/batch-interest-accrual/` bundle for the second example, plus the associated tester notes and AI review trail.
+- Added `RELEASE-CHECKLIST.md` for release hygiene, verification, evidence, and git discipline.
 - Added verification and GnuCOBOL evidence to the account-transfer bundle, including `dist/jcl/ACCOUNT-TRANSFER.jcl`, `dist/audit/verification-report.md`, and `dist/audit/gnucobol-validation.md`.
 - Added `bankc layout <project>` to emit a deterministic copybook layout report in `dist/layout/copybook-layout.md` and `dist/layout/copybook-layout.json`, and wired the audit bundle to include `dist/audit/copybook-layout.md`.
 - Added `bankc copybook types <file>` for the generated copybook subset, with a field type summary and CLI/unit coverage against `TRANSFER-REQUEST.cpy`.
