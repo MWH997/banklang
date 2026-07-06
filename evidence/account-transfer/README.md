@@ -15,9 +15,12 @@ This bundle captures the generated artifacts for the account-transfer example.
 - `audit/decimal-analysis.json`
 - `audit/transaction-analysis.json`
 - `audit/copybook-layout.json`
+- `audit/copybook-layout.md`
 - `audit/validation-matrix.md`
 - `audit/verification-report.md`
+- `audit/verification-report.json`
 - `audit/gnucobol-validation.md`
+- `audit/bankc-test-report.md`
 
 ## Related tester notes
 

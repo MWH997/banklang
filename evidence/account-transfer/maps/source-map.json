@@ -1,4 +1,6 @@
 {
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/examples/account-transfer/src/main.bank.ts",
   "artifact": "/workspace/dist/maps/source-map.json",
   "entries": [

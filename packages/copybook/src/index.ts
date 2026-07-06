@@ -70,6 +70,8 @@ export interface CopybookLayoutReport {
 }
 
 export interface CopybookLayoutDocument {
+  version: number;
+  backendProfile: string;
   artifact: string;
   reports: CopybookLayoutReport[];
 }
@@ -306,6 +308,8 @@ export function buildCopybookLayoutDocument(
   artifact: string,
 ): CopybookLayoutDocument {
   return {
+    version: 1,
+    backendProfile: "ibm-enterprise-cobol-zos",
     artifact,
     reports: program.records.map((record) => buildCopybookLayoutReport(record)),
   };
@@ -344,6 +348,9 @@ export function renderCopybookLayoutDocument(
 ): string {
   const lines = [
     "# Copybook Layout Report",
+    "",
+    `Version: ${document.version}`,
+    `Backend profile: ${document.backendProfile}`,
     "",
     `Artifact: ${document.artifact}`,
     "",

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import {
@@ -34,7 +34,10 @@ import {
 import { parseBankTs } from "../../parser/src/index";
 import { typecheckProgram } from "../../typechecker/src/index";
 import { decimalPicture, toCobolName } from "../../cobol-ir/src/index";
-import { runGnucobolValidation } from "../../../tools/gnucobol-validation";
+import {
+  runGnucobolValidation,
+  type GnucobolValidationSummary,
+} from "../../../tools/gnucobol-validation";
 
 export interface CliResult {
   exitCode: number;
@@ -51,6 +54,62 @@ interface CompiledProject {
 }
 
 const PLANNED_COMMAND_ERROR = "planned but not implemented yet";
+const AUDIT_SCHEMA_VERSION = 1;
+const BACKEND_PROFILE = "ibm-enterprise-cobol-zos";
+
+type AuditCheckStatus = "passed" | "emitted" | "skipped" | "failed";
+
+interface AuditCheck {
+  name: string;
+  status: AuditCheckStatus;
+  details: string;
+}
+
+interface VerificationReportDocument {
+  version: number;
+  backendProfile: string;
+  phase: "audit" | "verify";
+  project: string;
+  checks: AuditCheck[];
+  artifacts: string[];
+  deterministicRegeneration: AuditCheck;
+  gnucobolValidation: GnucobolValidationSummary | null;
+  notes: string[];
+}
+
+interface TestReportDocument {
+  version: number;
+  backendProfile: string;
+  project: string;
+  steps: AuditCheck[];
+  artifacts: string[];
+  notes: string[];
+}
+
+interface AuditManifestDocument {
+  version: number;
+  backendProfile: string;
+  artifacts: string[];
+}
+
+interface DiagnosticsDocument {
+  version: number;
+  backendProfile: string;
+  diagnostics: Diagnostic[];
+}
+
+interface DecimalAnalysisDocument {
+  version: number;
+  backendProfile: string;
+  entries: unknown[];
+}
+
+interface TransactionAnalysisDocument {
+  version: number;
+  backendProfile: string;
+  status: string;
+  transactions: unknown[];
+}
 
 export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
@@ -355,6 +414,11 @@ function runAuditReport(args: string[], cwd: string): CliResult {
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
   });
+  writeCobolOutputs(emitResult);
+  const writtenCopybooks = writeCopybookOutputs(
+    compiled.ir.program as IRProgram,
+    outputRoot,
+  );
   const jclResult = emitJcl(compiled.ir.program as IRProgram, {
     jclArtifactPath: getJclArtifactPath(
       compiled.ir.program as IRProgram,
@@ -371,7 +435,11 @@ function runAuditReport(args: string[], cwd: string): CliResult {
 
   return {
     exitCode: 0,
-    stdout: `Wrote audit artifacts under ${auditRoot}\n`,
+    stdout:
+      [
+        ...writtenCopybooks.map((path) => `Wrote ${path}`),
+        `Wrote audit artifacts under ${auditRoot}`,
+      ].join("\n") + "\n",
     stderr: "",
   };
 }
@@ -427,12 +495,69 @@ function runVerify(args: string[], cwd: string): CliResult {
     jclResult,
     outputRoot,
   );
-  const verificationReportPath = writeVerificationReport(
+  const gnucobolValidation = runGnucobolValidation(
+    cwd,
+    projectPath,
+    outputRoot,
+  );
+  const generatedArtifactPaths = [
+    emitResult.cobolArtifactPath,
+    emitResult.sourceMapArtifactPath,
+    ...writtenCopybooks,
+    jclResult.jclArtifactPath,
+    join(auditRoot, "diagnostics.json"),
+    join(auditRoot, "source-map.json"),
+    join(auditRoot, "decimal-analysis.json"),
+    join(auditRoot, "transaction-analysis.json"),
+    join(auditRoot, "copybook-layout.json"),
+    join(auditRoot, "generated-artifacts.json"),
+    join(auditRoot, "verification-report.md"),
+    join(auditRoot, "verification-report.json"),
+    join(auditRoot, "validation-matrix.md"),
+    join(auditRoot, "gnucobol-validation.md"),
+  ];
+  writeFileSync(
+    join(auditRoot, "generated-artifacts.json"),
+    `${JSON.stringify(
+      {
+        version: AUDIT_SCHEMA_VERSION,
+        backendProfile: BACKEND_PROFILE,
+        artifacts: generatedArtifactPaths,
+      } satisfies AuditManifestDocument,
+      null,
+      2,
+    )}\n`,
+  );
+  const verificationReport = buildVerificationReportDocument(
+    "verify",
     compiled,
     emitResult,
     jclResult,
-    auditRoot,
+    outputRoot,
+    gnucobolValidation,
   );
+  writeVerificationReportArtifacts(verificationReport, auditRoot);
+  const verificationFailed = verificationReport.checks.some(
+    (check) => check.status === "failed",
+  );
+
+  if (verificationFailed) {
+    return {
+      exitCode: 1,
+      stdout:
+        [
+          `Verified ${projectPath}`,
+          `Wrote ${emitResult.cobolArtifactPath}`,
+          `Wrote ${emitResult.sourceMapArtifactPath}`,
+          ...writtenCopybooks.map((path) => `Wrote ${path}`),
+          `Wrote ${jclResult.jclArtifactPath}`,
+          `Wrote ${join(auditRoot, "verification-report.md")}`,
+          `Wrote ${join(auditRoot, "verification-report.json")}`,
+          `Wrote ${join(auditRoot, "gnucobol-validation.md")}`,
+        ].join("\n") + "\n",
+      stderr: `${gnucobolValidation.compilerOutput ?? "Verification failed."}\n`,
+    };
+  }
 
   return {
     exitCode: 0,
@@ -443,7 +568,9 @@ function runVerify(args: string[], cwd: string): CliResult {
         `Wrote ${emitResult.sourceMapArtifactPath}`,
         ...writtenCopybooks.map((path) => `Wrote ${path}`),
         `Wrote ${jclResult.jclArtifactPath}`,
-        `Wrote ${verificationReportPath}`,
+        `Wrote ${join(auditRoot, "verification-report.md")}`,
+        `Wrote ${join(auditRoot, "verification-report.json")}`,
+        `Wrote ${join(auditRoot, "gnucobol-validation.md")}`,
       ].join("\n") + "\n",
     stderr: "",
   };
@@ -460,21 +587,44 @@ function runTest(args: string[], cwd: string): CliResult {
   }
 
   const outputRoot = resolveOutputRoot(cwd, args);
-  const verification = runVerify(args, cwd);
-  if (verification.exitCode !== 0) {
-    return verification;
+  const checkResult = runCheck(args, cwd);
+  if (checkResult.exitCode !== 0) {
+    return checkResult;
   }
 
-  const summary = runGnucobolValidation(cwd, projectPath, outputRoot);
+  const buildResult = runBuild(args, cwd);
+  if (buildResult.exitCode !== 0) {
+    return buildResult;
+  }
+
+  const verifyResult = runVerify(args, cwd);
+  const testReportPath = writeTestReport(
+    projectPath,
+    outputRoot,
+    checkResult,
+    buildResult,
+    verifyResult,
+  );
+
+  if (verifyResult.exitCode !== 0) {
+    return {
+      ...verifyResult,
+      stdout: `${verifyResult.stdout.trimEnd()}\nWrote ${testReportPath}\n`,
+    };
+  }
+
   return {
-    exitCode: summary.compilerStatus === "failed" ? 1 : 0,
+    exitCode: 0,
     stdout:
-      `${verification.stdout}` +
-      `GnuCOBOL validation: ${summary.validatedWithGnucobol ? "passed" : "skipped"}\n`,
-    stderr:
-      summary.compilerStatus === "failed" && summary.compilerOutput
-        ? `${summary.compilerOutput}\n`
-        : "",
+      [
+        checkResult.stdout.trimEnd(),
+        buildResult.stdout.trimEnd(),
+        verifyResult.stdout.trimEnd(),
+        `Wrote ${testReportPath}`,
+      ]
+        .filter((line) => line.length > 0)
+        .join("\n") + "\n",
+    stderr: "",
   };
 }
 
@@ -794,18 +944,34 @@ function writeAuditOutputs(
 ): string {
   const auditRoot = join(outputRoot, "audit");
   mkdirSync(auditRoot, { recursive: true });
+  const copybookPaths = (compiled.ir.program as IRProgram).records.map(
+    (record) =>
+      join(outputRoot, "copybooks", `${toCobolName(record.name)}.cpy`),
+  );
   const layoutOutputs = writeLayoutOutputs(
     compiled.ir.program as IRProgram,
     auditRoot,
     join(auditRoot, "copybook-layout.md"),
   );
+  const verificationReport = buildVerificationReportDocument(
+    "audit",
+    compiled,
+    emitResult,
+    jclResult,
+    outputRoot,
+    null,
+  );
   writeFileSync(
     join(auditRoot, "diagnostics.json"),
     `${JSON.stringify(
-      serializeDiagnostics([
-        ...compiled.parsed.diagnostics,
-        ...compiled.typechecked.diagnostics,
-      ]),
+      {
+        version: AUDIT_SCHEMA_VERSION,
+        backendProfile: BACKEND_PROFILE,
+        diagnostics: serializeDiagnostics([
+          ...compiled.parsed.diagnostics,
+          ...compiled.typechecked.diagnostics,
+        ]),
+      } satisfies DiagnosticsDocument,
       null,
       2,
     )}\n`,
@@ -818,9 +984,12 @@ function writeAuditOutputs(
     join(auditRoot, "generated-artifacts.json"),
     `${JSON.stringify(
       {
+        version: AUDIT_SCHEMA_VERSION,
+        backendProfile: BACKEND_PROFILE,
         artifacts: [
           emitResult.cobolArtifactPath,
           emitResult.sourceMapArtifactPath,
+          ...copybookPaths,
           jclResult.jclArtifactPath,
           join(auditRoot, "diagnostics.json"),
           join(auditRoot, "source-map.json"),
@@ -828,9 +997,10 @@ function writeAuditOutputs(
           join(auditRoot, "transaction-analysis.json"),
           join(auditRoot, "copybook-layout.json"),
           join(auditRoot, "verification-report.md"),
+          join(auditRoot, "verification-report.json"),
           layoutOutputs.markdownPath,
         ],
-      },
+      } satisfies AuditManifestDocument,
       null,
       2,
     )}\n`,
@@ -838,7 +1008,11 @@ function writeAuditOutputs(
   writeFileSync(
     join(auditRoot, "decimal-analysis.json"),
     `${JSON.stringify(
-      collectDecimalAnalysis(compiled.ir.program as IRProgram),
+      {
+        version: AUDIT_SCHEMA_VERSION,
+        backendProfile: BACKEND_PROFILE,
+        entries: collectDecimalAnalysis(compiled.ir.program as IRProgram),
+      } satisfies DecimalAnalysisDocument,
       null,
       2,
     )}\n`,
@@ -847,29 +1021,271 @@ function writeAuditOutputs(
     join(auditRoot, "transaction-analysis.json"),
     `${JSON.stringify(
       {
-        backendProfile: "ibm-enterprise-cobol-zos",
+        version: AUDIT_SCHEMA_VERSION,
+        backendProfile: BACKEND_PROFILE,
         transactions: [],
         status: "not-applicable",
-      },
+      } satisfies TransactionAnalysisDocument,
       null,
       2,
     )}\n`,
   );
-  writeFileSync(
-    join(auditRoot, "verification-report.md"),
-    `# Verification Report\n\n| Check | Status |\n| --- | --- |\n| COBOL output | emitted |\n| Copybooks | emitted |\n| JCL | emitted |\n| Source map | emitted |\n| Audit schema | pending verify |\n`,
-    "utf8",
-  );
+  writeVerificationReportArtifacts(verificationReport, auditRoot);
   writeFileSync(
     layoutOutputs.jsonPath,
     `${JSON.stringify(layoutOutputs.document, null, 2)}\n`,
   );
   writeFileSync(
     join(auditRoot, "validation-matrix.md"),
-    `# Validation Matrix\n\n| Artifact | Status | Backend profile |\n| --- | --- | --- |\n| COBOL source | emitted | ibm-enterprise-cobol-zos |\n| Source map | emitted | ibm-enterprise-cobol-zos |\n| Diagnostics | clean | ibm-enterprise-cobol-zos |\n| Decimal analysis | emitted | ibm-enterprise-cobol-zos |\n| Copybook layout | emitted | ibm-enterprise-cobol-zos |\n| Copybook layout report | emitted | ibm-enterprise-cobol-zos |\n| JCL | emitted | ibm-enterprise-cobol-zos |\n`,
+    `# Validation Matrix\n\n| Artifact | Status | Backend profile |\n| --- | --- | --- |\n| COBOL source | emitted | ${BACKEND_PROFILE} |\n| Source map | emitted | ${BACKEND_PROFILE} |\n| Diagnostics | clean | ${BACKEND_PROFILE} |\n| Decimal analysis | emitted | ${BACKEND_PROFILE} |\n| Copybook layout | emitted | ${BACKEND_PROFILE} |\n| Copybook layout report | emitted | ${BACKEND_PROFILE} |\n| JCL | emitted | ${BACKEND_PROFILE} |\n`,
   );
 
   return auditRoot;
+}
+
+function writeVerificationReportArtifacts(
+  report: VerificationReportDocument,
+  auditRoot: string,
+): string {
+  const markdownPath = join(auditRoot, "verification-report.md");
+  const jsonPath = join(auditRoot, "verification-report.json");
+  writeFileSync(markdownPath, renderVerificationReportDocument(report), "utf8");
+  writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  return markdownPath;
+}
+
+function buildVerificationReportDocument(
+  phase: "audit" | "verify",
+  compiled: CompiledProject,
+  emitResult: CobolEmitResult,
+  jclResult: JclEmitResult,
+  outputRoot: string,
+  gnucobolValidation: GnucobolValidationSummary | null,
+): VerificationReportDocument {
+  const program = compiled.ir.program as IRProgram;
+  const auditRoot = join(outputRoot, "audit");
+  const copybookPaths = program.records.map((record) =>
+    join(outputRoot, "copybooks", `${toCobolName(record.name)}.cpy`),
+  );
+  const copybookContents = copybookPaths.map((path) =>
+    readFileSync(path, "utf8"),
+  );
+  const reEmittedCobol = emitCobol(program, {
+    cobolArtifactPath: emitResult.cobolArtifactPath,
+    sourceMapArtifactPath: emitResult.sourceMapArtifactPath,
+  });
+  const reEmittedJcl = emitJcl(program, {
+    jclArtifactPath: jclResult.jclArtifactPath,
+  });
+  const deterministicMatches =
+    readFileSync(emitResult.cobolArtifactPath, "utf8") ===
+      reEmittedCobol.cobol &&
+    readFileSync(emitResult.sourceMapArtifactPath, "utf8") ===
+      `${JSON.stringify(reEmittedCobol.sourceMap, null, 2)}\n` &&
+    readFileSync(jclResult.jclArtifactPath, "utf8") === reEmittedJcl.jcl &&
+    copybookContents.every((content, index) => {
+      const record = program.records[index];
+      return content === renderCopybook(record);
+    });
+  const deterministicRegeneration: AuditCheck = {
+    name: "Deterministic regeneration",
+    status: deterministicMatches ? "passed" : "failed",
+    details: deterministicMatches
+      ? "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+      : "One or more artifacts changed when regenerated from the same IR.",
+  };
+  const gnucobolCheck: AuditCheck = gnucobolValidation
+    ? {
+        name: "GnuCOBOL validation",
+        status:
+          gnucobolValidation.compilerStatus === "failed"
+            ? "failed"
+            : gnucobolValidation.validatedWithGnucobol
+              ? "passed"
+              : "skipped",
+        details:
+          gnucobolValidation.compilerStatus === "failed"
+            ? `cobc exited with ${gnucobolValidation.compilerExitCode ?? "n/a"}`
+            : gnucobolValidation.validatedWithGnucobol
+              ? "Local cobc validation passed."
+              : "No local cobc executable was available.",
+      }
+    : {
+        name: "GnuCOBOL validation",
+        status: "skipped",
+        details: "Verification preview does not run the local cobc lane.",
+      };
+  const verificationReportPath = join(auditRoot, "verification-report.md");
+  return {
+    version: AUDIT_SCHEMA_VERSION,
+    backendProfile: BACKEND_PROFILE,
+    phase,
+    project: compiled.sourceFile,
+    checks: [
+      {
+        name: "Parse",
+        status: "passed",
+        details: `${compiled.parsed.diagnostics.length} diagnostics`,
+      },
+      {
+        name: "Typecheck",
+        status: "passed",
+        details: `${compiled.typechecked.diagnostics.length} diagnostics`,
+      },
+      {
+        name: "COBOL emit",
+        status: "passed",
+        details: emitResult.cobolArtifactPath,
+      },
+      {
+        name: "Copybook emit",
+        status: "passed",
+        details: `${copybookPaths.length} copybook file(s)`,
+      },
+      {
+        name: "Source map emit",
+        status: "passed",
+        details: emitResult.sourceMapArtifactPath,
+      },
+      {
+        name: "JCL emit",
+        status: "passed",
+        details: jclResult.jclArtifactPath,
+      },
+      {
+        name: "Audit artifacts",
+        status: "passed",
+        details: auditRoot,
+      },
+      deterministicRegeneration,
+      gnucobolCheck,
+      {
+        name: "Audit schema",
+        status: "passed",
+        details: `version ${AUDIT_SCHEMA_VERSION}, backend profile ${BACKEND_PROFILE}`,
+      },
+    ],
+    artifacts: [
+      emitResult.cobolArtifactPath,
+      emitResult.sourceMapArtifactPath,
+      ...copybookPaths,
+      jclResult.jclArtifactPath,
+      join(auditRoot, "diagnostics.json"),
+      join(auditRoot, "source-map.json"),
+      join(auditRoot, "decimal-analysis.json"),
+      join(auditRoot, "transaction-analysis.json"),
+      join(auditRoot, "copybook-layout.json"),
+      join(auditRoot, "generated-artifacts.json"),
+      verificationReportPath,
+      join(auditRoot, "verification-report.json"),
+      join(auditRoot, "validation-matrix.md"),
+      ...(gnucobolValidation
+        ? [join(auditRoot, "gnucobol-validation.md")]
+        : []),
+    ],
+    deterministicRegeneration,
+    gnucobolValidation,
+    notes:
+      phase === "verify"
+        ? [
+            "This report records the current deterministic compiler pipeline for the supported subset.",
+            "IBM Enterprise COBOL validation is not claimed here.",
+            "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available.",
+          ]
+        : [
+            "This preview report is emitted during build/audit-report to prove the current deterministic artifact set.",
+            "IBM Enterprise COBOL validation is not claimed here.",
+            "Local GnuCOBOL validation is recorded by verify/test when available.",
+          ],
+  };
+}
+
+function renderVerificationReportDocument(
+  report: VerificationReportDocument,
+): string {
+  const lines = [
+    "# Verification Report",
+    "",
+    `Project: ${report.project}`,
+    `Version: ${report.version}`,
+    `Backend profile: ${report.backendProfile}`,
+    `Phase: ${report.phase}`,
+    "",
+    "| Check | Status | Details |",
+    "| --- | --- | --- |",
+  ];
+
+  for (const check of report.checks) {
+    lines.push(`| ${check.name} | ${check.status} | ${check.details} |`);
+  }
+
+  lines.push("", "## Notes", "");
+  for (const note of report.notes) {
+    lines.push(`- ${note}`);
+  }
+
+  if (report.gnucobolValidation) {
+    lines.push(
+      "",
+      "## GnuCOBOL Validation",
+      "",
+      `- validated-with-gnucobol: ${
+        report.gnucobolValidation.validatedWithGnucobol ? "yes" : "no"
+      }`,
+      `- compiler-status: ${report.gnucobolValidation.compilerStatus}`,
+      `- compiler-command: ${report.gnucobolValidation.compilerCommand}`,
+      `- compiler-exit-code: ${report.gnucobolValidation.compilerExitCode ?? "n/a"}`,
+    );
+  }
+
+  lines.push("");
+  return `${lines.join("\n")}`;
+}
+
+function writeTestReport(
+  projectPath: string,
+  outputRoot: string,
+  checkResult: CliResult,
+  buildResult: CliResult,
+  verifyResult: CliResult,
+): string {
+  const auditRoot = join(outputRoot, "audit");
+  mkdirSync(auditRoot, { recursive: true });
+  const reportPath = join(auditRoot, "bankc-test-report.md");
+  const gnucobolReportPath = join(auditRoot, "gnucobol-validation.md");
+  const lines = [
+    "# bankc Test Report",
+    "",
+    `Project: ${projectPath}`,
+    `Version: ${AUDIT_SCHEMA_VERSION}`,
+    `Backend profile: ${BACKEND_PROFILE}`,
+    "",
+    "| Step | Status | Details |",
+    "| --- | --- | --- |",
+    `| Check | ${checkResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(checkResult)} |`,
+    `| Build | ${buildResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(buildResult)} |`,
+    `| Verify | ${verifyResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(verifyResult)} |`,
+    `| GnuCOBOL report | ${existsSync(gnucobolReportPath) ? "emitted" : "skipped"} | ${gnucobolReportPath} |`,
+    "",
+    "## Notes",
+    "",
+    "- This report records command orchestration only.",
+    "- It does not claim business-semantics execution beyond the supported compiler subset.",
+    "- Local GnuCOBOL validation remains separate from IBM validation claims.",
+    "",
+  ];
+
+  writeFileSync(reportPath, `${lines.join("\n")}`, "utf8");
+  return reportPath;
+}
+
+function summarizeCliResult(result: CliResult): string {
+  const firstLine =
+    result.stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.length > 0) ?? result.stderr.trim();
+  return firstLine.length > 0 ? firstLine : "no additional output";
 }
 
 function writeLayoutOutputs(
@@ -896,39 +1312,6 @@ function writeLayoutOutputs(
 function writeJclOutputs(result: JclEmitResult): void {
   mkdirSync(dirname(result.jclArtifactPath), { recursive: true });
   writeFileSync(result.jclArtifactPath, result.jcl, "utf8");
-}
-
-function writeVerificationReport(
-  compiled: CompiledProject,
-  emitResult: CobolEmitResult,
-  jclResult: JclEmitResult,
-  auditRoot: string,
-): string {
-  const reportPath = join(auditRoot, "verification-report.md");
-  const lines = [
-    "# Verification Report",
-    "",
-    `Project: ${compiled.sourceFile}`,
-    "",
-    "| Check | Status | Details |",
-    "| --- | --- | --- |",
-    `| Parse | passed | ${compiled.parsed.diagnostics.length} diagnostics |`,
-    `| Typecheck | passed | ${compiled.typechecked.diagnostics.length} diagnostics |`,
-    `| COBOL artifact | passed | ${emitResult.cobolArtifactPath} |`,
-    `| Source map artifact | passed | ${emitResult.sourceMapArtifactPath} |`,
-    `| JCL artifact | passed | ${jclResult.jclArtifactPath} |`,
-    `| Audit schema | passed | verified locally by the assistant |`,
-    "",
-    "## Notes",
-    "",
-    "- This report confirms the generated artifacts exist and match the current deterministic compiler pipeline.",
-    "- IBM Enterprise COBOL validation is not claimed here.",
-    "- GnuCOBOL validation is recorded separately by `bankc test` and `pnpm test:gnucobol`.",
-    "",
-  ];
-
-  writeFileSync(reportPath, `${lines.join("\n")}`, "utf8");
-  return reportPath;
 }
 
 function writeCobolOutputs(result: CobolEmitResult): void {

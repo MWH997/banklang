@@ -11,7 +11,9 @@ The generated files are emitted into `dist/` by the CLI:
 - source map in `dist/maps/source-map.json`
 - audit artifacts in `dist/audit/`
 - verification report in `dist/audit/verification-report.md`
+- verification report JSON in `dist/audit/verification-report.json`
 - local GnuCOBOL report in `dist/audit/gnucobol-validation.md`
+- bankc test report in `dist/audit/bankc-test-report.md`
 
 The example source itself stays in `src/main.bank.ts` so the input and output
 paths remain separate and deterministic.

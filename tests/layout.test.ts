@@ -31,6 +31,14 @@ describe("layout report", () => {
       expect(
         readFileSync(join(outDir, "layout", "copybook-layout.md"), "utf8"),
       ).toContain("TRANSFER-REQUEST.DEBIT-ACCOUNT");
+      expect(
+        JSON.parse(
+          readFileSync(join(outDir, "layout", "copybook-layout.json"), "utf8"),
+        ),
+      ).toMatchObject({
+        version: 1,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      });
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }

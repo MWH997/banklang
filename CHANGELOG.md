@@ -4,8 +4,10 @@
 
 ### Added
 
+- Added schema-hardened audit JSON artifacts with version and backend-profile metadata for diagnostics, source maps, decimal analysis, copybook layout, generated artifacts, and verification reports.
+- Added `dist/audit/verification-report.json` and `dist/audit/bankc-test-report.md` to support the expanded `bankc verify` and `bankc test` flows.
 - Added `bankc verify <project>` to write a deterministic verification report alongside the emitted COBOL, copybooks, source map, and JCL.
-- Added `bankc test <project>` to run the verification flow and record the local GnuCOBOL validation report under `dist/audit/gnucobol-validation.md`.
+- Added `bankc test <project>` to run `check`, `build`, and `verify`, then record the local GnuCOBOL validation report under `dist/audit/gnucobol-validation.md` and the command-level report under `dist/audit/bankc-test-report.md`.
 - Added `bankc emit jcl <project>` to emit a readable JCL skeleton for the generated COBOL artifact.
 - Added `bankc copybook inspect --json` / `types --json` / `diff --json` output for the generated copybook subset.
 - Added `examples/batch-interest-accrual` as a second BankTS example that exercises deterministic `if` / `else` control flow.
@@ -35,6 +37,7 @@
 
 ### Changed
 
+- Hardened `bankc verify` so it checks deterministic regeneration, copybook emission, and local GnuCOBOL validation when available, and writes both markdown and JSON verification reports.
 - Hardened the audit bundle and verification flow so build/verify/test output includes JCL, verification evidence, and the generated-artifacts list for the current compiler slice.
 - Updated the account-transfer example and evidence bundle to surface the new JCL and verification artifacts.
 - Updated the repository formatter ignore list to exclude scratch `tmp/` outputs and generated `.jcl` files.
