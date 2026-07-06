@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "transactions": [],
   "status": "not-applicable"

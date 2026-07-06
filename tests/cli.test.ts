@@ -62,6 +62,9 @@ describe("bankc cli", () => {
       expect(existsSync(join(outDir, "audit", "verification-report.md"))).toBe(
         true,
       );
+      expect(
+        existsSync(join(outDir, "audit", "verification-report.json")),
+      ).toBe(true);
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
@@ -83,8 +86,23 @@ describe("bankc cli", () => {
         true,
       );
       expect(
+        existsSync(join(outDir, "audit", "verification-report.json")),
+      ).toBe(true);
+      expect(
+        JSON.parse(
+          readFileSync(
+            join(outDir, "audit", "verification-report.json"),
+            "utf8",
+          ),
+        ),
+      ).toMatchObject({
+        version: 1,
+        backendProfile: "ibm-enterprise-cobol-zos",
+        phase: "verify",
+      });
+      expect(
         readFileSync(join(outDir, "audit", "verification-report.md"), "utf8"),
-      ).toContain("Audit schema | passed");
+      ).toContain("Deterministic regeneration");
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
@@ -233,6 +251,15 @@ describe("bankc cli", () => {
       expect(existsSync(join(outDir, "audit", "gnucobol-validation.md"))).toBe(
         true,
       );
+      expect(existsSync(join(outDir, "audit", "bankc-test-report.md"))).toBe(
+        true,
+      );
+      expect(
+        readFileSync(join(outDir, "audit", "bankc-test-report.md"), "utf8"),
+      ).toContain("bankc Test Report");
+      expect(
+        readFileSync(join(outDir, "audit", "bankc-test-report.md"), "utf8"),
+      ).toContain("Check | passed");
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }

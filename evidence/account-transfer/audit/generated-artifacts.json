@@ -1,7 +1,10 @@
 {
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
   "artifacts": [
     "/workspace/dist/cobol/ACCOUNT-TRANSFER.cbl",
     "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/TRANSFER-REQUEST.cpy",
     "/workspace/dist/jcl/ACCOUNT-TRANSFER.jcl",
     "/workspace/dist/audit/diagnostics.json",
     "/workspace/dist/audit/source-map.json",
@@ -9,6 +12,7 @@
     "/workspace/dist/audit/transaction-analysis.json",
     "/workspace/dist/audit/copybook-layout.json",
     "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
     "/workspace/dist/audit/copybook-layout.md"
   ]
 }

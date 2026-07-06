@@ -40,6 +40,8 @@ export interface SourceMapEntry {
 }
 
 export interface SourceMapDocument {
+  version: number;
+  backendProfile: string;
   sourceFile: string;
   artifact: string;
   entries: SourceMapEntry[];
@@ -71,6 +73,7 @@ export function emitCobol(
   program: IRProgram,
   options: CobolEmitOptions = {},
 ): CobolEmitResult {
+  const backendProfile = "ibm-enterprise-cobol-zos";
   const cobolArtifactPath =
     options.cobolArtifactPath ?? defaultCobolArtifactPath(program.moduleName);
   const sourceMapArtifactPath =
@@ -168,6 +171,8 @@ export function emitCobol(
   return {
     cobol: `${lines.join("\n")}\n`,
     sourceMap: {
+      version: 1,
+      backendProfile,
       sourceFile: program.sourceFile,
       artifact: sourceMapArtifactPath,
       entries,

@@ -6,20 +6,24 @@ converter.
 
 ## Status
 
-The repository currently contains the Phase 0 foundation and the beginning of
-the Phase 1 compiler skeleton.
+The repository currently contains a deterministic compiler slice with
+verification, local validation, and a second example.
 
 Current capabilities:
 
 - restricted BankTS parser, typechecker, and IR lowering for the
-  `account-transfer` example
+  `account-transfer` and `batch-interest-accrual` examples
 - deterministic COBOL emission
 - deterministic copybook generation
+- deterministic JCL emission
 - source-map emission
 - audit-report generation
+- `bankc verify` with deterministic regeneration checks and a schema-hardened
+  verification report
+- `bankc test` with a local GnuCOBOL smoke-validation lane
 - copybook inspection, type summary, and diff commands for the generated
   subset
-- local GnuCOBOL smoke validation
+- copybook JSON output for the generated subset
 - evidence bundles and tester notes for the current demo slice
 
 ## Positioning
@@ -94,9 +98,12 @@ pnpm bankc doctor
 pnpm bankc check examples/account-transfer
 pnpm bankc build examples/account-transfer
 pnpm bankc layout examples/account-transfer
+pnpm bankc verify examples/account-transfer
+pnpm bankc test examples/account-transfer
 pnpm bankc audit-report examples/account-transfer
 pnpm bankc emit cobol examples/account-transfer
 pnpm bankc emit copybooks examples/account-transfer
+pnpm bankc emit jcl examples/account-transfer
 pnpm bankc copybook inspect dist/copybooks/TRANSFER-REQUEST.cpy
 pnpm bankc copybook types dist/copybooks/TRANSFER-REQUEST.cpy
 pnpm bankc copybook diff dist/copybooks/TRANSFER-REQUEST.cpy dist/copybooks/TRANSFER-REQUEST.cpy
@@ -149,6 +156,9 @@ The current repo state has been verified with:
 - `pnpm bankc build examples/account-transfer`
 - `pnpm bankc layout examples/account-transfer`
 - `pnpm bankc audit-report examples/account-transfer`
+- `pnpm bankc emit jcl examples/account-transfer`
+- `pnpm bankc verify examples/account-transfer`
+- `pnpm bankc test examples/account-transfer`
 - `pnpm bankc copybook inspect ...`
 - `pnpm bankc copybook types ...`
 - `pnpm bankc copybook diff ...`
@@ -175,5 +185,6 @@ BankLang uses prompt templates and review trails for bounded AI assistance.
 ## Scope
 
 The current milestone is a deterministic, auditable compiler slice for the
-`account-transfer` example. IBM Enterprise COBOL for z/OS remains the primary
-target, with GnuCOBOL-compatible local validation support where possible.
+`account-transfer` and `batch-interest-accrual` examples. IBM Enterprise COBOL
+for z/OS remains the primary target, with GnuCOBOL-compatible local validation
+support where possible.

@@ -9,7 +9,7 @@
 | generated-artifact         | dist/gnucobol/cobol/ACCOUNT-TRANSFER.cbl                         |
 | generated-artifact-sha256  | 83b3dc1c505f157fc925bf2b9264e083cef1520a93531166c9a3d260213d8505 |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | 23b529b5ff7e421c5ff9ba35f24d6e12f71187d347eb04c0d779822e0d287abf |
+| source-map-artifact-sha256 | df4ffac4a401e0ecdd0da77977942c3483d7d792523e6616d2c6de4d55473a46 |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
 | compiler-command           | cobc not found                                                   |

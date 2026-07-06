@@ -1,4 +1,6 @@
 {
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
   "artifact": "/workspace/dist/audit/copybook-layout.md",
   "reports": [
     {

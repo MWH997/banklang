@@ -28,7 +28,9 @@ The `build` command produces a full bundle:
 - `dist/audit/transaction-analysis.json`
 - `dist/audit/copybook-layout.json`
 - `dist/audit/verification-report.md`
+- `dist/audit/verification-report.json`
 - `dist/audit/gnucobol-validation.md`
+- `dist/audit/bankc-test-report.md`
 - `dist/audit/validation-matrix.md`
 
 The narrower emit commands still write their respective outputs:
@@ -40,10 +42,11 @@ The narrower emit commands still write their respective outputs:
 - `pnpm bankc emit jcl examples/account-transfer` writes
   `dist/jcl/ACCOUNT-TRANSFER.jcl`
 - `pnpm bankc audit-report examples/account-transfer` writes the audit bundle
-- `pnpm bankc verify examples/account-transfer` writes a verification report in
-  `dist/audit/verification-report.md`
-- `pnpm bankc test examples/account-transfer` writes the verification report
-  plus the local GnuCOBOL report in `dist/audit/gnucobol-validation.md`
+- `pnpm bankc verify examples/account-transfer` writes verification reports in
+  `dist/audit/verification-report.md` and `dist/audit/verification-report.json`
+- `pnpm bankc test examples/account-transfer` runs `check`, `build`, and
+  `verify`, then writes `dist/audit/bankc-test-report.md` plus the local
+  GnuCOBOL report in `dist/audit/gnucobol-validation.md`
 - `pnpm bankc layout examples/account-transfer` writes
   `dist/layout/copybook-layout.md` and `dist/layout/copybook-layout.json`
 
