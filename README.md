@@ -12,7 +12,8 @@ verification, local validation, and a second example.
 Current capabilities:
 
 - restricted BankTS parser, typechecker, and IR lowering for the
-  `account-transfer` and `batch-interest-accrual` examples
+  `account-transfer` and `batch-interest-accrual` examples, including local
+  variable declarations and exact decimal arithmetic in the second example
 - deterministic COBOL emission
 - deterministic copybook generation
 - deterministic JCL emission
@@ -80,7 +81,9 @@ map, and audit bundle for the `account-transfer` example.
   posture.
 - `validation-lab-plan.md` defines the validation ladder.
 - `examples/account-transfer/` contains the demo input program.
+- `examples/batch-interest-accrual/` contains the second demo input program.
 - `evidence/account-transfer/` captures the current demo evidence bundle.
+- `evidence/batch-interest-accrual/` captures the second demo evidence bundle.
 - `tester-notes/` records change-specific validation notes.
 - `ai-reviews/` stores multi-AI Q/A and review trails.
 - `prompts/` contains the specialist and workhorse prompt templates.
@@ -124,6 +127,7 @@ If you want the exact output inventory, run `pnpm bankc --help` or inspect the
 - `risk-register.md`
 - `strategic-positioning.md`
 - `validation-lab-plan.md`
+- `RELEASE-CHECKLIST.md`
 - `benchmark-and-evidence-plan.md`
 - `ibm-engagement-strategy.md`
 - `medium-article-brief.md`
@@ -139,6 +143,9 @@ If you want the exact output inventory, run `pnpm bankc --help` or inspect the
 - `evidence/account-transfer/` contains the source, generated COBOL, generated
   copybook, source map, audit artifacts, validation matrix, and links to the
   tester notes used for the current demo slice.
+- `evidence/batch-interest-accrual/` contains the source, generated COBOL,
+  generated copybook, source map, audit artifacts, validation matrix, and
+  links to the tester notes for the second example.
 - `tester-notes/` contains per-change validation records, including build,
   copybook, layout, and GnuCOBOL smoke-check notes.
 - `ai-reviews/` contains the review briefs and review rounds used for multi-AI
@@ -159,6 +166,8 @@ The current repo state has been verified with:
 - `pnpm bankc emit jcl examples/account-transfer`
 - `pnpm bankc verify examples/account-transfer`
 - `pnpm bankc test examples/account-transfer`
+- `pnpm bankc verify examples/batch-interest-accrual`
+- `pnpm bankc test examples/batch-interest-accrual`
 - `pnpm bankc copybook inspect ...`
 - `pnpm bankc copybook types ...`
 - `pnpm bankc copybook diff ...`
