@@ -4,6 +4,16 @@
 
 ### Added
 
+- Added `bankc fmt`, an AST-printing formatter with `--check` for CI. It is idempotent, preserves comments by capturing them as lexer trivia, keeps author blank lines inside bodies, and refuses to rewrite source it cannot fully parse.
+- Added a language server (`packages/language-server`) implementing LSP over stdio with no dependencies: diagnostics on open and change, hover showing either a diagnostic's catalogue explanation or the COBOL lines a source line generates, document formatting, and an outline with record fields nested. Transport is separated from request handling so the protocol surface is unit-tested without spawning a process.
+- Added a VS Code extension (`packages/vscode-extension`) with the language client, a TextMate grammar mirroring the lexer's token classes, and editor configuration.
+- Added `--format text|json|sarif` and `--output <file>` to `bankc check`. SARIF 2.1.0 output carries each rule's catalogue explanation and remediation, so diagnostics can appear as inline pull request annotations through GitHub code scanning.
+- Added `banklang.json` project configuration (`packages/config`) for entry, output directory, backend profile, and format checking, plus `bankc config` to show resolved values. Unknown keys and wrong types are reported as warnings and fall back to defaults instead of throwing.
+- Added `bankc init <dir>`, which scaffolds a project that compiles cleanly on the first run, including an idempotency key so it satisfies the banking safety rules.
+- Added `--watch` to rerun any command when a `.bank.ts` file changes.
+- Added comment trivia to the parser: `ParsedProgram` now carries the comments the lexer previously discarded.
+- Added `docs/toolchain.md` covering the CLI surface, formatting, configuration, CI integration, and editor support.
+- Added CI steps for formatting, VS Code extension typechecking, and SARIF production and upload.
 - Added a browser playground (`packages/playground`) that runs the real compiler client-side, with a live editor, generated-artifact tabs, and a clickable source map that cross-highlights BankTS and the COBOL it produced. Built with Vite and CodeMirror; the bundle is static and needs no backend.
 - Added `@banklang/compiler`, a one-call programmatic API (`compile(source)`) returning diagnostics and every generated artifact. It performs no file system or network access, so it runs unchanged in Node and the browser.
 - Added `@banklang/diagnostics`, a machine-readable diagnostic catalogue with an explanation, remediation, and spec reference per identifier.

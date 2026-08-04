@@ -20,10 +20,11 @@ const BROWSER_SAFE_PACKAGES = [
   "verifier",
   "diagnostics",
   "compiler",
+  "formatter",
 ];
 
 /** Packages allowed to touch the file system and process. */
-const NODE_PACKAGES = ["bankc-cli"];
+const NODE_PACKAGES = ["bankc-cli", "config", "language-server"];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -63,7 +64,7 @@ describe("compiler core is browser safe", () => {
     const packages = readdirSync("packages", { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      .filter((name) => name !== "playground");
+      .filter((name) => name !== "playground" && name !== "vscode-extension");
 
     expect([...BROWSER_SAFE_PACKAGES, ...NODE_PACKAGES].sort()).toEqual(
       packages.sort(),

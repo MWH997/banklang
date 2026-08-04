@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/formatter",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

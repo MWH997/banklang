@@ -1,13 +1,27 @@
-import { runBankc } from "./index";
+import { runBankc, watchProject } from "./index";
 
-const result = runBankc(process.argv.slice(2));
+const argv = process.argv.slice(2);
 
-if (result.stdout) {
-  process.stdout.write(result.stdout);
+function write(result: { stdout: string; stderr: string; exitCode: number }) {
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+  process.exitCode = result.exitCode;
 }
 
-if (result.stderr) {
-  process.stderr.write(result.stderr);
+if (argv.includes("--watch")) {
+  process.stdout.write("Watching for changes. Press Ctrl+C to stop.\n");
+  const stop = watchProject(argv, process.cwd(), (result) => {
+    write(result);
+    process.stdout.write("\n");
+  });
+  process.on("SIGINT", () => {
+    stop();
+    process.exit(0);
+  });
+} else {
+  write(runBankc(argv));
 }
-
-process.exitCode = result.exitCode;

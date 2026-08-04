@@ -113,12 +113,35 @@ installed in CI.
 
 ```bash
 pnpm install
+pnpm bankc init    my-service                 # scaffold a project
 pnpm bankc check   examples/account-posting   # diagnostics only
 pnpm bankc build   examples/account-posting   # full artifact bundle
 pnpm bankc verify  examples/account-posting   # determinism + coverage
 pnpm bankc test    examples/account-posting   # the above, plus cobc
+pnpm bankc fmt     examples/account-posting   # format (--check for CI)
 pnpm bankc explain BANK-LED-001               # explain a diagnostic
 ```
+
+Add `--watch` to any command to rerun on save.
+
+## Toolchain
+
+Beyond the compiler, the things that make it usable day to day:
+
+| Capability            | What it does                                                   |
+| --------------------- | -------------------------------------------------------------- |
+| **Language server**   | Diagnostics as you type, hover, formatting, outline — over LSP |
+| **VS Code extension** | Language client, TextMate grammar, editor configuration        |
+| **Formatter**         | AST-printed, idempotent, comment-preserving                    |
+| **SARIF output**      | `--format sarif` puts diagnostics inline on a pull request     |
+| **Project config**    | `banklang.json` for entry, output, and backend profile         |
+| **Scaffolding**       | `bankc init` produces a project that compiles first try        |
+| **Watch mode**        | `--watch` on any command                                       |
+
+Hover on a clean line reports which COBOL lines it generates, reading the same
+source map the playground uses.
+
+See [docs/toolchain.md](docs/toolchain.md).
 
 ## Examples
 
@@ -181,6 +204,7 @@ result.sourceMap; // every traced symbol
 | [COBOL backend](docs/cobol-backend.md)           | Emission rules                  |
 | [Verification](docs/verification.md)             | Testing and evidence strategy   |
 | [Glossary](docs/glossary.md)                     | Compiler and mainframe terms    |
+| [Toolchain](docs/toolchain.md)                   | CLI, formatter, CI, editors     |
 | [Roadmap](docs/roadmap.md)                       | What is planned                 |
 | [ADRs](docs/adr/)                                | Architectural decisions         |
 
@@ -200,6 +224,8 @@ sounding impressive:
   sections; read and write statements are not in the subset yet.
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
+- **The VS Code extension is unpublished.** It builds and typechecks in CI, but
+  it has not been through marketplace review.
 
 ## Contributing
 

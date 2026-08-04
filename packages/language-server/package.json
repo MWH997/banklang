@@ -1,0 +1,9 @@
+{
+  "name": "@banklang/language-server",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "banklang-language-server": "./src/bin.ts"
+  }
+}

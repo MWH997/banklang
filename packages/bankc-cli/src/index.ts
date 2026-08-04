@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  watch,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import {
@@ -41,6 +47,18 @@ import {
   namespaceOf,
   renderDiagnosticDoc,
 } from "../../diagnostics/src/index";
+import {
+  DIAGNOSTIC_FORMATS,
+  isDiagnosticFormat,
+  renderDiagnostics as renderDiagnosticsAs,
+  type DiagnosticFormat,
+} from "../../diagnostics/src/reporters";
+import { formatBankTs } from "../../formatter/src/index";
+import {
+  CONFIG_FILE_NAME,
+  loadConfig,
+  renderDefaultConfig,
+} from "../../config/src/index";
 import {
   checkSourceMapCoverage,
   type SourceMapCoverageResult,
@@ -160,6 +178,12 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runCopybook(rest, cwd);
     case "explain":
       return runExplain(rest);
+    case "fmt":
+      return runFmt(rest, cwd);
+    case "init":
+      return runInit(rest, cwd);
+    case "config":
+      return runConfig(rest, cwd);
     default:
       return {
         exitCode: 1,
@@ -179,9 +203,40 @@ function runCheck(args: string[], cwd: string): CliResult {
     };
   }
 
+  const format = resolveDiagnosticFormat(args);
+  if (!format) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Unknown --format value. Supported: ${DIAGNOSTIC_FORMATS.join(", ")}.\n`,
+    };
+  }
+
   const compiled = compileProject(projectPath, cwd);
-  if (collectCompileDiagnostics(compiled).length > 0) {
-    const diagnostics = collectCompileDiagnostics(compiled);
+  const diagnostics = collectCompileDiagnostics(compiled);
+
+  // Machine-readable formats are always produced, including when empty, so a
+  // CI step can upload the report unconditionally.
+  if (format !== "text") {
+    const report = renderDiagnosticsAs(diagnostics, format);
+    const outputPath = readFlagValue(args, "--output");
+    const exitCode = diagnostics.length > 0 ? 1 : 0;
+
+    if (outputPath) {
+      const target = resolve(cwd, outputPath);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, report, "utf8");
+      return {
+        exitCode,
+        stdout: `Wrote ${target}\n`,
+        stderr: "",
+      };
+    }
+
+    return { exitCode, stdout: report, stderr: "" };
+  }
+
+  if (diagnostics.length > 0) {
     return {
       exitCode: 1,
       stdout: "",
@@ -194,6 +249,23 @@ function runCheck(args: string[], cwd: string): CliResult {
     stdout: `OK: ${projectPath}\n`,
     stderr: "",
   };
+}
+
+function resolveDiagnosticFormat(args: string[]): DiagnosticFormat | null {
+  const value = readFlagValue(args, "--format");
+  if (value === null) {
+    return "text";
+  }
+  return isDiagnosticFormat(value) ? value : null;
+}
+
+function readFlagValue(args: string[], flag: string): string | null {
+  const index = args.indexOf(flag);
+  if (index < 0) {
+    return null;
+  }
+  const value = args[index + 1];
+  return value && !value.startsWith("--") ? value : null;
 }
 
 function runEmit(args: string[], cwd: string): CliResult {
@@ -880,15 +952,36 @@ function resolveOutputRoot(cwd: string, args: string[]): string {
   return join(cwd, "dist");
 }
 
+/** Flags that consume the argument after them. */
+const VALUE_FLAGS = new Set(["--format", "--output", "--out"]);
+
+/**
+ * Positional arguments, skipping flags and the values they consume.
+ *
+ * Without this, `bankc check --format sarif examples/x` would treat `sarif`
+ * as the project path.
+ */
+function positionalArgs(args: string[]): string[] {
+  const positionals: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg.startsWith("-")) {
+      if (VALUE_FLAGS.has(arg)) {
+        index += 1;
+      }
+      continue;
+    }
+    positionals.push(arg);
+  }
+  return positionals;
+}
+
 function requireProjectPath(
   args: string[],
   commandName: string,
 ): string | null {
-  const project = args.find((arg) => !arg.startsWith("--"));
+  const [project] = positionalArgs(args);
   if (!project) {
-    return null;
-  }
-  if (project === "--help" || project === "-h") {
     return null;
   }
   return project;
@@ -898,7 +991,7 @@ function requireCopybookPath(
   args: string[],
   commandName: string,
 ): string | null {
-  const file = args.find((arg) => !arg.startsWith("--"));
+  const [file] = positionalArgs(args);
   if (!file) {
     return null;
   }
@@ -935,6 +1028,210 @@ function planned(commandName: string): CliResult {
   };
 }
 
+/**
+ * `bankc fmt <project>` rewrites source files in place.
+ * `--check` reports which files would change and exits non-zero, for CI.
+ */
+function runFmt(args: string[], cwd: string): CliResult {
+  const projectPath = requireProjectPath(args, "fmt");
+  if (!projectPath) {
+    return { exitCode: 1, stdout: "", stderr: renderHelp() };
+  }
+
+  const checkOnly = args.includes("--check");
+  const sourceFile = resolveSourceFile(projectPath, cwd);
+
+  if (!existsSync(sourceFile)) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `No source file at ${sourceFile}\n`,
+    };
+  }
+
+  const original = readFileSync(sourceFile, "utf8");
+  const result = formatBankTs(original, sourceFile);
+
+  if (result.diagnostics.length > 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Cannot format a file with syntax errors.\n\n${renderDiagnostics(result.diagnostics)}`,
+    };
+  }
+
+  if (result.unchanged) {
+    return {
+      exitCode: 0,
+      stdout: `Already formatted: ${sourceFile}\n`,
+      stderr: "",
+    };
+  }
+
+  if (checkOnly) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Would reformat: ${sourceFile}\nRun \`bankc fmt ${projectPath}\` to fix.\n`,
+    };
+  }
+
+  writeFileSync(sourceFile, result.text, "utf8");
+  return { exitCode: 0, stdout: `Formatted ${sourceFile}\n`, stderr: "" };
+}
+
+/** `bankc init <directory>` scaffolds a compilable starter project. */
+function runInit(args: string[], cwd: string): CliResult {
+  const [target] = positionalArgs(args);
+  if (!target) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: "Usage: bankc init <directory>\n",
+    };
+  }
+
+  const root = resolve(cwd, target);
+  const sourcePath = join(root, "src", "main.bank.ts");
+  const configPath = join(root, CONFIG_FILE_NAME);
+
+  if (existsSync(sourcePath)) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Refusing to overwrite ${sourcePath}\n`,
+    };
+  }
+
+  const moduleName = toModuleName(target);
+  mkdirSync(dirname(sourcePath), { recursive: true });
+  writeFileSync(sourcePath, renderStarterProgram(moduleName), "utf8");
+  writeFileSync(configPath, renderDefaultConfig(), "utf8");
+
+  return {
+    exitCode: 0,
+    stdout: [
+      `Created ${sourcePath}`,
+      `Created ${configPath}`,
+      "",
+      "Next:",
+      `  bankc check ${target}`,
+      `  bankc build ${target}`,
+      "",
+    ].join("\n"),
+    stderr: "",
+  };
+}
+
+/** `bankc config <project>` shows the resolved configuration. */
+function runConfig(args: string[], cwd: string): CliResult {
+  const projectPath = requireProjectPath(args, "config");
+  if (!projectPath) {
+    return { exitCode: 1, stdout: "", stderr: renderHelp() };
+  }
+
+  const loaded = loadConfig(projectPath, cwd);
+  const lines = [
+    `source: ${loaded.path ?? "defaults (no banklang.json found)"}`,
+    `entry: ${loaded.config.entry}`,
+    `outDir: ${loaded.config.outDir}`,
+    `backendProfile: ${loaded.config.backendProfile}`,
+    `formatCheck: ${loaded.config.formatCheck}`,
+  ];
+
+  if (loaded.problems.length > 0) {
+    return {
+      exitCode: 1,
+      stdout: `${lines.join("\n")}\n`,
+      stderr: `${loaded.problems.map((problem) => `warning: ${problem}`).join("\n")}\n`,
+    };
+  }
+
+  return { exitCode: 0, stdout: `${lines.join("\n")}\n`, stderr: "" };
+}
+
+function toModuleName(target: string): string {
+  const base = target.split(/[\\/]/).filter(Boolean).pop() ?? "Main";
+  const pascal = base
+    .replace(/[^A-Za-z0-9]+(.)?/g, (_match, char: string | undefined) =>
+      char ? char.toUpperCase() : "",
+    )
+    .replace(/^[a-z]/, (char) => char.toUpperCase());
+  return /^[A-Za-z]/.test(pascal) ? pascal : `Module${pascal}`;
+}
+
+/**
+ * `bankc <command> <project> --watch` reruns on source changes.
+ *
+ * Watching lives in the binary rather than in `runBankc`, which stays a pure
+ * argv-to-result function so it remains directly testable.
+ */
+export function watchProject(
+  argv: string[],
+  cwd: string,
+  write: (result: CliResult) => void,
+): () => void {
+  const args = argv.filter((arg) => arg !== "--watch");
+  const projectPath = requireProjectPath(args.slice(1), cwd) ?? ".";
+  const sourceFile = resolveSourceFile(projectPath, cwd);
+
+  let running = false;
+  let pending = false;
+
+  const run = () => {
+    if (running) {
+      pending = true;
+      return;
+    }
+    running = true;
+    write(runBankc(args, cwd));
+    running = false;
+    if (pending) {
+      pending = false;
+      run();
+    }
+  };
+
+  run();
+
+  const watcher = watch(
+    dirname(sourceFile),
+    { recursive: true },
+    (_event, file) => {
+      if (!file || file.toString().endsWith(".bank.ts")) {
+        run();
+      }
+    },
+  );
+
+  return () => watcher.close();
+}
+
+function renderStarterProgram(moduleName: string): string {
+  return `module ${moduleName};
+
+type MoneyBDT = decimal<18, 2>;
+
+record TransferRequest {
+  debitAccount: string<16>;
+  creditAccount: string<16>;
+  amount: MoneyBDT;
+  // Required by BANK-TXN-001: a transaction must be safe to retry.
+  idempotencyKey: string<36>;
+}
+
+function validateAmount(amount: MoneyBDT): bool {
+  return amount > 0.00;
+}
+
+transaction postTransfer(request: TransferRequest) {
+  debit(request.debitAccount, request.amount);
+  credit(request.creditAccount, request.amount);
+  audit("TRANSFER_POSTED", request.idempotencyKey);
+}
+`;
+}
+
 function renderHelp(): string {
   return [
     "BankLang compiler CLI",
@@ -957,6 +1254,14 @@ function renderHelp(): string {
     "  copybook types <file>",
     "  copybook diff <left> <right>",
     "  explain [diagnostic-id]",
+    "  fmt <project> [--check]",
+    "  init <directory>",
+    "  config <project>",
+    "",
+    "Options:",
+    "  --format text|json|sarif   diagnostic output format for `check`",
+    "  --output <file>            write the machine-readable report to a file",
+    "  --out <dir>                output root for generated artifacts",
     "",
   ].join("\n");
 }

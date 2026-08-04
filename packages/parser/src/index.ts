@@ -34,6 +34,7 @@ import {
   type AuditStatementNode,
   type TransactionDeclarationNode,
   type FileDeclarationNode,
+  type CommentTrivia,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -84,6 +85,7 @@ class Lexer {
   private offset = 0;
   private line = 1;
   private column = 1;
+  public readonly comments: CommentTrivia[] = [];
 
   public constructor(source: string, sourceFile: string) {
     this.source = source;
@@ -219,17 +221,45 @@ class Lexer {
       }
 
       if (char === "/" && this.source[this.offset + 1] === "/") {
+        const startLine = this.line;
+        const startColumn = this.column;
+        // A comment owns its line when only whitespace precedes it.
+        const ownLine = this.onlyWhitespaceBeforeOnLine();
+        let text = "";
         while (
           this.offset < this.source.length &&
           this.source[this.offset] !== "\n"
         ) {
+          text += this.source[this.offset];
           this.advance(this.source[this.offset]);
         }
+        this.comments.push({
+          text: text.replace(/^\/\/\s?/, "").trimEnd(),
+          span: {
+            sourceFile: this.sourceFile,
+            start: { line: startLine, column: startColumn },
+            end: { line: this.line, column: this.column },
+          },
+          ownLine,
+        });
         continue;
       }
 
       break;
     }
+  }
+
+  private onlyWhitespaceBeforeOnLine(): boolean {
+    for (let index = this.offset - 1; index >= 0; index -= 1) {
+      const char = this.source[index];
+      if (char === "\n") {
+        return true;
+      }
+      if (char !== " " && char !== "\t" && char !== "\r") {
+        return false;
+      }
+    }
+    return true;
   }
 
   private advance(char: string): void {
@@ -288,11 +318,19 @@ class Parser {
     this.next = this.lexer.nextToken();
   }
 
+  public get comments(): CommentTrivia[] {
+    return this.lexer.comments;
+  }
+
   public parseProgram(): ParsedProgram {
     const declarations: DeclarationNode[] = [];
     const moduleDeclaration = this.parseModuleDeclaration();
     if (!moduleDeclaration) {
-      return { program: null, diagnostics: this.diagnostics };
+      return {
+        program: null,
+        diagnostics: this.diagnostics,
+        comments: this.comments,
+      };
     }
 
     while (!this.is("eof")) {
@@ -316,12 +354,17 @@ class Parser {
     };
 
     if (this.diagnostics.length > 0) {
-      return { program: null, diagnostics: this.diagnostics };
+      return {
+        program: null,
+        diagnostics: this.diagnostics,
+        comments: this.comments,
+      };
     }
 
     return {
       program,
       diagnostics: this.diagnostics,
+      comments: this.comments,
     };
   }
 
