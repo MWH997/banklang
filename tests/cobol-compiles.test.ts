@@ -5,7 +5,9 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { compileExample } from "./helpers";
+import { compile } from "../packages/compiler/src/index";
+
+import { compileExample, loadExampleSource } from "./helpers";
 
 /**
  * Every checked-in example must produce COBOL that a real compiler accepts.
@@ -31,6 +33,22 @@ describe("generated COBOL compiles", () => {
 
   for (const example of EXAMPLES) {
     it.skipIf(!cobcAvailable())(`compiles ${example} with cobc`, () => {
+      // Embedded SQL and CICS need a precompiler, so plain cobc cannot check
+      // them. Such a program is reported here rather than silently passing.
+      const requirements = compile(
+        loadExampleSource(example),
+      ).backendRequirements;
+      if (requirements.length > 0) {
+        expect(
+          requirements.every(
+            (requirement) =>
+              requirement === "db2-precompiler" ||
+              requirement === "cics-translator",
+          ),
+        ).toBe(true);
+        return;
+      }
+
       const { emit } = compileExample(example);
       const dir = mkdtempSync(join(tmpdir(), "bankc-cobc-"));
       const file = join(dir, "program.cbl");

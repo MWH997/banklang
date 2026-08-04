@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifacts": [
+    "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/LEDGER-ENTRY.cpy",
+    "/workspace/dist/copybooks/STATEMENT.cpy",
+    "/workspace/dist/copybooks/ACCOUNT-MASTER.cpy",
+    "/workspace/dist/jcl/STATEMENT-GENERATION.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
+  ]
+}

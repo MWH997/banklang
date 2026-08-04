@@ -87,6 +87,7 @@
     "diagnostics": []
   },
   "gnucobolValidation": {
+    "backendRequirements": [],
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/account-posting/src/main.bank.ts",
     "sourceArtifactHash": "4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9",

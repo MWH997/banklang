@@ -24,6 +24,9 @@ import type {
   IRExpressionStatement,
   IRFileStatement,
   IRSwitchStatement,
+  IRSqlStatement,
+  IRSql,
+  IRCicsStatement,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -67,6 +70,17 @@ const FILE_STATUS_PICTURE = "PIC XX";
  * `VALIDATE-AMOUNT-P1` rather than `AMOUNT`.
  */
 let currentParameters = new Map<string, string>();
+
+/** SQL declarations for the program being emitted. */
+let currentSql = new Map<string, IRSql>();
+
+function requireSqlDeclaration(name: string): IRSql {
+  const declaration = currentSql.get(name);
+  if (!declaration) {
+    throw new Error(`Unresolved SQL statement during emission: ${name}`);
+  }
+  return declaration;
+}
 
 /** BankTS comparison operators to COBOL relational operators. */
 const COBOL_COMPARISONS: Record<string, string> = {
@@ -141,6 +155,7 @@ export function emitCobol(
     options.sourceMapArtifactPath ?? "dist/maps/source-map.json";
   const lines: string[] = [];
   const entries: SourceMapEntry[] = [];
+  currentSql = new Map(program.sql.map((entry) => [entry.name, entry]));
 
   const addLine = (line = "") => {
     lines.push(line);
@@ -181,6 +196,18 @@ export function emitCobol(
   }
 
   addLine(`       WORKING-STORAGE SECTION.`);
+
+  // The SQLCA carries SQLCODE, which the analyzer requires the program to test.
+  if (program.sql.length > 0) {
+    addLine(`           EXEC SQL INCLUDE SQLCA END-EXEC.`);
+    for (const statement of program.sql) {
+      statement.parameters.forEach((parameter, index) => {
+        addLine(
+          `       01  ${sqlParameterName(statement.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+        );
+      });
+    }
+  }
 
   for (const file of program.files) {
     if (file.statusName) {
@@ -286,6 +313,27 @@ export function emitCobol(
     emitLedgerInterfaceStorage(addLine);
   }
 
+  // A CICS transaction receives its input through DFHCOMMAREA rather than as
+  // working storage, so the record is redefined in the LINKAGE SECTION.
+  const cicsTransactions = program.transactions.filter(
+    (transaction) => transaction.isCics,
+  );
+  if (cicsTransactions.length > 0) {
+    addLine("");
+    addLine(`       LINKAGE SECTION.`);
+    addLine(`       01  DFHCOMMAREA.`);
+    const commareaRecord = cicsTransactions[0].parameters.find(
+      (parameter) => parameter.type.kind === "record",
+    );
+    if (commareaRecord && commareaRecord.type.kind === "record") {
+      for (const field of commareaRecord.type.fields) {
+        emitField(`LK-${field.name}`, field.type, 1, " ".repeat(11), addLine);
+      }
+    } else {
+      addLine(`           05  FILLER               PIC X(1).`);
+    }
+  }
+
   addLine("");
   addLine(`       PROCEDURE DIVISION.`);
 
@@ -315,7 +363,12 @@ export function emitCobol(
     );
     emitTransactionBody(transaction.body, addLine, 11);
     currentParameters = new Map();
-    addLine(`           GOBACK.`);
+    // A CICS program returns control to CICS rather than to a caller.
+    addLine(
+      transaction.isCics
+        ? `           EXEC CICS RETURN END-EXEC.`
+        : `           GOBACK.`,
+    );
     const transactionEnd = lineNumber() - 1;
     entries.push({
       sourceFile: program.sourceFile,
@@ -623,6 +676,14 @@ function emitStatement(
       case "SwitchStatement":
         emitSwitchStatement(statement, addLine, indentLevel, resultName, false);
         break;
+      case "SqlStatement":
+        emitSqlStatement(
+          statement,
+          requireSqlDeclaration(statement.name),
+          addLine,
+          indent,
+        );
+        break;
       default:
         throw new Error(
           `Unsupported statement in function body: ${statement.kind}`,
@@ -671,6 +732,17 @@ function emitTransactionBody(
         break;
       case "SwitchStatement":
         emitSwitchStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "SqlStatement":
+        emitSqlStatement(
+          statement,
+          requireSqlDeclaration(statement.name),
+          addLine,
+          indent,
+        );
+        break;
+      case "CicsStatement":
+        emitCicsStatement(statement, addLine, indent);
         break;
       default:
         throw new Error(
@@ -932,7 +1004,14 @@ function emitComputeInto(
     return;
   }
 
-  if (expression.resolvedType.kind === "string") {
+  // Anything that is not numeric is moved rather than computed.
+  if (
+    expression.resolvedType.kind === "string" ||
+    expression.resolvedType.kind === "enum" ||
+    expression.resolvedType.kind === "record" ||
+    expression.resolvedType.kind === "array" ||
+    expression.resolvedType.kind === "nullable"
+  ) {
     addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
     return;
   }
@@ -969,6 +1048,10 @@ function parameterBindings(
 }
 
 function resolveIdentifier(name: string): string {
+  // SQLCODE comes from the SQLCA, not from generated storage.
+  if (name === "sqlcode") {
+    return "SQLCODE";
+  }
   return currentParameters.get(name) ?? toCobolFieldName(name);
 }
 
@@ -987,6 +1070,91 @@ function collectLoops(block: IRBlock): IRWhileStatement[] {
     }
   }
   return loops;
+}
+
+/**
+ * CICS commands with `RESP`, which is how a program observes the outcome
+ * without abending. BANK-CICS-001 makes capturing it mandatory.
+ */
+function emitCicsStatement(
+  statement: IRCicsStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const resp = statement.respName
+    ? ` RESP(${toCobolFieldName(statement.respName)})`
+    : "";
+
+  switch (statement.operation) {
+    case "link": {
+      const commarea = statement.commarea
+        ? ` COMMAREA(${resolveIdentifier(statement.commarea)})`
+        : "";
+      addLine(
+        `${indent}EXEC CICS LINK PROGRAM("${statement.program}")${commarea}${resp} END-EXEC`,
+      );
+      return;
+    }
+    case "syncpoint":
+      addLine(`${indent}EXEC CICS SYNCPOINT${resp} END-EXEC`);
+      return;
+    case "rollback":
+      addLine(`${indent}EXEC CICS SYNCPOINT ROLLBACK${resp} END-EXEC`);
+      return;
+  }
+}
+
+function sqlParameterName(statementName: string, index: number): string {
+  return `${toCobolName(statementName)}-H${index + 1}`;
+}
+
+/**
+ * Emits an `EXEC SQL` block.
+ *
+ * Host variables are rewritten from BankTS names to the COBOL fields they
+ * resolve to: parameters become dedicated host-variable storage, and result
+ * fields become qualified references into the target record.
+ */
+function emitSqlStatement(
+  statement: IRSqlStatement,
+  declaration: IRSql,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  statement.args.forEach((argument, index) => {
+    addLine(
+      `${indent}MOVE ${renderExpression(argument)} TO ${sqlParameterName(declaration.name, index)}`,
+    );
+  });
+
+  const intoRecord = statement.intoRecord
+    ? resolveIdentifier(statement.intoRecord)
+    : null;
+
+  const rewritten = declaration.text.replace(
+    /:([A-Za-z_][A-Za-z0-9_]*)/g,
+    (match, name: string) => {
+      const parameterIndex = declaration.parameters.findIndex(
+        (parameter) => parameter.name === name,
+      );
+      if (parameterIndex >= 0) {
+        return `:${sqlParameterName(declaration.name, parameterIndex)}`;
+      }
+      if (intoRecord) {
+        return `:${toCobolFieldName(name)} OF ${intoRecord}`;
+      }
+      return match;
+    },
+  );
+
+  addLine(`${indent}EXEC SQL`);
+  for (const line of rewritten.split("\n")) {
+    const text = line.trim();
+    if (text.length > 0) {
+      addLine(`${indent}    ${text}`);
+    }
+  }
+  addLine(`${indent}END-EXEC`);
 }
 
 function parameterFieldName(functionName: string, index: number): string {

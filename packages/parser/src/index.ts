@@ -55,6 +55,10 @@ import {
   type SwitchStatementNode,
   type SwitchCaseNode,
   type FileOrganization,
+  type SqlDeclarationNode,
+  type SqlStatementNode,
+  type CicsStatementNode,
+  type CicsOperation,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -64,6 +68,8 @@ interface Token {
   kind: TokenKind;
   text: string;
   span: SourceSpan;
+  /** Byte offset where the token starts, so a raw scan can resume from it. */
+  offset: number;
 }
 
 const KEYWORDS = new Set([
@@ -84,6 +90,12 @@ const KEYWORDS = new Set([
   "switch",
   "case",
   "enum",
+  "sql",
+  "execute",
+  "cics",
+  "link",
+  "syncpoint",
+  "rollback",
   "currency",
   "nullable",
   "transaction",
@@ -143,6 +155,7 @@ class Lexer {
   private line = 1;
   private column = 1;
   public readonly comments: CommentTrivia[] = [];
+  private tokenStartOffset = 0;
 
   public constructor(source: string, sourceFile: string) {
     this.source = source;
@@ -153,6 +166,7 @@ class Lexer {
     this.skipTrivia();
 
     if (this.offset >= this.source.length) {
+      this.tokenStartOffset = this.offset;
       return this.makeToken(
         "eof",
         "",
@@ -165,6 +179,7 @@ class Lexer {
 
     const startLine = this.line;
     const startColumn = this.column;
+    this.tokenStartOffset = this.offset;
     const char = this.source[this.offset];
 
     if (this.isIdentifierStart(char)) {
@@ -279,6 +294,47 @@ class Lexer {
     );
   }
 
+  /**
+   * Captures raw text from the current position to the matching close brace.
+   *
+   * Used for SQL bodies, which are passed through rather than parsed. Returns
+   * the text and leaves the lexer positioned after the closing brace.
+   */
+  public captureBracedTextFrom(
+    braceOffset: number,
+    braceLine: number,
+    braceColumn: number,
+  ): { text: string; endLine: number; endColumn: number } | null {
+    // Rewind to the brace: the parser has already lexed past it.
+    this.offset = braceOffset;
+    this.line = braceLine;
+    this.column = braceColumn;
+
+    if (this.source[this.offset] !== "{") {
+      return null;
+    }
+    this.advance("{");
+
+    let depth = 1;
+    let text = "";
+    while (this.offset < this.source.length) {
+      const char = this.source[this.offset];
+      if (char === "{") {
+        depth += 1;
+      } else if (char === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          this.advance("}");
+          return { text, endLine: this.line, endColumn: this.column };
+        }
+      }
+      text += char;
+      this.advance(char);
+    }
+
+    return null;
+  }
+
   private skipTrivia(): void {
     while (this.offset < this.source.length) {
       const char = this.source[this.offset];
@@ -357,6 +413,7 @@ class Lexer {
     return {
       kind,
       text,
+      offset: this.tokenStartOffset,
       span: {
         sourceFile: this.sourceFile,
         start: { line: startLine, column: startColumn },
@@ -482,8 +539,20 @@ class Parser {
       return this.parseFunctionDeclaration();
     }
 
+    if (this.matchKeyword("cics")) {
+      if (!this.matchKeyword("transaction")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `transaction` after `cics`.",
+          "Write `cics transaction <name>(commarea: <Record>) { ... }`.",
+        );
+        return null;
+      }
+      return this.parseTransactionDeclaration(true);
+    }
+
     if (this.matchKeyword("transaction")) {
-      return this.parseTransactionDeclaration();
+      return this.parseTransactionDeclaration(false);
     }
 
     if (this.matchKeyword("file")) {
@@ -494,12 +563,87 @@ class Parser {
       return this.parseEnumDeclaration();
     }
 
+    if (this.matchKeyword("sql")) {
+      return this.parseSqlDeclaration();
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a declaration.",
     );
     return null;
+  }
+
+  private parseSqlDeclaration(): SqlDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected SQL statement name.");
+    this.expectPunctuation("(", "Expected `(` after SQL statement name.");
+    const parameters = this.parseParameters();
+    this.expectPunctuation(")", "Expected `)` after parameter list.");
+
+    let resultTypeName: string | null = null;
+    if (this.matchPunctuation(":")) {
+      const resultToken = this.expectIdentifier(
+        "Expected a result record type.",
+      );
+      resultTypeName = resultToken?.text ?? null;
+    }
+
+    // The body is captured verbatim, so the lexer must be positioned at the
+    // opening brace before the raw scan begins.
+    const bodyStart = this.current.span.start;
+    const captured = this.captureSqlBody();
+    if (!nameToken || !captured) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `{` to start the SQL body.",
+        "Write the SQL statement between braces.",
+      );
+      return null;
+    }
+
+    const hostVariables: { name: string; span: SourceSpan }[] = [];
+    let line = bodyStart.line;
+    let column = bodyStart.column;
+    for (let index = 0; index < captured.text.length; index += 1) {
+      const char = captured.text[index];
+      if (char === ":" && /[A-Za-z_]/.test(captured.text[index + 1] ?? "")) {
+        let name = "";
+        let cursor = index + 1;
+        while (/[A-Za-z0-9_]/.test(captured.text[cursor] ?? "")) {
+          name += captured.text[cursor];
+          cursor += 1;
+        }
+        hostVariables.push({
+          name,
+          span: {
+            sourceFile: nameToken.span.sourceFile,
+            start: { line, column },
+            end: { line, column: column + name.length + 1 },
+          },
+        });
+      }
+      if (char === "\n") {
+        line += 1;
+        column = 1;
+      } else {
+        column += 1;
+      }
+    }
+
+    return {
+      kind: "SqlDeclaration",
+      name: nameToken.text,
+      parameters,
+      resultTypeName,
+      text: captured.text.trim(),
+      hostVariables,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: { line: captured.endLine, column: captured.endColumn },
+      },
+    };
   }
 
   private parseEnumDeclaration(): EnumDeclarationNode | null {
@@ -632,7 +776,9 @@ class Parser {
     return null;
   }
 
-  private parseTransactionDeclaration(): TransactionDeclarationNode | null {
+  private parseTransactionDeclaration(
+    isCics: boolean,
+  ): TransactionDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected transaction name.");
     const openParen = this.expectPunctuation(
       "(",
@@ -654,6 +800,7 @@ class Parser {
       name: nameToken.text,
       parameters,
       body,
+      isCics,
       span: {
         sourceFile: nameToken.span.sourceFile,
         start: nameToken.span.start,
@@ -874,6 +1021,19 @@ class Parser {
       return this.parseSwitchStatement();
     }
 
+    if (this.matchKeyword("execute")) {
+      return this.parseSqlStatement();
+    }
+
+    if (
+      this.current.kind === "keyword" &&
+      (this.current.text === "link" ||
+        this.current.text === "syncpoint" ||
+        this.current.text === "rollback")
+    ) {
+      return this.parseCicsStatement();
+    }
+
     if (
       this.current.kind === "identifier" &&
       FILE_OPERATIONS.has(this.current.text) &&
@@ -976,6 +1136,116 @@ class Parser {
         sourceFile: whileToken.span.sourceFile,
         start: whileToken.span.start,
         end: body.span.end,
+      },
+    };
+  }
+
+  private parseCicsStatement(): CicsStatementNode | null {
+    const operationToken = this.advance();
+    const operation = operationToken.text as CicsOperation;
+
+    let program: string | null = null;
+    let commarea: string | null = null;
+    let respName: string | null = null;
+
+    if (operation === "link") {
+      const programToken = this.current;
+      if (programToken.kind !== "string") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected a target program name.",
+          'Write `link "PROGNAME" commarea <record> resp <status>;`.',
+        );
+        return null;
+      }
+      this.advance();
+      program = programToken.text;
+
+      if (
+        this.current.kind === "identifier" &&
+        this.current.text === "commarea"
+      ) {
+        this.advance();
+        const recordToken = this.expectIdentifier("Expected a record name.");
+        commarea = recordToken?.text ?? null;
+      }
+    }
+
+    // The response code is mandatory. A CICS command whose outcome is never
+    // examined is BANK-CICS-001.
+    if (this.current.kind === "identifier" && this.current.text === "resp") {
+      this.advance();
+      const respToken = this.expectIdentifier("Expected a response variable.");
+      respName = respToken?.text ?? null;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after CICS statement.",
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "CicsStatement",
+      operation,
+      program,
+      commarea,
+      respName,
+      span: {
+        sourceFile: operationToken.span.sourceFile,
+        start: operationToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseSqlStatement(): SqlStatementNode | null {
+    const executeToken = this.previous;
+    const nameToken = this.expectIdentifier("Expected a SQL statement name.");
+    this.expectPunctuation("(", "Expected `(` after the SQL statement name.");
+
+    const args: ExpressionNode[] = [];
+    if (!this.isPunctuation(")")) {
+      for (;;) {
+        const argument = this.parseExpression();
+        if (!argument) {
+          return null;
+        }
+        args.push(argument);
+        if (!this.matchPunctuation(",")) {
+          break;
+        }
+      }
+    }
+    this.expectPunctuation(")", "Expected `)` after arguments.");
+
+    let intoRecord: string | null = null;
+    if (this.current.kind === "identifier" && this.current.text === "into") {
+      this.advance();
+      const recordToken = this.expectIdentifier("Expected a record name.");
+      intoRecord = recordToken?.text ?? null;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after execute statement.",
+    );
+
+    if (!executeToken || !nameToken || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "SqlStatement",
+      name: nameToken.text,
+      args,
+      intoRecord,
+      span: {
+        sourceFile: executeToken.span.sourceFile,
+        start: executeToken.span.start,
+        end: semicolon.span.end,
       },
     };
   }
@@ -1952,6 +2222,37 @@ class Parser {
 
   private isPunctuation(symbol: string): boolean {
     return this.current.kind === "punctuation" && this.current.text === symbol;
+  }
+
+  /**
+   * Hands control to the lexer for a raw brace-delimited scan.
+   *
+   * The parser keeps two tokens of lookahead, so those are discarded and
+   * refilled once the raw text has been consumed.
+   */
+  private captureSqlBody(): {
+    text: string;
+    endLine: number;
+    endColumn: number;
+  } | null {
+    if (!this.isPunctuation("{")) {
+      return null;
+    }
+
+    // `current` is the open brace and `next` is already lexed past it, so the
+    // raw scan must start from the brace itself.
+    const captured = this.lexer.captureBracedTextFrom(
+      this.current.offset,
+      this.current.span.start.line,
+      this.current.span.start.column,
+    );
+    if (!captured) {
+      return null;
+    }
+
+    this.current = this.lexer.nextToken();
+    this.next = this.lexer.nextToken();
+    return captured;
   }
 
   private advance(): Token {

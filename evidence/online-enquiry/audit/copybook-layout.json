@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "EnquiryRequest",
+      "cobolName": "ENQUIRY-REQUEST",
+      "totalLength": 72,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ENQUIRY-REQUEST.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "ENQUIRY-REQUEST.REQUESTED-BY",
+          "type": "string<20>",
+          "picture": "PIC X(20)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 20,
+          "bytes": 20
+        },
+        {
+          "order": 3,
+          "path": "ENQUIRY-REQUEST.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 36,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    },
+    {
+      "recordName": "AccountRow",
+      "cobolName": "ACCOUNT-ROW",
+      "totalLength": 34,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ACCOUNT-ROW.ROW-ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "ACCOUNT-ROW.ROW-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "ACCOUNT-ROW.ROW-STATUS",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 8,
+          "bytes": 8
+        }
+      ]
+    },
+    {
+      "recordName": "EnquiryReply",
+      "cobolName": "ENQUIRY-REPLY",
+      "totalLength": 37,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ENQUIRY-REPLY.REPLY-ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "ENQUIRY-REPLY.REPLY-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "ENQUIRY-REPLY.OUTCOME",
+          "type": "enum<EnquiryOutcome>",
+          "picture": "PIC X(11)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 11,
+          "bytes": 11
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+  "artifact": "/workspace/dist/maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 27
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 4,
+      "targetEndLine": 5,
+      "category": "module",
+      "symbol": "StatementGeneration"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 21,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 25,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 53,
+      "targetEndLine": 58,
+      "category": "record",
+      "symbol": "LedgerEntry"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 22,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 22,
+        "column": 24
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 54,
+      "targetEndLine": 56,
+      "category": "field",
+      "symbol": "entryKind"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 23,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 23,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 57,
+      "targetEndLine": 57,
+      "category": "field",
+      "symbol": "narrative"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 24,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 24,
+        "column": 15
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 58,
+      "targetEndLine": 58,
+      "category": "field",
+      "symbol": "amount"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 27,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 37,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 59,
+      "targetEndLine": 76,
+      "category": "record",
+      "symbol": "Statement"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 28,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 28,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 60,
+      "targetEndLine": 60,
+      "category": "field",
+      "symbol": "accountId"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 29,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 29,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 61,
+      "targetEndLine": 65,
+      "category": "field",
+      "symbol": "status"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 30,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 30,
+        "column": 23
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 66,
+      "targetEndLine": 66,
+      "category": "field",
+      "symbol": "openingBalance"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 31,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 31,
+        "column": 23
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 67,
+      "targetEndLine": 67,
+      "category": "field",
+      "symbol": "closingBalance"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 33,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 33,
+        "column": 27
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 68,
+      "targetEndLine": 73,
+      "category": "field",
+      "symbol": "lines"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 35,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 35,
+        "column": 45
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 74,
+      "targetEndLine": 75,
+      "category": "field",
+      "symbol": "relationshipManager"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 36,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 36,
+        "column": 30
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 76,
+      "targetEndLine": 76,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 39,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 43,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 77,
+      "targetEndLine": 84,
+      "category": "record",
+      "symbol": "AccountMaster"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 40,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 40,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 78,
+      "targetEndLine": 78,
+      "category": "field",
+      "symbol": "accountId"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 41,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 41,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 79,
+      "targetEndLine": 83,
+      "category": "field",
+      "symbol": "status"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 42,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 42,
+        "column": 16
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 84,
+      "targetEndLine": 84,
+      "category": "field",
+      "symbol": "balance"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 51,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 53,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 102,
+      "targetEndLine": 108,
+      "category": "function",
+      "symbol": "isStatementable"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 58,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 68,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 109,
+      "targetEndLine": 119,
+      "category": "function",
+      "symbol": "suppressionReason"
+    },
+    {
+      "sourceFile": "/workspace/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 70,
+        "column": 13
+      },
+      "sourceEnd": {
+        "line": 103,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 120,
+      "targetEndLine": 153,
+      "category": "transaction",
+      "symbol": "generateStatement"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ describe("gnucobol validation report", () => {
   it("renders the required evidence fields", () => {
     const report = buildGnucobolValidationReport({
       backendProfile: "gnucobol-local",
+      backendRequirements: [],
       sourceArtifact: "examples/account-transfer/src/main.bank.ts",
       sourceArtifactHash:
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

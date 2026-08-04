@@ -27,6 +27,7 @@ import type {
   ResolvedRecord,
   ResolvedLocal,
   ResolvedTransaction,
+  ResolvedSql,
   ResolvedType,
   TypeCheckResult,
 } from "../../typechecker/src/index";
@@ -41,6 +42,26 @@ export interface IRProgram {
   transactions: IRTransaction[];
   files: IRFile[];
   enums: IREnum[];
+  sql: IRSql[];
+  /**
+   * Preprocessing the generated COBOL needs before a compiler will accept it.
+   *
+   * A program using embedded SQL requires the Db2 precompiler, so plain COBOL
+   * compilation is not a meaningful check and must not be reported as one.
+   */
+  backendRequirements: BackendRequirement[];
+}
+
+export type BackendRequirement = "db2-precompiler" | "cics-translator";
+
+export interface IRSql {
+  kind: "Sql";
+  name: string;
+  span: SourceSpan;
+  parameters: IRParameter[];
+  resultRecordName: string | null;
+  text: string;
+  hostVariables: { name: string; origin: "parameter" | "result" }[];
 }
 
 export interface IREnum {
@@ -67,6 +88,7 @@ export interface IRTransaction {
   span: SourceSpan;
   parameters: IRParameter[];
   body: IRBlock;
+  isCics: boolean;
 }
 
 export interface IRRecord {
@@ -115,7 +137,26 @@ export type IRStatement =
   | IRAssignStatement
   | IRExpressionStatement
   | IRFileStatement
-  | IRSwitchStatement;
+  | IRSwitchStatement
+  | IRSqlStatement
+  | IRCicsStatement;
+
+export interface IRCicsStatement {
+  kind: "CicsStatement";
+  span: SourceSpan;
+  operation: "link" | "syncpoint" | "rollback";
+  program: string | null;
+  commarea: string | null;
+  respName: string | null;
+}
+
+export interface IRSqlStatement {
+  kind: "SqlStatement";
+  span: SourceSpan;
+  name: string;
+  args: IRExpression[];
+  intoRecord: string | null;
+}
 
 export interface IRSwitchStatement {
   kind: "SwitchStatement";
@@ -421,6 +462,11 @@ export function lowerProgramToIR(
     enumTable.set(entry.name, entry.members);
   }
 
+  sqlTable.clear();
+  for (const entry of typechecked.sql) {
+    sqlTable.set(entry.name, entry);
+  }
+
   functionTable.clear();
   for (const fn of typechecked.functions) {
     functionTable.set(fn.name, lowerType(fn.returnType));
@@ -457,6 +503,26 @@ export function lowerProgramToIR(
         span: entry.span,
         members: entry.members,
       })),
+      sql: typechecked.sql.map((entry) => ({
+        kind: "Sql" as const,
+        name: entry.name,
+        span: entry.span,
+        parameters: entry.parameters.map((parameter) => ({
+          kind: "Parameter" as const,
+          name: parameter.name,
+          span: parameter.span,
+          type: lowerType(parameter.type),
+        })),
+        resultRecordName: entry.result?.name ?? null,
+        text: entry.text,
+        hostVariables: entry.hostVariables,
+      })),
+      backendRequirements: [
+        ...(typechecked.sql.length > 0 ? (["db2-precompiler"] as const) : []),
+        ...(typechecked.transactions.some((entry) => entry.isCics)
+          ? (["cics-translator"] as const)
+          : []),
+      ],
     },
     diagnostics: typechecked.diagnostics,
   };
@@ -477,6 +543,9 @@ const functionTable = new Map<string, IRType>();
 /** Declared enums, for lowering member references and switch statements. */
 const enumTable = new Map<string, string[]>();
 
+/** Declared SQL statements, for lowering execute statements. */
+const sqlTable = new Map<string, ResolvedSql>();
+
 /** File status fields are readable in any body, so they must be in IR scope. */
 function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
   for (const [, file] of fileTable) {
@@ -484,11 +553,49 @@ function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
       scopeTypes.set(file.statusName, { kind: "string", length: 2 });
     }
   }
+
+  if (sqlTable.size > 0 && !scopeTypes.has("sqlcode")) {
+    scopeTypes.set("sqlcode", { kind: "decimal", precision: 9, scale: 0 });
+  }
+}
+
+/** CICS response variables are compiler-owned storage. */
+function addCicsRespSymbols(
+  block: { statements: StatementNode[] },
+  scopeTypes: Map<string, IRType>,
+): void {
+  for (const statement of block.statements) {
+    if (statement.kind === "CicsStatement" && statement.respName) {
+      scopeTypes.set(statement.respName, {
+        kind: "decimal",
+        precision: 9,
+        scale: 0,
+      });
+    }
+    if (statement.kind === "IfStatement") {
+      addCicsRespSymbols(statement.thenBranch, scopeTypes);
+      if (statement.elseBranch) {
+        addCicsRespSymbols(statement.elseBranch, scopeTypes);
+      }
+    }
+    if (statement.kind === "WhileStatement") {
+      addCicsRespSymbols(statement.body, scopeTypes);
+    }
+    if (statement.kind === "SwitchStatement") {
+      for (const branch of statement.cases) {
+        addCicsRespSymbols(branch.body, scopeTypes);
+      }
+      if (statement.otherwise) {
+        addCicsRespSymbols(statement.otherwise, scopeTypes);
+      }
+    }
+  }
 }
 
 function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
   const scopeTypes = new Map<string, IRType>();
   addFileStatusSymbols(scopeTypes);
+  addCicsRespSymbols(transaction.body, scopeTypes);
   for (const parameter of transaction.parameters) {
     scopeTypes.set(parameter.name, lowerType(parameter.type));
   }
@@ -507,6 +614,7 @@ function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
       type: lowerType(parameter.type),
     })),
     body: lowerBlock(transaction.body, scopeTypes),
+    isCics: transaction.isCics,
   };
 }
 
@@ -616,6 +724,25 @@ function lowerStatement(
         kind: "ExpressionStatement",
         span: statement.span,
         expression: lowerExpression(statement.expression, scopeTypes),
+      };
+    case "CicsStatement":
+      return {
+        kind: "CicsStatement",
+        span: statement.span,
+        operation: statement.operation,
+        program: statement.program,
+        commarea: statement.commarea,
+        respName: statement.respName,
+      };
+    case "SqlStatement":
+      return {
+        kind: "SqlStatement",
+        span: statement.span,
+        name: statement.name,
+        args: statement.args.map((argument) =>
+          lowerExpression(argument, scopeTypes),
+        ),
+        intoRecord: statement.intoRecord,
       };
     case "SwitchStatement": {
       const subject = lowerExpression(statement.subject, scopeTypes);

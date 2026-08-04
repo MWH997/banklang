@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "generateStatement",
+      "parameters": ["statement", "master"],
+      "ledgerPostings": [],
+      "auditEvents": [
+        {
+          "event": "STATEMENT_GENERATED",
+          "correlation": "statement.idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

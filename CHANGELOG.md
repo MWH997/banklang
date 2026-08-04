@@ -88,6 +88,10 @@
 
 ### Fixed
 
+- Fixed nested group items reusing COBOL level 05 instead of stepping to 10, which `OCCURS` made fatal.
+- Fixed source map field attribution, which assumed one emitted line per record field. Enums, nullables, and arrays emit several, and `BANK-GEN-006` caught the drift. Field start lines are now recorded as they are emitted, closing the gap noted when that check was added.
+- Fixed FD records being emitted as opaque buffers. They now carry the real field structure with qualified references, so per-field mapping works.
+- Fixed string literals being typed by their exact written length, so a literal now fits any string field long enough to hold it. COBOL `MOVE` pads with spaces, so this is not a silent truncation.
 - Fixed function parameters never being declared in working storage. A parameter reference only resolved when it happened to share a name with a record field, so `validateAmount(amount)` read the record's `AMOUNT` rather than its argument, and calling a function was impossible. Parameters now get their own storage; record parameters resolve to the record group item.
 - Fixed decimal literals being typed by their written width, which forced `0000000000000025.00` to assign to a `decimal<18, 2>`. A literal now widens to any decimal with the same scale and enough precision. The scale must still match exactly, because changing scale is a rounding decision.
 - Fixed generated COBOL for functions whose body is an `if` / `else`. A `GOBACK.` was emitted inside each branch, and the period terminated the COBOL sentence, leaving the following `ELSE` and `END-IF` dangling. GnuCOBOL rejected the batch-interest-accrual output with `syntax error, unexpected ELSE`. Return statements now assign only the result field and each paragraph ends with a single `GOBACK.`. The batch-interest-accrual golden fixture is updated to match; the account-transfer fixture is unchanged.
