@@ -4,7 +4,8 @@ Generated artifacts for the withdrawal-with-recovery example, which exercises
 record inheritance, guard clauses, `raise` with an `on failure` handler, ledger
 rollback on the failure path, and an explicit program entry point.
 
-This is the only example that is also **executed**. See
+This example is also **executed**, alongside `online-enquiry` and
+`branch-accrual-cursor`. See
 [`tests/conformance.test.ts`](../../tests/conformance.test.ts) and
 [`runtime/README.md`](../../runtime/README.md).
 

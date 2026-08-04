@@ -49,11 +49,22 @@ export interface ConformanceRun {
 
 /** An outcome the reference Db2 runtime should report for one statement. */
 export interface SqlOutcome {
-  /** Statement number, as the precompiler assigns it: 1 for the first block. */
+  /**
+   * Statement number, as the precompiler assigns it: 1 for the first executable
+   * block. A cursor's DECLARE is not executable and takes no number.
+   */
   statement: number;
   sqlcode: number;
   /** Defaults to the state that matches the code for 0 and 100. */
   sqlstate?: string;
+  /**
+   * Calls this outcome applies to, or every remaining call when omitted.
+   *
+   * A FETCH is one statement run many times, so scripting a cursor means
+   * `{ statement: 2, sqlcode: 0, times: 3 }` followed by an unbounded
+   * `{ statement: 2, sqlcode: 100 }` for the end of the rows.
+   */
+  times?: number;
 }
 
 /** A response the reference CICS runtime should report for one command. */
@@ -145,7 +156,7 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
       `${options.sqlOutcomes
         .map(
           (outcome) =>
-            `${String(outcome.statement).padStart(4, "0")} ${signedField(outcome.sqlcode, 3)} ${outcome.sqlstate ?? defaultSqlState(outcome.sqlcode)}`,
+            `${String(outcome.statement).padStart(4, "0")} ${signedField(outcome.sqlcode, 3)} ${outcome.sqlstate ?? defaultSqlState(outcome.sqlcode)} ${String(outcome.times ?? 0).padStart(4, "0")}`,
         )
         .join("\n")}\n`,
       "utf8",

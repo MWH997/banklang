@@ -13,6 +13,7 @@ import {
   layoutOf,
   readField,
   runConformance,
+  type SqlOutcome,
 } from "../tools/conformance";
 
 /**
@@ -32,6 +33,11 @@ const SOURCE = readFileSync(
 
 const CICS_SOURCE = readFileSync(
   "examples/online-enquiry/src/main.bank.ts",
+  "utf8",
+);
+
+const CURSOR_SOURCE = readFileSync(
+  "examples/branch-accrual-cursor/src/main.bank.ts",
   "utf8",
 );
 
@@ -459,6 +465,100 @@ runner("executed against the reference Db2 and CICS runtimes", () => {
       "CICS 0001 LINK RESP 27",
       "CICS 0002 SYNCPOINT ROLLBACK RESP 0",
       "CICS 0003 RETURN RESP 0",
+    ]);
+  });
+});
+
+/**
+ * A cursor loop, executed.
+ *
+ * Statement 1 is the OPEN, 2 the FETCH, 3 the CLOSE — the DECLARE is read at
+ * precompile time and takes no number. Scripting how many fetches succeed is
+ * what makes the loop's own decisions observable: when it stops, whether it
+ * closes, and whether the bound holds when the rows never run out.
+ *
+ * The runtime writes no host variables, so a fetched row arrives unchanged.
+ * What is under test here is the shape the compiler generates, not the contents
+ * of a row, which only a real Db2 could supply.
+ */
+runner("cursor loops executed against the reference Db2 runtime", () => {
+  function runCursor(name: string, outcomes: SqlOutcome[]) {
+    return runConformance({
+      source: CURSOR_SOURCE,
+      sourceFile: "main.bank.ts",
+      workDir: workDir(name),
+      outputs: ["SUMMARYO"],
+      sqlOutcomes: outcomes,
+    });
+  }
+
+  it("opens, fetches until the rows run out, and closes", () => {
+    const result = runCursor("cursor-rows", [
+      { statement: 2, sqlcode: 0, times: 3 },
+      { statement: 2, sqlcode: 100 },
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.sqlCalls).toEqual([
+      "SQL 0001 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 100",
+      "SQL 0003 SQLCODE 0",
+    ]);
+  });
+
+  it("still closes the cursor when it returns no rows at all", () => {
+    const result = runCursor("cursor-empty", [{ statement: 2, sqlcode: 100 }]);
+
+    expect(result.sqlCalls).toEqual([
+      "SQL 0001 SQLCODE 0",
+      "SQL 0002 SQLCODE 100",
+      "SQL 0003 SQLCODE 0",
+    ]);
+    expect(result.journal).toEqual([]);
+    expect(result.auditLog).toHaveLength(1);
+  });
+
+  /**
+   * The reason the bound is mandatory. With every fetch succeeding, the loop
+   * would run forever holding Db2 locks; the generated counter stops it at the
+   * declared limit and the CLOSE still runs.
+   */
+  it("stops at the declared bound when the rows never run out", () => {
+    const boundedSource = CURSOR_SOURCE.replace("limit 5000", "limit 4");
+    const result = runConformance({
+      source: boundedSource,
+      sourceFile: "main.bank.ts",
+      workDir: workDir("cursor-bounded"),
+      outputs: ["SUMMARYO"],
+      sqlOutcomes: [{ statement: 2, sqlcode: 0 }],
+    });
+
+    expect(
+      result.sqlCalls.filter((call) => call.startsWith("SQL 0002")),
+    ).toHaveLength(4);
+    expect(result.sqlCalls.at(-1)).toBe("SQL 0003 SQLCODE 0");
+  });
+
+  /**
+   * An error is not end of data. Treating one as the other would process a
+   * partial result set as though it were the whole one, which is how a batch
+   * silently under-posts.
+   */
+  it("leaves the loop on an error rather than treating it as the end", () => {
+    const result = runCursor("cursor-error", [
+      { statement: 2, sqlcode: 0, times: 2 },
+      { statement: 2, sqlcode: -911, sqlstate: "40001" },
+    ]);
+
+    expect(result.sqlCalls).toEqual([
+      "SQL 0001 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE -911",
+      "SQL 0003 SQLCODE 0",
     ]);
   });
 });

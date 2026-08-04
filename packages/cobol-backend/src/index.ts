@@ -10,6 +10,7 @@ import type {
   IRIfStatement,
   IRFunction,
   IRIdentifierExpression,
+  IRCursorLoopStatement,
   IRLetStatement,
   IRProgram,
   IRRecord,
@@ -403,7 +404,15 @@ export function emitCobol(
           `       01  ${sqlParameterName(statement.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
         );
       });
+      // A cursor counts the rows it has taken, so the declared bound can stop
+      // it whatever the database keeps returning.
+      if (statement.form === "cursor") {
+        addLine(
+          `       01  ${cursorRowCounter(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+        );
+      }
     }
+    emitCursorDeclarations(program.sql, addLine);
   }
 
   for (const file of program.files) {
@@ -836,7 +845,11 @@ function collectCicsRespNames(block: IRBlock): string[] {
         names.push(...collectCicsRespNames(statement.elseBranch));
       }
     }
-    if (statement.kind === "WhileStatement") {
+    if (
+      statement.kind === "WhileStatement" ||
+      statement.kind === "ForEachStatement" ||
+      statement.kind === "CursorLoopStatement"
+    ) {
       names.push(...collectCicsRespNames(statement.body));
     }
     if (statement.kind === "SwitchStatement") {
@@ -1170,6 +1183,16 @@ function emitStatement(
           false,
         );
         break;
+      case "CursorLoopStatement":
+        emitCursorLoopStatement(
+          statement,
+          requireSqlDeclaration(statement.cursorName),
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
         break;
@@ -1296,6 +1319,16 @@ function emitTransactionBody(
         break;
       case "ForEachStatement":
         emitForEachStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "CursorLoopStatement":
+        emitCursorLoopStatement(
+          statement,
+          requireSqlDeclaration(statement.cursorName),
+          addLine,
+          indentLevel,
+          "",
+          true,
+        );
         break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
@@ -1895,7 +1928,10 @@ function collectForEachIndexes(block: IRBlock): IRForEachStatement[] {
       found.push(statement);
       found.push(...collectForEachIndexes(statement.body));
     }
-    if (statement.kind === "WhileStatement") {
+    if (
+      statement.kind === "WhileStatement" ||
+      statement.kind === "CursorLoopStatement"
+    ) {
       found.push(...collectForEachIndexes(statement.body));
     }
     if (statement.kind === "IfStatement") {
@@ -1921,6 +1957,12 @@ function collectLoops(block: IRBlock): IRWhileStatement[] {
   for (const statement of block.statements) {
     if (statement.kind === "WhileStatement") {
       loops.push(statement);
+      loops.push(...collectLoops(statement.body));
+    }
+    if (
+      statement.kind === "ForEachStatement" ||
+      statement.kind === "CursorLoopStatement"
+    ) {
       loops.push(...collectLoops(statement.body));
     }
     if (statement.kind === "IfStatement") {
@@ -1969,6 +2011,137 @@ function sqlParameterName(statementName: string, index: number): string {
   return `${toCobolName(statementName)}-H${index + 1}`;
 }
 
+/** Counts the rows a cursor loop has taken, so the declared bound can stop it. */
+function cursorRowCounter(cursorName: string): string {
+  return `${toCobolName(cursorName)}-ROWS`;
+}
+
+/**
+ * Rewrites host variables from BankTS names to the COBOL fields they resolve
+ * to: parameters become dedicated host-variable storage, and result fields
+ * become qualified references into the record the row lands in.
+ */
+function rewriteHostVariables(
+  text: string,
+  declaration: IRSql,
+  intoRecord: string | null,
+): string {
+  return text.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name: string) => {
+    const parameterIndex = declaration.parameters.findIndex(
+      (parameter) => parameter.name === name,
+    );
+    if (parameterIndex >= 0) {
+      return `:${sqlParameterName(declaration.name, parameterIndex)}`;
+    }
+    if (intoRecord) {
+      return `:${toCobolFieldName(name)} OF ${intoRecord}`;
+    }
+    return match;
+  });
+}
+
+function emitExecSql(
+  lines: string[],
+  addLine: (line?: string) => void,
+  indent: string,
+  /** True in the DATA DIVISION, where the block terminates a sentence. */
+  terminated = false,
+): void {
+  addLine(`${indent}EXEC SQL`);
+  for (const line of lines) {
+    const text = line.trim();
+    if (text.length > 0) {
+      addLine(`${indent}    ${text}`);
+    }
+  }
+  addLine(`${indent}END-EXEC${terminated ? "." : ""}`);
+}
+
+/**
+ * `DECLARE ... CURSOR FOR ...`, one per declared cursor.
+ *
+ * A cursor declaration is not an executable statement — Db2 reads it at
+ * precompile time — so it sits in WORKING-STORAGE next to the host variables it
+ * names rather than in the paragraph that opens the cursor.
+ *
+ * The row's destination is deliberately absent here. `DECLARE CURSOR` may not
+ * carry an `INTO`; the row arrives on the `FETCH`, which is where the compiler
+ * puts the clause the author wrote on the SELECT.
+ */
+function emitCursorDeclarations(
+  sql: IRSql[],
+  addLine: (line?: string) => void,
+): void {
+  for (const declaration of sql) {
+    if (declaration.form !== "cursor" || !declaration.cursorSelect) {
+      continue;
+    }
+    emitExecSql(
+      [
+        `DECLARE ${toCobolName(declaration.name)} CURSOR FOR`,
+        ...rewriteHostVariables(declaration.cursorSelect, declaration, null)
+          .split("\n")
+          .map((line) => `    ${line.trim()}`),
+      ],
+      addLine,
+      "       ",
+      true,
+    );
+  }
+}
+
+/**
+ * A bounded read of a cursor: open, fetch until the rows run out or the bound
+ * is reached, then close.
+ *
+ * `CLOSE` is emitted rather than written, so a cursor cannot be left open. The
+ * loop leaves on any non-zero `SQLCODE`, not only on 100: an error that is
+ * treated as end-of-data would silently process a partial result set as if it
+ * were the whole one.
+ */
+function emitCursorLoopStatement(
+  statement: IRCursorLoopStatement,
+  declaration: IRSql,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const cursor = toCobolName(declaration.name);
+  const counter = cursorRowCounter(declaration.name);
+  const row = resolveIdentifier(statement.rowRecordName);
+
+  statement.args.forEach((argument, index) => {
+    addLine(
+      `${indent}MOVE ${renderExpression(argument)} TO ${sqlParameterName(declaration.name, index)}`,
+    );
+  });
+
+  emitExecSql([`OPEN ${cursor}`], addLine, indent);
+  addLine(`${indent}MOVE 0 TO ${counter}`);
+  addLine(`${indent}PERFORM UNTIL ${counter} >= ${statement.limit}`);
+  emitExecSql(
+    [
+      `FETCH ${cursor}`,
+      `INTO ${rewriteHostVariables(declaration.cursorInto ?? "", declaration, row)}`,
+    ],
+    addLine,
+    `${indent}    `,
+  );
+  addLine(`${indent}    IF SQLCODE NOT = 0`);
+  addLine(`${indent}        EXIT PERFORM`);
+  addLine(`${indent}    END-IF`);
+  addLine(`${indent}    ADD 1 TO ${counter}`);
+  if (inTransaction) {
+    emitTransactionBody(statement.body, addLine, indentLevel + 4);
+  } else {
+    emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+  }
+  addLine(`${indent}END-PERFORM`);
+  emitExecSql([`CLOSE ${cursor}`], addLine, indent);
+}
+
 /**
  * Emits an `EXEC SQL` block.
  *
@@ -1992,30 +2165,11 @@ function emitSqlStatement(
     ? resolveIdentifier(statement.intoRecord)
     : null;
 
-  const rewritten = declaration.text.replace(
-    /:([A-Za-z_][A-Za-z0-9_]*)/g,
-    (match, name: string) => {
-      const parameterIndex = declaration.parameters.findIndex(
-        (parameter) => parameter.name === name,
-      );
-      if (parameterIndex >= 0) {
-        return `:${sqlParameterName(declaration.name, parameterIndex)}`;
-      }
-      if (intoRecord) {
-        return `:${toCobolFieldName(name)} OF ${intoRecord}`;
-      }
-      return match;
-    },
+  emitExecSql(
+    rewriteHostVariables(declaration.text, declaration, intoRecord).split("\n"),
+    addLine,
+    indent,
   );
-
-  addLine(`${indent}EXEC SQL`);
-  for (const line of rewritten.split("\n")) {
-    const text = line.trim();
-    if (text.length > 0) {
-      addLine(`${indent}    ${text}`);
-    }
-  }
-  addLine(`${indent}END-EXEC`);
 }
 
 function parameterFieldName(functionName: string, index: number): string {
@@ -2243,6 +2397,7 @@ function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
           break;
         case "WhileStatement":
         case "ForEachStatement":
+        case "CursorLoopStatement":
           visit(statement.body);
           break;
         case "SwitchStatement":

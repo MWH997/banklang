@@ -104,10 +104,10 @@ export function runGnucobolValidation(
 
   if (precompiled) {
     const translated = precompile(readFileSync(artifacts.cobolPath, "utf8"));
-    precompiledArtifact = artifacts.cobolPath.replace(
-      /\.cbl$/,
-      ".precompiled.cbl",
-    );
+    // `-PRE` rather than `.precompiled`, because GnuCOBOL caps a source file's
+    // base name at 31 characters and a suffix this tool chose should not be
+    // what makes a legitimate module name too long to validate.
+    precompiledArtifact = artifacts.cobolPath.replace(/\.cbl$/, "-PRE.cbl");
     writeFileSync(precompiledArtifact, translated.cobol, "utf8");
   }
 

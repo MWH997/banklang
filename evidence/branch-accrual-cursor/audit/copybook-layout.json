@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "AccrualRequest",
+      "cobolName": "ACCRUAL-REQUEST",
+      "totalLength": 47,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ACCRUAL-REQUEST.BRANCH-ID",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 8,
+          "bytes": 8
+        },
+        {
+          "order": 2,
+          "path": "ACCRUAL-REQUEST.ACCRUAL-RATE",
+          "type": "decimal<5,4>",
+          "picture": "PIC S9(1)V9999 COMP-3",
+          "usage": "COMP-3",
+          "offset": 8,
+          "length": 3,
+          "bytes": 3
+        },
+        {
+          "order": 3,
+          "path": "ACCRUAL-REQUEST.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 11,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    },
+    {
+      "recordName": "AccountRow",
+      "cobolName": "ACCOUNT-ROW",
+      "totalLength": 34,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ACCOUNT-ROW.ROW-ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "ACCOUNT-ROW.ROW-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "ACCOUNT-ROW.ROW-STATUS",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 8,
+          "bytes": 8
+        }
+      ]
+    },
+    {
+      "recordName": "AccrualSummary",
+      "cobolName": "ACCRUAL-SUMMARY",
+      "totalLength": 64,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ACCRUAL-SUMMARY.SUMMARY-BRANCH-ID",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 8,
+          "bytes": 8
+        },
+        {
+          "order": 2,
+          "path": "ACCRUAL-SUMMARY.ACCOUNTS-READ",
+          "type": "decimal<9,0>",
+          "picture": "PIC S9(9) COMP-3",
+          "usage": "COMP-3",
+          "offset": 8,
+          "length": 5,
+          "bytes": 5
+        },
+        {
+          "order": 3,
+          "path": "ACCRUAL-SUMMARY.ACCOUNTS-ACCRUED",
+          "type": "decimal<9,0>",
+          "picture": "PIC S9(9) COMP-3",
+          "usage": "COMP-3",
+          "offset": 13,
+          "length": 5,
+          "bytes": 5
+        },
+        {
+          "order": 4,
+          "path": "ACCRUAL-SUMMARY.INTEREST-POSTED",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 18,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 5,
+          "path": "ACCRUAL-SUMMARY.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 28,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    }
+  ]
+}

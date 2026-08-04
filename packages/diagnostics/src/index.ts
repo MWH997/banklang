@@ -473,6 +473,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: false,
   },
   {
+    id: "BANK-SQL-005",
+    title: "Cursor and statement confused",
+    explanation:
+      "A cursor was executed like a single-row statement, or a single-row statement was read like a cursor. They lower to different Db2 statements: a statement is one EXEC SQL, a cursor is DECLARE, OPEN, FETCH, and CLOSE.",
+    remediation:
+      "Run a `sql` declaration with `execute`, and read a `cursor` declaration with `for each <row> in <cursor>(...) limit <n>`.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
+  },
+  {
+    id: "BANK-SQL-006",
+    title: "Cursor row binding missing",
+    explanation:
+      "A cursor declares no result record, or no INTO clause naming where a fetched row lands. Either way the generated FETCH would have nowhere to put a row, and the compiler does not parse SQL well enough to bind the select list positionally instead.",
+    remediation:
+      "Declare the result record, and write `INTO :field, ...` between the select list and FROM.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
+  },
+  {
     id: "BANK-CICS-001",
     title: "CICS response code not captured",
     explanation:

@@ -60,7 +60,12 @@ export interface IRSql {
   span: SourceSpan;
   parameters: IRParameter[];
   resultRecordName: string | null;
+  /** `statement` runs once; `cursor` is declared, opened, fetched, and closed. */
+  form: "statement" | "cursor";
   text: string;
+  /** A cursor's SELECT without its INTO, and that INTO on its own. */
+  cursorSelect: string | null;
+  cursorInto: string | null;
   hostVariables: { name: string; origin: "parameter" | "result" }[];
 }
 
@@ -168,7 +173,27 @@ export type IRStatement =
   | IRSqlStatement
   | IRCicsStatement
   | IRForEachStatement
+  | IRCursorLoopStatement
   | IRRaiseStatement;
+
+/**
+ * A bounded read of a Db2 cursor.
+ *
+ * The OPEN and CLOSE are generated around the body rather than written, so the
+ * cursor cannot be left open — a cursor still holding locks at the end of a
+ * batch window is a defect the language can simply make unwritable.
+ */
+export interface IRCursorLoopStatement {
+  kind: "CursorLoopStatement";
+  span: SourceSpan;
+  cursorName: string;
+  args: IRExpression[];
+  /** COBOL group item each fetched row lands in. */
+  rowRecordName: string;
+  /** The most rows the loop may process. */
+  limit: number;
+  body: IRBlock;
+}
 
 /**
  * `raise "CODE"` — abandons the rest of the body and hands control to the
@@ -610,7 +635,10 @@ export function lowerProgramToIR(
           type: lowerType(parameter.type),
         })),
         resultRecordName: entry.result?.name ?? null,
+        form: entry.form,
         text: entry.text,
+        cursorSelect: entry.cursorSelect,
+        cursorInto: entry.cursorInto,
         hostVariables: entry.hostVariables,
       })),
       backendRequirements: [
@@ -693,7 +721,11 @@ function addCicsRespSymbols(
         addCicsRespSymbols(statement.elseBranch, scopeTypes);
       }
     }
-    if (statement.kind === "WhileStatement") {
+    if (
+      statement.kind === "WhileStatement" ||
+      statement.kind === "ForEachStatement" ||
+      statement.kind === "CursorLoopStatement"
+    ) {
       addCicsRespSymbols(statement.body, scopeTypes);
     }
     if (statement.kind === "SwitchStatement") {
@@ -938,6 +970,7 @@ function blockCanFail(block: IRBlock): boolean {
         }
         break;
       case "ForEachStatement":
+      case "CursorLoopStatement":
         if (blockCanFail(statement.body)) {
           return true;
         }
@@ -1037,6 +1070,7 @@ function blockPostsToLedger(block: IRBlock): boolean {
         break;
       case "WhileStatement":
       case "ForEachStatement":
+      case "CursorLoopStatement":
         if (blockPostsToLedger(statement.body)) {
           return true;
         }
@@ -1141,6 +1175,7 @@ function collectCalls(block: IRBlock): Set<string> {
           walkBlock(statement.body);
           break;
         case "ForEachStatement":
+        case "CursorLoopStatement":
           walkBlock(statement.body);
           break;
         case "SwitchStatement":
@@ -1310,6 +1345,25 @@ function lowerStatement(
         span: statement.span,
         code: statement.code,
       };
+    case "CursorLoopStatement": {
+      const cursor = sqlTable.get(statement.cursorName);
+      if (!cursor) {
+        throw new Error(
+          `Unresolved cursor during IR lowering: ${statement.cursorName}.`,
+        );
+      }
+      return {
+        kind: "CursorLoopStatement",
+        span: statement.span,
+        cursorName: statement.cursorName,
+        args: statement.args.map((argument) =>
+          lowerExpression(argument, scopeTypes),
+        ),
+        rowRecordName: statement.rowName,
+        limit: statement.limit,
+        body: lowerBlock(statement.body, scopeTypes),
+      };
+    }
     case "ForEachStatement": {
       const array = lowerExpression(statement.array, scopeTypes);
       const arrayType =

@@ -1,0 +1,280 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 27
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 4,
+      "targetEndLine": 5,
+      "category": "module",
+      "symbol": "BranchAccrualCursor"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 5,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 9,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 36,
+      "targetEndLine": 39,
+      "category": "record",
+      "symbol": "AccrualRequest"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 6,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 6,
+        "column": 23
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 37,
+      "targetEndLine": 37,
+      "category": "field",
+      "symbol": "branchId"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 7,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 7,
+        "column": 30
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 38,
+      "targetEndLine": 38,
+      "category": "field",
+      "symbol": "accrualRate"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 8,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 8,
+        "column": 30
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 39,
+      "targetEndLine": 39,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 11,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 40,
+      "targetEndLine": 43,
+      "category": "record",
+      "symbol": "AccountRow"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 12,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 12,
+        "column": 28
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 41,
+      "targetEndLine": 41,
+      "category": "field",
+      "symbol": "rowAccountId"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 13,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 13,
+        "column": 19
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 42,
+      "targetEndLine": 42,
+      "category": "field",
+      "symbol": "rowBalance"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 14,
+        "column": 24
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 43,
+      "targetEndLine": 43,
+      "category": "field",
+      "symbol": "rowStatus"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 17,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 23,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 44,
+      "targetEndLine": 49,
+      "category": "record",
+      "symbol": "AccrualSummary"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 18,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 18,
+        "column": 30
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 45,
+      "targetEndLine": 45,
+      "category": "field",
+      "symbol": "summaryBranchId"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 19,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 19,
+        "column": 31
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 46,
+      "targetEndLine": 46,
+      "category": "field",
+      "symbol": "accountsRead"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 20,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 20,
+        "column": 34
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 47,
+      "targetEndLine": 47,
+      "category": "field",
+      "symbol": "accountsAccrued"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 21,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 21,
+        "column": 23
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 48,
+      "targetEndLine": 48,
+      "category": "field",
+      "symbol": "interestPosted"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 22,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 22,
+        "column": 30
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 49,
+      "targetEndLine": 49,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 38,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 40,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 66,
+      "targetEndLine": 68,
+      "category": "function",
+      "symbol": "interestOn"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceStart": {
+        "line": 42,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 68,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "targetStartLine": 69,
+      "targetEndLine": 118,
+      "category": "transaction",
+      "symbol": "accrueBranch"
+    }
+  ]
+}

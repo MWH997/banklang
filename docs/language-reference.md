@@ -527,6 +527,68 @@ identical to one that was.
 Dynamic SQL (`EXECUTE IMMEDIATE`, `PREPARE`) is `BANK-SQL-002`, because it
 cannot be precompiled, bound, or checked ahead of time.
 
+### Cursors
+
+A query that returns many rows is declared with `cursor` and read with a bounded
+loop:
+
+```ts
+cursor accountsInBranch(keyBranch: string<8>): AccountRow {
+  SELECT ACCOUNT_ID, BALANCE, STATUS
+  INTO :rowAccountId, :rowBalance, :rowStatus
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+  ORDER BY ACCOUNT_ID
+}
+
+for each row in accountsInBranch(request.branchId) limit 5000 {
+  // runs once per row, with the row in `row`
+}
+```
+
+The `OPEN` and the `CLOSE` are generated around the body rather than written, so
+a cursor cannot be left open — a cursor still holding Db2 locks at the end of a
+batch window is a defect the language can simply make unwritable. There is
+deliberately no `open` / `fetch` / `close` to write by hand; that shape would
+need three more diagnostics to reach the same guarantee and would still permit
+the bug.
+
+The bound is mandatory, for the reason a `while` bound is: a cursor over a table
+nobody sized is an unbounded loop holding locks. Omitting it is `BANK-TXN-004`.
+
+The generated loop leaves on any non-zero `SQLCODE`, not only on 100. Treating
+an error as end-of-data would process a partial result set as though it were the
+whole one, which is how a batch silently under-posts. Because the loop tests
+`SQLCODE` itself, it does not put the body under `BANK-SQL-001`; an `execute` in
+the body still does.
+
+**Where the `INTO` goes.** `DECLARE CURSOR` may not carry an `INTO` — Db2 puts
+the row's destination on the `FETCH`, which is where a row actually arrives.
+Writing it on the SELECT is how the query reads, so the author writes it there
+and the compiler moves it:
+
+```cobol
+       EXEC SQL
+           DECLARE ACCOUNTS-IN-BRANCH CURSOR FOR
+           SELECT ACCOUNT_ID, BALANCE, STATUS
+           FROM ACCOUNT
+           WHERE BRANCH_ID = :ACCOUNTS-IN-BRANCH-H1
+           ORDER BY ACCOUNT_ID
+       END-EXEC.
+...
+           EXEC SQL
+               FETCH ACCOUNTS-IN-BRANCH
+               INTO :ROW-ACCOUNT-ID OF ACCOUNT-ROW, ...
+           END-EXEC
+```
+
+A cursor with no result record, or no `INTO`, is `BANK-SQL-006`: a fetched row
+would have nowhere to go, and this compiler does not parse SQL well enough to
+bind the select list to the record's fields positionally instead.
+
+A cursor and a `sql` statement are not interchangeable (`BANK-SQL-005`). One
+lowers to a single `EXEC SQL`, the other to four.
+
 ## 14. CICS
 
 An online transaction is declared with `cics`:

@@ -113,7 +113,10 @@ Outcomes the program branches on can be scripted, because the reference Db2 and
 CICS runtimes decide nothing on their own. Seeding `SQLCODE 100` for a statement,
 or `PGMIDERR` for a command, executes the branch the generated program guards
 with `sqlcode == 0` or a `resp` test rather than reading it out of the emitted
-COBOL. See `runtime/README.md` for the file format.
+COBOL. A scripted count of successful fetches does the same for a cursor: the
+loop's own decisions — when it stops, whether it closes, and whether the declared
+bound holds when the rows never run out — are executed rather than inspected. See
+`runtime/README.md` for the file format.
 
 The suite skips when `cobc` is unavailable, and CI installs GnuCOBOL so it does
 not skip there.

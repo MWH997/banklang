@@ -225,6 +225,17 @@ SQL host variable does not match expected COBOL field layout.
 
 SQL statement participates in a transaction without clear commit/rollback mapping.
 
+### `BANK-SQL-005` cursor and statement confused
+
+A `cursor` was run with `execute`, or a `sql` statement was read with a cursor
+loop. One lowers to a single `EXEC SQL`; the other to `DECLARE`, `OPEN`,
+`FETCH`, and `CLOSE`.
+
+### `BANK-SQL-006` cursor row binding missing
+
+A cursor declares no result record, or no `INTO` clause naming where a fetched
+row lands, so the generated `FETCH` would have nowhere to put one.
+
 ## 9. CICS diagnostics
 
 ### `BANK-CICS-001` CICS response code not handled

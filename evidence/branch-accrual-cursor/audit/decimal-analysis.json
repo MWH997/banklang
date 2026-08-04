@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "entries": [
+    {
+      "category": "record-field",
+      "owner": "AccrualRequest",
+      "symbol": "accrualRate",
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "start": {
+          "line": 7,
+          "column": 3
+        },
+        "end": {
+          "line": 7,
+          "column": 30
+        }
+      },
+      "precision": 5,
+      "scale": 4,
+      "packedBytes": 3,
+      "picture": "PIC S9(1)V9999 COMP-3"
+    },
+    {
+      "category": "record-field",
+      "owner": "AccrualSummary",
+      "symbol": "accountsRead",
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "start": {
+          "line": 19,
+          "column": 3
+        },
+        "end": {
+          "line": 19,
+          "column": 31
+        }
+      },
+      "precision": 9,
+      "scale": 0,
+      "packedBytes": 5,
+      "picture": "PIC S9(9) COMP-3"
+    },
+    {
+      "category": "record-field",
+      "owner": "AccrualSummary",
+      "symbol": "accountsAccrued",
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "start": {
+          "line": 20,
+          "column": 3
+        },
+        "end": {
+          "line": 20,
+          "column": 34
+        }
+      },
+      "precision": 9,
+      "scale": 0,
+      "packedBytes": 5,
+      "picture": "PIC S9(9) COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "interestOn",
+      "symbol": "rate",
+      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "start": {
+          "line": 38,
+          "column": 35
+        },
+        "end": {
+          "line": 38,
+          "column": 54
+        }
+      },
+      "precision": 5,
+      "scale": 4,
+      "packedBytes": 3,
+      "picture": "PIC S9(1)V9999 COMP-3"
+    }
+  ]
+}
