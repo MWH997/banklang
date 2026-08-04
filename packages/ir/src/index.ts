@@ -40,16 +40,25 @@ export interface IRProgram {
   functions: IRFunction[];
   transactions: IRTransaction[];
   files: IRFile[];
+  enums: IREnum[];
+}
+
+export interface IREnum {
+  kind: "Enum";
+  name: string;
+  span: SourceSpan;
+  members: string[];
 }
 
 export interface IRFile {
   kind: "File";
   name: string;
   span: SourceSpan;
-  organization: "sequential";
+  organization: "sequential" | "indexed" | "relative";
   mode: "input" | "output";
   record: IRRecord;
   statusName: string | null;
+  keyFieldName: string | null;
 }
 
 export interface IRTransaction {
@@ -105,7 +114,17 @@ export type IRStatement =
   | IRWhileStatement
   | IRAssignStatement
   | IRExpressionStatement
-  | IRFileStatement;
+  | IRFileStatement
+  | IRSwitchStatement;
+
+export interface IRSwitchStatement {
+  kind: "SwitchStatement";
+  span: SourceSpan;
+  subject: IRExpression;
+  enumName: string;
+  cases: { member: string; body: IRBlock }[];
+  otherwise: IRBlock | null;
+}
 
 export interface IRWhileStatement {
   kind: "WhileStatement";
@@ -136,7 +155,10 @@ export interface IRFileStatement {
   recordName: string | null;
   /** Mode of the declared file, needed to emit OPEN INPUT vs OPEN OUTPUT. */
   fileMode: "input" | "output";
+  fileOrganization: "sequential" | "indexed" | "relative";
   statusName: string | null;
+  keyFieldName: string | null;
+  key: IRExpression | null;
 }
 
 export interface IRLedgerStatement {
@@ -187,7 +209,34 @@ export type IRExpression =
   | IRLogicalExpression
   | IRNotExpression
   | IRRoundedExpression
-  | IRCallExpression;
+  | IRCallExpression
+  | IREnumMemberExpression
+  | IRIndexAccessExpression
+  | IRNullableCheckExpression;
+
+export interface IREnumMemberExpression {
+  kind: "EnumMember";
+  span: SourceSpan;
+  enumName: string;
+  member: string;
+  resolvedType: EnumIRType;
+}
+
+export interface IRIndexAccessExpression {
+  kind: "IndexAccess";
+  span: SourceSpan;
+  target: IRIdentifierExpression | IRMemberAccessExpression;
+  index: IRExpression;
+  resolvedType: IRType;
+}
+
+export interface IRNullableCheckExpression {
+  kind: "NullableCheck";
+  span: SourceSpan;
+  operation: "isPresent" | "valueOf";
+  operand: IRExpression;
+  resolvedType: IRType;
+}
 
 export interface IRStringLiteralExpression {
   kind: "StringLiteral";
@@ -202,6 +251,8 @@ export interface IRMemberAccessExpression {
   targetName: string;
   recordName: string;
   member: string;
+  /** Subscript when the field is reached through an array element. */
+  index: IRExpression | null;
   resolvedType: IRType;
 }
 
@@ -277,7 +328,39 @@ export interface IRBinaryArithmeticExpression {
   resolvedType: DecimalIRType;
 }
 
-export type IRType = DecimalIRType | StringIRType | BoolIRType | RecordIRType;
+export type IRType =
+  | DecimalIRType
+  | StringIRType
+  | BoolIRType
+  | RecordIRType
+  | CurrencyIRType
+  | EnumIRType
+  | NullableIRType
+  | ArrayIRType;
+
+export interface CurrencyIRType {
+  kind: "currency";
+  code: string;
+  precision: number;
+  scale: number;
+}
+
+export interface EnumIRType {
+  kind: "enum";
+  name: string;
+  members: string[];
+}
+
+export interface NullableIRType {
+  kind: "nullable";
+  inner: IRType;
+}
+
+export interface ArrayIRType {
+  kind: "array";
+  element: IRType;
+  length: number;
+}
 
 export interface DecimalIRType {
   kind: "decimal";
@@ -327,8 +410,15 @@ export function lowerProgramToIR(
   for (const file of typechecked.files) {
     fileTable.set(file.name, {
       mode: file.mode,
+      organization: file.organization,
       statusName: file.statusName,
+      keyFieldName: file.keyField?.name ?? null,
     });
+  }
+
+  enumTable.clear();
+  for (const entry of typechecked.enums) {
+    enumTable.set(entry.name, entry.members);
   }
 
   functionTable.clear();
@@ -348,6 +438,7 @@ export function lowerProgramToIR(
     mode: file.mode,
     record: lowerRecord(file.record, recordTypeMap),
     statusName: file.statusName,
+    keyFieldName: file.keyField?.name ?? null,
   }));
 
   return {
@@ -360,6 +451,12 @@ export function lowerProgramToIR(
       functions,
       transactions,
       files,
+      enums: typechecked.enums.map((entry) => ({
+        kind: "Enum" as const,
+        name: entry.name,
+        span: entry.span,
+        members: entry.members,
+      })),
     },
     diagnostics: typechecked.diagnostics,
   };
@@ -368,9 +465,17 @@ export function lowerProgramToIR(
 /** Declared files and function return types, for lowering references. */
 const fileTable = new Map<
   string,
-  { mode: "input" | "output"; statusName: string | null }
+  {
+    mode: "input" | "output";
+    organization: "sequential" | "indexed" | "relative";
+    statusName: string | null;
+    keyFieldName: string | null;
+  }
 >();
 const functionTable = new Map<string, IRType>();
+
+/** Declared enums, for lowering member references and switch statements. */
+const enumTable = new Map<string, string[]>();
 
 /** File status fields are readable in any body, so they must be in IR scope. */
 function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
@@ -512,6 +617,25 @@ function lowerStatement(
         span: statement.span,
         expression: lowerExpression(statement.expression, scopeTypes),
       };
+    case "SwitchStatement": {
+      const subject = lowerExpression(statement.subject, scopeTypes);
+      if (subject.resolvedType.kind !== "enum") {
+        throw new Error("Switch subject must be an enum during IR lowering.");
+      }
+      return {
+        kind: "SwitchStatement",
+        span: statement.span,
+        subject,
+        enumName: subject.resolvedType.name,
+        cases: statement.cases.map((branch) => ({
+          member: branch.member,
+          body: lowerBlock(branch.body, scopeTypes),
+        })),
+        otherwise: statement.otherwise
+          ? lowerBlock(statement.otherwise, scopeTypes)
+          : null,
+      };
+    }
     case "FileStatement": {
       const file = fileTable.get(statement.fileName);
       if (!file) {
@@ -526,7 +650,10 @@ function lowerStatement(
         fileName: statement.fileName,
         recordName: statement.recordName,
         fileMode: file.mode,
+        fileOrganization: file.organization,
         statusName: file.statusName,
+        keyFieldName: file.keyFieldName,
+        key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
       };
     }
   }
@@ -619,6 +746,50 @@ function lowerExpression(
         },
       };
     }
+    case "IndexAccess": {
+      const target = lowerExpression(expression.target, scopeTypes);
+      if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
+        throw new Error("Index target must be an identifier or field.");
+      }
+      const element =
+        target.resolvedType.kind === "array"
+          ? target.resolvedType.element
+          : target.resolvedType;
+      return {
+        kind: "IndexAccess",
+        span: expression.span,
+        target,
+        index: lowerExpression(expression.index, scopeTypes),
+        resolvedType: element,
+      };
+    }
+    case "NullableCheck": {
+      const operand = lowerExpression(expression.operand, scopeTypes);
+      const inner =
+        operand.resolvedType.kind === "nullable"
+          ? operand.resolvedType.inner
+          : operand.resolvedType;
+      return {
+        kind: "NullableCheck",
+        span: expression.span,
+        operation: expression.operation,
+        operand,
+        resolvedType:
+          expression.operation === "isPresent" ? { kind: "bool" } : inner,
+      };
+    }
+    case "EnumMember":
+      return {
+        kind: "EnumMember",
+        span: expression.span,
+        enumName: expression.enumName,
+        member: expression.member,
+        resolvedType: {
+          kind: "enum",
+          name: expression.enumName,
+          members: enumTable.get(expression.enumName) ?? [],
+        },
+      };
     case "CallExpression": {
       const signature = functionTable.get(expression.callee);
       if (!signature) {
@@ -642,12 +813,86 @@ function lowerExpression(
 function lowerMemberAccessExpression(
   expression: MemberAccessNode,
   scopeTypes: Map<string, IRType>,
-): IRMemberAccessExpression {
-  const targetType = scopeTypes.get(expression.target.name);
-  if (!targetType || targetType.kind !== "record") {
-    throw new Error(
-      `Unresolved record during IR lowering: ${expression.target.name}`,
+): IRMemberAccessExpression | IREnumMemberExpression {
+  // `Status.ACTIVE` parses as member access but lowers to an enum member.
+  if (
+    expression.target.kind === "Identifier" &&
+    !scopeTypes.has(expression.target.name) &&
+    enumTable.has(expression.target.name)
+  ) {
+    const enumName = expression.target.name;
+    return {
+      kind: "EnumMember",
+      span: expression.span,
+      enumName,
+      member: expression.member,
+      resolvedType: {
+        kind: "enum",
+        name: enumName,
+        members: enumTable.get(enumName) ?? [],
+      },
+    };
+  }
+
+  // `lines[i].amount`: the record is the array's element type, and the
+  // subscript is carried so the backend can emit FIELD OF RECORD (INDEX).
+  if (expression.target.kind === "IndexAccess") {
+    const arrayTarget = expression.target.target;
+    const holderName =
+      arrayTarget.kind === "Identifier" ? arrayTarget.name : arrayTarget.member;
+    const holderType =
+      arrayTarget.kind === "Identifier"
+        ? scopeTypes.get(arrayTarget.name)
+        : lowerMemberAccessExpression(arrayTarget, scopeTypes).resolvedType;
+
+    const arrayType =
+      holderType?.kind === "array"
+        ? holderType
+        : holderType?.kind === "record"
+          ? holderType.fields.find(
+              (field) =>
+                arrayTarget.kind === "MemberAccess" &&
+                field.name === arrayTarget.member,
+            )?.type
+          : undefined;
+
+    const elementType =
+      arrayType && arrayType.kind === "array" ? arrayType.element : undefined;
+
+    if (!elementType || elementType.kind !== "record") {
+      throw new Error(
+        `Indexed field access requires an array of records: ${holderName}`,
+      );
+    }
+
+    const field = elementType.fields.find(
+      (candidate) => candidate.name === expression.member,
     );
+    if (!field) {
+      throw new Error(
+        `Unresolved field during IR lowering: ${holderName}[..].${expression.member}`,
+      );
+    }
+
+    return {
+      kind: "MemberAccess",
+      span: expression.span,
+      targetName: holderName,
+      recordName: rootRecordName(arrayTarget, scopeTypes),
+      member: expression.member,
+      index: lowerExpression(expression.target.index, scopeTypes),
+      resolvedType: field.type,
+    };
+  }
+
+  if (expression.target.kind !== "Identifier") {
+    throw new Error("Unsupported member access target during IR lowering.");
+  }
+
+  const targetName = expression.target.name;
+  const targetType = scopeTypes.get(targetName);
+  if (!targetType || targetType.kind !== "record") {
+    throw new Error(`Unresolved record during IR lowering: ${targetName}`);
   }
 
   const field = targetType.fields.find(
@@ -655,18 +900,37 @@ function lowerMemberAccessExpression(
   );
   if (!field) {
     throw new Error(
-      `Unresolved field during IR lowering: ${expression.target.name}.${expression.member}`,
+      `Unresolved field during IR lowering: ${targetName}.${expression.member}`,
     );
   }
 
   return {
     kind: "MemberAccess",
     span: expression.span,
-    targetName: expression.target.name,
+    targetName,
     recordName: targetType.name,
     member: expression.member,
+    index: null,
     resolvedType: field.type,
   };
+}
+
+/** The COBOL group item a subscripted field is qualified by. */
+function rootRecordName(
+  target: IdentifierNode | MemberAccessNode,
+  scopeTypes: Map<string, IRType>,
+): string {
+  if (target.kind === "MemberAccess" && target.target.kind === "Identifier") {
+    const holder = scopeTypes.get(target.target.name);
+    return holder?.kind === "record" ? holder.name : target.target.name;
+  }
+  const direct =
+    target.kind === "Identifier" ? scopeTypes.get(target.name) : undefined;
+  return direct?.kind === "record"
+    ? direct.name
+    : target.kind === "Identifier"
+      ? target.name
+      : target.member;
 }
 
 function lowerIdentifierExpression(
@@ -812,6 +1076,23 @@ function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
 
 function lowerType(type: ResolvedType): IRType {
   switch (type.kind) {
+    case "currency":
+      return {
+        kind: "currency",
+        code: type.code,
+        precision: type.precision,
+        scale: type.scale,
+      };
+    case "enum":
+      return { kind: "enum", name: type.name, members: type.members };
+    case "nullable":
+      return { kind: "nullable", inner: lowerType(type.inner) };
+    case "array":
+      return {
+        kind: "array",
+        element: lowerType(type.element),
+        length: type.length,
+      };
     case "decimal":
       return lowerDecimalType(type);
     case "string":

@@ -1,5 +1,6 @@
 import type { IRProgram, IRRecord, IRType } from "../../ir/src/index";
 import {
+  enumWidth,
   decimalPicture,
   packedDecimalByteLength,
   toCobolName,
@@ -100,8 +101,20 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
   };
 }
 
+/** Db2-style null indicator: a two-byte signed halfword beside the value. */
+export const NULL_INDICATOR_BYTES = 2;
+
 export function fieldLength(type: IRType): number {
   switch (type.kind) {
+    case "currency":
+      return packedDecimalByteLength(type.precision);
+    case "enum":
+      return enumWidth(type.members);
+    case "nullable":
+      // The value plus a two-byte null indicator, following the Db2 convention.
+      return fieldLength(type.inner) + NULL_INDICATOR_BYTES;
+    case "array":
+      return fieldLength(type.element) * type.length;
     case "decimal":
       return packedDecimalByteLength(type.precision);
     case "string":
@@ -460,6 +473,14 @@ function formatLayoutType(type: IRType): string {
       return "bool";
     case "record":
       return `record<${type.name}>`;
+    case "currency":
+      return `currency<"${type.code}",${type.precision},${type.scale}>`;
+    case "enum":
+      return `enum<${type.name}>`;
+    case "nullable":
+      return `nullable<${formatLayoutType(type.inner)}>`;
+    case "array":
+      return `${formatLayoutType(type.element)}[${type.length}]`;
   }
 }
 
@@ -476,6 +497,14 @@ function formatLayoutUsage(type: IRType): string {
   switch (type.kind) {
     case "decimal":
       return "COMP-3";
+    case "currency":
+      return "COMP-3";
+    case "enum":
+      return "DISPLAY";
+    case "nullable":
+      return formatLayoutUsage(type.inner);
+    case "array":
+      return formatLayoutUsage(type.element);
     case "string":
       return "DISPLAY";
     case "bool":

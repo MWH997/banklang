@@ -895,6 +895,12 @@ function describeExpression(expression: IRExpression): string {
       return `round(${describeExpression(expression.operand)}, ${expression.mode})`;
     case "Call":
       return `${expression.callee}(${expression.args.map(describeExpression).join(", ")})`;
+    case "EnumMember":
+      return `${expression.enumName}.${expression.member}`;
+    case "IndexAccess":
+      return `${describeExpression(expression.target)}[${describeExpression(expression.index)}]`;
+    case "NullableCheck":
+      return `${expression.operation}(${describeExpression(expression.operand)})`;
   }
 }
 
@@ -912,6 +918,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         functions: [],
         transactions: [],
         files: [],
+        enums: [],
       };
   const ir = parsed.program
     ? lowerProgramToIR(typechecked)

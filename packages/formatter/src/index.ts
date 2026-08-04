@@ -222,14 +222,23 @@ function printDeclaration(
       return;
 
     case "FileDeclaration": {
+      const key = declaration.keyField ? ` key ${declaration.keyField}` : "";
       const status = declaration.statusName
         ? ` status ${declaration.statusName}`
         : "";
       printer.push(
-        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${status};${trailing}`,
+        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${key}${status};${trailing}`,
       );
       return;
     }
+
+    case "EnumDeclaration":
+      printer.push(`enum ${declaration.name} {${trailing}`);
+      for (const member of declaration.members) {
+        printer.push(`${INDENT}${member},`);
+      }
+      printer.push("}");
+      return;
   }
 }
 
@@ -331,9 +340,28 @@ function printStatement(
           : statement.operation === "write"
             ? ` from ${statement.recordName}`
             : "";
+      const key = statement.key ? ` key ${printExpression(statement.key)}` : "";
       printer.push(
-        `${indent}${statement.operation} ${statement.fileName}${clause};${trailing}`,
+        `${indent}${statement.operation} ${statement.fileName}${clause}${key};${trailing}`,
       );
+      return;
+    }
+
+    case "SwitchStatement": {
+      printer.push(
+        `${indent}switch ${printExpression(statement.subject)} {${trailing}`,
+      );
+      for (const branch of statement.cases) {
+        printer.push(`${indent}${INDENT}case ${branch.member} {`);
+        printBlockBody(branch.body, printer, depth + 2);
+        printer.push(`${indent}${INDENT}}`);
+      }
+      if (statement.otherwise) {
+        printer.push(`${indent}${INDENT}else {`);
+        printBlockBody(statement.otherwise, printer, depth + 2);
+        printer.push(`${indent}${INDENT}}`);
+      }
+      printer.push(`${indent}}`);
       return;
     }
   }
@@ -349,6 +377,12 @@ function printType(type: TypeNode): string {
       return "bool";
     case "TypeReference":
       return type.name;
+    case "CurrencyType":
+      return `currency<"${type.code}", ${type.precision}, ${type.scale}>`;
+    case "NullableType":
+      return `nullable<${printType(type.inner)}>`;
+    case "ArrayType":
+      return `${printType(type.element)}[${type.length}]`;
   }
 }
 
@@ -363,7 +397,7 @@ function printExpression(expression: ExpressionNode): string {
     case "StringLiteral":
       return `"${expression.value}"`;
     case "MemberAccess":
-      return `${expression.target.name}.${expression.member}`;
+      return `${printExpression(expression.target)}.${expression.member}`;
     case "BinaryExpression":
       return `${printExpression(expression.left)} ${expression.operator} ${printExpression(expression.right)}`;
     case "UnaryExpression":
@@ -375,5 +409,11 @@ function printExpression(expression: ExpressionNode): string {
         : `round(${printExpression(expression.operand)}, "${expression.mode}")`;
     case "CallExpression":
       return `${expression.callee}(${expression.args.map(printExpression).join(", ")})`;
+    case "EnumMember":
+      return `${expression.enumName}.${expression.member}`;
+    case "IndexAccess":
+      return `${printExpression(expression.target)}[${printExpression(expression.index)}]`;
+    case "NullableCheck":
+      return `${expression.operation}(${printExpression(expression.operand)})`;
   }
 }

@@ -143,22 +143,33 @@ describe("file COBOL emission", () => {
   it("emits a FILE-CONTROL entry with the FILE STATUS clause", () => {
     const { emit } = compileExample("examples/account-file-batch");
 
-    expect(emit.cobol).toContain("SELECT ACCOUNT-INPUT ASSIGN TO ACCOUNTI");
+    expect(emit.cobol).toContain(
+      "SELECT ACCOUNT-INPUT-FILE ASSIGN TO ACCOUNTI",
+    );
     expect(emit.cobol).toContain("FILE STATUS IS ACCOUNT-INPUT-STATUS.");
   });
 
   /**
-   * Emitting the structured record inside every FD would duplicate field names
-   * across FD and working storage, and GnuCOBOL rejects the resulting
-   * unqualified references as ambiguous.
+   * The FD record carries the real field structure so per-field access works.
+   * Field names are not prefixed: COBOL allows duplicate data names as long as
+   * every reference is qualified, and a prefix would collide with the
+   * conventional `<file>Status` name for the file status field.
    */
-  it("emits the FD record as a buffer sized from the copybook layout", () => {
+  it("emits a structured FD record", () => {
     const { emit } = compileExample("examples/account-file-batch");
 
-    expect(emit.cobol).toContain("01  ACCOUNT-INPUT-RECORD     PIC X(26).");
-    expect(emit.cobol).not.toMatch(
-      /01 {2}ACCOUNT-INPUT-RECORD\.\n {11}05 {2}ACCOUNT-ID/,
-    );
+    expect(emit.cobol).toContain("01  ACCOUNT-INPUT-RECORD.");
+    expect(emit.cobol).toContain("05  ACCOUNT-ID           PIC X(16).");
+    expect(emit.cobol).toContain("05  BALANCE              PIC S9(16)V99");
+  });
+
+  it("suffixes COBOL file names so they cannot collide with a record", () => {
+    const { emit } = compileExample("examples/account-file-batch");
+
+    expect(emit.cobol).toContain("FD  ACCOUNT-INPUT-FILE.");
+    expect(emit.cobol).toContain("SELECT ACCOUNT-INPUT-FILE");
+    // The record type keeps the unsuffixed name, so the two cannot collide.
+    expect(emit.cobol).toContain("01  ACCOUNT-RECORD.");
   });
 
   it("declares each file status field once in working storage", () => {

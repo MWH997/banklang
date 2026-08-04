@@ -45,6 +45,16 @@ import {
   type AssignStatementNode,
   type ExpressionStatementNode,
   type FileStatementNode,
+  type CurrencyTypeNode,
+  type NullableTypeNode,
+  type ArrayTypeNode,
+  type EnumDeclarationNode,
+  type EnumMemberNode,
+  type IndexAccessNode,
+  type NullableCheckNode,
+  type SwitchStatementNode,
+  type SwitchCaseNode,
+  type FileOrganization,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -71,6 +81,11 @@ const KEYWORDS = new Set([
   "if",
   "else",
   "while",
+  "switch",
+  "case",
+  "enum",
+  "currency",
+  "nullable",
   "transaction",
   "file",
 ]);
@@ -80,7 +95,10 @@ const KEYWORDS = new Set([
  * `input`, `output`, and `status` stay usable as field and parameter names.
  */
 const FILE_MODES = new Set(["input", "output"]);
-const FILE_ORGANIZATIONS = new Set(["sequential"]);
+const FILE_ORGANIZATIONS = new Set(["sequential", "indexed", "relative"]);
+
+/** Built-ins for working with nullable values. */
+const NULLABLE_BUILTINS = new Set(["isPresent", "valueOf"]);
 
 /**
  * Ledger and audit operations are matched contextually rather than reserved as
@@ -472,12 +490,55 @@ class Parser {
       return this.parseFileDeclaration();
     }
 
+    if (this.matchKeyword("enum")) {
+      return this.parseEnumDeclaration();
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a declaration.",
     );
     return null;
+  }
+
+  private parseEnumDeclaration(): EnumDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected enum name.");
+    const openBrace = this.expectPunctuation(
+      "{",
+      "Expected `{` to start enum body.",
+    );
+    const members: string[] = [];
+
+    while (!this.is("eof") && !this.isPunctuation("}")) {
+      const memberToken = this.expectIdentifier("Expected an enum member.");
+      if (!memberToken) {
+        return null;
+      }
+      members.push(memberToken.text);
+      if (!this.matchPunctuation(",")) {
+        break;
+      }
+    }
+
+    const close = this.expectPunctuation(
+      "}",
+      "Expected `}` to close enum body.",
+    );
+    if (!nameToken || !openBrace || !close) {
+      return null;
+    }
+
+    return {
+      kind: "EnumDeclaration",
+      name: nameToken.text,
+      members,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: close.span.end,
+      },
+    };
   }
 
   private parseFileDeclaration(): FileDeclarationNode | null {
@@ -496,6 +557,19 @@ class Parser {
     const recordTypeToken = this.expectIdentifier(
       "Expected the record type name.",
     );
+
+    let keyField: string | null = null;
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "key" &&
+      this.next.kind === "identifier"
+    ) {
+      this.advance();
+      const keyToken = this.expectIdentifier(
+        "Expected a key field name after `key`.",
+      );
+      keyField = keyToken?.text ?? null;
+    }
 
     let statusName: string | null = null;
     if (
@@ -529,10 +603,11 @@ class Parser {
     return {
       kind: "FileDeclaration",
       name: nameToken.text,
-      organization: organizationToken.text as "sequential",
+      organization: organizationToken.text as FileOrganization,
       mode: modeToken.text as "input" | "output",
       recordTypeName: recordTypeToken.text,
       statusName,
+      keyField,
       span: {
         sourceFile: fileToken.span.sourceFile,
         start: fileToken.span.start,
@@ -795,6 +870,10 @@ class Parser {
       return this.parseWhileStatement();
     }
 
+    if (this.matchKeyword("switch")) {
+      return this.parseSwitchStatement();
+    }
+
     if (
       this.current.kind === "identifier" &&
       FILE_OPERATIONS.has(this.current.text) &&
@@ -901,6 +980,73 @@ class Parser {
     };
   }
 
+  private parseSwitchStatement(): SwitchStatementNode | null {
+    const switchToken = this.previous;
+    if (!switchToken) {
+      return null;
+    }
+
+    const subject = this.parseExpression();
+    this.expectPunctuation("{", "Expected `{` to start switch body.");
+
+    const cases: SwitchCaseNode[] = [];
+    let otherwise: BlockNode | null = null;
+
+    while (!this.is("eof") && !this.isPunctuation("}")) {
+      if (this.matchKeyword("case")) {
+        const caseToken = this.previous;
+        const memberToken = this.expectIdentifier("Expected an enum member.");
+        const body = this.parseBlock();
+        if (!caseToken || !memberToken || !body) {
+          return null;
+        }
+        cases.push({
+          kind: "SwitchCase",
+          member: memberToken.text,
+          body,
+          span: {
+            sourceFile: caseToken.span.sourceFile,
+            start: caseToken.span.start,
+            end: body.span.end,
+          },
+        });
+        continue;
+      }
+
+      if (this.matchKeyword("else")) {
+        otherwise = this.parseBlock();
+        if (!otherwise) {
+          return null;
+        }
+        continue;
+      }
+
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        `Unexpected token ${this.current.text} in switch body.`,
+        "Expected `case <MEMBER> { ... }` or `else { ... }`.",
+      );
+      return null;
+    }
+
+    const close = this.expectPunctuation("}", "Expected `}` to close switch.");
+    if (!subject || !close) {
+      return null;
+    }
+
+    return {
+      kind: "SwitchStatement",
+      subject,
+      cases,
+      otherwise,
+      span: {
+        sourceFile: switchToken.span.sourceFile,
+        start: switchToken.span.start,
+        end: close.span.end,
+      },
+    };
+  }
+
   private parseAssignStatement(): AssignStatementNode | null {
     const nameToken = this.advance();
     const identifier: IdentifierNode = {
@@ -982,6 +1128,19 @@ class Parser {
       recordName = recordToken.text;
     }
 
+    let key: ExpressionNode | null = null;
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "key" &&
+      operation === "read"
+    ) {
+      this.advance();
+      key = this.parseExpression();
+      if (!key) {
+        return null;
+      }
+    }
+
     const semicolon = this.expectPunctuation(
       ";",
       "Expected `;` after file statement.",
@@ -995,6 +1154,7 @@ class Parser {
       operation,
       fileName: fileToken.text,
       recordName,
+      key,
       span: {
         sourceFile: operationToken.span.sourceFile,
         start: operationToken.span.start,
@@ -1314,6 +1474,30 @@ class Parser {
 
     if (this.is("identifier")) {
       if (
+        NULLABLE_BUILTINS.has(this.current.text) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
+      ) {
+        const nameToken = this.advance();
+        this.expectPunctuation("(", "Expected `(`.");
+        const operand = this.parseExpression();
+        const close = this.expectPunctuation(")", "Expected `)`.");
+        if (!operand || !close) {
+          return null;
+        }
+        return {
+          kind: "NullableCheck",
+          operation: nameToken.text as "isPresent" | "valueOf",
+          operand,
+          span: {
+            sourceFile: nameToken.span.sourceFile,
+            start: nameToken.span.start,
+            end: close.span.end,
+          },
+        } satisfies NullableCheckNode;
+      }
+
+      if (
         ROUNDING_BUILTINS.has(this.current.text) &&
         this.next.kind === "punctuation" &&
         this.next.text === "("
@@ -1342,7 +1526,10 @@ class Parser {
           return null;
         }
 
-        return {
+        // `Status.ACTIVE` is an enum member; anything else is field access.
+        // Enum names are resolved by the typechecker, so both parse the same
+        // way and the distinction is made once types are known.
+        const access: MemberAccessNode = {
           kind: "MemberAccess",
           target: identifier,
           member: memberToken.text,
@@ -1351,10 +1538,12 @@ class Parser {
             start: token.span.start,
             end: memberToken.span.end,
           },
-        } satisfies MemberAccessNode;
+        };
+
+        return this.withIndexSuffix(access);
       }
 
-      return identifier;
+      return this.withIndexSuffix(identifier);
     }
 
     if (this.matchPunctuation("(")) {
@@ -1372,6 +1561,58 @@ class Parser {
       "Expected an expression.",
     );
     return null;
+  }
+
+  private withIndexSuffix(
+    target: MemberAccessNode | IdentifierNode,
+  ): ExpressionNode | null {
+    if (!this.isPunctuation("[")) {
+      return target;
+    }
+
+    this.advance();
+    const index = this.parseExpression();
+    const close = this.expectPunctuation(
+      "]",
+      "Expected `]` after array index.",
+    );
+    if (!index || !close) {
+      return null;
+    }
+
+    const indexed: IndexAccessNode = {
+      kind: "IndexAccess",
+      target,
+      index,
+      span: {
+        sourceFile: target.span.sourceFile,
+        start: target.span.start,
+        end: close.span.end,
+      },
+    };
+
+    // `lines[i].amount` reaches a field of the indexed element.
+    if (this.isPunctuation(".")) {
+      this.advance();
+      const memberToken = this.expectIdentifier(
+        "Expected field name after `.`.",
+      );
+      if (!memberToken) {
+        return null;
+      }
+      return {
+        kind: "MemberAccess",
+        target: indexed,
+        member: memberToken.text,
+        span: {
+          sourceFile: indexed.span.sourceFile,
+          start: indexed.span.start,
+          end: memberToken.span.end,
+        },
+      } satisfies MemberAccessNode;
+    }
+
+    return indexed;
   }
 
   private parseCallExpression(nameToken: Token): ExpressionNode | null {
@@ -1501,7 +1742,7 @@ class Parser {
       ) {
         return null;
       }
-      return {
+      return this.withArraySuffix({
         kind: "DecimalType",
         precision: Number(precisionToken.text),
         scale: Number(scaleToken.text),
@@ -1510,7 +1751,7 @@ class Parser {
           start: keyword.span.start,
           end: closeAngle.span.end,
         },
-      } satisfies DecimalTypeNode;
+      } satisfies DecimalTypeNode);
     }
 
     if (this.matchKeyword("string")) {
@@ -1527,7 +1768,7 @@ class Parser {
       if (!keyword || !openAngle || !lengthToken || !closeAngle) {
         return null;
       }
-      return {
+      return this.withArraySuffix({
         kind: "StringType",
         length: Number(lengthToken.text),
         span: {
@@ -1535,7 +1776,7 @@ class Parser {
           start: keyword.span.start,
           end: closeAngle.span.end,
         },
-      } satisfies StringTypeNode;
+      } satisfies StringTypeNode);
     }
 
     if (this.matchKeyword("bool")) {
@@ -1543,19 +1784,78 @@ class Parser {
       if (!keyword) {
         return null;
       }
-      return {
+      return this.withArraySuffix({
         kind: "BoolType",
         span: keyword.span,
-      } satisfies BoolTypeNode;
+      } satisfies BoolTypeNode);
+    }
+
+    if (this.matchKeyword("currency")) {
+      const keyword = this.previous;
+      this.expectPunctuation("<", "Expected `<` after `currency`.");
+      const codeToken = this.current;
+      if (codeToken.kind !== "string") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected a currency code string.",
+          'Write currency<"BDT", 18, 2>.',
+        );
+        return null;
+      }
+      this.advance();
+      this.expectPunctuation(",", "Expected `,` after the currency code.");
+      const precisionToken = this.expectNumber("Expected currency precision.");
+      this.expectPunctuation(",", "Expected `,` between precision and scale.");
+      const scaleToken = this.expectNumber("Expected currency scale.");
+      const closeAngle = this.expectPunctuation(
+        ">",
+        "Expected `>` to close currency type.",
+      );
+      if (!keyword || !precisionToken || !scaleToken || !closeAngle) {
+        return null;
+      }
+      return this.withArraySuffix({
+        kind: "CurrencyType",
+        code: codeToken.text,
+        precision: Number(precisionToken.text),
+        scale: Number(scaleToken.text),
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: closeAngle.span.end,
+        },
+      } satisfies CurrencyTypeNode);
+    }
+
+    if (this.matchKeyword("nullable")) {
+      const keyword = this.previous;
+      this.expectPunctuation("<", "Expected `<` after `nullable`.");
+      const inner = this.parseTypeNode();
+      const closeAngle = this.expectPunctuation(
+        ">",
+        "Expected `>` to close nullable type.",
+      );
+      if (!keyword || !inner || !closeAngle) {
+        return null;
+      }
+      return {
+        kind: "NullableType",
+        inner,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: closeAngle.span.end,
+        },
+      } satisfies NullableTypeNode;
     }
 
     if (this.is("identifier")) {
       const token = this.advance();
-      return {
+      return this.withArraySuffix({
         kind: "TypeReference",
         name: token.text,
         span: token.span,
-      } satisfies TypeReferenceNode;
+      } satisfies TypeReferenceNode);
     }
 
     this.errorAtCurrent(
@@ -1564,6 +1864,34 @@ class Parser {
       "Expected a type annotation.",
     );
     return null;
+  }
+
+  /** Applies a `[n]` suffix, producing a bounded array type. */
+  private withArraySuffix(type: TypeNode): TypeNode | null {
+    if (!this.isPunctuation("[")) {
+      return type;
+    }
+
+    this.advance();
+    const lengthToken = this.expectNumber("Expected an array length.");
+    const close = this.expectPunctuation(
+      "]",
+      "Expected `]` after array length.",
+    );
+    if (!lengthToken || !close) {
+      return null;
+    }
+
+    return {
+      kind: "ArrayType",
+      element: type,
+      length: Number(lengthToken.text),
+      span: {
+        sourceFile: type.span.sourceFile,
+        start: type.span.start,
+        end: close.span.end,
+      },
+    } satisfies ArrayTypeNode;
   }
 
   private expectKeyword(keyword: string, message: string): Token | null {

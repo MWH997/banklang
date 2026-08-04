@@ -245,6 +245,12 @@ function canonicalExpression(expression: IRExpression): string {
       return `round(${canonicalExpression(expression.operand)}, ${expression.mode})`;
     case "Call":
       return `${expression.callee}(${expression.args.map(canonicalExpression).join(", ")})`;
+    case "EnumMember":
+      return `${expression.enumName}.${expression.member}`;
+    case "IndexAccess":
+      return `${canonicalExpression(expression.target)}[${canonicalExpression(expression.index)}]`;
+    case "NullableCheck":
+      return `${expression.operation}(${canonicalExpression(expression.operand)})`;
   }
 }
 

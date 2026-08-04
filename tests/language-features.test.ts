@@ -388,10 +388,10 @@ transaction t(account: Account) {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("OPEN INPUT FEED");
-    expect(result.cobol).toContain("READ FEED INTO ACCOUNT");
+    expect(result.cobol).toContain("OPEN INPUT FEED-FILE");
+    expect(result.cobol).toContain("READ FEED-FILE INTO ACCOUNT");
     expect(result.cobol).toContain("WRITE SINK-RECORD FROM ACCOUNT");
-    expect(result.cobol).toContain("CLOSE FEED");
+    expect(result.cobol).toContain("CLOSE FEED-FILE");
   });
 
   it("sets the file status at end of file", () => {
