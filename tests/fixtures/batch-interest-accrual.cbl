@@ -17,8 +17,7 @@
            COMPUTE PROJECTED-BALANCE = BALANCE + 0000000000000025.00
            IF PROJECTED-BALANCE > 1000.00
                MOVE 'Y' TO IS-ELIGIBLE-FOR-INTEREST-RESULT
-               GOBACK.
            ELSE
                MOVE 'N' TO IS-ELIGIBLE-FOR-INTEREST-RESULT
-               GOBACK.
            END-IF
+           GOBACK.

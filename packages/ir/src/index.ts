@@ -30,6 +30,17 @@ export interface IRProgram {
   records: IRRecord[];
   functions: IRFunction[];
   transactions: IRTransaction[];
+  files: IRFile[];
+}
+
+export interface IRFile {
+  kind: "File";
+  name: string;
+  span: SourceSpan;
+  organization: "sequential";
+  mode: "input" | "output";
+  record: IRRecord;
+  statusName: string | null;
 }
 
 export interface IRTransaction {
@@ -234,6 +245,15 @@ export function lowerProgramToIR(
   const transactions = typechecked.transactions.map((transaction) =>
     lowerTransaction(transaction),
   );
+  const files = typechecked.files.map((file) => ({
+    kind: "File" as const,
+    name: file.name,
+    span: file.span,
+    organization: file.organization,
+    mode: file.mode,
+    record: lowerRecord(file.record, recordTypeMap),
+    statusName: file.statusName,
+  }));
 
   return {
     program: {
@@ -244,6 +264,7 @@ export function lowerProgramToIR(
       records,
       functions,
       transactions,
+      files,
     },
     diagnostics: typechecked.diagnostics,
   };

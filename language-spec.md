@@ -191,8 +191,8 @@ Rules:
 ## 13. File declarations
 
 ```ts
-file AccountInput sequential input record AccountRecord;
-file PostingOutput sequential output record PostingRecord;
+file accountInput sequential input record AccountRecord status accountInputStatus;
+file postingOutput sequential output record PostingRecord status postingOutputStatus;
 ```
 
 Rules:
@@ -200,6 +200,15 @@ Rules:
 - file status must be checked
 - record type must map to a copybook-compatible layout
 - generated COBOL must contain file-control and FD sections
+
+The `status` clause names the field that receives the COBOL `FILE STATUS`
+value. It is optional at parse time so that a missing status is reported as
+`BANK-FILE-001` with a remediation hint rather than as a syntax error.
+
+The `FD` record is emitted as an unstructured buffer sized from the copybook
+layout, and the structured record is declared once in working storage. Emitting
+the record inside each `FD` as well would duplicate field names and make every
+unqualified reference ambiguous.
 
 ## 14. Banned features
 

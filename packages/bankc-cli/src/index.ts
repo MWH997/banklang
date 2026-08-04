@@ -823,6 +823,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         records: [],
         functions: [],
         transactions: [],
+        files: [],
       };
   const ir = parsed.program
     ? lowerProgramToIR(typechecked)
@@ -838,6 +839,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
           transactionCount: 0,
           auditEventCount: 0,
           ledgerPostingCount: 0,
+          fileCount: 0,
         },
       };
 

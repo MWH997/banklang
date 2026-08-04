@@ -18,6 +18,7 @@ import type {
   IRLedgerStatement,
   IRAuditStatement,
   IRMemberAccessExpression,
+  IRFile,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -50,6 +51,7 @@ const LEDGER_ACCOUNT_LENGTH = 32;
 const LEDGER_AMOUNT_PICTURE = "PIC S9(16)V99 COMP-3";
 const AUDIT_EVENT_LENGTH = 32;
 const AUDIT_CORRELATION_LENGTH = 64;
+const FILE_STATUS_PICTURE = "PIC XX";
 
 export interface SourceMapEntry {
   sourceFile: string;
@@ -117,8 +119,43 @@ export function emitCobol(
   addLine(`       IDENTIFICATION DIVISION.`);
   addLine(`       PROGRAM-ID. ${toCobolProgramId(program.moduleName)}.`);
   addLine("");
+
+  if (program.files.length > 0) {
+    addLine(`       ENVIRONMENT DIVISION.`);
+    addLine(`       INPUT-OUTPUT SECTION.`);
+    addLine(`       FILE-CONTROL.`);
+    for (const file of program.files) {
+      emitFileControlEntry(file, addLine);
+    }
+    addLine("");
+  }
+
   addLine(`       DATA DIVISION.`);
+
+  if (program.files.length > 0) {
+    addLine(`       FILE SECTION.`);
+    for (const file of program.files) {
+      // The FD record is an unstructured buffer sized from the copybook
+      // layout. The structured record lives once in working storage, so
+      // READ INTO / WRITE FROM move between them without creating duplicate
+      // field names that would make every reference ambiguous.
+      const layout = describeRecordLayout(file.record);
+      addLine(`       FD  ${toCobolName(file.name)}.`);
+      addLine(
+        `       01  ${fileRecordName(file).padEnd(24)} PIC X(${layout.totalLength}).`,
+      );
+    }
+  }
+
   addLine(`       WORKING-STORAGE SECTION.`);
+
+  for (const file of program.files) {
+    if (file.statusName) {
+      addLine(
+        `       01  ${toCobolFieldName(file.statusName).padEnd(20)} ${FILE_STATUS_PICTURE}.`,
+      );
+    }
+  }
 
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
@@ -268,6 +305,41 @@ export function emitJcl(
   };
 }
 
+/**
+ * A SELECT entry binding the BankTS file declaration to a DD name, with the
+ * FILE STATUS clause when the declaration provides a status field. A missing
+ * status is reported by the analyzer as BANK-FILE-001 rather than silently
+ * omitted here.
+ */
+function emitFileControlEntry(
+  file: IRFile,
+  addLine: (line?: string) => void,
+): void {
+  const cobolName = toCobolName(file.name);
+  addLine(`           SELECT ${cobolName} ASSIGN TO ${toDdName(file.name)}`);
+  addLine(`               ORGANIZATION IS ${file.organization.toUpperCase()}`);
+  if (file.statusName) {
+    addLine(
+      `               FILE STATUS IS ${toCobolFieldName(file.statusName)}.`,
+    );
+    return;
+  }
+
+  addLine(`               ACCESS MODE IS SEQUENTIAL.`);
+}
+
+function fileRecordName(file: IRFile): string {
+  return `${toCobolName(file.name)}-RECORD`;
+}
+
+/**
+ * z/OS DD names are at most eight characters, so the file name is folded to a
+ * deterministic uppercase alphanumeric prefix.
+ */
+function toDdName(fileName: string): string {
+  return toCobolName(fileName).replace(/-/g, "").slice(0, 8);
+}
+
 function emitLedgerInterfaceStorage(addLine: (line?: string) => void): void {
   addLine(`       01  ${LEDGER_INTERFACE_GROUP}.`);
   addLine(`           05  ${LEDGER_OPERATION_FIELD.padEnd(24)} PIC X(6).`);
@@ -305,11 +377,17 @@ function emitRecordFields(
   }
 }
 
+/**
+ * Return statements only assign the result field. The paragraph ends with a
+ * single `GOBACK.`, because a period inside an `IF` branch would terminate the
+ * COBOL sentence and leave the following `ELSE` and `END-IF` dangling.
+ */
 function emitFunctionBody(
   fn: IRFunction,
   addLine: (line?: string) => void,
 ): void {
   emitStatement(fn.body, addLine, 11, functionResultName(fn.name));
+  addLine(`           GOBACK.`);
 }
 
 function emitStatement(
@@ -449,14 +527,12 @@ function emitReturnStatement(
   const expression = statement.expression;
   if (expression.resolvedType.kind === "bool") {
     emitBooleanAssignment(indent, resultName, expression, addLine);
-    addLine(`${indent}GOBACK.`);
     return;
   }
 
   addLine(
     `${indent}COMPUTE ${resultName} = ${renderDecimalExpression(expression)}`,
   );
-  addLine(`${indent}GOBACK.`);
 }
 
 function renderExpression(expression: IRExpression): string {

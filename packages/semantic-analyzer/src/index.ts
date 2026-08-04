@@ -10,6 +10,7 @@ import type {
   IRProgram,
   IRStatement,
   IRTransaction,
+  IRFile,
 } from "../../ir/src/index";
 
 const IDEMPOTENCY_KEY_FIELD = "idempotencyKey";
@@ -20,6 +21,7 @@ export interface SemanticAnalysisSummary {
   transactionCount: number;
   auditEventCount: number;
   ledgerPostingCount: number;
+  fileCount: number;
 }
 
 export interface SemanticAnalysisResult {
@@ -60,6 +62,10 @@ export function analyzeProgramSemantics(
     diagnostics.push(...checkLedgerBalance(transaction, ledgerStatements));
   }
 
+  for (const file of program.files) {
+    diagnostics.push(...checkFileStatus(file));
+  }
+
   return {
     diagnostics,
     summary: {
@@ -68,8 +74,29 @@ export function analyzeProgramSemantics(
       transactionCount: program.transactions.length,
       auditEventCount,
       ledgerPostingCount,
+      fileCount: program.files.length,
     },
   };
+}
+
+/**
+ * `language-spec.md` section 13: file status must be checked. A declaration
+ * without a `status` clause gives the generated COBOL no FILE STATUS field, so
+ * the operation result would be unobservable.
+ */
+function checkFileStatus(file: IRFile): Diagnostic[] {
+  if (file.statusName) {
+    return [];
+  }
+
+  return [
+    diagnostic(
+      "BANK-FILE-001",
+      `File ${file.name} declares no file status field.`,
+      file.span,
+      `Add a status clause, such as: file ${file.name} ${file.organization} ${file.mode} record ${file.record.name} status ${file.name}Status;`,
+    ),
+  ];
 }
 
 /**
