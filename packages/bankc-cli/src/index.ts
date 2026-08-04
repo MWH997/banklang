@@ -35,6 +35,10 @@ import { parseBankTs } from "../../parser/src/index";
 import { typecheckProgram } from "../../typechecker/src/index";
 import { decimalPicture, toCobolName } from "../../cobol-ir/src/index";
 import {
+  checkSourceMapCoverage,
+  type SourceMapCoverageResult,
+} from "../../verifier/src/index";
+import {
   runGnucobolValidation,
   type GnucobolValidationSummary,
 } from "../../../tools/gnucobol-validation";
@@ -73,6 +77,7 @@ interface VerificationReportDocument {
   checks: AuditCheck[];
   artifacts: string[];
   deterministicRegeneration: AuditCheck;
+  sourceMapCoverage: SourceMapCoverageResult;
   gnucobolValidation: GnucobolValidationSummary | null;
   notes: string[];
 }
@@ -1094,6 +1099,21 @@ function buildVerificationReportDocument(
       ? "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
       : "One or more artifacts changed when regenerated from the same IR.",
   };
+  const sourceMapCoverage = checkSourceMapCoverage(
+    program,
+    emitResult.sourceMap,
+    emitResult.cobol,
+  );
+  const sourceMapCoverageCheck: AuditCheck = {
+    name: "Source map coverage",
+    status: sourceMapCoverage.diagnostics.length > 0 ? "failed" : "passed",
+    details:
+      sourceMapCoverage.diagnostics.length > 0
+        ? sourceMapCoverage.diagnostics
+            .map((diagnostic) => `${diagnostic.id} ${diagnostic.message}`)
+            .join(" ")
+        : `${sourceMapCoverage.coveredSymbolCount}/${sourceMapCoverage.expectedSymbolCount} traced symbols, all entries anchored in the generated COBOL.`,
+  };
   const gnucobolCheck: AuditCheck = gnucobolValidation
     ? {
         name: "GnuCOBOL validation",
@@ -1158,6 +1178,7 @@ function buildVerificationReportDocument(
         details: auditRoot,
       },
       deterministicRegeneration,
+      sourceMapCoverageCheck,
       gnucobolCheck,
       {
         name: "Audit schema",
@@ -1184,6 +1205,7 @@ function buildVerificationReportDocument(
         : []),
     ],
     deterministicRegeneration,
+    sourceMapCoverage,
     gnucobolValidation,
     notes:
       phase === "verify"
@@ -1222,6 +1244,19 @@ function renderVerificationReportDocument(
   lines.push("", "## Notes", "");
   for (const note of report.notes) {
     lines.push(`- ${note}`);
+  }
+
+  lines.push(
+    "",
+    "## Source Map Coverage",
+    "",
+    `- expected-symbols: ${report.sourceMapCoverage.expectedSymbolCount}`,
+    `- traced-symbols: ${report.sourceMapCoverage.coveredSymbolCount}`,
+    `- coverage-gaps: ${report.sourceMapCoverage.diagnostics.length}`,
+  );
+
+  for (const diagnostic of report.sourceMapCoverage.diagnostics) {
+    lines.push(`- ${diagnostic.id}: ${diagnostic.message}`);
   }
 
   if (report.gnucobolValidation) {

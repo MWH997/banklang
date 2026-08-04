@@ -1,3 +1,8 @@
+export {
+  checkSourceMapCoverage,
+  type SourceMapCoverageResult,
+} from "./source-map-coverage";
+
 export interface DeterminismComparison {
   identical: boolean;
   leftBytes: number;

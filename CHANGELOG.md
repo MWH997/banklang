@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added a source map coverage checker in the verifier package that asserts every module, record, field, and function has a source map entry, and that every entry resolves to a line range inside the generated COBOL that contains the generated name.
+- Added the `BANK-GEN-001` through `BANK-GEN-006` code-generation diagnostics to `banking-safety-spec.md`, filling in a namespace that was reserved but undocumented. `BANK-GEN-004` matches the identifier already published in `verification-spec.md` section 7.
+- Added a `Source Map Coverage` section to the markdown verification report and a `sourceMapCoverage` object to the JSON verification report.
 - Added schema-hardened audit JSON artifacts with version and backend-profile metadata for diagnostics, source maps, decimal analysis, copybook layout, generated artifacts, and verification reports.
 - Added `dist/audit/verification-report.json` and `dist/audit/bankc-test-report.md` to support the expanded `bankc verify` and `bankc test` flows.
 - Added `bankc verify <project>` to write a deterministic verification report alongside the emitted COBOL, copybooks, source map, and JCL.
@@ -39,6 +42,8 @@
 
 ### Changed
 
+- Standardised the toolchain on Node.js 24. CI, the `engines` field, `@types/node`, the Docker verification lane, and the contributor and release documentation now all require Node 24 or newer.
+- Hardened `bankc verify` so a source map coverage gap fails the command instead of passing silently.
 - Hardened `bankc verify` so it checks deterministic regeneration, copybook emission, and local GnuCOBOL validation when available, and writes both markdown and JSON verification reports.
 - Hardened the audit bundle and verification flow so build/verify/test output includes JCL, verification evidence, and the generated-artifacts list for the current compiler slice.
 - Updated the account-transfer example and evidence bundle to surface the new JCL and verification artifacts.
@@ -55,6 +60,7 @@
 
 ### Testing
 
+- Added `tests/source-map-coverage.test.ts` with positive coverage for both examples and negative coverage for each of `BANK-GEN-001` through `BANK-GEN-006`, including a case proving a prefixed COBOL name cannot satisfy an unrelated entry.
 - Verified the new command surface with `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm bankc build examples/account-transfer`, `pnpm bankc verify examples/account-transfer`, `pnpm bankc test examples/account-transfer`, and `pnpm test:gnucobol` in Docker.
 - Added tests for the second BankTS example, JCL emission, verification output, copybook JSON output, and the expanded CLI surface.
 - Verified the current compiler slice with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and the `bankc` help/doctor/check/build/layout/emit cobol/emit copybooks/audit-report commands in Docker.
@@ -64,6 +70,9 @@
 
 ### Documentation
 
+- Documented the Node.js 24 requirement in `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `RELEASE-CHECKLIST.md`, and `repo-conventions.md`, and added a `Node.js 24` glossary entry.
+- Added a `Source map coverage` glossary entry and the `BANK-GEN-*` catalogue section to `banking-safety-spec.md`.
+- Refreshed both evidence bundles on Node 24 so the checked-in verification reports record source map coverage.
 - Refreshed the account-transfer evidence bundle, tester notes, and AI review trail to include the emitted JCL and verification reports.
 - Expanded `examples/account-transfer/README.md`, `examples/account-transfer/expected/README.md`, and `evidence/account-transfer/README.md` to reflect the new JCL, verification, and GnuCOBOL artifacts.
 - Added a second example README and a command-surface feature proposal/tester-note trail.

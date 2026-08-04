@@ -378,9 +378,14 @@ Required test categories:
 - fuzz tests for parser/copybook parser
 - audit-schema tests
 
+All testing and validation runs use Node.js 24 or newer. That applies to local
+runs, CI, and Docker-based verification lanes. Record the runtime version in
+tester notes when the run produced checked-in evidence.
+
 Testing commands should be explicit:
 
 ```bash
+node --version # must be v24 or newer
 pnpm lint
 pnpm typecheck
 pnpm test

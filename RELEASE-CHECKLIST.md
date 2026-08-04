@@ -11,6 +11,12 @@ Use this before cutting or publishing a release.
 
 ## 2. Verification
 
+Confirm the runtime before running the checks. Node.js 24 or newer is required:
+
+```bash
+node --version # must be v24 or newer
+```
+
 Run the repository checks:
 
 ```bash

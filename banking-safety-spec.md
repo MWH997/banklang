@@ -161,7 +161,39 @@ Copybook contains a PIC clause not supported by current parser.
 
 New copybook layout changes field offsets or byte lengths incompatibly.
 
-## 11. Severity levels
+## 11. Code generation diagnostics
+
+These diagnostics protect the traceability claim: every BankTS symbol that
+reaches the backend must be locatable in the generated COBOL.
+
+### `BANK-GEN-001` module missing source map entry
+
+The generated source map has no entry for the compiled module.
+
+### `BANK-GEN-002` record missing source map entry
+
+A record reached the backend but has no source map entry.
+
+### `BANK-GEN-003` field missing source map entry
+
+A record field reached the backend but has no source map entry.
+
+### `BANK-GEN-004` function missing source map entry
+
+A function reached the backend but has no source map entry.
+
+### `BANK-GEN-005` source map entry outside generated artifact
+
+An entry targets a line range that does not exist in the generated COBOL, or an
+inverted range where the end line precedes the start line.
+
+### `BANK-GEN-006` source map entry not anchored to generated name
+
+An entry targets a line range that exists but does not contain the COBOL name
+the entry claims to describe. This catches entries that drift when the emitter
+changes its line layout.
+
+## 12. Severity levels
 
 ```txt
 error      compilation must stop
@@ -170,7 +202,7 @@ info       useful explanation
 audit      included in audit report
 ```
 
-## 12. Audit report integration
+## 13. Audit report integration
 
 All warnings and errors should be available in machine-readable audit output.
 

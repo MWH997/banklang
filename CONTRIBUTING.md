@@ -21,6 +21,16 @@ Read:
 4. Add tester notes for compiler, generated-output, or safety changes.
 5. Run the repository checks.
 
+## Toolchain
+
+Use Node.js 24 or newer. Node 24 is the supported runtime for local
+development, CI, and Docker-based verification. Use pnpm 11.7.0 as pinned by
+the `packageManager` field.
+
+```bash
+node --version # must be v24 or newer
+```
+
 ## Local checks
 
 ```bash

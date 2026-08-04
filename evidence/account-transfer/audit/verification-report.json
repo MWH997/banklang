@@ -45,6 +45,11 @@
       "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
     },
     {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "6/6 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
       "name": "GnuCOBOL validation",
       "status": "skipped",
       "details": "No local cobc executable was available."
@@ -75,6 +80,11 @@
     "name": "Deterministic regeneration",
     "status": "passed",
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 6,
+    "coveredSymbolCount": 6,
+    "diagnostics": []
   },
   "gnucobolValidation": {
     "backendProfile": "gnucobol-local",
