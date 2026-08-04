@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/MWH997/banklang/security/advisories/new
+    about: Report privately through GitHub Security Advisories, not a public issue.
+  - name: Diagnostic reference
+    url: https://github.com/MWH997/banklang/blob/main/docs/diagnostics.md
+    about: Every diagnostic, with explanation and remediation.

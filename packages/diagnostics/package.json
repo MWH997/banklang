@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/diagnostics",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

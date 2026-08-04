@@ -12,9 +12,12 @@
     "emit:cobol": "pnpm bankc emit cobol examples/account-transfer",
     "emit:copybooks": "pnpm bankc emit copybooks examples/account-transfer",
     "lint": "prettier --check . --ignore-path .prettierignore",
-    "test:gnucobol": "tsx tools/gnucobol-validation.ts",
+    "playground:build": "pnpm --filter @banklang/playground build",
+    "playground:dev": "pnpm --filter @banklang/playground dev",
+    "playground:preview": "pnpm --filter @banklang/playground preview",
     "test": "vitest run",
     "test:determinism": "vitest run tests/determinism.test.ts",
+    "test:gnucobol": "tsx tools/gnucobol-validation.ts",
     "typecheck": "tsc -p tsconfig.base.json --noEmit"
   },
   "devDependencies": {

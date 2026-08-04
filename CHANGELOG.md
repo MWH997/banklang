@@ -4,6 +4,14 @@
 
 ### Added
 
+- Added a browser playground (`packages/playground`) that runs the real compiler client-side, with a live editor, generated-artifact tabs, and a clickable source map that cross-highlights BankTS and the COBOL it produced. Built with Vite and CodeMirror; the bundle is static and needs no backend.
+- Added `@banklang/compiler`, a one-call programmatic API (`compile(source)`) returning diagnostics and every generated artifact. It performs no file system or network access, so it runs unchanged in Node and the browser.
+- Added `@banklang/diagnostics`, a machine-readable diagnostic catalogue with an explanation, remediation, and spec reference per identifier.
+- Added `bankc explain [id]`, which prints a diagnostic's catalogue entry or lists the whole catalogue grouped by namespace.
+- Added `tests/diagnostic-catalogue.test.ts`, which scans compiler source and fails if any emitted diagnostic is undocumented, if a catalogue entry claims to be implemented when nothing emits it, or if `docs/diagnostics.md` and the catalogue disagree.
+- Added `tests/browser-safety.test.ts`, which fails if any compiler package imports a Node built-in, keeping the playground buildable.
+- Added `.editorconfig`, Dependabot config, issue forms, and a pull request template.
+- Added a CI step that builds the playground and uploads the bundle as an artifact.
 - Added `transaction` declarations, `debit` / `credit` ledger statements, `audit` statements, single-level record field access, and string literals to the BankTS subset, with `debit`, `credit`, and `audit` matched contextually so they stay usable as field names.
 - Added the banking safety analyzer: `BANK-TXN-001` missing idempotency key, `BANK-AUD-001` missing audit event, `BANK-AUD-003` non-constant audit event name, and `BANK-LED-001` unbalanced debit and credit postings. Its diagnostics now gate every `bankc` command.
 - Added `file` declarations with organization, mode, record type, and an optional `status` clause, lowering to `FILE-CONTROL` and `FD` sections, plus the `BANK-FILE-001` file-status diagnostic.

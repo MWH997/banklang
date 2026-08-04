@@ -35,6 +35,13 @@ import { parseBankTs } from "../../parser/src/index";
 import { typecheckProgram } from "../../typechecker/src/index";
 import { decimalPicture, toCobolName } from "../../cobol-ir/src/index";
 import {
+  DIAGNOSTICS,
+  NAMESPACE_TITLES,
+  explainDiagnostic,
+  namespaceOf,
+  renderDiagnosticDoc,
+} from "../../diagnostics/src/index";
+import {
   checkSourceMapCoverage,
   type SourceMapCoverageResult,
 } from "../../verifier/src/index";
@@ -151,6 +158,8 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runLayout(rest, cwd);
     case "copybook":
       return runCopybook(rest, cwd);
+    case "explain":
+      return runExplain(rest);
     default:
       return {
         exitCode: 1,
@@ -947,8 +956,51 @@ function renderHelp(): string {
     "  copybook inspect <file>",
     "  copybook types <file>",
     "  copybook diff <left> <right>",
+    "  explain [diagnostic-id]",
     "",
   ].join("\n");
+}
+
+/**
+ * `bankc explain BANK-LED-001` prints the catalogue entry for a diagnostic.
+ * With no argument it lists every catalogued identifier, grouped by namespace.
+ */
+function runExplain(args: string[]): CliResult {
+  const [id] = args;
+
+  if (!id) {
+    const grouped = new Map<string, string[]>();
+    for (const doc of DIAGNOSTICS) {
+      const namespace = namespaceOf(doc.id);
+      if (!namespace) {
+        continue;
+      }
+      const label = `${NAMESPACE_TITLES[namespace]} (BANK-${namespace}-*)`;
+      const line = `  ${doc.id}  ${doc.title}${doc.implemented ? "" : "  [reserved]"}`;
+      grouped.set(label, [...(grouped.get(label) ?? []), line]);
+    }
+
+    const sections = [...grouped.entries()].map(
+      ([label, lines]) => `${label}\n${lines.join("\n")}`,
+    );
+
+    return {
+      exitCode: 0,
+      stdout: `${["BankLang diagnostic catalogue", "", ...sections, "", "Run `bankc explain <id>` for one diagnostic."].join("\n")}\n`,
+      stderr: "",
+    };
+  }
+
+  const doc = explainDiagnostic(id);
+  if (!doc) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Unknown diagnostic: ${id}\nRun \`bankc explain\` to list every catalogued identifier.\n`,
+    };
+  }
+
+  return { exitCode: 0, stdout: renderDiagnosticDoc(doc), stderr: "" };
 }
 
 function renderDoctor(cwd: string): string {

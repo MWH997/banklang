@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>BankLang Playground — BankTS to COBOL, in your browser</title>
+    <meta
+      name="description"
+      content="Write BankTS and watch it compile to readable IBM Enterprise COBOL, with banking safety diagnostics and a clickable source map. The real compiler, running client-side."
+    />
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead__title">
+        <h1>BankLang</h1>
+        <p>
+          A deterministic compiler from <strong>BankTS</strong>, a restricted
+          TypeScript-like language, to readable COBOL. This page runs the real
+          compiler in your browser — no server, no network call.
+        </p>
+      </div>
+      <nav class="masthead__links">
+        <a href="https://github.com/MWH997/banklang">Source</a>
+        <a
+          href="https://github.com/MWH997/banklang/blob/main/docs/language-reference.md"
+          >Language</a
+        >
+        <a
+          href="https://github.com/MWH997/banklang/blob/main/docs/diagnostics.md"
+          >Diagnostics</a
+        >
+      </nav>
+    </header>
+
+    <main class="app">
+      <section class="pane pane--source">
+        <div class="pane__bar">
+          <label class="sr-only" for="example-picker">Example</label>
+          <select id="example-picker"></select>
+          <span id="status" class="status">Compiling…</span>
+        </div>
+        <p id="example-blurb" class="blurb"></p>
+        <div id="source-editor" class="editor"></div>
+        <div id="summary" class="summary"></div>
+      </section>
+
+      <section class="pane pane--output">
+        <div class="pane__bar">
+          <div class="tabs" role="tablist">
+            <button class="tab tab--active" data-tab="cobol">COBOL</button>
+            <button class="tab" data-tab="copybook">Copybook</button>
+            <button class="tab" data-tab="diagnostics">
+              Diagnostics<span
+                id="tab-diagnostics-count"
+                class="badge"
+                hidden
+              ></span>
+            </button>
+            <button class="tab" data-tab="sourcemap">Source map</button>
+            <button class="tab" data-tab="analysis">Analysis</button>
+          </div>
+          <label class="sr-only" for="copybook-picker">Copybook</label>
+          <select id="copybook-picker" hidden></select>
+          <button id="copy-output" class="ghost">Copy</button>
+        </div>
+        <div id="output-editor" class="editor"></div>
+        <div id="diagnostics" class="diagnostics" hidden></div>
+        <p id="trace" class="trace">
+          Click a line in either pane to trace it through the source map.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
+        Enterprise COBOL validation is claimed.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -51,3 +51,16 @@ jobs:
             pnpm bankc test "$example"
             echo "::endgroup::"
           done
+
+      # The playground bundles the compiler for the browser. Building it here
+      # catches anything that accidentally introduces a Node-only dependency
+      # into the compiler core.
+      - name: Build playground
+        run: pnpm playground:build
+
+      - name: Upload playground bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground
+          path: packages/playground/dist
+          retention-days: 14

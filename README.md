@@ -1,219 +1,211 @@
 # BankLang
 
-BankLang is a deterministic compiler/toolchain for writing banking-oriented
-BankTS and generating readable COBOL-oriented artifacts. It is not an AI
-converter.
+**A deterministic compiler from a restricted TypeScript-like language to
+readable IBM Enterprise COBOL — with banking safety rules enforced at compile
+time.**
 
-## Status
+[![CI](https://github.com/MWH997/banklang/actions/workflows/ci.yml/badge.svg)](https://github.com/MWH997/banklang/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
-The repository currently contains a deterministic compiler slice with
-verification, local validation, banking safety diagnostics, and four examples.
+BankLang compiles **BankTS**, a deliberately small TypeScript-like language,
+into COBOL that a mainframe engineer can read and review. It is a compiler, not
+an AI converter: no model decides what code is generated, and the same input
+always produces byte-identical output.
 
-Current capabilities:
-
-- restricted BankTS parser, typechecker, and IR lowering across four examples,
-  including local variable declarations, exact decimal arithmetic, transaction
-  declarations with ledger postings and audit events, and sequential file
-  declarations
-- banking safety diagnostics for idempotency keys, audit events, balanced
-  debit/credit postings, and file status (`BANK-TXN-001`, `BANK-AUD-001`,
-  `BANK-AUD-003`, `BANK-LED-001`, `BANK-FILE-001`)
-- source map coverage checking, so every traced symbol is proven to resolve
-  into the generated COBOL
-- deterministic COBOL emission
-- deterministic copybook generation
-- deterministic JCL emission
-- source-map emission
-- audit-report generation
-- `bankc verify` with deterministic regeneration checks and a schema-hardened
-  verification report
-- `bankc test` with a local GnuCOBOL smoke-validation lane
-- copybook inspection, type summary, and diff commands for the generated
-  subset
-- copybook JSON output for the generated subset
-- evidence bundles and tester notes for the current demo slice
-
-## Positioning
-
-BankLang is a deterministic compiler/toolchain for a restricted banking
-language called BankTS. BankTS is a TypeScript-like source language that keeps
-the syntax familiar while removing dynamic JavaScript behavior, floating-point
-money, and other runtime-dependent features. BankLang is not an AI converter
-and it is not a general TypeScript to COBOL translator.
-
-## Example
+The interesting part is not the translation. It is that the compiler **refuses
+to compile financially unsafe programs**.
 
 ```ts
-module AccountTransfer;
-
-type MoneyBDT = decimal<18, 2>;
-
-record TransferRequest {
-  debitAccount: string<16>;
-  creditAccount: string<16>;
-  amount: MoneyBDT;
-}
-
-function validateAmount(amount: MoneyBDT): bool {
-  return amount > 0.00;
+transaction postTransfer(request: TransferRequest) {
+  debit(request.debitAccount, request.amount);
+  credit(request.creditAccount, request.fee); // ← a different amount
 }
 ```
 
-This input becomes a deterministic COBOL program, generated copybook, source
-map, and audit bundle for the `account-transfer` example.
+```txt
+BANK-TXN-001  Transaction postTransfer has no idempotency key.
+BANK-AUD-001  Transaction postTransfer does not emit an audit event.
+BANK-LED-001  Transaction postTransfer does not balance:
+              debited request.amount against credited request.fee.
+```
 
-## Non-goals
+Retries that post twice, money movement with no audit trail, and unbalanced
+ledger postings become compile errors instead of production incidents.
 
-- arbitrary JavaScript or TypeScript runtime semantics
-- AI-decided code generation
-- IBM validation claims without IBM validation
-- production-readiness claims before evidence exists
+## Try it
 
-## Unsupported claims
+The **[playground](packages/playground/)** runs the entire compiler in your
+browser — no server, no network call.
 
-- "AI writes COBOL for you"
-- "full TypeScript support"
-- "IBM Enterprise COBOL validated"
-- "production-ready on z/OS"
+```bash
+pnpm install && pnpm playground:dev
+```
 
-## Layout
+Click any line of BankTS and the COBOL it produced lights up, and vice versa.
+That cross-link is read straight from the emitted source map, so traceability is
+something you can click rather than something the documentation asserts.
 
-- `spec.md` and `architecture.md` define the project.
-- `language-spec.md` defines the BankTS subset.
-- `cobol-backend-spec.md` defines the COBOL output rules.
-- `verification-spec.md` defines the testing and evidence rules.
-- `docs/adr/` records the architectural decisions.
-- `strategic-positioning.md` and `risk-register.md` define the credibility
-  posture.
-- `validation-lab-plan.md` defines the validation ladder.
-- `examples/account-transfer/` contains the demo input program.
-- `examples/batch-interest-accrual/` contains the control-flow example.
-- `examples/account-posting/` contains the transaction example.
-- `examples/account-file-batch/` contains the file-declaration example.
-- `evidence/` captures a regenerable evidence bundle for every example.
-- `tester-notes/` records change-specific validation notes.
-- `ai-reviews/` stores multi-AI Q/A and review trails.
-- `prompts/` contains the specialist and workhorse prompt templates.
+## What it generates
 
-## Tooling
+From one BankTS module, `bankc build` emits:
 
-The initial implementation uses TypeScript and pnpm.
+| Artifact            | Purpose                                                     |
+| ------------------- | ----------------------------------------------------------- |
+| COBOL program       | Readable, stable names, no timestamps                       |
+| Copybooks           | `PIC X(n)` and `COMP-3` layouts for every record            |
+| Source map          | Every module, record, field, function, and transaction      |
+| JCL skeleton        | A structurally sane job for the generated program           |
+| Audit bundle        | Diagnostics, decimal analysis, transaction analysis, layout |
+| Verification report | Determinism, source-map coverage, local compile results     |
 
-## Requirements
+Generated COBOL for the transaction example:
 
-- Node.js 24 or newer. Node 24 is the supported runtime for local development,
-  CI, and every Docker-based verification lane. Older major versions are not
-  supported.
-- pnpm 11.7.0, pinned through the `packageManager` field.
+```cobol
+       POST-TRANSFER.
+           MOVE "DEBIT" TO BANK-LEDGER-OPERATION
+           MOVE DEBIT-ACCOUNT OF TRANSFER-REQUEST TO BANK-LEDGER-ACCOUNT
+           MOVE AMOUNT OF TRANSFER-REQUEST TO BANK-LEDGER-AMOUNT
+           CALL "BANKLEDG" USING BANK-LEDGER-INTERFACE
+```
+
+Ledger and audit operations stop at a documented call boundary
+([ADR-0003](docs/adr/0003-ledger-and-audit-calling-convention.md)). BankLang
+does not own your ledger, so it does not invent posting logic.
+
+## Safety rules the compiler enforces
+
+| Diagnostic      | Rule                                                    |
+| --------------- | ------------------------------------------------------- |
+| `BANK-TXN-001`  | A transaction must carry an idempotency key             |
+| `BANK-AUD-001`  | A transaction must emit at least one audit event        |
+| `BANK-AUD-003`  | Audit event names must be compile-time constants        |
+| `BANK-LED-001`  | Debits and credits must balance                         |
+| `BANK-FILE-001` | A file declaration must bind a `FILE STATUS` field      |
+| `BANK-GEN-00x`  | Every symbol must be traceable into the generated COBOL |
+
+`BANK-LED-001` proves balance structurally, comparing posting expressions as
+multisets. The compiler does not evaluate expressions, so the check is
+deliberately conservative: it reports what it cannot prove rather than accepting
+it.
+
+Run `bankc explain BANK-LED-001` for any diagnostic. A test asserts that no
+diagnostic can be emitted without a catalogue entry.
+
+## Design constraints
+
+Because money is involved, several ordinary conveniences are removed on purpose:
+
+- **No binary floating point.** Money is `decimal<precision, scale>`, mapped to
+  packed decimal (`COMP-3`).
+- **No implicit coercion.** `decimal<18,2>` and `decimal<18,4>` do not mix
+  without an explicit decision.
+- **No dynamic semantics.** No `any`, no dynamic property access, no runtime
+  mutation, no closures.
+- **Deterministic output.** No timestamps, no random names, no
+  filesystem-ordering dependence. `bankc verify` re-emits every artifact and
+  fails if a single byte differs.
 
 ## Quick start
 
+Requires **Node.js 24+** and pnpm 11.7.0. GnuCOBOL is optional locally and
+installed in CI.
+
 ```bash
-node --version # must be v24 or newer
 pnpm install
-pnpm bankc --help
-pnpm bankc doctor
-pnpm bankc check examples/account-transfer
-pnpm bankc build examples/account-transfer
-pnpm bankc layout examples/account-transfer
-pnpm bankc verify examples/account-transfer
-pnpm bankc test examples/account-transfer
-pnpm bankc audit-report examples/account-transfer
-pnpm bankc emit cobol examples/account-transfer
-pnpm bankc emit copybooks examples/account-transfer
-pnpm bankc emit jcl examples/account-transfer
-pnpm bankc copybook inspect dist/copybooks/TRANSFER-REQUEST.cpy
-pnpm bankc copybook types dist/copybooks/TRANSFER-REQUEST.cpy
-pnpm bankc copybook diff dist/copybooks/TRANSFER-REQUEST.cpy dist/copybooks/TRANSFER-REQUEST.cpy
-pnpm test:gnucobol   # optional, when cobc is installed
+pnpm bankc check   examples/account-posting   # diagnostics only
+pnpm bankc build   examples/account-posting   # full artifact bundle
+pnpm bankc verify  examples/account-posting   # determinism + coverage
+pnpm bankc test    examples/account-posting   # the above, plus cobc
+pnpm bankc explain BANK-LED-001               # explain a diagnostic
 ```
 
-Generated artifacts are written under `dist/`.
+## Examples
 
-If you want the exact output inventory, run `pnpm bankc --help` or inspect the
-`dist/audit/` and `dist/layout/` folders after `build` or `layout`.
+| Example                                                      | Demonstrates                                       |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| [`account-transfer`](examples/account-transfer/)             | Records, decimal aliases, a validation function    |
+| [`batch-interest-accrual`](examples/batch-interest-accrual/) | Locals, exact decimal arithmetic, `if`/`else`      |
+| [`account-posting`](examples/account-posting/)               | Transactions, ledger postings, audit events        |
+| [`account-file-batch`](examples/account-file-batch/)         | Sequential files, `FILE-CONTROL` and `FD` sections |
+
+Every example is compiled with GnuCOBOL in CI, and each has a checked-in
+[evidence bundle](evidence/) holding its generated artifacts and verification
+report.
+
+## Architecture
+
+```txt
+BankTS source
+    ↓  parser              hand-written lexer and recursive-descent parser
+    ↓  typechecker         type resolution, decimal rules
+    ↓  ir                  typed representation carrying source spans
+    ↓  semantic-analyzer   banking safety rules
+    ↓  cobol-backend       COBOL, copybooks, JCL, source map
+    ↓  verifier            determinism, source-map coverage
+COBOL + audit bundle
+```
+
+| Package             | Role                                    |
+| ------------------- | --------------------------------------- |
+| `ast`, `parser`     | Tokens, nodes, source spans             |
+| `typechecker`       | Type resolution and decimal rules       |
+| `ir`, `cobol-ir`    | Lowered representation, COBOL naming    |
+| `semantic-analyzer` | Banking safety diagnostics              |
+| `cobol-backend`     | COBOL, JCL, and source-map emission     |
+| `copybook`          | Layout, rendering, inspection, diffing  |
+| `verifier`          | Determinism and source-map coverage     |
+| `diagnostics`       | The diagnostic catalogue                |
+| `compiler`          | One-call programmatic API, browser-safe |
+| `bankc-cli`         | The `bankc` command                     |
+| `playground`        | Browser playground                      |
+
+Use the compiler programmatically:
+
+```ts
+import { compile } from "@banklang/compiler";
+
+const result = compile(source);
+result.diagnostics; // typed diagnostics with spans and hints
+result.cobol; // the generated program
+result.sourceMap; // every traced symbol
+```
 
 ## Documentation
 
-- `definitions.md`
-- `repo-conventions.md`
-- `research-dossier.md`
-- `source-of-truth-matrix.md`
-- `risk-register.md`
-- `strategic-positioning.md`
-- `validation-lab-plan.md`
-- `RELEASE-CHECKLIST.md`
-- `benchmark-and-evidence-plan.md`
-- `ibm-engagement-strategy.md`
-- `medium-article-brief.md`
-- `ibm-email-brief.md`
-- `tools-ai-design.md`
-- `multi-ai-review-protocol.md`
-- `a model-workhorse-validation.md`
-- `a model-specialist-validation.md`
-- `a model-free-workhorse-plan.md`
+| Document                                         | Contents                        |
+| ------------------------------------------------ | ------------------------------- |
+| [Language reference](docs/language-reference.md) | The BankTS subset               |
+| [Architecture](docs/architecture.md)             | Pipeline and package boundaries |
+| [Diagnostics](docs/diagnostics.md)               | The full catalogue              |
+| [COBOL backend](docs/cobol-backend.md)           | Emission rules                  |
+| [Verification](docs/verification.md)             | Testing and evidence strategy   |
+| [Glossary](docs/glossary.md)                     | Compiler and mainframe terms    |
+| [Roadmap](docs/roadmap.md)                       | What is planned                 |
+| [ADRs](docs/adr/)                                | Architectural decisions         |
 
-## Evidence
+## Status and honest limits
 
-- `evidence/account-transfer/` contains the source, generated COBOL, generated
-  copybook, source map, audit artifacts, validation matrix, and links to the
-  tester notes used for the current demo slice.
-- `evidence/batch-interest-accrual/` contains the source, generated COBOL,
-  generated copybook, source map, audit artifacts, validation matrix, and
-  links to the tester notes for the control-flow example.
-- `evidence/account-posting/` captures the transaction example, including the
-  per-transaction ledger and audit analysis.
-- `evidence/account-file-batch/` captures the file-declaration example.
-- `tester-notes/` contains per-change validation records, including build,
-  copybook, layout, and GnuCOBOL smoke-check notes.
-- `ai-reviews/` contains the review briefs and review rounds used for multi-AI
-  checks.
-- `prompts/` contains the reusable prompt templates used for a model, a model,
-  and local review assistants.
+This is a working compiler for a **deliberately narrow subset**, not a
+production mainframe toolchain. Being precise about that matters more than
+sounding impressive:
 
-## Validation
+- **Validated with GnuCOBOL, not IBM.** Every example compiles with GnuCOBOL in
+  CI. No IBM Enterprise COBOL validation has been performed, and none is
+  claimed.
+- **Not production-ready**, and never run against a real ledger.
+- **The subset is small.** No loops, no SQL, no CICS, no VSAM. Db2 and CICS
+  profiles are on the roadmap, not in the box.
+- **File I/O is declaration-only.** Files produce `FILE-CONTROL` and `FD`
+  sections; read and write statements are not in the subset yet.
+- **Ledger balance is structural.** Two different expressions that evaluate to
+  the same amount are reported as unbalanced.
 
-The current repo state has been verified with:
+## Contributing
 
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm bankc build examples/account-transfer`
-- `pnpm bankc layout examples/account-transfer`
-- `pnpm bankc audit-report examples/account-transfer`
-- `pnpm bankc emit jcl examples/account-transfer`
-- `pnpm bankc verify examples/account-transfer`
-- `pnpm bankc test examples/account-transfer`
-- `pnpm bankc verify examples/batch-interest-accrual`
-- `pnpm bankc test examples/batch-interest-accrual`
-- `pnpm bankc test examples/account-posting`
-- `pnpm bankc test examples/account-file-batch`
-- `pnpm bankc copybook inspect ...`
-- `pnpm bankc copybook types ...`
-- `pnpm bankc copybook diff ...`
-- `pnpm test:gnucobol`
+See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: small changes, real
+tests, no silent golden updates, and never claim validation that did not happen.
 
-a model and a model were also checked directly during doc review work:
+## License
 
-- a model API `generateContent` requests returned `200` with the configured
-  `MODEL_API_KEY`.
-- `a model --version` and `curl http://localhost:11434/api/tags` confirmed a
-  local a model instance with `qwen2.5:14b` available.
-
-## AI Review Workflow
-
-BankLang uses prompt templates and review trails for bounded AI assistance.
-
-- `prompts/a model-specialist-prompt-template.md` defines a specialist review
-  prompt for a model 2.5 Flash.
-- `prompts/a model-workhorse-prompt-template.md` defines the bounded workhorse
-  prompt shape.
-- `prompts/a model-review-prompt-template.md` defines the local review format.
-- `ai-reviews/` stores the resulting review rounds and final decisions.
-
-## Scope
-
-The current milestone is a deterministic, auditable compiler slice for the
-`account-transfer` and `batch-interest-accrual` examples. IBM Enterprise COBOL
-for z/OS remains the primary target, with GnuCOBOL-compatible local validation
-support where possible.
+[MIT](LICENSE)
