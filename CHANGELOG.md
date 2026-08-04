@@ -10,6 +10,7 @@
 - Added `examples/account-posting`, which exercises the transaction path, and `examples/account-file-batch`, which exercises file declarations.
 - Added ADR-0003 recording the ledger and audit calling convention that `debit`, `credit`, and `audit` lower to.
 - Added `tests/cobol-compiles.test.ts`, which compiles every checked-in example with `cobc` so uncompilable output cannot pass unnoticed again.
+- Added GnuCOBOL to the CI workflow so the compile lane runs there instead of skipping, and added a CI step that runs `bankc test` for every example.
 - Added a source map coverage checker in the verifier package that asserts every module, record, field, and function has a source map entry, and that every entry resolves to a line range inside the generated COBOL that contains the generated name.
 - Added the `BANK-GEN-001` through `BANK-GEN-006` code-generation diagnostics to `banking-safety-spec.md`, filling in a namespace that was reserved but undocumented. `BANK-GEN-004` matches the identifier already published in `verification-spec.md` section 7.
 - Added a `Source Map Coverage` section to the markdown verification report and a `sourceMapCoverage` object to the JSON verification report.
