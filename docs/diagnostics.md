@@ -199,9 +199,11 @@ loses digits in the `MOVE`, and COBOL truncates silently.
 
 Financial transaction path lacks audit event.
 
-### `BANK-AUD-002` audit payload contains sensitive field
+### `BANK-AUD-002` restricted data reaches a log
 
-Audit payload includes a field marked sensitive.
+A value marked `sensitive` reaches an audit event or a ledger posting. Both are
+durable records that outlive the transaction and are read by people with no
+business seeing a card number or a national identifier.
 
 ### `BANK-AUD-003` audit event name is not compile-time constant
 
@@ -277,6 +279,14 @@ Copybook contains a PIC clause not supported by current parser.
 ### `BANK-COPY-003` incompatible layout change
 
 New copybook layout changes field offsets or byte lengths incompatibly.
+
+## 11a. Security diagnostics
+
+### `BANK-SEC-001` restricted data reclassified
+
+A value marked `sensitive` is assigned to a field that is not. A field's marking
+is part of its record declaration and therefore part of its copybook, so this
+would reclassify the data silently and defeat the marking everywhere downstream.
 
 ## 12. Code generation diagnostics
 

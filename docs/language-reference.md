@@ -489,6 +489,49 @@ audit("TRANSFER_REJECTED", request.idempotencyKey, {
 
 Audit event names are compile-time strings. Audit payloads must be typed records.
 
+### Restricted data
+
+A record field may be marked `sensitive`:
+
+```ts
+record Statement {
+  accountId: string<16>;
+  sensitive holderName: string<40>;
+  sensitive nationalId: string<20>;
+  idempotencyKey: string<36>;
+}
+```
+
+The marking is on the field rather than inferred from its name, because whether
+a value is restricted is a decision about the data and not a guess from
+spelling. What the compiler adds is that the decision then holds everywhere the
+value goes, rather than everywhere someone remembered.
+
+A restricted value may not reach an **audit event** or a **ledger posting**
+(`BANK-AUD-002`). Both are durable records that outlive the transaction and are
+read by people with no business seeing a card number. It may not be assigned to
+a field that is not itself marked (`BANK-SEC-001`): a field's marking is part of
+its record declaration and therefore part of its copybook, so copying restricted
+data into an unmarked field would reclassify it silently.
+
+It may be read, compared, computed with, and written to a file — which is where
+such data legitimately lives. The layout report marks which fields carry it, so
+an auditor reading the evidence does not have to read the source.
+
+The check follows a value through locals:
+
+```ts
+let carried: string<20> = customer.nationalId;
+audit("SETTLED", carried);            // BANK-AUD-002
+```
+
+**The stated limit: a function call declassifies.** Taint does not cross a call,
+so `maskPan(card.number)` is unrestricted and the compiler does not check that
+`maskPan` masks anything. Following taint across a call would need per-function
+summaries, and a language with no closures and no higher-order functions can
+express masking no other way — so the call is the declassification point, made
+explicit rather than hidden.
+
 ## 12. SQL
 
 SQL is declared, never assembled at run time:

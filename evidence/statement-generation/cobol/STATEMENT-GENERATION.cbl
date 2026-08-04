@@ -31,6 +31,8 @@
        FD  STATEMENT-OUTPUT-FILE.
        01  STATEMENT-OUTPUT-RECORD.
            05  ACCOUNT-ID           PIC X(16).
+           05  HOLDER-NAME          PIC X(40).
+           05  NATIONAL-ID          PIC X(20).
            05  STATUS-FLD           PIC X(7).
                88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
                88  STATUS-FLD-DORMANT           VALUE "DORMANT".
@@ -61,6 +63,8 @@
            05  AMOUNT               PIC S9(16)V99 COMP-3.
        01  STATEMENT.
            05  ACCOUNT-ID           PIC X(16).
+           05  HOLDER-NAME          PIC X(40).
+           05  NATIONAL-ID          PIC X(20).
            05  STATUS-FLD           PIC X(7).
                88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
                88  STATUS-FLD-DORMANT           VALUE "DORMANT".
@@ -92,7 +96,7 @@
        01  LINE-INDEX           PIC S9(4) COMP-3.
        01  RUNNING              PIC S9(16)V99 COMP-3.
        01  MANAGER              PIC X(20).
-       01  WS-LOOP-84-5         PIC 9(9) COMP.
+       01  WS-LOOP-89-5         PIC 9(9) COMP.
        01  BANK-LEDGER-INTERFACE.
            05  BANK-LEDGER-OPERATION    PIC X(6).
            05  BANK-LEDGER-ACCOUNT      PIC X(32).
@@ -148,9 +152,9 @@
            MOVE STATUS-FLD OF ACCOUNT-MASTER TO IS-STATEMENTABLE-P1
            PERFORM IS-STATEMENTABLE
            IF IS-STATEMENTABLE-RESULT = 'Y'
-               MOVE 0 TO WS-LOOP-84-5
-               PERFORM UNTIL WS-LOOP-84-5 >= 100 OR NOT (LINE-INDEX <= 100)
-                   ADD 1 TO WS-LOOP-84-5
+               MOVE 0 TO WS-LOOP-89-5
+               PERFORM UNTIL WS-LOOP-89-5 >= 100 OR NOT (LINE-INDEX <= 100)
+                   ADD 1 TO WS-LOOP-89-5
                    EVALUATE ENTRY-KIND OF STATEMENT (LINE-INDEX)
                        WHEN "DEBIT"
                            IF LINE-INDEX < 1 OR LINE-INDEX > 100
@@ -171,6 +175,8 @@
                END-PERFORM
                COMPUTE CLOSING-BALANCE OF STATEMENT = RUNNING
                MOVE ACCOUNT-ID OF STATEMENT TO ACCOUNT-ID OF STATEMENT-OUTPUT-RECORD
+               MOVE HOLDER-NAME OF STATEMENT TO HOLDER-NAME OF STATEMENT-OUTPUT-RECORD
+               MOVE NATIONAL-ID OF STATEMENT TO NATIONAL-ID OF STATEMENT-OUTPUT-RECORD
                MOVE STATUS-FLD OF STATEMENT TO STATUS-FLD OF STATEMENT-OUTPUT-RECORD
                MOVE OPENING-BALANCE OF STATEMENT TO OPENING-BALANCE OF STATEMENT-OUTPUT-RECORD
                MOVE CLOSING-BALANCE OF STATEMENT TO CLOSING-BALANCE OF STATEMENT-OUTPUT-RECORD

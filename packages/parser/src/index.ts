@@ -98,6 +98,7 @@ const KEYWORDS = new Set([
   "switch",
   "case",
   "enum",
+  "sensitive",
   "sql",
   "cursor",
   "execute",
@@ -930,6 +931,7 @@ class Parser {
   }
 
   private parseFieldDeclaration(): FieldDeclarationNode | null {
+    const modifierToken = this.isKeyword("sensitive") ? this.advance() : null;
     const nameToken = this.expectIdentifier("Expected field name.");
     this.expectPunctuation(":", "Expected `:` after field name.");
     const type = this.parseTypeNode();
@@ -946,9 +948,10 @@ class Parser {
       kind: "FieldDeclaration",
       name: nameToken.text,
       type,
+      sensitive: modifierToken !== null,
       span: {
-        sourceFile: nameToken.span.sourceFile,
-        start: nameToken.span.start,
+        sourceFile: (modifierToken ?? nameToken).span.sourceFile,
+        start: (modifierToken ?? nameToken).span.start,
         end: semicolon.span.end,
       },
     };

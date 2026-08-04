@@ -16,7 +16,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 6,
-          "bytes": 6
+          "bytes": 6,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -26,7 +27,8 @@
           "usage": "DISPLAY",
           "offset": 6,
           "length": 40,
-          "bytes": 40
+          "bytes": 40,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -36,14 +38,15 @@
           "usage": "COMP-3",
           "offset": 46,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         }
       ]
     },
     {
       "recordName": "Statement",
       "cobolName": "STATEMENT",
-      "totalLength": 5701,
+      "totalLength": 5761,
       "entries": [
         {
           "order": 1,
@@ -53,67 +56,96 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
+          "path": "STATEMENT.HOLDER-NAME",
+          "type": "string<40>",
+          "picture": "PIC X(40)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 40,
+          "bytes": 40,
+          "sensitive": true
+        },
+        {
+          "order": 3,
+          "path": "STATEMENT.NATIONAL-ID",
+          "type": "string<20>",
+          "picture": "PIC X(20)",
+          "usage": "DISPLAY",
+          "offset": 56,
+          "length": 20,
+          "bytes": 20,
+          "sensitive": true
+        },
+        {
+          "order": 4,
           "path": "STATEMENT.STATUS-FLD",
           "type": "enum<AccountStatus>",
           "picture": "PIC X(7)",
           "usage": "DISPLAY",
-          "offset": 16,
+          "offset": 76,
           "length": 7,
-          "bytes": 7
+          "bytes": 7,
+          "sensitive": false
         },
         {
-          "order": 3,
+          "order": 5,
           "path": "STATEMENT.OPENING-BALANCE",
           "type": "currency<\"BDT\",18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
-          "offset": 23,
+          "offset": 83,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
-          "order": 4,
+          "order": 6,
           "path": "STATEMENT.CLOSING-BALANCE",
           "type": "currency<\"BDT\",18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
-          "offset": 33,
+          "offset": 93,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
-          "order": 5,
+          "order": 7,
           "path": "STATEMENT.LINES-FLD",
           "type": "record<LedgerEntry>[100]",
           "picture": "GROUP",
           "usage": "GROUP",
-          "offset": 43,
+          "offset": 103,
           "length": 5600,
-          "bytes": 5600
+          "bytes": 5600,
+          "sensitive": false
         },
         {
-          "order": 6,
+          "order": 8,
           "path": "STATEMENT.RELATIONSHIP-MANAGER",
           "type": "nullable<string<20>>",
           "picture": "PIC X(20)",
           "usage": "DISPLAY",
-          "offset": 5643,
+          "offset": 5703,
           "length": 22,
-          "bytes": 22
+          "bytes": 22,
+          "sensitive": false
         },
         {
-          "order": 7,
+          "order": 9,
           "path": "STATEMENT.IDEMPOTENCY-KEY",
           "type": "string<36>",
           "picture": "PIC X(36)",
           "usage": "DISPLAY",
-          "offset": 5665,
+          "offset": 5725,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         }
       ]
     },
@@ -130,7 +162,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -140,7 +173,8 @@
           "usage": "DISPLAY",
           "offset": 16,
           "length": 7,
-          "bytes": 7
+          "bytes": 7,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -150,7 +184,8 @@
           "usage": "COMP-3",
           "offset": 23,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         }
       ]
     }
