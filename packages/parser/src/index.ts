@@ -35,6 +35,16 @@ import {
   type TransactionDeclarationNode,
   type FileDeclarationNode,
   type CommentTrivia,
+  type BinaryOperator,
+  type ComparisonOperator,
+  type UnaryExpressionNode,
+  type RoundedExpressionNode,
+  type RoundingMode,
+  type CallExpressionNode,
+  type WhileStatementNode,
+  type AssignStatementNode,
+  type ExpressionStatementNode,
+  type FileStatementNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -60,6 +70,7 @@ const KEYWORDS = new Set([
   "let",
   "if",
   "else",
+  "while",
   "transaction",
   "file",
 ]);
@@ -78,6 +89,34 @@ const FILE_ORGANIZATIONS = new Set(["sequential"]);
  */
 const LEDGER_OPERATIONS = new Set(["debit", "credit"]);
 const AUDIT_OPERATION = "audit";
+
+const TWO_CHAR_OPERATORS = new Set(["<=", ">=", "==", "!=", "&&", "||"]);
+
+/** Longest first, so `<=` is matched before `<`. */
+const COMPARISON_OPERATORS: ComparisonOperator[] = [
+  "<=",
+  ">=",
+  "==",
+  "!=",
+  "<",
+  ">",
+];
+
+/** Built-in expression forms that take an explicit rounding mode. */
+const ROUNDING_BUILTINS = new Set(["round", "divide"]);
+
+const ROUNDING_MODES = new Set([
+  "HALF_EVEN",
+  "HALF_UP",
+  "HALF_DOWN",
+  "UP",
+  "DOWN",
+  "CEILING",
+  "FLOOR",
+]);
+
+/** File operation keywords, matched contextually in statement position. */
+const FILE_OPERATIONS = new Set(["open", "read", "write", "close"]);
 
 class Lexer {
   private readonly source: string;
@@ -188,6 +227,22 @@ class Lexer {
       return this.makeToken(
         "string",
         text,
+        startLine,
+        startColumn,
+        this.line,
+        this.column,
+      );
+    }
+
+    // Two-character operators must be lexed before single characters, or
+    // `<=` would tokenise as `<` followed by `=`.
+    const pair = char + (this.source[this.offset + 1] ?? "");
+    if (TWO_CHAR_OPERATORS.has(pair)) {
+      this.advance(char);
+      this.advance(pair[1]);
+      return this.makeToken(
+        "punctuation",
+        pair,
         startLine,
         startColumn,
         this.line,
@@ -736,6 +791,28 @@ class Parser {
       return this.parseIfStatement();
     }
 
+    if (this.matchKeyword("while")) {
+      return this.parseWhileStatement();
+    }
+
+    if (
+      this.current.kind === "identifier" &&
+      FILE_OPERATIONS.has(this.current.text) &&
+      this.next.kind === "identifier"
+    ) {
+      return this.parseFileStatement();
+    }
+
+    if (this.current.kind === "identifier") {
+      // `name =` or `name.field =` is an assignment; `name(` is a call.
+      if (this.next.kind === "punctuation" && this.next.text === "=") {
+        return this.parseAssignStatement();
+      }
+      if (this.next.kind === "punctuation" && this.next.text === ".") {
+        return this.parseAssignStatement();
+      }
+    }
+
     if (
       this.current.kind === "identifier" &&
       this.next.kind === "punctuation" &&
@@ -750,12 +827,180 @@ class Parser {
       }
     }
 
+    if (
+      this.current.kind === "identifier" &&
+      this.next.kind === "punctuation" &&
+      this.next.text === "("
+    ) {
+      const start = this.current;
+      const expression = this.parseExpression();
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after expression statement.",
+      );
+      if (!expression || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "ExpressionStatement",
+        expression,
+        span: {
+          sourceFile: start.span.sourceFile,
+          start: start.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ExpressionStatementNode;
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a statement.",
     );
     return null;
+  }
+
+  private parseWhileStatement(): WhileStatementNode | null {
+    const whileToken = this.previous;
+    if (!whileToken) {
+      return null;
+    }
+
+    const condition = this.parseExpression();
+
+    // The bound is required, not optional. An unbounded loop in a financial
+    // program is BANK-TXN-004, and the compiler cannot infer a safe limit.
+    const limitWord = this.current;
+    if (limitWord.kind !== "identifier" || limitWord.text !== "limit") {
+      this.errorAtCurrent(
+        "BANK-TXN-004",
+        "A while loop must declare a static iteration limit.",
+        "Write `while <condition> limit <n> { ... }`.",
+      );
+      return null;
+    }
+    this.advance();
+
+    const limitToken = this.expectNumber("Expected the iteration limit.");
+    const body = this.parseBlock();
+
+    if (!condition || !limitToken || !body) {
+      return null;
+    }
+
+    return {
+      kind: "WhileStatement",
+      condition,
+      limit: Number(limitToken.text),
+      body,
+      span: {
+        sourceFile: whileToken.span.sourceFile,
+        start: whileToken.span.start,
+        end: body.span.end,
+      },
+    };
+  }
+
+  private parseAssignStatement(): AssignStatementNode | null {
+    const nameToken = this.advance();
+    const identifier: IdentifierNode = {
+      kind: "Identifier",
+      name: nameToken.text,
+      span: nameToken.span,
+    };
+
+    let target: IdentifierNode | MemberAccessNode = identifier;
+
+    if (this.matchPunctuation(".")) {
+      const memberToken = this.expectIdentifier(
+        "Expected field name after `.`.",
+      );
+      if (!memberToken) {
+        return null;
+      }
+      target = {
+        kind: "MemberAccess",
+        target: identifier,
+        member: memberToken.text,
+        span: {
+          sourceFile: nameToken.span.sourceFile,
+          start: nameToken.span.start,
+          end: memberToken.span.end,
+        },
+      };
+    }
+
+    this.expectPunctuation("=", "Expected `=` in assignment.");
+    const expression = this.parseExpression();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after assignment.",
+    );
+
+    if (!expression || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "AssignStatement",
+      target,
+      expression,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseFileStatement(): FileStatementNode | null {
+    const operationToken = this.advance();
+    const fileToken = this.expectIdentifier("Expected a file name.");
+    if (!fileToken) {
+      return null;
+    }
+
+    const operation = operationToken.text as FileStatementNode["operation"];
+    let recordName: string | null = null;
+
+    if (operation === "read" || operation === "write") {
+      const clause = operation === "read" ? "into" : "from";
+      const clauseToken = this.current;
+      if (clauseToken.kind !== "identifier" || clauseToken.text !== clause) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`${clause}\` after \`${operation} ${fileToken.text}\`.`,
+          `Write \`${operation} ${fileToken.text} ${clause} <record>;\`.`,
+        );
+        return null;
+      }
+      this.advance();
+      const recordToken = this.expectIdentifier("Expected a record name.");
+      if (!recordToken) {
+        return null;
+      }
+      recordName = recordToken.text;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after file statement.",
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "FileStatement",
+      operation,
+      fileName: fileToken.text,
+      recordName,
+      span: {
+        sourceFile: operationToken.span.sourceFile,
+        start: operationToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
   }
 
   private parseLedgerStatement(): LedgerStatementNode | null {
@@ -912,54 +1157,85 @@ class Parser {
   }
 
   private parseExpression(): ExpressionNode | null {
-    return this.parseComparisonExpression();
+    return this.parseLogicalOr();
   }
 
-  private parseComparisonExpression(): ExpressionNode | null {
-    const left = this.parseAdditiveExpression();
+  private parseLogicalOr(): ExpressionNode | null {
+    return this.parseBinaryLevel(["||"], () => this.parseLogicalAnd());
+  }
+
+  private parseLogicalAnd(): ExpressionNode | null {
+    return this.parseBinaryLevel(["&&"], () => this.parseComparison());
+  }
+
+  /** Comparisons do not chain: `a < b < c` is rejected as a type error. */
+  private parseComparison(): ExpressionNode | null {
+    const left = this.parseAdditive();
     if (!left) {
       return null;
     }
 
-    if (this.matchPunctuation(">")) {
-      const operatorToken = this.previous;
-      const right = this.parseAdditiveExpression();
-      if (!right || !operatorToken) {
-        return null;
-      }
-
-      return {
-        kind: "BinaryExpression",
-        operator: ">",
-        left,
-        right,
-        span: {
-          sourceFile: left.span.sourceFile,
-          start: left.span.start,
-          end: right.span.end,
-        },
-      };
+    const operator = COMPARISON_OPERATORS.find((candidate) =>
+      this.isPunctuation(candidate),
+    );
+    if (!operator) {
+      return left;
     }
 
-    return left;
+    this.advance();
+    const right = this.parseAdditive();
+    if (!right) {
+      return null;
+    }
+
+    return {
+      kind: "BinaryExpression",
+      operator,
+      left,
+      right,
+      span: {
+        sourceFile: left.span.sourceFile,
+        start: left.span.start,
+        end: right.span.end,
+      },
+    };
   }
 
-  private parseAdditiveExpression(): ExpressionNode | null {
-    let expression = this.parsePrimaryExpression();
+  private parseAdditive(): ExpressionNode | null {
+    return this.parseBinaryLevel(["+", "-"], () => this.parseMultiplicative());
+  }
+
+  private parseMultiplicative(): ExpressionNode | null {
+    return this.parseBinaryLevel(["*", "/"], () => this.parseUnary());
+  }
+
+  /** Left-associative binary level shared by the arithmetic and logical tiers. */
+  private parseBinaryLevel(
+    operators: BinaryOperator[],
+    next: () => ExpressionNode | null,
+  ): ExpressionNode | null {
+    let expression = next();
     if (!expression) {
       return null;
     }
 
-    while (this.isPunctuation("+") || this.isPunctuation("-")) {
-      const operatorToken = this.advance();
-      const right = this.parsePrimaryExpression();
+    for (;;) {
+      const operator = operators.find((candidate) =>
+        this.isPunctuation(candidate),
+      );
+      if (!operator) {
+        return expression;
+      }
+
+      this.advance();
+      const right = next();
       if (!right) {
         return null;
       }
 
       expression = {
         kind: "BinaryExpression",
-        operator: operatorToken.text as "+" | "-",
+        operator,
         left: expression,
         right,
         span: {
@@ -969,8 +1245,28 @@ class Parser {
         },
       };
     }
+  }
 
-    return expression;
+  private parseUnary(): ExpressionNode | null {
+    if (this.isPunctuation("!")) {
+      const token = this.advance();
+      const operand = this.parseUnary();
+      if (!operand) {
+        return null;
+      }
+      return {
+        kind: "UnaryExpression",
+        operator: "!",
+        operand,
+        span: {
+          sourceFile: token.span.sourceFile,
+          start: token.span.start,
+          end: operand.span.end,
+        },
+      } satisfies UnaryExpressionNode;
+    }
+
+    return this.parsePrimaryExpression();
   }
 
   private parsePrimaryExpression(): ExpressionNode | null {
@@ -1017,7 +1313,20 @@ class Parser {
     }
 
     if (this.is("identifier")) {
+      if (
+        ROUNDING_BUILTINS.has(this.current.text) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
+      ) {
+        return this.parseRoundedExpression();
+      }
+
       const token = this.advance();
+
+      if (this.isPunctuation("(")) {
+        return this.parseCallExpression(token);
+      }
+
       const identifier: IdentifierNode = {
         kind: "Identifier",
         name: token.text,
@@ -1063,6 +1372,110 @@ class Parser {
       "Expected an expression.",
     );
     return null;
+  }
+
+  private parseCallExpression(nameToken: Token): ExpressionNode | null {
+    this.expectPunctuation("(", "Expected `(` after function name.");
+    const args: ExpressionNode[] = [];
+
+    if (!this.isPunctuation(")")) {
+      for (;;) {
+        const argument = this.parseExpression();
+        if (!argument) {
+          return null;
+        }
+        args.push(argument);
+        if (!this.matchPunctuation(",")) {
+          break;
+        }
+      }
+    }
+
+    const close = this.expectPunctuation(")", "Expected `)` after arguments.");
+    if (!close) {
+      return null;
+    }
+
+    return {
+      kind: "CallExpression",
+      callee: nameToken.text,
+      args,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: close.span.end,
+      },
+    } satisfies CallExpressionNode;
+  }
+
+  /**
+   * `round(expr, "MODE")` and `divide(a, b, "MODE")`.
+   *
+   * The rounding mode is a required argument rather than an option, because an
+   * unstated rounding mode is a real defect in financial arithmetic.
+   */
+  private parseRoundedExpression(): ExpressionNode | null {
+    const nameToken = this.advance();
+    const isDivision = nameToken.text === "divide";
+    this.expectPunctuation("(", `Expected \`(\` after \`${nameToken.text}\`.`);
+
+    const first = this.parseExpression();
+    if (!first) {
+      return null;
+    }
+
+    let operand: ExpressionNode = first;
+
+    if (isDivision) {
+      this.expectPunctuation(",", "Expected `,` after the dividend.");
+      const divisor = this.parseExpression();
+      if (!divisor) {
+        return null;
+      }
+      operand = {
+        kind: "BinaryExpression",
+        operator: "/",
+        left: first,
+        right: divisor,
+        span: {
+          sourceFile: first.span.sourceFile,
+          start: first.span.start,
+          end: divisor.span.end,
+        },
+      };
+    }
+
+    this.expectPunctuation(",", "Expected `,` before the rounding mode.");
+    const modeToken = this.current;
+    if (modeToken.kind !== "string" || !ROUNDING_MODES.has(modeToken.text)) {
+      this.errorAtCurrent(
+        "BANK-DEC-003",
+        `Expected an explicit rounding mode.`,
+        `Use one of: ${[...ROUNDING_MODES].sort().join(", ")}.`,
+      );
+      return null;
+    }
+    this.advance();
+
+    const close = this.expectPunctuation(
+      ")",
+      `Expected \`)\` after \`${nameToken.text}\` arguments.`,
+    );
+    if (!close) {
+      return null;
+    }
+
+    return {
+      kind: "RoundedExpression",
+      operand,
+      mode: modeToken.text as RoundingMode,
+      isDivision,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: close.span.end,
+      },
+    } satisfies RoundedExpressionNode;
   }
 
   private parseTypeNode(): TypeNode | null {

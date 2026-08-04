@@ -885,9 +885,16 @@ function describeExpression(expression: IRExpression): string {
       return expression.value;
     case "MemberAccess":
       return `${expression.targetName}.${expression.member}`;
+    case "Logical":
     case "BinaryComparison":
     case "BinaryArithmetic":
       return `${describeExpression(expression.left)} ${expression.operator} ${describeExpression(expression.right)}`;
+    case "Not":
+      return `!${describeExpression(expression.operand)}`;
+    case "Rounded":
+      return `round(${describeExpression(expression.operand)}, ${expression.mode})`;
+    case "Call":
+      return `${expression.callee}(${expression.args.map(describeExpression).join(", ")})`;
   }
 }
 

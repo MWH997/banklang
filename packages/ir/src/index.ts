@@ -10,6 +10,15 @@ import {
   type ReturnStatementNode,
   type SourceSpan,
   type MemberAccessNode,
+  type ComparisonOperator,
+  type LogicalOperator,
+  type RoundingMode,
+  type UnaryExpressionNode,
+  type RoundedExpressionNode,
+  type CallExpressionNode,
+  type WhileStatementNode,
+  type AssignStatementNode,
+  type FileStatementNode,
 } from "../../ast/src/index";
 import type {
   DecimalType,
@@ -92,7 +101,43 @@ export type IRStatement =
   | IRReturnStatement
   | IRIfStatement
   | IRLedgerStatement
-  | IRAuditStatement;
+  | IRAuditStatement
+  | IRWhileStatement
+  | IRAssignStatement
+  | IRExpressionStatement
+  | IRFileStatement;
+
+export interface IRWhileStatement {
+  kind: "WhileStatement";
+  span: SourceSpan;
+  condition: IRExpression;
+  limit: number;
+  body: IRBlock;
+}
+
+export interface IRAssignStatement {
+  kind: "AssignStatement";
+  span: SourceSpan;
+  target: IRIdentifierExpression | IRMemberAccessExpression;
+  expression: IRExpression;
+}
+
+export interface IRExpressionStatement {
+  kind: "ExpressionStatement";
+  span: SourceSpan;
+  expression: IRExpression;
+}
+
+export interface IRFileStatement {
+  kind: "FileStatement";
+  span: SourceSpan;
+  operation: "open" | "read" | "write" | "close";
+  fileName: string;
+  recordName: string | null;
+  /** Mode of the declared file, needed to emit OPEN INPUT vs OPEN OUTPUT. */
+  fileMode: "input" | "output";
+  statusName: string | null;
+}
 
 export interface IRLedgerStatement {
   kind: "LedgerStatement";
@@ -138,7 +183,11 @@ export type IRExpression =
   | IRStringLiteralExpression
   | IRMemberAccessExpression
   | IRBinaryComparisonExpression
-  | IRBinaryArithmeticExpression;
+  | IRBinaryArithmeticExpression
+  | IRLogicalExpression
+  | IRNotExpression
+  | IRRoundedExpression
+  | IRCallExpression;
 
 export interface IRStringLiteralExpression {
   kind: "StringLiteral";
@@ -180,16 +229,49 @@ export interface IRBooleanLiteralExpression {
 export interface IRBinaryComparisonExpression {
   kind: "BinaryComparison";
   span: SourceSpan;
-  operator: ">";
+  operator: ComparisonOperator;
   left: IRExpression;
   right: IRExpression;
   resolvedType: BoolIRType;
 }
 
+export interface IRLogicalExpression {
+  kind: "Logical";
+  span: SourceSpan;
+  operator: LogicalOperator;
+  left: IRExpression;
+  right: IRExpression;
+  resolvedType: BoolIRType;
+}
+
+export interface IRNotExpression {
+  kind: "Not";
+  span: SourceSpan;
+  operand: IRExpression;
+  resolvedType: BoolIRType;
+}
+
+/** Arithmetic carrying an explicit rounding mode, from round() or divide(). */
+export interface IRRoundedExpression {
+  kind: "Rounded";
+  span: SourceSpan;
+  operand: IRExpression;
+  mode: RoundingMode;
+  resolvedType: DecimalIRType;
+}
+
+export interface IRCallExpression {
+  kind: "Call";
+  span: SourceSpan;
+  callee: string;
+  args: IRExpression[];
+  resolvedType: IRType;
+}
+
 export interface IRBinaryArithmeticExpression {
   kind: "BinaryArithmetic";
   span: SourceSpan;
-  operator: "+" | "-";
+  operator: "+" | "-" | "*" | "/";
   left: IRExpression;
   right: IRExpression;
   resolvedType: DecimalIRType;
@@ -241,6 +323,19 @@ export function lowerProgramToIR(
     return lowered;
   });
 
+  fileTable.clear();
+  for (const file of typechecked.files) {
+    fileTable.set(file.name, {
+      mode: file.mode,
+      statusName: file.statusName,
+    });
+  }
+
+  functionTable.clear();
+  for (const fn of typechecked.functions) {
+    functionTable.set(fn.name, lowerType(fn.returnType));
+  }
+
   const functions = typechecked.functions.map((fn) => lowerFunction(fn));
   const transactions = typechecked.transactions.map((transaction) =>
     lowerTransaction(transaction),
@@ -270,8 +365,25 @@ export function lowerProgramToIR(
   };
 }
 
+/** Declared files and function return types, for lowering references. */
+const fileTable = new Map<
+  string,
+  { mode: "input" | "output"; statusName: string | null }
+>();
+const functionTable = new Map<string, IRType>();
+
+/** File status fields are readable in any body, so they must be in IR scope. */
+function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
+  for (const [, file] of fileTable) {
+    if (file.statusName && !scopeTypes.has(file.statusName)) {
+      scopeTypes.set(file.statusName, { kind: "string", length: 2 });
+    }
+  }
+}
+
 function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
   const scopeTypes = new Map<string, IRType>();
+  addFileStatusSymbols(scopeTypes);
   for (const parameter of transaction.parameters) {
     scopeTypes.set(parameter.name, lowerType(parameter.type));
   }
@@ -312,6 +424,7 @@ function lowerRecord(
 
 function lowerFunction(fn: ResolvedFunction): IRFunction {
   const scopeTypes = new Map<string, IRType>();
+  addFileStatusSymbols(scopeTypes);
   for (const parameter of fn.parameters) {
     scopeTypes.set(parameter.name, lowerType(parameter.type));
   }
@@ -373,6 +486,49 @@ function lowerStatement(
         eventName: lowerExpression(statement.eventName, scopeTypes),
         correlation: lowerExpression(statement.correlation, scopeTypes),
       };
+    case "WhileStatement":
+      return {
+        kind: "WhileStatement",
+        span: statement.span,
+        condition: lowerExpression(statement.condition, scopeTypes),
+        limit: statement.limit,
+        body: lowerBlock(statement.body, scopeTypes),
+      };
+    case "AssignStatement": {
+      const target = lowerExpression(statement.target, scopeTypes);
+      if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
+        throw new Error("Assignment target must be an identifier or field.");
+      }
+      return {
+        kind: "AssignStatement",
+        span: statement.span,
+        target,
+        expression: lowerExpression(statement.expression, scopeTypes),
+      };
+    }
+    case "ExpressionStatement":
+      return {
+        kind: "ExpressionStatement",
+        span: statement.span,
+        expression: lowerExpression(statement.expression, scopeTypes),
+      };
+    case "FileStatement": {
+      const file = fileTable.get(statement.fileName);
+      if (!file) {
+        throw new Error(
+          `Unresolved file during IR lowering: ${statement.fileName}`,
+        );
+      }
+      return {
+        kind: "FileStatement",
+        span: statement.span,
+        operation: statement.operation,
+        fileName: statement.fileName,
+        recordName: statement.recordName,
+        fileMode: file.mode,
+        statusName: file.statusName,
+      };
+    }
   }
 }
 
@@ -442,6 +598,44 @@ function lowerExpression(
       return lowerMemberAccessExpression(expression, scopeTypes);
     case "BinaryExpression":
       return lowerBinaryExpression(expression, scopeTypes);
+    case "UnaryExpression":
+      return {
+        kind: "Not",
+        span: expression.span,
+        operand: lowerExpression(expression.operand, scopeTypes),
+        resolvedType: { kind: "bool" },
+      };
+    case "RoundedExpression": {
+      const operand = lowerExpression(expression.operand, scopeTypes);
+      return {
+        kind: "Rounded",
+        span: expression.span,
+        operand,
+        mode: expression.mode,
+        resolvedType: expressionDecimalType(operand) ?? {
+          kind: "decimal",
+          precision: 18,
+          scale: 2,
+        },
+      };
+    }
+    case "CallExpression": {
+      const signature = functionTable.get(expression.callee);
+      if (!signature) {
+        throw new Error(
+          `Unresolved function during IR lowering: ${expression.callee}`,
+        );
+      }
+      return {
+        kind: "Call",
+        span: expression.span,
+        callee: expression.callee,
+        args: expression.args.map((argument) =>
+          lowerExpression(argument, scopeTypes),
+        ),
+        resolvedType: signature,
+      };
+    }
   }
 }
 
@@ -523,15 +717,31 @@ function lowerBooleanLiteralExpression(
 function lowerBinaryExpression(
   expression: BinaryExpressionNode,
   scopeTypes: Map<string, IRType>,
-): IRBinaryComparisonExpression | IRBinaryArithmeticExpression {
+):
+  | IRBinaryComparisonExpression
+  | IRBinaryArithmeticExpression
+  | IRLogicalExpression {
   const left = lowerExpression(expression.left, scopeTypes);
   const right = lowerExpression(expression.right, scopeTypes);
 
-  if (expression.operator === ">") {
+  const operator = expression.operator;
+
+  if (operator === "&&" || operator === "||") {
+    return {
+      kind: "Logical",
+      span: expression.span,
+      operator,
+      left,
+      right,
+      resolvedType: { kind: "bool" },
+    };
+  }
+
+  if (COMPARISON_OPERATORS.has(operator)) {
     return {
       kind: "BinaryComparison",
       span: expression.span,
-      operator: expression.operator,
+      operator: operator as ComparisonOperator,
       left,
       right,
       resolvedType: { kind: "bool" },
@@ -541,11 +751,33 @@ function lowerBinaryExpression(
   return {
     kind: "BinaryArithmetic",
     span: expression.span,
-    operator: expression.operator,
+    operator: operator as "+" | "-" | "*" | "/",
     left,
     right,
-    resolvedType: decimalExpressionType(left, right),
+    resolvedType: arithmeticResultType(operator, left, right),
   };
+}
+
+const COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "==", "!="]);
+
+/** Multiplication adds scales; other operators keep the operand type. */
+function arithmeticResultType(
+  operator: string,
+  left: IRExpression,
+  right: IRExpression,
+): DecimalIRType {
+  const leftType = expressionDecimalType(left);
+  const rightType = expressionDecimalType(right);
+
+  if (operator === "*" && leftType && rightType) {
+    return {
+      kind: "decimal",
+      precision: Math.max(leftType.precision, rightType.precision),
+      scale: leftType.scale + rightType.scale,
+    };
+  }
+
+  return decimalExpressionType(left, right);
 }
 
 function decimalExpressionType(
@@ -560,13 +792,16 @@ function decimalExpressionType(
 function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
   if (
     expression.kind === "DecimalLiteral" ||
-    expression.kind === "BinaryArithmetic"
+    expression.kind === "BinaryArithmetic" ||
+    expression.kind === "Rounded"
   ) {
     return expression.resolvedType;
   }
 
   if (
-    expression.kind === "Identifier" &&
+    (expression.kind === "Identifier" ||
+      expression.kind === "MemberAccess" ||
+      expression.kind === "Call") &&
     expression.resolvedType.kind === "decimal"
   ) {
     return expression.resolvedType;

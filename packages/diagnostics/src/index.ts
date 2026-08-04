@@ -151,24 +151,28 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-DEC-002",
     title: "Implicit scale narrowing",
     explanation:
-      "Assigning a wider scale to a narrower one silently discards digits, so it requires an explicit rounding decision.",
-    remediation: "Apply an explicit rounding mode.",
-    implemented: false,
+      "Assigning a wider scale to a narrower one silently discards digits, which is the classic way money goes missing a fraction at a time.",
+    remediation:
+      'Wrap the value in round(value, "HALF_EVEN") to state how digits are discarded.',
+    specReference: "language-reference.md section 4",
+    implemented: true,
   },
   {
     id: "BANK-DEC-003",
     title: "Missing rounding mode",
     explanation:
-      "A division or scale conversion has no explicit rounding mode, leaving the result backend-dependent.",
-    remediation: "State the rounding mode at the operation.",
-    implemented: false,
+      "Division cannot be exact, so a rounding mode must be stated. Leaving it implicit makes the result depend on the backend rather than on a decision someone made.",
+    remediation: 'Write divide(a, b, "HALF_EVEN") instead of a / b.',
+    specReference: "language-reference.md section 4",
+    implemented: true,
   },
   {
     id: "BANK-DEC-004",
     title: "Possible overflow",
-    explanation: "An operation may exceed the target precision.",
-    remediation: "Widen the target type or constrain the inputs.",
-    implemented: false,
+    explanation:
+      "Multiplication adds the operand scales, and the result needs more digits than the declared precision allows.",
+    remediation: "Widen the operand precision or reduce the operand scales.",
+    implemented: true,
   },
   {
     id: "BANK-DEC-005",
@@ -208,9 +212,10 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-TXN-004",
     title: "Unbounded loop in transaction",
     explanation:
-      "A transaction contains a loop with no static bound or termination proof.",
-    remediation: "Reserved until loops enter the subset.",
-    implemented: false,
+      "A loop has no static iteration bound. An unbounded loop in a financial program can hold locks or consume a batch window indefinitely.",
+    remediation: "Write `while <condition> limit 1000 { ... }`.",
+    specReference: "language-reference.md section 9",
+    implemented: true,
   },
   {
     id: "BANK-LED-001",
@@ -275,9 +280,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-FILE-002",
     title: "Record layout mismatch",
     explanation:
-      "A file record layout differs from the declared copybook layout.",
-    remediation: "Reserved.",
-    implemented: false,
+      "A read or write uses a record variable whose type differs from the record type in the file declaration, so the bytes would not line up.",
+    remediation:
+      "Make the record variable match the record type in the file declaration.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
   },
   {
     id: "BANK-FILE-003",

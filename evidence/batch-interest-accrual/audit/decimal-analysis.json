@@ -57,7 +57,7 @@
         },
         "end": {
           "line": 11,
-          "column": 66
+          "column": 52
         }
       },
       "precision": 18,
@@ -68,7 +68,7 @@
     {
       "category": "literal",
       "owner": "isEligibleForInterest",
-      "symbol": "0000000000000025.00",
+      "symbol": "25.00",
       "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
         "sourceFile": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
@@ -78,13 +78,13 @@
         },
         "end": {
           "line": 11,
-          "column": 65
+          "column": 51
         }
       },
-      "precision": 18,
+      "precision": 4,
       "scale": 2,
-      "packedBytes": 10,
-      "picture": "PIC S9(16)V99 COMP-3"
+      "packedBytes": 3,
+      "picture": "PIC S9(2)V99 COMP-3"
     },
     {
       "category": "literal",

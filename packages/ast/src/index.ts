@@ -148,11 +148,51 @@ export interface MemberAccessNode extends NodeBase {
   member: string;
 }
 
+export type ComparisonOperator = "<" | "<=" | ">" | ">=" | "==" | "!=";
+export type ArithmeticOperator = "+" | "-" | "*" | "/";
+export type LogicalOperator = "&&" | "||";
+
+export type BinaryOperator =
+  ComparisonOperator | ArithmeticOperator | LogicalOperator;
+
 export interface BinaryExpressionNode extends NodeBase {
   kind: "BinaryExpression";
-  operator: ">" | "+" | "-";
+  operator: BinaryOperator;
   left: ExpressionNode;
   right: ExpressionNode;
+}
+
+export interface UnaryExpressionNode extends NodeBase {
+  kind: "UnaryExpression";
+  operator: "!";
+  operand: ExpressionNode;
+}
+
+/** Rounding modes, named after the COBOL `ROUNDED MODE IS` phrases. */
+export type RoundingMode =
+  "HALF_EVEN" | "HALF_UP" | "HALF_DOWN" | "UP" | "DOWN" | "CEILING" | "FLOOR";
+
+/**
+ * `round(expr, "HALF_EVEN")` or `divide(a, b, "HALF_UP")`.
+ *
+ * Rounding is a distinct node rather than an operator because COBOL attaches
+ * `ROUNDED` to the assignment, not to a subexpression. Making it explicit in
+ * the source is also the point: an unstated rounding mode is a real defect in
+ * financial arithmetic.
+ */
+export interface RoundedExpressionNode extends NodeBase {
+  kind: "RoundedExpression";
+  operand: ExpressionNode;
+  mode: RoundingMode;
+  /** True when written as `divide(a, b, mode)`. */
+  isDivision: boolean;
+}
+
+/** A call to a user-declared function. */
+export interface CallExpressionNode extends NodeBase {
+  kind: "CallExpression";
+  callee: string;
+  args: ExpressionNode[];
 }
 
 export interface LetStatementNode extends NodeBase {
@@ -168,7 +208,10 @@ export type ExpressionNode =
   | BooleanLiteralNode
   | StringLiteralNode
   | MemberAccessNode
-  | BinaryExpressionNode;
+  | BinaryExpressionNode
+  | UnaryExpressionNode
+  | RoundedExpressionNode
+  | CallExpressionNode;
 
 /**
  * A ledger posting operation inside a transaction body.
@@ -191,12 +234,57 @@ export interface AuditStatementNode extends NodeBase {
   correlation: ExpressionNode;
 }
 
+/** `while <condition> { ... }` with a required static bound. */
+export interface WhileStatementNode extends NodeBase {
+  kind: "WhileStatement";
+  condition: ExpressionNode;
+  /**
+   * Maximum iterations, from the required `limit <n>` clause. Unbounded loops
+   * in a transaction are rejected as BANK-TXN-004.
+   */
+  limit: number;
+  body: BlockNode;
+}
+
+/** Assignment to an existing local or record field. */
+export interface AssignStatementNode extends NodeBase {
+  kind: "AssignStatement";
+  target: IdentifierNode | MemberAccessNode;
+  expression: ExpressionNode;
+}
+
+/** `call someFunction(args);` used as a statement for its effect. */
+export interface ExpressionStatementNode extends NodeBase {
+  kind: "ExpressionStatement";
+  expression: ExpressionNode;
+}
+
+export type FileOperation = "open" | "read" | "write" | "close";
+
+/**
+ * `read accountInput into record;` and friends.
+ *
+ * The file name is resolved against declared files, so an operation on an
+ * undeclared file is a type error rather than a runtime surprise.
+ */
+export interface FileStatementNode extends NodeBase {
+  kind: "FileStatement";
+  operation: FileOperation;
+  fileName: string;
+  /** Record variable for `read into` / `write from`. */
+  recordName: string | null;
+}
+
 export type StatementNode =
   | LetStatementNode
   | ReturnStatementNode
   | IfStatementNode
   | LedgerStatementNode
-  | AuditStatementNode;
+  | AuditStatementNode
+  | WhileStatementNode
+  | AssignStatementNode
+  | ExpressionStatementNode
+  | FileStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";

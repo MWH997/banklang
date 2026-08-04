@@ -27,10 +27,11 @@
            05  ACCOUNT-ID           PIC X(16).
            05  BALANCE              PIC S9(16)V99 COMP-3.
        01  IS-OVERDRAWN-RESULT PIC X VALUE 'N'.
+       01  IS-OVERDRAWN-P1      PIC S9(16)V99 COMP-3.
 
        PROCEDURE DIVISION.
        IS-OVERDRAWN.
-           IF 0.00 > BALANCE
+           IF 0.00 > IS-OVERDRAWN-P1
                MOVE 'Y' TO IS-OVERDRAWN-RESULT
            ELSE
                MOVE 'N' TO IS-OVERDRAWN-RESULT

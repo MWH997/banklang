@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "InterestAccount",
+      "cobolName": "INTEREST-ACCOUNT",
+      "totalLength": 80,
+      "entries": [
+        {
+          "order": 1,
+          "path": "INTEREST-ACCOUNT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "INTEREST-ACCOUNT.BRANCH-CODE",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 8,
+          "bytes": 8
+        },
+        {
+          "order": 3,
+          "path": "INTEREST-ACCOUNT.BALANCE",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 24,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 4,
+          "path": "INTEREST-ACCOUNT.ACCRUED-INTEREST",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 34,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 5,
+          "path": "INTEREST-ACCOUNT.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 44,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    },
+    {
+      "recordName": "PostingAdvice",
+      "cobolName": "POSTING-ADVICE",
+      "totalLength": 62,
+      "entries": [
+        {
+          "order": 1,
+          "path": "POSTING-ADVICE.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "POSTING-ADVICE.INTEREST-AMOUNT",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "POSTING-ADVICE.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    }
+  ]
+}

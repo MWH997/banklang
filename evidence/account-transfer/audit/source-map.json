@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ACCOUNT-TRANSFER.cbl",
-      "targetStartLine": 16,
-      "targetEndLine": 22,
+      "targetStartLine": 17,
+      "targetEndLine": 23,
       "category": "function",
       "symbol": "validateAmount"
     }

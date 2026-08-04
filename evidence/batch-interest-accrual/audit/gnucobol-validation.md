@@ -5,11 +5,11 @@
 | validated-with-gnucobol    | no                                                               |
 | backend-profile            | gnucobol-local                                                   |
 | source-artifact            | examples/batch-interest-accrual/src/main.bank.ts                 |
-| source-artifact-sha256     | 271e70e778647fe020d67b563de3036df6c562b56471c1c3f4c1aed4bc0e95a2 |
+| source-artifact-sha256     | e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa |
 | generated-artifact         | dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl                   |
-| generated-artifact-sha256  | 508812fd13bde5ccb268fe6dcfaea7ba9ee7d18b73364d7706f0d9ac84d5b592 |
+| generated-artifact-sha256  | dc18fc14cd248eb8bffb83eab832edc7965b0b187f0b201e42e618df3dc9c03d |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | efa4096fe29f50ac94f54d6237b979bf7ae8ec04cfd57a894142d3752fa7e936 |
+| source-map-artifact-sha256 | 8a2a6d2ef89ce4b65b876917b3b8a353472b9778fb4be005a12f59945281eade |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
 | compiler-command           | cobc not found                                                   |

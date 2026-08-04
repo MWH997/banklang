@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "2 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "/workspace/dist/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "/workspace/dist/jcl/INTEREST-POSTING-BATCH.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "/workspace/dist/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "17/17 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "skipped",
+      "details": "No local cobc executable was available."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/INTEREST-ACCOUNT.cpy",
+    "/workspace/dist/copybooks/POSTING-ADVICE.cpy",
+    "/workspace/dist/jcl/INTEREST-POSTING-BATCH.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 17,
+    "coveredSymbolCount": 17,
+    "diagnostics": []
+  },
+  "gnucobolValidation": {
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/interest-posting-batch/src/main.bank.ts",
+    "sourceArtifactHash": "7383eb12eccef651dc091e9b78889cf4579f004901d7d61036c8ad7380f58c23",
+    "generatedArtifact": "dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl",
+    "generatedArtifactHash": "2589fc20a3e46b86458af62bc1c6c58437cf922a51c9bbda8d84579f40f4f571",
+    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "5cfa77acb4af1c9d706bb28700542168c3c2399c6ec9c82eb88cee7c12a7b5de",
+    "compilerExecutable": null,
+    "compilerVersion": null,
+    "compilerCommand": "cobc not found",
+    "compilerExitCode": null,
+    "compilerStatus": "skipped",
+    "compilerOutput": null,
+    "validatedWithGnucobol": false,
+    "knownBackendGaps": [
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}

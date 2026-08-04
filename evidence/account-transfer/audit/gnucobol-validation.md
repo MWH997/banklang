@@ -7,9 +7,9 @@
 | source-artifact            | examples/account-transfer/src/main.bank.ts                       |
 | source-artifact-sha256     | ce511a3e0e193fcb873d1c72af546e76aa49dac9665dab56e4f1e05428527a44 |
 | generated-artifact         | dist/gnucobol/cobol/ACCOUNT-TRANSFER.cbl                         |
-| generated-artifact-sha256  | 83b3dc1c505f157fc925bf2b9264e083cef1520a93531166c9a3d260213d8505 |
+| generated-artifact-sha256  | 6be2dc8d493fb8db769500191123fb1a382ca0dfe7019f22e8fd36d0c2bc306d |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | df4ffac4a401e0ecdd0da77977942c3483d7d792523e6616d2c6de4d55473a46 |
+| source-map-artifact-sha256 | 42ccbefbb933575941dc5b3fdbf3b9080cbb4c294349381d8bb176657936a74f |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
 | compiler-command           | cobc not found                                                   |

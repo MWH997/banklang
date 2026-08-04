@@ -79,8 +79,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
-      "targetStartLine": 16,
-      "targetEndLine": 23,
+      "targetStartLine": 17,
+      "targetEndLine": 24,
       "category": "function",
       "symbol": "isEligibleForInterest"
     }

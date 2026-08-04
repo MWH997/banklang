@@ -92,6 +92,45 @@ it.
 Run `bankc explain BANK-LED-001` for any diagnostic. A test asserts that no
 diagnostic can be emitted without a catalogue entry.
 
+## The language
+
+BankTS is small on purpose, but it covers what a posting or batch program
+actually needs:
+
+| Feature      | Surface                                                        |
+| ------------ | -------------------------------------------------------------- |
+| Comparison   | `<` `<=` `>` `>=` `==` `!=`                                    |
+| Logic        | `&&` `\|\|` `!`                                                |
+| Arithmetic   | `+` `-` `*`, and `divide(a, b, "HALF_EVEN")`                   |
+| Rounding     | `round(expr, "MODE")` across seven COBOL rounding modes        |
+| Control flow | `if` / `else`, and `while ... limit <n>`                       |
+| Functions    | Declared, called, and callable before declaration              |
+| Transactions | `debit`, `credit`, `audit`, field assignment                   |
+| Files        | `open`, `read into`, `write from`, `close`, with status checks |
+
+Interest accrual, in full:
+
+```ts
+function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
+  return round(balance * rate, "HALF_EVEN");
+}
+```
+
+`MoneyBDT` is `decimal<18, 2>` and `Rate` is `decimal<9, 4>`, so the product has
+scale 6. Storing it as money discards four digits, and the compiler will not let
+that happen silently — `round` with an explicit mode is required. Bare division
+is rejected outright for the same reason.
+
+```cobol
+       ACCRUE.
+           COMPUTE ACCRUE-RESULT ROUNDED MODE IS NEAREST-EVEN = (ACCRUE-P1 * ACCRUE-P2)
+           GOBACK.
+```
+
+Loops must declare a bound. An unbounded loop in a transaction is
+`BANK-TXN-004`, and the limit becomes a real guard counter in the generated
+COBOL, so a loop whose condition never goes false still terminates.
+
 ## Design constraints
 
 Because money is involved, several ordinary conveniences are removed on purpose:
@@ -218,10 +257,11 @@ sounding impressive:
   CI. No IBM Enterprise COBOL validation has been performed, and none is
   claimed.
 - **Not production-ready**, and never run against a real ledger.
-- **The subset is small.** No loops, no SQL, no CICS, no VSAM. Db2 and CICS
-  profiles are on the roadmap, not in the box.
-- **File I/O is declaration-only.** Files produce `FILE-CONTROL` and `FD`
-  sections; read and write statements are not in the subset yet.
+- **The subset is small.** No arrays, enums, nullable types, currency types,
+  SQL, CICS, or VSAM. Db2 and CICS profiles are on the roadmap, not in the box.
+- **File I/O moves whole records.** There is no per-field file mapping, and
+  indexed and relative organisations are not supported.
+- **No recursion**, and no user-defined types beyond records and aliases.
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but

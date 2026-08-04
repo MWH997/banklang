@@ -8,7 +8,7 @@ record InterestAccount {
 }
 
 function isEligibleForInterest(balance: MoneyBDT): bool {
-  let projectedBalance: MoneyBDT = balance + 0000000000000025.00;
+  let projectedBalance: MoneyBDT = balance + 25.00;
 
   if projectedBalance > 1000.00 {
     return true;

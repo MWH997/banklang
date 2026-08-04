@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "entries": [
+    {
+      "category": "record-field",
+      "owner": "InterestAccount",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 10,
+          "column": 3
+        },
+        "end": {
+          "line": 10,
+          "column": 21
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "record-field",
+      "owner": "InterestAccount",
+      "symbol": "accruedInterest",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 11,
+          "column": 3
+        },
+        "end": {
+          "line": 11,
+          "column": 29
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "record-field",
+      "owner": "PostingAdvice",
+      "symbol": "interestAmount",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 17,
+          "column": 3
+        },
+        "end": {
+          "line": 17,
+          "column": 28
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "isEligible",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 26,
+          "column": 21
+        },
+        "end": {
+          "line": 26,
+          "column": 38
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "isEligible",
+      "symbol": "minimumBalance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 26,
+          "column": 40
+        },
+        "end": {
+          "line": 26,
+          "column": 64
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "rateFor",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 31,
+          "column": 18
+        },
+        "end": {
+          "line": 31,
+          "column": 35
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "rateFor",
+      "symbol": "threshold",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 31,
+          "column": 37
+        },
+        "end": {
+          "line": 31,
+          "column": 56
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "return-type",
+      "owner": "rateFor",
+      "symbol": "rateFor",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 31,
+          "column": 10
+        },
+        "end": {
+          "line": 37,
+          "column": 2
+        }
+      },
+      "precision": 9,
+      "scale": 4,
+      "packedBytes": 5,
+      "picture": "PIC S9(5)V9999 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "rateFor",
+      "symbol": "0.0450",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 33,
+          "column": 12
+        },
+        "end": {
+          "line": 33,
+          "column": 18
+        }
+      },
+      "precision": 5,
+      "scale": 4,
+      "packedBytes": 3,
+      "picture": "PIC S9(1)V9999 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "rateFor",
+      "symbol": "0.0125",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 35,
+          "column": 12
+        },
+        "end": {
+          "line": 35,
+          "column": 18
+        }
+      },
+      "precision": 5,
+      "scale": 4,
+      "packedBytes": 3,
+      "picture": "PIC S9(1)V9999 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "accrue",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 41,
+          "column": 17
+        },
+        "end": {
+          "line": 41,
+          "column": 34
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "accrue",
+      "symbol": "rate",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 41,
+          "column": 36
+        },
+        "end": {
+          "line": 41,
+          "column": 46
+        }
+      },
+      "precision": 9,
+      "scale": 4,
+      "packedBytes": 5,
+      "picture": "PIC S9(5)V9999 COMP-3"
+    },
+    {
+      "category": "return-type",
+      "owner": "accrue",
+      "symbol": "accrue",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 41,
+          "column": 10
+        },
+        "end": {
+          "line": 43,
+          "column": 2
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "feeFor",
+      "symbol": "balance",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 46,
+          "column": 17
+        },
+        "end": {
+          "line": 46,
+          "column": 34
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "feeFor",
+      "symbol": "fee",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 46,
+          "column": 36
+        },
+        "end": {
+          "line": 46,
+          "column": 49
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "return-type",
+      "owner": "feeFor",
+      "symbol": "feeFor",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 46,
+          "column": 10
+        },
+        "end": {
+          "line": 52,
+          "column": 2
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "feeFor",
+      "symbol": "0.00",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 47,
+          "column": 23
+        },
+        "end": {
+          "line": 47,
+          "column": 27
+        }
+      },
+      "precision": 3,
+      "scale": 2,
+      "packedBytes": 2,
+      "picture": "PIC S9(1)V99 COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "feeFor",
+      "symbol": "0.00",
+      "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/interest-posting-batch/src/main.bank.ts",
+        "start": {
+          "line": 50,
+          "column": 12
+        },
+        "end": {
+          "line": 50,
+          "column": 16
+        }
+      },
+      "precision": 3,
+      "scale": 2,
+      "packedBytes": 2,
+      "picture": "PIC S9(1)V99 COMP-3"
+    }
+  ]
+}
