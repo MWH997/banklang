@@ -168,6 +168,82 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-014",
+    title: "Generic expansion does not terminate",
+    explanation:
+      "A generic function calls itself at a type argument that keeps changing. Generics are monomorphised, so each new type argument creates another instantiation and the expansion never finishes.",
+    remediation:
+      "Make the recursive call use the same type arguments as the enclosing function.",
+    specReference: "language-reference.md section 5",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-015",
+    title: "Generic function is never instantiated",
+    explanation:
+      "A generic declaration is a template. Nothing is generated for one that is never called, and its body is never checked against real types, so a type error inside it would ship unnoticed.",
+    remediation: "Call the function, or remove it.",
+    specReference: "language-reference.md section 5",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-016",
+    title: "Record inheritance cycle",
+    explanation:
+      "A record extends itself, directly or through another record. The flattened layout would be infinite.",
+    remediation: "Break the cycle so the chain of base records terminates.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-017",
+    title: "Inherited field redeclared",
+    explanation:
+      "A derived record declares a field its base already declares. Both would land in one COBOL group under the same name, which no qualification can disambiguate.",
+    remediation:
+      "Rename the field. A derived record extends the base layout; it cannot replace part of it.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-018",
+    title: "Wrong number of type arguments",
+    explanation:
+      "A generic record was used with a different number of type arguments than it declares parameters, or with none at all. COBOL has no boxed values, so the layout has to be fixed at compile time.",
+    remediation: "Supply one concrete type per declared type parameter.",
+    specReference: "language-reference.md section 5",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-019",
+    title: "Type arguments on a non-generic type",
+    explanation:
+      "A type that declares no type parameters was given type arguments.",
+    remediation: "Drop the type argument list.",
+    specReference: "language-reference.md section 5",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-020",
+    title: "Type argument cannot be inferred",
+    explanation:
+      "A generic function is instantiated from the types of its arguments. A type parameter that appears in no parameter type, or that two arguments disagree about, has no single answer.",
+    remediation:
+      "Mention every type parameter in a parameter type, and pass arguments that agree on it.",
+    specReference: "language-reference.md section 5",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-021",
+    title: "Record argument is not a named record",
+    explanation:
+      "A record parameter binds to the record's group item in working storage rather than to a copy of it, so the callee reads that group whatever the caller passed. An expression argument would compile and then silently read different storage.",
+    remediation:
+      "Assign the value into a record of the parameter's type, then pass that record by name.",
+    specReference: "language-reference.md section 6",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:
@@ -248,6 +324,33 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TXN-008",
+    title: "Invalid failure code",
+    explanation:
+      "A raise code is empty or wider than BANK-FAILURE-CODE. A truncated code would not match the handler that tests it.",
+    remediation: "Use a non-empty code of at most 32 characters.",
+    specReference: "language-reference.md section 11",
+    implemented: true,
+  },
+  {
+    id: "BANK-TXN-009",
+    title: "Failure handler raises",
+    explanation:
+      "An `on failure` handler contains a raise. It is the last line of defence: there is no outer handler to catch it, so the failure would be lost along with the record of why the transaction stopped.",
+    remediation: "Record the failure and return instead of raising again.",
+    specReference: "language-reference.md section 11",
+    implemented: true,
+  },
+  {
+    id: "BANK-TXN-010",
+    title: "More than one entry transaction",
+    explanation:
+      "A program starts at one place. COBOL enters at the first statement of the PROCEDURE DIVISION and cannot choose between two entry points, so the second would never run.",
+    remediation: "Mark exactly one transaction with `entry`.",
+    specReference: "language-reference.md section 10",
+    implemented: true,
+  },
+  {
     id: "BANK-LED-001",
     title: "Unbalanced posting",
     explanation:
@@ -270,6 +373,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     explanation: "Posting date and value date policy is missing or unclear.",
     remediation: "Reserved.",
     implemented: false,
+  },
+  {
+    id: "BANK-LED-004",
+    title: "Posted amount does not fit the ledger interface",
+    explanation:
+      "BANK-LEDGER-AMOUNT is PIC S9(16)V99. An amount with more integer digits or a finer scale loses digits in the MOVE, and COBOL truncates silently.",
+    remediation:
+      "Round to two decimal places with an explicit mode, or narrow the amount type, so the loss is stated rather than silent.",
+    specReference: "docs/adr/0003-ledger-and-audit-calling-convention.md",
+    implemented: true,
   },
   {
     id: "BANK-AUD-001",

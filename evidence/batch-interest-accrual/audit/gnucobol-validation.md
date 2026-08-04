@@ -1,20 +1,20 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                            |
-| -------------------------- | ---------------------------------------------------------------- |
-| validated-with-gnucobol    | no                                                               |
-| backend-profile            | gnucobol-local                                                   |
-| source-artifact            | examples/batch-interest-accrual/src/main.bank.ts                 |
-| source-artifact-sha256     | e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa |
-| generated-artifact         | dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl                   |
-| generated-artifact-sha256  | dc18fc14cd248eb8bffb83eab832edc7965b0b187f0b201e42e618df3dc9c03d |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | 8a2a6d2ef89ce4b65b876917b3b8a353472b9778fb4be005a12f59945281eade |
-| compiler-executable        | not found                                                        |
-| compiler-version           | unavailable                                                      |
-| compiler-command           | cobc not found                                                   |
-| compiler-exit-code         | n/a                                                              |
-| compiler-status            | skipped                                                          |
+| Field                      | Value                                                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| validated-with-gnucobol    | yes                                                                                                      |
+| backend-profile            | gnucobol-local                                                                                           |
+| source-artifact            | examples/batch-interest-accrual/src/main.bank.ts                                                         |
+| source-artifact-sha256     | e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa                                         |
+| generated-artifact         | dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl                                                           |
+| generated-artifact-sha256  | dc18fc14cd248eb8bffb83eab832edc7965b0b187f0b201e42e618df3dc9c03d                                         |
+| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                       |
+| source-map-artifact-sha256 | 7503bfddd89a0af193419eed1171ab26da9a6b731c49717b2feee3bc126f4ecf                                         |
+| compiler-executable        | cobc                                                                                                     |
+| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                    |
+| compiler-command           | cobc -x -free dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl -o dist/gnucobol/bin/batch-interest-accrual |
+| compiler-exit-code         | 0                                                                                                        |
+| compiler-status            | passed                                                                                                   |
 
 ## Compiler Output
 

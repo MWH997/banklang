@@ -37,7 +37,7 @@
           }
         },
         {
-          "match": "\\b(function|transaction|file)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "match": "\\b(function|transaction|file|record|enum|sql)\\s+([A-Za-z_][A-Za-z0-9_]*)",
           "captures": {
             "1": { "name": "keyword.control.bankts" },
             "2": { "name": "entity.name.function.bankts" }
@@ -58,7 +58,7 @@
       "patterns": [
         {
           "name": "keyword.control.bankts",
-          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else)\\b"
+          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else|while|for|each|in|switch|case|enum|sql|execute|cics|link|syncpoint|rollback|extends|entry|raise|on|failure)\\b"
         },
         {
           "name": "constant.language.bankts",

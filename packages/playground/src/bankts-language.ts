@@ -1,5 +1,7 @@
 import { StreamLanguage, type StringStream } from "@codemirror/language";
 
+// Mirrors KEYWORDS in packages/parser/src/index.ts. Highlighting that lags the
+// lexer is how a supported keyword ends up looking like an undefined name.
 const KEYWORDS = new Set([
   "module",
   "type",
@@ -11,11 +13,29 @@ const KEYWORDS = new Set([
   "let",
   "if",
   "else",
+  "while",
+  "for",
+  "each",
+  "in",
+  "switch",
+  "case",
+  "enum",
+  "sql",
+  "execute",
+  "cics",
+  "link",
+  "syncpoint",
+  "rollback",
+  "extends",
+  "entry",
+  "raise",
+  "on",
+  "failure",
   "true",
   "false",
 ]);
 
-const TYPES = new Set(["decimal", "string", "bool"]);
+const TYPES = new Set(["decimal", "string", "bool", "currency", "nullable"]);
 
 /** Ledger and audit operations are contextual in the grammar, not reserved. */
 const OPERATIONS = new Set(["debit", "credit", "audit"]);

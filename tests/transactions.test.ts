@@ -72,7 +72,7 @@ transaction postTransfer(request: TransferRequest) {
       "BANK-TYPE-003",
     );
     expect(typechecked.diagnostics[0].message).toContain(
-      "amount argument must be a decimal value",
+      "amount argument must be a decimal or currency value",
     );
   });
 

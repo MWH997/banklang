@@ -23,9 +23,10 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
-      # tests/cobol-compiles.test.ts skips without cobc. Installing GnuCOBOL
-      # keeps that lane running in CI, so generated COBOL that no compiler
-      # accepts cannot merge.
+      # tests/cobol-compiles.test.ts and tests/conformance.test.ts skip without
+      # cobc. Installing GnuCOBOL keeps both lanes running in CI, so neither
+      # generated COBOL that no compiler accepts nor a program that compiles and
+      # then computes the wrong balance can merge.
       - name: Install GnuCOBOL
         run: |
           sudo apt-get update

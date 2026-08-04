@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/amortisation-schedule
+Project: examples/amortisation-schedule/
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                               |
-| --------------- | ------- | ----------------------------------------------------- |
-| Check           | passed  | OK: examples/amortisation-schedule                    |
-| Build           | passed  | Wrote /workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl |
-| Verify          | passed  | Verified examples/amortisation-schedule               |
-| GnuCOBOL report | emitted | /workspace/dist/audit/gnucobol-validation.md          |
+| Step            | Status  | Details                                                             |
+| --------------- | ------- | ------------------------------------------------------------------- |
+| Check           | passed  | OK: examples/amortisation-schedule/                                 |
+| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl |
+| Verify          | passed  | Verified examples/amortisation-schedule/                            |
+| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md          |
 
 ## Notes
 

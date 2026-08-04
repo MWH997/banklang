@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/interest-posting-batch
+Project: examples/interest-posting-batch/
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                                |
-| --------------- | ------- | ------------------------------------------------------ |
-| Check           | passed  | OK: examples/interest-posting-batch                    |
-| Build           | passed  | Wrote /workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl |
-| Verify          | passed  | Verified examples/interest-posting-batch               |
-| GnuCOBOL report | emitted | /workspace/dist/audit/gnucobol-validation.md           |
+| Step            | Status  | Details                                                              |
+| --------------- | ------- | -------------------------------------------------------------------- |
+| Check           | passed  | OK: examples/interest-posting-batch/                                 |
+| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl |
+| Verify          | passed  | Verified examples/interest-posting-batch/                            |
+| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md           |
 
 ## Notes
 

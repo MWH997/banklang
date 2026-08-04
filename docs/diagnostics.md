@@ -80,6 +80,43 @@ Field access names a field the record does not declare.
 A ledger or audit statement appears outside a transaction, or a return or if
 statement appears inside a transaction body.
 
+### `BANK-TYPE-014` generic expansion does not terminate
+
+A generic function calls itself at a type argument that keeps changing. Generics
+are monomorphised, so every new type argument creates another instantiation.
+
+### `BANK-TYPE-015` generic function is never instantiated
+
+Nothing is generated for an uninstantiated generic, and its body is never
+checked against real types.
+
+### `BANK-TYPE-016` record inheritance cycle
+
+A record extends itself, directly or through another record.
+
+### `BANK-TYPE-017` inherited field redeclared
+
+A derived record declares a field its base already declares. Both would land in
+one COBOL group under the same name.
+
+### `BANK-TYPE-018` wrong number of type arguments
+
+A generic record was used with the wrong number of type arguments, or with none.
+
+### `BANK-TYPE-019` type arguments on a non-generic type
+
+A type that declares no type parameters was given type arguments.
+
+### `BANK-TYPE-020` type argument cannot be inferred
+
+A type parameter appears in no parameter type, or two arguments disagree about
+what it stands for.
+
+### `BANK-TYPE-021` record argument is not a named record
+
+A record parameter binds to that record's group item in working storage, so the
+callee reads the group whatever the caller passed.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden
@@ -120,6 +157,21 @@ Transaction contains an operation with backend-dependent behaviour.
 
 Transaction contains a loop without static bound or approved termination proof.
 
+### `BANK-TXN-008` invalid failure code
+
+A `raise` code is empty or wider than `BANK-FAILURE-CODE`. A truncated code
+would not match the handler that tests it.
+
+### `BANK-TXN-009` failure handler raises
+
+An `on failure` handler contains a `raise`. There is no outer handler to catch
+it.
+
+### `BANK-TXN-010` more than one entry transaction
+
+COBOL enters a program at one place, so only one transaction can be the entry
+point.
+
 ## 6. Ledger diagnostics
 
 ### `BANK-LED-001` unbalanced posting
@@ -133,6 +185,11 @@ Money movement occurs without ledger posting.
 ### `BANK-LED-003` inconsistent value date
 
 Posting date and value date policy is missing or inconsistent.
+
+### `BANK-LED-004` posted amount does not fit the ledger interface
+
+`BANK-LEDGER-AMOUNT` is `PIC S9(16)V99`. A wider integer part or a finer scale
+loses digits in the `MOVE`, and COBOL truncates silently.
 
 ## 7. Audit diagnostics
 

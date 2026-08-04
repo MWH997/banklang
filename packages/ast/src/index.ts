@@ -89,6 +89,19 @@ export interface BoolTypeNode extends NodeBase {
 export interface TypeReferenceNode extends NodeBase {
   kind: "TypeReference";
   name: string;
+  /**
+   * Type arguments in `Box<Money>`. Empty for a plain reference.
+   *
+   * COBOL has no runtime polymorphism, so a reference carrying arguments is
+   * resolved by instantiating a concrete record, never by erasure.
+   */
+  typeArguments: TypeNode[];
+}
+
+/** A type parameter name in `record Box<T>` or `function first<T>`. */
+export interface TypeParameterNode extends NodeBase {
+  kind: "TypeParameter";
+  name: string;
 }
 
 /**
@@ -171,6 +184,13 @@ export interface FieldDeclarationNode extends NodeBase {
 export interface RecordDeclarationNode extends NodeBase {
   kind: "RecordDeclaration";
   name: string;
+  typeParameters: TypeParameterNode[];
+  /**
+   * `record Savings extends Account` — the base record whose fields are laid
+   * out first, so a derived record's leading storage matches the base byte for
+   * byte and a copybook cut for the base still reads correctly.
+   */
+  baseType: TypeReferenceNode | null;
   fields: FieldDeclarationNode[];
 }
 
@@ -416,11 +436,37 @@ export type StatementNode =
   | SwitchStatementNode
   | SqlStatementNode
   | CicsStatementNode
-  | ForEachStatementNode;
+  | ForEachStatementNode
+  | RaiseStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
   expression: ExpressionNode;
+}
+
+/**
+ * `raise "INSUFFICIENT_FUNDS";` — abandons the rest of the body and runs the
+ * enclosing `on failure` handler.
+ *
+ * The code is a literal rather than an expression so that every failure a
+ * program can signal is visible in the source, and in the audit report, without
+ * running it.
+ */
+export interface RaiseStatementNode extends NodeBase {
+  kind: "RaiseStatement";
+  code: string;
+  codeSpan: SourceSpan;
+}
+
+/**
+ * `on failure { ... }` — the handler that runs when the body raises.
+ *
+ * A handler is declared once, before the statements it covers, so the recovery
+ * path is impossible to miss when reading the transaction top to bottom.
+ */
+export interface FailureHandlerNode extends NodeBase {
+  kind: "FailureHandler";
+  body: BlockNode;
 }
 
 export interface IfStatementNode extends NodeBase {
@@ -438,6 +484,7 @@ export interface BlockNode extends NodeBase {
 export interface FunctionDeclarationNode extends NodeBase {
   kind: "FunctionDeclaration";
   name: string;
+  typeParameters: TypeParameterNode[];
   parameters: ParameterNode[];
   returnType: TypeNode;
   body: BlockNode;
@@ -465,6 +512,20 @@ export interface TransactionDeclarationNode extends NodeBase {
   name: string;
   parameters: ParameterNode[];
   body: BlockNode;
+  /**
+   * Recovery path for a raise anywhere in the body, including inside a function
+   * the body calls. A transaction is the unit of work, so it is the only place
+   * a handler can sit.
+   */
+  failureHandler: FailureHandlerNode | null;
+  /**
+   * True for `entry transaction`, the transaction the program starts at.
+   *
+   * COBOL enters a program at the first statement of the PROCEDURE DIVISION, so
+   * without a designated entry the starting paragraph is whichever declaration
+   * happened to be emitted first.
+   */
+  isEntry: boolean;
   /**
    * A CICS transaction receives its input through DFHCOMMAREA and ends with
    * `EXEC CICS RETURN` instead of `GOBACK`.

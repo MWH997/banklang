@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "/workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "3 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "/workspace/Code/banklang/dist/jcl/WITHDRAWAL-WITH-RECOVERY.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "/workspace/Code/banklang/dist/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "18/18 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "passed",
+      "details": "Local cobc validation passed."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "/workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
+    "/workspace/Code/banklang/dist/maps/source-map.json",
+    "/workspace/Code/banklang/dist/copybooks/CURRENT-ACCOUNT.cpy",
+    "/workspace/Code/banklang/dist/copybooks/SAVINGS-ACCOUNT.cpy",
+    "/workspace/Code/banklang/dist/copybooks/WITHDRAWAL-RESULT.cpy",
+    "/workspace/Code/banklang/dist/jcl/WITHDRAWAL-WITH-RECOVERY.jcl",
+    "/workspace/Code/banklang/dist/audit/diagnostics.json",
+    "/workspace/Code/banklang/dist/audit/source-map.json",
+    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
+    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/dist/audit/verification-report.md",
+    "/workspace/Code/banklang/dist/audit/verification-report.json",
+    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
+    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 18,
+    "coveredSymbolCount": 18,
+    "diagnostics": []
+  },
+  "gnucobolValidation": {
+    "backendRequirements": [],
+    "precompiled": false,
+    "precompiledArtifact": null,
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/withdrawal-with-recovery/src/main.bank.ts",
+    "sourceArtifactHash": "78e590d4a58d8e4ddf5bb5a1cf25a75387dd3a58516ae553aabaab832f9fba12",
+    "generatedArtifact": "dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
+    "generatedArtifactHash": "edf403f81c2eaa23f86ac1a918718e8639b4c07d444b3fb638e21c04ed381321",
+    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "af0093497740514e6713c15895976f92cfe63180ae420fcacc3788f4ad1ae1a2",
+    "compilerExecutable": "cobc",
+    "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
+    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery",
+    "compilerExitCode": 0,
+    "compilerStatus": "passed",
+    "compilerOutput": null,
+    "validatedWithGnucobol": true,
+    "knownBackendGaps": [
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}

@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "AccountRecord",
       "symbol": "balance",
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 7,
           "column": 3
@@ -27,9 +27,9 @@
       "category": "parameter",
       "owner": "isOverdrawn",
       "symbol": "balance",
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 14,
           "column": 22
@@ -48,9 +48,9 @@
       "category": "literal",
       "owner": "isOverdrawn",
       "symbol": "0.00",
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 15,
           "column": 10

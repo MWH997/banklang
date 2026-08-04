@@ -82,7 +82,7 @@ transaction postInterest(account: InterestAccount, advice: PostingAdvice) {
   audit("INTEREST_POSTED", account.idempotencyKey);
 }
 
-transaction runBatch(account: InterestAccount, advice: PostingAdvice) {
+entry transaction runBatch(account: InterestAccount, advice: PostingAdvice) {
   open accountFeed;
   open adviceOutput;
 

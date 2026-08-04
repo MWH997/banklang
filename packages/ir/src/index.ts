@@ -88,6 +88,21 @@ export interface IRTransaction {
   span: SourceSpan;
   parameters: IRParameter[];
   body: IRBlock;
+  /** The `on failure` block, lowered. Null when none is declared. */
+  failureHandler: IRBlock | null;
+  /**
+   * True when the body can abandon its work: it raises, guards a computed
+   * subscript, or calls a function that does either.
+   *
+   * The backend only emits the failure plumbing for a transaction that can
+   * reach it, so a transaction with no failure path generates exactly the COBOL
+   * it did before the exception model existed.
+   */
+  canFail: boolean;
+  /** True when the body posts to the ledger, so a failure has to unwind it. */
+  postsToLedger: boolean;
+  /** True for the transaction the generated program starts at. */
+  isEntry: boolean;
   isCics: boolean;
 }
 
@@ -118,6 +133,12 @@ export interface IRFunction {
    * emitted as a separate RECURSIVE program instead.
    */
   isRecursive: boolean;
+  /**
+   * True when the function raises, guards a computed subscript, or calls a
+   * function that does. A caller has to test the failure code after performing
+   * one of these, because COBOL has no unwinding of its own.
+   */
+  canFail: boolean;
 }
 
 export interface IRParameter {
@@ -146,7 +167,18 @@ export type IRStatement =
   | IRSwitchStatement
   | IRSqlStatement
   | IRCicsStatement
-  | IRForEachStatement;
+  | IRForEachStatement
+  | IRRaiseStatement;
+
+/**
+ * `raise "CODE"` — abandons the rest of the body and hands control to the
+ * enclosing transaction's failure path.
+ */
+export interface IRRaiseStatement {
+  kind: "RaiseStatement";
+  span: SourceSpan;
+  code: string;
+}
 
 export interface IRForEachStatement {
   kind: "ForEachStatement";
@@ -507,15 +539,27 @@ export function lowerProgramToIR(
     functionTable.set(fn.name, lowerType(fn.returnType));
   }
 
+  callTargetTable = typechecked.callTargets;
+
   const loweredFunctions = typechecked.functions.map((fn) => lowerFunction(fn));
   const recursive = findRecursiveFunctions(loweredFunctions);
+  const failing = findFailingFunctions(loweredFunctions);
   const functions = loweredFunctions.map((fn) => ({
     ...fn,
     isRecursive: recursive.has(fn.name),
+    canFail: failing.has(fn.name),
   }));
-  const transactions = typechecked.transactions.map((transaction) =>
-    lowerTransaction(transaction),
-  );
+  const transactions = typechecked.transactions
+    .map((transaction) => lowerTransaction(transaction))
+    .map((transaction) => ({
+      ...transaction,
+      canFail:
+        blockCanFail(transaction.body) ||
+        [...collectCalls(transaction.body)].some((callee) =>
+          failing.has(callee),
+        ),
+      postsToLedger: blockPostsToLedger(transaction.body),
+    }));
   const files = typechecked.files.map((file) => ({
     kind: "File" as const,
     name: file.name,
@@ -580,6 +624,14 @@ const fileTable = new Map<
   }
 >();
 const functionTable = new Map<string, IRType>();
+
+/**
+ * The concrete function each generic call resolves to, from the typechecker.
+ *
+ * A generic function has no paragraph of its own, so lowering has to read the
+ * instantiation rather than the callee the author wrote.
+ */
+let callTargetTable: ReadonlyMap<CallExpressionNode, string> = new Map();
 
 /** Declared enums, for lowering member references and switch statements. */
 const enumTable = new Map<string, string[]>();
@@ -650,6 +702,191 @@ function addCicsRespSymbols(
  * active is undefined. Recursive functions therefore have to be emitted
  * differently, so they are identified here rather than in the backend.
  */
+/**
+ * Works out which functions can abandon their body, following calls.
+ *
+ * A caller has to test the failure code after performing a callee that can
+ * fail, so the property has to be transitive: a function that only calls
+ * something that raises can still leave the failure code set on return.
+ */
+function findFailingFunctions(functions: IRFunction[]): Set<string> {
+  const callees = new Map<string, Set<string>>();
+  const failing = new Set<string>();
+
+  for (const fn of functions) {
+    callees.set(fn.name, collectCalls(fn.body));
+    if (blockCanFail(fn.body)) {
+      failing.add(fn.name);
+    }
+  }
+
+  // Propagate until nothing new is marked. The call graph may contain cycles,
+  // so a single pass in declaration order is not enough.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const fn of functions) {
+      if (failing.has(fn.name)) {
+        continue;
+      }
+      for (const callee of callees.get(fn.name) ?? []) {
+        if (failing.has(callee)) {
+          failing.add(fn.name);
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+
+  return failing;
+}
+
+/** True when a block raises directly or guards a computed subscript. */
+function blockCanFail(block: IRBlock): boolean {
+  for (const statement of block.statements) {
+    switch (statement.kind) {
+      case "RaiseStatement":
+        return true;
+      case "IfStatement":
+        if (
+          expressionNeedsBoundsCheck(statement.condition) ||
+          blockCanFail(statement.thenBranch) ||
+          (statement.elseBranch ? blockCanFail(statement.elseBranch) : false)
+        ) {
+          return true;
+        }
+        break;
+      case "WhileStatement":
+        if (
+          expressionNeedsBoundsCheck(statement.condition) ||
+          blockCanFail(statement.body)
+        ) {
+          return true;
+        }
+        break;
+      case "ForEachStatement":
+        if (blockCanFail(statement.body)) {
+          return true;
+        }
+        break;
+      case "SwitchStatement":
+        if (
+          statement.cases.some((entry) => blockCanFail(entry.body)) ||
+          (statement.otherwise ? blockCanFail(statement.otherwise) : false)
+        ) {
+          return true;
+        }
+        break;
+      case "LetStatement":
+        if (expressionNeedsBoundsCheck(statement.initializer)) {
+          return true;
+        }
+        break;
+      case "ReturnStatement":
+      case "ExpressionStatement":
+        if (expressionNeedsBoundsCheck(statement.expression)) {
+          return true;
+        }
+        break;
+      case "AssignStatement":
+        if (
+          expressionNeedsBoundsCheck(statement.expression) ||
+          expressionNeedsBoundsCheck(statement.target)
+        ) {
+          return true;
+        }
+        break;
+      case "LedgerStatement":
+        if (
+          expressionNeedsBoundsCheck(statement.account) ||
+          expressionNeedsBoundsCheck(statement.amount)
+        ) {
+          return true;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return false;
+}
+
+/** True when an expression contains a subscript the compiler could not prove. */
+function expressionNeedsBoundsCheck(expression: IRExpression): boolean {
+  switch (expression.kind) {
+    case "IndexAccess":
+      return (
+        (expression.needsBoundsCheck && expression.length > 0) ||
+        expressionNeedsBoundsCheck(expression.index)
+      );
+    case "MemberAccess":
+      if (!expression.index) {
+        return false;
+      }
+      return (
+        (expression.indexNeedsBoundsCheck && expression.indexLength > 0) ||
+        expressionNeedsBoundsCheck(expression.index)
+      );
+    case "BinaryComparison":
+    case "BinaryArithmetic":
+    case "Logical":
+      return (
+        expressionNeedsBoundsCheck(expression.left) ||
+        expressionNeedsBoundsCheck(expression.right)
+      );
+    case "Not":
+    case "Rounded":
+    case "NullableCheck":
+      return expressionNeedsBoundsCheck(expression.operand);
+    case "Call":
+      return expression.args.some(expressionNeedsBoundsCheck);
+    default:
+      return false;
+  }
+}
+
+/** True when a block posts to the ledger, directly or in a nested block. */
+function blockPostsToLedger(block: IRBlock): boolean {
+  for (const statement of block.statements) {
+    switch (statement.kind) {
+      case "LedgerStatement":
+        return true;
+      case "IfStatement":
+        if (
+          blockPostsToLedger(statement.thenBranch) ||
+          (statement.elseBranch
+            ? blockPostsToLedger(statement.elseBranch)
+            : false)
+        ) {
+          return true;
+        }
+        break;
+      case "WhileStatement":
+      case "ForEachStatement":
+        if (blockPostsToLedger(statement.body)) {
+          return true;
+        }
+        break;
+      case "SwitchStatement":
+        if (
+          statement.cases.some((entry) => blockPostsToLedger(entry.body)) ||
+          (statement.otherwise
+            ? blockPostsToLedger(statement.otherwise)
+            : false)
+        ) {
+          return true;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return false;
+}
+
 function findRecursiveFunctions(functions: IRFunction[]): Set<string> {
   const callees = new Map<string, Set<string>>();
   for (const fn of functions) {
@@ -774,7 +1011,15 @@ function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
       type: lowerType(parameter.type),
     })),
     body: lowerBlock(transaction.body, scopeTypes),
+    failureHandler: transaction.failureHandler
+      ? lowerBlock(transaction.failureHandler, scopeTypes)
+      : null,
+    isEntry: transaction.isEntry,
     isCics: transaction.isCics,
+    // Filled in once the call graph is known, because a transaction can also
+    // fail through a function it calls.
+    canFail: false,
+    postsToLedger: false,
   };
 }
 
@@ -818,6 +1063,7 @@ function lowerFunction(fn: ResolvedFunction): IRFunction {
     returnType: lowerType(fn.returnType),
     body: lowerBlock(fn.body, scopeTypes),
     isRecursive: false,
+    canFail: false,
   };
 }
 
@@ -885,6 +1131,12 @@ function lowerStatement(
         kind: "ExpressionStatement",
         span: statement.span,
         expression: lowerExpression(statement.expression, scopeTypes),
+      };
+    case "RaiseStatement":
+      return {
+        kind: "RaiseStatement",
+        span: statement.span,
+        code: statement.code,
       };
     case "ForEachStatement": {
       const array = lowerExpression(statement.array, scopeTypes);
@@ -1134,16 +1386,17 @@ function lowerExpression(
         },
       };
     case "CallExpression": {
-      const signature = functionTable.get(expression.callee);
+      // A generic call names a template, which has no paragraph of its own.
+      // The typechecker recorded the instantiation it resolved to.
+      const callee = callTargetTable.get(expression) ?? expression.callee;
+      const signature = functionTable.get(callee);
       if (!signature) {
-        throw new Error(
-          `Unresolved function during IR lowering: ${expression.callee}`,
-        );
+        throw new Error(`Unresolved function during IR lowering: ${callee}`);
       }
       return {
         kind: "Call",
         span: expression.span,
-        callee: expression.callee,
+        callee,
         args: expression.args.map((argument) =>
           lowerExpression(argument, scopeTypes),
         ),

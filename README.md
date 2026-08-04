@@ -103,9 +103,11 @@ actually needs:
 | Logic        | `&&` `\|\|` `!`                                                |
 | Arithmetic   | `+` `-` `*`, and `divide(a, b, "HALF_EVEN")`                   |
 | Rounding     | `round(expr, "MODE")` across seven COBOL rounding modes        |
-| Control flow | `if` / `else`, and `while ... limit <n>`                       |
-| Functions    | Declared, called, and callable before declaration              |
-| Transactions | `debit`, `credit`, `audit`, field assignment                   |
+| Control flow | `if` / `else`, `while ... limit <n>`, `for each`, `switch`     |
+| Functions    | Declared, called, callable before declaration, recursive       |
+| Types        | Records with `extends`, generics, enums, arrays, nullable      |
+| Failures     | `raise "CODE"` with an `on failure` handler                    |
+| Transactions | `debit`, `credit`, `audit`, field assignment, `entry`          |
 | Files        | `open`, `read into`, `write from`, `close`, with status checks |
 
 Interest accrual, in full:
@@ -184,16 +186,23 @@ See [docs/toolchain.md](docs/toolchain.md).
 
 ## Examples
 
-| Example                                                      | Demonstrates                                       |
-| ------------------------------------------------------------ | -------------------------------------------------- |
-| [`account-transfer`](examples/account-transfer/)             | Records, decimal aliases, a validation function    |
-| [`batch-interest-accrual`](examples/batch-interest-accrual/) | Locals, exact decimal arithmetic, `if`/`else`      |
-| [`account-posting`](examples/account-posting/)               | Transactions, ledger postings, audit events        |
-| [`account-file-batch`](examples/account-file-batch/)         | Sequential files, `FILE-CONTROL` and `FD` sections |
+| Example                                                          | Demonstrates                                       |
+| ---------------------------------------------------------------- | -------------------------------------------------- |
+| [`account-transfer`](examples/account-transfer/)                 | Records, decimal aliases, a validation function    |
+| [`batch-interest-accrual`](examples/batch-interest-accrual/)     | Locals, exact decimal arithmetic, `if`/`else`      |
+| [`account-posting`](examples/account-posting/)                   | Transactions, ledger postings, audit events        |
+| [`account-file-batch`](examples/account-file-batch/)             | Sequential files, `FILE-CONTROL` and `FD` sections |
+| [`withdrawal-with-recovery`](examples/withdrawal-with-recovery/) | Inheritance, `raise` / `on failure`, **executed**  |
 
 Every example is compiled with GnuCOBOL in CI, and each has a checked-in
 [evidence bundle](evidence/) holding its generated artifacts and verification
 report.
+
+`withdrawal-with-recovery` goes further: it is **run**, against the reference
+runtime in [`runtime/`](runtime/README.md), and the test asserts on the balances
+the ledger ends up holding. That is what catches a defect that compiles — the
+bounds guard once clamped an out-of-range subscript instead of refusing it, and
+every static check passed.
 
 ## Architecture
 
@@ -256,17 +265,38 @@ sounding impressive:
 - **Validated with GnuCOBOL, not IBM.** Every example compiles with GnuCOBOL in
   CI. No IBM Enterprise COBOL validation has been performed, and none is
   claimed.
-- **Not production-ready**, and never run against a real ledger.
+- **Not production-ready.** It has never run against a real ledger, and no
+  institution's money has moved through it.
 - **SQL and CICS are checked structurally, not semantically.** BankLang ships a
   precompiler that translates `EXEC SQL` and `EXEC CICS` the way `DSNHPC` and
   the CICS translator do, so every example compiles with GnuCOBOL. That proves
   the surrounding COBOL and every host variable resolve; it does not validate
   SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.
-- **Never run against a real ledger, Db2, or CICS region.**
-- **No user-defined types beyond records, enums, and aliases.** No generics, no
-  inheritance, no user-defined operators.
-- **Bounds violations are recorded, not thrown.** An out-of-range computed index
-  is clamped and reported in `BANK-BOUNDS-STATUS`; there is no exception model.
+- **Executed only against a reference runtime, never IBM software.** The
+  programs in [`runtime/`](runtime/README.md) satisfy the ledger, audit, SQL,
+  and CICS interfaces well enough to run a generated program end to end and
+  check its arithmetic. `BANKLEDG` is not a bank ledger; `DSNHLI` parses no SQL
+  and always reports `SQLCODE 0`; `DFHEI1` provides no task, COMMAREA, or
+  syncpoint. Nothing has run on z/OS, against Db2, or in a CICS region.
+- **Generics are monomorphised, not polymorphic.** Every instantiation is
+  expanded into a concrete record or paragraph, because COBOL has no boxing.
+  Two instantiations cost two copies of the storage and the code.
+- **Inheritance is layout, not substitutability.** `extends` guarantees a
+  derived record starts with the base record's exact bytes. It does not let a
+  derived record be passed where the base is expected: a record parameter binds
+  to a group item in working storage, so that would silently read the wrong
+  storage, and it is rejected instead.
+- **Failure is an abandoned unit of work, not a thrown value.** `raise` sets
+  `BANK-FAILURE-CODE` and jumps to the body's exit; the caller must test it.
+  There is no unwinding, no stack trace, and no `catch` that resumes. A failure
+  crossing a `CALL` boundary relies on an `EXTERNAL` field rather than on
+  anything the language runtime enforces.
+- **Rollback is delegated, not performed.** The failure path calls the ledger
+  with `ROLLBK`. What that undoes is the institution's program's decision;
+  BankLang generates no compensating postings of its own.
+- **No user-defined operators, interfaces, or variance.** Generics are
+  unconstrained: a type parameter's body is checked per instantiation, so an
+  uninstantiated generic is never checked at all (`BANK-TYPE-015`).
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but

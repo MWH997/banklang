@@ -7,6 +7,7 @@ import type {
   FieldDeclarationNode,
   ParameterNode,
   ProgramNode,
+  TypeParameterNode,
   StatementNode,
   TypeNode,
 } from "../../ast/src/index";
@@ -193,7 +194,12 @@ function printDeclaration(
       return;
 
     case "RecordDeclaration": {
-      printer.push(`record ${declaration.name} {${trailing}`);
+      const base = declaration.baseType
+        ? ` extends ${printType(declaration.baseType)}`
+        : "";
+      printer.push(
+        `record ${declaration.name}${printTypeParameters(declaration.typeParameters)}${base} {${trailing}`,
+      );
       let previousLine: number | null = null;
       for (const field of declaration.fields) {
         printer.separateIfAuthorDid(field.span.start.line, previousLine);
@@ -207,19 +213,27 @@ function printDeclaration(
 
     case "FunctionDeclaration":
       printer.push(
-        `function ${declaration.name}(${printParameters(declaration.parameters)}): ${printType(declaration.returnType)} {${trailing}`,
+        `function ${declaration.name}${printTypeParameters(declaration.typeParameters)}(${printParameters(declaration.parameters)}): ${printType(declaration.returnType)} {${trailing}`,
       );
       printBlockBody(declaration.body, printer, 1);
       printer.push("}");
       return;
 
-    case "TransactionDeclaration":
+    case "TransactionDeclaration": {
+      const modifiers = `${declaration.isEntry ? "entry " : ""}${declaration.isCics ? "cics " : ""}`;
       printer.push(
-        `${declaration.isCics ? "cics " : ""}transaction ${declaration.name}(${printParameters(declaration.parameters)}) {${trailing}`,
+        `${modifiers}transaction ${declaration.name}(${printParameters(declaration.parameters)}) {${trailing}`,
       );
+      if (declaration.failureHandler) {
+        printer.push(`${INDENT}on failure {`);
+        printBlockBody(declaration.failureHandler.body, printer, 2);
+        printer.push(`${INDENT}}`);
+        printer.push("");
+      }
       printBlockBody(declaration.body, printer, 1);
       printer.push("}");
       return;
+    }
 
     case "FileDeclaration": {
       const key = declaration.keyField ? ` key ${declaration.keyField}` : "";
@@ -259,6 +273,12 @@ function printDeclaration(
 function printField(field: FieldDeclarationNode, printer: Printer): void {
   const trailing = printer.trailingCommentFor(field.span.start.line);
   printer.push(`${INDENT}${field.name}: ${printType(field.type)};${trailing}`);
+}
+
+function printTypeParameters(parameters: TypeParameterNode[]): string {
+  return parameters.length > 0
+    ? `<${parameters.map((parameter) => parameter.name).join(", ")}>`
+    : "";
 }
 
 function printParameters(parameters: ParameterNode[]): string {
@@ -325,6 +345,10 @@ function printStatement(
       printer.push(
         `${indent}audit(${printExpression(statement.eventName)}, ${printExpression(statement.correlation)});${trailing}`,
       );
+      return;
+
+    case "RaiseStatement":
+      printer.push(`${indent}raise "${statement.code}";${trailing}`);
       return;
 
     case "WhileStatement":
@@ -419,7 +443,9 @@ function printType(type: TypeNode): string {
     case "BoolType":
       return "bool";
     case "TypeReference":
-      return type.name;
+      return type.typeArguments.length > 0
+        ? `${type.name}<${type.typeArguments.map(printType).join(", ")}>`
+        : type.name;
     case "CurrencyType":
       return `currency<"${type.code}", ${type.precision}, ${type.scale}>`;
     case "NullableType":

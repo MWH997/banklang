@@ -1,11 +1,11 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
-  "artifact": "/workspace/dist/maps/source-map.json",
+  "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
   "entries": [
     {
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
         "line": 1,
         "column": 1
@@ -14,14 +14,14 @@
         "line": 1,
         "column": 24
       },
-      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
       "symbol": "AccountFileBatch"
     },
     {
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
         "line": 5,
         "column": 8
@@ -30,14 +30,14 @@
         "line": 8,
         "column": 2
       },
-      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
       "targetStartLine": 32,
       "targetEndLine": 34,
       "category": "record",
       "symbol": "AccountRecord"
     },
     {
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
         "line": 6,
         "column": 3
@@ -46,14 +46,14 @@
         "line": 6,
         "column": 25
       },
-      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
       "targetStartLine": 33,
       "targetEndLine": 33,
       "category": "field",
       "symbol": "accountId"
     },
     {
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
         "line": 7,
         "column": 3
@@ -62,14 +62,14 @@
         "line": 7,
         "column": 21
       },
-      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
       "targetStartLine": 34,
       "targetEndLine": 34,
       "category": "field",
       "symbol": "balance"
     },
     {
-      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
         "line": 14,
         "column": 10
@@ -78,7 +78,7 @@
         "line": 16,
         "column": 2
       },
-      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
       "targetStartLine": 39,
       "targetEndLine": 45,
       "category": "function",

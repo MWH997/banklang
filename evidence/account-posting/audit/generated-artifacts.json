@@ -2,19 +2,19 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "artifacts": [
-    "/workspace/dist/cobol/ACCOUNT-POSTING.cbl",
-    "/workspace/dist/maps/source-map.json",
-    "/workspace/dist/copybooks/TRANSFER-REQUEST.cpy",
-    "/workspace/dist/jcl/ACCOUNT-POSTING.jcl",
-    "/workspace/dist/audit/diagnostics.json",
-    "/workspace/dist/audit/source-map.json",
-    "/workspace/dist/audit/decimal-analysis.json",
-    "/workspace/dist/audit/transaction-analysis.json",
-    "/workspace/dist/audit/copybook-layout.json",
-    "/workspace/dist/audit/generated-artifacts.json",
-    "/workspace/dist/audit/verification-report.md",
-    "/workspace/dist/audit/verification-report.json",
-    "/workspace/dist/audit/validation-matrix.md",
-    "/workspace/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
+    "/workspace/Code/banklang/dist/maps/source-map.json",
+    "/workspace/Code/banklang/dist/copybooks/TRANSFER-REQUEST.cpy",
+    "/workspace/Code/banklang/dist/jcl/ACCOUNT-POSTING.jcl",
+    "/workspace/Code/banklang/dist/audit/diagnostics.json",
+    "/workspace/Code/banklang/dist/audit/source-map.json",
+    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
+    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/dist/audit/verification-report.md",
+    "/workspace/Code/banklang/dist/audit/verification-report.json",
+    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
+    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
   ]
 }

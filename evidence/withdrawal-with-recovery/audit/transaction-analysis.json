@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "withdraw",
+      "parameters": ["account", "result"],
+      "ledgerPostings": [
+        {
+          "operation": "debit",
+          "account": "account.accountId",
+          "amount": "allowed"
+        },
+        {
+          "operation": "credit",
+          "account": "BRANCH-TILL",
+          "amount": "allowed"
+        }
+      ],
+      "auditEvents": [
+        {
+          "event": "WITHDRAWAL_POSTED",
+          "correlation": "account.idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

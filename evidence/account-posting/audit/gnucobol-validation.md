@@ -1,20 +1,20 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                            |
-| -------------------------- | ---------------------------------------------------------------- |
-| validated-with-gnucobol    | no                                                               |
-| backend-profile            | gnucobol-local                                                   |
-| source-artifact            | examples/account-posting/src/main.bank.ts                        |
-| source-artifact-sha256     | 4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9 |
-| generated-artifact         | dist/gnucobol/cobol/ACCOUNT-POSTING.cbl                          |
-| generated-artifact-sha256  | 43b004ac3d73e0b3ae7b32bdc29b574d7ed49c4424a013d701c5d2ed31c39e2e |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | 7e2137939b3df0a355817e82a0ad736793b5c1d58b1ee11bdeef25ed34df052d |
-| compiler-executable        | not found                                                        |
-| compiler-version           | unavailable                                                      |
-| compiler-command           | cobc not found                                                   |
-| compiler-exit-code         | n/a                                                              |
-| compiler-status            | skipped                                                          |
+| Field                      | Value                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| validated-with-gnucobol    | yes                                                                                        |
+| backend-profile            | gnucobol-local                                                                             |
+| source-artifact            | examples/account-posting/src/main.bank.ts                                                  |
+| source-artifact-sha256     | 4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9                           |
+| generated-artifact         | dist/gnucobol/cobol/ACCOUNT-POSTING.cbl                                                    |
+| generated-artifact-sha256  | e3eb20ee670e5c7150fdec3788ae28d88ceba8b9db3cec87afce1a84ae6d8d35                           |
+| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                         |
+| source-map-artifact-sha256 | 4e4491eba5b14ae8e278ff63936a36e9ab1bf970501946bd365369e305209128                           |
+| compiler-executable        | cobc                                                                                       |
+| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                      |
+| compiler-command           | cobc -x -free dist/gnucobol/cobol/ACCOUNT-POSTING.cbl -o dist/gnucobol/bin/account-posting |
+| compiler-exit-code         | 0                                                                                          |
+| compiler-status            | passed                                                                                     |
 
 ## Compiler Output
 

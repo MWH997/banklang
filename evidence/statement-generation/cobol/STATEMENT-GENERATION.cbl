@@ -52,6 +52,7 @@
        01  STATEMENT-OUTPUT-STATUS PIC XX.
        01  BANK-BOUNDS-STATUS   PIC X(2) VALUE "00".
        01  BANK-COPY-INDEX      PIC 9(9) COMP.
+       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
        01  LEDGER-ENTRY.
            05  ENTRY-KIND           PIC X(6).
                88  ENTRY-KIND-DEBIT             VALUE "DEBIT".
@@ -101,6 +102,9 @@
            05  BANK-AUDIT-CORRELATION   PIC X(64).
 
        PROCEDURE DIVISION.
+       BANK-MAIN.
+           PERFORM GENERATE-STATEMENT
+           GOBACK.
        IS-STATEMENTABLE.
            IF (IS-STATEMENTABLE-P1 = "ACTIVE") OR (IS-STATEMENTABLE-P1 = "DORMANT")
                MOVE 'Y' TO IS-STATEMENTABLE-RESULT
@@ -120,6 +124,13 @@
            END-IF
            GOBACK.
        GENERATE-STATEMENT.
+           MOVE SPACES TO BANK-FAILURE-CODE
+           PERFORM GENERATE-STATEMENT-BODY THRU GENERATE-STATEMENT-BODY-EXIT
+           IF BANK-FAILURE-CODE NOT = SPACES
+               PERFORM GENERATE-STATEMENT-FAILURE
+           END-IF
+           GOBACK.
+       GENERATE-STATEMENT-BODY.
            COMPUTE LINE-INDEX = 1
            COMPUTE RUNNING = OPENING-BALANCE OF STATEMENT
            MOVE "UNASSIGNED" TO MANAGER
@@ -144,13 +155,15 @@
                        WHEN "DEBIT"
                            IF LINE-INDEX < 1 OR LINE-INDEX > 100
                                MOVE "23" TO BANK-BOUNDS-STATUS
-                               MOVE 100 TO LINE-INDEX
+                               MOVE "BANK-BOUNDS-VIOLATION" TO BANK-FAILURE-CODE
+                               GO TO GENERATE-STATEMENT-BODY-EXIT
                            END-IF
                            COMPUTE RUNNING = (RUNNING - AMOUNT OF STATEMENT (LINE-INDEX))
                        WHEN "CREDIT"
                            IF LINE-INDEX < 1 OR LINE-INDEX > 100
                                MOVE "23" TO BANK-BOUNDS-STATUS
-                               MOVE 100 TO LINE-INDEX
+                               MOVE "BANK-BOUNDS-VIOLATION" TO BANK-FAILURE-CODE
+                               GO TO GENERATE-STATEMENT-BODY-EXIT
                            END-IF
                            COMPUTE RUNNING = (RUNNING + AMOUNT OF STATEMENT (LINE-INDEX))
                    END-EVALUATE
@@ -172,4 +185,8 @@
            MOVE "STATEMENT_GENERATED" TO BANK-AUDIT-EVENT
            MOVE IDEMPOTENCY-KEY OF STATEMENT TO BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE
-           GOBACK.
+           CONTINUE.
+       GENERATE-STATEMENT-BODY-EXIT.
+           EXIT.
+       GENERATE-STATEMENT-FAILURE.
+           EXIT.
