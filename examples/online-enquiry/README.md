@@ -54,21 +54,30 @@ Two rules make the failure paths impossible to skip:
            END-IF
 ```
 
-## This program is not locally validated
+## Both branches are executed, not just emitted
 
 **Embedded SQL needs the Db2 precompiler and CICS commands need the CICS
-translator.** Plain GnuCOBOL rejects both, so this example is the one program in
-the repository that is _not_ compiler-checked, and the audit trail says so:
+translator**, so plain GnuCOBOL rejects this program as written. BankLang's own
+precompiler performs the equivalent translation first, and the audit trail
+records that it did:
 
 ```txt
-| compiler-status         | requires-preprocessor |
-| validated-with-gnucobol | no                    |
+| compiler-status         | passed |
+| validated-with-gnucobol | yes    |
 ```
 
-`bankc test` reports this rather than recording a pass, and the compile lane in
-the test suite reports it instead of skipping silently. The diagnostics are
-still enforced: the compiler checks host variables, SQLCODE handling, response
-codes, and syncpoint placement without needing a precompiler.
+`tests/conformance.test.ts` goes further and runs it against the reference
+runtime, scripting what the runtime reports so the branch each test guards is
+actually taken:
+
+| Scripted               | Executed result                                   |
+| ---------------------- | ------------------------------------------------- |
+| nothing                | `CICS 0002 SYNCPOINT RESP 0` — the link committed |
+| `PGMIDERR` on the link | `CICS 0002 SYNCPOINT ROLLBACK RESP 0`             |
+
+That is what the `RESP` plumbing is for: the translator copies `EIBRESP` into
+`linkResp` after the call, because CICS returns a response in the EXEC interface
+block rather than in an operand.
 
 ## Running it
 
@@ -81,4 +90,7 @@ pnpm bankc test  examples/online-enquiry
 
 No IBM Db2, CICS, or Enterprise COBOL validation has been performed, and none is
 claimed. The generated `EXEC SQL` and `EXEC CICS` blocks follow IBM's documented
-syntax but have never been precompiled, translated, or run.
+syntax but have never been precompiled by `DSNHPC`, translated by the CICS
+translator, or run in a region. Every `SQLCODE` and `RESP` above was written down
+by a test: it says what this program does with that outcome, not that Db2 or CICS
+would produce it.

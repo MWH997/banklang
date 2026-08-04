@@ -114,8 +114,10 @@ what it stands for.
 
 ### `BANK-TYPE-021` record argument is not a named record
 
-A record parameter binds to that record's group item in working storage, so the
-callee reads the group whatever the caller passed.
+A record argument is passed by reference: the caller points the callee's
+`LINKAGE` cell at the argument's storage. A subscripted element has no address
+the caller can take without evaluating the subscript first, so it must be
+assigned into a record and passed by name.
 
 ## 4. Decimal diagnostics
 

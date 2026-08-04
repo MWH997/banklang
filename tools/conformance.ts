@@ -39,8 +39,29 @@ export interface ConformanceRun {
   balances: Map<string, string>;
   /** `event correlationKey` per audit call, in order. */
   auditLog: string[];
+  /** `SQL nnnn SQLCODE n` per SQL call, in the order the program made them. */
+  sqlCalls: string[];
+  /** `CICS nnnn RESP n` per CICS command, in order. */
+  cicsCalls: string[];
   /** Raw bytes of each declared output file, keyed by its DD name. */
   outputs: Map<string, Buffer>;
+}
+
+/** An outcome the reference Db2 runtime should report for one statement. */
+export interface SqlOutcome {
+  /** Statement number, as the precompiler assigns it: 1 for the first block. */
+  statement: number;
+  sqlcode: number;
+  /** Defaults to the state that matches the code for 0 and 100. */
+  sqlstate?: string;
+}
+
+/** A response the reference CICS runtime should report for one command. */
+export interface CicsOutcome {
+  /** Command number, counted in the order the program issues them. */
+  call: number;
+  resp: number;
+  resp2?: number;
 }
 
 export interface ConformanceOptions {
@@ -53,6 +74,33 @@ export interface ConformanceOptions {
   inputs?: Record<string, Buffer>;
   /** DD names of output files to read back after the run. */
   outputs?: string[];
+  /**
+   * SQL outcomes to script.
+   *
+   * The reference runtime evaluates no SQL, so a statement succeeds unless a
+   * test says otherwise. Scripting a 100 is what makes a generated program's
+   * "row not found" branch executable rather than merely inspectable.
+   */
+  sqlOutcomes?: SqlOutcome[];
+  /** CICS responses to script. A command returns NORMAL unless listed. */
+  cicsOutcomes?: CicsOutcome[];
+}
+
+/** SQLSTATE for the codes with one obvious answer, so tests need not repeat it. */
+function defaultSqlState(sqlcode: number): string {
+  if (sqlcode === 0) {
+    return "00000";
+  }
+  if (sqlcode === 100) {
+    return "02000";
+  }
+  // Anything else is a real Db2 error whose state a test has to state itself,
+  // because there is no mapping this repository could honestly claim to know.
+  return "     ";
+}
+
+function signedField(value: number, digits: number): string {
+  return `${value < 0 ? "-" : "+"}${String(Math.abs(value)).padStart(digits, "0")}`;
 }
 
 /** Thrown when the run could not be set up, as opposed to failing an assertion. */
@@ -87,6 +135,33 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
 
   for (const [ddName, bytes] of Object.entries(options.inputs ?? {})) {
     writeFileSync(join(workDir, ddName), bytes);
+  }
+
+  // The runtimes read their scripts from fixed names beside the program, so
+  // there is no DD to declare and nothing for the generated program to know.
+  if (options.sqlOutcomes?.length) {
+    writeFileSync(
+      join(workDir, "sql-outcomes.txt"),
+      `${options.sqlOutcomes
+        .map(
+          (outcome) =>
+            `${String(outcome.statement).padStart(4, "0")} ${signedField(outcome.sqlcode, 3)} ${outcome.sqlstate ?? defaultSqlState(outcome.sqlcode)}`,
+        )
+        .join("\n")}\n`,
+      "utf8",
+    );
+  }
+  if (options.cicsOutcomes?.length) {
+    writeFileSync(
+      join(workDir, "cics-outcomes.txt"),
+      `${options.cicsOutcomes
+        .map(
+          (outcome) =>
+            `${String(outcome.call).padStart(4, "0")} ${signedField(outcome.resp, 3)} ${signedField(outcome.resp2 ?? 0, 3)}`,
+        )
+        .join("\n")}\n`,
+      "utf8",
+    );
   }
 
   compileRuntime(workDir);
@@ -134,6 +209,8 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
     journal: readLines(join(workDir, "ledger-journal.txt")),
     balances: readBalances(join(workDir, "ledger-balances.txt")),
     auditLog: readLines(join(workDir, "audit-log.txt")),
+    sqlCalls: readLines(join(workDir, "sql-calls.txt")),
+    cicsCalls: readLines(join(workDir, "cics-calls.txt")),
     outputs,
   };
 }

@@ -20,4 +20,4 @@
            ELSE
                MOVE 'N' TO VALIDATE-AMOUNT-RESULT
            END-IF
-           GOBACK.
+           CONTINUE.

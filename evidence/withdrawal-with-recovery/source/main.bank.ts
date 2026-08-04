@@ -27,6 +27,14 @@ file requestInput sequential input record SavingsAccount status requestStatus;
 
 file resultOutput sequential output record WithdrawalResult status resultStatus;
 
+// Declared over the base record, so it works for any account that extends
+// CurrentAccount. The call site below passes a SavingsAccount: its leading
+// fields sit at the offsets this parameter describes, which is what `extends`
+// guarantees and what makes passing it here safe.
+function ledgerBalanceOf(account: CurrentAccount): MoneyBDT {
+  return account.balance;
+}
+
 // A withdrawal is only permitted when it leaves the account at or above its
 // minimum balance. The check raises rather than returning a sentinel, so a
 // caller cannot forget to test a failure that abandons the transaction.
@@ -61,7 +69,8 @@ entry transaction withdraw(account: SavingsAccount, result: WithdrawalResult) {
   debit(account.accountId, allowed);
   credit("BRANCH-TILL", allowed);
 
-  account.balance = account.balance - allowed;
+  // Reads the derived record through a parameter declared over the base.
+  account.balance = ledgerBalanceOf(account) - allowed;
 
   result.accountId = account.accountId;
   result.paidOut = allowed;

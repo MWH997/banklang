@@ -11,17 +11,18 @@ whole value is what does _not_ reach the ledger.
 
 ## What it demonstrates
 
-| Feature                | Where                                             |
-| ---------------------- | ------------------------------------------------- |
-| Record inheritance     | `record SavingsAccount extends CurrentAccount`    |
-| Guard clauses          | `if requested <= 0.00 { raise "..."; }`           |
-| Raising a failure      | `raise "BELOW_MINIMUM_BALANCE";`                  |
-| Failure handler        | `on failure { audit(...); }`                      |
-| Failure through a call | `permittedAmount` raises; `withdraw` unwinds      |
-| Ledger rollback        | generated on the failure path, before the handler |
-| Entry point            | `entry transaction withdraw`                      |
-| Currency types         | `currency<"BDT", 18, 2>`                          |
-| Per-field file mapping | `read requestInput into account`                  |
+| Feature                 | Where                                             |
+| ----------------------- | ------------------------------------------------- |
+| Record inheritance      | `record SavingsAccount extends CurrentAccount`    |
+| Record substitutability | `ledgerBalanceOf(account: CurrentAccount)`        |
+| Guard clauses           | `if requested <= 0.00 { raise "..."; }`           |
+| Raising a failure       | `raise "BELOW_MINIMUM_BALANCE";`                  |
+| Failure handler         | `on failure { audit(...); }`                      |
+| Failure through a call  | `permittedAmount` raises; `withdraw` unwinds      |
+| Ledger rollback         | generated on the failure path, before the handler |
+| Entry point             | `entry transaction withdraw`                      |
+| Currency types          | `currency<"BDT", 18, 2>`                          |
+| Per-field file mapping  | `read requestInput into account`                  |
 
 ## Inheritance is a layout claim
 
@@ -38,11 +39,37 @@ An existing `CURRENT-ACCOUNT` copybook still reads a `SAVINGS-ACCOUNT` record
 correctly. `tests/conformance.test.ts` asserts this offset by offset against the
 compiler's own layout report rather than against a hand-counted table.
 
-What inheritance does **not** give you is substitutability at a call site. A
-record parameter binds to that record's group item in working storage, so a
-function declared over `CurrentAccount` reads `01 CURRENT-ACCOUNT` whatever the
-caller passed. Passing a `SavingsAccount` there is rejected rather than silently
-reading the wrong storage.
+That layout claim is also what makes substitutability safe. `ledgerBalanceOf` is
+declared over the base record and called with a `SavingsAccount`:
+
+```ts
+function ledgerBalanceOf(account: CurrentAccount): MoneyBDT {
+  return account.balance;
+}
+```
+
+A function's record parameter is a `LINKAGE` cell rather than a group item in
+working storage, and the caller points it at the argument before performing the
+paragraph:
+
+```cobol
+       LINKAGE SECTION.
+       01  LEDGER-BALANCE-OF-P1.
+           05  ACCOUNT-ID           PIC X(16).
+           05  BALANCE              PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY      PIC X(36).
+       ...
+           SET ADDRESS OF LEDGER-BALANCE-OF-P1 TO ADDRESS OF SAVINGS-ACCOUNT
+           PERFORM LEDGER-BALANCE-OF
+```
+
+The cell describes the base record's fields, and those fields sit at the same
+offsets in the derived record — which is exactly what `extends` guarantees. The
+callee reads the caller's storage, so the closing balance in the executed test
+is the proof that it read the right record and not a stale group item.
+
+A transaction is a program entry point rather than something called with varying
+arguments, so its records stay in working storage and take no part in this.
 
 ## The failure path
 

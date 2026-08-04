@@ -15,7 +15,7 @@ Phase: verify
 | JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/WITHDRAWAL-WITH-RECOVERY.jcl                  |
 | Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 18/18 traced symbols, all entries anchored in the generated COBOL.              |
+| Source map coverage        | passed | 19/19 traced symbols, all entries anchored in the generated COBOL.              |
 | GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
 | Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
 
@@ -27,8 +27,8 @@ Phase: verify
 
 ## Source Map Coverage
 
-- expected-symbols: 18
-- traced-symbols: 18
+- expected-symbols: 19
+- traced-symbols: 19
 - coverage-gaps: 0
 
 ## GnuCOBOL Validation

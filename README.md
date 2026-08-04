@@ -275,17 +275,24 @@ sounding impressive:
 - **Executed only against a reference runtime, never IBM software.** The
   programs in [`runtime/`](runtime/README.md) satisfy the ledger, audit, SQL,
   and CICS interfaces well enough to run a generated program end to end and
-  check its arithmetic. `BANKLEDG` is not a bank ledger; `DSNHLI` parses no SQL
-  and always reports `SQLCODE 0`; `DFHEI1` provides no task, COMMAREA, or
-  syncpoint. Nothing has run on z/OS, against Db2, or in a CICS region.
+  check its arithmetic. `BANKLEDG` is not a bank ledger. `DSNHLI` parses no SQL
+  and `DFHEI1` provides no task or syncpoint: a test can script what they report,
+  so a `SQLCODE 100` or a `PGMIDERR` branch is executed rather than assumed, but
+  every such value was written down by the test, not decided by a database or a
+  region. Nothing has run on z/OS, against Db2, or in a CICS region.
 - **Generics are monomorphised, not polymorphic.** Every instantiation is
   expanded into a concrete record or paragraph, because COBOL has no boxing.
-  Two instantiations cost two copies of the storage and the code.
-- **Inheritance is layout, not substitutability.** `extends` guarantees a
-  derived record starts with the base record's exact bytes. It does not let a
-  derived record be passed where the base is expected: a record parameter binds
-  to a group item in working storage, so that would silently read the wrong
-  storage, and it is rejected instead.
+  Instantiated functions that lower to identical COBOL share one paragraph, so
+  two currencies of the same precision cost one copy rather than two; anything
+  that lowers differently, and every instantiated record, still costs its own.
+- **Inheritance is layout first.** `extends` guarantees a derived record starts
+  with the base record's exact bytes, which is what lets a copybook cut for the
+  base read a derived record. Substitutability follows from that layout: a
+  function's record parameter is a `LINKAGE` cell the caller points at the actual
+  record, so passing a derived record where the base is expected reads the right
+  storage. A transaction is a program entry point rather than something called
+  with varying arguments, so its records stay in working storage and take no
+  part in this.
 - **Failure is an abandoned unit of work, not a thrown value.** `raise` sets
   `BANK-FAILURE-CODE` and jumps to the body's exit; the caller must test it.
   There is no unwinding, no stack trace, and no `catch` that resumes. A failure

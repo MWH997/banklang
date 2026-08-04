@@ -99,11 +99,24 @@ record SavingsAccount extends CurrentAccount {
 That layout guarantee is the point: an existing copybook for the base still
 reads a derived record correctly.
 
-Inheritance does **not** make a derived record substitutable for its base at a
-call site. A record parameter binds to that record's group item in working
-storage, so a function declared over `CurrentAccount` reads
-`01 CURRENT-ACCOUNT` whatever the caller passed. Passing a `SavingsAccount`
-there is rejected rather than silently reading the wrong storage.
+It is also what makes a derived record substitutable for its base at a call
+site. A function's record parameter is a `LINKAGE` cell rather than a group item
+in working storage, and the caller points the cell at the argument before
+performing the paragraph:
+
+```cobol
+           SET ADDRESS OF LEDGER-BALANCE-OF-P1 TO ADDRESS OF SAVINGS-ACCOUNT
+           PERFORM LEDGER-BALANCE-OF
+```
+
+The cell describes the declared parameter's fields, and `extends` guarantees
+those fields sit at the same offsets in the derived record, so the callee reads
+the caller's storage correctly. An argument whose address the caller cannot take
+without evaluating a subscript first is `BANK-TYPE-021`.
+
+A transaction is a program entry point rather than something called with varying
+arguments, so its record parameters stay in working storage and take no part in
+this.
 
 Redeclaring an inherited field is `BANK-TYPE-017`; a cycle is `BANK-TYPE-016`.
 
@@ -152,6 +165,24 @@ parameter type therefore cannot be inferred, and is `BANK-TYPE-020`.
 A generic that is never instantiated generates nothing and is never checked
 against real types, which is reported as `BANK-TYPE-015`.
 
+Two instantiations of a generic **function** that lower to identical COBOL share
+one paragraph. `larger<currency<"BDT", 18, 2>>` and
+`larger<currency<"USD", 18, 2>>` both emit `PIC S9(16)V99 COMP-3`, so emitting
+both is the same paragraph and the same storage twice. Sharing follows the
+callee: two instantiations that differ only in which instantiation they call
+merge once those callees have merged. The surviving name is the alphabetically
+first of the group, so the choice does not depend on the order the instantiations
+were created in.
+
+This is a decision about emitted COBOL and nothing else. Currency stays nominally
+typed, so `larger(bdtAmount, usdAmount)` is still `BANK-TYPE-020`. A function you
+wrote yourself keeps its own paragraph even if another one happens to match it
+exactly, because that name appears in the source, the source map, and the audit
+record.
+
+Instantiated **records** are never shared: two instantiations are two variables
+holding different values, not two copies of one routine.
+
 ## 6. Bounded arrays
 
 ```ts
@@ -194,6 +225,28 @@ function is emitted as a sibling `RECURSIVE` program with its locals in
 detected through the call graph.
 
 Functions may take type parameters; see section 5b.
+
+### Locals
+
+COBOL has no block scope. Every `let` becomes an `01` item in
+`WORKING-STORAGE` — including one written inside a loop or a `switch` branch,
+which is allocated once for the whole routine rather than per iteration.
+
+A local keeps its own name when only one routine declares it. When two do, both
+are qualified with the routine that owns them, the way parameters and results
+already are:
+
+```ts
+function feeOn(amount: MoneyBDT): MoneyBDT {
+  let scratch: MoneyBDT = amount; // 01 FEE-ON-SCRATCH
+  return scratch;
+}
+```
+
+Qualifying only on collision keeps the common case readable and keeps names
+inside the 30-character limit IBM Enterprise COBOL imposes, which a transaction
+name plus a local name can exceed. A recursive function is a separate program, so
+its locals never collide with anything and are never qualified.
 
 ## 9. Control flow
 
@@ -512,16 +565,27 @@ BankLang ships its own precompiler that performs the equivalent translation, so
 such a program can still be compiled and checked locally:
 
 - `EXEC SQL INCLUDE SQLCA` expands to the SQLCA structure.
-- `EXEC SQL ... END-EXEC` becomes a call to the SQL runtime, passing SQLCA and
-  every host variable the statement referenced.
-- `EXEC CICS ... END-EXEC` becomes a call to the CICS runtime, passing every
-  data item the command referenced.
+- `EXEC SQL ... END-EXEC` becomes a call to the SQL runtime, passing SQLCA, a
+  statement descriptor identifying the call site, and every host variable the
+  statement referenced. Db2 numbers a program's statements the same way, because
+  the operands alone do not say which statement is being run.
+- `EXEC CICS ... END-EXEC` becomes a call to the CICS runtime, passing the EXEC
+  interface block, a generated field naming the command, and every data item the
+  command referenced.
+- A command's `RESP` option is not passed as an operand. CICS returns a response
+  in `EIBRESP`, so the translator emits the `MOVE EIBRESP TO ...` that follows
+  the call — which is what makes a generated program's error branch reachable.
 
 **What this proves:** the surrounding COBOL is valid, every host variable and
 data name resolves, and SQLCA fields such as `SQLCODE` are declared and usable.
+Against the reference runtime in `runtime/`, it also proves that the branch a
+`sqlcode` or `resp` test guards is reached and taken.
 
 **What it does not prove:** SQL semantics, Db2 bind behaviour, or CICS runtime
-behaviour. It is not IBM's precompiler and produces no bind artifacts.
+behaviour. It is not IBM's precompiler and produces no bind artifacts. The
+reference runtime replays outcomes a test writes down; a scripted `SQLCODE 100`
+says what the generated program does with a missing row, not what Db2 would
+return.
 
 The translated output exists only for verification. The shipped artifact keeps
 its `EXEC SQL` and `EXEC CICS` blocks.

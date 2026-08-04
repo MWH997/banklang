@@ -100,20 +100,30 @@ the compiler's own layout report, executes the program, and asserts on:
 - the closing balance per account
 - the audit events emitted
 - the bytes of each output record
+- the SQL and CICS calls made, each with the outcome it reported
 
 This catches the class of defect that compiles. The bounds guard once clamped an
-out-of-range subscript instead of refusing it, and a recursive function returned
-`5` for `5!` because `WORKING-STORAGE` is shared across invocations. Both passed
-every static check and every golden fixture.
+out-of-range subscript instead of refusing it; a recursive function returned `5`
+for `5!` because `WORKING-STORAGE` is shared across invocations; and every
+non-failing function paragraph ended with `GOBACK.`, so performing one ended the
+whole program at the first call — a program that exited 0 having posted nothing.
+All three passed every static check and every golden fixture.
+
+Outcomes the program branches on can be scripted, because the reference Db2 and
+CICS runtimes decide nothing on their own. Seeding `SQLCODE 100` for a statement,
+or `PGMIDERR` for a command, executes the branch the generated program guards
+with `sqlcode == 0` or a `resp` test rather than reading it out of the emitted
+COBOL. See `runtime/README.md` for the file format.
 
 The suite skips when `cobc` is unavailable, and CI installs GnuCOBOL so it does
 not skip there.
 
 Scope limit: the runtime is a set of small COBOL programs in this repository.
-`BANKLEDG` is not a bank ledger, `DSNHLI` parses no SQL and always reports
-`SQLCODE 0`, and `DFHEI1` provides no CICS behaviour. A conformance pass
-establishes that the generated program executes and computes correctly; it
-establishes nothing about Db2, CICS, or any real ledger. See
+`BANKLEDG` is not a bank ledger; `DSNHLI` parses no SQL and every `SQLCODE` it
+reports was either the default or written down by a test; `DFHEI1` provides no
+task, no syncpoint, and no recovery. A conformance pass establishes that the
+generated program executes, computes correctly, and takes the branch its own
+tests select. It establishes nothing about Db2, CICS, or any real ledger. See
 `runtime/README.md`.
 
 ### 2.7 Mainframe smoke tests

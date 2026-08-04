@@ -98,13 +98,17 @@ let currentExitLabel: string | null = null;
 const COPY_INDEX_FIELD = "BANK-COPY-INDEX";
 
 /**
- * Parameter name to COBOL field, for the function currently being emitted.
+ * BankTS name to COBOL field, for the routine currently being emitted.
  *
- * Parameters live in their own storage so calls can pass arguments, so a
- * reference to `amount` inside `validateAmount` must render as
- * `VALIDATE-AMOUNT-P1` rather than `AMOUNT`.
+ * Parameters and locals live in their own storage so calls can pass arguments
+ * and two routines can each declare `scratch`, so a reference to `amount`
+ * inside `validateAmount` must render as `VALIDATE-AMOUNT-P1` rather than
+ * `AMOUNT`.
  */
-let currentParameters = new Map<string, string>();
+let currentBindings = new Map<string, string>();
+
+/** Local name to COBOL field, per routine. See `planLocalFields`. */
+let currentLocalFields = new Map<string, Map<string, string>>();
 
 /** SQL declarations for the program being emitted. */
 let currentSql = new Map<string, IRSql>();
@@ -143,6 +147,40 @@ function recursiveProgramName(name: string): string {
 function paragraphName(name: string): string {
   const base = toCobolParagraphName(name);
   return declaredDataNames.has(base) ? `${base}-PARA` : base;
+}
+
+/**
+ * A record parameter's LINKAGE cell.
+ *
+ * The cell carries the *declared* parameter type's layout. A caller passing a
+ * record that extends it points the cell at storage that is longer, which is
+ * safe precisely because the declared fields sit at the same offsets.
+ */
+interface RecordParameterCell {
+  name: string;
+  fields: IRRecord["fields"];
+}
+
+function collectRecordParameterCells(
+  program: IRProgram,
+): RecordParameterCell[] {
+  const cells: RecordParameterCell[] = [];
+  for (const fn of program.functions) {
+    // A recursive function is a separate program and receives its records
+    // through its own PROCEDURE DIVISION USING clause instead.
+    if (fn.isRecursive) {
+      continue;
+    }
+    fn.parameters.forEach((parameter, index) => {
+      if (parameter.type.kind === "record") {
+        cells.push({
+          name: parameterFieldName(fn.name, index),
+          fields: parameter.type.fields,
+        });
+      }
+    });
+  }
+  return cells;
 }
 
 /** The paragraph the generated program starts at. */
@@ -218,13 +256,10 @@ function collectDataNames(program: IRProgram): Set<string> {
     fn.parameters.forEach((_parameter, index) => {
       names.add(parameterFieldName(fn.name, index));
     });
-    for (const local of collectFunctionLocals(fn.body)) {
-      names.add(toCobolFieldName(local.name));
-    }
   }
-  for (const transaction of program.transactions) {
-    for (const local of collectFunctionLocals(transaction.body)) {
-      names.add(toCobolFieldName(local.name));
+  for (const owner of localOwners(program)) {
+    for (const local of owner.locals) {
+      names.add(localFieldName(owner.name, local.name));
     }
   }
 
@@ -313,6 +348,9 @@ export function emitCobol(
   const lines: string[] = [];
   const entries: SourceMapEntry[] = [];
   currentSql = new Map(program.sql.map((entry) => [entry.name, entry]));
+  // Names locals before anything reads them: whether a local is qualified
+  // depends on the whole program, not on the routine that declares it.
+  currentLocalFields = planLocalFields(program);
   declaredDataNames = collectDataNames(program);
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
 
@@ -450,9 +488,20 @@ export function emitCobol(
     }
   }
 
+  const localsByOwner = new Map(
+    localOwners(program).map((owner) => [owner.name, owner.locals]),
+  );
+  const emitLocals = (owner: string): void => {
+    for (const local of localsByOwner.get(owner) ?? []) {
+      addLine(
+        `       01  ${localFieldName(owner, local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      );
+    }
+  };
+
   for (const fn of program.functions) {
-    // A recursive function becomes its own program, so its result and
-    // parameters live in that program's storage rather than here.
+    // A recursive function becomes its own program, so its result, parameters
+    // and locals live in that program's storage rather than here.
     if (fn.isRecursive) {
       continue;
     }
@@ -472,11 +521,7 @@ export function emitCobol(
         `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
       );
     });
-    for (const local of collectFunctionLocals(fn.body)) {
-      addLine(
-        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
-      );
-    }
+    emitLocals(fn.name);
   }
 
   for (const transaction of program.transactions) {
@@ -488,11 +533,7 @@ export function emitCobol(
         `       01  ${parameterFieldName(transaction.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
       );
     });
-    for (const local of collectFunctionLocals(transaction.body)) {
-      addLine(
-        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
-      );
-    }
+    emitLocals(transaction.name);
   }
 
   // Loop guard counters, one per loop, named from its source position.
@@ -521,14 +562,26 @@ export function emitCobol(
     emitLedgerInterfaceStorage(addLine);
   }
 
-  // A CICS transaction receives its input through DFHCOMMAREA rather than as
-  // working storage, so the record is redefined in the LINKAGE SECTION.
+  // A record parameter is a reference cell rather than storage of its own. The
+  // caller points it at the record being passed, so one paragraph can run over
+  // any record whose layout begins with the declared one — which is exactly
+  // what `extends` guarantees.
+  const recordParameterCells = collectRecordParameterCells(program);
   const cicsTransactions = program.transactions.filter(
     (transaction) => transaction.isCics,
   );
-  if (cicsTransactions.length > 0) {
+
+  if (recordParameterCells.length > 0 || cicsTransactions.length > 0) {
     addLine("");
     addLine(`       LINKAGE SECTION.`);
+  }
+
+  for (const cell of recordParameterCells) {
+    addLine(`       01  ${cell.name}.`);
+    emitRecordFields(cell.fields, 1, addLine);
+  }
+
+  if (cicsTransactions.length > 0) {
     addLine(`       01  DFHCOMMAREA.`);
     const commareaRecord = cicsTransactions[0].parameters.find(
       (parameter) => parameter.type.kind === "record",
@@ -578,10 +631,7 @@ export function emitCobol(
   for (const transaction of program.transactions) {
     const transactionStart = lineNumber();
     addLine(`       ${paragraphName(transaction.name)}.`);
-    currentParameters = parameterBindings(
-      transaction.name,
-      transaction.parameters,
-    );
+    currentBindings = routineBindings(transaction.name, transaction.parameters);
 
     if (transaction.canFail) {
       emitFailingTransaction(transaction, addLine);
@@ -595,7 +645,7 @@ export function emitCobol(
       );
     }
 
-    currentParameters = new Map();
+    currentBindings = new Map();
     const transactionEnd = lineNumber() - 1;
     entries.push({
       sourceFile: program.sourceFile,
@@ -991,16 +1041,25 @@ function emitRecursiveProgram(
   );
   addLine(`       ${toCobolParagraphName(fn.name)}-BODY.`);
 
-  const previousParameters = currentParameters;
+  const previousBindings = currentBindings;
   const previousRecursive = recursiveContext;
-  currentParameters = new Map(
-    fn.parameters.map((parameter, index) => [
-      parameter.name,
-      parameter.type.kind === "record"
-        ? toCobolName(parameter.type.name)
-        : linkageNames[index],
-    ]),
-  );
+  currentBindings = new Map([
+    // A recursive function is its own program, so its locals sit in that
+    // program's LOCAL-STORAGE under their own names and can never collide with
+    // a local of the same name elsewhere.
+    ...locals.map(
+      (local) => [local.name, toCobolFieldName(local.name)] as [string, string],
+    ),
+    ...fn.parameters.map(
+      (parameter, index) =>
+        [
+          parameter.name,
+          parameter.type.kind === "record"
+            ? toCobolName(parameter.type.name)
+            : linkageNames[index],
+        ] as [string, string],
+    ),
+  ]);
   recursiveContext = {
     name: fn.name,
     programName,
@@ -1010,7 +1069,7 @@ function emitRecursiveProgram(
 
   emitStatement(fn.body, addLine, 11, resultName);
 
-  currentParameters = previousParameters;
+  currentBindings = previousBindings;
   recursiveContext = previousRecursive;
 
   addLine(`           GOBACK.`);
@@ -1021,19 +1080,23 @@ function emitFunctionBody(
   fn: IRFunction,
   addLine: (line?: string) => void,
 ): void {
-  currentParameters = parameterBindings(fn.name, fn.parameters);
+  currentBindings = routineBindings(fn.name, fn.parameters, true);
   // A function that can raise needs somewhere to jump to. Its callers perform
   // it THRU the exit paragraph, so the jump stays inside the performed range.
   currentExitLabel = fn.canFail ? exitParagraphName(fn.name) : null;
   emitStatement(fn.body, addLine, 11, functionResultName(fn.name));
-  currentParameters = new Map();
+  currentBindings = new Map();
 
   if (fn.canFail) {
     addLine(`           CONTINUE.`);
     addLine(`       ${exitParagraphName(fn.name)}.`);
     addLine(`           EXIT.`);
   } else {
-    addLine(`           GOBACK.`);
+    // Not GOBACK. A function is reached with PERFORM, and PERFORM returns at
+    // the end of the paragraph on its own; GOBACK here would end the whole
+    // program at the first function call. That compiles perfectly, which is
+    // why it survived until a generated program was actually executed.
+    addLine(`           CONTINUE.`);
   }
 
   currentExitLabel = null;
@@ -1617,11 +1680,17 @@ function emitCallsIn(
       // paragraph is performed or the program is called.
       if (!recursiveContext || expression.callee !== recursiveContext.name) {
         expression.args.forEach((argument, index) => {
-          // A record parameter has no storage of its own: the callee reads the
-          // record's own group item, because a record type is a single group in
-          // working storage. Moving into a `-Pn` field that was never declared
-          // is what this skip avoids.
+          // A record parameter is a reference cell, not storage. Pointing it at
+          // the argument passes the record by reference, which is what lets a
+          // record that extends the declared type be passed here: its leading
+          // fields sit at exactly the offsets the cell describes.
           if (argument.resolvedType.kind === "record") {
+            const callee = currentFunctions.get(expression.callee);
+            if (!callee?.isRecursive) {
+              addLine(
+                `${indent}SET ADDRESS OF ${parameterFieldName(expression.callee, index)} TO ADDRESS OF ${renderExpression(argument)}`,
+              );
+            }
             return;
           }
           emitArgumentInto(
@@ -1762,22 +1831,38 @@ function emitComputeInto(
 }
 
 /**
- * Maps each parameter to the COBOL storage it reads from. Record parameters
- * resolve to the record group item; scalars get dedicated fields so a call can
- * move arguments into them.
+ * Maps each name a routine's body can mention to the COBOL storage it reads.
+ *
+ * Record parameters resolve to the record group item; scalars get dedicated
+ * fields so a call can move arguments into them. Locals come from the
+ * program-wide plan, because whether one is qualified depends on whether
+ * another routine declares the same name.
  */
-function parameterBindings(
+function routineBindings(
   owner: string,
   parameters: { name: string; type: IRType }[],
+  /**
+   * True when record parameters are reference cells the caller rebinds, which
+   * is how a function accepts any record whose layout starts with the declared
+   * one. A transaction is a program entry point rather than something called
+   * with varying arguments, so its records stay in working storage.
+   */
+  recordsByReference = false,
 ): Map<string, string> {
-  return new Map(
-    parameters.map((parameter, index) => [
-      parameter.name,
-      parameter.type.kind === "record"
-        ? toCobolName(parameter.type.name)
-        : parameterFieldName(owner, index),
-    ]),
-  );
+  return new Map([
+    ...(currentLocalFields.get(owner) ?? new Map<string, string>()),
+    ...parameters.map(
+      (parameter, index) =>
+        [
+          parameter.name,
+          parameter.type.kind === "record"
+            ? recordsByReference
+              ? parameterFieldName(owner, index)
+              : toCobolName(parameter.type.name)
+            : parameterFieldName(owner, index),
+        ] as [string, string],
+    ),
+  ]);
 }
 
 function resolveIdentifier(name: string): string {
@@ -1785,7 +1870,7 @@ function resolveIdentifier(name: string): string {
   if (name === "sqlcode") {
     return "SQLCODE";
   }
-  return currentParameters.get(name) ?? toCobolFieldName(name);
+  return currentBindings.get(name) ?? toCobolFieldName(name);
 }
 
 /** `for each` index variables need storage, like any other local. */
@@ -2023,9 +2108,24 @@ function nullIndicatorFor(expression: IRExpression): string {
     return `${toCobolFieldName(expression.name)}-IND`;
   }
   if (expression.kind === "MemberAccess") {
-    return `${toCobolFieldName(expression.member)}-IND OF ${toCobolName(expression.recordName)}`;
+    return `${toCobolFieldName(expression.member)}-IND OF ${recordGroupFor(expression)}`;
   }
   return "0";
+}
+
+/**
+ * The group item a record-typed name refers to in the body being emitted.
+ *
+ * Inside a function, a record parameter is a LINKAGE cell the caller points at
+ * the argument, so the field has to be qualified by the cell rather than by the
+ * record type's own working-storage group. Qualifying by the type would read
+ * whatever happened to be in that group and silently return the wrong number.
+ */
+function recordGroupFor(expression: IRMemberAccessExpression): string {
+  return (
+    currentBindings.get(expression.targetName) ??
+    toCobolName(expression.recordName)
+  );
 }
 
 /**
@@ -2035,7 +2135,7 @@ function nullIndicatorFor(expression: IRExpression): string {
 function renderQualifiedFieldReference(
   expression: IRMemberAccessExpression,
 ): string {
-  const base = `${toCobolFieldName(expression.member)} OF ${toCobolName(expression.recordName)}`;
+  const base = `${toCobolFieldName(expression.member)} OF ${recordGroupFor(expression)}`;
   // A subscripted field is written `FIELD OF RECORD (INDEX)`.
   return expression.index
     ? `${base} (${renderExpression(expression.index)})`
@@ -2114,31 +2214,129 @@ function emitBooleanAssignment(
   addLine(`${indent}END-IF`);
 }
 
+/**
+ * Every `let` in a body, wherever it is nested.
+ *
+ * COBOL has no block scope: a local declared inside a loop still needs an 01
+ * item in WORKING-STORAGE. Visiting only the top level and the branches of an
+ * `if` left a local declared inside a `while` with no storage at all, which
+ * GnuCOBOL rejects as an undefined name.
+ */
 function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
   const locals: IRLetStatement[] = [];
   const seen = new Set<string>();
 
   const visit = (current: IRBlock): void => {
     for (const statement of current.statements) {
-      if (statement.kind === "LetStatement") {
-        if (!seen.has(statement.name)) {
-          seen.add(statement.name);
-          locals.push(statement);
-        }
-        continue;
-      }
-
-      if (statement.kind === "IfStatement") {
-        visit(statement.thenBranch);
-        if (statement.elseBranch) {
-          visit(statement.elseBranch);
-        }
+      switch (statement.kind) {
+        case "LetStatement":
+          if (!seen.has(statement.name)) {
+            seen.add(statement.name);
+            locals.push(statement);
+          }
+          break;
+        case "IfStatement":
+          visit(statement.thenBranch);
+          if (statement.elseBranch) {
+            visit(statement.elseBranch);
+          }
+          break;
+        case "WhileStatement":
+        case "ForEachStatement":
+          visit(statement.body);
+          break;
+        case "SwitchStatement":
+          for (const branch of statement.cases) {
+            visit(branch.body);
+          }
+          if (statement.otherwise) {
+            visit(statement.otherwise);
+          }
+          break;
+        default:
+          break;
       }
     }
   };
 
   visit(block);
   return locals;
+}
+
+/**
+ * Every routine whose locals share the main program's WORKING-STORAGE.
+ *
+ * A recursive function is a sibling program with its own LOCAL-STORAGE, so its
+ * locals are neither at risk of colliding here nor a reason to qualify a name
+ * that is otherwise unique.
+ */
+function localOwners(
+  program: IRProgram,
+): { name: string; locals: IRLetStatement[] }[] {
+  return [
+    ...program.functions
+      .filter((fn) => !fn.isRecursive)
+      .map((fn) => ({
+        name: fn.name,
+        locals: collectFunctionLocals(fn.body),
+      })),
+    ...program.transactions.map((transaction) => ({
+      name: transaction.name,
+      locals: [
+        ...collectFunctionLocals(transaction.body),
+        ...(transaction.failureHandler
+          ? collectFunctionLocals(transaction.failureHandler)
+          : []),
+      ],
+    })),
+  ];
+}
+
+/**
+ * The WORKING-STORAGE field each routine's locals are emitted as.
+ *
+ * Every local becomes an 01 item, so two routines that both declare `scratch`
+ * used to emit two `01 SCRATCH` items — with different PICTUREs if the two
+ * locals had different types. A name only one routine declares keeps it, which
+ * is what a COBOL maintainer reading the BankTS source expects to find; a name
+ * more than one routine declares is qualified with its owner, the same way
+ * parameters and results already are. Qualifying only on collision follows the
+ * rule paragraph names use, and keeps the common case short: a name is capped
+ * at 30 characters on IBM Enterprise COBOL.
+ */
+function planLocalFields(program: IRProgram): Map<string, Map<string, string>> {
+  const owners = localOwners(program);
+
+  const ownerCount = new Map<string, number>();
+  for (const owner of owners) {
+    for (const name of new Set(
+      owner.locals.map((local) => toCobolFieldName(local.name)),
+    )) {
+      ownerCount.set(name, (ownerCount.get(name) ?? 0) + 1);
+    }
+  }
+
+  const plan = new Map<string, Map<string, string>>();
+  for (const owner of owners) {
+    const fields = new Map<string, string>();
+    for (const local of owner.locals) {
+      const bare = toCobolFieldName(local.name);
+      fields.set(
+        local.name,
+        (ownerCount.get(bare) ?? 0) > 1
+          ? `${toCobolName(owner.name)}-${bare}`
+          : bare,
+      );
+    }
+    plan.set(owner.name, fields);
+  }
+
+  return plan;
+}
+
+/** The field a local is emitted as, for the routine that declares it. */
+function localFieldName(owner: string, local: string): string {
+  return currentLocalFields.get(owner)?.get(local) ?? toCobolFieldName(local);
 }
 
 function functionResultName(functionName: string): string {

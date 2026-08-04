@@ -71,7 +71,7 @@
 
        PROCEDURE DIVISION.
        BANK-MAIN.
-           PERFORM POST-INTEREST
+           PERFORM RUN-BATCH
            GOBACK.
        IS-ELIGIBLE.
            IF (IS-ELIGIBLE-P1 >= IS-ELIGIBLE-P2) AND (IS-ELIGIBLE-P1 > 0.00)
@@ -79,24 +79,24 @@
            ELSE
                MOVE 'N' TO IS-ELIGIBLE-RESULT
            END-IF
-           GOBACK.
+           CONTINUE.
        RATE-FOR.
            IF RATE-FOR-P1 >= RATE-FOR-P2
                COMPUTE RATE-FOR-RESULT = 0.0450
            ELSE
                COMPUTE RATE-FOR-RESULT = 0.0125
            END-IF
-           GOBACK.
+           CONTINUE.
        ACCRUE.
            COMPUTE ACCRUE-RESULT ROUNDED MODE IS NEAREST-EVEN = (ACCRUE-P1 * ACCRUE-P2)
-           GOBACK.
+           CONTINUE.
        FEE-FOR.
            IF (FEE-FOR-P1 - FEE-FOR-P2) >= 0.00
                COMPUTE FEE-FOR-RESULT = FEE-FOR-P2
            ELSE
                COMPUTE FEE-FOR-RESULT = 0.00
            END-IF
-           GOBACK.
+           CONTINUE.
        POST-INTEREST.
            COMPUTE MINIMUM-BALANCE = 100.00
            COMPUTE PREMIUM-THRESHOLD = 500000.00

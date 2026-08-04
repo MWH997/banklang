@@ -60,15 +60,70 @@ const SQLCA_LINES = [
   "           05  SQLSTATE      PIC X(5).",
 ];
 
+/**
+ * The statement identifier passed with every translated `EXEC SQL`.
+ *
+ * Db2's precompiler numbers the statements in a program and passes a descriptor
+ * for the one being executed, which is how DSNHLI knows what it was asked to
+ * run. Numbering them here serves the same purpose: without it the runtime has
+ * nothing to distinguish one call site from another, and cannot report anything
+ * but success.
+ */
+const SQL_STATEMENT_FIELD = "SQL-STMT-NUMBER";
+
+const SQL_STATEMENT_LINES = [`       01  ${SQL_STATEMENT_FIELD}     PIC 9(4).`];
+
+/**
+ * Where the translator records which command the runtime is being asked for.
+ *
+ * DFHEIV* is the translator's own namespace for the work fields it generates to
+ * describe a command. Nothing in the operand list says which command it is, so
+ * without this the runtime cannot tell a SYNCPOINT from a rollback.
+ */
+const CICS_COMMAND_FIELD = "DFHEIV-COMMAND";
+
+/**
+ * The EXEC interface block, as the CICS translator generates it.
+ *
+ * A command's response code is not returned in an operand; it arrives in
+ * EIBRESP, and the translator emits the `MOVE` that copies it into whatever the
+ * command's `RESP` option named. Declaring the block here is what lets a
+ * generated program's error branch be reached at all.
+ */
+const CICS_EIB_LINES = [
+  "       01  DFHEIBLK.",
+  "           05  EIBRESP       PIC S9(8) COMP.",
+  "           05  EIBRESP2      PIC S9(8) COMP.",
+  `       01  ${CICS_COMMAND_FIELD}   PIC X(20).`,
+];
+
 export function precompile(cobol: string): PrecompileResult {
   const lines = cobol.split("\n");
   const output: string[] = [];
   let sqlBlocks = 0;
   let cicsBlocks = 0;
 
+  const usesSql = /^\s*EXEC\s+SQL\b/im.test(cobol);
+  const usesCics = /^\s*EXEC\s+CICS\b/im.test(cobol);
+
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     const trimmed = line.trim();
+
+    // Translator-owned storage goes in immediately, the way IBM's translators
+    // inject their own control blocks rather than asking for them.
+    if (/^WORKING-STORAGE\s+SECTION\.$/i.test(trimmed)) {
+      output.push(line);
+      if (usesSql) {
+        output.push("      *> Statement descriptor added by the precompiler.");
+        output.push(...SQL_STATEMENT_LINES);
+      }
+      if (usesCics) {
+        output.push("      *> EXEC interface block added by the translator.");
+        output.push(...CICS_EIB_LINES);
+      }
+      continue;
+    }
 
     // `EXEC SQL INCLUDE SQLCA END-EXEC.` expands to the structure itself.
     if (/^EXEC\s+SQL\s+INCLUDE\s+SQLCA\s+END-EXEC\.?$/i.test(trimmed)) {
@@ -101,7 +156,7 @@ export function precompile(cobol: string): PrecompileResult {
 
     if (kind === "SQL") {
       sqlBlocks += 1;
-      output.push(...translateSql(body, indent, terminated));
+      output.push(...translateSql(body, indent, terminated, sqlBlocks));
     } else {
       cicsBlocks += 1;
       output.push(...translateCics(body, indent, terminated));
@@ -123,13 +178,15 @@ function translateSql(
   body: string,
   indent: string,
   terminated: boolean,
+  statementNumber: number,
 ): string[] {
   const hostVariables = extractHostVariables(body);
-  const operands = ["SQLCA", ...hostVariables];
+  const operands = ["SQLCA", SQL_STATEMENT_FIELD, ...hostVariables];
 
   return [
     `${indent}*> EXEC SQL translated by the BankLang precompiler.`,
     ...commentedSource(body, indent),
+    `${indent}MOVE ${String(statementNumber).padStart(4, "0")} TO ${SQL_STATEMENT_FIELD}`,
     `${indent}CALL "${SQL_RUNTIME}" USING ${operands.join(", ")}${terminated ? "." : ""}`,
   ];
 }
@@ -137,23 +194,32 @@ function translateSql(
 /**
  * `EXEC CICS ... END-EXEC` becomes a call into the CICS runtime, passing every
  * data item the command referenced so those names are still checked.
+ *
+ * A command's `RESP` option is not an operand the runtime writes to. CICS
+ * returns the response in EIBRESP, and the translator copies it out afterwards,
+ * so that is what happens here too.
  */
 function translateCics(
   body: string,
   indent: string,
   terminated: boolean,
 ): string[] {
-  const operands = extractCicsOperands(body);
-  const suffix = terminated ? "." : "";
-  const call =
-    operands.length > 0
-      ? `${indent}CALL "${CICS_RUNTIME}" USING ${operands.join(", ")}${suffix}`
-      : `${indent}CALL "${CICS_RUNTIME}"${suffix}`;
+  const respTarget = extractCicsRespTarget(body);
+  const operands = extractCicsOperands(body).filter(
+    (operand) => operand !== respTarget,
+  );
+  const trailing = terminated ? "." : "";
+  const callSuffix = respTarget ? "" : trailing;
+  const call = `${indent}CALL "${CICS_RUNTIME}" USING DFHEIBLK, ${CICS_COMMAND_FIELD}${operands.length > 0 ? `, ${operands.join(", ")}` : ""}${callSuffix}`;
 
   return [
     `${indent}*> EXEC CICS translated by the BankLang precompiler.`,
     ...commentedSource(body, indent),
+    `${indent}MOVE "${extractCicsCommand(body)}" TO ${CICS_COMMAND_FIELD}`,
     call,
+    ...(respTarget
+      ? [`${indent}MOVE EIBRESP TO ${respTarget}${trailing}`]
+      : []),
   ];
 }
 
@@ -184,6 +250,28 @@ function extractHostVariables(body: string): string[] {
   }
 
   return found;
+}
+
+/**
+ * The command itself, without its options.
+ *
+ * Everything from the first parenthesised option onwards is an argument, so
+ * `SYNCPOINT ROLLBACK RESP(WS-RESP)` is the command `SYNCPOINT ROLLBACK` and
+ * `LINK PROGRAM("X") COMMAREA(Y)` is the command `LINK`.
+ */
+function extractCicsCommand(body: string): string {
+  const words = body.trim().split(/\s+/);
+  const options = words.findIndex((word) => word.includes("("));
+  return (options === -1 ? words : words.slice(0, options))
+    .join(" ")
+    .toUpperCase()
+    .slice(0, 20);
+}
+
+/** The data item a command's `RESP` option names, if it has one. */
+function extractCicsRespTarget(body: string): string | null {
+  const match = /\bRESP\s*\(\s*([A-Za-z][A-Za-z0-9-]*)\s*\)/i.exec(body);
+  return match ? match[1] : null;
 }
 
 /**
