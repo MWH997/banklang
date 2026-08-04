@@ -237,9 +237,9 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-TYPE-021",
     title: "Record argument is not a named record",
     explanation:
-      "A record parameter binds to the record's group item in working storage rather than to a copy of it, so the callee reads that group whatever the caller passed. An expression argument would compile and then silently read different storage.",
+      "A record argument is passed by reference: the caller points the callee's LINKAGE cell at the argument's storage. A subscripted element has no address the caller can take without evaluating the subscript, so such an argument would compile and then read whatever the cell was last pointed at.",
     remediation:
-      "Assign the value into a record of the parameter's type, then pass that record by name.",
+      "Assign the element into a record of the parameter's type, then pass that record by name.",
     specReference: "language-reference.md section 6",
     implemented: true,
   },

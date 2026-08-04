@@ -41,7 +41,11 @@ This is the only example that is also **executed**. See
   paragraph, the `GO TO` out of `PERMITTED-AMOUNT` on a raise, the caller's test
   of `BANK-FAILURE-CODE` after the `PERFORM`, and the `ROLLBK` call that
   precedes the handler.
-- `audit/source-map.json` traces all 18 symbols, including the paragraphs that
+- The same file shows substitutability resting on that layout: `LEDGER-BALANCE-OF-P1`
+  is a `LINKAGE` cell carrying `CURRENT-ACCOUNT`'s fields, and the call site
+  points it at `SAVINGS-ACCOUNT` with `SET ADDRESS OF` rather than copying
+  anything.
+- `audit/source-map.json` traces all 19 symbols, including the paragraphs that
   only exist because the transaction can fail.
 - `audit/gnucobol-validation.md` records the local `cobc` invocation, its exit
   code, and the SHA-256 of both the source and the generated artifact.

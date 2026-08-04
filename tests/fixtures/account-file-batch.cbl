@@ -42,4 +42,4 @@
            ELSE
                MOVE 'N' TO IS-OVERDRAWN-RESULT
            END-IF
-           GOBACK.
+           CONTINUE.

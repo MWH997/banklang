@@ -263,32 +263,48 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
-        "line": 33,
+        "line": 34,
         "column": 10
       },
       "sourceEnd": {
-        "line": 43,
+        "line": 36,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
-      "targetStartLine": 68,
-      "targetEndLine": 80,
+      "targetStartLine": 81,
+      "targetEndLine": 83,
+      "category": "function",
+      "symbol": "ledgerBalanceOf"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceStart": {
+        "line": 41,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 51,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
+      "targetStartLine": 84,
+      "targetEndLine": 96,
       "category": "function",
       "symbol": "permittedAmount"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
-        "line": 45,
+        "line": 53,
         "column": 19
       },
       "sourceEnd": {
-        "line": 76,
+        "line": 85,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
-      "targetStartLine": 81,
-      "targetEndLine": 139,
+      "targetStartLine": 97,
+      "targetEndLine": 158,
       "category": "transaction",
       "symbol": "withdraw"
     }

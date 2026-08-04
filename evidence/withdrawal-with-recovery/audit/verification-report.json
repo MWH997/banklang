@@ -47,7 +47,7 @@
     {
       "name": "Source map coverage",
       "status": "passed",
-      "details": "18/18 traced symbols, all entries anchored in the generated COBOL."
+      "details": "19/19 traced symbols, all entries anchored in the generated COBOL."
     },
     {
       "name": "GnuCOBOL validation",
@@ -84,8 +84,8 @@
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
   },
   "sourceMapCoverage": {
-    "expectedSymbolCount": 18,
-    "coveredSymbolCount": 18,
+    "expectedSymbolCount": 19,
+    "coveredSymbolCount": 19,
     "diagnostics": []
   },
   "gnucobolValidation": {
@@ -94,11 +94,11 @@
     "precompiledArtifact": null,
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/withdrawal-with-recovery/src/main.bank.ts",
-    "sourceArtifactHash": "78e590d4a58d8e4ddf5bb5a1cf25a75387dd3a58516ae553aabaab832f9fba12",
+    "sourceArtifactHash": "c144363d321a6586794c5600f8e8e4bd9a4966d0b7cac277d4edae2fbfe1e093",
     "generatedArtifact": "dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl",
-    "generatedArtifactHash": "edf403f81c2eaa23f86ac1a918718e8639b4c07d444b3fb638e21c04ed381321",
+    "generatedArtifactHash": "d613aefeea69e28cc0997e6bcacf317864dac30fe2fdb1965589097b00b75475",
     "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "af0093497740514e6713c15895976f92cfe63180ae420fcacc3788f4ad1ae1a2",
+    "sourceMapArtifactHash": "efe2b5634710faea435961a361c25fe31134fac4d4532bb86c2a4e0585eeb398",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
     "compilerCommand": "cobc -x -free dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery",

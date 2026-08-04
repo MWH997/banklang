@@ -21,4 +21,4 @@
            ELSE
                MOVE 'N' TO IS-ELIGIBLE-FOR-INTEREST-RESULT
            END-IF
-           GOBACK.
+           CONTINUE.

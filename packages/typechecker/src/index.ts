@@ -3474,13 +3474,13 @@ function inferCallExpressionType(
 }
 
 /**
- * Rejects a record argument that is not a plain named record.
+ * Rejects a record argument the backend cannot take the address of.
  *
- * A record type is one group item in working storage, and a record parameter
- * binds to that group rather than to storage of its own. So the callee reads
- * `01 ADDRESS`, whatever the caller wrote. Passing `customer.address` would
- * compile and then silently read a different group, which is exactly the kind
- * of quiet wrong answer this compiler exists to make impossible.
+ * A record parameter is a reference cell the caller points at the argument, so
+ * the argument has to name addressable storage: a record, or a field path
+ * reaching a nested record. A subscripted element is not accepted, because the
+ * cell would have to describe storage chosen by a subscript evaluated at the
+ * call site.
  */
 function checkRecordArgument(
   callee: string,
@@ -3489,7 +3489,18 @@ function checkRecordArgument(
   index: number,
   diagnostics: Diagnostic[],
 ): void {
-  if (expected.kind !== "record" || argument.kind === "Identifier") {
+  if (expected.kind !== "record") {
+    return;
+  }
+
+  if (argument.kind === "Identifier") {
+    return;
+  }
+
+  if (
+    argument.kind === "MemberAccess" &&
+    argument.target.kind === "Identifier"
+  ) {
     return;
   }
 
@@ -3497,9 +3508,9 @@ function checkRecordArgument(
     createDiagnostic({
       id: "BANK-TYPE-021",
       severity: "error",
-      message: `Argument ${index + 1} of ${callee} must name a record directly.`,
+      message: `Argument ${index + 1} of ${callee} is not a record the compiler can take the address of.`,
       span: argument.span,
-      hint: `A record parameter binds to the ${expected.name} group in working storage, not to a copy. Assign the value into a ${expected.name} first, then pass that.`,
+      hint: `Pass a record by name, or a record-typed field such as \`customer.address\`. Copy a subscripted element into a ${expected.name} first, then pass that.`,
       backendProfile: "ibm-enterprise-cobol-zos",
     }),
   );
@@ -3810,6 +3821,27 @@ function unifyNestedArguments(
   }
 
   return true;
+}
+
+/**
+ * True when `candidate` extends `base`, directly or through a chain.
+ *
+ * This is what makes a derived record usable where its base is expected. It is
+ * sound only because inheritance flattens the base fields first: the derived
+ * record's leading storage is the base record's storage at the same offsets, so
+ * a reference cell describing the base reads the right bytes either way.
+ */
+function extendsRecord(candidate: string, base: string): boolean {
+  const seen = new Set<string>();
+  let current: string | undefined = recordBases.get(candidate);
+  while (current && !seen.has(current)) {
+    if (current === base) {
+      return true;
+    }
+    seen.add(current);
+    current = recordBases.get(current);
+  }
+  return false;
 }
 
 /** True for a written decimal literal, whose scale is its own, not the target's. */
@@ -4546,7 +4578,7 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
   }
 
   if (left.kind === "record" && right.kind === "record") {
-    return left.name === right.name;
+    return left.name === right.name || extendsRecord(right.name, left.name);
   }
 
   // Currency is nominal: two currencies with identical precision and scale are

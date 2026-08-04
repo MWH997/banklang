@@ -52,7 +52,7 @@
            ELSE
                MOVE 'N' TO IS-AVAILABLE-RESULT
            END-IF
-           GOBACK.
+           CONTINUE.
        ACCOUNT-ENQUIRY.
            MOVE ACCOUNT-ID OF ENQUIRY-REQUEST TO FETCH-ACCOUNT-H1
            EXEC SQL

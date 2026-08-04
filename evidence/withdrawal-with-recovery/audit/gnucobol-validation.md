@@ -5,11 +5,11 @@
 | validated-with-gnucobol    | yes                                                                                                          |
 | backend-profile            | gnucobol-local                                                                                               |
 | source-artifact            | examples/withdrawal-with-recovery/src/main.bank.ts                                                           |
-| source-artifact-sha256     | 78e590d4a58d8e4ddf5bb5a1cf25a75387dd3a58516ae553aabaab832f9fba12                                             |
+| source-artifact-sha256     | c144363d321a6586794c5600f8e8e4bd9a4966d0b7cac277d4edae2fbfe1e093                                             |
 | generated-artifact         | dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl                                                             |
-| generated-artifact-sha256  | edf403f81c2eaa23f86ac1a918718e8639b4c07d444b3fb638e21c04ed381321                                             |
+| generated-artifact-sha256  | d613aefeea69e28cc0997e6bcacf317864dac30fe2fdb1965589097b00b75475                                             |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                           |
-| source-map-artifact-sha256 | af0093497740514e6713c15895976f92cfe63180ae420fcacc3788f4ad1ae1a2                                             |
+| source-map-artifact-sha256 | efe2b5634710faea435961a361c25fe31134fac4d4532bb86c2a4e0585eeb398                                             |
 | compiler-executable        | cobc                                                                                                         |
 | compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                        |
 | compiler-command           | cobc -x -free dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery |

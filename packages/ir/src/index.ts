@@ -541,7 +541,10 @@ export function lowerProgramToIR(
 
   callTargetTable = typechecked.callTargets;
 
-  const loweredFunctions = typechecked.functions.map((fn) => lowerFunction(fn));
+  const shared = shareIdenticalInstantiations(
+    typechecked.functions.map((fn) => lowerFunction(fn)),
+  );
+  const loweredFunctions = shared.functions;
   const recursive = findRecursiveFunctions(loweredFunctions);
   const failing = findFailingFunctions(loweredFunctions);
   const functions = loweredFunctions.map((fn) => ({
@@ -551,6 +554,15 @@ export function lowerProgramToIR(
   }));
   const transactions = typechecked.transactions
     .map((transaction) => lowerTransaction(transaction))
+    // A transaction is lowered after the functions it calls have been merged,
+    // so its call sites still name instantiations that no longer exist.
+    .map((transaction) => ({
+      ...transaction,
+      body: rewriteCallees(transaction.body, shared.aliases),
+      failureHandler: transaction.failureHandler
+        ? rewriteCallees(transaction.failureHandler, shared.aliases)
+        : null,
+    }))
     .map((transaction) => ({
       ...transaction,
       canFail:
@@ -693,6 +705,166 @@ function addCicsRespSymbols(
       }
     }
   }
+}
+
+/** True for a name the typechecker minted for a generic instantiation. */
+function isInstantiation(name: string): boolean {
+  return name.includes("$");
+}
+
+/**
+ * Merges instantiations that lower to identical COBOL onto one paragraph.
+ *
+ * Monomorphisation is the only sound lowering for a language with no boxing,
+ * but on its own it copies a paragraph per instantiation whether or not the
+ * copies differ. `firstOr<MoneyBDT>` and `firstOr<MoneyUSD>` both emit
+ * `PIC S9(16)V99 COMP-3`: two identical paragraphs and two sets of storage for
+ * a distinction that exists only in the typechecker. Sharing them changes what
+ * is emitted, never what is accepted — currency stays nominally typed, and a
+ * BDT amount is still rejected where a USD amount is expected.
+ *
+ * Only instantiations are merged. A function the author wrote keeps its own
+ * paragraph even when another one happens to match it exactly, because that
+ * name appears in the source, the source map, and the audit record.
+ */
+function shareIdenticalInstantiations(functions: IRFunction[]): {
+  functions: IRFunction[];
+  aliases: Map<string, string>;
+} {
+  const aliases = new Map<string, string>();
+  let current = functions;
+
+  // Merging one group can make another group identical: two instantiations of
+  // a caller differ only in the callee they name until those callees merge.
+  // Repeat until a round changes nothing.
+  for (;;) {
+    const groups = new Map<string, IRFunction[]>();
+    for (const fn of current) {
+      if (!isInstantiation(fn.name)) {
+        continue;
+      }
+      const key = instantiationKey(fn);
+      const group = groups.get(key);
+      if (group) {
+        group.push(fn);
+      } else {
+        groups.set(key, [fn]);
+      }
+    }
+
+    const round = new Map<string, string>();
+    for (const group of groups.values()) {
+      if (group.length < 2) {
+        continue;
+      }
+      // Sorted, so the surviving name depends on which instantiations exist and
+      // not on the order the typechecker happened to create them in.
+      const names = group.map((fn) => fn.name).sort();
+      for (const name of names.slice(1)) {
+        round.set(name, names[0]);
+      }
+    }
+
+    if (round.size === 0) {
+      return { functions: current, aliases };
+    }
+
+    for (const [from, to] of round) {
+      aliases.set(from, to);
+    }
+    // An alias recorded in an earlier round may now name a function this round
+    // merged away, so follow it to the name that survived.
+    for (const [from, to] of aliases) {
+      aliases.set(from, round.get(to) ?? to);
+    }
+
+    current = current
+      .filter((fn) => !round.has(fn.name))
+      .map((fn) => ({ ...fn, body: rewriteCallees(fn.body, round) }));
+  }
+}
+
+/**
+ * A rendering of a function that compares equal exactly when two functions emit
+ * the same COBOL.
+ *
+ * Spans are dropped: a span places a diagnostic, not a statement. Currency is
+ * erased to the decimal it shares a PICTURE with. A record is keyed by its
+ * fields rather than its name, because a record parameter is reached through a
+ * LINKAGE cell that the caller points at the actual record, so the cell's
+ * layout is what reaches the generated program and the record's name does not.
+ * The function's own name is replaced, so a self-call still matches.
+ */
+function instantiationKey(fn: IRFunction): string {
+  const parameterSlots = new Map(
+    fn.parameters.map((parameter, index) => [parameter.name, `@p${index}`]),
+  );
+
+  return JSON.stringify(
+    { ...fn, name: "@self" },
+    function (this: Record<string, unknown>, key: string, value: unknown) {
+      if (key === "span") {
+        return undefined;
+      }
+      if (key === "callee" && value === fn.name) {
+        return "@self";
+      }
+      if (key === "targetName" && typeof value === "string") {
+        return parameterSlots.get(value) ?? value;
+      }
+      if (key === "recordName" && typeof value === "string") {
+        // A reference through a parameter renders as that parameter's cell. A
+        // reference to anything else renders as the record's own group item, so
+        // there the name is exactly what distinguishes the emitted code.
+        const target = this.targetName;
+        return typeof target === "string" && parameterSlots.has(target)
+          ? "@cell"
+          : value;
+      }
+      if (isIRTypeOfKind(value, "currency")) {
+        return {
+          kind: "decimal",
+          precision: value.precision,
+          scale: value.scale,
+        };
+      }
+      if (isIRTypeOfKind(value, "record")) {
+        return { kind: "@record", fields: value.fields };
+      }
+      return value;
+    },
+  );
+}
+
+function isIRTypeOfKind<K extends IRType["kind"]>(
+  value: unknown,
+  kind: K,
+): value is Extract<IRType, { kind: K }> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === kind
+  );
+}
+
+/**
+ * Repoints every call in a block at the instantiation that survived merging.
+ *
+ * The IR is plain data with no cycles, so a serialising walk rewrites every
+ * `callee` wherever it appears without this needing to know the shape of every
+ * statement and expression that can hold one.
+ */
+function rewriteCallees(
+  block: IRBlock,
+  aliases: ReadonlyMap<string, string>,
+): IRBlock {
+  return JSON.parse(
+    JSON.stringify(block, (key, value) =>
+      key === "callee" && typeof value === "string"
+        ? (aliases.get(value) ?? value)
+        : value,
+    ),
+  ) as IRBlock;
 }
 
 /**
