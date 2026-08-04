@@ -7,9 +7,9 @@
 | source-artifact            | examples/interest-posting-batch/src/main.bank.ts                 |
 | source-artifact-sha256     | 7383eb12eccef651dc091e9b78889cf4579f004901d7d61036c8ad7380f58c23 |
 | generated-artifact         | dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl                   |
-| generated-artifact-sha256  | bb8f41070c263dcf89cd4dbdaa9c98b37bcee49661c8cbf898e4fc7d425c4584 |
+| generated-artifact-sha256  | 3b2d04d53ce2d0abfd6be95b03051e7bca8bd547595508db408013cf45f4b5d1 |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | 0bf1cf380b47c8fa4502eab48196b253c707294f5e3dc964a157250bde7c2b63 |
+| source-map-artifact-sha256 | ba51366fef4a5334c41c655200e68bea36b618ee95a1b50bbf22238366816289 |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
 | compiler-command           | cobc not found                                                   |

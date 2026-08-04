@@ -341,6 +341,21 @@ export interface WhileStatementNode extends NodeBase {
   body: BlockNode;
 }
 
+/**
+ * `for each <name> in <arrayExpression> { ... }`
+ *
+ * The bound comes from the array's declared length, so unlike `while` this
+ * needs no explicit limit clause.
+ */
+export interface ForEachStatementNode extends NodeBase {
+  kind: "ForEachStatement";
+  /** Loop index variable, readable inside the body. */
+  indexName: string;
+  /** The array being iterated. */
+  array: MemberAccessNode | IdentifierNode;
+  body: BlockNode;
+}
+
 /** Assignment to an existing local or record field. */
 export interface AssignStatementNode extends NodeBase {
   kind: "AssignStatement";
@@ -400,7 +415,8 @@ export type StatementNode =
   | FileStatementNode
   | SwitchStatementNode
   | SqlStatementNode
-  | CicsStatementNode;
+  | CicsStatementNode
+  | ForEachStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";

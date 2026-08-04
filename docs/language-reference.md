@@ -131,6 +131,20 @@ Not yet implemented: `for each` over bounded arrays, and `switch` over enums.
 
 Never supported: `try`/`catch`, `throw`, `async`/`await`, `yield`.
 
+### `for each`
+
+Iterating a bounded array needs no limit clause, because the array supplies the
+bound:
+
+```ts
+for each month in loan.schedule {
+  loan.schedule[month].dueBalance = running;
+}
+```
+
+This lowers to `PERFORM VARYING` over the declared length. The index is
+provably in range, so no runtime check is emitted for it.
+
 ### Bounded loops
 
 Every loop must declare a static iteration limit:
@@ -214,7 +228,16 @@ Calls lower to argument moves plus a `PERFORM`, because COBOL has no
 call-in-expression form. Each parameter gets its own working-storage field, and
 nested calls are ordered so inner results are ready before the outer call runs.
 
-Recursion is not supported.
+Recursion is supported, including mutual recursion.
+
+A recursive function is emitted as a separate `RECURSIVE` COBOL program and
+reached with `CALL` rather than `PERFORM`, because a COBOL paragraph is not
+reentrant: performing one that is already active is undefined.
+
+Its locals go in `LOCAL-STORAGE`, not `WORKING-STORAGE`. That distinction is
+not cosmetic — `WORKING-STORAGE` is shared across invocations, so locals held
+there are overwritten by the nested call and the program returns a wrong answer
+while compiling perfectly.
 
 ## 9c. Assignment
 
@@ -322,19 +345,29 @@ SECTION` and ends with `EXEC CICS RETURN` rather than `GOBACK`.
 `BANK-CICS-003` exists because a syncpoint inside a loop commits or discards
 partial work on every iteration, which is rarely what a transaction means.
 
-## 15. Backend requirements
+## 15. Backend requirements and precompilation
 
 Embedded SQL requires the Db2 precompiler and CICS commands require the CICS
-translator. A program using either **cannot be validated by a plain COBOL
-compiler**, and BankLang reports that rather than pretending otherwise:
+translator. Neither is a COBOL compiler feature: on z/OS, `DSNHPC` and the CICS
+translator rewrite those blocks into calls before the compiler runs.
 
-```txt
-| compiler-status         | requires-preprocessor                          |
-| validated-with-gnucobol | no                                             |
-| compiler-command        | not run: requires db2-precompiler and cics-translator |
-```
+BankLang ships its own precompiler that performs the equivalent translation, so
+such a program can still be compiled and checked locally:
 
-The compile-verification lane reports such programs instead of passing them.
+- `EXEC SQL INCLUDE SQLCA` expands to the SQLCA structure.
+- `EXEC SQL ... END-EXEC` becomes a call to the SQL runtime, passing SQLCA and
+  every host variable the statement referenced.
+- `EXEC CICS ... END-EXEC` becomes a call to the CICS runtime, passing every
+  data item the command referenced.
+
+**What this proves:** the surrounding COBOL is valid, every host variable and
+data name resolves, and SQLCA fields such as `SQLCODE` are declared and usable.
+
+**What it does not prove:** SQL semantics, Db2 bind behaviour, or CICS runtime
+behaviour. It is not IBM's precompiler and produces no bind artifacts.
+
+The translated output exists only for verification. The shipped artifact keeps
+its `EXEC SQL` and `EXEC CICS` blocks.
 
 ## 13. File declarations
 
@@ -375,8 +408,11 @@ while accountFeedStatus == "00" limit 100000 {
 }
 ```
 
-Operations move whole records between the file buffer and working storage.
-There is no per-field file mapping yet.
+Read and write map the record **field by field** rather than moving it as a
+group, so the correspondence between the file record and working storage is
+explicit in the generated COBOL and does not depend on the two layouts being
+byte-identical. An array field is copied element by element, because COBOL
+rejects a move of an `OCCURS` item without a subscript.
 
 The `FD` record is emitted as an unstructured buffer sized from the copybook
 layout, and the structured record is declared once in working storage. Emitting

@@ -40,6 +40,7 @@ import {
   type SqlDeclarationNode,
   type SqlStatementNode,
   type CicsStatementNode,
+  type ForEachStatementNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -660,6 +661,7 @@ function validateTransactionBody(
       case "SwitchStatement":
       case "SqlStatement":
       case "CicsStatement":
+      case "ForEachStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -809,6 +811,17 @@ function validateEffectStatement(
       return true;
     case "CicsStatement":
       validateCicsStatement(statement, scope, diagnostics, inTransaction);
+      return true;
+    case "ForEachStatement":
+      validateForEachStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
       return true;
     case "SwitchStatement":
       validateSwitchStatement(
@@ -1181,6 +1194,83 @@ function validateBranchBody(
         backendProfile: null,
       }),
     );
+  }
+}
+
+/**
+ * `for each <index> in <array>` iterates a bounded array.
+ *
+ * The bound comes from the declared array length, so no limit clause is
+ * needed and the loop cannot run away.
+ */
+function validateForEachStatement(
+  statement: ForEachStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const arrayType = inferExpressionType(
+    statement.array,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (!arrayType) {
+    return;
+  }
+
+  if (arrayType.kind !== "array") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `Cannot iterate ${describeType(arrayType)}, which is not an array.`,
+        span: statement.array.span,
+        hint: "Iterate a field declared as T[n].",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  // The index is scoped to the loop and typed to hold the array's bound.
+  const indexType: ResolvedType = {
+    kind: "decimal",
+    precision: Math.max(String(arrayType.length).length, 4),
+    scale: 0,
+  };
+  const shadowed = scope.get(statement.indexName);
+  scope.set(statement.indexName, indexType);
+  if (!locals.some((local) => local.name === statement.indexName)) {
+    locals.push({
+      name: statement.indexName,
+      span: statement.span,
+      type: indexType,
+    });
+  }
+
+  const previousInLoop = inLoopBody;
+  inLoopBody = true;
+  validateBranchBody(
+    statement.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+    inTransaction,
+  );
+  inLoopBody = previousInLoop;
+
+  if (shadowed) {
+    scope.set(statement.indexName, shadowed);
+  } else {
+    scope.delete(statement.indexName);
   }
 }
 
@@ -1824,6 +1914,7 @@ function resolveTerminalStatementType(
     case "SwitchStatement":
     case "SqlStatement":
     case "CicsStatement":
+    case "ForEachStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;
@@ -2206,14 +2297,20 @@ function inferExpressionType(
       if (!operand) {
         return null;
       }
+      // Money is rounded at least as often as a plain decimal, so currency
+      // operands are accepted and keep their currency.
+      if (operand.kind === "currency") {
+        return operand;
+      }
+
       if (!isDecimalType(operand)) {
         diagnostics.push(
           createDiagnostic({
             id: "BANK-TYPE-003",
             severity: "error",
-            message: `${expression.isDivision ? "divide" : "round"} requires decimal operands.`,
+            message: `${expression.isDivision ? "divide" : "round"} requires a decimal or currency operand.`,
             span: expression.span,
-            hint: "Rounding applies to decimal arithmetic only.",
+            hint: "Rounding applies to numeric arithmetic only.",
             backendProfile: null,
           }),
         );
@@ -2769,6 +2866,15 @@ function inferBinaryExpressionType(
     const currency = left.kind === "currency" ? left : (right as CurrencyType);
     const other = left.kind === "currency" ? right : left;
 
+    // Scaling money by a dimensionless factor is a normal banking operation:
+    // a rate or a count has no currency of its own, and the result keeps the
+    // currency of the amount. Adding across types is a different matter and
+    // still needs both sides to agree.
+    const scaling = operator === "*" || operator === "/";
+    if (scaling && isDecimalType(other)) {
+      return currency;
+    }
+
     if (isDecimalType(other) && other.literal) {
       if (other.scale !== currency.scale) {
         diagnostics.push(
@@ -3077,7 +3183,10 @@ function resolveReference(
  */
 function inferDecimalLiteral(node: DecimalLiteralNode): DecimalType {
   const scale = node.text.includes(".") ? node.text.split(".")[1].length : 0;
-  const precision = node.text.replace(".", "").replace(/^0+/, "").length || 1;
+  const digits = node.text.replace(".", "").replace(/^0+/, "").length;
+  // Precision must cover the scale: `0.00` is scale 2, so it needs at least
+  // two digits even though every one of them is a zero.
+  const precision = Math.max(digits, scale, 1);
   return { kind: "decimal", precision, scale, literal: true };
 }
 
@@ -3115,6 +3224,16 @@ function declareSymbol(
 }
 
 function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
+  // A decimal literal has no currency of its own, so it fits a currency field
+  // of the same scale. Checked before the kind comparison, which would
+  // otherwise reject it outright.
+  if (left.kind === "currency" && right.kind === "decimal" && right.literal) {
+    return right.scale === left.scale && right.precision <= left.precision;
+  }
+  if (right.kind === "currency" && left.kind === "decimal" && left.literal) {
+    return left.scale === right.scale && left.precision <= right.precision;
+  }
+
   if (left.kind !== right.kind) {
     return false;
   }
@@ -3150,11 +3269,6 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
 
   if (left.kind === "record" && right.kind === "record") {
     return left.name === right.name;
-  }
-
-  // A literal fits a currency field of the same scale.
-  if (left.kind === "currency" && right.kind === "decimal" && right.literal) {
-    return right.scale === left.scale && right.precision <= left.precision;
   }
 
   // Currency is nominal: two currencies with identical precision and scale are

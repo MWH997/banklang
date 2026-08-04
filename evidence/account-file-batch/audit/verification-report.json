@@ -88,6 +88,8 @@
   },
   "gnucobolValidation": {
     "backendRequirements": [],
+    "precompiled": false,
+    "precompiledArtifact": null,
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/account-file-batch/src/main.bank.ts",
     "sourceArtifactHash": "561b89ea4116a112a95061ece3e92d7df8aa8e0f44c86899be645f0a6df5de6e",

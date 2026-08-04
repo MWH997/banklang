@@ -8,6 +8,9 @@
        WORKING-STORAGE SECTION.
            EXEC SQL INCLUDE SQLCA END-EXEC.
        01  FETCH-ACCOUNT-H1     PIC X(16).
+       01  LINK-RESP            PIC S9(8) COMP.
+       01  COMMIT-RESP          PIC S9(8) COMP.
+       01  ROLLBACK-RESP        PIC S9(8) COMP.
        01  ENQUIRY-REQUEST.
            05  ACCOUNT-ID           PIC X(16).
            05  REQUESTED-BY         PIC X(20).

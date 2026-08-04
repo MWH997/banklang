@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "entries": [
+    {
+      "category": "record-field",
+      "owner": "Loan",
+      "symbol": "monthlyRate",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 17,
+          "column": 3
+        },
+        "end": {
+          "line": 17,
+          "column": 21
+        }
+      },
+      "precision": 9,
+      "scale": 4,
+      "packedBytes": 5,
+      "picture": "PIC S9(5)V9999 COMP-3"
+    },
+    {
+      "category": "record-field",
+      "owner": "Loan",
+      "symbol": "termMonths",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 18,
+          "column": 3
+        },
+        "end": {
+          "line": 18,
+          "column": 22
+        }
+      },
+      "precision": 9,
+      "scale": 0,
+      "packedBytes": 5,
+      "picture": "PIC S9(9) COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "compound",
+      "symbol": "rate",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 26,
+          "column": 33
+        },
+        "end": {
+          "line": 26,
+          "column": 43
+        }
+      },
+      "precision": 9,
+      "scale": 4,
+      "packedBytes": 5,
+      "picture": "PIC S9(5)V9999 COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "compound",
+      "symbol": "periods",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 26,
+          "column": 45
+        },
+        "end": {
+          "line": 26,
+          "column": 60
+        }
+      },
+      "precision": 9,
+      "scale": 0,
+      "packedBytes": 5,
+      "picture": "PIC S9(9) COMP-3"
+    },
+    {
+      "category": "literal",
+      "owner": "compound",
+      "symbol": "0",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 27,
+          "column": 17
+        },
+        "end": {
+          "line": 27,
+          "column": 18
+        }
+      },
+      "precision": 1,
+      "scale": 0,
+      "packedBytes": 1,
+      "picture": "PIC S9(1) COMP-3"
+    },
+    {
+      "category": "parameter",
+      "owner": "interestFor",
+      "symbol": "rate",
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+        "start": {
+          "line": 35,
+          "column": 36
+        },
+        "end": {
+          "line": 35,
+          "column": 46
+        }
+      },
+      "precision": 9,
+      "scale": 4,
+      "packedBytes": 5,
+      "picture": "PIC S9(5)V9999 COMP-3"
+    }
+  ]
+}

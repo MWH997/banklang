@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 53,
-      "targetEndLine": 58,
+      "targetStartLine": 55,
+      "targetEndLine": 60,
       "category": "record",
       "symbol": "LedgerEntry"
     },
@@ -47,8 +47,8 @@
         "column": 24
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 54,
-      "targetEndLine": 56,
+      "targetStartLine": 56,
+      "targetEndLine": 58,
       "category": "field",
       "symbol": "entryKind"
     },
@@ -63,8 +63,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 57,
-      "targetEndLine": 57,
+      "targetStartLine": 59,
+      "targetEndLine": 59,
       "category": "field",
       "symbol": "narrative"
     },
@@ -79,8 +79,8 @@
         "column": 15
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 58,
-      "targetEndLine": 58,
+      "targetStartLine": 60,
+      "targetEndLine": 60,
       "category": "field",
       "symbol": "amount"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 59,
-      "targetEndLine": 76,
+      "targetStartLine": 61,
+      "targetEndLine": 78,
       "category": "record",
       "symbol": "Statement"
     },
@@ -111,8 +111,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 60,
-      "targetEndLine": 60,
+      "targetStartLine": 62,
+      "targetEndLine": 62,
       "category": "field",
       "symbol": "accountId"
     },
@@ -127,8 +127,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 61,
-      "targetEndLine": 65,
+      "targetStartLine": 63,
+      "targetEndLine": 67,
       "category": "field",
       "symbol": "status"
     },
@@ -143,8 +143,8 @@
         "column": 23
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 66,
-      "targetEndLine": 66,
+      "targetStartLine": 68,
+      "targetEndLine": 68,
       "category": "field",
       "symbol": "openingBalance"
     },
@@ -159,8 +159,8 @@
         "column": 23
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 67,
-      "targetEndLine": 67,
+      "targetStartLine": 69,
+      "targetEndLine": 69,
       "category": "field",
       "symbol": "closingBalance"
     },
@@ -175,8 +175,8 @@
         "column": 27
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 68,
-      "targetEndLine": 73,
+      "targetStartLine": 70,
+      "targetEndLine": 75,
       "category": "field",
       "symbol": "lines"
     },
@@ -191,8 +191,8 @@
         "column": 45
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 74,
-      "targetEndLine": 75,
+      "targetStartLine": 76,
+      "targetEndLine": 77,
       "category": "field",
       "symbol": "relationshipManager"
     },
@@ -207,8 +207,8 @@
         "column": 30
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 76,
-      "targetEndLine": 76,
+      "targetStartLine": 78,
+      "targetEndLine": 78,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 77,
-      "targetEndLine": 84,
+      "targetStartLine": 79,
+      "targetEndLine": 86,
       "category": "record",
       "symbol": "AccountMaster"
     },
@@ -239,8 +239,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 78,
-      "targetEndLine": 78,
+      "targetStartLine": 80,
+      "targetEndLine": 80,
       "category": "field",
       "symbol": "accountId"
     },
@@ -255,8 +255,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 79,
-      "targetEndLine": 83,
+      "targetStartLine": 81,
+      "targetEndLine": 85,
       "category": "field",
       "symbol": "status"
     },
@@ -271,8 +271,8 @@
         "column": 16
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 84,
-      "targetEndLine": 84,
+      "targetStartLine": 86,
+      "targetEndLine": 86,
       "category": "field",
       "symbol": "balance"
     },
@@ -287,8 +287,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 102,
-      "targetEndLine": 108,
+      "targetStartLine": 104,
+      "targetEndLine": 110,
       "category": "function",
       "symbol": "isStatementable"
     },
@@ -303,8 +303,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 109,
-      "targetEndLine": 119,
+      "targetStartLine": 111,
+      "targetEndLine": 121,
       "category": "function",
       "symbol": "suppressionReason"
     },
@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 120,
-      "targetEndLine": 153,
+      "targetStartLine": 122,
+      "targetEndLine": 175,
       "category": "transaction",
       "symbol": "generateStatement"
     }

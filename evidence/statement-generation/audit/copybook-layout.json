@@ -57,7 +57,7 @@
         },
         {
           "order": 2,
-          "path": "STATEMENT.STATUS",
+          "path": "STATEMENT.STATUS-FLD",
           "type": "enum<AccountStatus>",
           "picture": "PIC X(7)",
           "usage": "DISPLAY",
@@ -87,7 +87,7 @@
         },
         {
           "order": 5,
-          "path": "STATEMENT.LINES",
+          "path": "STATEMENT.LINES-FLD",
           "type": "record<LedgerEntry>[100]",
           "picture": "GROUP",
           "usage": "GROUP",
@@ -134,7 +134,7 @@
         },
         {
           "order": 2,
-          "path": "ACCOUNT-MASTER.STATUS",
+          "path": "ACCOUNT-MASTER.STATUS-FLD",
           "type": "enum<AccountStatus>",
           "picture": "PIC X(7)",
           "usage": "DISPLAY",

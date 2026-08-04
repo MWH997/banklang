@@ -235,10 +235,19 @@ function cobolNameForEntry(
       return toCobolName(entry.symbol);
     case "field":
       return toCobolFieldName(entry.symbol);
-    case "function":
-      return program.functions.some((fn) => fn.name === entry.symbol)
-        ? toCobolParagraphName(entry.symbol)
-        : null;
+    case "function": {
+      const fn = program.functions.find(
+        (candidate) => candidate.name === entry.symbol,
+      );
+      if (!fn) {
+        return null;
+      }
+      // A recursive function is a separate program, so its anchor is the
+      // PROGRAM-ID rather than a paragraph name.
+      return fn.isRecursive
+        ? toCobolName(entry.symbol).replace(/-/g, "").slice(0, 8).toUpperCase()
+        : toCobolParagraphName(entry.symbol);
+    }
     case "transaction":
       return program.transactions.some(
         (transaction) => transaction.name === entry.symbol,

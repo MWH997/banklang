@@ -88,6 +88,14 @@
 
 ### Fixed
 
+- Fixed CICS response variables being referenced but never declared in working storage, so a generated CICS program named data items that did not exist. Found by compiling the translated output for the first time.
+- Fixed COBOL reserved words being emitted as record and paragraph names; the mangling previously applied only to field names.
+- Fixed paragraph names colliding with data names, which COBOL treats as one namespace. A transaction named `total` alongside a field named `total` now emits `TOTAL-PARA`, and only when it would actually collide.
+- Fixed COBOL file names colliding with record type names, which happens whenever a file and its record share a name. File names are now suffixed `-FILE`.
+- Fixed decimal literal precision being computed below its own scale, so `0.00` was typed `decimal<1, 2>` and rejected everywhere.
+- Fixed string literals being compared by exact length rather than fitting any field long enough to hold them.
+- Fixed currency rejecting multiplication by a plain decimal. Scaling money by a dimensionless rate is a normal banking operation and keeps the currency; adding across types is still `BANK-DEC-005`.
+- Fixed `round()` rejecting currency operands.
 - Fixed nested group items reusing COBOL level 05 instead of stepping to 10, which `OCCURS` made fatal.
 - Fixed source map field attribution, which assumed one emitted line per record field. Enums, nullables, and arrays emit several, and `BANK-GEN-006` caught the drift. Field start lines are now recorded as they are emitted, closing the gap noted when that check was added.
 - Fixed FD records being emitted as opaque buffers. They now carry the real field structure with qualified references, so per-field mapping works.

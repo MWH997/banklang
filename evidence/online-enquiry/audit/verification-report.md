@@ -16,7 +16,7 @@ Phase: verify
 | Audit artifacts            | passed  | /workspace/dist/audit                                                           |
 | Deterministic regeneration | passed  | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage        | passed  | 15/15 traced symbols, all entries anchored in the generated COBOL.              |
-| GnuCOBOL validation        | skipped | Not validated locally: requires db2-precompiler and cics-translator.            |
+| GnuCOBOL validation        | skipped | No local cobc executable was available.                                         |
 | Audit schema               | passed  | version 1, backend profile ibm-enterprise-cobol-zos                             |
 
 ## Notes
@@ -34,6 +34,6 @@ Phase: verify
 ## GnuCOBOL Validation
 
 - validated-with-gnucobol: no
-- compiler-status: requires-preprocessor
-- compiler-command: not run: requires db2-precompiler and cics-translator
+- compiler-status: skipped
+- compiler-command: cobc not found
 - compiler-exit-code: n/a
