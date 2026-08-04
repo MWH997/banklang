@@ -10,7 +10,11 @@ import {
   renderCopybook,
   type CopybookLayoutDocument,
 } from "../../copybook/src/index";
-import { lowerProgramToIR, type IRProgram } from "../../ir/src/index";
+import {
+  lowerProgramToIR,
+  type BackendRequirement,
+  type IRProgram,
+} from "../../ir/src/index";
 import { parseBankTs } from "../../parser/src/index";
 import {
   analyzeProgramSemantics,
@@ -23,6 +27,7 @@ import {
 } from "../../verifier/src/index";
 
 export type { Diagnostic } from "../../ast/src/index";
+export type { BackendRequirement } from "../../ir/src/index";
 export type {
   SourceMapDocument,
   SourceMapEntry,
@@ -59,6 +64,14 @@ export interface CompileResult {
   layout: CopybookLayoutDocument | null;
   analysis: SemanticAnalysisSummary | null;
   coverage: SourceMapCoverageResult | null;
+  /**
+   * Preprocessing the generated COBOL needs before a compiler will accept it.
+   *
+   * Embedded SQL requires the Db2 precompiler and CICS commands require the
+   * CICS translator. Plain COBOL compilation of such a program is not a
+   * meaningful check, and callers must not report it as one.
+   */
+  backendRequirements: BackendRequirement[];
 }
 
 const EMPTY: Omit<CompileResult, "ok" | "diagnostics"> = {
@@ -70,6 +83,7 @@ const EMPTY: Omit<CompileResult, "ok" | "diagnostics"> = {
   layout: null,
   analysis: null,
   coverage: null,
+  backendRequirements: [],
 };
 
 /**
@@ -113,6 +127,7 @@ export function compile(
       ...EMPTY,
       program,
       analysis: semantics.summary,
+      backendRequirements: program.backendRequirements,
     };
   }
 
@@ -138,5 +153,6 @@ export function compile(
     layout: buildCopybookLayoutDocument(program, "dist/copybooks"),
     analysis: semantics.summary,
     coverage,
+    backendRequirements: program.backendRequirements,
   };
 }

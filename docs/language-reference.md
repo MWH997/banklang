@@ -258,22 +258,83 @@ Audit event names are compile-time strings. Audit payloads must be typed records
 
 ## 12. SQL
 
-SQL is declared explicitly.
+SQL is declared, never assembled at run time:
 
 ```ts
-sql selectAccount(accountId: string<16>): AccountRow {
-  SELECT ACCOUNT_ID, BALANCE, STATUS
+sql fetchAccount(keyAccountId: string<16>): AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
   FROM ACCOUNT
-  WHERE ACCOUNT_ID = :accountId
+  WHERE ACCOUNT_ID = :keyAccountId
 }
 ```
 
-Rules:
+BankLang does not parse SQL. It resolves the `:hostVariable` references,
+rewrites them to the COBOL fields they bind to, and emits the statement inside
+`EXEC SQL` / `END-EXEC`. Each host variable must resolve to exactly one place:
+a declared parameter or a field of the result record. A name that matches both
+is `BANK-SQL-003`.
 
-- host variables must be typed
-- SQLCODE must be handled
-- dynamic SQL is disallowed in v0.1
-- generated COBOL must use explicit `EXEC SQL`
+Run a statement with `execute`:
+
+```ts
+execute fetchAccount(request.accountId) into row;
+
+if sqlcode == 0 {
+  // found
+} else {
+  // not found, or an error
+}
+```
+
+`sqlcode` is readable wherever SQL can run. A body that runs SQL without ever
+testing it is `BANK-SQL-001`: a row that was not found otherwise looks
+identical to one that was.
+
+Dynamic SQL (`EXECUTE IMMEDIATE`, `PREPARE`) is `BANK-SQL-002`, because it
+cannot be precompiled, bound, or checked ahead of time.
+
+## 14. CICS
+
+An online transaction is declared with `cics`:
+
+```ts
+cics transaction accountEnquiry(request: EnquiryRequest, reply: EnquiryReply) {
+  link "AUDITLOG" commarea reply resp linkResp;
+
+  if linkResp == 0 {
+    syncpoint resp commitResp;
+  } else {
+    rollback resp rollbackResp;
+  }
+}
+```
+
+A CICS transaction receives input through `DFHCOMMAREA` in the `LINKAGE
+SECTION` and ends with `EXEC CICS RETURN` rather than `GOBACK`.
+
+| Rule                                    | Diagnostic      |
+| --------------------------------------- | --------------- |
+| Every command must capture `resp`       | `BANK-CICS-001` |
+| CICS commands need a `cics transaction` | `BANK-CICS-002` |
+| No syncpoint or rollback inside a loop  | `BANK-CICS-003` |
+
+`BANK-CICS-003` exists because a syncpoint inside a loop commits or discards
+partial work on every iteration, which is rarely what a transaction means.
+
+## 15. Backend requirements
+
+Embedded SQL requires the Db2 precompiler and CICS commands require the CICS
+translator. A program using either **cannot be validated by a plain COBOL
+compiler**, and BankLang reports that rather than pretending otherwise:
+
+```txt
+| compiler-status         | requires-preprocessor                          |
+| validated-with-gnucobol | no                                             |
+| compiler-command        | not run: requires db2-precompiler and cics-translator |
+```
+
+The compile-verification lane reports such programs instead of passing them.
 
 ## 13. File declarations
 

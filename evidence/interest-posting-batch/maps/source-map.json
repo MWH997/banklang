@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 26,
-      "targetEndLine": 31,
+      "targetStartLine": 36,
+      "targetEndLine": 41,
       "category": "record",
       "symbol": "InterestAccount"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 27,
-      "targetEndLine": 27,
+      "targetStartLine": 37,
+      "targetEndLine": 37,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 28,
-      "targetEndLine": 28,
+      "targetStartLine": 38,
+      "targetEndLine": 38,
       "category": "field",
       "symbol": "branchCode"
     },
@@ -79,8 +79,8 @@
         "column": 21
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 29,
-      "targetEndLine": 29,
+      "targetStartLine": 39,
+      "targetEndLine": 39,
       "category": "field",
       "symbol": "balance"
     },
@@ -95,8 +95,8 @@
         "column": 29
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 30,
-      "targetEndLine": 30,
+      "targetStartLine": 40,
+      "targetEndLine": 40,
       "category": "field",
       "symbol": "accruedInterest"
     },
@@ -111,8 +111,8 @@
         "column": 30
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 31,
-      "targetEndLine": 31,
+      "targetStartLine": 41,
+      "targetEndLine": 41,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -127,8 +127,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 32,
-      "targetEndLine": 35,
+      "targetStartLine": 42,
+      "targetEndLine": 45,
       "category": "record",
       "symbol": "PostingAdvice"
     },
@@ -143,8 +143,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 33,
-      "targetEndLine": 33,
+      "targetStartLine": 43,
+      "targetEndLine": 43,
       "category": "field",
       "symbol": "accountId"
     },
@@ -159,8 +159,8 @@
         "column": 28
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 34,
-      "targetEndLine": 34,
+      "targetStartLine": 44,
+      "targetEndLine": 44,
       "category": "field",
       "symbol": "interestAmount"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 35,
-      "targetEndLine": 35,
+      "targetStartLine": 45,
+      "targetEndLine": 45,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 63,
-      "targetEndLine": 69,
+      "targetStartLine": 73,
+      "targetEndLine": 79,
       "category": "function",
       "symbol": "isEligible"
     },
@@ -207,8 +207,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 70,
-      "targetEndLine": 76,
+      "targetStartLine": 80,
+      "targetEndLine": 86,
       "category": "function",
       "symbol": "rateFor"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 77,
-      "targetEndLine": 79,
+      "targetStartLine": 87,
+      "targetEndLine": 89,
       "category": "function",
       "symbol": "accrue"
     },
@@ -239,8 +239,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 80,
-      "targetEndLine": 86,
+      "targetStartLine": 90,
+      "targetEndLine": 96,
       "category": "function",
       "symbol": "feeFor"
     },
@@ -255,8 +255,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 134,
+      "targetStartLine": 97,
+      "targetEndLine": 144,
       "category": "transaction",
       "symbol": "postInterest"
     },
@@ -271,8 +271,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 135,
-      "targetEndLine": 151,
+      "targetStartLine": 145,
+      "targetEndLine": 161,
       "category": "transaction",
       "symbol": "runBatch"
     }

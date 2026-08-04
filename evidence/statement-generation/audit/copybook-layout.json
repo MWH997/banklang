@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "LedgerEntry",
+      "cobolName": "LEDGER-ENTRY",
+      "totalLength": 56,
+      "entries": [
+        {
+          "order": 1,
+          "path": "LEDGER-ENTRY.ENTRY-KIND",
+          "type": "enum<EntryKind>",
+          "picture": "PIC X(6)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 6,
+          "bytes": 6
+        },
+        {
+          "order": 2,
+          "path": "LEDGER-ENTRY.NARRATIVE",
+          "type": "string<40>",
+          "picture": "PIC X(40)",
+          "usage": "DISPLAY",
+          "offset": 6,
+          "length": 40,
+          "bytes": 40
+        },
+        {
+          "order": 3,
+          "path": "LEDGER-ENTRY.AMOUNT",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 46,
+          "length": 10,
+          "bytes": 10
+        }
+      ]
+    },
+    {
+      "recordName": "Statement",
+      "cobolName": "STATEMENT",
+      "totalLength": 5701,
+      "entries": [
+        {
+          "order": 1,
+          "path": "STATEMENT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "STATEMENT.STATUS",
+          "type": "enum<AccountStatus>",
+          "picture": "PIC X(7)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 7,
+          "bytes": 7
+        },
+        {
+          "order": 3,
+          "path": "STATEMENT.OPENING-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 23,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 4,
+          "path": "STATEMENT.CLOSING-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 33,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 5,
+          "path": "STATEMENT.LINES",
+          "type": "record<LedgerEntry>[100]",
+          "picture": "GROUP",
+          "usage": "GROUP",
+          "offset": 43,
+          "length": 5600,
+          "bytes": 5600
+        },
+        {
+          "order": 6,
+          "path": "STATEMENT.RELATIONSHIP-MANAGER",
+          "type": "nullable<string<20>>",
+          "picture": "PIC X(20)",
+          "usage": "DISPLAY",
+          "offset": 5643,
+          "length": 22,
+          "bytes": 22
+        },
+        {
+          "order": 7,
+          "path": "STATEMENT.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 5665,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    },
+    {
+      "recordName": "AccountMaster",
+      "cobolName": "ACCOUNT-MASTER",
+      "totalLength": 33,
+      "entries": [
+        {
+          "order": 1,
+          "path": "ACCOUNT-MASTER.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "ACCOUNT-MASTER.STATUS",
+          "type": "enum<AccountStatus>",
+          "picture": "PIC X(7)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 7,
+          "bytes": 7
+        },
+        {
+          "order": 3,
+          "path": "ACCOUNT-MASTER.BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 23,
+          "length": 10,
+          "bytes": 10
+        }
+      ]
+    }
+  ]
+}

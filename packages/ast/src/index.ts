@@ -124,6 +124,32 @@ export type TypeNode =
   | NullableTypeNode
   | ArrayTypeNode;
 
+/**
+ * `sql name(params): ResultRecord { <SQL text> }`
+ *
+ * The SQL body is captured verbatim. BankLang does not parse SQL: it resolves
+ * the `:hostVariable` references, rewrites them to COBOL names, and emits the
+ * statement inside `EXEC SQL` / `END-EXEC`.
+ */
+export interface SqlDeclarationNode extends NodeBase {
+  kind: "SqlDeclaration";
+  name: string;
+  parameters: ParameterNode[];
+  resultTypeName: string | null;
+  /** Raw SQL text as written. */
+  text: string;
+  /** `:name` references found in the text, with their positions. */
+  hostVariables: { name: string; span: SourceSpan }[];
+}
+
+/** `execute selectAccount(args) into row;` */
+export interface SqlStatementNode extends NodeBase {
+  kind: "SqlStatement";
+  name: string;
+  args: ExpressionNode[];
+  intoRecord: string | null;
+}
+
 export interface EnumDeclarationNode extends NodeBase {
   kind: "EnumDeclaration";
   name: string;
@@ -372,7 +398,9 @@ export type StatementNode =
   | AssignStatementNode
   | ExpressionStatementNode
   | FileStatementNode
-  | SwitchStatementNode;
+  | SwitchStatementNode
+  | SqlStatementNode
+  | CicsStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
@@ -421,6 +449,25 @@ export interface TransactionDeclarationNode extends NodeBase {
   name: string;
   parameters: ParameterNode[];
   body: BlockNode;
+  /**
+   * A CICS transaction receives its input through DFHCOMMAREA and ends with
+   * `EXEC CICS RETURN` instead of `GOBACK`.
+   */
+  isCics: boolean;
+}
+
+/** `link "PROGRAM" commarea record resp status;` and syncpoint operations. */
+export type CicsOperation = "link" | "syncpoint" | "rollback";
+
+export interface CicsStatementNode extends NodeBase {
+  kind: "CicsStatement";
+  operation: CicsOperation;
+  /** Target program name for `link`. */
+  program: string | null;
+  /** COMMAREA record for `link`. */
+  commarea: string | null;
+  /** Response-code variable, required for `link`. */
+  respName: string | null;
 }
 
 export type DeclarationNode =
@@ -429,7 +476,8 @@ export type DeclarationNode =
   | FunctionDeclarationNode
   | TransactionDeclarationNode
   | FileDeclarationNode
-  | EnumDeclarationNode;
+  | EnumDeclarationNode
+  | SqlDeclarationNode;
 
 export interface ProgramNode extends NodeBase {
   kind: "Program";

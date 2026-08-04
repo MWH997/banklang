@@ -215,7 +215,7 @@ function printDeclaration(
 
     case "TransactionDeclaration":
       printer.push(
-        `transaction ${declaration.name}(${printParameters(declaration.parameters)}) {${trailing}`,
+        `${declaration.isCics ? "cics " : ""}transaction ${declaration.name}(${printParameters(declaration.parameters)}) {${trailing}`,
       );
       printBlockBody(declaration.body, printer, 1);
       printer.push("}");
@@ -229,6 +229,20 @@ function printDeclaration(
       printer.push(
         `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${key}${status};${trailing}`,
       );
+      return;
+    }
+
+    case "SqlDeclaration": {
+      const result = declaration.resultTypeName
+        ? `: ${declaration.resultTypeName}`
+        : "";
+      printer.push(
+        `sql ${declaration.name}(${printParameters(declaration.parameters)})${result} {${trailing}`,
+      );
+      for (const line of declaration.text.split("\n")) {
+        printer.push(line.trim().length > 0 ? `${INDENT}${line.trim()}` : "");
+      }
+      printer.push("}");
       return;
     }
 
@@ -343,6 +357,26 @@ function printStatement(
       const key = statement.key ? ` key ${printExpression(statement.key)}` : "";
       printer.push(
         `${indent}${statement.operation} ${statement.fileName}${clause}${key};${trailing}`,
+      );
+      return;
+    }
+
+    case "CicsStatement": {
+      const program = statement.program ? ` "${statement.program}"` : "";
+      const commarea = statement.commarea
+        ? ` commarea ${statement.commarea}`
+        : "";
+      const resp = statement.respName ? ` resp ${statement.respName}` : "";
+      printer.push(
+        `${indent}${statement.operation}${program}${commarea}${resp};${trailing}`,
+      );
+      return;
+    }
+
+    case "SqlStatement": {
+      const into = statement.intoRecord ? ` into ${statement.intoRecord}` : "";
+      printer.push(
+        `${indent}execute ${statement.name}(${statement.args.map(printExpression).join(", ")})${into};${trailing}`,
       );
       return;
     }

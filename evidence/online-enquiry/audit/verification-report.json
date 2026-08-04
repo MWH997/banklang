@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "/workspace/examples/online-enquiry/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "3 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "/workspace/dist/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "/workspace/dist/jcl/ONLINE-ENQUIRY.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "/workspace/dist/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "15/15 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "skipped",
+      "details": "Not validated locally: requires db2-precompiler and cics-translator."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/ENQUIRY-REQUEST.cpy",
+    "/workspace/dist/copybooks/ACCOUNT-ROW.cpy",
+    "/workspace/dist/copybooks/ENQUIRY-REPLY.cpy",
+    "/workspace/dist/jcl/ONLINE-ENQUIRY.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 15,
+    "coveredSymbolCount": 15,
+    "diagnostics": []
+  },
+  "gnucobolValidation": {
+    "backendRequirements": ["db2-precompiler", "cics-translator"],
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/online-enquiry/src/main.bank.ts",
+    "sourceArtifactHash": "b063de9a71be722c8b71124fa6f15e42b5aaeee5f80d4e91c348b4805b1e3347",
+    "generatedArtifact": "dist/gnucobol/cobol/ONLINE-ENQUIRY.cbl",
+    "generatedArtifactHash": "e5d803b1bb927f89f0c4fd74e9de8f1096a2deea7360999f4a44fd3238be2a5b",
+    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "a2fe03ed3f16a836ef932d3d4251e16c8fa60f679feb3368eae8791a1d8676b2",
+    "compilerExecutable": null,
+    "compilerVersion": null,
+    "compilerCommand": "not run: requires db2-precompiler and cics-translator",
+    "compilerExitCode": null,
+    "compilerStatus": "requires-preprocessor",
+    "compilerOutput": null,
+    "validatedWithGnucobol": false,
+    "knownBackendGaps": [
+      "This program requires db2-precompiler and cics-translator; plain GnuCOBOL cannot validate it.",
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}

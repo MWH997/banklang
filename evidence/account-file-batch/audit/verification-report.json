@@ -87,13 +87,14 @@
     "diagnostics": []
   },
   "gnucobolValidation": {
+    "backendRequirements": [],
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/account-file-batch/src/main.bank.ts",
     "sourceArtifactHash": "561b89ea4116a112a95061ece3e92d7df8aa8e0f44c86899be645f0a6df5de6e",
     "generatedArtifact": "dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl",
-    "generatedArtifactHash": "11f323705e558d9e365573b6e698dc802aeff8eedfccc8a943337b86f8f84f98",
+    "generatedArtifactHash": "65f17296af1c7e35b8cd47b4efb3fd5dce2ebebbc010c10fa2fd3d45d4689fdb",
     "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "05e2f4fe9fd735dca0ee39abb8237005b6f0270f6c51a8b8295a714c66d40e1e",
+    "sourceMapArtifactHash": "5c476ab499b4e30ee798224c8db248ea55cf2a9b6748352549f0b15d4a061a4b",
     "compilerExecutable": null,
     "compilerVersion": null,
     "compilerCommand": "cobc not found",

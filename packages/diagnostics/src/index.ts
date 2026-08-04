@@ -327,25 +327,29 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-SQL-001",
     title: "SQLCODE not handled",
     explanation:
-      "A generated SQL operation does not handle the success, not-found, and error branches.",
-    remediation: "Reserved for the Db2 profile.",
-    implemented: false,
+      "A body runs SQL but never tests SQLCODE. A row that was not found otherwise looks identical to one that was.",
+    remediation: "Test `sqlcode` after the execute statement.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
   },
   {
     id: "BANK-SQL-002",
     title: "Dynamic SQL disallowed",
     explanation:
-      "Dynamic SQL is not supported by the selected backend profile.",
-    remediation: "Reserved for the Db2 profile.",
-    implemented: false,
+      "A SQL declaration uses EXECUTE IMMEDIATE or PREPARE. Dynamic SQL cannot be precompiled, bound, or checked ahead of time.",
+    remediation: "Write the statement out so it can be precompiled and bound.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
   },
   {
     id: "BANK-SQL-003",
-    title: "Host variable layout mismatch",
+    title: "Host variable mismatch",
     explanation:
-      "A SQL host variable does not match the expected COBOL field layout.",
-    remediation: "Reserved for the Db2 profile.",
-    implemented: false,
+      "A host variable does not resolve to a parameter or a field of the result record, matches both, or the result of a query is discarded.",
+    remediation:
+      "Give each host variable exactly one binding, and capture the result with `into <record>`.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
   },
   {
     id: "BANK-SQL-004",
@@ -357,25 +361,31 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   },
   {
     id: "BANK-CICS-001",
-    title: "CICS response code not handled",
-    explanation: "A CICS command does not handle its response code.",
-    remediation: "Reserved for the CICS profile.",
-    implemented: false,
+    title: "CICS response code not captured",
+    explanation:
+      "A CICS command does not capture RESP, so a failed command is indistinguishable from a successful one.",
+    remediation:
+      'Write `link "PROG" commarea <record> resp <status>;` and test the status.',
+    specReference: "language-reference.md section 14",
+    implemented: true,
   },
   {
     id: "BANK-CICS-002",
-    title: "Unsupported CICS operation",
+    title: "CICS command outside a CICS transaction",
     explanation:
-      "The selected backend profile does not support the requested operation.",
-    remediation: "Reserved for the CICS profile.",
-    implemented: false,
+      "A link, syncpoint, or rollback appears in a transaction that was not declared with `cics`.",
+    remediation: "Declare the transaction as `cics transaction <name>(...)`.",
+    specReference: "language-reference.md section 14",
+    implemented: true,
   },
   {
     id: "BANK-CICS-003",
-    title: "Syncpoint misuse",
-    explanation: "A transaction uses a syncpoint in an invalid scope.",
-    remediation: "Reserved for the CICS profile.",
-    implemented: false,
+    title: "Syncpoint in a loop",
+    explanation:
+      "A syncpoint or rollback inside a loop commits or discards partial work on every iteration, which is rarely what a transaction means to do.",
+    remediation: "Move the syncpoint outside the loop.",
+    specReference: "language-reference.md section 14",
+    implemented: true,
   },
   {
     id: "BANK-COPY-001",

@@ -257,11 +257,17 @@ sounding impressive:
   CI. No IBM Enterprise COBOL validation has been performed, and none is
   claimed.
 - **Not production-ready**, and never run against a real ledger.
-- **The subset is small.** No arrays, enums, nullable types, currency types,
-  SQL, CICS, or VSAM. Db2 and CICS profiles are on the roadmap, not in the box.
-- **File I/O moves whole records.** There is no per-field file mapping, and
-  indexed and relative organisations are not supported.
-- **No recursion**, and no user-defined types beyond records and aliases.
+- **SQL and CICS output is not compiler-validated.** Embedded SQL needs the Db2
+  precompiler and CICS commands need the CICS translator; neither is available
+  here. The generated blocks follow IBM's documented syntax but have never been
+  precompiled, translated, or run. `bankc` reports this as
+  `requires-preprocessor` rather than recording a pass.
+- **No recursion**, no `for each`, no user-defined types beyond records, enums,
+  and aliases.
+- **Array bounds are checked only for literal indexes.** A computed index is
+  not bounds-checked at run time.
+- **File I/O moves whole records.** Read and write transfer the whole record;
+  there is no per-field file mapping in the statement surface.
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but

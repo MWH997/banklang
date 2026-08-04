@@ -23,7 +23,9 @@ export interface GnucobolValidationSummary {
   compilerVersion: string | null;
   compilerCommand: string;
   compilerExitCode: number | null;
-  compilerStatus: "passed" | "failed" | "skipped";
+  compilerStatus: "passed" | "failed" | "skipped" | "requires-preprocessor";
+  /** Preprocessing the generated program needs before a compiler accepts it. */
+  backendRequirements: string[];
   compilerOutput: string | null;
   validatedWithGnucobol: boolean;
   knownBackendGaps: string[];
@@ -85,11 +87,21 @@ export function runGnucobolValidation(
     readFileSync(artifacts.cobolPath, "utf8"),
   );
 
-  const compilerExecutable = resolveCobcExecutable(cwd);
+  // Embedded SQL needs the Db2 precompiler and CICS commands need the CICS
+  // translator. Running plain cobc on such a program proves nothing, so the
+  // report says so rather than recording a pass or a failure.
+  const backendRequirements = ir.program?.backendRequirements ?? [];
+
+  const compilerExecutable =
+    backendRequirements.length > 0 ? null : resolveCobcExecutable(cwd);
   let compilerVersion: string | null = null;
-  let compilerCommand = "cobc not found";
+  let compilerCommand =
+    backendRequirements.length > 0
+      ? `not run: requires ${backendRequirements.join(" and ")}`
+      : "cobc not found";
   let compilerExitCode: number | null = null;
-  let compilerStatus: GnucobolValidationSummary["compilerStatus"] = "skipped";
+  let compilerStatus: GnucobolValidationSummary["compilerStatus"] =
+    backendRequirements.length > 0 ? "requires-preprocessor" : "skipped";
   let compilerOutput: string | null = null;
 
   if (compilerExecutable) {
@@ -122,6 +134,7 @@ export function runGnucobolValidation(
   }
 
   const summary: GnucobolValidationSummary = {
+    backendRequirements,
     backendProfile: "gnucobol-local",
     sourceArtifact: relative(cwd, artifacts.sourceFile),
     sourceArtifactHash,
@@ -137,6 +150,11 @@ export function runGnucobolValidation(
     compilerOutput,
     validatedWithGnucobol: compilerStatus === "passed",
     knownBackendGaps: [
+      ...(backendRequirements.length > 0
+        ? [
+            `This program requires ${backendRequirements.join(" and ")}; plain GnuCOBOL cannot validate it.`,
+          ]
+        : []),
       "This local profile covers the account-transfer subset only.",
       "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
       "Db2, CICS, and VSAM sections are not exercised by this example.",
@@ -271,7 +289,11 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const summary = runGnucobolValidation();
+  // Accept a project path so the lane can validate any example.
+  const project = process.argv[2];
+  const summary = project
+    ? runGnucobolValidation(process.cwd(), project)
+    : runGnucobolValidation();
   if (summary.compilerStatus === "failed") {
     process.exitCode = 1;
   }

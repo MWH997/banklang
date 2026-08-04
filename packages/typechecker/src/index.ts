@@ -37,6 +37,9 @@ import {
   type SwitchStatementNode,
   type IndexAccessNode,
   type NullableCheckNode,
+  type SqlDeclarationNode,
+  type SqlStatementNode,
+  type CicsStatementNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -154,6 +157,7 @@ export interface ResolvedTransaction {
   parameters: ResolvedParameter[];
   locals: ResolvedLocal[];
   body: BlockNode;
+  isCics: boolean;
 }
 
 export interface ResolvedFile {
@@ -166,6 +170,16 @@ export interface ResolvedFile {
   statusName: string | null;
 }
 
+export interface ResolvedSql {
+  name: string;
+  span: SourceSpan;
+  parameters: ResolvedParameter[];
+  result: ResolvedRecord | null;
+  text: string;
+  /** Host variables resolved to a parameter or a result field. */
+  hostVariables: { name: string; origin: "parameter" | "result" }[];
+}
+
 export interface TypeCheckResult {
   program: ProgramNode | null;
   diagnostics: Diagnostic[];
@@ -175,6 +189,7 @@ export interface TypeCheckResult {
   transactions: ResolvedTransaction[];
   files: ResolvedFile[];
   enums: ResolvedEnum[];
+  sql: ResolvedSql[];
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -196,6 +211,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       transactions: [],
       files: [],
       enums: [],
+      sql: [],
     };
   }
 
@@ -207,6 +223,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
   const enums: ResolvedEnum[] = [];
+  const sqlStatements: ResolvedSql[] = [];
 
   // Resolve record and alias declarations first so function signatures can
   // reference them, then collect signatures so a function may call one
@@ -214,6 +231,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   functionSignatures = new Map();
   declaredFiles = new Map();
   enumMap = new Map();
+  sqlMap = new Map();
 
   // Pass 1: type aliases and records, so later passes can resolve types.
   for (const declaration of program.declarations) {
@@ -277,6 +295,20 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       continue;
     }
 
+    if (declaration.kind === "SqlDeclaration") {
+      const resolvedSql = resolveSql(
+        declaration,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (resolvedSql) {
+        sqlStatements.push(resolvedSql);
+        sqlMap.set(resolvedSql.name, resolvedSql);
+      }
+      continue;
+    }
+
     if (declaration.kind === "FileDeclaration") {
       const resolvedFile = resolveFile(declaration, recordMap, diagnostics);
       if (resolvedFile) {
@@ -323,6 +355,124 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     transactions,
     files,
     enums,
+    sql: sqlStatements,
+  };
+}
+
+/**
+ * Resolves a SQL declaration.
+ *
+ * BankLang does not parse SQL. It resolves the `:hostVariable` references
+ * against the declared parameters and result record, rejects dynamic SQL, and
+ * leaves the statement text otherwise untouched.
+ */
+function resolveSql(
+  declaration: SqlDeclarationNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedSql | null {
+  const parameters: ResolvedParameter[] = [];
+  for (const parameter of declaration.parameters) {
+    const type = resolveTypeNode(
+      parameter.type,
+      aliases,
+      recordMap,
+      diagnostics,
+      parameter.span,
+    );
+    if (type) {
+      parameters.push({ name: parameter.name, span: parameter.span, type });
+    }
+  }
+
+  let result: ResolvedRecord | null = null;
+  if (declaration.resultTypeName) {
+    result = recordMap.get(declaration.resultTypeName) ?? null;
+    if (!result) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved result record for SQL statement ${declaration.name}: ${declaration.resultTypeName}.`,
+          span: declaration.span,
+          hint: "Declare the record before the SQL statement that returns it.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  // Dynamic SQL cannot be checked or bound ahead of time.
+  const upper = declaration.text.toUpperCase();
+  for (const banned of ["EXECUTE IMMEDIATE", "PREPARE "]) {
+    if (upper.includes(banned)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-002",
+          severity: "error",
+          message: `Dynamic SQL is not supported: ${declaration.name} uses ${banned.trim()}.`,
+          span: declaration.span,
+          hint: "Write the statement out so it can be precompiled and bound.",
+          backendProfile: null,
+        }),
+      );
+      break;
+    }
+  }
+
+  const hostVariables: ResolvedSql["hostVariables"] = [];
+  for (const host of declaration.hostVariables) {
+    const isParameter = parameters.some(
+      (parameter) => parameter.name === host.name,
+    );
+    const isResultField = Boolean(
+      result?.fields.some((field) => field.name === host.name),
+    );
+
+    // A name that is both an input and an output is ambiguous: the generated
+    // statement would silently bind one of them.
+    if (isParameter && isResultField) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-003",
+          severity: "error",
+          message: `Host variable :${host.name} matches both a parameter and a field of ${result?.name}.`,
+          span: declaration.span,
+          hint: "Rename one of them so each host variable binds to one place.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+
+    if (isParameter) {
+      hostVariables.push({ name: host.name, origin: "parameter" });
+      continue;
+    }
+    if (result?.fields.some((field) => field.name === host.name)) {
+      hostVariables.push({ name: host.name, origin: "result" });
+      continue;
+    }
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-003",
+        severity: "error",
+        message: `Host variable :${host.name} does not match a parameter or a field of the result record.`,
+        span: declaration.span,
+        hint: `Parameters: ${parameters.map((parameter) => parameter.name).join(", ") || "none"}. Result fields: ${result?.fields.map((field) => field.name).join(", ") || "none"}.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    parameters,
+    result,
+    text: declaration.text,
+    hostVariables,
   };
 }
 
@@ -433,6 +583,13 @@ function resolveTransaction(
 
   declareFileStatusSymbols(scope);
 
+  // CICS response variables are compiler-owned storage, like file statuses.
+  currentTransactionIsCics = declaration.isCics;
+  cicsRespCaptured = new Set();
+  declareCicsRespSymbols(declaration.body, scope);
+
+  sqlExecuted = false;
+  sqlCodeTested = false;
   validateTransactionBody(
     declaration.body,
     scope,
@@ -441,6 +598,7 @@ function resolveTransaction(
     locals,
     diagnostics,
   );
+  checkSqlCodeHandled(declaration.span, diagnostics);
 
   return {
     name: declaration.name,
@@ -448,6 +606,7 @@ function resolveTransaction(
     parameters,
     locals,
     body: declaration.body,
+    isCics: declaration.isCics,
   };
 }
 
@@ -499,6 +658,8 @@ function validateTransactionBody(
       case "ExpressionStatement":
       case "FileStatement":
       case "SwitchStatement":
+      case "SqlStatement":
+      case "CicsStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -643,6 +804,12 @@ function validateEffectStatement(
     case "FileStatement":
       validateFileStatement(statement, scope, aliases, recordMap, diagnostics);
       return true;
+    case "SqlStatement":
+      validateSqlStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "CicsStatement":
+      validateCicsStatement(statement, scope, diagnostics, inTransaction);
+      return true;
     case "SwitchStatement":
       validateSwitchStatement(
         statement,
@@ -657,6 +824,180 @@ function validateEffectStatement(
     default:
       return false;
   }
+}
+
+/**
+ * CICS commands are only valid inside a CICS transaction, and every command
+ * must capture its response code.
+ */
+function validateCicsStatement(
+  statement: CicsStatementNode,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  if (!inTransaction || !currentTransactionIsCics) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-CICS-002",
+        severity: "error",
+        message: `A ${statement.operation} command requires a CICS transaction.`,
+        span: statement.span,
+        hint: "Declare the transaction as `cics transaction <name>(...)`.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.operation === "link") {
+    if (!statement.respName) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-CICS-001",
+          severity: "error",
+          message: `The response code of link "${statement.program}" is not captured.`,
+          span: statement.span,
+          hint: 'Write `link "PROG" commarea <record> resp <status>;` and test the status.',
+          backendProfile: null,
+        }),
+      );
+    }
+
+    if (statement.commarea && !scope.has(statement.commarea)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved COMMAREA record: ${statement.commarea}.`,
+          span: statement.span,
+          hint: "Pass a record-typed parameter or local.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  // A syncpoint inside a loop commits partial work on each pass.
+  if (statement.operation !== "link" && inLoopBody) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-CICS-003",
+        severity: "error",
+        message: `A ${statement.operation} inside a loop commits or discards partial work on every iteration.`,
+        span: statement.span,
+        hint: "Move the syncpoint outside the loop.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.respName) {
+    cicsRespCaptured.add(statement.respName);
+  }
+}
+
+function validateSqlStatement(
+  statement: SqlStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const declared = sqlMap.get(statement.name);
+  if (!declared) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved SQL statement: ${statement.name}.`,
+        span: statement.span,
+        hint: "Declare it with `sql <name>(...) : <Record> { ... }`.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.args.length !== declared.parameters.length) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${statement.name} expects ${declared.parameters.length} argument(s) but received ${statement.args.length}.`,
+        span: statement.span,
+        hint: `Signature: ${declared.parameters.map((parameter) => `${parameter.name}: ${describeType(parameter.type)}`).join(", ")}.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (let index = 0; index < statement.args.length; index += 1) {
+    const actual = inferExpressionType(
+      statement.args[index],
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    const expected = declared.parameters[index]?.type;
+    if (actual && expected && !typesCompatible(expected, actual)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-003",
+          severity: "error",
+          message: `Argument ${index + 1} of ${statement.name} expects ${describeType(expected)} but received ${describeType(actual)}.`,
+          span: statement.args[index].span,
+          hint: "A host variable must match the declared parameter layout.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  if (statement.intoRecord) {
+    const target = scope.get(statement.intoRecord);
+    if (!target) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved record variable: ${statement.intoRecord}.`,
+          span: statement.span,
+          hint: "Pass a record-typed parameter or local.",
+          backendProfile: null,
+        }),
+      );
+    } else if (
+      target.kind !== "record" ||
+      !declared.result ||
+      target.name !== declared.result.name
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-003",
+          severity: "error",
+          message: `${statement.name} returns ${declared.result?.name ?? "no record"}, but ${statement.intoRecord} is ${describeType(target)}.`,
+          span: statement.span,
+          hint: "The target record must match the declared result type.",
+          backendProfile: null,
+        }),
+      );
+    }
+  } else if (declared.result) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-003",
+        severity: "error",
+        message: `${statement.name} returns ${declared.result.name} but the result is discarded.`,
+        span: statement.span,
+        hint: `Write \`execute ${statement.name}(...) into <record>;\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  sqlExecuted = true;
 }
 
 /**
@@ -886,6 +1227,8 @@ function validateWhileStatement(
     );
   }
 
+  const previousInLoop = inLoopBody;
+  inLoopBody = true;
   for (const inner of statement.body.statements) {
     if (inner.kind === "LetStatement") {
       validateLetStatement(
@@ -930,6 +1273,7 @@ function validateWhileStatement(
       }),
     );
   }
+  inLoopBody = previousInLoop;
 }
 
 function validateAssignStatement(
@@ -1281,6 +1625,8 @@ function resolveFunction(
 
   declareFileStatusSymbols(scope);
 
+  sqlExecuted = false;
+  sqlCodeTested = false;
   validateFunctionBody(
     declaration.body,
     returnType,
@@ -1290,6 +1636,8 @@ function resolveFunction(
     locals,
     diagnostics,
   );
+
+  checkSqlCodeHandled(declaration.span, diagnostics);
 
   return {
     name: declaration.name,
@@ -1474,6 +1822,8 @@ function resolveTerminalStatementType(
     case "ExpressionStatement":
     case "FileStatement":
     case "SwitchStatement":
+    case "SqlStatement":
+    case "CicsStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;
@@ -1665,6 +2015,9 @@ function inferExpressionType(
     case "DecimalLiteral":
       return inferDecimalLiteral(expression);
     case "Identifier": {
+      if (expression.name === "sqlcode") {
+        sqlCodeTested = true;
+      }
       const resolved = scope.get(expression.name);
       if (!resolved) {
         diagnostics.push(
@@ -2017,15 +2370,98 @@ let declaredFiles = new Map<string, ResolvedFile>();
 /** Declared enums, for resolving member references and switch cases. */
 let enumMap = new Map<string, ResolvedEnum>();
 
+/** Declared SQL statements, for resolving execute statements. */
+let sqlMap = new Map<string, ResolvedSql>();
+
+/**
+ * Whether the body being checked runs SQL, and whether it tests SQLCODE.
+ *
+ * An unchecked SQLCODE is the classic embedded-SQL defect: a row that was not
+ * found looks identical to a row that was.
+ */
+let sqlExecuted = false;
+let sqlCodeTested = false;
+
+/** Whether the transaction being checked is a CICS transaction. */
+let currentTransactionIsCics = false;
+
+/** Whether the statement being checked sits inside a loop body. */
+let inLoopBody = false;
+
+/** Response variables captured by CICS commands in the current body. */
+let cicsRespCaptured = new Set<string>();
+
 /**
  * File status fields are readable in any body, so a loop can test them.
  * They are compiler-owned storage, not user locals.
  */
+/** Declares every `resp` variable a CICS body names, so it can be tested. */
+function declareCicsRespSymbols(
+  block: BlockNode,
+  scope: Map<string, ResolvedType>,
+): void {
+  for (const statement of block.statements) {
+    if (statement.kind === "CicsStatement" && statement.respName) {
+      scope.set(statement.respName, {
+        kind: "decimal",
+        precision: 9,
+        scale: 0,
+      });
+    }
+    if (statement.kind === "IfStatement") {
+      declareCicsRespSymbols(statement.thenBranch, scope);
+      if (statement.elseBranch) {
+        declareCicsRespSymbols(statement.elseBranch, scope);
+      }
+    }
+    if (statement.kind === "WhileStatement") {
+      declareCicsRespSymbols(statement.body, scope);
+    }
+    if (statement.kind === "SwitchStatement") {
+      for (const branch of statement.cases) {
+        declareCicsRespSymbols(branch.body, scope);
+      }
+      if (statement.otherwise) {
+        declareCicsRespSymbols(statement.otherwise, scope);
+      }
+    }
+  }
+}
+
 function declareFileStatusSymbols(scope: Map<string, ResolvedType>): void {
   for (const file of declaredFiles.values()) {
     if (file.statusName && !scope.has(file.statusName)) {
       scope.set(file.statusName, { kind: "string", length: 2 });
     }
+  }
+
+  // SQLCODE is readable wherever SQL can run, mirroring the SQLCA field.
+  if (sqlMap.size > 0 && !scope.has("sqlcode")) {
+    scope.set("sqlcode", { kind: "decimal", precision: 9, scale: 0 });
+  }
+}
+
+/**
+ * Reports BANK-SQL-001 when a body runs SQL without ever testing SQLCODE.
+ *
+ * Checked per body rather than per statement, because the natural shape is one
+ * or more executes followed by a single check of the outcome.
+ */
+function checkSqlCodeHandled(
+  span: SourceSpan,
+  diagnostics: Diagnostic[],
+): void {
+  if (sqlExecuted && !sqlCodeTested) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-001",
+        severity: "error",
+        message: "SQL runs here but SQLCODE is never checked.",
+        span,
+        hint: "Test `sqlcode` after the execute; a row that was not found otherwise looks identical to one that was.",
+        backendProfile: null,
+      }),
+    );
   }
 }
 
