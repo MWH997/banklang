@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "2 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "/workspace/dist/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "/workspace/dist/jcl/AMORTISATION-SCHEDULE.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "/workspace/dist/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "14/14 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "skipped",
+      "details": "No local cobc executable was available."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+    "/workspace/dist/maps/source-map.json",
+    "/workspace/dist/copybooks/INSTALMENT.cpy",
+    "/workspace/dist/copybooks/LOAN.cpy",
+    "/workspace/dist/jcl/AMORTISATION-SCHEDULE.jcl",
+    "/workspace/dist/audit/diagnostics.json",
+    "/workspace/dist/audit/source-map.json",
+    "/workspace/dist/audit/decimal-analysis.json",
+    "/workspace/dist/audit/transaction-analysis.json",
+    "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
+    "/workspace/dist/audit/verification-report.md",
+    "/workspace/dist/audit/verification-report.json",
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 14,
+    "coveredSymbolCount": 14,
+    "diagnostics": []
+  },
+  "gnucobolValidation": {
+    "backendRequirements": [],
+    "precompiled": false,
+    "precompiledArtifact": null,
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/amortisation-schedule/src/main.bank.ts",
+    "sourceArtifactHash": "1a2193f454760ceae605f6901d0b6bb6c6e14ce0fb869f34a5e9b02f849cef57",
+    "generatedArtifact": "dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl",
+    "generatedArtifactHash": "842299761ef1601895f39745f851e2e6a16e84552b0f60d6e621afea506a0fb1",
+    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "5ab8b88792c66b4aec5c1617839c82bb301bcfbfd66d82bdc42a00f056a78d8e",
+    "compilerExecutable": null,
+    "compilerVersion": null,
+    "compilerCommand": "cobc not found",
+    "compilerExitCode": null,
+    "compilerStatus": "skipped",
+    "compilerOutput": null,
+    "validatedWithGnucobol": false,
+    "knownBackendGaps": [
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}

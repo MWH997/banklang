@@ -389,9 +389,16 @@ transaction t(account: Account) {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("OPEN INPUT FEED-FILE");
-    expect(result.cobol).toContain("READ FEED-FILE INTO ACCOUNT");
-    expect(result.cobol).toContain("WRITE SINK-RECORD FROM ACCOUNT");
+    expect(result.cobol).toContain("READ FEED-FILE");
+    expect(result.cobol).toContain("WRITE SINK-RECORD");
     expect(result.cobol).toContain("CLOSE FEED-FILE");
+    // Fields are mapped one by one rather than moved as a group.
+    expect(result.cobol).toContain(
+      "MOVE ACCOUNT-ID OF FEED-RECORD TO ACCOUNT-ID OF ACCOUNT",
+    );
+    expect(result.cobol).toContain(
+      "MOVE BALANCE OF ACCOUNT TO BALANCE OF SINK-RECORD",
+    );
   });
 
   it("sets the file status at end of file", () => {

@@ -67,6 +67,8 @@ importers:
         specifier: ^6.0.7
         version: 6.4.3(@types/node@24.13.3)(tsx@4.23.0)
 
+  packages/precompiler: {}
+
   packages/semantic-analyzer: {}
 
   packages/typechecker: {}

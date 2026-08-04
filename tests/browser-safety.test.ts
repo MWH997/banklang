@@ -21,6 +21,7 @@ const BROWSER_SAFE_PACKAGES = [
   "diagnostics",
   "compiler",
   "formatter",
+  "precompiler",
 ];
 
 /** Packages allowed to touch the file system and process. */

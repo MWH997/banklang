@@ -381,6 +381,15 @@ function printStatement(
       return;
     }
 
+    case "ForEachStatement": {
+      printer.push(
+        `${indent}for each ${statement.indexName} in ${printExpression(statement.array)} {${trailing}`,
+      );
+      printBlockBody(statement.body, printer, depth + 1);
+      printer.push(`${indent}}`);
+      return;
+    }
+
     case "SwitchStatement": {
       printer.push(
         `${indent}switch ${printExpression(statement.subject)} {${trailing}`,

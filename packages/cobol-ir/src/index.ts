@@ -1,6 +1,10 @@
 import type { IRRecord, IRType } from "../../ir/src/index";
 
 export function toCobolName(name: string): string {
+  return avoidReserved(rawCobolName(name));
+}
+
+function rawCobolName(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
     .replace(/[_\s]+/g, "-")
@@ -267,7 +271,7 @@ function avoidReserved(name: string): string {
 }
 
 export function toCobolFieldName(fieldName: string): string {
-  return avoidReserved(toCobolName(fieldName));
+  return toCobolName(fieldName);
 }
 
 /** Width of the widest enum member, which is the PIC X(n) size. */

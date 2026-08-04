@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "buildSchedule",
+      "parameters": ["loan"],
+      "ledgerPostings": [],
+      "auditEvents": [
+        {
+          "event": "SCHEDULE_BUILT",
+          "correlation": "loan.idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { precompile } from "../packages/precompiler/src/index";
 
 import { compileExample, loadExampleSource } from "./helpers";
 

@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 11,
-      "targetEndLine": 14,
+      "targetStartLine": 14,
+      "targetEndLine": 17,
       "category": "record",
       "symbol": "EnquiryRequest"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 12,
-      "targetEndLine": 12,
+      "targetStartLine": 15,
+      "targetEndLine": 15,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 27
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 13,
-      "targetEndLine": 13,
+      "targetStartLine": 16,
+      "targetEndLine": 16,
       "category": "field",
       "symbol": "requestedBy"
     },
@@ -79,8 +79,8 @@
         "column": 30
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 14,
-      "targetEndLine": 14,
+      "targetStartLine": 17,
+      "targetEndLine": 17,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 15,
-      "targetEndLine": 18,
+      "targetStartLine": 18,
+      "targetEndLine": 21,
       "category": "record",
       "symbol": "AccountRow"
     },
@@ -111,8 +111,8 @@
         "column": 28
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 16,
-      "targetEndLine": 16,
+      "targetStartLine": 19,
+      "targetEndLine": 19,
       "category": "field",
       "symbol": "rowAccountId"
     },
@@ -127,8 +127,8 @@
         "column": 19
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 17,
-      "targetEndLine": 17,
+      "targetStartLine": 20,
+      "targetEndLine": 20,
       "category": "field",
       "symbol": "rowBalance"
     },
@@ -143,8 +143,8 @@
         "column": 24
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 18,
-      "targetEndLine": 18,
+      "targetStartLine": 21,
+      "targetEndLine": 21,
       "category": "field",
       "symbol": "rowStatus"
     },
@@ -159,8 +159,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 19,
-      "targetEndLine": 25,
+      "targetStartLine": 22,
+      "targetEndLine": 28,
       "category": "record",
       "symbol": "EnquiryReply"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 20,
-      "targetEndLine": 20,
+      "targetStartLine": 23,
+      "targetEndLine": 23,
       "category": "field",
       "symbol": "replyAccountId"
     },
@@ -191,8 +191,8 @@
         "column": 21
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 21,
-      "targetEndLine": 21,
+      "targetStartLine": 24,
+      "targetEndLine": 24,
       "category": "field",
       "symbol": "replyBalance"
     },
@@ -207,8 +207,8 @@
         "column": 27
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 22,
-      "targetEndLine": 25,
+      "targetStartLine": 25,
+      "targetEndLine": 28,
       "category": "field",
       "symbol": "outcome"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 43,
-      "targetEndLine": 49,
+      "targetStartLine": 46,
+      "targetEndLine": 52,
       "category": "function",
       "symbol": "isAvailable"
     },
@@ -239,8 +239,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ONLINE-ENQUIRY.cbl",
-      "targetStartLine": 50,
-      "targetEndLine": 80,
+      "targetStartLine": 53,
+      "targetEndLine": 83,
       "category": "transaction",
       "symbol": "accountEnquiry"
     }

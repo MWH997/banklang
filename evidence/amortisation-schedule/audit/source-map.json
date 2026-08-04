@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+  "artifact": "/workspace/dist/maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 28
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 4,
+      "targetEndLine": 5,
+      "category": "module",
+      "symbol": "AmortisationSchedule"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 12,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 15,
+      "targetEndLine": 17,
+      "category": "record",
+      "symbol": "Instalment"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 10,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 10,
+        "column": 19
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 16,
+      "targetEndLine": 16,
+      "category": "field",
+      "symbol": "dueBalance"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 11,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 11,
+        "column": 20
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 17,
+      "targetEndLine": 17,
+      "category": "field",
+      "symbol": "interestDue"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 21,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 18,
+      "targetEndLine": 26,
+      "category": "record",
+      "symbol": "Loan"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 15,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 19,
+      "targetEndLine": 19,
+      "category": "field",
+      "symbol": "accountId"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 16,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 18
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 20,
+      "targetEndLine": 20,
+      "category": "field",
+      "symbol": "principal"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 17,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 17,
+        "column": 21
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 21,
+      "targetEndLine": 21,
+      "category": "field",
+      "symbol": "monthlyRate"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 18,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 18,
+        "column": 22
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 22,
+      "targetEndLine": 22,
+      "category": "field",
+      "symbol": "termMonths"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 19,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 19,
+        "column": 28
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 23,
+      "targetEndLine": 25,
+      "category": "field",
+      "symbol": "schedule"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 20,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 20,
+        "column": 30
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 26,
+      "targetEndLine": 26,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 35,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 37,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 41,
+      "targetEndLine": 43,
+      "category": "function",
+      "symbol": "interestFor"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 39,
+        "column": 13
+      },
+      "sourceEnd": {
+        "line": 50,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 44,
+      "targetEndLine": 61,
+      "category": "transaction",
+      "symbol": "buildSchedule"
+    },
+    {
+      "sourceFile": "/workspace/examples/amortisation-schedule/src/main.bank.ts",
+      "sourceStart": {
+        "line": 26,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 33,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/AMORTISATION-SCHEDULE.cbl",
+      "targetStartLine": 63,
+      "targetEndLine": 93,
+      "category": "function",
+      "symbol": "compound"
+    }
+  ]
+}

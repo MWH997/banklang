@@ -272,7 +272,7 @@
       },
       "artifact": "/workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl",
       "targetStartLine": 145,
-      "targetEndLine": 161,
+      "targetEndLine": 169,
       "category": "transaction",
       "symbol": "runBatch"
     }

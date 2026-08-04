@@ -27,6 +27,8 @@ import type {
   IRSqlStatement,
   IRSql,
   IRCicsStatement,
+  IRTransaction,
+  IRForEachStatement,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -63,6 +65,18 @@ const AUDIT_CORRELATION_LENGTH = 64;
 const FILE_STATUS_PICTURE = "PIC XX";
 
 /**
+ * Field set when a computed array index falls outside its declared bounds.
+ *
+ * COBOL does not range-check subscripts, so an out-of-range index reads or
+ * writes adjacent storage. Recording it makes the failure observable instead
+ * of silently corrupting the record next door.
+ */
+const BOUNDS_STATUS_FIELD = "BANK-BOUNDS-STATUS";
+
+/** Index used when copying a table between a file record and working storage. */
+const COPY_INDEX_FIELD = "BANK-COPY-INDEX";
+
+/**
  * Parameter name to COBOL field, for the function currently being emitted.
  *
  * Parameters live in their own storage so calls can pass arguments, so a
@@ -73,6 +87,87 @@ let currentParameters = new Map<string, string>();
 
 /** SQL declarations for the program being emitted. */
 let currentSql = new Map<string, IRSql>();
+
+/**
+ * Every data name the program declares.
+ *
+ * COBOL puts paragraph names and data names in one namespace, so a transaction
+ * called `total` would clash with a field called `total`. Paragraph names are
+ * suffixed only when they would actually collide, which keeps the common case
+ * readable.
+ */
+let declaredDataNames = new Set<string>();
+
+/**
+ * The recursive program currently being emitted, if any.
+ *
+ * A self-call inside a recursive program uses that program's own per-invocation
+ * argument storage rather than the caller's.
+ */
+let recursiveContext: {
+  name: string;
+  programName: string;
+  args: string[];
+  subResult: string;
+} | null = null;
+
+/** Functions of the program being emitted, for resolving call shape. */
+let currentFunctions = new Map<string, IRFunction>();
+
+/** Recursive functions become separate programs with their own names. */
+function recursiveProgramName(name: string): string {
+  return toCobolName(name).replace(/-/g, "").slice(0, 8).toUpperCase();
+}
+
+function paragraphName(name: string): string {
+  const base = toCobolParagraphName(name);
+  return declaredDataNames.has(base) ? `${base}-PARA` : base;
+}
+
+function collectDataNames(program: IRProgram): Set<string> {
+  const names = new Set<string>();
+
+  const addFields = (fields: IRRecord["fields"]): void => {
+    for (const field of fields) {
+      names.add(toCobolFieldName(field.name));
+      if (field.type.kind === "record") {
+        addFields(field.type.fields);
+      }
+      if (field.type.kind === "array" && field.type.element.kind === "record") {
+        addFields(field.type.element.fields);
+      }
+    }
+  };
+
+  for (const record of program.records) {
+    names.add(toCobolName(record.name));
+    addFields(record.fields);
+  }
+  for (const file of program.files) {
+    names.add(fileCobolName(file.name));
+    names.add(fileRecordName(file));
+    addFields(file.record.fields);
+    if (file.statusName) {
+      names.add(toCobolFieldName(file.statusName));
+    }
+  }
+  for (const fn of program.functions) {
+    names.add(functionResultName(fn.name));
+    fn.parameters.forEach((_parameter, index) => {
+      names.add(parameterFieldName(fn.name, index));
+    });
+    for (const local of collectFunctionLocals(fn.body)) {
+      names.add(toCobolFieldName(local.name));
+    }
+  }
+  for (const transaction of program.transactions) {
+    for (const local of collectFunctionLocals(transaction.body)) {
+      names.add(toCobolFieldName(local.name));
+    }
+  }
+
+  return names;
+}
 
 function requireSqlDeclaration(name: string): IRSql {
   const declaration = currentSql.get(name);
@@ -156,6 +251,8 @@ export function emitCobol(
   const lines: string[] = [];
   const entries: SourceMapEntry[] = [];
   currentSql = new Map(program.sql.map((entry) => [entry.name, entry]));
+  declaredDataNames = collectDataNames(program);
+  currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
 
   const addLine = (line = "") => {
     lines.push(line);
@@ -217,6 +314,31 @@ export function emitCobol(
     }
   }
   emitRelativeKeys(program.files, addLine);
+  emitCicsRespFields(program.transactions, addLine);
+  // A recursive function is called, not performed, so the caller still needs
+  // somewhere to put the arguments and receive the result.
+  for (const fn of program.functions) {
+    if (!fn.isRecursive) {
+      continue;
+    }
+    addLine(
+      `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
+    );
+    fn.parameters.forEach((parameter, index) => {
+      if (parameter.type.kind === "record") {
+        return;
+      }
+      addLine(
+        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      );
+    });
+  }
+  if (programUsesArrays(program)) {
+    addLine(
+      `       01  ${BOUNDS_STATUS_FIELD.padEnd(20)} PIC X(2) VALUE "00".`,
+    );
+    addLine(`       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP.`);
+  }
 
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
@@ -262,6 +384,11 @@ export function emitCobol(
   }
 
   for (const fn of program.functions) {
+    // A recursive function becomes its own program, so its result and
+    // parameters live in that program's storage rather than here.
+    if (fn.isRecursive) {
+      continue;
+    }
     addLine(
       `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
     );
@@ -309,6 +436,20 @@ export function emitCobol(
   for (const loop of counters) {
     addLine(`       01  ${loopCounterName(loop).padEnd(20)} PIC 9(9) COMP.`);
   }
+
+  const forEachIndexes = [
+    ...program.functions.map((fn) => fn.body),
+    ...program.transactions.map((transaction) => transaction.body),
+  ].flatMap((body) => collectForEachIndexes(body));
+  const declaredIndexes = new Set<string>();
+  for (const loop of forEachIndexes) {
+    const name = toCobolFieldName(loop.indexName);
+    if (declaredIndexes.has(name)) {
+      continue;
+    }
+    declaredIndexes.add(name);
+    addLine(`       01  ${name.padEnd(20)} PIC 9(9) COMP.`);
+  }
   if (program.transactions.length > 0) {
     emitLedgerInterfaceStorage(addLine);
   }
@@ -338,8 +479,11 @@ export function emitCobol(
   addLine(`       PROCEDURE DIVISION.`);
 
   for (const fn of program.functions) {
+    if (fn.isRecursive) {
+      continue;
+    }
     const functionStart = lineNumber();
-    addLine(`       ${toCobolParagraphName(fn.name)}.`);
+    addLine(`       ${paragraphName(fn.name)}.`);
     emitFunctionBody(fn, addLine);
     const functionEnd = lineNumber() - 1;
     entries.push({
@@ -356,7 +500,7 @@ export function emitCobol(
 
   for (const transaction of program.transactions) {
     const transactionStart = lineNumber();
-    addLine(`       ${toCobolParagraphName(transaction.name)}.`);
+    addLine(`       ${paragraphName(transaction.name)}.`);
     currentParameters = parameterBindings(
       transaction.name,
       transaction.parameters,
@@ -392,6 +536,30 @@ export function emitCobol(
     category: "module",
     symbol: program.moduleName,
   });
+
+  // Recursive functions are emitted as sibling programs. LOCAL-STORAGE gives
+  // each invocation its own copy of the locals; WORKING-STORAGE would be
+  // shared across the recursion and silently produce wrong answers.
+  const recursiveFunctions = program.functions.filter((fn) => fn.isRecursive);
+  if (recursiveFunctions.length > 0) {
+    addLine(`       END PROGRAM ${toCobolProgramId(program.moduleName)}.`);
+    for (const fn of recursiveFunctions) {
+      const start = lineNumber();
+      emitRecursiveProgram(fn, addLine);
+      // A recursive function still has to be traceable. Its entry points at
+      // the sibling program rather than at a paragraph in the main one.
+      entries.push({
+        sourceFile: program.sourceFile,
+        sourceStart: fn.span.start,
+        sourceEnd: fn.span.end,
+        artifact: cobolArtifactPath,
+        targetStartLine: start,
+        targetEndLine: lineNumber() - 1,
+        category: "function",
+        symbol: fn.name,
+      });
+    }
+  }
 
   return {
     cobol: `${lines.join("\n")}\n`,
@@ -498,6 +666,56 @@ function fdFieldName(file: IRFile, fieldName: string): string {
 
 function relativeKeyName(file: IRFile): string {
   return `${toCobolName(file.name)}-RRN`;
+}
+
+/**
+ * CICS response variables need storage. The typechecker makes them readable
+ * symbols, so the backend has to declare them or the generated program
+ * references undefined data names.
+ */
+function emitCicsRespFields(
+  transactions: IRTransaction[],
+  addLine: (line?: string) => void,
+): void {
+  const declared = new Set<string>();
+  for (const transaction of transactions) {
+    for (const name of collectCicsRespNames(transaction.body)) {
+      if (declared.has(name)) {
+        continue;
+      }
+      declared.add(name);
+      addLine(
+        `       01  ${toCobolFieldName(name).padEnd(20)} PIC S9(8) COMP.`,
+      );
+    }
+  }
+}
+
+function collectCicsRespNames(block: IRBlock): string[] {
+  const names: string[] = [];
+  for (const statement of block.statements) {
+    if (statement.kind === "CicsStatement" && statement.respName) {
+      names.push(statement.respName);
+    }
+    if (statement.kind === "IfStatement") {
+      names.push(...collectCicsRespNames(statement.thenBranch));
+      if (statement.elseBranch) {
+        names.push(...collectCicsRespNames(statement.elseBranch));
+      }
+    }
+    if (statement.kind === "WhileStatement") {
+      names.push(...collectCicsRespNames(statement.body));
+    }
+    if (statement.kind === "SwitchStatement") {
+      for (const branch of statement.cases) {
+        names.push(...collectCicsRespNames(branch.body));
+      }
+      if (statement.otherwise) {
+        names.push(...collectCicsRespNames(statement.otherwise));
+      }
+    }
+  }
+  return names;
 }
 
 /** Relative files need their record number declared in working storage. */
@@ -633,6 +851,89 @@ function enumConditionName(fieldName: string, member: string): string {
  * single `GOBACK.`, because a period inside an `IF` branch would terminate the
  * COBOL sentence and leave the following `ELSE` and `END-IF` dangling.
  */
+/**
+ * A recursive function as its own `RECURSIVE` program.
+ *
+ * Parameters and the result arrive through the LINKAGE SECTION, and locals go
+ * in LOCAL-STORAGE so each invocation gets its own copy.
+ */
+function emitRecursiveProgram(
+  fn: IRFunction,
+  addLine: (line?: string) => void,
+): void {
+  const programName = recursiveProgramName(fn.name);
+  const linkageNames = fn.parameters.map(
+    (_parameter, index) => `LK-P${index + 1}`,
+  );
+  const resultName = "LK-RESULT";
+
+  addLine("");
+  addLine(`       IDENTIFICATION DIVISION.`);
+  addLine(`       PROGRAM-ID. ${programName} RECURSIVE.`);
+  addLine("");
+  addLine(`       DATA DIVISION.`);
+
+  const locals = collectFunctionLocals(fn.body);
+  const callArgs = fn.parameters.map(
+    (_parameter, index) => `WS-ARG-${index + 1}`,
+  );
+
+  addLine(`       LOCAL-STORAGE SECTION.`);
+  for (const local of locals) {
+    addLine(
+      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+    );
+  }
+  // Storage for the arguments of a nested call, per invocation.
+  fn.parameters.forEach((parameter, index) => {
+    addLine(
+      `       01  ${callArgs[index].padEnd(20)} ${formatCobolType(parameter.type)}.`,
+    );
+  });
+  addLine(`       01  WS-SUB-RESULT        ${formatCobolType(fn.returnType)}.`);
+
+  addLine(`       LINKAGE SECTION.`);
+  fn.parameters.forEach((parameter, index) => {
+    addLine(
+      `       01  ${linkageNames[index].padEnd(20)} ${formatCobolType(parameter.type)}.`,
+    );
+  });
+  addLine(
+    `       01  ${resultName.padEnd(20)} ${formatCobolType(fn.returnType)}.`,
+  );
+
+  addLine("");
+  addLine(
+    `       PROCEDURE DIVISION USING ${[...linkageNames, resultName].join(" ")}.`,
+  );
+  addLine(`       ${toCobolParagraphName(fn.name)}-BODY.`);
+
+  const previousParameters = currentParameters;
+  const previousRecursive = recursiveContext;
+  currentParameters = new Map(
+    fn.parameters.map((parameter, index) => [
+      parameter.name,
+      parameter.type.kind === "record"
+        ? toCobolName(parameter.type.name)
+        : linkageNames[index],
+    ]),
+  );
+  recursiveContext = {
+    name: fn.name,
+    programName,
+    args: callArgs,
+    subResult: "WS-SUB-RESULT",
+  };
+
+  emitStatement(fn.body, addLine, 11, resultName);
+
+  currentParameters = previousParameters;
+  recursiveContext = previousRecursive;
+
+  addLine(`           GOBACK.`);
+  addLine(`       END PROGRAM ${programName}.`);
+}
+
 function emitFunctionBody(
   fn: IRFunction,
   addLine: (line?: string) => void,
@@ -682,6 +983,15 @@ function emitStatement(
           requireSqlDeclaration(statement.name),
           addLine,
           indent,
+        );
+        break;
+      case "ForEachStatement":
+        emitForEachStatement(
+          statement,
+          addLine,
+          indentLevel,
+          resultName,
+          false,
         );
         break;
       default:
@@ -744,6 +1054,9 @@ function emitTransactionBody(
       case "CicsStatement":
         emitCicsStatement(statement, addLine, indent);
         break;
+      case "ForEachStatement":
+        emitForEachStatement(statement, addLine, indentLevel, "", true);
+        break;
       default:
         throw new Error(
           `Unsupported statement in transaction body: ${statement.kind}`,
@@ -786,6 +1099,33 @@ function emitAuditStatement(
     `${indent}MOVE ${renderExpression(statement.correlation)} TO ${AUDIT_CORRELATION_FIELD}`,
   );
   addLine(`${indent}CALL "${AUDIT_PROGRAM}" USING ${AUDIT_INTERFACE_GROUP}`);
+}
+
+/**
+ * `for each` becomes `PERFORM VARYING` over the array's declared bound.
+ *
+ * The bound is a compile-time constant, so the loop cannot run past the end of
+ * the table and needs no separate guard counter.
+ */
+function emitForEachStatement(
+  statement: IRForEachStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const index = toCobolFieldName(statement.indexName);
+
+  addLine(
+    `${indent}PERFORM VARYING ${index} FROM 1 BY 1 UNTIL ${index} > ${statement.length}`,
+  );
+  if (inTransaction) {
+    emitTransactionBody(statement.body, addLine, indentLevel + 4);
+  } else {
+    emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+  }
+  addLine(`${indent}END-PERFORM`);
 }
 
 /** `switch` over an enum becomes `EVALUATE TRUE` over the level-88 names. */
@@ -911,7 +1251,7 @@ function emitFileStatement(
           `${indent}MOVE ${renderExpression(statement.key)} TO ${toCobolFieldName(statement.keyFieldName)} OF ${fileRecordNameFor(statement.fileName)}`,
         );
       }
-      addLine(`${indent}READ ${file} INTO ${recordTarget(statement)}`);
+      addLine(`${indent}READ ${file}`);
       if (statement.statusName) {
         // An indexed read reports a missing key rather than end of file.
         const notFound = statement.fileOrganization === "indexed" ? "23" : "10";
@@ -922,12 +1262,57 @@ function emitFileStatement(
         );
       }
       addLine(`${indent}END-READ`);
+      // Field by field rather than a group move, so the correspondence between
+      // the file record and working storage is explicit in the generated COBOL
+      // and does not depend on the two layouts being byte-identical.
+      emitRecordFieldMapping(statement, addLine, indent, "read");
       return;
     case "write":
-      addLine(
-        `${indent}WRITE ${fileRecordNameFor(statement.fileName)} FROM ${recordTarget(statement)}`,
-      );
+      emitRecordFieldMapping(statement, addLine, indent, "write");
+      addLine(`${indent}WRITE ${fileRecordNameFor(statement.fileName)}`);
       return;
+  }
+}
+
+/**
+ * Maps each field between the FD record and the working-storage record.
+ *
+ * A group `READ INTO` assumes the two layouts are byte-identical. Mapping the
+ * fields explicitly makes the correspondence visible in the generated COBOL and
+ * survives a layout that is merely compatible rather than identical.
+ */
+function emitRecordFieldMapping(
+  statement: IRFileStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+  direction: "read" | "write",
+): void {
+  if (!statement.recordName) {
+    return;
+  }
+
+  const fileRecord = fileRecordNameFor(statement.fileName);
+  const target = resolveIdentifier(statement.recordName);
+
+  for (const field of statement.recordFields) {
+    const name = toCobolFieldName(field.name);
+    const source = direction === "read" ? fileRecord : target;
+    const destination = direction === "read" ? target : fileRecord;
+
+    // COBOL cannot move an OCCURS item without a subscript, so a table is
+    // copied element by element.
+    if (field.arrayLength !== null) {
+      addLine(
+        `${indent}PERFORM VARYING ${COPY_INDEX_FIELD} FROM 1 BY 1 UNTIL ${COPY_INDEX_FIELD} > ${field.arrayLength}`,
+      );
+      addLine(
+        `${indent}    MOVE ${name} OF ${source} (${COPY_INDEX_FIELD}) TO ${name} OF ${destination} (${COPY_INDEX_FIELD})`,
+      );
+      addLine(`${indent}END-PERFORM`);
+      continue;
+    }
+
+    addLine(`${indent}MOVE ${name} OF ${source} TO ${name} OF ${destination}`);
   }
 }
 
@@ -947,6 +1332,81 @@ function loopCounterName(statement: IRWhileStatement): string {
 }
 
 /**
+ * Emits a range check for every computed subscript in an expression.
+ *
+ * COBOL does not check subscripts, so an index past the end of a table reads
+ * or writes whatever storage follows it. Clamping and recording the failure
+ * turns silent corruption into an observable status.
+ */
+function emitBoundsChecks(
+  expression: IRExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  for (const check of collectBoundsChecks(expression)) {
+    addLine(
+      `${indent}IF ${check.index} < 1 OR ${check.index} > ${check.length}`,
+    );
+    addLine(`${indent}    MOVE "23" TO ${BOUNDS_STATUS_FIELD}`);
+    addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
+    addLine(`${indent}END-IF`);
+  }
+}
+
+function collectBoundsChecks(
+  expression: IRExpression,
+): { index: string; length: number }[] {
+  const checks: { index: string; length: number }[] = [];
+
+  const walk = (node: IRExpression): void => {
+    switch (node.kind) {
+      case "IndexAccess":
+        walk(node.index);
+        if (node.needsBoundsCheck && node.length > 0) {
+          checks.push({
+            index: renderDecimalExpression(node.index),
+            length: node.length,
+          });
+        }
+        return;
+      case "MemberAccess":
+        if (node.index) {
+          walk(node.index);
+          if (node.indexNeedsBoundsCheck && node.indexLength > 0) {
+            checks.push({
+              index: renderDecimalExpression(node.index),
+              length: node.indexLength,
+            });
+          }
+        }
+        return;
+      case "BinaryComparison":
+      case "BinaryArithmetic":
+      case "Logical":
+        walk(node.left);
+        walk(node.right);
+        return;
+      case "Not":
+      case "Rounded":
+        walk(node.kind === "Not" ? node.operand : node.operand);
+        return;
+      case "Call":
+        node.args.forEach(walk);
+        return;
+      case "NullableCheck":
+        walk(node.operand);
+        return;
+      default:
+        return;
+    }
+  };
+
+  walk(expression);
+  // Only a variable subscript is worth guarding; a constant cannot drift.
+  return checks.filter((check) => !/^\d+$/.test(check.index));
+}
+
+/**
  * Emits `PERFORM` for every call inside an expression before the expression is
  * used, because COBOL has no call-in-expression form. Results land in each
  * function's result field, which is what `renderExpression` reads.
@@ -962,13 +1422,45 @@ function emitCallsIn(
         emitCallsIn(argument, addLine, indent);
       }
       // Arguments are moved into the callee's parameter storage, then the
-      // paragraph is performed.
-      expression.args.forEach((argument, index) => {
+      // paragraph is performed or the program is called.
+      if (!recursiveContext || expression.callee !== recursiveContext.name) {
+        expression.args.forEach((argument, index) => {
+          emitArgumentInto(
+            parameterFieldName(expression.callee, index),
+            argument,
+            addLine,
+            indent,
+          );
+        });
+      }
+      const callee = currentFunctions.get(expression.callee);
+      if (recursiveContext && expression.callee === recursiveContext.name) {
+        expression.args.forEach((argument, index) => {
+          emitArgumentInto(
+            recursiveContext!.args[index],
+            argument,
+            addLine,
+            indent,
+          );
+        });
         addLine(
-          `${indent}MOVE ${renderExpression(argument)} TO ${parameterFieldName(expression.callee, index)}`,
+          `${indent}CALL "${recursiveContext.programName}" USING ${[...recursiveContext.args, recursiveContext.subResult].join(", ")}`,
         );
-      });
-      addLine(`${indent}PERFORM ${toCobolParagraphName(expression.callee)}`);
+      } else if (callee?.isRecursive) {
+        // COBOL paragraphs are not reentrant, so a recursive function is a
+        // separate RECURSIVE program reached with CALL.
+        const operands = [
+          ...expression.args.map((_argument, index) =>
+            parameterFieldName(expression.callee, index),
+          ),
+          functionResultName(expression.callee),
+        ];
+        addLine(
+          `${indent}CALL "${recursiveProgramName(expression.callee)}" USING ${operands.join(", ")}`,
+        );
+      } else {
+        addLine(`${indent}PERFORM ${paragraphName(expression.callee)}`);
+      }
       return;
     case "BinaryComparison":
     case "BinaryArithmetic":
@@ -988,6 +1480,34 @@ function emitCallsIn(
 }
 
 /**
+ * Moves one call argument into the callee's storage.
+ *
+ * `MOVE` cannot take an arithmetic expression, so a computed numeric argument
+ * has to go through `COMPUTE`.
+ */
+function emitArgumentInto(
+  target: string,
+  argument: IRExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const numeric =
+    argument.resolvedType.kind === "decimal" ||
+    argument.resolvedType.kind === "currency";
+  const computed =
+    argument.kind === "BinaryArithmetic" || argument.kind === "Rounded";
+
+  if (numeric && computed) {
+    addLine(
+      `${indent}COMPUTE ${target} = ${renderDecimalExpression(argument)}`,
+    );
+    return;
+  }
+
+  addLine(`${indent}MOVE ${renderExpression(argument)} TO ${target}`);
+}
+
+/**
  * Assignment target plus expression, honouring a rounding mode when the
  * expression is a `round(...)` or `divide(...)`.
  */
@@ -998,6 +1518,7 @@ function emitComputeInto(
   indent: string,
 ): void {
   emitCallsIn(expression, addLine, indent);
+  emitBoundsChecks(expression, addLine, indent);
 
   if (expression.resolvedType.kind === "bool") {
     emitBooleanAssignment(indent, target, expression, addLine);
@@ -1053,6 +1574,49 @@ function resolveIdentifier(name: string): string {
     return "SQLCODE";
   }
   return currentParameters.get(name) ?? toCobolFieldName(name);
+}
+
+/** `for each` index variables need storage, like any other local. */
+/** True when any record declares an array, so the bounds field is needed. */
+function programUsesArrays(program: IRProgram): boolean {
+  const hasArray = (fields: IRRecord["fields"]): boolean =>
+    fields.some(
+      (field) =>
+        field.type.kind === "array" ||
+        (field.type.kind === "record" && hasArray(field.type.fields)),
+    );
+  return (
+    program.records.some((record) => hasArray(record.fields)) ||
+    program.files.some((file) => hasArray(file.record.fields))
+  );
+}
+
+function collectForEachIndexes(block: IRBlock): IRForEachStatement[] {
+  const found: IRForEachStatement[] = [];
+  for (const statement of block.statements) {
+    if (statement.kind === "ForEachStatement") {
+      found.push(statement);
+      found.push(...collectForEachIndexes(statement.body));
+    }
+    if (statement.kind === "WhileStatement") {
+      found.push(...collectForEachIndexes(statement.body));
+    }
+    if (statement.kind === "IfStatement") {
+      found.push(...collectForEachIndexes(statement.thenBranch));
+      if (statement.elseBranch) {
+        found.push(...collectForEachIndexes(statement.elseBranch));
+      }
+    }
+    if (statement.kind === "SwitchStatement") {
+      for (const branch of statement.cases) {
+        found.push(...collectForEachIndexes(branch.body));
+      }
+      if (statement.otherwise) {
+        found.push(...collectForEachIndexes(statement.otherwise));
+      }
+    }
+  }
+  return found;
 }
 
 function collectLoops(block: IRBlock): IRWhileStatement[] {
@@ -1222,7 +1786,11 @@ function renderExpression(expression: IRExpression): string {
     case "Rounded":
       return renderDecimalExpression(expression.operand);
     case "Call":
-      return functionResultName(expression.callee);
+      // Inside a recursive program a self-call returns into that program's own
+      // per-invocation result field, not the caller's.
+      return recursiveContext && expression.callee === recursiveContext.name
+        ? recursiveContext.subResult
+        : functionResultName(expression.callee);
     case "EnumMember":
       return `"${expression.member}"`;
     case "IndexAccess":
@@ -1275,7 +1843,9 @@ function renderDecimalExpression(expression: IRExpression): string {
     case "Rounded":
       return renderDecimalExpression(expression.operand);
     case "Call":
-      return functionResultName(expression.callee);
+      return recursiveContext && expression.callee === recursiveContext.name
+        ? recursiveContext.subResult
+        : functionResultName(expression.callee);
     case "IndexAccess":
       return `${renderExpression(expression.target)} (${renderDecimalExpression(expression.index)})`;
     case "NullableCheck":

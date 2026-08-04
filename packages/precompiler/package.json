@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/precompiler",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

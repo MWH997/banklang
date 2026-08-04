@@ -59,6 +59,7 @@ import {
   type SqlStatementNode,
   type CicsStatementNode,
   type CicsOperation,
+  type ForEachStatementNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -87,6 +88,9 @@ const KEYWORDS = new Set([
   "if",
   "else",
   "while",
+  "for",
+  "each",
+  "in",
   "switch",
   "case",
   "enum",
@@ -1017,6 +1021,10 @@ class Parser {
       return this.parseWhileStatement();
     }
 
+    if (this.matchKeyword("for")) {
+      return this.parseForEachStatement();
+    }
+
     if (this.matchKeyword("switch")) {
       return this.parseSwitchStatement();
     }
@@ -1043,11 +1051,13 @@ class Parser {
     }
 
     if (this.current.kind === "identifier") {
-      // `name =` or `name.field =` is an assignment; `name(` is a call.
-      if (this.next.kind === "punctuation" && this.next.text === "=") {
-        return this.parseAssignStatement();
-      }
-      if (this.next.kind === "punctuation" && this.next.text === ".") {
+      // `name`, `name.field`, and `name.field[i].sub` can all be assignment
+      // targets; `name(` is a call.
+      const next = this.next;
+      if (
+        next.kind === "punctuation" &&
+        (next.text === "=" || next.text === "." || next.text === "[")
+      ) {
         return this.parseAssignStatement();
       }
     }
@@ -1097,6 +1107,60 @@ class Parser {
       "Expected a statement.",
     );
     return null;
+  }
+
+  private parseForEachStatement(): ForEachStatementNode | null {
+    const forToken = this.previous;
+    this.expectKeyword("each", "Expected `each` after `for`.");
+    const indexToken = this.expectIdentifier("Expected a loop index name.");
+    this.expectKeyword("in", "Expected `in` after the loop index name.");
+
+    const arrayToken = this.expectIdentifier("Expected an array to iterate.");
+    if (!arrayToken) {
+      return null;
+    }
+
+    let array: MemberAccessNode | IdentifierNode = {
+      kind: "Identifier",
+      name: arrayToken.text,
+      span: arrayToken.span,
+    };
+
+    if (this.matchPunctuation(".")) {
+      const memberToken = this.expectIdentifier(
+        "Expected field name after `.`.",
+      );
+      if (!memberToken) {
+        return null;
+      }
+      array = {
+        kind: "MemberAccess",
+        target: array as IdentifierNode,
+        member: memberToken.text,
+        span: {
+          sourceFile: arrayToken.span.sourceFile,
+          start: arrayToken.span.start,
+          end: memberToken.span.end,
+        },
+      };
+    }
+
+    const body = this.parseBlock();
+    if (!forToken || !indexToken || !body) {
+      return null;
+    }
+
+    return {
+      kind: "ForEachStatement",
+      indexName: indexToken.text,
+      array,
+      body,
+      span: {
+        sourceFile: forToken.span.sourceFile,
+        start: forToken.span.start,
+        end: body.span.end,
+      },
+    };
   }
 
   private parseWhileStatement(): WhileStatementNode | null {
@@ -1318,32 +1382,22 @@ class Parser {
   }
 
   private parseAssignStatement(): AssignStatementNode | null {
-    const nameToken = this.advance();
-    const identifier: IdentifierNode = {
-      kind: "Identifier",
-      name: nameToken.text,
-      span: nameToken.span,
-    };
+    const start = this.current;
 
-    let target: IdentifierNode | MemberAccessNode = identifier;
+    // The target is parsed with the expression parser so it can be a plain
+    // name, a field, or a field reached through an array element.
+    const target = this.parsePrimaryExpression();
+    if (!target) {
+      return null;
+    }
 
-    if (this.matchPunctuation(".")) {
-      const memberToken = this.expectIdentifier(
-        "Expected field name after `.`.",
+    if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
+      this.errorAtCurrent(
+        "BANK-SYN-002",
+        "This is not an assignable target.",
+        "Assign to a local, a record field, or an array element field.",
       );
-      if (!memberToken) {
-        return null;
-      }
-      target = {
-        kind: "MemberAccess",
-        target: identifier,
-        member: memberToken.text,
-        span: {
-          sourceFile: nameToken.span.sourceFile,
-          start: nameToken.span.start,
-          end: memberToken.span.end,
-        },
-      };
+      return null;
     }
 
     this.expectPunctuation("=", "Expected `=` in assignment.");
@@ -1362,8 +1416,8 @@ class Parser {
       target,
       expression,
       span: {
-        sourceFile: nameToken.span.sourceFile,
-        start: nameToken.span.start,
+        sourceFile: start.span.sourceFile,
+        start: start.span.start,
         end: semicolon.span.end,
       },
     };

@@ -2,23 +2,29 @@
 
 Generated artifacts for the CICS + Db2 example.
 
-## This bundle is deliberately not compiler-validated
+## How this program is validated
 
 Embedded SQL requires the Db2 precompiler and CICS commands require the CICS
-translator. Neither is available here, so:
+translator, so a plain COBOL compiler rejects both. BankLang's own precompiler
+performs the equivalent translation — `EXEC SQL INCLUDE SQLCA` expands to the
+SQLCA, and each block becomes a runtime call passing every data item it
+referenced — after which the program compiles with GnuCOBOL.
 
-```txt
-| compiler-status         | requires-preprocessor |
-| validated-with-gnucobol | no                    |
-```
+**What that proves:** the surrounding COBOL is valid, every host variable and
+data name resolves, and SQLCA fields such as `SQLCODE` are declared and usable.
+Compiling the translated output is what first revealed that CICS response
+variables were being referenced without ever being declared.
 
-This is the one program in the repository whose generated COBOL has never been
-accepted by a compiler. The `EXEC SQL` and `EXEC CICS` blocks follow IBM's
-documented syntax, but they have not been precompiled, translated, or run.
+**What it does not prove:** SQL semantics, Db2 bind behaviour, or CICS runtime
+behaviour. It is not IBM's precompiler and produces no bind artifacts.
 
-The compiler's own checks still apply: host variable resolution, SQLCODE
-handling, CICS response codes, and syncpoint placement are all enforced without
-needing a precompiler, and `audit/diagnostics.json` is empty.
+The bundle in this directory was generated in a container without GnuCOBOL, so
+its report records `compiler-status: skipped`. Run `pnpm bankc test
+examples/online-enquiry` locally with `cobc` installed to see it pass.
+
+The compiler's own checks apply regardless of any precompiler: host variable
+resolution, SQLCODE handling, CICS response codes, and syncpoint placement are
+all enforced, and `audit/diagnostics.json` is empty.
 
 ## Contents
 

@@ -257,17 +257,16 @@ sounding impressive:
   CI. No IBM Enterprise COBOL validation has been performed, and none is
   claimed.
 - **Not production-ready**, and never run against a real ledger.
-- **SQL and CICS output is not compiler-validated.** Embedded SQL needs the Db2
-  precompiler and CICS commands need the CICS translator; neither is available
-  here. The generated blocks follow IBM's documented syntax but have never been
-  precompiled, translated, or run. `bankc` reports this as
-  `requires-preprocessor` rather than recording a pass.
-- **No recursion**, no `for each`, no user-defined types beyond records, enums,
-  and aliases.
-- **Array bounds are checked only for literal indexes.** A computed index is
-  not bounds-checked at run time.
-- **File I/O moves whole records.** Read and write transfer the whole record;
-  there is no per-field file mapping in the statement surface.
+- **SQL and CICS are checked structurally, not semantically.** BankLang ships a
+  precompiler that translates `EXEC SQL` and `EXEC CICS` the way `DSNHPC` and
+  the CICS translator do, so every example compiles with GnuCOBOL. That proves
+  the surrounding COBOL and every host variable resolve; it does not validate
+  SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.
+- **Never run against a real ledger, Db2, or CICS region.**
+- **No user-defined types beyond records, enums, and aliases.** No generics, no
+  inheritance, no user-defined operators.
+- **Bounds violations are recorded, not thrown.** An out-of-range computed index
+  is clamped and reported in `BANK-BOUNDS-STATUS`; there is no exception model.
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but

@@ -1550,12 +1550,12 @@ function buildVerificationReportDocument(
           gnucobolValidation.compilerStatus === "failed"
             ? `cobc exited with ${gnucobolValidation.compilerExitCode ?? "n/a"}`
             : gnucobolValidation.validatedWithGnucobol
-              ? "Local cobc validation passed."
-              : // Say which it is: a missing compiler and a program that needs
-                // a precompiler are very different situations.
-                gnucobolValidation.compilerStatus === "requires-preprocessor"
-                ? `Not validated locally: requires ${gnucobolValidation.backendRequirements.join(" and ")}.`
-                : "No local cobc executable was available.",
+              ? // Say when the compiled artifact went through the precompiler,
+                // because that changes what the pass actually proves.
+                gnucobolValidation.precompiled
+                ? `Local cobc validation passed after precompiling (${gnucobolValidation.backendRequirements.join(" and ")}).`
+                : "Local cobc validation passed."
+              : "No local cobc executable was available.",
       }
     : {
         name: "GnuCOBOL validation",

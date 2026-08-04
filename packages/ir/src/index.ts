@@ -112,6 +112,12 @@ export interface IRFunction {
   parameters: IRParameter[];
   returnType: IRType;
   body: IRBlock;
+  /**
+   * True when the function can reach itself, directly or through other
+   * functions. A COBOL paragraph is not reentrant, so a recursive function is
+   * emitted as a separate RECURSIVE program instead.
+   */
+  isRecursive: boolean;
 }
 
 export interface IRParameter {
@@ -139,7 +145,19 @@ export type IRStatement =
   | IRFileStatement
   | IRSwitchStatement
   | IRSqlStatement
-  | IRCicsStatement;
+  | IRCicsStatement
+  | IRForEachStatement;
+
+export interface IRForEachStatement {
+  kind: "ForEachStatement";
+  span: SourceSpan;
+  indexName: string;
+  /** COBOL group item the array field is qualified by. */
+  arrayRecordName: string;
+  arrayFieldName: string;
+  length: number;
+  body: IRBlock;
+}
 
 export interface IRCicsStatement {
   kind: "CicsStatement";
@@ -200,6 +218,11 @@ export interface IRFileStatement {
   statusName: string | null;
   keyFieldName: string | null;
   key: IRExpression | null;
+  /**
+   * The file record's fields, for per-field mapping. An array field carries
+   * its bound, because COBOL cannot move an OCCURS item without a subscript.
+   */
+  recordFields: { name: string; arrayLength: number | null }[];
 }
 
 export interface IRLedgerStatement {
@@ -268,6 +291,10 @@ export interface IRIndexAccessExpression {
   span: SourceSpan;
   target: IRIdentifierExpression | IRMemberAccessExpression;
   index: IRExpression;
+  /** Declared array bound, used to emit a runtime range check. */
+  length: number;
+  /** False when the index is a literal the compiler already proved in range. */
+  needsBoundsCheck: boolean;
   resolvedType: IRType;
 }
 
@@ -294,6 +321,10 @@ export interface IRMemberAccessExpression {
   member: string;
   /** Subscript when the field is reached through an array element. */
   index: IRExpression | null;
+  /** Declared bound of the array the subscript indexes. */
+  indexLength: number;
+  /** False when the subscript is a literal already proven in range. */
+  indexNeedsBoundsCheck: boolean;
   resolvedType: IRType;
 }
 
@@ -454,6 +485,10 @@ export function lowerProgramToIR(
       organization: file.organization,
       statusName: file.statusName,
       keyFieldName: file.keyField?.name ?? null,
+      recordFields: file.record.fields.map((field) => ({
+        name: field.name,
+        arrayLength: field.type.kind === "array" ? field.type.length : null,
+      })),
     });
   }
 
@@ -472,7 +507,12 @@ export function lowerProgramToIR(
     functionTable.set(fn.name, lowerType(fn.returnType));
   }
 
-  const functions = typechecked.functions.map((fn) => lowerFunction(fn));
+  const loweredFunctions = typechecked.functions.map((fn) => lowerFunction(fn));
+  const recursive = findRecursiveFunctions(loweredFunctions);
+  const functions = loweredFunctions.map((fn) => ({
+    ...fn,
+    isRecursive: recursive.has(fn.name),
+  }));
   const transactions = typechecked.transactions.map((transaction) =>
     lowerTransaction(transaction),
   );
@@ -536,12 +576,23 @@ const fileTable = new Map<
     organization: "sequential" | "indexed" | "relative";
     statusName: string | null;
     keyFieldName: string | null;
+    recordFields: { name: string; arrayLength: number | null }[];
   }
 >();
 const functionTable = new Map<string, IRType>();
 
 /** Declared enums, for lowering member references and switch statements. */
 const enumTable = new Map<string, string[]>();
+
+/** Index variables a `for each` already bounds, so they need no range check. */
+let boundedIndexNames = new Set<string>();
+
+function indexIsProvenInRange(index: ExpressionNode): boolean {
+  if (index.kind === "Identifier") {
+    return boundedIndexNames.has(index.name);
+  }
+  return index.kind === "DecimalLiteral" && !index.text.includes(".");
+}
 
 /** Declared SQL statements, for lowering execute statements. */
 const sqlTable = new Map<string, ResolvedSql>();
@@ -590,6 +641,115 @@ function addCicsRespSymbols(
       }
     }
   }
+}
+
+/**
+ * Functions that can reach themselves, directly or through a cycle.
+ *
+ * COBOL paragraphs are not reentrant: performing a paragraph that is already
+ * active is undefined. Recursive functions therefore have to be emitted
+ * differently, so they are identified here rather than in the backend.
+ */
+function findRecursiveFunctions(functions: IRFunction[]): Set<string> {
+  const callees = new Map<string, Set<string>>();
+  for (const fn of functions) {
+    callees.set(fn.name, collectCalls(fn.body));
+  }
+
+  const recursive = new Set<string>();
+  for (const fn of functions) {
+    const seen = new Set<string>();
+    const stack = [...(callees.get(fn.name) ?? [])];
+    while (stack.length > 0) {
+      const next = stack.pop() as string;
+      if (next === fn.name) {
+        recursive.add(fn.name);
+        break;
+      }
+      if (seen.has(next)) {
+        continue;
+      }
+      seen.add(next);
+      stack.push(...(callees.get(next) ?? []));
+    }
+  }
+
+  return recursive;
+}
+
+function collectCalls(block: IRBlock): Set<string> {
+  const calls = new Set<string>();
+
+  const walkExpression = (expression: IRExpression): void => {
+    switch (expression.kind) {
+      case "Call":
+        calls.add(expression.callee);
+        expression.args.forEach(walkExpression);
+        return;
+      case "BinaryComparison":
+      case "BinaryArithmetic":
+      case "Logical":
+        walkExpression(expression.left);
+        walkExpression(expression.right);
+        return;
+      case "Not":
+      case "Rounded":
+        walkExpression(expression.operand);
+        return;
+      case "NullableCheck":
+        walkExpression(expression.operand);
+        return;
+      case "IndexAccess":
+        walkExpression(expression.index);
+        return;
+      default:
+        return;
+    }
+  };
+
+  const walkBlock = (inner: IRBlock): void => {
+    for (const statement of inner.statements) {
+      switch (statement.kind) {
+        case "LetStatement":
+          walkExpression(statement.initializer);
+          break;
+        case "ReturnStatement":
+        case "ExpressionStatement":
+          walkExpression(statement.expression);
+          break;
+        case "AssignStatement":
+          walkExpression(statement.expression);
+          break;
+        case "IfStatement":
+          walkExpression(statement.condition);
+          walkBlock(statement.thenBranch);
+          if (statement.elseBranch) {
+            walkBlock(statement.elseBranch);
+          }
+          break;
+        case "WhileStatement":
+          walkExpression(statement.condition);
+          walkBlock(statement.body);
+          break;
+        case "ForEachStatement":
+          walkBlock(statement.body);
+          break;
+        case "SwitchStatement":
+          for (const branch of statement.cases) {
+            walkBlock(branch.body);
+          }
+          if (statement.otherwise) {
+            walkBlock(statement.otherwise);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  walkBlock(block);
+  return calls;
 }
 
 function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
@@ -657,6 +817,7 @@ function lowerFunction(fn: ResolvedFunction): IRFunction {
     })),
     returnType: lowerType(fn.returnType),
     body: lowerBlock(fn.body, scopeTypes),
+    isRecursive: false,
   };
 }
 
@@ -725,6 +886,51 @@ function lowerStatement(
         span: statement.span,
         expression: lowerExpression(statement.expression, scopeTypes),
       };
+    case "ForEachStatement": {
+      const array = lowerExpression(statement.array, scopeTypes);
+      const arrayType =
+        array.kind === "Identifier" || array.kind === "MemberAccess"
+          ? array.resolvedType
+          : undefined;
+      if (!arrayType || arrayType.kind !== "array") {
+        throw new Error("for each requires an array during IR lowering.");
+      }
+
+      // The index is a loop-scoped local, so it must be visible to the body.
+      const bodyScope = new Map(scopeTypes);
+      bodyScope.set(statement.indexName, {
+        kind: "decimal",
+        precision: Math.max(String(arrayType.length).length, 4),
+        scale: 0,
+      });
+
+      // PERFORM VARYING already bounds this index, so a runtime range check
+      // inside the body would be dead weight on every iteration.
+      const previousBounded = boundedIndexNames;
+      boundedIndexNames = new Set([...previousBounded, statement.indexName]);
+      const loweredBody = lowerBlock(statement.body, bodyScope);
+      boundedIndexNames = previousBounded;
+
+      return {
+        kind: "ForEachStatement",
+        span: statement.span,
+        indexName: statement.indexName,
+        arrayRecordName:
+          array.kind === "MemberAccess"
+            ? array.recordName
+            : statement.array.kind === "Identifier"
+              ? statement.array.name
+              : statement.array.member,
+        arrayFieldName:
+          array.kind === "MemberAccess"
+            ? array.member
+            : statement.array.kind === "Identifier"
+              ? statement.array.name
+              : statement.array.member,
+        length: arrayType.length,
+        body: loweredBody,
+      };
+    }
     case "CicsStatement":
       return {
         kind: "CicsStatement",
@@ -781,6 +987,7 @@ function lowerStatement(
         statusName: file.statusName,
         keyFieldName: file.keyFieldName,
         key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
+        recordFields: file.recordFields,
       };
     }
   }
@@ -882,11 +1089,20 @@ function lowerExpression(
         target.resolvedType.kind === "array"
           ? target.resolvedType.element
           : target.resolvedType;
+      const arrayLength =
+        target.resolvedType.kind === "array" ? target.resolvedType.length : 0;
+      // A literal index is proven at compile time by BANK-TYPE-009, and a
+      // `for each` index is bounded by its PERFORM VARYING, so neither needs a
+      // runtime check.
+      const literalIndex = indexIsProvenInRange(expression.index);
+
       return {
         kind: "IndexAccess",
         span: expression.span,
         target,
         index: lowerExpression(expression.index, scopeTypes),
+        length: arrayLength,
+        needsBoundsCheck: !literalIndex,
         resolvedType: element,
       };
     }
@@ -964,6 +1180,7 @@ function lowerMemberAccessExpression(
   // `lines[i].amount`: the record is the array's element type, and the
   // subscript is carried so the backend can emit FIELD OF RECORD (INDEX).
   if (expression.target.kind === "IndexAccess") {
+    const indexIsLiteral = indexIsProvenInRange(expression.target.index);
     const arrayTarget = expression.target.target;
     const holderName =
       arrayTarget.kind === "Identifier" ? arrayTarget.name : arrayTarget.member;
@@ -1008,6 +1225,9 @@ function lowerMemberAccessExpression(
       recordName: rootRecordName(arrayTarget, scopeTypes),
       member: expression.member,
       index: lowerExpression(expression.target.index, scopeTypes),
+      indexLength:
+        arrayType && arrayType.kind === "array" ? arrayType.length : 0,
+      indexNeedsBoundsCheck: !indexIsLiteral,
       resolvedType: field.type,
     };
   }
@@ -1038,6 +1258,8 @@ function lowerMemberAccessExpression(
     recordName: targetType.name,
     member: expression.member,
     index: null,
+    indexLength: 0,
+    indexNeedsBoundsCheck: false,
     resolvedType: field.type,
   };
 }

@@ -7,14 +7,14 @@
 | source-artifact            | examples/online-enquiry/src/main.bank.ts                         |
 | source-artifact-sha256     | b063de9a71be722c8b71124fa6f15e42b5aaeee5f80d4e91c348b4805b1e3347 |
 | generated-artifact         | dist/gnucobol/cobol/ONLINE-ENQUIRY.cbl                           |
-| generated-artifact-sha256  | e5d803b1bb927f89f0c4fd74e9de8f1096a2deea7360999f4a44fd3238be2a5b |
+| generated-artifact-sha256  | 1531c9944aceaa470b8cbba68736afa2bd65b2fc0e4a8a5f0b6dec622039b918 |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | a2fe03ed3f16a836ef932d3d4251e16c8fa60f679feb3368eae8791a1d8676b2 |
+| source-map-artifact-sha256 | 183b315aba44d3a99757d403086e1e3ce123656e8190e6d0c20a2948b235ad0c |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
-| compiler-command           | not run: requires db2-precompiler and cics-translator            |
+| compiler-command           | cobc not found                                                   |
 | compiler-exit-code         | n/a                                                              |
-| compiler-status            | requires-preprocessor                                            |
+| compiler-status            | skipped                                                          |
 
 ## Compiler Output
 
@@ -22,7 +22,7 @@ _No compiler output recorded._
 
 ## Known Backend Gaps
 
-- This program requires db2-precompiler and cics-translator; plain GnuCOBOL cannot validate it.
+- This program requires db2-precompiler and cics-translator. It was translated by the BankLang precompiler before compiling, which checks the surrounding COBOL and every host variable but does not validate SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.
 - This local profile covers the account-transfer subset only.
 - GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.
 - Db2, CICS, and VSAM sections are not exercised by this example.

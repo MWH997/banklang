@@ -10,6 +10,7 @@ import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
 import { toCobolProgramId } from "../packages/cobol-ir/src/index";
+import { precompile } from "../packages/precompiler/src/index";
 
 export interface GnucobolValidationSummary {
   backendProfile: "gnucobol-local";
@@ -23,9 +24,15 @@ export interface GnucobolValidationSummary {
   compilerVersion: string | null;
   compilerCommand: string;
   compilerExitCode: number | null;
-  compilerStatus: "passed" | "failed" | "skipped" | "requires-preprocessor";
+  compilerStatus: "passed" | "failed" | "skipped";
   /** Preprocessing the generated program needs before a compiler accepts it. */
   backendRequirements: string[];
+  /**
+   * True when the compiled artifact was produced by the BankLang precompiler
+   * rather than being the shipped COBOL directly.
+   */
+  precompiled: boolean;
+  precompiledArtifact: string | null;
   compilerOutput: string | null;
   validatedWithGnucobol: boolean;
   knownBackendGaps: string[];
@@ -87,21 +94,29 @@ export function runGnucobolValidation(
     readFileSync(artifacts.cobolPath, "utf8"),
   );
 
-  // Embedded SQL needs the Db2 precompiler and CICS commands need the CICS
-  // translator. Running plain cobc on such a program proves nothing, so the
-  // report says so rather than recording a pass or a failure.
+  // Embedded SQL and CICS need preprocessing before any COBOL compiler will
+  // accept them, exactly as DSNHPC and the CICS translator do on z/OS. The
+  // BankLang precompiler performs the equivalent translation so the program
+  // can still be compiled and checked here.
   const backendRequirements = ir.program?.backendRequirements ?? [];
+  const precompiled = backendRequirements.length > 0;
+  let precompiledArtifact: string | null = null;
 
-  const compilerExecutable =
-    backendRequirements.length > 0 ? null : resolveCobcExecutable(cwd);
+  if (precompiled) {
+    const translated = precompile(readFileSync(artifacts.cobolPath, "utf8"));
+    precompiledArtifact = artifacts.cobolPath.replace(
+      /\.cbl$/,
+      ".precompiled.cbl",
+    );
+    writeFileSync(precompiledArtifact, translated.cobol, "utf8");
+  }
+
+  const compileTarget = precompiledArtifact ?? artifacts.cobolPath;
+  const compilerExecutable = resolveCobcExecutable(cwd);
   let compilerVersion: string | null = null;
-  let compilerCommand =
-    backendRequirements.length > 0
-      ? `not run: requires ${backendRequirements.join(" and ")}`
-      : "cobc not found";
+  let compilerCommand = "cobc not found";
   let compilerExitCode: number | null = null;
-  let compilerStatus: GnucobolValidationSummary["compilerStatus"] =
-    backendRequirements.length > 0 ? "requires-preprocessor" : "skipped";
+  let compilerStatus: GnucobolValidationSummary["compilerStatus"] = "skipped";
   let compilerOutput: string | null = null;
 
   if (compilerExecutable) {
@@ -114,7 +129,7 @@ export function runGnucobolValidation(
     const compileArgs = [
       "-x",
       "-free",
-      relative(cwd, artifacts.cobolPath),
+      relative(cwd, compileTarget),
       "-o",
       relative(cwd, artifacts.binaryPath),
     ];
@@ -135,6 +150,10 @@ export function runGnucobolValidation(
 
   const summary: GnucobolValidationSummary = {
     backendRequirements,
+    precompiled,
+    precompiledArtifact: precompiledArtifact
+      ? relative(cwd, precompiledArtifact)
+      : null,
     backendProfile: "gnucobol-local",
     sourceArtifact: relative(cwd, artifacts.sourceFile),
     sourceArtifactHash,
@@ -150,9 +169,9 @@ export function runGnucobolValidation(
     compilerOutput,
     validatedWithGnucobol: compilerStatus === "passed",
     knownBackendGaps: [
-      ...(backendRequirements.length > 0
+      ...(precompiled
         ? [
-            `This program requires ${backendRequirements.join(" and ")}; plain GnuCOBOL cannot validate it.`,
+            `This program requires ${backendRequirements.join(" and ")}. It was translated by the BankLang precompiler before compiling, which checks the surrounding COBOL and every host variable but does not validate SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.`,
           ]
         : []),
       "This local profile covers the account-transfer subset only.",

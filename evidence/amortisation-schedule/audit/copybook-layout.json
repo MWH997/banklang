@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "Instalment",
+      "cobolName": "INSTALMENT",
+      "totalLength": 20,
+      "entries": [
+        {
+          "order": 1,
+          "path": "INSTALMENT.DUE-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 0,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 2,
+          "path": "INSTALMENT.INTEREST-DUE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 10,
+          "length": 10,
+          "bytes": 10
+        }
+      ]
+    },
+    {
+      "recordName": "Loan",
+      "cobolName": "LOAN",
+      "totalLength": 792,
+      "entries": [
+        {
+          "order": 1,
+          "path": "LOAN.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "LOAN.PRINCIPAL",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "LOAN.MONTHLY-RATE",
+          "type": "decimal<9,4>",
+          "picture": "PIC S9(5)V9999 COMP-3",
+          "usage": "COMP-3",
+          "offset": 26,
+          "length": 5,
+          "bytes": 5
+        },
+        {
+          "order": 4,
+          "path": "LOAN.TERM-MONTHS",
+          "type": "decimal<9,0>",
+          "picture": "PIC S9(9) COMP-3",
+          "usage": "COMP-3",
+          "offset": 31,
+          "length": 5,
+          "bytes": 5
+        },
+        {
+          "order": 5,
+          "path": "LOAN.SCHEDULE",
+          "type": "record<Instalment>[36]",
+          "picture": "GROUP",
+          "usage": "GROUP",
+          "offset": 36,
+          "length": 720,
+          "bytes": 720
+        },
+        {
+          "order": 6,
+          "path": "LOAN.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 756,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    }
+  ]
+}

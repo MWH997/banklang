@@ -7,6 +7,8 @@ describe("gnucobol validation report", () => {
     const report = buildGnucobolValidationReport({
       backendProfile: "gnucobol-local",
       backendRequirements: [],
+      precompiled: false,
+      precompiledArtifact: null,
       sourceArtifact: "examples/account-transfer/src/main.bank.ts",
       sourceArtifactHash:
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
