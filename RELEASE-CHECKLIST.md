@@ -34,13 +34,18 @@ pnpm bankc test examples/account-transfer
 pnpm bankc emit jcl examples/account-transfer
 ```
 
-If the second example changed, also verify:
+Every example must pass, not only the first one. Run the loop so a defect in a
+later example cannot hide:
 
 ```bash
-pnpm bankc build examples/batch-interest-accrual
-pnpm bankc verify examples/batch-interest-accrual
-pnpm bankc test examples/batch-interest-accrual
+for example in examples/*/; do
+  pnpm bankc test "$example" || echo "FAILED: $example"
+done
 ```
+
+`pnpm test` includes `tests/cobol-compiles.test.ts`, which compiles every
+example with `cobc` when GnuCOBOL is installed. Treat a skipped compile lane as
+an unverified release, not a passing one.
 
 ## 3. Documentation and evidence
 

@@ -90,8 +90,7 @@ map, and audit bundle for the `account-transfer` example.
 - `examples/batch-interest-accrual/` contains the control-flow example.
 - `examples/account-posting/` contains the transaction example.
 - `examples/account-file-batch/` contains the file-declaration example.
-- `evidence/account-transfer/` captures the current demo evidence bundle.
-- `evidence/batch-interest-accrual/` captures the second demo evidence bundle.
+- `evidence/` captures a regenerable evidence bundle for every example.
 - `tester-notes/` records change-specific validation notes.
 - `ai-reviews/` stores multi-AI Q/A and review trails.
 - `prompts/` contains the specialist and workhorse prompt templates.
@@ -161,7 +160,10 @@ If you want the exact output inventory, run `pnpm bankc --help` or inspect the
   tester notes used for the current demo slice.
 - `evidence/batch-interest-accrual/` contains the source, generated COBOL,
   generated copybook, source map, audit artifacts, validation matrix, and
-  links to the tester notes for the second example.
+  links to the tester notes for the control-flow example.
+- `evidence/account-posting/` captures the transaction example, including the
+  per-transaction ledger and audit analysis.
+- `evidence/account-file-batch/` captures the file-declaration example.
 - `tester-notes/` contains per-change validation records, including build,
   copybook, layout, and GnuCOBOL smoke-check notes.
 - `ai-reviews/` contains the review briefs and review rounds used for multi-AI

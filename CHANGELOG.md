@@ -83,7 +83,8 @@
 - Documented the full diagnostic catalogue in `banking-safety-spec.md`, adding the previously missing syntax and type-system sections.
 - Documented the Node.js 24 requirement in `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `RELEASE-CHECKLIST.md`, and `repo-conventions.md`, and added a `Node.js 24` glossary entry.
 - Added a `Source map coverage` glossary entry and the `BANK-GEN-*` catalogue section to `banking-safety-spec.md`.
-- Refreshed both evidence bundles on Node 24 so the checked-in verification reports record source map coverage.
+- Refreshed every evidence bundle on Node 24, and added checked-in bundles for the account-posting and account-file-batch examples.
+- Updated `RELEASE-CHECKLIST.md` to verify every example rather than only the first, since a defect in a later example previously went unnoticed.
 - Refreshed the account-transfer evidence bundle, tester notes, and AI review trail to include the emitted JCL and verification reports.
 - Expanded `examples/account-transfer/README.md`, `examples/account-transfer/expected/README.md`, and `evidence/account-transfer/README.md` to reflect the new JCL, verification, and GnuCOBOL artifacts.
 - Added a second example README and a command-surface feature proposal/tester-note trail.

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "entries": [
+    {
+      "category": "record-field",
+      "owner": "TransferRequest",
+      "symbol": "amount",
+      "sourceFile": "/workspace/examples/account-posting/src/main.bank.ts",
+      "sourceSpan": {
+        "sourceFile": "/workspace/examples/account-posting/src/main.bank.ts",
+        "start": {
+          "line": 8,
+          "column": 3
+        },
+        "end": {
+          "line": 8,
+          "column": 20
+        }
+      },
+      "precision": 18,
+      "scale": 2,
+      "packedBytes": 10,
+      "picture": "PIC S9(16)V99 COMP-3"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "TransferRequest",
+      "cobolName": "TRANSFER-REQUEST",
+      "totalLength": 78,
+      "entries": [
+        {
+          "order": 1,
+          "path": "TRANSFER-REQUEST.DEBIT-ACCOUNT",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "TRANSFER-REQUEST.CREDIT-ACCOUNT",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 16,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 3,
+          "path": "TRANSFER-REQUEST.AMOUNT",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 32,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 4,
+          "path": "TRANSFER-REQUEST.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 42,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    }
+  ]
+}
