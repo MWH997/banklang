@@ -395,10 +395,13 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   },
   {
     id: "BANK-AUD-002",
-    title: "Audit payload contains sensitive field",
-    explanation: "An audit payload includes a field marked sensitive.",
-    remediation: "Reserved until audit payloads enter the subset.",
-    implemented: false,
+    title: "Restricted data reaches a log",
+    explanation:
+      "A value marked `sensitive` reaches an audit event or a ledger posting. Both are durable records that outlive the transaction and are read by people with no business seeing a card number or a national identifier.",
+    remediation:
+      "Pass an idempotency key or another unrestricted identifier, or derive a masked value through a function first.",
+    specReference: "language-reference.md section 11",
+    implemented: true,
   },
   {
     id: "BANK-AUD-003",
@@ -554,6 +557,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       "Declare `key <field>` on an indexed file and read it with `read <file> into <record> key <value>;`.",
     specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
+    id: "BANK-SEC-001",
+    title: "Restricted data reclassified",
+    explanation:
+      "A value marked `sensitive` is assigned to a field that is not. A field's marking is part of its record declaration and therefore part of its copybook, so this would reclassify the data silently and defeat the marking everywhere downstream.",
+    remediation:
+      "Mark the target field `sensitive`, or derive an unrestricted value through a function first.",
+    specReference: "language-reference.md section 11",
     implemented: true,
   },
   {

@@ -26,6 +26,11 @@ record LedgerEntry {
 
 record Statement {
   accountId: string<16>;
+  // Restricted data. It belongs on the statement and in the output file, but it
+  // must never reach the audit log or the ledger journal, which outlive the
+  // transaction and are read by people with no business seeing it.
+  sensitive holderName: string<40>;
+  sensitive nationalId: string<20>;
   status: AccountStatus;
   openingBalance: BDT;
   closingBalance: BDT;

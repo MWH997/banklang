@@ -61,6 +61,13 @@ export interface CopybookLayoutEntry {
   offset: number;
   length: number;
   bytes: number;
+  /**
+   * Restricted data, as the BankTS record declared it.
+   *
+   * Reported here so an auditor reading the layout can see which bytes of a
+   * record hold data that must not reach a log, without reading the source.
+   */
+  sensitive: boolean;
 }
 
 export interface CopybookLayoutReport {
@@ -375,13 +382,13 @@ export function renderCopybookLayoutDocument(
       "",
       `Total length: ${report.totalLength}`,
       "",
-      "| Order | Path | Type | PIC | Usage | Offset | Length | Bytes |",
-      "| --- | --- | --- | --- | --- | --- | --- | --- |",
+      "| Order | Path | Type | PIC | Usage | Offset | Length | Bytes | Sensitive |",
+      "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     );
 
     for (const entry of report.entries) {
       lines.push(
-        `| ${entry.order} | ${entry.path} | ${entry.type} | ${entry.picture} | ${entry.usage} | ${entry.offset} | ${entry.length} | ${entry.bytes} |`,
+        `| ${entry.order} | ${entry.path} | ${entry.type} | ${entry.picture} | ${entry.usage} | ${entry.offset} | ${entry.length} | ${entry.bytes} | ${entry.sensitive ? "yes" : "no"} |`,
       );
     }
 
@@ -443,6 +450,7 @@ function collectLayoutEntries(
     offset,
     length,
     bytes: length,
+    sensitive: field.sensitive,
   });
 
   if (field.type.kind !== "record") {

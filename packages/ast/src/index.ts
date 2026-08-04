@@ -208,6 +208,17 @@ export interface FieldDeclarationNode extends NodeBase {
   kind: "FieldDeclaration";
   name: string;
   type: TypeNode;
+  /**
+   * `sensitive nationalId: string<20>` — restricted data that must not reach a
+   * log.
+   *
+   * Marked on the field rather than inferred from its name, because whether a
+   * value is restricted is a decision about the data, not a guess from spelling.
+   * A field marked here cannot reach an audit event or a ledger account
+   * identifier (`BANK-AUD-002`); it can still be read, computed with, and
+   * written to a file, which is where such data legitimately lives.
+   */
+  sensitive: boolean;
 }
 
 export interface RecordDeclarationNode extends NodeBase {

@@ -81,6 +81,8 @@ does not own your ledger, so it does not invent posting logic.
 | `BANK-AUD-001`  | A transaction must emit at least one audit event        |
 | `BANK-AUD-003`  | Audit event names must be compile-time constants        |
 | `BANK-LED-001`  | Debits and credits must balance                         |
+| `BANK-AUD-002`  | A `sensitive` field must not reach a log                |
+| `BANK-SEC-001`  | A `sensitive` field must not be copied into a plain one |
 | `BANK-FILE-001` | A file declaration must bind a `FILE STATUS` field      |
 | `BANK-GEN-00x`  | Every symbol must be traceable into the generated COBOL |
 
@@ -106,6 +108,8 @@ actually needs:
 | Control flow | `if` / `else`, `while ... limit <n>`, `for each`, `switch`     |
 | Functions    | Declared, called, callable before declaration, recursive       |
 | Types        | Records with `extends`, generics, enums, arrays, nullable      |
+| Db2          | `sql` statements, `cursor` declarations, bounded row loops     |
+| Security     | `sensitive` fields that cannot reach a log                     |
 | Failures     | `raise "CODE"` with an `on failure` handler                    |
 | Transactions | `debit`, `credit`, `audit`, field assignment, `entry`          |
 | Files        | `open`, `read into`, `write from`, `close`, with status checks |

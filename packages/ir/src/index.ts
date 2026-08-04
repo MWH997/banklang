@@ -123,6 +123,12 @@ export interface IRField {
   name: string;
   span: SourceSpan;
   type: IRType;
+  /**
+   * Restricted data. Carried into the IR so the copybook layout report can say
+   * which fields hold it — an auditor reading the evidence should not have to
+   * read the BankTS source to find out.
+   */
+  sensitive: boolean;
 }
 
 export interface IRFunction {
@@ -1239,10 +1245,11 @@ function lowerRecord(
     name: record.name,
     span: record.span,
     fields: record.fields.map((field) => ({
-      kind: "Field",
+      kind: "Field" as const,
       name: field.name,
       span: field.span,
       type: lowerType(field.type),
+      sensitive: field.sensitive,
     })),
   };
 }
@@ -1932,10 +1939,11 @@ function lowerType(type: ResolvedType): IRType {
         kind: "record",
         name: type.name,
         fields: type.fields.map((field) => ({
-          kind: "Field",
+          kind: "Field" as const,
           name: field.name,
           span: field.span,
           type: lowerType(field.type),
+          sensitive: field.sensitive,
         })),
       };
   }

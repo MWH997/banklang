@@ -3,6 +3,7 @@ import {
   type BinaryExpressionNode,
   type BlockNode,
   type CursorLoopStatementNode,
+  type MemberAccessNode,
   type BooleanLiteralNode,
   type DeclarationNode,
   type DecimalLiteralNode,
@@ -132,6 +133,8 @@ export interface ResolvedField {
   name: string;
   span: SourceSpan;
   type: ResolvedType;
+  /** Restricted data: it must not reach an audit event or the ledger journal. */
+  sensitive: boolean;
 }
 
 export interface ResolvedParameter {
@@ -853,6 +856,7 @@ function resolveTransaction(
 
   sqlExecuted = false;
   sqlCodeTested = false;
+  sensitiveLocals = new Set();
   validateTransactionBody(
     declaration.body,
     scope,
@@ -1942,6 +1946,50 @@ function validateWhileStatement(
   inLoopBody = previousInLoop;
 }
 
+/**
+ * Follows restricted data across an assignment.
+ *
+ * A local takes on whatever it was assigned, and loses it when overwritten with
+ * something unrestricted. A record field cannot: its marking is part of the
+ * record's declaration and therefore part of its copybook, so assigning
+ * restricted data into a field not marked `sensitive` would reclassify it
+ * silently and defeat the marking everywhere downstream.
+ */
+function trackSensitiveAssignment(
+  statement: AssignStatementNode,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+): void {
+  const sensitive = isSensitiveExpression(statement.expression, scope);
+
+  if (statement.target.kind === "Identifier") {
+    if (sensitive) {
+      sensitiveLocals.add(statement.target.name);
+    } else {
+      sensitiveLocals.delete(statement.target.name);
+    }
+    return;
+  }
+
+  if (!sensitive || statement.target.kind !== "MemberAccess") {
+    return;
+  }
+
+  const field = sensitiveFieldOf(statement.target, scope);
+  if (field && !field.sensitive) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SEC-001",
+        severity: "error",
+        message: `Restricted data is assigned to ${field.name}, which is not marked sensitive.`,
+        span: statement.span,
+        hint: `Mark ${field.name} sensitive, or derive an unrestricted value through a function first.`,
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
 function validateAssignStatement(
   statement: AssignStatementNode,
   scope: Map<string, ResolvedType>,
@@ -1949,6 +1997,8 @@ function validateAssignStatement(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): void {
+  trackSensitiveAssignment(statement, scope, diagnostics);
+
   const targetType = inferExpressionType(
     statement.target,
     scope,
@@ -2144,6 +2194,13 @@ function validateLedgerStatement(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): void {
+  checkNotSensitive(
+    statement.account,
+    scope,
+    "the ledger journal",
+    diagnostics,
+  );
+
   const accountType = inferExpressionType(
     statement.account,
     scope,
@@ -2246,6 +2303,102 @@ function checkFitsLedgerInterface(
   }
 }
 
+/**
+ * Locals currently holding restricted data, for the body being checked.
+ *
+ * A local assigned from a `sensitive` field carries that data onward, so the
+ * check has to follow it. Tracked per body and cleared between them, like the
+ * other body-scoped state in this module.
+ */
+let sensitiveLocals = new Set<string>();
+
+/**
+ * True when an expression can carry data from a `sensitive` field.
+ *
+ * Reads a field's own marking, follows locals through `sensitiveLocals`, and
+ * treats any operand of a computation as carrying the whole expression's
+ * sensitivity — an amount derived from a restricted value is still derived from
+ * it.
+ *
+ * A call is deliberately not followed. Passing a restricted value into a
+ * function is the declassification point: `maskPan(card.number)` is untainted,
+ * and the compiler does not check that `maskPan` masks anything. That is a
+ * stated limit rather than an oversight — following taint across a call would
+ * need per-function summaries, and a language with no closures and no higher
+ * order functions can express masking no other way.
+ */
+function isSensitiveExpression(
+  expression: ExpressionNode,
+  scope: Map<string, ResolvedType>,
+): boolean {
+  switch (expression.kind) {
+    case "Identifier":
+      return sensitiveLocals.has(expression.name);
+    case "MemberAccess":
+      return sensitiveFieldOf(expression, scope)?.sensitive ?? false;
+    case "IndexAccess":
+      return isSensitiveExpression(expression.target, scope);
+    case "BinaryExpression":
+      return (
+        isSensitiveExpression(expression.left, scope) ||
+        isSensitiveExpression(expression.right, scope)
+      );
+    case "UnaryExpression":
+    case "RoundedExpression":
+    case "NullableCheck":
+      return isSensitiveExpression(expression.operand, scope);
+    default:
+      return false;
+  }
+}
+
+/** The declared field a member access reads, when it resolves to one. */
+function sensitiveFieldOf(
+  expression: MemberAccessNode,
+  scope: Map<string, ResolvedType>,
+): ResolvedField | null {
+  const target =
+    expression.target.kind === "Identifier"
+      ? scope.get(expression.target.name)
+      : null;
+  if (!target || target.kind !== "record") {
+    return null;
+  }
+  return (
+    target.fields.find((field) => field.name === expression.member) ?? null
+  );
+}
+
+/**
+ * Reports restricted data escaping into a log.
+ *
+ * An audit event and a ledger posting are both written to a durable record that
+ * outlives the transaction and is read by people who have no business seeing a
+ * card number. A field marked `sensitive` may be read, computed with, and
+ * written to a file; it may not be written here.
+ */
+function checkNotSensitive(
+  expression: ExpressionNode,
+  scope: Map<string, ResolvedType>,
+  destination: string,
+  diagnostics: Diagnostic[],
+): void {
+  if (!isSensitiveExpression(expression, scope)) {
+    return;
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-AUD-002",
+      severity: "error",
+      message: `A value marked sensitive reaches ${destination}.`,
+      span: expression.span,
+      hint: "Pass an idempotency key or another unrestricted identifier, or derive a masked value through a function first.",
+      backendProfile: null,
+    }),
+  );
+}
+
 function validateAuditStatement(
   statement: AuditStatementNode,
   scope: Map<string, ResolvedType>,
@@ -2253,6 +2406,8 @@ function validateAuditStatement(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): void {
+  checkNotSensitive(statement.correlation, scope, "the audit log", diagnostics);
+
   inferExpressionType(
     statement.eventName,
     scope,
@@ -2390,7 +2545,12 @@ function resolveRecord(
       continue;
     }
 
-    fields.push({ name: field.name, span: field.span, type: resolved });
+    fields.push({
+      name: field.name,
+      span: field.span,
+      type: resolved,
+      sensitive: field.sensitive,
+    });
   }
 
   return {
@@ -2604,6 +2764,7 @@ function resolveFunction(
 
   sqlExecuted = false;
   sqlCodeTested = false;
+  sensitiveLocals = new Set();
   validateFunctionBody(
     declaration.body,
     returnType,
@@ -3042,6 +3203,12 @@ function validateLetStatement(
   );
   if (!declaredType) {
     return;
+  }
+
+  // A local initialised from restricted data carries it onward, so the checks
+  // that matter downstream can follow it.
+  if (isSensitiveExpression(statement.expression, scope)) {
+    sensitiveLocals.add(statement.name);
   }
 
   const initializerType = inferExpressionType(

@@ -16,7 +16,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 8,
-          "bytes": 8
+          "bytes": 8,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -26,7 +27,8 @@
           "usage": "COMP-3",
           "offset": 8,
           "length": 3,
-          "bytes": 3
+          "bytes": 3,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -36,7 +38,8 @@
           "usage": "DISPLAY",
           "offset": 11,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         }
       ]
     },
@@ -53,7 +56,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -63,7 +67,8 @@
           "usage": "COMP-3",
           "offset": 16,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -73,7 +78,8 @@
           "usage": "DISPLAY",
           "offset": 26,
           "length": 8,
-          "bytes": 8
+          "bytes": 8,
+          "sensitive": false
         }
       ]
     },
@@ -90,7 +96,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 8,
-          "bytes": 8
+          "bytes": 8,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -100,7 +107,8 @@
           "usage": "COMP-3",
           "offset": 8,
           "length": 5,
-          "bytes": 5
+          "bytes": 5,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -110,7 +118,8 @@
           "usage": "COMP-3",
           "offset": 13,
           "length": 5,
-          "bytes": 5
+          "bytes": 5,
+          "sensitive": false
         },
         {
           "order": 4,
@@ -120,7 +129,8 @@
           "usage": "COMP-3",
           "offset": 18,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 5,
@@ -130,7 +140,8 @@
           "usage": "DISPLAY",
           "offset": 28,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         }
       ]
     }

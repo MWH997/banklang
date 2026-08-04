@@ -5,11 +5,11 @@
 | validated-with-gnucobol    | yes                                                                                                  |
 | backend-profile            | gnucobol-local                                                                                       |
 | source-artifact            | examples/statement-generation/src/main.bank.ts                                                       |
-| source-artifact-sha256     | fd7417adfb56fe65bd07db63f16fd518853c20c0c938245d15e622bd0ca71052                                     |
+| source-artifact-sha256     | 6c8de1f6aa35b7a864feee37005986d4f8a3021a97d4825c3d2f38021ba0f43c                                     |
 | generated-artifact         | dist/gnucobol/cobol/STATEMENT-GENERATION.cbl                                                         |
-| generated-artifact-sha256  | d2f87da984e7bfeded5a5985bd059f639404a22755633435fe8b19b39b041ffa                                     |
+| generated-artifact-sha256  | 012339adbba2de130875b7bf6a605cac6f53ca9f15434e3dc567c21deca15f4c                                     |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                   |
-| source-map-artifact-sha256 | e7545b70e79e2cc94f9f43ee87525bcf15194b75d242fd91f08589daad4a7824                                     |
+| source-map-artifact-sha256 | 83e8ef76b91cd7415e2faf1ebdfb0628c7361280994a8306c5aa995c5e1c26f7                                     |
 | compiler-executable        | cobc                                                                                                 |
 | compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                |
 | compiler-command           | cobc -x -free dist/gnucobol/cobol/STATEMENT-GENERATION.cbl -o dist/gnucobol/bin/statement-generation |

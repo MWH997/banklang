@@ -15,7 +15,7 @@ Phase: verify
 | JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/STATEMENT-GENERATION.jcl                      |
 | Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 20/20 traced symbols, all entries anchored in the generated COBOL.              |
+| Source map coverage        | passed | 22/22 traced symbols, all entries anchored in the generated COBOL.              |
 | GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
 | Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
 
@@ -27,8 +27,8 @@ Phase: verify
 
 ## Source Map Coverage
 
-- expected-symbols: 20
-- traced-symbols: 20
+- expected-symbols: 22
+- traced-symbols: 22
 - coverage-gaps: 0
 
 ## GnuCOBOL Validation

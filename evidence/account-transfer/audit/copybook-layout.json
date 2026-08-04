@@ -16,7 +16,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -26,7 +27,8 @@
           "usage": "DISPLAY",
           "offset": 16,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -36,7 +38,8 @@
           "usage": "COMP-3",
           "offset": 32,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         }
       ]
     }

@@ -9,8 +9,8 @@ Artifact: /workspace/Code/banklang/dist/audit/copybook-layout.md
 
 Total length: 42
 
-| Order | Path                            | Type          | PIC                  | Usage   | Offset | Length | Bytes |
-| ----- | ------------------------------- | ------------- | -------------------- | ------- | ------ | ------ | ----- |
-| 1     | TRANSFER-REQUEST.DEBIT-ACCOUNT  | string<16>    | PIC X(16)            | DISPLAY | 0      | 16     | 16    |
-| 2     | TRANSFER-REQUEST.CREDIT-ACCOUNT | string<16>    | PIC X(16)            | DISPLAY | 16     | 16     | 16    |
-| 3     | TRANSFER-REQUEST.AMOUNT         | decimal<18,2> | PIC S9(16)V99 COMP-3 | COMP-3  | 32     | 10     | 10    |
+| Order | Path                            | Type          | PIC                  | Usage   | Offset | Length | Bytes | Sensitive |
+| ----- | ------------------------------- | ------------- | -------------------- | ------- | ------ | ------ | ----- | --------- |
+| 1     | TRANSFER-REQUEST.DEBIT-ACCOUNT  | string<16>    | PIC X(16)            | DISPLAY | 0      | 16     | 16    | no        |
+| 2     | TRANSFER-REQUEST.CREDIT-ACCOUNT | string<16>    | PIC X(16)            | DISPLAY | 16     | 16     | 16    | no        |
+| 3     | TRANSFER-REQUEST.AMOUNT         | decimal<18,2> | PIC S9(16)V99 COMP-3 | COMP-3  | 32     | 10     | 10    | no        |

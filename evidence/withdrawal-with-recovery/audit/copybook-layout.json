@@ -16,7 +16,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -26,7 +27,8 @@
           "usage": "COMP-3",
           "offset": 16,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -36,7 +38,8 @@
           "usage": "DISPLAY",
           "offset": 26,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         }
       ]
     },
@@ -53,7 +56,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -63,7 +67,8 @@
           "usage": "COMP-3",
           "offset": 16,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -73,7 +78,8 @@
           "usage": "DISPLAY",
           "offset": 26,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         },
         {
           "order": 4,
@@ -83,7 +89,8 @@
           "usage": "COMP-3",
           "offset": 62,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 5,
@@ -93,7 +100,8 @@
           "usage": "COMP-3",
           "offset": 72,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         }
       ]
     },
@@ -110,7 +118,8 @@
           "usage": "DISPLAY",
           "offset": 0,
           "length": 16,
-          "bytes": 16
+          "bytes": 16,
+          "sensitive": false
         },
         {
           "order": 2,
@@ -120,7 +129,8 @@
           "usage": "COMP-3",
           "offset": 16,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 3,
@@ -130,7 +140,8 @@
           "usage": "COMP-3",
           "offset": 26,
           "length": 10,
-          "bytes": 10
+          "bytes": 10,
+          "sensitive": false
         },
         {
           "order": 4,
@@ -140,7 +151,8 @@
           "usage": "DISPLAY",
           "offset": 36,
           "length": 36,
-          "bytes": 36
+          "bytes": 36,
+          "sensitive": false
         }
       ]
     }

@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 56,
-      "targetEndLine": 61,
+      "targetStartLine": 58,
+      "targetEndLine": 63,
       "category": "record",
       "symbol": "LedgerEntry"
     },
@@ -47,8 +47,8 @@
         "column": 24
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 57,
-      "targetEndLine": 59,
+      "targetStartLine": 59,
+      "targetEndLine": 61,
       "category": "field",
       "symbol": "entryKind"
     },
@@ -63,8 +63,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 60,
-      "targetEndLine": 60,
+      "targetStartLine": 62,
+      "targetEndLine": 62,
       "category": "field",
       "symbol": "narrative"
     },
@@ -79,8 +79,8 @@
         "column": 15
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 61,
-      "targetEndLine": 61,
+      "targetStartLine": 63,
+      "targetEndLine": 63,
       "category": "field",
       "symbol": "amount"
     },
@@ -91,12 +91,12 @@
         "column": 8
       },
       "sourceEnd": {
-        "line": 37,
+        "line": 42,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 62,
-      "targetEndLine": 79,
+      "targetStartLine": 64,
+      "targetEndLine": 83,
       "category": "record",
       "symbol": "Statement"
     },
@@ -111,216 +111,248 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 63,
-      "targetEndLine": 63,
+      "targetStartLine": 65,
+      "targetEndLine": 65,
       "category": "field",
       "symbol": "accountId"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 29,
+        "line": 32,
         "column": 3
       },
       "sourceEnd": {
-        "line": 29,
+        "line": 32,
+        "column": 36
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 66,
+      "targetEndLine": 66,
+      "category": "field",
+      "symbol": "holderName"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 33,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 33,
+        "column": 36
+      },
+      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
+      "targetStartLine": 67,
+      "targetEndLine": 67,
+      "category": "field",
+      "symbol": "nationalId"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
+      "sourceStart": {
+        "line": 34,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 34,
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 64,
-      "targetEndLine": 68,
+      "targetStartLine": 68,
+      "targetEndLine": 72,
       "category": "field",
       "symbol": "status"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 30,
+        "line": 35,
         "column": 3
       },
       "sourceEnd": {
-        "line": 30,
+        "line": 35,
         "column": 23
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 69,
-      "targetEndLine": 69,
+      "targetStartLine": 73,
+      "targetEndLine": 73,
       "category": "field",
       "symbol": "openingBalance"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 31,
+        "line": 36,
         "column": 3
       },
       "sourceEnd": {
-        "line": 31,
+        "line": 36,
         "column": 23
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 70,
-      "targetEndLine": 70,
+      "targetStartLine": 74,
+      "targetEndLine": 74,
       "category": "field",
       "symbol": "closingBalance"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 33,
+        "line": 38,
         "column": 3
       },
       "sourceEnd": {
-        "line": 33,
+        "line": 38,
         "column": 27
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 71,
-      "targetEndLine": 76,
+      "targetStartLine": 75,
+      "targetEndLine": 80,
       "category": "field",
       "symbol": "lines"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 35,
+        "line": 40,
         "column": 3
       },
       "sourceEnd": {
-        "line": 35,
+        "line": 40,
         "column": 45
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 77,
-      "targetEndLine": 78,
+      "targetStartLine": 81,
+      "targetEndLine": 82,
       "category": "field",
       "symbol": "relationshipManager"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 36,
+        "line": 41,
         "column": 3
       },
       "sourceEnd": {
-        "line": 36,
+        "line": 41,
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 79,
-      "targetEndLine": 79,
+      "targetStartLine": 83,
+      "targetEndLine": 83,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 39,
+        "line": 44,
         "column": 8
       },
       "sourceEnd": {
-        "line": 43,
+        "line": 48,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 80,
-      "targetEndLine": 87,
+      "targetStartLine": 84,
+      "targetEndLine": 91,
       "category": "record",
       "symbol": "AccountMaster"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 40,
+        "line": 45,
         "column": 3
       },
       "sourceEnd": {
-        "line": 40,
+        "line": 45,
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 81,
-      "targetEndLine": 81,
+      "targetStartLine": 85,
+      "targetEndLine": 85,
       "category": "field",
       "symbol": "accountId"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 41,
+        "line": 46,
         "column": 3
       },
       "sourceEnd": {
-        "line": 41,
+        "line": 46,
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 82,
-      "targetEndLine": 86,
+      "targetStartLine": 86,
+      "targetEndLine": 90,
       "category": "field",
       "symbol": "status"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 42,
+        "line": 47,
         "column": 3
       },
       "sourceEnd": {
-        "line": 42,
+        "line": 47,
         "column": 16
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 87,
+      "targetStartLine": 91,
+      "targetEndLine": 91,
       "category": "field",
       "symbol": "balance"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 51,
+        "line": 56,
         "column": 10
       },
       "sourceEnd": {
-        "line": 53,
+        "line": 58,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 108,
-      "targetEndLine": 114,
+      "targetStartLine": 112,
+      "targetEndLine": 118,
       "category": "function",
       "symbol": "isStatementable"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 58,
+        "line": 63,
         "column": 10
       },
       "sourceEnd": {
-        "line": 68,
+        "line": 73,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 115,
-      "targetEndLine": 125,
+      "targetStartLine": 119,
+      "targetEndLine": 129,
       "category": "function",
       "symbol": "suppressionReason"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 70,
+        "line": 75,
         "column": 13
       },
       "sourceEnd": {
-        "line": 103,
+        "line": 108,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 126,
-      "targetEndLine": 192,
+      "targetStartLine": 130,
+      "targetEndLine": 198,
       "category": "transaction",
       "symbol": "generateStatement"
     }

@@ -272,7 +272,10 @@ function printDeclaration(
 
 function printField(field: FieldDeclarationNode, printer: Printer): void {
   const trailing = printer.trailingCommentFor(field.span.start.line);
-  printer.push(`${INDENT}${field.name}: ${printType(field.type)};${trailing}`);
+  const modifier = field.sensitive ? "sensitive " : "";
+  printer.push(
+    `${INDENT}${modifier}${field.name}: ${printType(field.type)};${trailing}`,
+  );
 }
 
 function printTypeParameters(parameters: TypeParameterNode[]): string {
