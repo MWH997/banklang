@@ -11,8 +11,10 @@
     "/workspace/dist/audit/decimal-analysis.json",
     "/workspace/dist/audit/transaction-analysis.json",
     "/workspace/dist/audit/copybook-layout.json",
+    "/workspace/dist/audit/generated-artifacts.json",
     "/workspace/dist/audit/verification-report.md",
     "/workspace/dist/audit/verification-report.json",
-    "/workspace/dist/audit/copybook-layout.md"
+    "/workspace/dist/audit/validation-matrix.md",
+    "/workspace/dist/audit/gnucobol-validation.md"
   ]
 }

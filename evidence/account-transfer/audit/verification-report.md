@@ -15,6 +15,7 @@ Phase: verify
 | JCL emit                   | passed  | /workspace/dist/jcl/ACCOUNT-TRANSFER.jcl                                        |
 | Audit artifacts            | passed  | /workspace/dist/audit                                                           |
 | Deterministic regeneration | passed  | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
+| Source map coverage        | passed  | 6/6 traced symbols, all entries anchored in the generated COBOL.                |
 | GnuCOBOL validation        | skipped | No local cobc executable was available.                                         |
 | Audit schema               | passed  | version 1, backend profile ibm-enterprise-cobol-zos                             |
 
@@ -23,6 +24,12 @@ Phase: verify
 - This report records the current deterministic compiler pipeline for the supported subset.
 - IBM Enterprise COBOL validation is not claimed here.
 - GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available.
+
+## Source Map Coverage
+
+- expected-symbols: 6
+- traced-symbols: 6
+- coverage-gaps: 0
 
 ## GnuCOBOL Validation
 

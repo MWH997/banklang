@@ -92,9 +92,17 @@ map, and audit bundle for the `account-transfer` example.
 
 The initial implementation uses TypeScript and pnpm.
 
+## Requirements
+
+- Node.js 24 or newer. Node 24 is the supported runtime for local development,
+  CI, and every Docker-based verification lane. Older major versions are not
+  supported.
+- pnpm 11.7.0, pinned through the `packageManager` field.
+
 ## Quick start
 
 ```bash
+node --version # must be v24 or newer
 pnpm install
 pnpm bankc --help
 pnpm bankc doctor
