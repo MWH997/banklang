@@ -4,6 +4,16 @@
 
 ### Added
 
+- Added the comparison operators `<`, `<=`, `>=`, `==`, and `!=`. Previously `>` was the only one, which made most banking conditions impossible to express. Ordering stays decimal-only; equality also works on strings and bools.
+- Added the logical operators `&&`, `||`, and `!`, with a full precedence chain: `||`, `&&`, comparison, additive, multiplicative, unary.
+- Added multiplication, which adds the operand scales, and `BANK-DEC-004` when the result needs more digits than the declared precision allows.
+- Added `round(expr, "MODE")` and `divide(a, b, "MODE")` covering seven COBOL rounding modes. A bare `/` is rejected as `BANK-DEC-003`, and a narrowing assignment without rounding is `BANK-DEC-002`. Rounding lowers to `COMPUTE ... ROUNDED MODE IS`, taking the scale of the assignment target exactly as COBOL does.
+- Added function calls, including calls to functions declared later in the file. Calls lower to argument moves plus a `PERFORM`, with nested calls ordered so inner results are ready first.
+- Added `while <condition> limit <n>` loops. The limit is mandatory (`BANK-TXN-004`) and becomes a guard counter in the generated COBOL, so a loop whose condition never goes false still terminates.
+- Added assignment to locals and record fields.
+- Added the file operations `open`, `read into`, `write from`, and `close`, with `BANK-FILE-001` for direction mismatches and `BANK-FILE-002` for record layout mismatches. A `read` sets the status field at end of file, and status fields are readable symbols so a batch loop can test them.
+- Added `if` / `else` inside transaction bodies, branching on effects rather than on a returned value.
+- Added `examples/interest-posting-batch`, a tiered interest accrual batch with eligibility rules, fees, balanced double-entry posting, and a bounded loop over sequential files.
 - Added `bankc fmt`, an AST-printing formatter with `--check` for CI. It is idempotent, preserves comments by capturing them as lexer trivia, keeps author blank lines inside bodies, and refuses to rewrite source it cannot fully parse.
 - Added a language server (`packages/language-server`) implementing LSP over stdio with no dependencies: diagnostics on open and change, hover showing either a diagnostic's catalogue explanation or the COBOL lines a source line generates, document formatting, and an outline with record fields nested. Transport is separated from request handling so the protocol surface is unit-tested without spawning a process.
 - Added a VS Code extension (`packages/vscode-extension`) with the language client, a TextMate grammar mirroring the lexer's token classes, and editor configuration.
@@ -78,6 +88,8 @@
 
 ### Fixed
 
+- Fixed function parameters never being declared in working storage. A parameter reference only resolved when it happened to share a name with a record field, so `validateAmount(amount)` read the record's `AMOUNT` rather than its argument, and calling a function was impossible. Parameters now get their own storage; record parameters resolve to the record group item.
+- Fixed decimal literals being typed by their written width, which forced `0000000000000025.00` to assign to a `decimal<18, 2>`. A literal now widens to any decimal with the same scale and enough precision. The scale must still match exactly, because changing scale is a rounding decision.
 - Fixed generated COBOL for functions whose body is an `if` / `else`. A `GOBACK.` was emitted inside each branch, and the period terminated the COBOL sentence, leaving the following `ELSE` and `END-IF` dangling. GnuCOBOL rejected the batch-interest-accrual output with `syntax error, unexpected ELSE`. Return statements now assign only the result field and each paragraph ends with a single `GOBACK.`. The batch-interest-accrual golden fixture is updated to match; the account-transfer fixture is unchanged.
 - Fixed `bankc layout <project>` so it writes the JSON layout report as well as the markdown report.
 - Fixed the command help text and CLI routing so the new commands are discoverable and executable.

@@ -26,8 +26,8 @@ describe("source map", () => {
     });
     expect(emit.sourceMap.entries[5]).toMatchObject({
       symbol: "validateAmount",
-      targetStartLine: 16,
-      targetEndLine: 22,
+      targetStartLine: 17,
+      targetEndLine: 23,
     });
   });
 });

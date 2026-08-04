@@ -235,9 +235,16 @@ function canonicalExpression(expression: IRExpression): string {
       return JSON.stringify(expression.value);
     case "MemberAccess":
       return `${expression.targetName}.${expression.member}`;
+    case "Logical":
     case "BinaryComparison":
     case "BinaryArithmetic":
       return `(${canonicalExpression(expression.left)} ${expression.operator} ${canonicalExpression(expression.right)})`;
+    case "Not":
+      return `!${canonicalExpression(expression.operand)}`;
+    case "Rounded":
+      return `round(${canonicalExpression(expression.operand)}, ${expression.mode})`;
+    case "Call":
+      return `${expression.callee}(${expression.args.map(canonicalExpression).join(", ")})`;
   }
 }
 

@@ -11,10 +11,11 @@
            05  CREDIT-ACCOUNT       PIC X(16).
            05  AMOUNT               PIC S9(16)V99 COMP-3.
        01  VALIDATE-AMOUNT-RESULT PIC X VALUE 'N'.
+       01  VALIDATE-AMOUNT-P1   PIC S9(16)V99 COMP-3.
 
        PROCEDURE DIVISION.
        VALIDATE-AMOUNT.
-           IF AMOUNT > 0.00
+           IF VALIDATE-AMOUNT-P1 > 0.00
                MOVE 'Y' TO VALIDATE-AMOUNT-RESULT
            ELSE
                MOVE 'N' TO VALIDATE-AMOUNT-RESULT

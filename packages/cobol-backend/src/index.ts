@@ -19,6 +19,10 @@ import type {
   IRAuditStatement,
   IRMemberAccessExpression,
   IRFile,
+  IRWhileStatement,
+  IRAssignStatement,
+  IRExpressionStatement,
+  IRFileStatement,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -52,6 +56,36 @@ const LEDGER_AMOUNT_PICTURE = "PIC S9(16)V99 COMP-3";
 const AUDIT_EVENT_LENGTH = 32;
 const AUDIT_CORRELATION_LENGTH = 64;
 const FILE_STATUS_PICTURE = "PIC XX";
+
+/**
+ * Parameter name to COBOL field, for the function currently being emitted.
+ *
+ * Parameters live in their own storage so calls can pass arguments, so a
+ * reference to `amount` inside `validateAmount` must render as
+ * `VALIDATE-AMOUNT-P1` rather than `AMOUNT`.
+ */
+let currentParameters = new Map<string, string>();
+
+/** BankTS comparison operators to COBOL relational operators. */
+const COBOL_COMPARISONS: Record<string, string> = {
+  "<": "<",
+  "<=": "<=",
+  ">": ">",
+  ">=": ">=",
+  "==": "=",
+  "!=": "NOT =",
+};
+
+/** BankTS rounding modes to COBOL `ROUNDED MODE IS` phrases. */
+const COBOL_ROUNDING_MODES: Record<string, string> = {
+  HALF_EVEN: "NEAREST-EVEN",
+  HALF_UP: "NEAREST-AWAY-FROM-ZERO",
+  HALF_DOWN: "NEAREST-TOWARD-ZERO",
+  UP: "AWAY-FROM-ZERO",
+  DOWN: "TRUNCATION",
+  CEILING: "TOWARD-GREATER",
+  FLOOR: "TOWARD-LESSER",
+};
 
 export interface SourceMapEntry {
   sourceFile: string;
@@ -198,11 +232,49 @@ export function emitCobol(
     addLine(
       `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
     );
+    // Parameters get their own storage so a call can move arguments in.
+    // Without this, a parameter reference only resolved by coinciding with a
+    // record field name.
+    fn.parameters.forEach((parameter, index) => {
+      // A record parameter refers to the record's group item, which is already
+      // declared once. Only scalars need their own storage.
+      if (parameter.type.kind === "record") {
+        return;
+      }
+      addLine(
+        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      );
+    });
     for (const local of collectFunctionLocals(fn.body)) {
       addLine(
         `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
       );
     }
+  }
+
+  for (const transaction of program.transactions) {
+    transaction.parameters.forEach((parameter, index) => {
+      if (parameter.type.kind === "record") {
+        return;
+      }
+      addLine(
+        `       01  ${parameterFieldName(transaction.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      );
+    });
+    for (const local of collectFunctionLocals(transaction.body)) {
+      addLine(
+        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      );
+    }
+  }
+
+  // Loop guard counters, one per loop, named from its source position.
+  const counters = [
+    ...program.functions.map((fn) => fn.body),
+    ...program.transactions.map((transaction) => transaction.body),
+  ].flatMap((body) => collectLoops(body));
+  for (const loop of counters) {
+    addLine(`       01  ${loopCounterName(loop).padEnd(20)} PIC 9(9) COMP.`);
   }
   if (program.transactions.length > 0) {
     emitLedgerInterfaceStorage(addLine);
@@ -231,7 +303,12 @@ export function emitCobol(
   for (const transaction of program.transactions) {
     const transactionStart = lineNumber();
     addLine(`       ${toCobolParagraphName(transaction.name)}.`);
+    currentParameters = parameterBindings(
+      transaction.name,
+      transaction.parameters,
+    );
     emitTransactionBody(transaction.body, addLine, 11);
+    currentParameters = new Map();
     addLine(`           GOBACK.`);
     const transactionEnd = lineNumber() - 1;
     entries.push({
@@ -386,7 +463,9 @@ function emitFunctionBody(
   fn: IRFunction,
   addLine: (line?: string) => void,
 ): void {
+  currentParameters = parameterBindings(fn.name, fn.parameters);
   emitStatement(fn.body, addLine, 11, functionResultName(fn.name));
+  currentParameters = new Map();
   addLine(`           GOBACK.`);
 }
 
@@ -408,6 +487,18 @@ function emitStatement(
       case "IfStatement":
         emitIfStatement(statement, addLine, indentLevel, resultName);
         break;
+      case "WhileStatement":
+        emitWhileStatement(statement, addLine, indentLevel, resultName);
+        break;
+      case "AssignStatement":
+        emitAssignStatement(statement, addLine, indent);
+        break;
+      case "ExpressionStatement":
+        emitExpressionStatement(statement, addLine, indent);
+        break;
+      case "FileStatement":
+        emitFileStatement(statement, addLine, indent);
+        break;
       default:
         throw new Error(
           `Unsupported statement in function body: ${statement.kind}`,
@@ -427,6 +518,7 @@ function emitTransactionBody(
   indentLevel: number,
 ): void {
   const indent = " ".repeat(indentLevel);
+  void indentLevel;
   for (const statement of block.statements) {
     switch (statement.kind) {
       case "LetStatement":
@@ -437,6 +529,21 @@ function emitTransactionBody(
         break;
       case "AuditStatement":
         emitAuditStatement(statement, addLine, indent);
+        break;
+      case "IfStatement":
+        emitTransactionBranch(statement, addLine, indentLevel);
+        break;
+      case "WhileStatement":
+        emitWhileStatement(statement, addLine, indentLevel, "");
+        break;
+      case "AssignStatement":
+        emitAssignStatement(statement, addLine, indent);
+        break;
+      case "ExpressionStatement":
+        emitExpressionStatement(statement, addLine, indent);
+        break;
+      case "FileStatement":
+        emitFileStatement(statement, addLine, indent);
         break;
       default:
         throw new Error(
@@ -482,23 +589,251 @@ function emitAuditStatement(
   addLine(`${indent}CALL "${AUDIT_PROGRAM}" USING ${AUDIT_INTERFACE_GROUP}`);
 }
 
-function emitLetStatement(
-  statement: IRLetStatement,
+/** `IF` inside a transaction branches on effects, not on a returned value. */
+function emitTransactionBranch(
+  statement: IRIfStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+): void {
+  const indent = " ".repeat(indentLevel);
+  emitCallsIn(statement.condition, addLine, indent);
+  addLine(`${indent}IF ${renderCondition(statement.condition)}`);
+  emitTransactionBody(statement.thenBranch, addLine, indentLevel + 4);
+  if (statement.elseBranch) {
+    addLine(`${indent}ELSE`);
+    emitTransactionBody(statement.elseBranch, addLine, indentLevel + 4);
+  }
+  addLine(`${indent}END-IF`);
+}
+
+/**
+ * `PERFORM UNTIL` with a guard counter.
+ *
+ * The declared limit is emitted as a real counter rather than trusted, so a
+ * loop whose condition never goes false still terminates. BANK-TXN-004 makes
+ * the limit mandatory; this makes it enforced at run time.
+ */
+function emitWhileStatement(
+  statement: IRWhileStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const counter = loopCounterName(statement);
+
+  addLine(`${indent}MOVE 0 TO ${counter}`);
+  addLine(
+    `${indent}PERFORM UNTIL ${counter} >= ${statement.limit} OR NOT (${renderCondition(statement.condition)})`,
+  );
+  addLine(`${indent}    ADD 1 TO ${counter}`);
+  emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+  addLine(`${indent}END-PERFORM`);
+}
+
+function emitAssignStatement(
+  statement: IRAssignStatement,
   addLine: (line?: string) => void,
   indent: string,
 ): void {
-  if (statement.declaredType.kind === "bool") {
-    emitBooleanAssignment(
-      indent,
-      toCobolFieldName(statement.name),
-      statement.initializer,
-      addLine,
+  const target =
+    statement.target.kind === "Identifier"
+      ? resolveIdentifier(statement.target.name)
+      : renderQualifiedFieldReference(statement.target);
+
+  emitComputeInto(target, statement.expression, addLine, indent);
+}
+
+function emitExpressionStatement(
+  statement: IRExpressionStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  emitCallsIn(statement.expression, addLine, indent);
+}
+
+/**
+ * File operations, each followed by its status check when the declaration
+ * bound a status field. `read` also drives the AT END path by moving the
+ * end-of-file status into the status field.
+ */
+function emitFileStatement(
+  statement: IRFileStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const file = toCobolName(statement.fileName);
+
+  switch (statement.operation) {
+    case "open":
+      addLine(
+        `${indent}OPEN ${statement.fileMode === "input" ? "INPUT" : "OUTPUT"} ${file}`,
+      );
+      return;
+    case "close":
+      addLine(`${indent}CLOSE ${file}`);
+      return;
+    case "read":
+      addLine(`${indent}READ ${file} INTO ${recordTarget(statement)}`);
+      if (statement.statusName) {
+        addLine(
+          `${indent}    AT END MOVE "10" TO ${toCobolFieldName(statement.statusName)}`,
+        );
+      }
+      addLine(`${indent}END-READ`);
+      return;
+    case "write":
+      addLine(
+        `${indent}WRITE ${fileRecordNameFor(statement.fileName)} FROM ${recordTarget(statement)}`,
+      );
+      return;
+  }
+}
+
+function recordTarget(statement: IRFileStatement): string {
+  return statement.recordName
+    ? resolveIdentifier(statement.recordName)
+    : fileRecordNameFor(statement.fileName);
+}
+
+function fileRecordNameFor(fileName: string): string {
+  return `${toCobolName(fileName)}-RECORD`;
+}
+
+/** Deterministic counter name, derived from the loop's source position. */
+function loopCounterName(statement: IRWhileStatement): string {
+  return `WS-LOOP-${statement.span.start.line}-${statement.span.start.column}`;
+}
+
+/**
+ * Emits `PERFORM` for every call inside an expression before the expression is
+ * used, because COBOL has no call-in-expression form. Results land in each
+ * function's result field, which is what `renderExpression` reads.
+ */
+function emitCallsIn(
+  expression: IRExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  switch (expression.kind) {
+    case "Call":
+      for (const argument of expression.args) {
+        emitCallsIn(argument, addLine, indent);
+      }
+      // Arguments are moved into the callee's parameter storage, then the
+      // paragraph is performed.
+      expression.args.forEach((argument, index) => {
+        addLine(
+          `${indent}MOVE ${renderExpression(argument)} TO ${parameterFieldName(expression.callee, index)}`,
+        );
+      });
+      addLine(`${indent}PERFORM ${toCobolParagraphName(expression.callee)}`);
+      return;
+    case "BinaryComparison":
+    case "BinaryArithmetic":
+    case "Logical":
+      emitCallsIn(expression.left, addLine, indent);
+      emitCallsIn(expression.right, addLine, indent);
+      return;
+    case "Not":
+      emitCallsIn(expression.operand, addLine, indent);
+      return;
+    case "Rounded":
+      emitCallsIn(expression.operand, addLine, indent);
+      return;
+    default:
+      return;
+  }
+}
+
+/**
+ * Assignment target plus expression, honouring a rounding mode when the
+ * expression is a `round(...)` or `divide(...)`.
+ */
+function emitComputeInto(
+  target: string,
+  expression: IRExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  emitCallsIn(expression, addLine, indent);
+
+  if (expression.resolvedType.kind === "bool") {
+    emitBooleanAssignment(indent, target, expression, addLine);
+    return;
+  }
+
+  if (expression.resolvedType.kind === "string") {
+    addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
+    return;
+  }
+
+  if (expression.kind === "Rounded") {
+    addLine(
+      `${indent}COMPUTE ${target} ROUNDED MODE IS ${COBOL_ROUNDING_MODES[expression.mode]} = ${renderDecimalExpression(expression.operand)}`,
     );
     return;
   }
 
   addLine(
-    `${indent}COMPUTE ${toCobolFieldName(statement.name)} = ${renderDecimalExpression(statement.initializer)}`,
+    `${indent}COMPUTE ${target} = ${renderDecimalExpression(expression)}`,
+  );
+}
+
+/**
+ * Maps each parameter to the COBOL storage it reads from. Record parameters
+ * resolve to the record group item; scalars get dedicated fields so a call can
+ * move arguments into them.
+ */
+function parameterBindings(
+  owner: string,
+  parameters: { name: string; type: IRType }[],
+): Map<string, string> {
+  return new Map(
+    parameters.map((parameter, index) => [
+      parameter.name,
+      parameter.type.kind === "record"
+        ? toCobolName(parameter.type.name)
+        : parameterFieldName(owner, index),
+    ]),
+  );
+}
+
+function resolveIdentifier(name: string): string {
+  return currentParameters.get(name) ?? toCobolFieldName(name);
+}
+
+function collectLoops(block: IRBlock): IRWhileStatement[] {
+  const loops: IRWhileStatement[] = [];
+  for (const statement of block.statements) {
+    if (statement.kind === "WhileStatement") {
+      loops.push(statement);
+      loops.push(...collectLoops(statement.body));
+    }
+    if (statement.kind === "IfStatement") {
+      loops.push(...collectLoops(statement.thenBranch));
+      if (statement.elseBranch) {
+        loops.push(...collectLoops(statement.elseBranch));
+      }
+    }
+  }
+  return loops;
+}
+
+function parameterFieldName(functionName: string, index: number): string {
+  return `${toCobolName(functionName)}-P${index + 1}`;
+}
+
+function emitLetStatement(
+  statement: IRLetStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  emitComputeInto(
+    resolveIdentifier(statement.name),
+    statement.initializer,
+    addLine,
+    indent,
   );
 }
 
@@ -524,21 +859,13 @@ function emitReturnStatement(
   indent: string,
   resultName: string,
 ): void {
-  const expression = statement.expression;
-  if (expression.resolvedType.kind === "bool") {
-    emitBooleanAssignment(indent, resultName, expression, addLine);
-    return;
-  }
-
-  addLine(
-    `${indent}COMPUTE ${resultName} = ${renderDecimalExpression(expression)}`,
-  );
+  emitComputeInto(resultName, statement.expression, addLine, indent);
 }
 
 function renderExpression(expression: IRExpression): string {
   switch (expression.kind) {
     case "Identifier":
-      return toCobolFieldName(expression.name);
+      return resolveIdentifier(expression.name);
     case "DecimalLiteral":
       return expression.text;
     case "BooleanLiteral":
@@ -548,9 +875,17 @@ function renderExpression(expression: IRExpression): string {
     case "MemberAccess":
       return renderQualifiedFieldReference(expression);
     case "BinaryComparison":
-      return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
+      return `${renderExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderExpression(expression.right)}`;
     case "BinaryArithmetic":
       return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
+    case "Logical":
+      return `${renderExpression(expression.left)} ${expression.operator === "&&" ? "AND" : "OR"} ${renderExpression(expression.right)}`;
+    case "Not":
+      return `NOT (${renderExpression(expression.operand)})`;
+    case "Rounded":
+      return renderDecimalExpression(expression.operand);
+    case "Call":
+      return functionResultName(expression.callee);
   }
 }
 
@@ -567,13 +902,17 @@ function renderQualifiedFieldReference(
 function renderDecimalExpression(expression: IRExpression): string {
   switch (expression.kind) {
     case "Identifier":
-      return toCobolFieldName(expression.name);
+      return resolveIdentifier(expression.name);
     case "DecimalLiteral":
       return expression.text;
     case "MemberAccess":
       return renderQualifiedFieldReference(expression);
     case "BinaryArithmetic":
-      return `${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)}`;
+      return `(${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)})`;
+    case "Rounded":
+      return renderDecimalExpression(expression.operand);
+    case "Call":
+      return functionResultName(expression.callee);
     default:
       return renderExpression(expression);
   }
@@ -585,10 +924,20 @@ function renderCondition(expression: IRExpression): string {
       return expression.value ? "1 = 1" : "1 = 0";
     case "Identifier":
       return expression.resolvedType.kind === "bool"
-        ? `${toCobolFieldName(expression.name)} = 'Y'`
-        : toCobolFieldName(expression.name);
+        ? `${resolveIdentifier(expression.name)} = 'Y'`
+        : resolveIdentifier(expression.name);
+    case "MemberAccess":
+      return expression.resolvedType.kind === "bool"
+        ? `${renderQualifiedFieldReference(expression)} = 'Y'`
+        : renderQualifiedFieldReference(expression);
+    case "Logical":
+      return `(${renderCondition(expression.left)}) ${expression.operator === "&&" ? "AND" : "OR"} (${renderCondition(expression.right)})`;
+    case "Not":
+      return `NOT (${renderCondition(expression.operand)})`;
+    case "Call":
+      return `${functionResultName(expression.callee)} = 'Y'`;
     case "BinaryComparison":
-      return `${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)}`;
+      return `${renderDecimalExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderDecimalExpression(expression.right)}`;
     default:
       return renderExpression(expression);
   }

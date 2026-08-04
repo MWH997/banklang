@@ -79,8 +79,8 @@
         "column": 2
       },
       "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
-      "targetStartLine": 32,
-      "targetEndLine": 38,
+      "targetStartLine": 33,
+      "targetEndLine": 39,
       "category": "function",
       "symbol": "isOverdrawn"
     }

@@ -303,6 +303,39 @@ function printStatement(
         `${indent}audit(${printExpression(statement.eventName)}, ${printExpression(statement.correlation)});${trailing}`,
       );
       return;
+
+    case "WhileStatement":
+      printer.push(
+        `${indent}while ${printExpression(statement.condition)} limit ${statement.limit} {${trailing}`,
+      );
+      printBlockBody(statement.body, printer, depth + 1);
+      printer.push(`${indent}}`);
+      return;
+
+    case "AssignStatement":
+      printer.push(
+        `${indent}${printExpression(statement.target)} = ${printExpression(statement.expression)};${trailing}`,
+      );
+      return;
+
+    case "ExpressionStatement":
+      printer.push(
+        `${indent}${printExpression(statement.expression)};${trailing}`,
+      );
+      return;
+
+    case "FileStatement": {
+      const clause =
+        statement.operation === "read"
+          ? ` into ${statement.recordName}`
+          : statement.operation === "write"
+            ? ` from ${statement.recordName}`
+            : "";
+      printer.push(
+        `${indent}${statement.operation} ${statement.fileName}${clause};${trailing}`,
+      );
+      return;
+    }
   }
 }
 
@@ -333,5 +366,14 @@ function printExpression(expression: ExpressionNode): string {
       return `${expression.target.name}.${expression.member}`;
     case "BinaryExpression":
       return `${printExpression(expression.left)} ${expression.operator} ${printExpression(expression.right)}`;
+    case "UnaryExpression":
+      return `!${printExpression(expression.operand)}`;
+    case "RoundedExpression":
+      return expression.isDivision &&
+        expression.operand.kind === "BinaryExpression"
+        ? `divide(${printExpression(expression.operand.left)}, ${printExpression(expression.operand.right)}, "${expression.mode}")`
+        : `round(${printExpression(expression.operand)}, "${expression.mode}")`;
+    case "CallExpression":
+      return `${expression.callee}(${expression.args.map(printExpression).join(", ")})`;
   }
 }

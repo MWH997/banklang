@@ -28,12 +28,24 @@ import {
   type LedgerStatementNode,
   type AuditStatementNode,
   type FileDeclarationNode,
+  type CallExpressionNode,
+  type WhileStatementNode,
+  type AssignStatementNode,
+  type FileStatementNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
   kind: "decimal";
   precision: number;
   scale: number;
+  /** True for a written literal, which widens to a larger declared precision. */
+  literal?: boolean;
+  /**
+   * True for the result of `round(...)` or `divide(...)`, whose scale is
+   * decided by the assignment target. This mirrors COBOL, where `ROUNDED`
+   * attaches to the receiving field rather than to the expression.
+   */
+  rounded?: boolean;
 }
 
 export interface StringType {
@@ -143,6 +155,13 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
 
+  // Resolve record and alias declarations first so function signatures can
+  // reference them, then collect signatures so a function may call one
+  // declared later in the file.
+  functionSignatures = new Map();
+  declaredFiles = new Map();
+
+  // Pass 1: type aliases and records, so later passes can resolve types.
   for (const declaration of program.declarations) {
     if (declaration.kind === "TypeAliasDeclaration") {
       const resolved = resolveTypeNode(
@@ -169,9 +188,28 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
         records.push(resolvedRecord);
         recordMap.set(resolvedRecord.name, resolvedRecord);
       }
+    }
+  }
+
+  // Pass 2: files and function signatures, so a body can call a function
+  // declared later in the file and reference any declared file.
+  for (const declaration of program.declarations) {
+    if (declaration.kind === "FunctionDeclaration") {
+      registerFunctionSignature(declaration, aliases, recordMap);
       continue;
     }
 
+    if (declaration.kind === "FileDeclaration") {
+      const resolvedFile = resolveFile(declaration, recordMap, diagnostics);
+      if (resolvedFile) {
+        files.push(resolvedFile);
+        declaredFiles.set(resolvedFile.name, resolvedFile);
+      }
+    }
+  }
+
+  // Pass 3: bodies.
+  for (const declaration of program.declarations) {
     if (declaration.kind === "FunctionDeclaration") {
       const resolvedFunction = resolveFunction(
         declaration,
@@ -194,14 +232,6 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       );
       if (resolvedTransaction) {
         transactions.push(resolvedTransaction);
-      }
-      continue;
-    }
-
-    if (declaration.kind === "FileDeclaration") {
-      const resolvedFile = resolveFile(declaration, recordMap, diagnostics);
-      if (resolvedFile) {
-        files.push(resolvedFile);
       }
     }
   }
@@ -276,6 +306,8 @@ function resolveTransaction(
     });
   }
 
+  declareFileStatusSymbols(scope);
+
   validateTransactionBody(
     declaration.body,
     scope,
@@ -337,6 +369,30 @@ function validateTransactionBody(
           diagnostics,
         );
         break;
+      case "WhileStatement":
+      case "AssignStatement":
+      case "ExpressionStatement":
+      case "FileStatement":
+        validateEffectStatement(
+          statement,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+          true,
+        );
+        break;
+      case "IfStatement":
+        validateTransactionBranch(
+          statement,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+        break;
       default:
         diagnostics.push(
           createDiagnostic({
@@ -350,6 +406,335 @@ function validateTransactionBody(
           }),
         );
     }
+  }
+}
+
+/**
+ * Statements that carry effects and are valid in both function and
+ * transaction bodies: loops, assignment, calls, and file operations.
+ */
+/**
+ * `if` inside a transaction branches on effects rather than producing a value,
+ * so it is validated separately from the function-body form that must return
+ * matching types on both paths.
+ */
+function validateTransactionBranch(
+  statement: IfStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): void {
+  const conditionType = inferExpressionType(
+    statement.condition,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (conditionType && !isBoolType(conditionType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "If conditions must be bool.",
+        span: statement.condition.span,
+        hint: "Use a comparison or a bool value.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const branch of [statement.thenBranch, statement.elseBranch]) {
+    if (!branch) {
+      continue;
+    }
+    validateTransactionBody(
+      branch,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+    );
+  }
+}
+
+function validateEffectStatement(
+  statement: StatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): boolean {
+  switch (statement.kind) {
+    case "WhileStatement":
+      validateWhileStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
+      return true;
+    case "AssignStatement":
+      validateAssignStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      return true;
+    case "ExpressionStatement":
+      inferExpressionType(
+        statement.expression,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      return true;
+    case "FileStatement":
+      validateFileStatement(statement, scope, diagnostics);
+      return true;
+    default:
+      return false;
+  }
+}
+
+function validateWhileStatement(
+  statement: WhileStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const conditionType = inferExpressionType(
+    statement.condition,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (conditionType && !isBoolType(conditionType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "While conditions must be bool.",
+        span: statement.condition.span,
+        hint: "Use a comparison or a bool value.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (!Number.isInteger(statement.limit) || statement.limit <= 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-004",
+        severity: "error",
+        message: "A loop limit must be a positive whole number.",
+        span: statement.span,
+        hint: "Write `limit 1000`.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const inner of statement.body.statements) {
+    if (inner.kind === "LetStatement") {
+      validateLetStatement(
+        inner,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      continue;
+    }
+    if (
+      validateEffectStatement(
+        inner,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      )
+    ) {
+      continue;
+    }
+    if (inTransaction && inner.kind === "LedgerStatement") {
+      validateLedgerStatement(inner, scope, aliases, recordMap, diagnostics);
+      continue;
+    }
+    if (inTransaction && inner.kind === "AuditStatement") {
+      validateAuditStatement(inner, scope, aliases, recordMap, diagnostics);
+      continue;
+    }
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-007",
+        severity: "error",
+        message: `A ${inner.kind} is not allowed inside a loop body.`,
+        span: inner.span,
+        hint: "Loop bodies carry effects; move returns outside the loop.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+function validateAssignStatement(
+  statement: AssignStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const targetType = inferExpressionType(
+    statement.target,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  const valueType = inferExpressionType(
+    statement.expression,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (!targetType || !valueType) {
+    return;
+  }
+
+  if (!typesCompatible(targetType, valueType)) {
+    // Narrowing a decimal scale without saying how to round is the classic
+    // silent money bug, so it gets its own diagnostic.
+    if (
+      isDecimalType(targetType) &&
+      isDecimalType(valueType) &&
+      targetType.scale < valueType.scale &&
+      statement.expression.kind !== "RoundedExpression"
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DEC-002",
+          severity: "error",
+          message: `Assigning ${describeType(valueType)} to ${describeType(targetType)} discards digits.`,
+          span: statement.span,
+          hint: 'Wrap the value in round(value, "HALF_EVEN") to state the rounding.',
+          backendProfile: null,
+        }),
+      );
+      return;
+    }
+
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `Cannot assign ${describeType(valueType)} to ${describeType(targetType)}.`,
+        span: statement.span,
+        hint: "The subset does not coerce on assignment.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+function validateFileStatement(
+  statement: FileStatementNode,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+): void {
+  const file = declaredFiles.get(statement.fileName);
+  if (!file) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved file: ${statement.fileName}.`,
+        span: statement.span,
+        hint: "Declare the file before operating on it.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.operation === "read" && file.mode !== "input") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-001",
+        severity: "error",
+        message: `Cannot read from ${file.name}, which is declared as output.`,
+        span: statement.span,
+        hint: "Declare the file as input, or use write.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.operation === "write" && file.mode !== "output") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-001",
+        severity: "error",
+        message: `Cannot write to ${file.name}, which is declared as input.`,
+        span: statement.span,
+        hint: "Declare the file as output, or use read.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.recordName === null) {
+    return;
+  }
+
+  const recordType = scope.get(statement.recordName);
+  if (!recordType) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved record variable: ${statement.recordName}.`,
+        span: statement.span,
+        hint: "Pass a record-typed parameter or local.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (recordType.kind !== "record" || recordType.name !== file.record.name) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-002",
+        severity: "error",
+        message: `File ${file.name} carries ${file.record.name} records, but ${statement.recordName} is ${describeType(recordType)}.`,
+        span: statement.span,
+        hint: "The record layout must match the file declaration.",
+        backendProfile: null,
+      }),
+    );
   }
 }
 
@@ -505,6 +890,8 @@ function resolveFunction(
     return null;
   }
 
+  declareFileStatusSymbols(scope);
+
   validateFunctionBody(
     declaration.body,
     returnType,
@@ -581,6 +968,23 @@ function validateBlock(
         locals,
         diagnostics,
       );
+      continue;
+    }
+
+    // Loops, assignments, calls, and file operations carry effects and do not
+    // end a block, so they are checked here and the search for a terminal
+    // statement continues.
+    if (
+      validateEffectStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        false,
+      )
+    ) {
       continue;
     }
 
@@ -675,6 +1079,13 @@ function resolveTerminalStatementType(
           backendProfile: null,
         }),
       );
+      return null;
+    case "WhileStatement":
+    case "AssignStatement":
+    case "ExpressionStatement":
+    case "FileStatement":
+      // Effect statements are validated by validateBlock before the terminal
+      // statement is resolved, so nothing further is needed here.
       return null;
   }
 }
@@ -935,6 +1346,219 @@ function inferExpressionType(
         diagnostics,
       );
     }
+    case "UnaryExpression": {
+      const operand = inferExpressionType(
+        expression.operand,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (!operand) {
+        return null;
+      }
+      if (!isBoolType(operand)) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: "The `!` operator requires a bool operand.",
+            span: expression.span,
+            hint: "Negate a comparison or a bool value.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      return { kind: "bool" };
+    }
+    case "RoundedExpression": {
+      const previous = inRoundedContext;
+      inRoundedContext = true;
+      const operand = inferExpressionType(
+        expression.operand,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      inRoundedContext = previous;
+      if (!operand) {
+        return null;
+      }
+      if (!isDecimalType(operand)) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `${expression.isDivision ? "divide" : "round"} requires decimal operands.`,
+            span: expression.span,
+            hint: "Rounding applies to decimal arithmetic only.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      // The scale is decided by the assignment target, exactly as COBOL's
+      // ROUNDED attaches to the receiving field.
+      return { ...operand, rounded: true };
+    }
+    case "CallExpression":
+      return inferCallExpressionType(
+        expression,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+  }
+}
+
+/**
+ * Function calls are resolved against the module's declared functions.
+ *
+ * `functionSignatures` is populated in a first pass over declarations so a
+ * function can call one declared later in the file.
+ */
+let functionSignatures = new Map<string, ResolvedFunctionSignature>();
+
+/** Declared files, for resolving file statements. */
+let declaredFiles = new Map<string, ResolvedFile>();
+
+/**
+ * File status fields are readable in any body, so a loop can test them.
+ * They are compiler-owned storage, not user locals.
+ */
+function declareFileStatusSymbols(scope: Map<string, ResolvedType>): void {
+  for (const file of declaredFiles.values()) {
+    if (file.statusName && !scope.has(file.statusName)) {
+      scope.set(file.statusName, { kind: "string", length: 2 });
+    }
+  }
+}
+
+function registerFunctionSignature(
+  declaration: FunctionDeclarationNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+): void {
+  const ignored: Diagnostic[] = [];
+  const parameters = declaration.parameters.flatMap((parameter) => {
+    const type = resolveTypeNode(
+      parameter.type,
+      aliases,
+      recordMap,
+      ignored,
+      parameter.span,
+    );
+    return type ? [{ name: parameter.name, type }] : [];
+  });
+
+  const returnType = resolveTypeNode(
+    declaration.returnType,
+    aliases,
+    recordMap,
+    ignored,
+    declaration.returnType.span,
+  );
+
+  if (returnType && parameters.length === declaration.parameters.length) {
+    functionSignatures.set(declaration.name, {
+      name: declaration.name,
+      parameters,
+      returnType,
+    });
+  }
+}
+
+interface ResolvedFunctionSignature {
+  name: string;
+  parameters: { name: string; type: ResolvedType }[];
+  returnType: ResolvedType;
+}
+
+function inferCallExpressionType(
+  expression: CallExpressionNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  const signature = functionSignatures.get(expression.callee);
+  if (!signature) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved function: ${expression.callee}.`,
+        span: expression.span,
+        hint: "Declare the function in this module before calling it.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  if (expression.args.length !== signature.parameters.length) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${expression.callee} expects ${signature.parameters.length} argument(s) but received ${expression.args.length}.`,
+        span: expression.span,
+        hint: `Signature: ${signature.parameters.map((parameter) => `${parameter.name}: ${describeType(parameter.type)}`).join(", ")}.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  for (let index = 0; index < expression.args.length; index += 1) {
+    const actual = inferExpressionType(
+      expression.args[index],
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    const expected = signature.parameters[index].type;
+    if (actual && !typesCompatible(expected, actual)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `Argument ${index + 1} of ${expression.callee} expects ${describeType(expected)} but received ${describeType(actual)}.`,
+          span: expression.args[index].span,
+          hint: "The subset does not coerce arguments.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  return signature.returnType;
+}
+
+const COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "==", "!="]);
+
+/**
+ * True while checking inside `round(...)` or `divide(...)`.
+ *
+ * Division is only legal there, because COBOL attaches `ROUNDED` to the
+ * assignment and an unstated rounding mode is a real financial defect.
+ */
+let inRoundedContext = false;
+
+function describeType(type: ResolvedType): string {
+  switch (type.kind) {
+    case "decimal":
+      return `decimal<${type.precision}, ${type.scale}>`;
+    case "string":
+      return `string<${type.length}>`;
+    case "bool":
+      return "bool";
+    case "record":
+      return type.name;
   }
 }
 
@@ -963,16 +1587,45 @@ function inferBinaryExpressionType(
     return null;
   }
 
-  if (expression.operator === ">") {
+  const operator = expression.operator;
+
+  // Logical operators combine bools.
+  if (operator === "&&" || operator === "||") {
+    if (!isBoolType(left) || !isBoolType(right)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `Operator ${operator} requires bool operands.`,
+          span: expression.span,
+          hint: "Combine comparisons, not raw decimal values.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    return { kind: "bool" };
+  }
+
+  // Comparisons produce bool. Equality also works on strings and bools;
+  // ordering is decimal-only.
+  if (COMPARISON_OPERATORS.has(operator)) {
+    const equality = operator === "==" || operator === "!=";
+
+    if (equality && left.kind === right.kind && !isDecimalType(left)) {
+      return { kind: "bool" };
+    }
+
     if (!isDecimalType(left) || !isDecimalType(right)) {
       diagnostics.push(
         createDiagnostic({
           id: "BANK-TYPE-003",
           severity: "error",
-          message:
-            "Comparison operator > requires decimal operands in the current subset.",
+          message: equality
+            ? `Operator ${operator} requires operands of the same type.`
+            : `Comparison operator ${operator} requires decimal operands.`,
           span: expression.span,
-          hint: "Use decimal values or decimal literals in the comparison.",
+          hint: "Compare values of the same BankLang type.",
           backendProfile: null,
         }),
       );
@@ -984,10 +1637,9 @@ function inferBinaryExpressionType(
         createDiagnostic({
           id: "BANK-TYPE-003",
           severity: "error",
-          message:
-            "Decimal comparison requires matching scale in the current subset.",
+          message: `Decimal comparison requires matching scale, but the operands are ${describeType(left)} and ${describeType(right)}.`,
           span: expression.span,
-          hint: "Make both sides use the same decimal scale.",
+          hint: 'Rescale one side with round(value, "HALF_EVEN") before comparing.',
           backendProfile: null,
         }),
       );
@@ -1002,7 +1654,7 @@ function inferBinaryExpressionType(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `Arithmetic operator ${expression.operator} requires decimal operands in the current subset.`,
+        message: `Arithmetic operator ${operator} requires decimal operands.`,
         span: expression.span,
         hint: "Use decimal values or decimal literals in the arithmetic expression.",
         backendProfile: null,
@@ -1011,13 +1663,53 @@ function inferBinaryExpressionType(
     return null;
   }
 
-  if (left.precision !== right.precision || left.scale !== right.scale) {
+  // Division cannot be exact, so it must state a rounding mode.
+  if (operator === "/") {
+    if (!inRoundedContext) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DEC-003",
+          severity: "error",
+          message: "Division requires an explicit rounding mode.",
+          span: expression.span,
+          hint: 'Write divide(a, b, "HALF_EVEN") instead of a / b.',
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    return left;
+  }
+
+  // Multiplication is exact: scales add. Precision must still fit.
+  if (operator === "*") {
+    const scale = left.scale + right.scale;
+    const precision = Math.max(left.precision, right.precision);
+    if (scale > precision) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DEC-004",
+          severity: "error",
+          message: `Multiplying ${describeType(left)} by ${describeType(right)} needs scale ${scale}, which exceeds precision ${precision}.`,
+          span: expression.span,
+          hint: "Widen the operand precision or reduce the operand scales.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    return { kind: "decimal", precision, scale };
+  }
+
+  if (
+    left.scale !== right.scale ||
+    (!left.literal && !right.literal && left.precision !== right.precision)
+  ) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message:
-          "Decimal arithmetic requires matching precision and scale in the current subset.",
+        message: `Decimal ${operator} requires matching precision and scale, but the operands are ${describeType(left)} and ${describeType(right)}.`,
         span: expression.span,
         hint: "Make both operands use the same decimal precision and scale.",
         backendProfile: null,
@@ -1146,10 +1838,19 @@ function resolveReference(
   return null;
 }
 
+/**
+ * A literal carries its written scale and a `literal` marker.
+ *
+ * Without this, `0.00` has precision 3 and could not be assigned to a
+ * `decimal<18, 2>`, which is why earlier examples padded literals out to
+ * `0000000000000025.00`. A literal widens to any decimal with the same scale
+ * and enough precision; the scale still has to match exactly, so no rounding
+ * happens implicitly.
+ */
 function inferDecimalLiteral(node: DecimalLiteralNode): DecimalType {
   const scale = node.text.includes(".") ? node.text.split(".")[1].length : 0;
-  const precision = node.text.replace(".", "").length;
-  return { kind: "decimal", precision, scale };
+  const precision = node.text.replace(".", "").replace(/^0+/, "").length || 1;
+  return { kind: "decimal", precision, scale, literal: true };
 }
 
 function isDecimalType(type: ResolvedType): type is DecimalType {
@@ -1191,7 +1892,21 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
   }
 
   if (left.kind === "decimal" && right.kind === "decimal") {
-    return left.precision === right.precision && left.scale === right.scale;
+    // A rounded value takes the target's scale; that is what rounding means.
+    if (right.rounded || left.rounded) {
+      return true;
+    }
+    if (left.scale !== right.scale) {
+      return false;
+    }
+    // A literal fits any declared decimal wide enough to hold it.
+    if (right.literal) {
+      return right.precision <= left.precision;
+    }
+    if (left.literal) {
+      return left.precision <= right.precision;
+    }
+    return left.precision === right.precision;
   }
 
   if (left.kind === "string" && right.kind === "string") {
