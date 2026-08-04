@@ -60,7 +60,10 @@ describe("audit schema", () => {
       ).toMatchObject({
         version: 1,
         backendProfile: "ibm-enterprise-cobol-zos",
-        status: "not-applicable",
+        // account-transfer declares no transactions; the account-posting
+        // example covers the "analyzed" case in tests/transactions.test.ts.
+        status: "no-transactions",
+        transactions: [],
       });
 
       expect(

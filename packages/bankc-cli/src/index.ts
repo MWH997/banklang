@@ -55,6 +55,7 @@ interface CompiledProject {
   parsed: ReturnType<typeof parseBankTs>;
   typechecked: ReturnType<typeof typecheckProgram>;
   ir: ReturnType<typeof lowerProgramToIR>;
+  semantics: ReturnType<typeof analyzeProgramSemantics>;
 }
 
 const PLANNED_COMMAND_ERROR = "planned but not implemented yet";
@@ -170,14 +171,8 @@ function runCheck(args: string[], cwd: string): CliResult {
   }
 
   const compiled = compileProject(projectPath, cwd);
-  if (
-    compiled.typechecked.diagnostics.length > 0 ||
-    compiled.parsed.diagnostics.length > 0
-  ) {
-    const diagnostics = [
-      ...compiled.parsed.diagnostics,
-      ...compiled.typechecked.diagnostics,
-    ];
+  if (collectCompileDiagnostics(compiled).length > 0) {
+    const diagnostics = collectCompileDiagnostics(compiled);
     return {
       exitCode: 1,
       stdout: "",
@@ -206,17 +201,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (
-      compiled.typechecked.diagnostics.length > 0 ||
-      compiled.parsed.diagnostics.length > 0
-    ) {
+    if (collectCompileDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics([
-          ...compiled.parsed.diagnostics,
-          ...compiled.typechecked.diagnostics,
-        ]),
+        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
       };
     }
 
@@ -247,17 +236,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (
-      compiled.typechecked.diagnostics.length > 0 ||
-      compiled.parsed.diagnostics.length > 0
-    ) {
+    if (collectCompileDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics([
-          ...compiled.parsed.diagnostics,
-          ...compiled.typechecked.diagnostics,
-        ]),
+        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
       };
     }
 
@@ -285,17 +268,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (
-      compiled.typechecked.diagnostics.length > 0 ||
-      compiled.parsed.diagnostics.length > 0
-    ) {
+    if (collectCompileDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics([
-          ...compiled.parsed.diagnostics,
-          ...compiled.typechecked.diagnostics,
-        ]),
+        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
       };
     }
 
@@ -332,17 +309,11 @@ function runBuild(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (
-    compiled.typechecked.diagnostics.length > 0 ||
-    compiled.parsed.diagnostics.length > 0
-  ) {
+  if (collectCompileDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics([
-        ...compiled.parsed.diagnostics,
-        ...compiled.typechecked.diagnostics,
-      ]),
+      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
     };
   }
 
@@ -398,17 +369,11 @@ function runAuditReport(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (
-    compiled.typechecked.diagnostics.length > 0 ||
-    compiled.parsed.diagnostics.length > 0
-  ) {
+  if (collectCompileDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics([
-        ...compiled.parsed.diagnostics,
-        ...compiled.typechecked.diagnostics,
-      ]),
+      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
     };
   }
 
@@ -461,17 +426,11 @@ function runVerify(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (
-    compiled.typechecked.diagnostics.length > 0 ||
-    compiled.parsed.diagnostics.length > 0
-  ) {
+  if (collectCompileDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics([
-        ...compiled.parsed.diagnostics,
-        ...compiled.typechecked.diagnostics,
-      ]),
+      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
     };
   }
 
@@ -645,17 +604,11 @@ function runLayout(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (
-    compiled.typechecked.diagnostics.length > 0 ||
-    compiled.parsed.diagnostics.length > 0
-  ) {
+  if (collectCompileDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics([
-        ...compiled.parsed.diagnostics,
-        ...compiled.typechecked.diagnostics,
-      ]),
+      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
     };
   }
 
@@ -772,6 +725,91 @@ function runCopybook(args: string[], cwd: string): CliResult {
   };
 }
 
+/**
+ * Every blocking diagnostic for a compiled project, in pipeline order: syntax,
+ * then types, then banking safety analysis.
+ */
+function collectCompileDiagnostics(compiled: CompiledProject): Diagnostic[] {
+  return [
+    ...compiled.parsed.diagnostics,
+    ...compiled.typechecked.diagnostics,
+    ...compiled.semantics.diagnostics,
+  ];
+}
+
+/**
+ * Per-transaction audit record: the postings and audit events the analyzer
+ * found, so a reviewer can see what each transaction boundary does.
+ */
+function describeTransactions(compiled: CompiledProject): unknown[] {
+  const program = compiled.ir.program;
+  if (!program) {
+    return [];
+  }
+
+  return program.transactions.map((transaction) => {
+    const statements = flattenTransactionStatements(
+      transaction.body.statements,
+    );
+    return {
+      name: transaction.name,
+      parameters: transaction.parameters.map((parameter) => parameter.name),
+      ledgerPostings: statements
+        .filter((statement) => statement.kind === "LedgerStatement")
+        .map((statement) => ({
+          operation: statement.operation,
+          account: describeExpression(statement.account),
+          amount: describeExpression(statement.amount),
+        })),
+      auditEvents: statements
+        .filter((statement) => statement.kind === "AuditStatement")
+        .map((statement) => ({
+          event: describeExpression(statement.eventName),
+          correlation: describeExpression(statement.correlation),
+        })),
+    };
+  });
+}
+
+function flattenTransactionStatements(
+  statements: IRStatement[],
+): IRStatement[] {
+  const flattened: IRStatement[] = [];
+  for (const statement of statements) {
+    flattened.push(statement);
+    if (statement.kind === "IfStatement") {
+      flattened.push(
+        ...flattenTransactionStatements(statement.thenBranch.statements),
+      );
+      if (statement.elseBranch) {
+        flattened.push(
+          ...flattenTransactionStatements(statement.elseBranch.statements),
+        );
+      }
+    }
+  }
+
+  return flattened;
+}
+
+function describeExpression(expression: IRExpression): string {
+  switch (expression.kind) {
+    case "Identifier":
+      return expression.name;
+    case "DecimalLiteral":
+      return expression.text;
+    case "BooleanLiteral":
+      return String(expression.value);
+    case "StringLiteral":
+      return expression.value;
+    case "MemberAccess":
+      return `${expression.targetName}.${expression.member}`;
+    case "BinaryComparison":
+    case "BinaryArithmetic":
+      return `${describeExpression(expression.left)} ${expression.operator} ${describeExpression(expression.right)}`;
+  }
+}
+
 function compileProject(projectPath: string, cwd: string): CompiledProject {
   const sourceFile = resolveSourceFile(projectPath, cwd);
   const sourceText = readFileSync(sourceFile, "utf8");
@@ -784,14 +822,24 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         aliases: {},
         records: [],
         functions: [],
+        transactions: [],
       };
   const ir = parsed.program
     ? lowerProgramToIR(typechecked)
     : { program: null, diagnostics: [] };
 
-  if (ir.program) {
-    analyzeProgramSemantics(ir.program);
-  }
+  const semantics = ir.program
+    ? analyzeProgramSemantics(ir.program)
+    : {
+        diagnostics: [],
+        summary: {
+          recordCount: 0,
+          functionCount: 0,
+          transactionCount: 0,
+          auditEventCount: 0,
+          ledgerPostingCount: 0,
+        },
+      };
 
   return {
     sourceFile,
@@ -799,6 +847,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
     parsed,
     typechecked,
     ir,
+    semantics,
   };
 }
 
@@ -972,10 +1021,7 @@ function writeAuditOutputs(
       {
         version: AUDIT_SCHEMA_VERSION,
         backendProfile: BACKEND_PROFILE,
-        diagnostics: serializeDiagnostics([
-          ...compiled.parsed.diagnostics,
-          ...compiled.typechecked.diagnostics,
-        ]),
+        diagnostics: serializeDiagnostics(collectCompileDiagnostics(compiled)),
       } satisfies DiagnosticsDocument,
       null,
       2,
@@ -1028,8 +1074,11 @@ function writeAuditOutputs(
       {
         version: AUDIT_SCHEMA_VERSION,
         backendProfile: BACKEND_PROFILE,
-        transactions: [],
-        status: "not-applicable",
+        transactions: describeTransactions(compiled),
+        status:
+          compiled.semantics.summary.transactionCount > 0
+            ? "analyzed"
+            : "no-transactions",
       } satisfies TransactionAnalysisDocument,
       null,
       2,

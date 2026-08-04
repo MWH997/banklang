@@ -28,6 +28,11 @@ import {
   type BoolTypeNode,
   type StatementNode,
   type IfStatementNode,
+  type StringLiteralNode,
+  type MemberAccessNode,
+  type LedgerStatementNode,
+  type AuditStatementNode,
+  type TransactionDeclarationNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -53,7 +58,16 @@ const KEYWORDS = new Set([
   "let",
   "if",
   "else",
+  "transaction",
 ]);
+
+/**
+ * Ledger and audit operations are matched contextually rather than reserved as
+ * keywords, so `debit`, `credit`, and `audit` remain usable as field and
+ * parameter names.
+ */
+const LEDGER_OPERATIONS = new Set(["debit", "credit"]);
+const AUDIT_OPERATION = "audit";
 
 class Lexer {
   private readonly source: string;
@@ -343,12 +357,46 @@ class Parser {
       return this.parseFunctionDeclaration();
     }
 
+    if (this.matchKeyword("transaction")) {
+      return this.parseTransactionDeclaration();
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a declaration.",
     );
     return null;
+  }
+
+  private parseTransactionDeclaration(): TransactionDeclarationNode | null {
+    const nameToken = this.expectIdentifier("Expected transaction name.");
+    const openParen = this.expectPunctuation(
+      "(",
+      "Expected `(` after transaction name.",
+    );
+    const parameters = this.parseParameters();
+    const closeParen = this.expectPunctuation(
+      ")",
+      "Expected `)` after parameter list.",
+    );
+    const body = this.parseBlock();
+
+    if (!nameToken || !openParen || !closeParen || !body) {
+      return null;
+    }
+
+    return {
+      kind: "TransactionDeclaration",
+      name: nameToken.text,
+      parameters,
+      body,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: body.span.end,
+      },
+    };
   }
 
   private parseTypeAliasDeclaration(): TypeAliasDeclarationNode | null {
@@ -555,12 +603,86 @@ class Parser {
       return this.parseIfStatement();
     }
 
+    if (
+      this.current.kind === "identifier" &&
+      this.next.kind === "punctuation" &&
+      this.next.text === "("
+    ) {
+      if (LEDGER_OPERATIONS.has(this.current.text)) {
+        return this.parseLedgerStatement();
+      }
+
+      if (this.current.text === AUDIT_OPERATION) {
+        return this.parseAuditStatement();
+      }
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a statement.",
     );
     return null;
+  }
+
+  private parseLedgerStatement(): LedgerStatementNode | null {
+    const operationToken = this.advance();
+    this.expectPunctuation("(", "Expected `(` after ledger operation.");
+    const account = this.parseExpression();
+    this.expectPunctuation(",", "Expected `,` between account and amount.");
+    const amount = this.parseExpression();
+    this.expectPunctuation(")", "Expected `)` after ledger arguments.");
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after ledger statement.",
+    );
+
+    if (!account || !amount || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "LedgerStatement",
+      operation: operationToken.text as "debit" | "credit",
+      account,
+      amount,
+      span: {
+        sourceFile: operationToken.span.sourceFile,
+        start: operationToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseAuditStatement(): AuditStatementNode | null {
+    const auditToken = this.advance();
+    this.expectPunctuation("(", "Expected `(` after `audit`.");
+    const eventName = this.parseExpression();
+    this.expectPunctuation(
+      ",",
+      "Expected `,` between audit event name and correlation key.",
+    );
+    const correlation = this.parseExpression();
+    this.expectPunctuation(")", "Expected `)` after audit arguments.");
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after audit statement.",
+    );
+
+    if (!eventName || !correlation || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "AuditStatement",
+      eventName,
+      correlation,
+      span: {
+        sourceFile: auditToken.span.sourceFile,
+        start: auditToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
   }
 
   private parseLetStatement(): LetStatementNode | null {
@@ -752,13 +874,45 @@ class Parser {
       } satisfies DecimalLiteralNode;
     }
 
-    if (this.is("identifier")) {
+    if (this.is("string")) {
       const token = this.advance();
       return {
+        kind: "StringLiteral",
+        value: token.text,
+        span: token.span,
+      } satisfies StringLiteralNode;
+    }
+
+    if (this.is("identifier")) {
+      const token = this.advance();
+      const identifier: IdentifierNode = {
         kind: "Identifier",
         name: token.text,
         span: token.span,
-      } satisfies IdentifierNode;
+      };
+
+      if (this.isPunctuation(".")) {
+        this.advance();
+        const memberToken = this.expectIdentifier(
+          "Expected field name after `.`.",
+        );
+        if (!memberToken) {
+          return null;
+        }
+
+        return {
+          kind: "MemberAccess",
+          target: identifier,
+          member: memberToken.text,
+          span: {
+            sourceFile: token.span.sourceFile,
+            start: token.span.start,
+            end: memberToken.span.end,
+          },
+        } satisfies MemberAccessNode;
+      }
+
+      return identifier;
     }
 
     if (this.matchPunctuation("(")) {
@@ -954,7 +1108,9 @@ class Parser {
     while (!this.is("eof")) {
       if (
         this.current.kind === "keyword" &&
-        ["type", "record", "function"].includes(this.current.text)
+        ["type", "record", "function", "transaction"].includes(
+          this.current.text,
+        )
       ) {
         return;
       }
@@ -1000,7 +1156,17 @@ class Parser {
         this.current.kind === "keyword" &&
         (this.current.text === "return" ||
           this.current.text === "if" ||
-          this.current.text === "else")
+          this.current.text === "else" ||
+          this.current.text === "let")
+      ) {
+        return;
+      }
+      if (
+        this.current.kind === "identifier" &&
+        (LEDGER_OPERATIONS.has(this.current.text) ||
+          this.current.text === AUDIT_OPERATION) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
       ) {
         return;
       }

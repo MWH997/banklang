@@ -192,6 +192,17 @@ function collectExpectedSymbols(program: IRProgram): ExpectedSymbol[] {
     });
   }
 
+  for (const transaction of program.transactions) {
+    expected.push({
+      category: "transaction",
+      symbol: transaction.name,
+      span: transaction.span,
+      cobolName: toCobolParagraphName(transaction.name),
+      missingDiagnosticId: "BANK-GEN-007",
+      description: "transaction",
+    });
+  }
+
   return expected;
 }
 
@@ -226,6 +237,12 @@ function cobolNameForEntry(
       return toCobolFieldName(entry.symbol);
     case "function":
       return program.functions.some((fn) => fn.name === entry.symbol)
+        ? toCobolParagraphName(entry.symbol)
+        : null;
+    case "transaction":
+      return program.transactions.some(
+        (transaction) => transaction.name === entry.symbol,
+      )
         ? toCobolParagraphName(entry.symbol)
         : null;
   }
