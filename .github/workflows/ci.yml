@@ -23,6 +23,15 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      # tests/cobol-compiles.test.ts skips without cobc. Installing GnuCOBOL
+      # keeps that lane running in CI, so generated COBOL that no compiler
+      # accepts cannot merge.
+      - name: Install GnuCOBOL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gnucobol
+          cobc --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -34,3 +43,11 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Verify every example
+        run: |
+          for example in examples/*/; do
+            echo "::group::bankc test $example"
+            pnpm bankc test "$example"
+            echo "::endgroup::"
+          done
