@@ -7,13 +7,19 @@ converter.
 ## Status
 
 The repository currently contains a deterministic compiler slice with
-verification, local validation, and a second example.
+verification, local validation, banking safety diagnostics, and four examples.
 
 Current capabilities:
 
-- restricted BankTS parser, typechecker, and IR lowering for the
-  `account-transfer` and `batch-interest-accrual` examples, including local
-  variable declarations and exact decimal arithmetic in the second example
+- restricted BankTS parser, typechecker, and IR lowering across four examples,
+  including local variable declarations, exact decimal arithmetic, transaction
+  declarations with ledger postings and audit events, and sequential file
+  declarations
+- banking safety diagnostics for idempotency keys, audit events, balanced
+  debit/credit postings, and file status (`BANK-TXN-001`, `BANK-AUD-001`,
+  `BANK-AUD-003`, `BANK-LED-001`, `BANK-FILE-001`)
+- source map coverage checking, so every traced symbol is proven to resolve
+  into the generated COBOL
 - deterministic COBOL emission
 - deterministic copybook generation
 - deterministic JCL emission
@@ -81,7 +87,9 @@ map, and audit bundle for the `account-transfer` example.
   posture.
 - `validation-lab-plan.md` defines the validation ladder.
 - `examples/account-transfer/` contains the demo input program.
-- `examples/batch-interest-accrual/` contains the second demo input program.
+- `examples/batch-interest-accrual/` contains the control-flow example.
+- `examples/account-posting/` contains the transaction example.
+- `examples/account-file-batch/` contains the file-declaration example.
 - `evidence/account-transfer/` captures the current demo evidence bundle.
 - `evidence/batch-interest-accrual/` captures the second demo evidence bundle.
 - `tester-notes/` records change-specific validation notes.
@@ -176,6 +184,8 @@ The current repo state has been verified with:
 - `pnpm bankc test examples/account-transfer`
 - `pnpm bankc verify examples/batch-interest-accrual`
 - `pnpm bankc test examples/batch-interest-accrual`
+- `pnpm bankc test examples/account-posting`
+- `pnpm bankc test examples/account-file-batch`
 - `pnpm bankc copybook inspect ...`
 - `pnpm bankc copybook types ...`
 - `pnpm bankc copybook diff ...`

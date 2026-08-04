@@ -223,6 +223,21 @@ export interface FunctionDeclarationNode extends NodeBase {
   body: BlockNode;
 }
 
+/**
+ * `file Name sequential input record RecordType status statusField;`
+ *
+ * The `status` clause is optional at parse time so the analyzer can report a
+ * missing file status as BANK-FILE-001 rather than a syntax error.
+ */
+export interface FileDeclarationNode extends NodeBase {
+  kind: "FileDeclaration";
+  name: string;
+  organization: "sequential";
+  mode: "input" | "output";
+  recordTypeName: string;
+  statusName: string | null;
+}
+
 export interface TransactionDeclarationNode extends NodeBase {
   kind: "TransactionDeclaration";
   name: string;
@@ -234,7 +249,8 @@ export type DeclarationNode =
   | TypeAliasDeclarationNode
   | RecordDeclarationNode
   | FunctionDeclarationNode
-  | TransactionDeclarationNode;
+  | TransactionDeclarationNode
+  | FileDeclarationNode;
 
 export interface ProgramNode extends NodeBase {
   kind: "Program";

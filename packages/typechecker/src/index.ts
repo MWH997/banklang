@@ -27,6 +27,7 @@ import {
   type TransactionDeclarationNode,
   type LedgerStatementNode,
   type AuditStatementNode,
+  type FileDeclarationNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -94,6 +95,15 @@ export interface ResolvedTransaction {
   body: BlockNode;
 }
 
+export interface ResolvedFile {
+  name: string;
+  span: SourceSpan;
+  organization: "sequential";
+  mode: "input" | "output";
+  record: ResolvedRecord;
+  statusName: string | null;
+}
+
 export interface TypeCheckResult {
   program: ProgramNode | null;
   diagnostics: Diagnostic[];
@@ -101,6 +111,7 @@ export interface TypeCheckResult {
   records: ResolvedRecord[];
   functions: ResolvedFunction[];
   transactions: ResolvedTransaction[];
+  files: ResolvedFile[];
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -120,6 +131,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       records: [],
       functions: [],
       transactions: [],
+      files: [],
     };
   }
 
@@ -129,6 +141,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const recordMap = new Map<string, ResolvedRecord>();
   const functions: ResolvedFunction[] = [];
   const transactions: ResolvedTransaction[] = [];
+  const files: ResolvedFile[] = [];
 
   for (const declaration of program.declarations) {
     if (declaration.kind === "TypeAliasDeclaration") {
@@ -182,6 +195,14 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       if (resolvedTransaction) {
         transactions.push(resolvedTransaction);
       }
+      continue;
+    }
+
+    if (declaration.kind === "FileDeclaration") {
+      const resolvedFile = resolveFile(declaration, recordMap, diagnostics);
+      if (resolvedFile) {
+        files.push(resolvedFile);
+      }
     }
   }
 
@@ -192,6 +213,37 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     records,
     functions,
     transactions,
+    files,
+  };
+}
+
+function resolveFile(
+  declaration: FileDeclarationNode,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedFile | null {
+  const record = recordMap.get(declaration.recordTypeName);
+  if (!record) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved record type for file ${declaration.name}: ${declaration.recordTypeName}.`,
+        span: declaration.span,
+        hint: "Declare the record before the file that uses it.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    organization: declaration.organization,
+    mode: declaration.mode,
+    record,
+    statusName: declaration.statusName,
   };
 }
 

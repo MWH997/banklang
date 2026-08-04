@@ -33,6 +33,7 @@ import {
   type LedgerStatementNode,
   type AuditStatementNode,
   type TransactionDeclarationNode,
+  type FileDeclarationNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -59,7 +60,15 @@ const KEYWORDS = new Set([
   "if",
   "else",
   "transaction",
+  "file",
 ]);
+
+/**
+ * File declaration clause words are matched contextually so `sequential`,
+ * `input`, `output`, and `status` stay usable as field and parameter names.
+ */
+const FILE_MODES = new Set(["input", "output"]);
+const FILE_ORGANIZATIONS = new Set(["sequential"]);
 
 /**
  * Ledger and audit operations are matched contextually rather than reserved as
@@ -361,10 +370,91 @@ class Parser {
       return this.parseTransactionDeclaration();
     }
 
+    if (this.matchKeyword("file")) {
+      return this.parseFileDeclaration();
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a declaration.",
+    );
+    return null;
+  }
+
+  private parseFileDeclaration(): FileDeclarationNode | null {
+    const fileToken = this.previous;
+    const nameToken = this.expectIdentifier("Expected file name.");
+
+    const organizationToken = this.expectContextualWord(
+      FILE_ORGANIZATIONS,
+      "Expected a file organization such as `sequential`.",
+    );
+    const modeToken = this.expectContextualWord(
+      FILE_MODES,
+      "Expected `input` or `output` after the file organization.",
+    );
+    this.expectKeyword("record", "Expected `record` before the record type.");
+    const recordTypeToken = this.expectIdentifier(
+      "Expected the record type name.",
+    );
+
+    let statusName: string | null = null;
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "status" &&
+      this.next.kind === "identifier"
+    ) {
+      this.advance();
+      const statusToken = this.expectIdentifier(
+        "Expected a status field name after `status`.",
+      );
+      statusName = statusToken?.text ?? null;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after file declaration.",
+    );
+
+    if (
+      !fileToken ||
+      !nameToken ||
+      !organizationToken ||
+      !modeToken ||
+      !recordTypeToken ||
+      !semicolon
+    ) {
+      return null;
+    }
+
+    return {
+      kind: "FileDeclaration",
+      name: nameToken.text,
+      organization: organizationToken.text as "sequential",
+      mode: modeToken.text as "input" | "output",
+      recordTypeName: recordTypeToken.text,
+      statusName,
+      span: {
+        sourceFile: fileToken.span.sourceFile,
+        start: fileToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  private expectContextualWord(
+    allowed: Set<string>,
+    message: string,
+  ): Token | null {
+    if (this.current.kind === "identifier" && allowed.has(this.current.text)) {
+      return this.advance();
+    }
+
+    this.errorAtCurrent(
+      "BANK-SYN-001",
+      message,
+      `Expected one of: ${[...allowed].sort().join(", ")}.`,
     );
     return null;
   }
@@ -1108,7 +1198,7 @@ class Parser {
     while (!this.is("eof")) {
       if (
         this.current.kind === "keyword" &&
-        ["type", "record", "function", "transaction"].includes(
+        ["type", "record", "function", "transaction", "file"].includes(
           this.current.text,
         )
       ) {
