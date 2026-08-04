@@ -1,0 +1,142 @@
+import type { Diagnostic } from "../../ast/src/index";
+import {
+  emitCobol,
+  emitJcl,
+  type SourceMapDocument,
+} from "../../cobol-backend/src/index";
+import { toCobolName } from "../../cobol-ir/src/index";
+import {
+  buildCopybookLayoutDocument,
+  renderCopybook,
+  type CopybookLayoutDocument,
+} from "../../copybook/src/index";
+import { lowerProgramToIR, type IRProgram } from "../../ir/src/index";
+import { parseBankTs } from "../../parser/src/index";
+import {
+  analyzeProgramSemantics,
+  type SemanticAnalysisSummary,
+} from "../../semantic-analyzer/src/index";
+import { typecheckProgram } from "../../typechecker/src/index";
+import {
+  checkSourceMapCoverage,
+  type SourceMapCoverageResult,
+} from "../../verifier/src/index";
+
+export type { Diagnostic } from "../../ast/src/index";
+export type {
+  SourceMapDocument,
+  SourceMapEntry,
+} from "../../cobol-backend/src/index";
+
+export interface GeneratedCopybook {
+  /** Record name as written in BankTS. */
+  record: string;
+  /** Generated copybook file name, such as `TRANSFER-REQUEST.cpy`. */
+  fileName: string;
+  content: string;
+}
+
+export interface CompileOptions {
+  /** Path recorded in diagnostics and source map entries. */
+  sourceFile?: string;
+  /**
+   * Emit JCL alongside the COBOL program. Off by default because the
+   * playground and most API consumers do not need it.
+   */
+  emitJcl?: boolean;
+}
+
+export interface CompileResult {
+  /** True when no error-severity diagnostic was produced. */
+  ok: boolean;
+  /** Syntax, type, and banking safety diagnostics, in pipeline order. */
+  diagnostics: Diagnostic[];
+  program: IRProgram | null;
+  cobol: string | null;
+  copybooks: GeneratedCopybook[];
+  sourceMap: SourceMapDocument | null;
+  jcl: string | null;
+  layout: CopybookLayoutDocument | null;
+  analysis: SemanticAnalysisSummary | null;
+  coverage: SourceMapCoverageResult | null;
+}
+
+const EMPTY: Omit<CompileResult, "ok" | "diagnostics"> = {
+  program: null,
+  cobol: null,
+  copybooks: [],
+  sourceMap: null,
+  jcl: null,
+  layout: null,
+  analysis: null,
+  coverage: null,
+};
+
+/**
+ * Compiles BankTS source to COBOL artifacts in a single call.
+ *
+ * This is the programmatic entry point for the compiler. It performs no file
+ * system or network access, so it runs unchanged in Node and in a browser,
+ * which is what lets the web playground use the real compiler rather than a
+ * reimplementation of it.
+ *
+ * Compilation stops at the first stage that produces diagnostics, so a caller
+ * never receives partially-valid artifacts alongside errors.
+ */
+export function compile(
+  source: string,
+  options: CompileOptions = {},
+): CompileResult {
+  const sourceFile = options.sourceFile ?? "main.bank.ts";
+
+  const parsed = parseBankTs(source, sourceFile);
+  if (parsed.diagnostics.length > 0 || !parsed.program) {
+    return { ok: false, diagnostics: parsed.diagnostics, ...EMPTY };
+  }
+
+  const typechecked = typecheckProgram(parsed.program);
+  if (typechecked.diagnostics.length > 0) {
+    return { ok: false, diagnostics: typechecked.diagnostics, ...EMPTY };
+  }
+
+  const lowered = lowerProgramToIR(typechecked);
+  if (lowered.diagnostics.length > 0 || !lowered.program) {
+    return { ok: false, diagnostics: lowered.diagnostics, ...EMPTY };
+  }
+
+  const program = lowered.program;
+  const semantics = analyzeProgramSemantics(program);
+  if (semantics.diagnostics.length > 0) {
+    return {
+      ok: false,
+      diagnostics: semantics.diagnostics,
+      ...EMPTY,
+      program,
+      analysis: semantics.summary,
+    };
+  }
+
+  const emitted = emitCobol(program);
+  const coverage = checkSourceMapCoverage(
+    program,
+    emitted.sourceMap,
+    emitted.cobol,
+  );
+
+  return {
+    ok: coverage.diagnostics.length === 0,
+    diagnostics: coverage.diagnostics,
+    program,
+    cobol: emitted.cobol,
+    copybooks: program.records.map((record) => ({
+      record: record.name,
+      fileName: `${toCobolName(record.name)}.cpy`,
+      content: renderCopybook(record),
+    })),
+    sourceMap: emitted.sourceMap,
+    jcl: options.emitJcl ? emitJcl(program).jcl : null,
+    layout: buildCopybookLayoutDocument(program, "dist/copybooks"),
+    analysis: semantics.summary,
+    coverage,
+  };
+}

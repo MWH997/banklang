@@ -2,30 +2,54 @@
 
 BankLang treats security issues as a normal part of repository maintenance.
 
-## Reporting
+## Reporting a vulnerability
 
-Do not file secrets, credentials, or private customer data in issues, pull
-requests, tester notes, or audit artifacts.
+Please report vulnerabilities privately through GitHub Security Advisories
+rather than opening a public issue.
 
-If you discover a vulnerability, report it through the repository's normal
-security contact process if one exists, or open a private report in the hosting
-platform if supported.
+Never include secrets, credentials, or private customer data in issues, pull
+requests, or generated artifacts.
+
+## Design guarantees
+
+The compiler is built so that a build is fully explainable from local inputs:
+
+- no telemetry
+- no network calls in the compiler core
+- no source code sent to any external service by the compiler
+- deterministic output: the same input produces byte-identical artifacts
+- pinned dependencies through a committed lockfile
+
+`bankc verify` re-emits every artifact from the same IR and fails if the bytes
+differ, so a non-reproducible build is detectable rather than silent.
 
 ## Scope
 
 Security concerns include:
 
-- secret leakage in generated files or logs
+- secret leakage in generated files, logs, or audit artifacts
 - unsafe dependency additions
 - compromised build scripts
-- diagnostics that suppress a real safety issue
+- a diagnostic that suppresses a real safety issue
 - generated artifacts that embed sensitive source data
 
-## Expectations
-
-Fixes should include:
+## Expectations for a fix
 
 - a clear explanation of the problem
 - a test that prevents regression
-- a changelog entry when user-visible behavior changes
-- tester notes when the change affects compiler behavior or generated output
+- a `CHANGELOG.md` entry when user-visible behaviour changes
+
+## AI policy
+
+This repository is developed with AI assistance under one hard boundary: **AI is
+never used as compiler truth.**
+
+Permitted: documentation drafts, test fixture suggestions, diagnostic wording,
+repetitive scaffolding.
+
+Not permitted: deciding compiler semantics, generating COBOL at runtime,
+silently updating golden outputs, approving diagnostics, or altering financial
+arithmetic without deterministic tests.
+
+Every artifact in this repository is produced by deterministic compiler code,
+not by a model.

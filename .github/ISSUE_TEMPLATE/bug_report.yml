@@ -1,0 +1,43 @@
+name: Bug report
+description: The compiler produced wrong output, crashed, or rejected a valid program.
+labels: [bug]
+body:
+  - type: textarea
+    id: program
+    attributes:
+      label: BankTS program
+      description: The smallest program that reproduces the problem.
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Include the full diagnostic output or generated COBOL.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Node version
+      placeholder: v24.18.0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I ran `pnpm bankc check` and included the output
+        - label: I checked `bankc explain <ID>` for any diagnostic involved

@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a language, diagnostic, or backend capability.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What banking or mainframe problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed BankTS syntax or diagnostic
+      render: typescript
+
+  - type: textarea
+    id: cobol
+    attributes:
+      label: Expected COBOL
+      description: What should this lower to? Readability matters as much as correctness.
+      render: cobol
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: This does not require binary floating point for money
+        - label: This can be lowered deterministically
+        - label: This does not require AI at compile time
