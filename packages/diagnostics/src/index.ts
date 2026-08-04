@@ -140,6 +140,34 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-008",
+    title: "Nullable used without a presence check",
+    explanation:
+      "A nullable value was read with valueOf outside any isPresent guard, so the program could read a value that is not there.",
+    remediation:
+      "Guard the use: `if isPresent(value) { ... valueOf(value) ... }`.",
+    specReference: "language-reference.md section 7",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-009",
+    title: "Array index out of bounds",
+    explanation:
+      "A literal index falls outside the declared bounds of a bounded array.",
+    remediation: "Use an index between 1 and the declared array length.",
+    specReference: "language-reference.md section 6",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-010",
+    title: "Switch does not handle every enum member",
+    explanation:
+      "A switch with no else branch leaves some members unhandled, so adding a member later would silently skip those cases.",
+    remediation: "Handle every member, or add an else branch.",
+    specReference: "language-reference.md section 9",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:
@@ -178,9 +206,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-DEC-005",
     title: "Currency mismatch",
     explanation:
-      "Values in different currencies were combined without an explicit conversion.",
-    remediation: "Convert explicitly with a stated rate and rounding mode.",
-    implemented: false,
+      "Values in different currencies were combined or compared. Currency types are nominal, so two currencies with identical precision and scale are still different types.",
+    remediation:
+      "Convert explicitly with a stated rate and rounding mode before combining.",
+    specReference: "language-reference.md section 4",
+    implemented: true,
   },
   {
     id: "BANK-TXN-001",
@@ -372,6 +402,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       "Compare layouts with `bankc copybook diff` before shipping the change.",
     implemented: false,
+  },
+  {
+    id: "BANK-FILE-004",
+    title: "Invalid file key",
+    explanation:
+      "An indexed file has no record key, names a key field the record does not declare, is read without a key, or a key clause appears on a file that is not indexed.",
+    remediation:
+      "Declare `key <field>` on an indexed file and read it with `read <file> into <record> key <value>;`.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
   },
   {
     id: "BANK-GEN-001",

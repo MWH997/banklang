@@ -23,6 +23,7 @@ import type {
   IRAssignStatement,
   IRExpressionStatement,
   IRFileStatement,
+  IRSwitchStatement,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -32,6 +33,7 @@ import {
   toCobolParagraphName,
   toCobolPicture,
   toCobolProgramId,
+  enumWidth,
 } from "../../cobol-ir/src/index";
 import {
   describeRecordLayout,
@@ -169,15 +171,12 @@ export function emitCobol(
   if (program.files.length > 0) {
     addLine(`       FILE SECTION.`);
     for (const file of program.files) {
-      // The FD record is an unstructured buffer sized from the copybook
-      // layout. The structured record lives once in working storage, so
-      // READ INTO / WRITE FROM move between them without creating duplicate
-      // field names that would make every reference ambiguous.
-      const layout = describeRecordLayout(file.record);
-      addLine(`       FD  ${toCobolName(file.name)}.`);
-      addLine(
-        `       01  ${fileRecordName(file).padEnd(24)} PIC X(${layout.totalLength}).`,
-      );
+      // The FD record carries the real field structure, with names prefixed by
+      // the file so they cannot collide with the working-storage record. That
+      // is what makes per-field access and a RECORD KEY possible.
+      addLine(`       FD  ${fileCobolName(file.name)}.`);
+      addLine(`       01  ${fileRecordName(file)}.`);
+      emitRecordFields(file.record.fields, 1, addLine);
     }
   }
 
@@ -190,6 +189,7 @@ export function emitCobol(
       );
     }
   }
+  emitRelativeKeys(program.files, addLine);
 
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
@@ -197,7 +197,14 @@ export function emitCobol(
     const layout = describeRecordLayout(record);
     recordLayouts.push(layout);
     addLine(`       01  ${layout.cobolName}.`);
-    emitRecordFields(record.fields, 1, addLine);
+    // Field start lines are recorded as they are emitted, because a field can
+    // span several lines: an enum adds level-88 entries, a nullable adds an
+    // indicator, and an array of records nests its own fields.
+    const fieldLines: number[] = [];
+    for (const field of record.fields) {
+      fieldLines.push(lineNumber());
+      emitField(field.name, field.type, 1, " ".repeat(11), addLine);
+    }
     const recordEnd = lineNumber() - 1;
     entries.push({
       sourceFile: program.sourceFile,
@@ -210,21 +217,20 @@ export function emitCobol(
       symbol: record.name,
     });
 
-    const fieldEntries = layout.fields;
-    for (let index = 0; index < fieldEntries.length; index += 1) {
+    for (let index = 0; index < record.fields.length; index += 1) {
       const field = record.fields[index];
-      const fieldLayout = fieldEntries[index];
+      const start = fieldLines[index];
+      const end = (fieldLines[index + 1] ?? recordEnd + 1) - 1;
       entries.push({
         sourceFile: program.sourceFile,
         sourceStart: field.span.start,
         sourceEnd: field.span.end,
         artifact: cobolArtifactPath,
-        targetStartLine: recordStart + 1 + index,
-        targetEndLine: recordStart + 1 + index,
+        targetStartLine: start,
+        targetEndLine: Math.max(start, end),
         category: "field",
         symbol: field.name,
       });
-      void fieldLayout;
     }
   }
 
@@ -392,17 +398,76 @@ function emitFileControlEntry(
   file: IRFile,
   addLine: (line?: string) => void,
 ): void {
-  const cobolName = toCobolName(file.name);
-  addLine(`           SELECT ${cobolName} ASSIGN TO ${toDdName(file.name)}`);
-  addLine(`               ORGANIZATION IS ${file.organization.toUpperCase()}`);
-  if (file.statusName) {
-    addLine(
-      `               FILE STATUS IS ${toCobolFieldName(file.statusName)}.`,
-    );
-    return;
+  const cobolName = fileCobolName(file.name);
+  const clauses: string[] = [
+    `               ORGANIZATION IS ${file.organization.toUpperCase()}`,
+  ];
+
+  // An indexed file is read by key, so it uses random access and names its
+  // record key. Sequential and relative files stay sequential.
+  if (file.organization === "indexed") {
+    clauses.push(`               ACCESS MODE IS RANDOM`);
+    if (file.keyFieldName) {
+      clauses.push(
+        `               RECORD KEY IS ${fdFieldName(file, file.keyFieldName)}`,
+      );
+    }
+  } else if (file.organization === "relative") {
+    clauses.push(`               ACCESS MODE IS SEQUENTIAL`);
+    clauses.push(`               RELATIVE KEY IS ${relativeKeyName(file)}`);
+  } else {
+    clauses.push(`               ACCESS MODE IS SEQUENTIAL`);
   }
 
-  addLine(`               ACCESS MODE IS SEQUENTIAL.`);
+  if (file.statusName) {
+    clauses.push(
+      `               FILE STATUS IS ${toCobolFieldName(file.statusName)}`,
+    );
+  }
+
+  addLine(`           SELECT ${cobolName} ASSIGN TO ${toDdName(file.name)}`);
+  clauses.forEach((clause, index) => {
+    addLine(index === clauses.length - 1 ? `${clause}.` : clause);
+  });
+}
+
+/**
+ * A field of the FD record, qualified by the FD record name.
+ *
+ * The FD record is structured rather than an opaque buffer, so per-field access
+ * works. Field names are not prefixed: COBOL permits duplicate data names as
+ * long as every reference is qualified, and prefixing would collide with the
+ * conventional `<file>Status` name for the file status field.
+ */
+function fdFieldName(file: IRFile, fieldName: string): string {
+  return `${toCobolFieldName(fieldName)} OF ${fileRecordName(file)}`;
+}
+
+function relativeKeyName(file: IRFile): string {
+  return `${toCobolName(file.name)}-RRN`;
+}
+
+/** Relative files need their record number declared in working storage. */
+function emitRelativeKeys(
+  files: IRFile[],
+  addLine: (line?: string) => void,
+): void {
+  for (const file of files) {
+    if (file.organization === "relative") {
+      addLine(`       01  ${relativeKeyName(file).padEnd(20)} PIC 9(9) COMP.`);
+    }
+  }
+}
+
+/**
+ * COBOL file names are suffixed with -FILE.
+ *
+ * A BankTS file and record type often share a name (`accountMaster` carrying
+ * `AccountMaster`), which would otherwise produce two COBOL items with the same
+ * data name. The suffix is also the conventional COBOL spelling.
+ */
+function fileCobolName(fileName: string): string {
+  return `${toCobolName(fileName)}-FILE`;
 }
 
 function fileRecordName(file: IRFile): string {
@@ -442,16 +507,72 @@ function emitRecordFields(
 ): void {
   const indent = " ".repeat(7 + level * 4);
   for (const field of fields) {
-    if (field.type.kind === "record") {
-      addLine(`${indent}05  ${toCobolFieldName(field.name)}.`);
-      emitRecordFields(field.type.fields, level + 1, addLine);
-      continue;
-    }
-
-    addLine(
-      `${indent}05  ${toCobolFieldName(field.name).padEnd(20)} ${formatCobolType(field.type)}.`,
-    );
+    emitField(field.name, field.type, level, indent, addLine);
   }
+}
+
+/** COBOL level numbers step 05, 10, 15 with nesting depth. */
+function levelNumber(level: number): string {
+  return String(Math.min(level * 5, 45)).padStart(2, "0");
+}
+
+function emitField(
+  name: string,
+  type: IRType,
+  level: number,
+  indent: string,
+  addLine: (line?: string) => void,
+): void {
+  const cobolName = toCobolFieldName(name);
+  const lvl = levelNumber(level);
+
+  // A bounded array becomes OCCURS. Arrays of records nest their fields.
+  if (type.kind === "array") {
+    if (type.element.kind === "record") {
+      addLine(`${indent}${lvl}  ${cobolName} OCCURS ${type.length} TIMES.`);
+      emitRecordFields(type.element.fields, level + 1, addLine);
+      return;
+    }
+    addLine(
+      `${indent}${lvl}  ${cobolName.padEnd(20)} ${formatCobolType(type.element)}`,
+    );
+    addLine(`${indent}        OCCURS ${type.length} TIMES.`);
+    return;
+  }
+
+  if (type.kind === "record") {
+    addLine(`${indent}${lvl}  ${cobolName}.`);
+    emitRecordFields(type.fields, level + 1, addLine);
+    return;
+  }
+
+  // A nullable value carries a Db2-style indicator halfword beside it.
+  if (type.kind === "nullable") {
+    emitField(name, type.inner, level, indent, addLine);
+    addLine(
+      `${indent}${lvl}  ${nullIndicatorName(name).padEnd(20)} PIC S9(4) COMP.`,
+    );
+    return;
+  }
+
+  addLine(`${indent}${lvl}  ${cobolName.padEnd(20)} ${formatCobolType(type)}.`);
+
+  // Enum members become level-88 condition names, the idiomatic COBOL form.
+  if (type.kind === "enum") {
+    for (const member of type.members) {
+      addLine(
+        `${indent}    88  ${enumConditionName(name, member).padEnd(28)} VALUE "${member}".`,
+      );
+    }
+  }
+}
+
+function nullIndicatorName(fieldName: string): string {
+  return `${toCobolFieldName(fieldName)}-IND`;
+}
+
+function enumConditionName(fieldName: string, member: string): string {
+  return `${toCobolFieldName(fieldName)}-${toCobolName(member)}`;
 }
 
 /**
@@ -499,6 +620,9 @@ function emitStatement(
       case "FileStatement":
         emitFileStatement(statement, addLine, indent);
         break;
+      case "SwitchStatement":
+        emitSwitchStatement(statement, addLine, indentLevel, resultName, false);
+        break;
       default:
         throw new Error(
           `Unsupported statement in function body: ${statement.kind}`,
@@ -545,6 +669,9 @@ function emitTransactionBody(
       case "FileStatement":
         emitFileStatement(statement, addLine, indent);
         break;
+      case "SwitchStatement":
+        emitSwitchStatement(statement, addLine, indentLevel, "", true);
+        break;
       default:
         throw new Error(
           `Unsupported statement in transaction body: ${statement.kind}`,
@@ -587,6 +714,37 @@ function emitAuditStatement(
     `${indent}MOVE ${renderExpression(statement.correlation)} TO ${AUDIT_CORRELATION_FIELD}`,
   );
   addLine(`${indent}CALL "${AUDIT_PROGRAM}" USING ${AUDIT_INTERFACE_GROUP}`);
+}
+
+/** `switch` over an enum becomes `EVALUATE TRUE` over the level-88 names. */
+function emitSwitchStatement(
+  statement: IRSwitchStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const subject = renderExpression(statement.subject);
+
+  addLine(`${indent}EVALUATE ${subject}`);
+  for (const branch of statement.cases) {
+    addLine(`${indent}    WHEN "${branch.member}"`);
+    if (inTransaction) {
+      emitTransactionBody(branch.body, addLine, indentLevel + 8);
+    } else {
+      emitStatement(branch.body, addLine, indentLevel + 8, resultName);
+    }
+  }
+  if (statement.otherwise) {
+    addLine(`${indent}    WHEN OTHER`);
+    if (inTransaction) {
+      emitTransactionBody(statement.otherwise, addLine, indentLevel + 8);
+    } else {
+      emitStatement(statement.otherwise, addLine, indentLevel + 8, resultName);
+    }
+  }
+  addLine(`${indent}END-EVALUATE`);
 }
 
 /** `IF` inside a transaction branches on effects, not on a returned value. */
@@ -662,7 +820,7 @@ function emitFileStatement(
   addLine: (line?: string) => void,
   indent: string,
 ): void {
-  const file = toCobolName(statement.fileName);
+  const file = fileCobolName(statement.fileName);
 
   switch (statement.operation) {
     case "open":
@@ -674,10 +832,21 @@ function emitFileStatement(
       addLine(`${indent}CLOSE ${file}`);
       return;
     case "read":
+      // A keyed read on an indexed file moves the key into the record key
+      // field first, which is how COBOL addresses a KSDS record.
+      if (statement.key && statement.keyFieldName) {
+        addLine(
+          `${indent}MOVE ${renderExpression(statement.key)} TO ${toCobolFieldName(statement.keyFieldName)} OF ${fileRecordNameFor(statement.fileName)}`,
+        );
+      }
       addLine(`${indent}READ ${file} INTO ${recordTarget(statement)}`);
       if (statement.statusName) {
+        // An indexed read reports a missing key rather than end of file.
+        const notFound = statement.fileOrganization === "indexed" ? "23" : "10";
+        const clause =
+          statement.fileOrganization === "indexed" ? "INVALID KEY" : "AT END";
         addLine(
-          `${indent}    AT END MOVE "10" TO ${toCobolFieldName(statement.statusName)}`,
+          `${indent}    ${clause} MOVE "${notFound}" TO ${toCobolFieldName(statement.statusName)}`,
         );
       }
       addLine(`${indent}END-READ`);
@@ -886,7 +1055,29 @@ function renderExpression(expression: IRExpression): string {
       return renderDecimalExpression(expression.operand);
     case "Call":
       return functionResultName(expression.callee);
+    case "EnumMember":
+      return `"${expression.member}"`;
+    case "IndexAccess":
+      return `${renderExpression(expression.target)} (${renderExpression(expression.index)})`;
+    case "NullableCheck":
+      return expression.operation === "isPresent"
+        ? `${nullIndicatorFor(expression.operand)} = 0`
+        : renderExpression(expression.operand);
   }
+}
+
+/**
+ * The indicator halfword beside a nullable value. Zero means present, which
+ * follows the Db2 null-indicator convention.
+ */
+function nullIndicatorFor(expression: IRExpression): string {
+  if (expression.kind === "Identifier") {
+    return `${toCobolFieldName(expression.name)}-IND`;
+  }
+  if (expression.kind === "MemberAccess") {
+    return `${toCobolFieldName(expression.member)}-IND OF ${toCobolName(expression.recordName)}`;
+  }
+  return "0";
 }
 
 /**
@@ -896,7 +1087,11 @@ function renderExpression(expression: IRExpression): string {
 function renderQualifiedFieldReference(
   expression: IRMemberAccessExpression,
 ): string {
-  return `${toCobolFieldName(expression.member)} OF ${toCobolName(expression.recordName)}`;
+  const base = `${toCobolFieldName(expression.member)} OF ${toCobolName(expression.recordName)}`;
+  // A subscripted field is written `FIELD OF RECORD (INDEX)`.
+  return expression.index
+    ? `${base} (${renderExpression(expression.index)})`
+    : base;
 }
 
 function renderDecimalExpression(expression: IRExpression): string {
@@ -913,6 +1108,10 @@ function renderDecimalExpression(expression: IRExpression): string {
       return renderDecimalExpression(expression.operand);
     case "Call":
       return functionResultName(expression.callee);
+    case "IndexAccess":
+      return `${renderExpression(expression.target)} (${renderDecimalExpression(expression.index)})`;
+    case "NullableCheck":
+      return renderDecimalExpression(expression.operand);
     default:
       return renderExpression(expression);
   }
@@ -936,6 +1135,10 @@ function renderCondition(expression: IRExpression): string {
       return `NOT (${renderCondition(expression.operand)})`;
     case "Call":
       return `${functionResultName(expression.callee)} = 'Y'`;
+    case "NullableCheck":
+      return expression.operation === "isPresent"
+        ? `${nullIndicatorFor(expression.operand)} = 0`
+        : renderExpression(expression);
     case "BinaryComparison":
       return `${renderDecimalExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderDecimalExpression(expression.right)}`;
     default:
@@ -1022,6 +1225,14 @@ function formatCobolType(type: IRType): string {
       return "PIC X VALUE 'N'";
     case "record":
       return toCobolName(type.name);
+    case "currency":
+      return decimalPicture(type.precision, type.scale);
+    case "enum":
+      return `PIC X(${enumWidth(type.members)})`;
+    case "nullable":
+      return formatCobolType(type.inner);
+    case "array":
+      return formatCobolType(type.element);
   }
 }
 

@@ -91,8 +91,44 @@ export interface TypeReferenceNode extends NodeBase {
   name: string;
 }
 
+/**
+ * `currency<"BDT", 18, 2>` — a decimal that is nominally typed by its currency
+ * code, so two currencies cannot be combined without an explicit conversion.
+ */
+export interface CurrencyTypeNode extends NodeBase {
+  kind: "CurrencyType";
+  code: string;
+  precision: number;
+  scale: number;
+}
+
+/** `nullable<T>` — a value that must be checked before it can be used. */
+export interface NullableTypeNode extends NodeBase {
+  kind: "NullableType";
+  inner: TypeNode;
+}
+
+/** `T[n]` — a statically bounded array, lowering to COBOL `OCCURS`. */
+export interface ArrayTypeNode extends NodeBase {
+  kind: "ArrayType";
+  element: TypeNode;
+  length: number;
+}
+
 export type TypeNode =
-  DecimalTypeNode | StringTypeNode | BoolTypeNode | TypeReferenceNode;
+  | DecimalTypeNode
+  | StringTypeNode
+  | BoolTypeNode
+  | TypeReferenceNode
+  | CurrencyTypeNode
+  | NullableTypeNode
+  | ArrayTypeNode;
+
+export interface EnumDeclarationNode extends NodeBase {
+  kind: "EnumDeclaration";
+  name: string;
+  members: string[];
+}
 
 export interface TypeAliasDeclarationNode extends NodeBase {
   kind: "TypeAliasDeclaration";
@@ -144,7 +180,11 @@ export interface StringLiteralNode extends NodeBase {
  */
 export interface MemberAccessNode extends NodeBase {
   kind: "MemberAccess";
-  target: IdentifierNode;
+  /**
+   * An index access target supports `statement.lines[i].amount`, which lowers
+   * to the COBOL qualified-subscript form `AMOUNT OF STATEMENT (I)`.
+   */
+  target: IdentifierNode | IndexAccessNode;
   member: string;
 }
 
@@ -188,6 +228,32 @@ export interface RoundedExpressionNode extends NodeBase {
   isDivision: boolean;
 }
 
+/** `Status.ACTIVE` — a member of a declared enum. */
+export interface EnumMemberNode extends NodeBase {
+  kind: "EnumMember";
+  enumName: string;
+  member: string;
+}
+
+/** `statement.entries[index]` — element access on a bounded array. */
+export interface IndexAccessNode extends NodeBase {
+  kind: "IndexAccess";
+  target: MemberAccessNode | IdentifierNode;
+  index: ExpressionNode;
+}
+
+/**
+ * `isPresent(value)` and `valueOf(value)` for nullable values.
+ *
+ * `valueOf` is only legal where the compiler can see a preceding `isPresent`
+ * check, which is what makes implicit nullable access impossible.
+ */
+export interface NullableCheckNode extends NodeBase {
+  kind: "NullableCheck";
+  operation: "isPresent" | "valueOf";
+  operand: ExpressionNode;
+}
+
 /** A call to a user-declared function. */
 export interface CallExpressionNode extends NodeBase {
   kind: "CallExpression";
@@ -211,7 +277,10 @@ export type ExpressionNode =
   | BinaryExpressionNode
   | UnaryExpressionNode
   | RoundedExpressionNode
-  | CallExpressionNode;
+  | CallExpressionNode
+  | EnumMemberNode
+  | IndexAccessNode
+  | NullableCheckNode;
 
 /**
  * A ledger posting operation inside a transaction body.
@@ -259,7 +328,23 @@ export interface ExpressionStatementNode extends NodeBase {
   expression: ExpressionNode;
 }
 
+/** `switch value { case MEMBER { ... } else { ... } }` over an enum. */
+export interface SwitchCaseNode extends NodeBase {
+  kind: "SwitchCase";
+  member: string;
+  body: BlockNode;
+}
+
+export interface SwitchStatementNode extends NodeBase {
+  kind: "SwitchStatement";
+  subject: ExpressionNode;
+  cases: SwitchCaseNode[];
+  otherwise: BlockNode | null;
+}
+
 export type FileOperation = "open" | "read" | "write" | "close";
+
+export type FileOrganization = "sequential" | "indexed" | "relative";
 
 /**
  * `read accountInput into record;` and friends.
@@ -273,6 +358,8 @@ export interface FileStatementNode extends NodeBase {
   fileName: string;
   /** Record variable for `read into` / `write from`. */
   recordName: string | null;
+  /** Key expression for a keyed read on an indexed file. */
+  key: ExpressionNode | null;
 }
 
 export type StatementNode =
@@ -284,7 +371,8 @@ export type StatementNode =
   | WhileStatementNode
   | AssignStatementNode
   | ExpressionStatementNode
-  | FileStatementNode;
+  | FileStatementNode
+  | SwitchStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
@@ -320,10 +408,12 @@ export interface FunctionDeclarationNode extends NodeBase {
 export interface FileDeclarationNode extends NodeBase {
   kind: "FileDeclaration";
   name: string;
-  organization: "sequential";
+  organization: FileOrganization;
   mode: "input" | "output";
   recordTypeName: string;
   statusName: string | null;
+  /** Record key field, required for an indexed file. */
+  keyField: string | null;
 }
 
 export interface TransactionDeclarationNode extends NodeBase {
@@ -338,7 +428,8 @@ export type DeclarationNode =
   | RecordDeclarationNode
   | FunctionDeclarationNode
   | TransactionDeclarationNode
-  | FileDeclarationNode;
+  | FileDeclarationNode
+  | EnumDeclarationNode;
 
 export interface ProgramNode extends NodeBase {
   kind: "Program";

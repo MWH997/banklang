@@ -32,6 +32,11 @@ import {
   type WhileStatementNode,
   type AssignStatementNode,
   type FileStatementNode,
+  type EnumDeclarationNode,
+  type FileOrganization,
+  type SwitchStatementNode,
+  type IndexAccessNode,
+  type NullableCheckNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -51,6 +56,11 @@ export interface DecimalType {
 export interface StringType {
   kind: "string";
   length: number;
+  /**
+   * True for a written literal, which fits any string field long enough to
+   * hold it. COBOL `MOVE` pads with spaces, so this is not a silent truncation.
+   */
+  literal?: boolean;
 }
 
 export interface BoolType {
@@ -64,7 +74,46 @@ export interface RecordType {
   fields: ResolvedField[];
 }
 
-export type ResolvedType = DecimalType | StringType | BoolType | RecordType;
+/** A decimal that is nominally typed by currency code. */
+export interface CurrencyType {
+  kind: "currency";
+  code: string;
+  precision: number;
+  scale: number;
+}
+
+export interface EnumType {
+  kind: "enum";
+  name: string;
+  members: string[];
+}
+
+export interface NullableType {
+  kind: "nullable";
+  inner: ResolvedType;
+}
+
+export interface ArrayType {
+  kind: "array";
+  element: ResolvedType;
+  length: number;
+}
+
+export type ResolvedType =
+  | DecimalType
+  | StringType
+  | BoolType
+  | RecordType
+  | CurrencyType
+  | EnumType
+  | NullableType
+  | ArrayType;
+
+export interface ResolvedEnum {
+  name: string;
+  span: SourceSpan;
+  members: string[];
+}
 
 export interface ResolvedField {
   name: string;
@@ -110,7 +159,8 @@ export interface ResolvedTransaction {
 export interface ResolvedFile {
   name: string;
   span: SourceSpan;
-  organization: "sequential";
+  organization: FileOrganization;
+  keyField: ResolvedField | null;
   mode: "input" | "output";
   record: ResolvedRecord;
   statusName: string | null;
@@ -124,6 +174,7 @@ export interface TypeCheckResult {
   functions: ResolvedFunction[];
   transactions: ResolvedTransaction[];
   files: ResolvedFile[];
+  enums: ResolvedEnum[];
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -144,6 +195,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       functions: [],
       transactions: [],
       files: [],
+      enums: [],
     };
   }
 
@@ -154,12 +206,14 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const functions: ResolvedFunction[] = [];
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
+  const enums: ResolvedEnum[] = [];
 
   // Resolve record and alias declarations first so function signatures can
   // reference them, then collect signatures so a function may call one
   // declared later in the file.
   functionSignatures = new Map();
   declaredFiles = new Map();
+  enumMap = new Map();
 
   // Pass 1: type aliases and records, so later passes can resolve types.
   for (const declaration of program.declarations) {
@@ -174,6 +228,30 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       if (resolved) {
         aliases[declaration.name] = resolved;
       }
+      continue;
+    }
+
+    if (declaration.kind === "EnumDeclaration") {
+      if (declaration.members.length === 0) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-002",
+            severity: "error",
+            message: `Enum ${declaration.name} declares no members.`,
+            span: declaration.span,
+            hint: "An enum needs at least one member.",
+            backendProfile: null,
+          }),
+        );
+        continue;
+      }
+      const resolved: ResolvedEnum = {
+        name: declaration.name,
+        span: declaration.span,
+        members: declaration.members,
+      };
+      enums.push(resolved);
+      enumMap.set(resolved.name, resolved);
       continue;
     }
 
@@ -244,6 +322,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     functions,
     transactions,
     files,
+    enums,
   };
 }
 
@@ -267,10 +346,56 @@ function resolveFile(
     return null;
   }
 
+  // An indexed file needs a record key, and the key must be a real field of
+  // the record it carries.
+  let keyField: ResolvedField | null = null;
+  if (declaration.organization === "indexed") {
+    if (!declaration.keyField) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-004",
+          severity: "error",
+          message: `Indexed file ${declaration.name} declares no record key.`,
+          span: declaration.span,
+          hint: "Write `... record R key <field> status <s>;`.",
+          backendProfile: null,
+        }),
+      );
+    } else {
+      keyField =
+        record.fields.find((field) => field.name === declaration.keyField) ??
+        null;
+      if (!keyField) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-FILE-004",
+            severity: "error",
+            message: `Record ${record.name} has no field named ${declaration.keyField} to use as the record key.`,
+            span: declaration.span,
+            hint: `Available fields: ${record.fields.map((field) => field.name).join(", ")}.`,
+            backendProfile: null,
+          }),
+        );
+      }
+    }
+  } else if (declaration.keyField) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-004",
+        severity: "error",
+        message: `Only an indexed file can declare a record key, but ${declaration.name} is ${declaration.organization}.`,
+        span: declaration.span,
+        hint: "Remove the key clause, or declare the file as indexed.",
+        backendProfile: null,
+      }),
+    );
+  }
+
   return {
     name: declaration.name,
     span: declaration.span,
     organization: declaration.organization,
+    keyField,
     mode: declaration.mode,
     record,
     statusName: declaration.statusName,
@@ -373,6 +498,7 @@ function validateTransactionBody(
       case "AssignStatement":
       case "ExpressionStatement":
       case "FileStatement":
+      case "SwitchStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -398,10 +524,9 @@ function validateTransactionBody(
           createDiagnostic({
             id: "BANK-TYPE-007",
             severity: "error",
-            message:
-              "Transaction bodies support let, debit, credit, and audit statements in the current subset.",
+            message: `A ${statement.kind} is not allowed in a transaction body.`,
             span: statement.span,
-            hint: "Move return and if statements into a function.",
+            hint: "Transactions carry effects. Move a return into a function.",
             backendProfile: null,
           }),
         );
@@ -447,12 +572,26 @@ function validateTransactionBranch(
     );
   }
 
-  for (const branch of [statement.thenBranch, statement.elseBranch]) {
-    if (!branch) {
-      continue;
-    }
+  // Inside the then-branch, any nullable proven present by the condition may
+  // be read with valueOf.
+  const previousGuards = guardedNullables;
+  const guards = new Set(previousGuards);
+  collectGuards(statement.condition, guards);
+
+  guardedNullables = guards;
+  validateTransactionBody(
+    statement.thenBranch,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+  );
+  guardedNullables = previousGuards;
+
+  if (statement.elseBranch) {
     validateTransactionBody(
-      branch,
+      statement.elseBranch,
       scope,
       aliases,
       recordMap,
@@ -502,10 +641,205 @@ function validateEffectStatement(
       );
       return true;
     case "FileStatement":
-      validateFileStatement(statement, scope, diagnostics);
+      validateFileStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "SwitchStatement":
+      validateSwitchStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
       return true;
     default:
       return false;
+  }
+}
+
+/**
+ * `switch` over an enum. Every case must name a real member, cases must not
+ * repeat, and a switch with no `else` must cover every member, so adding an
+ * enum member surfaces every place that has to handle it.
+ */
+function validateSwitchStatement(
+  statement: SwitchStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const subject = inferExpressionType(
+    statement.subject,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (!subject) {
+    return;
+  }
+
+  if (subject.kind !== "enum") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `switch requires an enum value, but received ${describeType(subject)}.`,
+        span: statement.subject.span,
+        hint: "Switch over a declared enum.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  const seen = new Set<string>();
+  for (const branch of statement.cases) {
+    if (!subject.members.includes(branch.member)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-006",
+          severity: "error",
+          message: `Enum ${subject.name} has no member named ${branch.member}.`,
+          span: branch.span,
+          hint: `Members: ${subject.members.join(", ")}.`,
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    if (seen.has(branch.member)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-005",
+          severity: "error",
+          message: `Duplicate switch case for ${branch.member}.`,
+          span: branch.span,
+          hint: "Each member may appear once.",
+          backendProfile: null,
+        }),
+      );
+    }
+    seen.add(branch.member);
+  }
+
+  if (!statement.otherwise) {
+    const missing = subject.members.filter((member) => !seen.has(member));
+    if (missing.length > 0) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-010",
+          severity: "error",
+          message: `switch over ${subject.name} does not handle: ${missing.join(", ")}.`,
+          span: statement.span,
+          hint: "Handle every member, or add an else branch.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  for (const branch of statement.cases) {
+    validateBranchBody(
+      branch.body,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+      inTransaction,
+    );
+  }
+
+  if (statement.otherwise) {
+    validateBranchBody(
+      statement.otherwise,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+      inTransaction,
+    );
+  }
+}
+
+/** Body of a switch case or loop: effects and locals, no terminal statement. */
+function validateBranchBody(
+  block: BlockNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  for (const statement of block.statements) {
+    if (statement.kind === "LetStatement") {
+      validateLetStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      continue;
+    }
+    if (
+      validateEffectStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      )
+    ) {
+      continue;
+    }
+    if (inTransaction && statement.kind === "LedgerStatement") {
+      validateLedgerStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      continue;
+    }
+    if (inTransaction && statement.kind === "AuditStatement") {
+      validateAuditStatement(statement, scope, aliases, recordMap, diagnostics);
+      continue;
+    }
+    if (inTransaction && statement.kind === "IfStatement") {
+      validateTransactionBranch(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      continue;
+    }
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-007",
+        severity: "error",
+        message: `A ${statement.kind} is not allowed in this position.`,
+        span: statement.span,
+        hint: "Case and loop bodies carry effects.",
+        backendProfile: null,
+      }),
+    );
   }
 }
 
@@ -662,6 +996,8 @@ function validateAssignStatement(
 function validateFileStatement(
   statement: FileStatementNode,
   scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): void {
   const file = declaredFiles.get(statement.fileName);
@@ -700,6 +1036,59 @@ function validateFileStatement(
         message: `Cannot write to ${file.name}, which is declared as input.`,
         span: statement.span,
         hint: "Declare the file as output, or use read.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.key) {
+    if (file.organization !== "indexed") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-004",
+          severity: "error",
+          message: `Only an indexed file supports a keyed read, but ${file.name} is ${file.organization}.`,
+          span: statement.span,
+          hint: "Declare the file as indexed with a record key.",
+          backendProfile: null,
+        }),
+      );
+    } else {
+      const keyType = inferExpressionType(
+        statement.key,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (
+        keyType &&
+        file.keyField &&
+        !typesCompatible(file.keyField.type, keyType)
+      ) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-FILE-004",
+            severity: "error",
+            message: `Key expression is ${describeType(keyType)} but the record key ${file.keyField.name} is ${describeType(file.keyField.type)}.`,
+            span: statement.key.span,
+            hint: "The key must match the declared record key field.",
+            backendProfile: null,
+          }),
+        );
+      }
+    }
+  } else if (
+    statement.operation === "read" &&
+    file.organization === "indexed"
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-004",
+        severity: "error",
+        message: `Reading indexed file ${file.name} requires a key.`,
+        span: statement.span,
+        hint: `Write \`read ${file.name} into <record> key <value>;\`.`,
         backendProfile: null,
       }),
     );
@@ -1084,6 +1473,7 @@ function resolveTerminalStatementType(
     case "AssignStatement":
     case "ExpressionStatement":
     case "FileStatement":
+    case "SwitchStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;
@@ -1124,6 +1514,10 @@ function resolveIfStatementType(
     return null;
   }
 
+  const previousGuards = guardedNullables;
+  const guards = new Set(previousGuards);
+  collectGuards(statement.condition, guards);
+  guardedNullables = guards;
   const thenType = validateBlock(
     statement.thenBranch,
     returnType,
@@ -1133,6 +1527,7 @@ function resolveIfStatementType(
     locals,
     diagnostics,
   );
+  guardedNullables = previousGuards;
   if (!thenType) {
     return null;
   }
@@ -1287,15 +1682,87 @@ function inferExpressionType(
       return resolved;
     }
     case "StringLiteral":
-      return { kind: "string", length: expression.value.length };
+      return {
+        kind: "string",
+        length: expression.value.length,
+        literal: true,
+      };
     case "MemberAccess": {
-      const target = scope.get(expression.target.name);
+      // Reaching a field of an array element, such as `lines[i].amount`.
+      if (expression.target.kind === "IndexAccess") {
+        const element = inferExpressionType(
+          expression.target,
+          scope,
+          aliases,
+          recordMap,
+          diagnostics,
+        );
+        if (!element) {
+          return null;
+        }
+        if (element.kind !== "record") {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TYPE-003",
+              severity: "error",
+              message: `Cannot read field ${expression.member} of ${describeType(element)}.`,
+              span: expression.span,
+              hint: "Field access needs an array of records.",
+              backendProfile: null,
+            }),
+          );
+          return null;
+        }
+        const field = element.fields.find(
+          (candidate) => candidate.name === expression.member,
+        );
+        if (!field) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TYPE-006",
+              severity: "error",
+              message: `Record ${element.name} has no field named ${expression.member}.`,
+              span: expression.span,
+              hint: `Use one of: ${element.fields.map((candidate) => candidate.name).join(", ")}.`,
+              backendProfile: null,
+            }),
+          );
+          return null;
+        }
+        return field.type;
+      }
+
+      const targetName = expression.target.name;
+      // `Status.ACTIVE` where `Status` is a declared enum, not a value.
+      const enumType = enumMap.get(targetName);
+      if (enumType && !scope.has(targetName)) {
+        if (!enumType.members.includes(expression.member)) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TYPE-006",
+              severity: "error",
+              message: `Enum ${enumType.name} has no member named ${expression.member}.`,
+              span: expression.span,
+              hint: `Members: ${enumType.members.join(", ")}.`,
+              backendProfile: null,
+            }),
+          );
+          return null;
+        }
+        return {
+          kind: "enum",
+          name: enumType.name,
+          members: enumType.members,
+        };
+      }
+
+      const target = scope.get(targetName);
       if (!target) {
         diagnostics.push(
           createDiagnostic({
             id: "BANK-TYPE-001",
             severity: "error",
-            message: `Unresolved type or symbol: ${expression.target.name}.`,
+            message: `Unresolved type or symbol: ${targetName}.`,
             span: expression.target.span,
             hint: "Declare the symbol before using it in the transaction body.",
             backendProfile: null,
@@ -1309,7 +1776,7 @@ function inferExpressionType(
           createDiagnostic({
             id: "BANK-TYPE-003",
             severity: "error",
-            message: `Field access requires a record value, but ${expression.target.name} is not a record.`,
+            message: `Field access requires a record value, but ${targetName} is not a record.`,
             span: expression.span,
             hint: "Use field access only on record-typed parameters.",
             backendProfile: null,
@@ -1403,6 +1870,128 @@ function inferExpressionType(
       // ROUNDED attaches to the receiving field.
       return { ...operand, rounded: true };
     }
+    case "EnumMember": {
+      const enumType = enumMap.get(expression.enumName);
+      return enumType
+        ? { kind: "enum", name: enumType.name, members: enumType.members }
+        : null;
+    }
+    case "IndexAccess": {
+      const target = inferExpressionType(
+        expression.target,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      const index = inferExpressionType(
+        expression.index,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+
+      if (!target) {
+        return null;
+      }
+
+      if (target.kind !== "array") {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `Cannot index ${describeType(target)}, which is not an array.`,
+            span: expression.span,
+            hint: "Index a field declared as T[n].",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      if (index && !(index.kind === "decimal" && index.scale === 0)) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: "An array index must be a whole-number decimal.",
+            span: expression.index.span,
+            hint: "Use decimal<n, 0> for indexes.",
+            backendProfile: null,
+          }),
+        );
+      }
+
+      // A literal index out of range is a compile-time error; a computed index
+      // is not bounds-checked at run time, which is recorded as a known gap.
+      if (
+        expression.index.kind === "DecimalLiteral" &&
+        !expression.index.text.includes(".")
+      ) {
+        const value = Number(expression.index.text);
+        if (value < 1 || value > target.length) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TYPE-009",
+              severity: "error",
+              message: `Index ${value} is outside the bounds of an array of ${target.length}.`,
+              span: expression.index.span,
+              hint: `Valid indexes are 1 to ${target.length}.`,
+              backendProfile: null,
+            }),
+          );
+        }
+      }
+
+      return target.element;
+    }
+    case "NullableCheck": {
+      const operand = inferExpressionType(
+        expression.operand,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (!operand) {
+        return null;
+      }
+      if (operand.kind !== "nullable") {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `${expression.operation} requires a nullable value, but received ${describeType(operand)}.`,
+            span: expression.span,
+            hint: "Only nullable<T> values need a presence check.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      if (expression.operation === "isPresent") {
+        return { kind: "bool" };
+      }
+
+      // valueOf is only legal where a preceding isPresent check guards it.
+      if (!guardedNullables.has(nullableKey(expression.operand))) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-008",
+            severity: "error",
+            message: "A nullable value is used without a presence check.",
+            span: expression.span,
+            hint: "Guard the use with `if isPresent(value) { ... valueOf(value) ... }`.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      return operand.inner;
+    }
     case "CallExpression":
       return inferCallExpressionType(
         expression,
@@ -1424,6 +2013,9 @@ let functionSignatures = new Map<string, ResolvedFunctionSignature>();
 
 /** Declared files, for resolving file statements. */
 let declaredFiles = new Map<string, ResolvedFile>();
+
+/** Declared enums, for resolving member references and switch cases. */
+let enumMap = new Map<string, ResolvedEnum>();
 
 /**
  * File status fields are readable in any body, so a loop can test them.
@@ -1542,6 +2134,40 @@ function inferCallExpressionType(
 const COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "==", "!="]);
 
 /**
+ * Nullable values proven present by an enclosing `isPresent` check.
+ *
+ * Tracked by source text of the operand, which is enough for the single-level
+ * access the subset allows and keeps the check free of dataflow machinery.
+ */
+let guardedNullables = new Set<string>();
+
+function nullableKey(expression: ExpressionNode): string {
+  switch (expression.kind) {
+    case "Identifier":
+      return expression.name;
+    case "MemberAccess":
+      return `${nullableKey(expression.target)}.${expression.member}`;
+    default:
+      return `<${expression.kind}>`;
+  }
+}
+
+/** Collects the nullable values an `isPresent` condition proves present. */
+function collectGuards(expression: ExpressionNode, into: Set<string>): void {
+  if (
+    expression.kind === "NullableCheck" &&
+    expression.operation === "isPresent"
+  ) {
+    into.add(nullableKey(expression.operand));
+    return;
+  }
+  if (expression.kind === "BinaryExpression" && expression.operator === "&&") {
+    collectGuards(expression.left, into);
+    collectGuards(expression.right, into);
+  }
+}
+
+/**
  * True while checking inside `round(...)` or `divide(...)`.
  *
  * Division is only legal there, because COBOL attaches `ROUNDED` to the
@@ -1559,6 +2185,14 @@ function describeType(type: ResolvedType): string {
       return "bool";
     case "record":
       return type.name;
+    case "currency":
+      return `currency<"${type.code}", ${type.precision}, ${type.scale}>`;
+    case "enum":
+      return type.name;
+    case "nullable":
+      return `nullable<${describeType(type.inner)}>`;
+    case "array":
+      return `${describeType(type.element)}[${type.length}]`;
   }
 }
 
@@ -1612,6 +2246,49 @@ function inferBinaryExpressionType(
   if (COMPARISON_OPERATORS.has(operator)) {
     const equality = operator === "==" || operator === "!=";
 
+    if (left.kind === "currency" || right.kind === "currency") {
+      const currency =
+        left.kind === "currency" ? left : (right as CurrencyType);
+      const other = left.kind === "currency" ? right : left;
+
+      // A literal is comparable with any currency at the same scale.
+      if (isDecimalType(other) && other.literal) {
+        if (other.scale !== currency.scale) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TYPE-003",
+              severity: "error",
+              message: `A literal compared with ${describeType(currency)} must have scale ${currency.scale}.`,
+              span: expression.span,
+              hint: "Write the literal at the currency's scale.",
+              backendProfile: null,
+            }),
+          );
+          return null;
+        }
+        return { kind: "bool" };
+      }
+
+      if (
+        left.kind !== "currency" ||
+        right.kind !== "currency" ||
+        left.code !== right.code
+      ) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-DEC-005",
+            severity: "error",
+            message: `Cannot compare ${describeType(left)} with ${describeType(right)}.`,
+            span: expression.span,
+            hint: "Compare amounts in the same currency.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      return { kind: "bool" };
+    }
+
     if (equality && left.kind === right.kind && !isDecimalType(left)) {
       return { kind: "bool" };
     }
@@ -1647,6 +2324,72 @@ function inferBinaryExpressionType(
     }
 
     return { kind: "bool" };
+  }
+
+  // Currency values combine only with the same currency. A written literal has
+  // no currency of its own, so it adopts the currency of the other operand;
+  // that keeps `balance + 1.00` legal without weakening the nominal typing.
+  if (left.kind === "currency" || right.kind === "currency") {
+    const currency = left.kind === "currency" ? left : (right as CurrencyType);
+    const other = left.kind === "currency" ? right : left;
+
+    if (isDecimalType(other) && other.literal) {
+      if (other.scale !== currency.scale) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `A literal combined with ${describeType(currency)} must have scale ${currency.scale}.`,
+            span: expression.span,
+            hint: "Write the literal at the currency's scale.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      return currency;
+    }
+
+    if (left.kind !== "currency" || right.kind !== "currency") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DEC-005",
+          severity: "error",
+          message: `Cannot combine ${describeType(left)} with ${describeType(right)}.`,
+          span: expression.span,
+          hint: "Convert to a currency type explicitly before combining.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    if (left.code !== right.code) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DEC-005",
+          severity: "error",
+          message: `Cannot combine ${left.code} with ${right.code}.`,
+          span: expression.span,
+          hint: "Different currencies need an explicit conversion with a stated rate and rounding mode.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    if (left.scale !== right.scale) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `Currency ${operator} requires matching scale.`,
+          span: expression.span,
+          hint: "Rescale one side with an explicit rounding mode.",
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    return left;
   }
 
   if (!isDecimalType(left) || !isDecimalType(right)) {
@@ -1735,6 +2478,46 @@ function resolveTypeNode(
       return resolveString(node, diagnostics, span);
     case "BoolType":
       return { kind: "bool" };
+    case "CurrencyType":
+      return {
+        kind: "currency",
+        code: node.code,
+        precision: node.precision,
+        scale: node.scale,
+      };
+    case "NullableType": {
+      const inner = resolveTypeNode(
+        node.inner,
+        aliases,
+        recordMap,
+        diagnostics,
+        span,
+      );
+      return inner ? { kind: "nullable", inner } : null;
+    }
+    case "ArrayType": {
+      if (!Number.isInteger(node.length) || node.length <= 0) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-002",
+            severity: "error",
+            message: "Array length must be a positive whole number.",
+            span,
+            hint: "Arrays must be statically bounded, such as LedgerEntry[100].",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      const element = resolveTypeNode(
+        node.element,
+        aliases,
+        recordMap,
+        diagnostics,
+        span,
+      );
+      return element ? { kind: "array", element, length: node.length } : null;
+    }
     case "TypeReference":
       return resolveReference(node, aliases, recordMap, diagnostics, span);
   }
@@ -1825,6 +2608,15 @@ function resolveReference(
     };
   }
 
+  const enumType = enumMap.get(node.name);
+  if (enumType) {
+    return {
+      kind: "enum",
+      name: enumType.name,
+      members: enumType.members,
+    };
+  }
+
   diagnostics.push(
     createDiagnostic({
       id: "BANK-TYPE-001",
@@ -1910,11 +2702,48 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
   }
 
   if (left.kind === "string" && right.kind === "string") {
+    // A literal fits any field long enough to hold it; COBOL pads with spaces.
+    if (right.literal) {
+      return right.length <= left.length;
+    }
+    if (left.literal) {
+      return left.length <= right.length;
+    }
     return left.length === right.length;
   }
 
   if (left.kind === "record" && right.kind === "record") {
     return left.name === right.name;
+  }
+
+  // A literal fits a currency field of the same scale.
+  if (left.kind === "currency" && right.kind === "decimal" && right.literal) {
+    return right.scale === left.scale && right.precision <= left.precision;
+  }
+
+  // Currency is nominal: two currencies with identical precision and scale are
+  // still different types. That is the whole point of BANK-DEC-005.
+  if (left.kind === "currency" && right.kind === "currency") {
+    return (
+      left.code === right.code &&
+      left.precision === right.precision &&
+      left.scale === right.scale
+    );
+  }
+
+  if (left.kind === "enum" && right.kind === "enum") {
+    return left.name === right.name;
+  }
+
+  if (left.kind === "nullable" && right.kind === "nullable") {
+    return typesCompatible(left.inner, right.inner);
+  }
+
+  if (left.kind === "array" && right.kind === "array") {
+    return (
+      left.length === right.length &&
+      typesCompatible(left.element, right.element)
+    );
   }
 
   return true;
