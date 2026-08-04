@@ -133,6 +133,21 @@ export interface BooleanLiteralNode extends NodeBase {
   value: boolean;
 }
 
+export interface StringLiteralNode extends NodeBase {
+  kind: "StringLiteral";
+  value: string;
+}
+
+/**
+ * Field access on a record-typed identifier, such as `request.amount`.
+ * Only single-level access is supported by the current subset.
+ */
+export interface MemberAccessNode extends NodeBase {
+  kind: "MemberAccess";
+  target: IdentifierNode;
+  member: string;
+}
+
 export interface BinaryExpressionNode extends NodeBase {
   kind: "BinaryExpression";
   operator: ">" | "+" | "-";
@@ -151,10 +166,37 @@ export type ExpressionNode =
   | IdentifierNode
   | DecimalLiteralNode
   | BooleanLiteralNode
+  | StringLiteralNode
+  | MemberAccessNode
   | BinaryExpressionNode;
 
+/**
+ * A ledger posting operation inside a transaction body.
+ * `debit(account, amount)` / `credit(account, amount)`.
+ */
+export interface LedgerStatementNode extends NodeBase {
+  kind: "LedgerStatement";
+  operation: "debit" | "credit";
+  account: ExpressionNode;
+  amount: ExpressionNode;
+}
+
+/**
+ * An audit event emission inside a transaction body.
+ * `audit(eventName, correlationKey)`.
+ */
+export interface AuditStatementNode extends NodeBase {
+  kind: "AuditStatement";
+  eventName: ExpressionNode;
+  correlation: ExpressionNode;
+}
+
 export type StatementNode =
-  LetStatementNode | ReturnStatementNode | IfStatementNode;
+  | LetStatementNode
+  | ReturnStatementNode
+  | IfStatementNode
+  | LedgerStatementNode
+  | AuditStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
@@ -181,8 +223,18 @@ export interface FunctionDeclarationNode extends NodeBase {
   body: BlockNode;
 }
 
+export interface TransactionDeclarationNode extends NodeBase {
+  kind: "TransactionDeclaration";
+  name: string;
+  parameters: ParameterNode[];
+  body: BlockNode;
+}
+
 export type DeclarationNode =
-  TypeAliasDeclarationNode | RecordDeclarationNode | FunctionDeclarationNode;
+  | TypeAliasDeclarationNode
+  | RecordDeclarationNode
+  | FunctionDeclarationNode
+  | TransactionDeclarationNode;
 
 export interface ProgramNode extends NodeBase {
   kind: "Program";

@@ -15,6 +15,9 @@ import type {
   IRRecord,
   IRType,
   IRStatement,
+  IRLedgerStatement,
+  IRAuditStatement,
+  IRMemberAccessExpression,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -30,6 +33,24 @@ import {
   type CopybookRecordLayout,
 } from "../../copybook/src/index";
 
+/**
+ * BankLang ledger and audit calling convention. See ADR-0003. The field widths
+ * are fixed so the generated group items stay layout-stable across programs.
+ */
+const LEDGER_PROGRAM = "BANKLEDG";
+const AUDIT_PROGRAM = "BANKAUDT";
+const LEDGER_INTERFACE_GROUP = "BANK-LEDGER-INTERFACE";
+const AUDIT_INTERFACE_GROUP = "BANK-AUDIT-INTERFACE";
+const LEDGER_OPERATION_FIELD = "BANK-LEDGER-OPERATION";
+const LEDGER_ACCOUNT_FIELD = "BANK-LEDGER-ACCOUNT";
+const LEDGER_AMOUNT_FIELD = "BANK-LEDGER-AMOUNT";
+const AUDIT_EVENT_FIELD = "BANK-AUDIT-EVENT";
+const AUDIT_CORRELATION_FIELD = "BANK-AUDIT-CORRELATION";
+const LEDGER_ACCOUNT_LENGTH = 32;
+const LEDGER_AMOUNT_PICTURE = "PIC S9(16)V99 COMP-3";
+const AUDIT_EVENT_LENGTH = 32;
+const AUDIT_CORRELATION_LENGTH = 64;
+
 export interface SourceMapEntry {
   sourceFile: string;
   sourceStart: SourcePosition;
@@ -37,7 +58,7 @@ export interface SourceMapEntry {
   artifact: string;
   targetStartLine: number;
   targetEndLine: number;
-  category: "module" | "record" | "field" | "function";
+  category: "module" | "record" | "field" | "function" | "transaction";
   symbol: string;
 }
 
@@ -146,6 +167,10 @@ export function emitCobol(
       );
     }
   }
+  if (program.transactions.length > 0) {
+    emitLedgerInterfaceStorage(addLine);
+  }
+
   addLine("");
   addLine(`       PROCEDURE DIVISION.`);
 
@@ -163,6 +188,24 @@ export function emitCobol(
       targetEndLine: functionEnd,
       category: "function",
       symbol: fn.name,
+    });
+  }
+
+  for (const transaction of program.transactions) {
+    const transactionStart = lineNumber();
+    addLine(`       ${toCobolParagraphName(transaction.name)}.`);
+    emitTransactionBody(transaction.body, addLine, 11);
+    addLine(`           GOBACK.`);
+    const transactionEnd = lineNumber() - 1;
+    entries.push({
+      sourceFile: program.sourceFile,
+      sourceStart: transaction.span.start,
+      sourceEnd: transaction.span.end,
+      artifact: cobolArtifactPath,
+      targetStartLine: transactionStart,
+      targetEndLine: transactionEnd,
+      category: "transaction",
+      symbol: transaction.name,
     });
   }
 
@@ -225,6 +268,24 @@ export function emitJcl(
   };
 }
 
+function emitLedgerInterfaceStorage(addLine: (line?: string) => void): void {
+  addLine(`       01  ${LEDGER_INTERFACE_GROUP}.`);
+  addLine(`           05  ${LEDGER_OPERATION_FIELD.padEnd(24)} PIC X(6).`);
+  addLine(
+    `           05  ${LEDGER_ACCOUNT_FIELD.padEnd(24)} PIC X(${LEDGER_ACCOUNT_LENGTH}).`,
+  );
+  addLine(
+    `           05  ${LEDGER_AMOUNT_FIELD.padEnd(24)} ${LEDGER_AMOUNT_PICTURE}.`,
+  );
+  addLine(`       01  ${AUDIT_INTERFACE_GROUP}.`);
+  addLine(
+    `           05  ${AUDIT_EVENT_FIELD.padEnd(24)} PIC X(${AUDIT_EVENT_LENGTH}).`,
+  );
+  addLine(
+    `           05  ${AUDIT_CORRELATION_FIELD.padEnd(24)} PIC X(${AUDIT_CORRELATION_LENGTH}).`,
+  );
+}
+
 function emitRecordFields(
   fields: IRRecord["fields"],
   level: number,
@@ -269,8 +330,78 @@ function emitStatement(
       case "IfStatement":
         emitIfStatement(statement, addLine, indentLevel, resultName);
         break;
+      default:
+        throw new Error(
+          `Unsupported statement in function body: ${statement.kind}`,
+        );
     }
   }
+}
+
+/**
+ * Transaction bodies carry effects rather than a return value, so they emit
+ * through their own path. The typechecker restricts them to let, debit, credit,
+ * and audit statements.
+ */
+function emitTransactionBody(
+  block: IRBlock,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+): void {
+  const indent = " ".repeat(indentLevel);
+  for (const statement of block.statements) {
+    switch (statement.kind) {
+      case "LetStatement":
+        emitLetStatement(statement, addLine, indent);
+        break;
+      case "LedgerStatement":
+        emitLedgerStatement(statement, addLine, indent);
+        break;
+      case "AuditStatement":
+        emitAuditStatement(statement, addLine, indent);
+        break;
+      default:
+        throw new Error(
+          `Unsupported statement in transaction body: ${statement.kind}`,
+        );
+    }
+  }
+}
+
+/**
+ * Ledger postings are delegated to the BankLang ledger interface described in
+ * ADR-0003. The generated COBOL fills a fixed group item and calls a named
+ * program rather than inlining any posting logic.
+ */
+function emitLedgerStatement(
+  statement: IRLedgerStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(
+    `${indent}MOVE "${statement.operation.toUpperCase()}" TO ${LEDGER_OPERATION_FIELD}`,
+  );
+  addLine(
+    `${indent}MOVE ${renderExpression(statement.account)} TO ${LEDGER_ACCOUNT_FIELD}`,
+  );
+  addLine(
+    `${indent}MOVE ${renderDecimalExpression(statement.amount)} TO ${LEDGER_AMOUNT_FIELD}`,
+  );
+  addLine(`${indent}CALL "${LEDGER_PROGRAM}" USING ${LEDGER_INTERFACE_GROUP}`);
+}
+
+function emitAuditStatement(
+  statement: IRAuditStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(
+    `${indent}MOVE ${renderExpression(statement.eventName)} TO ${AUDIT_EVENT_FIELD}`,
+  );
+  addLine(
+    `${indent}MOVE ${renderExpression(statement.correlation)} TO ${AUDIT_CORRELATION_FIELD}`,
+  );
+  addLine(`${indent}CALL "${AUDIT_PROGRAM}" USING ${AUDIT_INTERFACE_GROUP}`);
 }
 
 function emitLetStatement(
@@ -336,11 +467,25 @@ function renderExpression(expression: IRExpression): string {
       return expression.text;
     case "BooleanLiteral":
       return expression.value ? "TRUE" : "FALSE";
+    case "StringLiteral":
+      return `"${expression.value}"`;
+    case "MemberAccess":
+      return renderQualifiedFieldReference(expression);
     case "BinaryComparison":
       return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
     case "BinaryArithmetic":
       return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
   }
+}
+
+/**
+ * COBOL qualifies a field with the group item that contains it, so
+ * `request.amount` becomes `AMOUNT OF TRANSFER-REQUEST`.
+ */
+function renderQualifiedFieldReference(
+  expression: IRMemberAccessExpression,
+): string {
+  return `${toCobolFieldName(expression.member)} OF ${toCobolName(expression.recordName)}`;
 }
 
 function renderDecimalExpression(expression: IRExpression): string {
@@ -349,6 +494,8 @@ function renderDecimalExpression(expression: IRExpression): string {
       return toCobolFieldName(expression.name);
     case "DecimalLiteral":
       return expression.text;
+    case "MemberAccess":
+      return renderQualifiedFieldReference(expression);
     case "BinaryArithmetic":
       return `${renderDecimalExpression(expression.left)} ${expression.operator} ${renderDecimalExpression(expression.right)}`;
     default:

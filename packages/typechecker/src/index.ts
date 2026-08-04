@@ -24,6 +24,9 @@ import {
   type TypeReferenceNode,
   type BoolTypeNode,
   type StatementNode,
+  type TransactionDeclarationNode,
+  type LedgerStatementNode,
+  type AuditStatementNode,
 } from "../../ast/src/index";
 
 export interface DecimalType {
@@ -83,12 +86,21 @@ export interface ResolvedLocal {
   type: ResolvedType;
 }
 
+export interface ResolvedTransaction {
+  name: string;
+  span: SourceSpan;
+  parameters: ResolvedParameter[];
+  locals: ResolvedLocal[];
+  body: BlockNode;
+}
+
 export interface TypeCheckResult {
   program: ProgramNode | null;
   diagnostics: Diagnostic[];
   aliases: Record<string, ResolvedType>;
   records: ResolvedRecord[];
   functions: ResolvedFunction[];
+  transactions: ResolvedTransaction[];
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -107,6 +119,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       aliases: {},
       records: [],
       functions: [],
+      transactions: [],
     };
   }
 
@@ -115,6 +128,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const records: ResolvedRecord[] = [];
   const recordMap = new Map<string, ResolvedRecord>();
   const functions: ResolvedFunction[] = [];
+  const transactions: ResolvedTransaction[] = [];
 
   for (const declaration of program.declarations) {
     if (declaration.kind === "TypeAliasDeclaration") {
@@ -155,6 +169,19 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       if (resolvedFunction) {
         functions.push(resolvedFunction);
       }
+      continue;
+    }
+
+    if (declaration.kind === "TransactionDeclaration") {
+      const resolvedTransaction = resolveTransaction(
+        declaration,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (resolvedTransaction) {
+        transactions.push(resolvedTransaction);
+      }
     }
   }
 
@@ -164,7 +191,198 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     aliases,
     records,
     functions,
+    transactions,
   };
+}
+
+function resolveTransaction(
+  declaration: TransactionDeclarationNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedTransaction | null {
+  const parameters: ResolvedParameter[] = [];
+  const scope = new Map<string, ResolvedType>();
+  const locals: ResolvedLocal[] = [];
+
+  for (const parameter of declaration.parameters) {
+    const resolved = resolveTypeNode(
+      parameter.type,
+      aliases,
+      recordMap,
+      diagnostics,
+      parameter.span,
+    );
+    if (!resolved) {
+      continue;
+    }
+    declareSymbol(parameter.name, resolved, parameter.span, scope, diagnostics);
+    parameters.push({
+      name: parameter.name,
+      span: parameter.span,
+      type: resolved,
+    });
+  }
+
+  validateTransactionBody(
+    declaration.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+  );
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    parameters,
+    locals,
+    body: declaration.body,
+  };
+}
+
+/**
+ * Transaction bodies are a flat sequence of effect statements rather than an
+ * expression with a return type, so they use their own validation path instead
+ * of the terminal-statement rule that applies to functions.
+ */
+function validateTransactionBody(
+  body: BlockNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): void {
+  for (const statement of body.statements) {
+    switch (statement.kind) {
+      case "LetStatement":
+        validateLetStatement(
+          statement,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+        break;
+      case "LedgerStatement":
+        validateLedgerStatement(
+          statement,
+          scope,
+          aliases,
+          recordMap,
+          diagnostics,
+        );
+        break;
+      case "AuditStatement":
+        validateAuditStatement(
+          statement,
+          scope,
+          aliases,
+          recordMap,
+          diagnostics,
+        );
+        break;
+      default:
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-007",
+            severity: "error",
+            message:
+              "Transaction bodies support let, debit, credit, and audit statements in the current subset.",
+            span: statement.span,
+            hint: "Move return and if statements into a function.",
+            backendProfile: null,
+          }),
+        );
+    }
+  }
+}
+
+function validateLedgerStatement(
+  statement: LedgerStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const accountType = inferExpressionType(
+    statement.account,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (accountType && accountType.kind !== "string") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `The ${statement.operation} account argument must be a string value.`,
+        span: statement.account.span,
+        hint: "Pass an account identifier declared as string<n>.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const amountType = inferExpressionType(
+    statement.amount,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (amountType && amountType.kind !== "decimal") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `The ${statement.operation} amount argument must be a decimal value.`,
+        span: statement.amount.span,
+        hint: "Pass a decimal amount so the posting stays exact.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+function validateAuditStatement(
+  statement: AuditStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  inferExpressionType(
+    statement.eventName,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  const correlationType = inferExpressionType(
+    statement.correlation,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (correlationType && correlationType.kind !== "string") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "The audit correlation argument must be a string value.",
+        span: statement.correlation.span,
+        hint: "Pass the idempotency key or another string<n> correlation value.",
+        backendProfile: null,
+      }),
+    );
+  }
 }
 
 function resolveRecord(
@@ -392,6 +610,20 @@ function resolveTerminalStatementType(
       );
     case "LetStatement":
       return null;
+    case "LedgerStatement":
+    case "AuditStatement":
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-007",
+          severity: "error",
+          message:
+            "Ledger and audit statements are only allowed inside a transaction body.",
+          span: statement.span,
+          hint: "Move the debit, credit, or audit statement into a transaction declaration.",
+          backendProfile: null,
+        }),
+      );
+      return null;
   }
 }
 
@@ -590,6 +822,57 @@ function inferExpressionType(
         return null;
       }
       return resolved;
+    }
+    case "StringLiteral":
+      return { kind: "string", length: expression.value.length };
+    case "MemberAccess": {
+      const target = scope.get(expression.target.name);
+      if (!target) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-001",
+            severity: "error",
+            message: `Unresolved type or symbol: ${expression.target.name}.`,
+            span: expression.target.span,
+            hint: "Declare the symbol before using it in the transaction body.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      if (target.kind !== "record") {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `Field access requires a record value, but ${expression.target.name} is not a record.`,
+            span: expression.span,
+            hint: "Use field access only on record-typed parameters.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      const field = target.fields.find(
+        (candidate) => candidate.name === expression.member,
+      );
+      if (!field) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-006",
+            severity: "error",
+            message: `Record ${target.name} has no field named ${expression.member}.`,
+            span: expression.span,
+            hint: `Use one of: ${target.fields.map((candidate) => candidate.name).join(", ")}.`,
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+
+      return field.type;
     }
     case "BinaryExpression": {
       return inferBinaryExpressionType(

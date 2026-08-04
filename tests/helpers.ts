@@ -18,6 +18,21 @@ export function loadExampleSource(
   return readFileSync(exampleSourceFile(examplePath), "utf8");
 }
 
+/**
+ * Compiles BankTS source text through parse, typecheck, and IR lowering without
+ * touching the filesystem. Used by analysis tests that need many small
+ * programs.
+ */
+export function compileSource(
+  sourceText: string,
+  sourceFile = "tests/inline.bank.ts",
+) {
+  const parsed = parseBankTs(sourceText, sourceFile);
+  const typechecked = typecheckProgram(parsed.program);
+  const ir = lowerProgramToIR(typechecked);
+  return { parsed, typechecked, ir };
+}
+
 export function compileExample(examplePath = "examples/account-transfer") {
   const sourceFile = exampleSourceFile(examplePath);
   const sourceText = loadExampleSource(examplePath);

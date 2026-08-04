@@ -9,6 +9,7 @@ import {
   type StatementNode,
   type ReturnStatementNode,
   type SourceSpan,
+  type MemberAccessNode,
 } from "../../ast/src/index";
 import type {
   DecimalType,
@@ -16,6 +17,7 @@ import type {
   ResolvedFunction,
   ResolvedRecord,
   ResolvedLocal,
+  ResolvedTransaction,
   ResolvedType,
   TypeCheckResult,
 } from "../../typechecker/src/index";
@@ -27,6 +29,15 @@ export interface IRProgram {
   moduleSpan: SourceSpan;
   records: IRRecord[];
   functions: IRFunction[];
+  transactions: IRTransaction[];
+}
+
+export interface IRTransaction {
+  kind: "Transaction";
+  name: string;
+  span: SourceSpan;
+  parameters: IRParameter[];
+  body: IRBlock;
 }
 
 export interface IRRecord {
@@ -65,7 +76,27 @@ export interface IRBlock {
   statements: IRStatement[];
 }
 
-export type IRStatement = IRLetStatement | IRReturnStatement | IRIfStatement;
+export type IRStatement =
+  | IRLetStatement
+  | IRReturnStatement
+  | IRIfStatement
+  | IRLedgerStatement
+  | IRAuditStatement;
+
+export interface IRLedgerStatement {
+  kind: "LedgerStatement";
+  span: SourceSpan;
+  operation: "debit" | "credit";
+  account: IRExpression;
+  amount: IRExpression;
+}
+
+export interface IRAuditStatement {
+  kind: "AuditStatement";
+  span: SourceSpan;
+  eventName: IRExpression;
+  correlation: IRExpression;
+}
 
 export interface IRLetStatement {
   kind: "LetStatement";
@@ -93,8 +124,26 @@ export type IRExpression =
   | IRIdentifierExpression
   | IRDecimalLiteralExpression
   | IRBooleanLiteralExpression
+  | IRStringLiteralExpression
+  | IRMemberAccessExpression
   | IRBinaryComparisonExpression
   | IRBinaryArithmeticExpression;
+
+export interface IRStringLiteralExpression {
+  kind: "StringLiteral";
+  span: SourceSpan;
+  value: string;
+  resolvedType: StringIRType;
+}
+
+export interface IRMemberAccessExpression {
+  kind: "MemberAccess";
+  span: SourceSpan;
+  targetName: string;
+  recordName: string;
+  member: string;
+  resolvedType: IRType;
+}
 
 export interface IRIdentifierExpression {
   kind: "Identifier";
@@ -182,6 +231,9 @@ export function lowerProgramToIR(
   });
 
   const functions = typechecked.functions.map((fn) => lowerFunction(fn));
+  const transactions = typechecked.transactions.map((transaction) =>
+    lowerTransaction(transaction),
+  );
 
   return {
     program: {
@@ -191,8 +243,32 @@ export function lowerProgramToIR(
       moduleSpan: moduleDeclaration.span,
       records,
       functions,
+      transactions,
     },
     diagnostics: typechecked.diagnostics,
+  };
+}
+
+function lowerTransaction(transaction: ResolvedTransaction): IRTransaction {
+  const scopeTypes = new Map<string, IRType>();
+  for (const parameter of transaction.parameters) {
+    scopeTypes.set(parameter.name, lowerType(parameter.type));
+  }
+  for (const local of transaction.locals) {
+    scopeTypes.set(local.name, lowerType(local.type));
+  }
+
+  return {
+    kind: "Transaction",
+    name: transaction.name,
+    span: transaction.span,
+    parameters: transaction.parameters.map((parameter) => ({
+      kind: "Parameter",
+      name: parameter.name,
+      span: parameter.span,
+      type: lowerType(parameter.type),
+    })),
+    body: lowerBlock(transaction.body, scopeTypes),
   };
 }
 
@@ -261,6 +337,21 @@ function lowerStatement(
       return lowerReturnStatement(statement, scopeTypes);
     case "IfStatement":
       return lowerIfStatement(statement, scopeTypes);
+    case "LedgerStatement":
+      return {
+        kind: "LedgerStatement",
+        span: statement.span,
+        operation: statement.operation,
+        account: lowerExpression(statement.account, scopeTypes),
+        amount: lowerExpression(statement.amount, scopeTypes),
+      };
+    case "AuditStatement":
+      return {
+        kind: "AuditStatement",
+        span: statement.span,
+        eventName: lowerExpression(statement.eventName, scopeTypes),
+        correlation: lowerExpression(statement.correlation, scopeTypes),
+      };
   }
 }
 
@@ -319,9 +410,48 @@ function lowerExpression(
       return lowerDecimalLiteralExpression(expression);
     case "BooleanLiteral":
       return lowerBooleanLiteralExpression(expression);
+    case "StringLiteral":
+      return {
+        kind: "StringLiteral",
+        span: expression.span,
+        value: expression.value,
+        resolvedType: { kind: "string", length: expression.value.length },
+      };
+    case "MemberAccess":
+      return lowerMemberAccessExpression(expression, scopeTypes);
     case "BinaryExpression":
       return lowerBinaryExpression(expression, scopeTypes);
   }
+}
+
+function lowerMemberAccessExpression(
+  expression: MemberAccessNode,
+  scopeTypes: Map<string, IRType>,
+): IRMemberAccessExpression {
+  const targetType = scopeTypes.get(expression.target.name);
+  if (!targetType || targetType.kind !== "record") {
+    throw new Error(
+      `Unresolved record during IR lowering: ${expression.target.name}`,
+    );
+  }
+
+  const field = targetType.fields.find(
+    (candidate) => candidate.name === expression.member,
+  );
+  if (!field) {
+    throw new Error(
+      `Unresolved field during IR lowering: ${expression.target.name}.${expression.member}`,
+    );
+  }
+
+  return {
+    kind: "MemberAccess",
+    span: expression.span,
+    targetName: expression.target.name,
+    recordName: targetType.name,
+    member: expression.member,
+    resolvedType: field.type,
+  };
 }
 
 function lowerIdentifierExpression(
