@@ -1,23 +1,23 @@
 # Verification Report
 
-Project: /workspace/examples/interest-posting-batch/src/main.bank.ts
+Project: /workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
 
-| Check                      | Status  | Details                                                                         |
-| -------------------------- | ------- | ------------------------------------------------------------------------------- |
-| Parse                      | passed  | 0 diagnostics                                                                   |
-| Typecheck                  | passed  | 0 diagnostics                                                                   |
-| COBOL emit                 | passed  | /workspace/dist/cobol/INTEREST-POSTING-BATCH.cbl                                |
-| Copybook emit              | passed  | 2 copybook file(s)                                                              |
-| Source map emit            | passed  | /workspace/dist/maps/source-map.json                                            |
-| JCL emit                   | passed  | /workspace/dist/jcl/INTEREST-POSTING-BATCH.jcl                                  |
-| Audit artifacts            | passed  | /workspace/dist/audit                                                           |
-| Deterministic regeneration | passed  | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed  | 17/17 traced symbols, all entries anchored in the generated COBOL.              |
-| GnuCOBOL validation        | skipped | No local cobc executable was available.                                         |
-| Audit schema               | passed  | version 1, backend profile ibm-enterprise-cobol-zos                             |
+| Check                      | Status | Details                                                                         |
+| -------------------------- | ------ | ------------------------------------------------------------------------------- |
+| Parse                      | passed | 0 diagnostics                                                                   |
+| Typecheck                  | passed | 0 diagnostics                                                                   |
+| COBOL emit                 | passed | /workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl                  |
+| Copybook emit              | passed | 2 copybook file(s)                                                              |
+| Source map emit            | passed | /workspace/Code/banklang/dist/maps/source-map.json                              |
+| JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/INTEREST-POSTING-BATCH.jcl                    |
+| Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
+| Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
+| Source map coverage        | passed | 17/17 traced symbols, all entries anchored in the generated COBOL.              |
+| GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
+| Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
 
 ## Notes
 
@@ -33,7 +33,7 @@ Phase: verify
 
 ## GnuCOBOL Validation
 
-- validated-with-gnucobol: no
-- compiler-status: skipped
-- compiler-command: cobc not found
-- compiler-exit-code: n/a
+- validated-with-gnucobol: yes
+- compiler-status: passed
+- compiler-command: cobc -x -free dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl -o dist/gnucobol/bin/interest-posting-batch
+- compiler-exit-code: 0

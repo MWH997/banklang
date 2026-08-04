@@ -48,6 +48,9 @@ import {
   type CurrencyTypeNode,
   type NullableTypeNode,
   type ArrayTypeNode,
+  type TypeParameterNode,
+  type RaiseStatementNode,
+  type FailureHandlerNode,
   type EnumDeclarationNode,
   type EnumMemberNode,
   type IndexAccessNode,
@@ -104,6 +107,11 @@ const KEYWORDS = new Set([
   "nullable",
   "transaction",
   "file",
+  "extends",
+  "entry",
+  "raise",
+  "on",
+  "failure",
 ]);
 
 /**
@@ -543,6 +551,19 @@ class Parser {
       return this.parseFunctionDeclaration();
     }
 
+    if (this.matchKeyword("entry")) {
+      const cics = this.matchKeyword("cics");
+      if (!this.matchKeyword("transaction")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `transaction` after `entry`.",
+          "Write `entry transaction <name>(...) { ... }` to mark the program entry point.",
+        );
+        return null;
+      }
+      return this.parseTransactionDeclaration(cics, true);
+    }
+
     if (this.matchKeyword("cics")) {
       if (!this.matchKeyword("transaction")) {
         this.errorAtCurrent(
@@ -552,11 +573,11 @@ class Parser {
         );
         return null;
       }
-      return this.parseTransactionDeclaration(true);
+      return this.parseTransactionDeclaration(true, false);
     }
 
     if (this.matchKeyword("transaction")) {
-      return this.parseTransactionDeclaration(false);
+      return this.parseTransactionDeclaration(false, false);
     }
 
     if (this.matchKeyword("file")) {
@@ -782,6 +803,7 @@ class Parser {
 
   private parseTransactionDeclaration(
     isCics: boolean,
+    isEntry: boolean,
   ): TransactionDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected transaction name.");
     const openParen = this.expectPunctuation(
@@ -793,7 +815,10 @@ class Parser {
       ")",
       "Expected `)` after parameter list.",
     );
-    const body = this.parseBlock();
+    const handlerSink: { handler: FailureHandlerNode | null } = {
+      handler: null,
+    };
+    const body = this.parseBlock(handlerSink);
 
     if (!nameToken || !openParen || !closeParen || !body) {
       return null;
@@ -804,6 +829,8 @@ class Parser {
       name: nameToken.text,
       parameters,
       body,
+      failureHandler: handlerSink.handler,
+      isEntry,
       isCics,
       span: {
         sourceFile: nameToken.span.sourceFile,
@@ -840,6 +867,25 @@ class Parser {
 
   private parseRecordDeclaration(): RecordDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected record name.");
+    const typeParameters = this.parseTypeParameters();
+
+    let baseType: TypeReferenceNode | null = null;
+    if (this.matchKeyword("extends")) {
+      const baseToken = this.expectIdentifier(
+        "Expected a base record name after `extends`.",
+      );
+      if (!baseToken) {
+        return null;
+      }
+      const baseArguments = this.parseTypeArguments();
+      baseType = {
+        kind: "TypeReference",
+        name: baseToken.text,
+        typeArguments: baseArguments,
+        span: baseToken.span,
+      };
+    }
+
     const openBrace = this.expectPunctuation(
       "{",
       "Expected `{` to start record body.",
@@ -863,6 +909,8 @@ class Parser {
     return {
       kind: "RecordDeclaration",
       name: nameToken.text,
+      typeParameters,
+      baseType,
       fields,
       span: {
         sourceFile: nameToken.span.sourceFile,
@@ -899,6 +947,7 @@ class Parser {
 
   private parseFunctionDeclaration(): FunctionDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected function name.");
+    const typeParameters = this.parseTypeParameters();
     const openParen = this.expectPunctuation(
       "(",
       "Expected `(` after function name.",
@@ -919,6 +968,7 @@ class Parser {
     return {
       kind: "FunctionDeclaration",
       name: nameToken.text,
+      typeParameters,
       parameters,
       returnType,
       body,
@@ -972,12 +1022,18 @@ class Parser {
     };
   }
 
-  private parseBlock(): BlockNode | null {
+  private parseBlock(handlerSink?: {
+    handler: FailureHandlerNode | null;
+  }): BlockNode | null {
     const openBrace = this.expectPunctuation(
       "{",
       "Expected `{` to start function body.",
     );
     const statements: StatementNode[] = [];
+
+    if (handlerSink && this.isKeyword("on")) {
+      handlerSink.handler = this.parseFailureHandler();
+    }
 
     while (!this.is("eof") && !this.matchPunctuation("}")) {
       const statement = this.parseStatement();
@@ -1031,6 +1087,10 @@ class Parser {
 
     if (this.matchKeyword("execute")) {
       return this.parseSqlStatement();
+    }
+
+    if (this.matchKeyword("raise")) {
+      return this.parseRaiseStatement();
     }
 
     if (
@@ -1543,6 +1603,79 @@ class Parser {
         sourceFile: auditToken.span.sourceFile,
         start: auditToken.span.start,
         end: semicolon.span.end,
+      },
+    };
+  }
+
+  private parseRaiseStatement(): RaiseStatementNode | null {
+    const raiseToken = this.previous;
+    if (!raiseToken) {
+      return null;
+    }
+
+    if (!this.is("string")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected a failure code literal after `raise`.",
+        'Write `raise "INSUFFICIENT_FUNDS";` so every failure a program can signal is visible in the source.',
+      );
+      return null;
+    }
+
+    const codeToken = this.advance();
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after raise statement.",
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "RaiseStatement",
+      code: codeToken.text,
+      codeSpan: codeToken.span,
+      span: {
+        sourceFile: raiseToken.span.sourceFile,
+        start: raiseToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  /**
+   * Parses a leading `on failure { ... }` block.
+   *
+   * The handler is read before the body so a reader meets the recovery path
+   * before the statements that can trigger it.
+   */
+  private parseFailureHandler(): FailureHandlerNode | null {
+    if (!this.isKeyword("on")) {
+      return null;
+    }
+
+    const onToken = this.advance();
+    if (!this.matchKeyword("failure")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `failure` after `on`.",
+        "Write `on failure { ... }` to declare the recovery path.",
+      );
+      return null;
+    }
+
+    const body = this.parseBlock();
+    if (!body) {
+      return null;
+    }
+
+    return {
+      kind: "FailureHandler",
+      body,
+      span: {
+        sourceFile: onToken.span.sourceFile,
+        start: onToken.span.start,
+        end: body.span.end,
       },
     };
   }
@@ -2175,10 +2308,20 @@ class Parser {
 
     if (this.is("identifier")) {
       const token = this.advance();
+      const typeArguments = this.parseTypeArguments();
+      const end =
+        typeArguments.length > 0
+          ? (this.previous?.span.end ?? token.span.end)
+          : token.span.end;
       return this.withArraySuffix({
         kind: "TypeReference",
         name: token.text,
-        span: token.span,
+        typeArguments,
+        span: {
+          sourceFile: token.span.sourceFile,
+          start: token.span.start,
+          end,
+        },
       } satisfies TypeReferenceNode);
     }
 
@@ -2188,6 +2331,71 @@ class Parser {
       "Expected a type annotation.",
     );
     return null;
+  }
+
+  /**
+   * Parses `<T, U>` in a declaration position.
+   *
+   * Only a declaration may introduce type parameters, so there is no ambiguity
+   * with the comparison operator here.
+   */
+  private parseTypeParameters(): TypeParameterNode[] {
+    if (!this.isPunctuation("<")) {
+      return [];
+    }
+
+    this.advance();
+    const parameters: TypeParameterNode[] = [];
+    while (!this.is("eof") && !this.isPunctuation(">")) {
+      const token = this.expectIdentifier("Expected a type parameter name.");
+      if (!token) {
+        break;
+      }
+      parameters.push({
+        kind: "TypeParameter",
+        name: token.text,
+        span: token.span,
+      });
+      if (!this.matchPunctuation(",")) {
+        break;
+      }
+    }
+    this.expectPunctuation(
+      ">",
+      "Expected `>` to close the type parameter list.",
+    );
+    return parameters;
+  }
+
+  /**
+   * Parses `<Money>` after a type name.
+   *
+   * A type position never contains a comparison, so consuming `<` here is
+   * unambiguous — unlike a call site, which is why generic functions infer
+   * their arguments instead of taking them explicitly.
+   */
+  private parseTypeArguments(): TypeNode[] {
+    if (!this.isPunctuation("<")) {
+      return [];
+    }
+
+    this.advance();
+    const args: TypeNode[] = [];
+    while (!this.is("eof") && !this.isPunctuation(">")) {
+      const argument = this.parseTypeNode();
+      if (!argument) {
+        break;
+      }
+      args.push(argument);
+      if (!this.matchPunctuation(",")) {
+        break;
+      }
+    }
+    this.expectPunctuation(
+      ">",
+      "Expected `>` to close the type argument list.",
+    );
+    return args;
   }
 
   /** Applies a `[n]` suffix, producing a bounded array type. */
@@ -2268,6 +2476,10 @@ class Parser {
       return true;
     }
     return false;
+  }
+
+  private isKeyword(keyword: string): boolean {
+    return this.current.kind === "keyword" && this.current.text === keyword;
   }
 
   private is(kind: TokenKind): boolean {

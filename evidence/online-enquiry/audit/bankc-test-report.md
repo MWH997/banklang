@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/online-enquiry
+Project: examples/online-enquiry/
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                        |
-| --------------- | ------- | ---------------------------------------------- |
-| Check           | passed  | OK: examples/online-enquiry                    |
-| Build           | passed  | Wrote /workspace/dist/cobol/ONLINE-ENQUIRY.cbl |
-| Verify          | passed  | Verified examples/online-enquiry               |
-| GnuCOBOL report | emitted | /workspace/dist/audit/gnucobol-validation.md   |
+| Step            | Status  | Details                                                      |
+| --------------- | ------- | ------------------------------------------------------------ |
+| Check           | passed  | OK: examples/online-enquiry/                                 |
+| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/ONLINE-ENQUIRY.cbl |
+| Verify          | passed  | Verified examples/online-enquiry/                            |
+| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md   |
 
 ## Notes
 

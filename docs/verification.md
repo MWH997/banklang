@@ -88,6 +88,34 @@ Integration examples:
 - CICS declaration emission
 - VSAM file declaration emission
 
+### 2.6a Executed conformance tests
+
+Every other category inspects the generated program. This one runs it.
+
+`tests/conformance.test.ts` compiles a BankTS program, links it against the
+reference runtime in `runtime/`, seeds a packed-decimal input record built from
+the compiler's own layout report, executes the program, and asserts on:
+
+- the ledger journal, in call order
+- the closing balance per account
+- the audit events emitted
+- the bytes of each output record
+
+This catches the class of defect that compiles. The bounds guard once clamped an
+out-of-range subscript instead of refusing it, and a recursive function returned
+`5` for `5!` because `WORKING-STORAGE` is shared across invocations. Both passed
+every static check and every golden fixture.
+
+The suite skips when `cobc` is unavailable, and CI installs GnuCOBOL so it does
+not skip there.
+
+Scope limit: the runtime is a set of small COBOL programs in this repository.
+`BANKLEDG` is not a bank ledger, `DSNHLI` parses no SQL and always reports
+`SQLCODE 0`, and `DFHEI1` provides no CICS behaviour. A conformance pass
+establishes that the generated program executes and computes correctly; it
+establishes nothing about Db2, CICS, or any real ledger. See
+`runtime/README.md`.
+
 ### 2.7 Mainframe smoke tests
 
 Roadmap only for public repo unless access exists.

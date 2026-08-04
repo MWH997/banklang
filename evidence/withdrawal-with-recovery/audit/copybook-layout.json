@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "reports": [
+    {
+      "recordName": "CurrentAccount",
+      "cobolName": "CURRENT-ACCOUNT",
+      "totalLength": 62,
+      "entries": [
+        {
+          "order": 1,
+          "path": "CURRENT-ACCOUNT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "CURRENT-ACCOUNT.BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "CURRENT-ACCOUNT.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    },
+    {
+      "recordName": "SavingsAccount",
+      "cobolName": "SAVINGS-ACCOUNT",
+      "totalLength": 82,
+      "entries": [
+        {
+          "order": 1,
+          "path": "SAVINGS-ACCOUNT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "SAVINGS-ACCOUNT.BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "SAVINGS-ACCOUNT.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 36,
+          "bytes": 36
+        },
+        {
+          "order": 4,
+          "path": "SAVINGS-ACCOUNT.MINIMUM-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 62,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 5,
+          "path": "SAVINGS-ACCOUNT.REQUESTED",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 72,
+          "length": 10,
+          "bytes": 10
+        }
+      ]
+    },
+    {
+      "recordName": "WithdrawalResult",
+      "cobolName": "WITHDRAWAL-RESULT",
+      "totalLength": 72,
+      "entries": [
+        {
+          "order": 1,
+          "path": "WITHDRAWAL-RESULT.ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16
+        },
+        {
+          "order": 2,
+          "path": "WITHDRAWAL-RESULT.PAID-OUT",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 3,
+          "path": "WITHDRAWAL-RESULT.CLOSING-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 26,
+          "length": 10,
+          "bytes": 10
+        },
+        {
+          "order": 4,
+          "path": "WITHDRAWAL-RESULT.IDEMPOTENCY-KEY",
+          "type": "string<36>",
+          "picture": "PIC X(36)",
+          "usage": "DISPLAY",
+          "offset": 36,
+          "length": 36,
+          "bytes": 36
+        }
+      ]
+    }
+  ]
+}

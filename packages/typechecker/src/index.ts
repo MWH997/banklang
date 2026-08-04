@@ -41,7 +41,15 @@ import {
   type SqlStatementNode,
   type CicsStatementNode,
   type ForEachStatementNode,
+  type RaiseStatementNode,
+  type FailureHandlerNode,
 } from "../../ast/src/index";
+import {
+  describeTypeNode,
+  instantiateFunction,
+  instantiateRecord,
+  mangleInstantiation,
+} from "./generics";
 
 export interface DecimalType {
   kind: "decimal";
@@ -158,6 +166,10 @@ export interface ResolvedTransaction {
   parameters: ResolvedParameter[];
   locals: ResolvedLocal[];
   body: BlockNode;
+  /** The `on failure` block, if the transaction declares one. */
+  failureHandler: BlockNode | null;
+  /** True for the transaction the generated program starts at. */
+  isEntry: boolean;
   isCics: boolean;
 }
 
@@ -191,6 +203,15 @@ export interface TypeCheckResult {
   files: ResolvedFile[];
   enums: ResolvedEnum[];
   sql: ResolvedSql[];
+  /**
+   * The concrete function a generic call resolves to, keyed by the call node.
+   *
+   * Lowering reads this instead of the written callee, because a generic call
+   * names a template that no COBOL paragraph corresponds to.
+   */
+  callTargets: ReadonlyMap<CallExpressionNode, string>;
+  /** Base record name for each record declared with `extends`. */
+  recordBases: ReadonlyMap<string, string>;
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -213,12 +234,15 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       files: [],
       enums: [],
       sql: [],
+      callTargets: new Map(),
+      recordBases: new Map(),
     };
   }
 
   const diagnostics: Diagnostic[] = [];
   const aliases: Record<string, ResolvedType> = {};
   const records: ResolvedRecord[] = [];
+  recordSink = records;
   const recordMap = new Map<string, ResolvedRecord>();
   const functions: ResolvedFunction[] = [];
   const transactions: ResolvedTransaction[] = [];
@@ -233,6 +257,42 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   declaredFiles = new Map();
   enumMap = new Map();
   sqlMap = new Map();
+  genericRecords = new Map();
+  genericFunctions = new Map();
+  pendingInstantiations = new Map();
+  instantiatedFunctions = new Set();
+  callTargets = new Map();
+  recordBases = new Map();
+
+  // Pass 0: index the generic declarations. They are templates, not types, so
+  // they are never resolved directly — only their instantiations are.
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "RecordDeclaration" &&
+      declaration.typeParameters.length > 0
+    ) {
+      genericRecords.set(declaration.name, declaration);
+    }
+    if (
+      declaration.kind === "FunctionDeclaration" &&
+      declaration.typeParameters.length > 0
+    ) {
+      genericFunctions.set(declaration.name, declaration);
+    }
+  }
+
+  // Records may extend a record declared further down the file, so bases are
+  // resolved on demand from this index rather than in declaration order.
+  const recordDeclarations = new Map<string, RecordDeclarationNode>();
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "RecordDeclaration" &&
+      declaration.typeParameters.length === 0
+    ) {
+      recordDeclarations.set(declaration.name, declaration);
+    }
+  }
+  pendingRecordDeclarations = recordDeclarations;
 
   // Pass 1: type aliases and records, so later passes can resolve types.
   for (const declaration of program.declarations) {
@@ -274,17 +334,18 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       continue;
     }
 
-    if (declaration.kind === "RecordDeclaration") {
-      const resolvedRecord = resolveRecord(
-        declaration,
+    if (
+      declaration.kind === "RecordDeclaration" &&
+      declaration.typeParameters.length === 0
+    ) {
+      ensureRecordResolved(
+        declaration.name,
         aliases,
         recordMap,
         diagnostics,
+        declaration.span,
+        [],
       );
-      if (resolvedRecord) {
-        records.push(resolvedRecord);
-        recordMap.set(resolvedRecord.name, resolvedRecord);
-      }
     }
   }
 
@@ -292,6 +353,11 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   // declared later in the file and reference any declared file.
   for (const declaration of program.declarations) {
     if (declaration.kind === "FunctionDeclaration") {
+      if (declaration.typeParameters.length > 0) {
+        // A generic function has no single signature. Its instantiations are
+        // registered when a call site fixes the type arguments.
+        continue;
+      }
       registerFunctionSignature(declaration, aliases, recordMap);
       continue;
     }
@@ -322,6 +388,9 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   // Pass 3: bodies.
   for (const declaration of program.declarations) {
     if (declaration.kind === "FunctionDeclaration") {
+      if (declaration.typeParameters.length > 0) {
+        continue;
+      }
       const resolvedFunction = resolveFunction(
         declaration,
         aliases,
@@ -347,6 +416,17 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     }
   }
 
+  // Pass 4: the instantiations those bodies asked for.
+  //
+  // Checking an instantiated body can request further instantiations, so this
+  // runs to a fixpoint rather than once over a fixed list. Draining a worklist
+  // here rather than recursing from the call site keeps the resolver's own
+  // per-body state (loop depth, nullable guards, CICS context) intact.
+  drainInstantiations(aliases, recordMap, functions, diagnostics);
+
+  reportUnusedGenerics(program, diagnostics);
+  checkSingleEntryPoint(transactions, diagnostics);
+
   return {
     program,
     diagnostics,
@@ -357,7 +437,115 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     files,
     enums,
     sql: sqlStatements,
+    callTargets,
+    recordBases,
   };
+}
+
+/**
+ * Resolves every function instantiation a body asked for, including any the
+ * instantiated bodies themselves request.
+ */
+function drainInstantiations(
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  functions: ResolvedFunction[],
+  diagnostics: Diagnostic[],
+): void {
+  // A generic that instantiates itself at a new type would expand forever, so
+  // the depth is capped and reported rather than left to exhaust memory.
+  const limit = 200;
+  let expanded = 0;
+
+  while (pendingInstantiations.size > 0) {
+    const [name, request] = pendingInstantiations.entries().next().value as [
+      string,
+      InstantiationRequest,
+    ];
+    pendingInstantiations.delete(name);
+
+    expanded += 1;
+    if (expanded > limit) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-014",
+          severity: "error",
+          message: `Generic expansion did not terminate after ${limit} instantiations, starting at ${name}.`,
+          span: request.span,
+          hint: "A generic function that calls itself at a new type argument expands forever. Fix the recursion so the type arguments stop changing.",
+          backendProfile: null,
+        }),
+      );
+      pendingInstantiations.clear();
+      return;
+    }
+
+    const resolved = resolveFunction(
+      request.declaration,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (resolved) {
+      functions.push(resolved);
+    }
+  }
+}
+
+/**
+ * A program has at most one entry transaction.
+ *
+ * COBOL starts at the first statement of the PROCEDURE DIVISION and has no way
+ * to choose between two starting points, so a second `entry` would silently
+ * never run.
+ */
+function checkSingleEntryPoint(
+  transactions: ResolvedTransaction[],
+  diagnostics: Diagnostic[],
+): void {
+  const entries = transactions.filter((transaction) => transaction.isEntry);
+  for (const extra of entries.slice(1)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-010",
+        severity: "error",
+        message: `${extra.name} is a second entry transaction; ${entries[0].name} is already the entry point.`,
+        span: extra.span,
+        hint: "A program starts in one place. Drop `entry` from all but one transaction.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+  }
+}
+
+/**
+ * Reports a generic declaration that is never instantiated.
+ *
+ * Monomorphisation means an uninstantiated generic contributes no COBOL at all.
+ * Staying silent would let a template with a type error ship unnoticed.
+ */
+function reportUnusedGenerics(
+  program: ProgramNode,
+  diagnostics: Diagnostic[],
+): void {
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "FunctionDeclaration" &&
+      declaration.typeParameters.length > 0 &&
+      !instantiatedFunctions.has(declaration.name)
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-015",
+          severity: "warning",
+          message: `Generic function ${declaration.name} is never called, so no COBOL is generated for it.`,
+          span: declaration.span,
+          hint: "Call it, or remove it. A generic is a template: an uninstantiated one is never type checked against real types.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
 }
 
 /**
@@ -599,6 +787,21 @@ function resolveTransaction(
     locals,
     diagnostics,
   );
+
+  // The handler shares the transaction's scope, so it can report on the same
+  // records the body was working with. It runs after the body has abandoned its
+  // work, which is exactly when those values matter.
+  if (declaration.failureHandler) {
+    validateFailureHandler(
+      declaration.failureHandler,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+    );
+  }
+
   checkSqlCodeHandled(declaration.span, diagnostics);
 
   return {
@@ -607,8 +810,138 @@ function resolveTransaction(
     parameters,
     locals,
     body: declaration.body,
+    failureHandler: declaration.failureHandler?.body ?? null,
+    isEntry: declaration.isEntry,
     isCics: declaration.isCics,
   };
+}
+
+/**
+ * Checks an `on failure` block.
+ *
+ * A handler may not raise: there would be nothing left to catch it, and a
+ * failure path that can itself fail is how a transaction ends up half-posted
+ * with no record of why.
+ */
+function validateFailureHandler(
+  handler: FailureHandlerNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): void {
+  const raised = findRaiseStatement(handler.body);
+  if (raised) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-009",
+        severity: "error",
+        message: "An `on failure` handler cannot raise.",
+        span: raised.span,
+        hint: "The handler is the last line of defence; there is no outer handler to catch it. Record the failure and return.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  validateTransactionBody(
+    handler.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+  );
+}
+
+/** Finds the first raise anywhere inside a block, including nested blocks. */
+function findRaiseStatement(block: BlockNode): RaiseStatementNode | null {
+  for (const statement of block.statements) {
+    switch (statement.kind) {
+      case "RaiseStatement":
+        return statement;
+      case "IfStatement": {
+        const found =
+          findRaiseStatement(statement.thenBranch) ??
+          (statement.elseBranch
+            ? findRaiseStatement(statement.elseBranch)
+            : null);
+        if (found) {
+          return found;
+        }
+        break;
+      }
+      case "WhileStatement":
+      case "ForEachStatement": {
+        const found = findRaiseStatement(statement.body);
+        if (found) {
+          return found;
+        }
+        break;
+      }
+      case "SwitchStatement": {
+        for (const entry of statement.cases) {
+          const found = findRaiseStatement(entry.body);
+          if (found) {
+            return found;
+          }
+        }
+        if (statement.otherwise) {
+          const found = findRaiseStatement(statement.otherwise);
+          if (found) {
+            return found;
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  return null;
+}
+
+/** Widest failure code the generated `BANK-FAILURE-CODE` field can hold. */
+const FAILURE_CODE_LENGTH = 32;
+
+/**
+ * Checks a raise statement.
+ *
+ * The code has to survive into the generated COBOL literal, so it is bounded to
+ * the width of the failure field. Truncating it silently would mean the handler
+ * compared against a code that no longer matched what the source said.
+ */
+function validateRaiseStatement(
+  statement: RaiseStatementNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (statement.code.trim().length === 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-008",
+        severity: "error",
+        message: "A failure code cannot be empty.",
+        span: statement.codeSpan,
+        hint: 'Name the failure, such as `raise "INSUFFICIENT_FUNDS";`.',
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.code.length > FAILURE_CODE_LENGTH) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-008",
+        severity: "error",
+        message: `Failure code ${statement.code} is ${statement.code.length} characters; the limit is ${FAILURE_CODE_LENGTH}.`,
+        span: statement.codeSpan,
+        hint: `BANK-FAILURE-CODE is PIC X(${FAILURE_CODE_LENGTH}), and a truncated code would not match the handler that tests it.`,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+  }
 }
 
 /**
@@ -681,6 +1014,9 @@ function validateTransactionBody(
           locals,
           diagnostics,
         );
+        break;
+      case "RaiseStatement":
+        validateRaiseStatement(statement, diagnostics);
         break;
       default:
         diagnostics.push(
@@ -1595,15 +1931,76 @@ function validateLedgerStatement(
     recordMap,
     diagnostics,
   );
-  if (amountType && amountType.kind !== "decimal") {
+  if (!amountType) {
+    return;
+  }
+
+  // Currency is the type the ledger interface was designed for: it is a decimal
+  // that also carries its unit. Rejecting it would leave every currency-typed
+  // balance unpostable.
+  if (amountType.kind !== "decimal" && amountType.kind !== "currency") {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `The ${statement.operation} amount argument must be a decimal value.`,
+        message: `The ${statement.operation} amount argument must be a decimal or currency value.`,
         span: statement.amount.span,
-        hint: "Pass a decimal amount so the posting stays exact.",
+        hint: "Pass a decimal or currency amount so the posting stays exact.",
         backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  checkFitsLedgerInterface(statement, amountType, diagnostics);
+}
+
+/** Integer and fraction digits `BANK-LEDGER-AMOUNT PIC S9(16)V99` can hold. */
+const LEDGER_INTEGER_DIGITS = 16;
+const LEDGER_SCALE = 2;
+
+/**
+ * Checks that a posted amount fits the ledger interface without truncation.
+ *
+ * The interface is a fixed `PIC S9(16)V99`, so an amount with a wider integer
+ * part or a finer scale loses digits in the `MOVE`. COBOL truncates silently,
+ * and a silently truncated posting is the worst possible failure mode here.
+ */
+function checkFitsLedgerInterface(
+  statement: LedgerStatementNode,
+  amountType: DecimalType | CurrencyType,
+  diagnostics: Diagnostic[],
+): void {
+  // A literal widens to whatever it is assigned to, so its written scale is not
+  // a claim about the value's real precision.
+  if (amountType.kind === "decimal" && amountType.literal) {
+    return;
+  }
+
+  const integerDigits = amountType.precision - amountType.scale;
+  if (amountType.scale > LEDGER_SCALE) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-LED-004",
+        severity: "error",
+        message: `A ${statement.operation} amount with scale ${amountType.scale} does not fit the ledger interface, which is PIC S9(${LEDGER_INTEGER_DIGITS})V${"9".repeat(LEDGER_SCALE)}.`,
+        span: statement.amount.span,
+        hint: `Round to ${LEDGER_SCALE} decimal places with an explicit mode before posting, so the rounding is stated rather than left to a truncating MOVE.`,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return;
+  }
+
+  if (integerDigits > LEDGER_INTEGER_DIGITS) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-LED-004",
+        severity: "error",
+        message: `A ${statement.operation} amount with ${integerDigits} integer digits does not fit the ledger interface, which holds ${LEDGER_INTEGER_DIGITS}.`,
+        span: statement.amount.span,
+        hint: `Narrow the amount type to at most decimal<${LEDGER_INTEGER_DIGITS + LEDGER_SCALE}, ${LEDGER_SCALE}>. The MOVE into BANK-LEDGER-AMOUNT would drop the high-order digits without a runtime error.`,
+        backendProfile: "ibm-enterprise-cobol-zos",
       }),
     );
   }
@@ -1645,13 +2042,85 @@ function validateAuditStatement(
   }
 }
 
+/**
+ * Resolves a record, and its base first, memoising into `recordMap`.
+ *
+ * `inProgress` carries the chain of records currently being resolved so a cycle
+ * is reported against the declaration that closes it instead of overflowing the
+ * stack.
+ */
+function ensureRecordResolved(
+  name: string,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+  inProgress: string[],
+): ResolvedRecord | null {
+  const existing = recordMap.get(name);
+  if (existing) {
+    return existing;
+  }
+
+  if (inProgress.includes(name)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-016",
+        severity: "error",
+        message: `Record inheritance forms a cycle: ${[...inProgress, name].join(" extends ")}.`,
+        span,
+        hint: "A record cannot extend itself, directly or through another record.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  const declaration = pendingRecordDeclarations.get(name);
+  if (!declaration) {
+    return null;
+  }
+
+  const resolved = resolveRecord(declaration, aliases, recordMap, diagnostics, [
+    ...inProgress,
+    name,
+  ]);
+  if (!resolved) {
+    return null;
+  }
+
+  recordSink.push(resolved);
+  recordMap.set(resolved.name, resolved);
+  return resolved;
+}
+
 function resolveRecord(
   declaration: RecordDeclarationNode,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
+  inProgress: string[],
 ): ResolvedRecord | null {
   const fields: ResolvedField[] = [];
+
+  // Base fields are laid out first so the derived record's leading storage is
+  // byte-for-byte the base record's storage. That is what makes a base-typed
+  // parameter safe to satisfy with a derived record, and what lets an existing
+  // copybook for the base still read a derived record correctly.
+  if (declaration.baseType) {
+    const base = resolveBaseRecord(
+      declaration.baseType,
+      aliases,
+      recordMap,
+      diagnostics,
+      inProgress,
+    );
+    if (base) {
+      recordBases.set(declaration.name, base.name);
+      fields.push(...base.fields);
+    }
+  }
+
   for (const field of declaration.fields) {
     const resolved = resolveTypeNode(
       field.type,
@@ -1663,6 +2132,24 @@ function resolveRecord(
     if (!resolved) {
       continue;
     }
+
+    const inherited = fields.find((existing) => existing.name === field.name);
+    if (inherited) {
+      // Redeclaring an inherited field would put two fields of the same name in
+      // one COBOL group, which is ambiguous however it is qualified.
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-017",
+          severity: "error",
+          message: `Field ${field.name} is already declared by the base record.`,
+          span: field.span,
+          hint: "Rename the field. A derived record extends the base layout; it cannot replace part of it.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+
     fields.push({ name: field.name, span: field.span, type: resolved });
   }
 
@@ -1671,6 +2158,166 @@ function resolveRecord(
     span: declaration.span,
     fields,
   };
+}
+
+/**
+ * Instantiates `Box<Money>` into a concrete record named `Box$dec18_2`.
+ *
+ * The instantiation is memoised on the mangled name, so two references to the
+ * same instantiation share one record and one COBOL group rather than emitting
+ * duplicate storage under different names.
+ */
+function instantiateGenericRecord(
+  node: TypeReferenceNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+): ResolvedType | null {
+  const generic = genericRecords.get(node.name);
+  if (!generic) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-019",
+        severity: "error",
+        message: `${node.name} is not generic, so it takes no type arguments.`,
+        span,
+        hint: `Write ${node.name} without a type argument list.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  if (node.typeArguments.length !== generic.typeParameters.length) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-018",
+        severity: "error",
+        message: `${node.name} expects ${generic.typeParameters.length} type argument(s) but received ${node.typeArguments.length}.`,
+        span,
+        hint: `Declared as ${node.name}<${generic.typeParameters.map((parameter) => parameter.name).join(", ")}>.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  // Type arguments are normalised through the resolver before they name an
+  // instantiation, so `Slot<BDT>` and `Slot<currency<"BDT", 18, 2>>` are one
+  // record rather than two identical ones under different names.
+  const normalized: TypeNode[] = [];
+  for (const argument of node.typeArguments) {
+    const resolvedArgument = resolveTypeNode(
+      argument,
+      aliases,
+      recordMap,
+      diagnostics,
+      span,
+    );
+    if (!resolvedArgument) {
+      return null;
+    }
+    const normalizedNode = typeToTypeNode(resolvedArgument, argument.span);
+    if (!normalizedNode) {
+      return null;
+    }
+    normalized.push(normalizedNode);
+  }
+
+  const mangled = mangleInstantiation(node.name, normalized);
+  const existing = recordMap.get(mangled);
+  if (existing) {
+    return {
+      kind: "record",
+      name: existing.name,
+      span: existing.span,
+      fields: existing.fields,
+    };
+  }
+
+  const substitution = new Map<string, TypeNode>();
+  generic.typeParameters.forEach((parameter, index) => {
+    substitution.set(parameter.name, normalized[index]);
+  });
+
+  const declaration = instantiateRecord(generic, substitution, mangled);
+
+  // Registered before its fields resolve so a self-referential instantiation
+  // is caught as a cycle rather than expanding forever.
+  pendingRecordDeclarations.set(mangled, declaration);
+
+  const resolved = ensureRecordResolved(
+    mangled,
+    aliases,
+    recordMap,
+    diagnostics,
+    span,
+    [],
+  );
+  if (!resolved) {
+    return null;
+  }
+
+  return {
+    kind: "record",
+    name: resolved.name,
+    span: resolved.span,
+    fields: resolved.fields,
+  };
+}
+
+function resolveBaseRecord(
+  baseType: TypeReferenceNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+  inProgress: string[],
+): ResolvedRecord | null {
+  const baseName =
+    baseType.typeArguments.length > 0
+      ? mangleInstantiation(baseType.name, baseType.typeArguments)
+      : baseType.name;
+
+  if (baseType.typeArguments.length > 0) {
+    const instantiated = resolveTypeNode(
+      baseType,
+      aliases,
+      recordMap,
+      diagnostics,
+      baseType.span,
+    );
+    if (instantiated?.kind === "record") {
+      return recordMap.get(instantiated.name) ?? null;
+    }
+    return null;
+  }
+
+  const resolved = ensureRecordResolved(
+    baseName,
+    aliases,
+    recordMap,
+    diagnostics,
+    baseType.span,
+    inProgress,
+  );
+  if (resolved) {
+    return resolved;
+  }
+
+  if (!recordMap.has(baseName) && !pendingRecordDeclarations.has(baseName)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved base record: ${baseType.name}.`,
+        span: baseType.span,
+        hint: "A record can only extend another record declared in this module.",
+        backendProfile: null,
+      }),
+    );
+  }
+  return null;
 }
 
 function resolveFunction(
@@ -1759,6 +2406,88 @@ function validateFunctionBody(
   );
 }
 
+/**
+ * True for `if <condition> { ... raise "..."; }` with no else branch.
+ *
+ * The then-branch has to end in a raise for this to be a guard: if it could
+ * fall through, the statements after it would run in both cases and the `if`
+ * would need an else to say what the function returns.
+ */
+function isGuardClause(statement: StatementNode): statement is IfStatementNode {
+  return (
+    statement.kind === "IfStatement" &&
+    statement.elseBranch === null &&
+    blockAlwaysRaises(statement.thenBranch)
+  );
+}
+
+/** True when every path out of a block raises. */
+function blockAlwaysRaises(block: BlockNode): boolean {
+  const last = block.statements[block.statements.length - 1];
+  if (!last) {
+    return false;
+  }
+
+  if (last.kind === "RaiseStatement") {
+    return true;
+  }
+
+  if (last.kind === "IfStatement") {
+    return (
+      blockAlwaysRaises(last.thenBranch) &&
+      last.elseBranch !== null &&
+      blockAlwaysRaises(last.elseBranch)
+    );
+  }
+
+  return false;
+}
+
+function validateGuardClause(
+  statement: IfStatementNode,
+  returnType: ResolvedType,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+): void {
+  const conditionType = inferExpressionType(
+    statement.condition,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (conditionType && !isBoolType(conditionType)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "If conditions must be bool.",
+        span: statement.condition.span,
+        hint: "Compare a decimal expression or use a bool value in the condition.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const previousGuards = guardedNullables;
+  const guards = new Set(previousGuards);
+  collectGuards(statement.condition, guards);
+  guardedNullables = guards;
+  validateBlock(
+    statement.thenBranch,
+    returnType,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+  );
+  guardedNullables = previousGuards;
+}
+
 function validateBlock(
   block: BlockNode,
   returnType: ResolvedType,
@@ -1789,6 +2518,23 @@ function validateBlock(
     if (statement.kind === "LetStatement") {
       validateLetStatement(
         statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      continue;
+    }
+
+    // A guard clause — `if <bad> { raise "..."; }` with no else — reads as a
+    // precondition, not as a branch that has to produce a value. The block
+    // continues after it, because control only reaches the next statement when
+    // the guard did not fire.
+    if (isGuardClause(statement)) {
+      validateGuardClause(
+        statement,
+        returnType,
         scope,
         aliases,
         recordMap,
@@ -1918,6 +2664,13 @@ function resolveTerminalStatementType(
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;
+    case "RaiseStatement":
+      // A raise abandons the body, so control never reaches the end of the
+      // function and the missing return is not a defect. Reporting the declared
+      // type here is what lets `if ... { return x; } else { raise "..."; }`
+      // satisfy the terminal-statement rule.
+      validateRaiseStatement(statement, diagnostics);
+      return returnType;
   }
 }
 
@@ -2470,6 +3223,43 @@ let enumMap = new Map<string, ResolvedEnum>();
 /** Declared SQL statements, for resolving execute statements. */
 let sqlMap = new Map<string, ResolvedSql>();
 
+/** Generic templates, indexed by name. These are never resolved directly. */
+let genericRecords = new Map<string, RecordDeclarationNode>();
+let genericFunctions = new Map<string, FunctionDeclarationNode>();
+
+/** Non-generic record declarations, for resolving a base declared later. */
+let pendingRecordDeclarations = new Map<string, RecordDeclarationNode>();
+
+/** Function instantiations requested by a call site but not yet checked. */
+interface InstantiationRequest {
+  declaration: FunctionDeclarationNode;
+  span: SourceSpan;
+}
+let pendingInstantiations = new Map<string, InstantiationRequest>();
+
+/** Generic function names that at least one call site instantiated. */
+let instantiatedFunctions = new Set<string>();
+
+/**
+ * The concrete function each generic call resolves to.
+ *
+ * Keyed by node identity because the same call text can appear in two
+ * instantiations of one generic body at different type arguments.
+ */
+let callTargets = new Map<CallExpressionNode, string>();
+
+/** The base record each derived record extends, for assignability checks. */
+let recordBases = new Map<string, string>();
+
+/**
+ * The list every newly resolved record is appended to.
+ *
+ * Records are resolved on demand rather than in declaration order, because a
+ * field or a base clause can name a record declared further down the file, and
+ * a generic instantiation creates a record that was never declared at all.
+ */
+let recordSink: ResolvedRecord[] = [];
+
 /**
  * Whether the body being checked runs SQL, and whether it tests SQLCODE.
  *
@@ -2609,6 +3399,18 @@ function inferCallExpressionType(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
+  const generic = genericFunctions.get(expression.callee);
+  if (generic) {
+    return inferGenericCallType(
+      expression,
+      generic,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+  }
+
   const signature = functionSignatures.get(expression.callee);
   if (!signature) {
     diagnostics.push(
@@ -2659,9 +3461,438 @@ function inferCallExpressionType(
         }),
       );
     }
+    checkRecordArgument(
+      expression.callee,
+      expected,
+      expression.args[index],
+      index,
+      diagnostics,
+    );
   }
 
   return signature.returnType;
+}
+
+/**
+ * Rejects a record argument that is not a plain named record.
+ *
+ * A record type is one group item in working storage, and a record parameter
+ * binds to that group rather than to storage of its own. So the callee reads
+ * `01 ADDRESS`, whatever the caller wrote. Passing `customer.address` would
+ * compile and then silently read a different group, which is exactly the kind
+ * of quiet wrong answer this compiler exists to make impossible.
+ */
+function checkRecordArgument(
+  callee: string,
+  expected: ResolvedType,
+  argument: ExpressionNode,
+  index: number,
+  diagnostics: Diagnostic[],
+): void {
+  if (expected.kind !== "record" || argument.kind === "Identifier") {
+    return;
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-TYPE-021",
+      severity: "error",
+      message: `Argument ${index + 1} of ${callee} must name a record directly.`,
+      span: argument.span,
+      hint: `A record parameter binds to the ${expected.name} group in working storage, not to a copy. Assign the value into a ${expected.name} first, then pass that.`,
+      backendProfile: "ibm-enterprise-cobol-zos",
+    }),
+  );
+}
+
+/**
+ * Resolves a call to a generic function by inferring its type arguments from
+ * the argument types, then requesting the matching instantiation.
+ *
+ * Type arguments are inferred rather than written at the call site because
+ * `f<T>(x)` cannot be told apart from two comparisons without unbounded
+ * lookahead. Inference keeps the grammar unambiguous and the call site clean.
+ */
+function inferGenericCallType(
+  expression: CallExpressionNode,
+  declaration: FunctionDeclarationNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  if (expression.args.length !== declaration.parameters.length) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${expression.callee} expects ${declaration.parameters.length} argument(s) but received ${expression.args.length}.`,
+        span: expression.span,
+        hint: `Declared as ${expression.callee}<${declaration.typeParameters.map((parameter) => parameter.name).join(", ")}>(${declaration.parameters.map((parameter) => parameter.name).join(", ")}).`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  const bindings = new Map<string, TypeNode>();
+  const parameterNames = new Set(
+    declaration.typeParameters.map((parameter) => parameter.name),
+  );
+
+  const actuals: (ResolvedType | null)[] = expression.args.map((argument) =>
+    inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
+  );
+  if (actuals.some((actual) => !actual)) {
+    return null;
+  }
+
+  // A decimal literal carries the scale it was written with, not the type it is
+  // meant to have: `0.00` on its own is decimal<2,2>. Inferring from it would
+  // fix T to the literal's shape and reject the real argument that follows, so
+  // literals are only consulted when nothing else determines the parameter.
+  const order = [
+    ...actuals
+      .map((actual, index) => ({ actual, index }))
+      .filter((entry) => !isLiteralDecimal(entry.actual as ResolvedType)),
+    ...actuals
+      .map((actual, index) => ({ actual, index }))
+      .filter((entry) => isLiteralDecimal(entry.actual as ResolvedType)),
+  ];
+
+  for (const { actual, index } of order) {
+    if (
+      !unifyTypeParameter(
+        declaration.parameters[index].type,
+        actual as ResolvedType,
+        parameterNames,
+        bindings,
+        diagnostics,
+        expression.args[index].span,
+      )
+    ) {
+      return null;
+    }
+  }
+
+  const missing = declaration.typeParameters.find(
+    (parameter) => !bindings.has(parameter.name),
+  );
+  if (missing) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-020",
+        severity: "error",
+        message: `Type parameter ${missing.name} of ${expression.callee} cannot be inferred from the arguments.`,
+        span: expression.span,
+        hint: `Every type parameter must appear in a parameter type, because ${expression.callee} is instantiated from its arguments.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  const typeArguments = declaration.typeParameters.map(
+    (parameter) => bindings.get(parameter.name) as TypeNode,
+  );
+  const mangled = mangleInstantiation(declaration.name, typeArguments);
+  callTargets.set(expression, mangled);
+  instantiatedFunctions.add(declaration.name);
+
+  if (!functionSignatures.has(mangled)) {
+    const instance = instantiateFunction(declaration, bindings, mangled);
+    // The signature is registered before the body is checked so a recursive
+    // instantiation resolves against itself instead of asking for a second one.
+    registerFunctionSignature(instance, aliases, recordMap);
+    pendingInstantiations.set(mangled, {
+      declaration: instance,
+      span: expression.span,
+    });
+  }
+
+  const signature = functionSignatures.get(mangled);
+  if (!signature) {
+    return null;
+  }
+
+  for (let index = 0; index < expression.args.length; index += 1) {
+    const actual = inferExpressionType(
+      expression.args[index],
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    const expected = signature.parameters[index].type;
+    if (actual && !typesCompatible(expected, actual)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `Argument ${index + 1} of ${expression.callee} expects ${describeType(expected)} but received ${describeType(actual)}.`,
+          span: expression.args[index].span,
+          hint: "All uses of one type parameter must agree; the subset does not coerce arguments.",
+          backendProfile: null,
+        }),
+      );
+    }
+    checkRecordArgument(
+      expression.callee,
+      expected,
+      expression.args[index],
+      index,
+      diagnostics,
+    );
+  }
+
+  return signature.returnType;
+}
+
+/**
+ * Matches a parameter's declared type against an argument's actual type,
+ * binding any type parameter it meets.
+ *
+ * A parameter name already bound to a different type is a conflict: one type
+ * parameter stands for exactly one type per instantiation.
+ */
+function unifyTypeParameter(
+  template: TypeNode,
+  actual: ResolvedType,
+  parameterNames: ReadonlySet<string>,
+  bindings: Map<string, TypeNode>,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+): boolean {
+  if (template.kind === "TypeReference" && parameterNames.has(template.name)) {
+    // A literal never overrides a binding another argument already fixed. Its
+    // written scale is not a claim about the type; `0.00` passed where the
+    // instantiation is currency<"BDT", 18, 2> is a valid zero, not a conflict.
+    if (isLiteralDecimal(actual) && bindings.has(template.name)) {
+      return true;
+    }
+
+    const node = typeToTypeNode(actual, span);
+    if (!node) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-020",
+          severity: "error",
+          message: `${describeType(actual)} cannot be used as a type argument.`,
+          span,
+          hint: "A type argument has to name a layout the backend can emit.",
+          backendProfile: null,
+        }),
+      );
+      return false;
+    }
+
+    const existing = bindings.get(template.name);
+    if (existing && describeTypeNode(existing) !== describeTypeNode(node)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-020",
+          severity: "error",
+          message: `Type parameter ${template.name} is already ${describeTypeNode(existing)} and cannot also be ${describeTypeNode(node)}.`,
+          span,
+          hint: "One type parameter stands for one type across the whole call.",
+          backendProfile: null,
+        }),
+      );
+      return false;
+    }
+
+    bindings.set(template.name, node);
+    return true;
+  }
+
+  if (template.kind === "ArrayType" && actual.kind === "array") {
+    return unifyTypeParameter(
+      template.element,
+      actual.element,
+      parameterNames,
+      bindings,
+      diagnostics,
+      span,
+    );
+  }
+
+  if (template.kind === "NullableType" && actual.kind === "nullable") {
+    return unifyTypeParameter(
+      template.inner,
+      actual.inner,
+      parameterNames,
+      bindings,
+      diagnostics,
+      span,
+    );
+  }
+
+  if (template.kind === "TypeReference") {
+    return unifyNestedArguments(
+      template,
+      actual,
+      parameterNames,
+      bindings,
+      diagnostics,
+      span,
+    );
+  }
+
+  // A concrete parameter type binds nothing; the argument check that follows
+  // reports any mismatch.
+  return true;
+}
+
+/** Unifies `Box<T>` against the record an argument of that shape resolved to. */
+function unifyNestedArguments(
+  template: TypeReferenceNode,
+  actual: ResolvedType,
+  parameterNames: ReadonlySet<string>,
+  bindings: Map<string, TypeNode>,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+): boolean {
+  if (template.typeArguments.length === 0 || actual.kind !== "record") {
+    return true;
+  }
+
+  const prefix = `${template.name}$`;
+  if (!actual.name.startsWith(prefix)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-020",
+        severity: "error",
+        message: `Expected an instantiation of ${template.name} but received ${actual.name}.`,
+        span,
+        hint: `Pass a value declared as ${template.name}<...>.`,
+        backendProfile: null,
+      }),
+    );
+    return false;
+  }
+
+  // The mangled suffix records the instantiation's type arguments in order, so
+  // matching it against the template's own arguments recovers the bindings.
+  const suffix = actual.name.slice(prefix.length).split("$");
+  if (suffix.length !== template.typeArguments.length) {
+    return false;
+  }
+
+  for (let index = 0; index < template.typeArguments.length; index += 1) {
+    const argument = template.typeArguments[index];
+    if (
+      argument.kind === "TypeReference" &&
+      parameterNames.has(argument.name)
+    ) {
+      const existing = bindings.get(argument.name);
+      const encoded = suffix[index];
+      if (existing && describeTypeNode(existing) !== encoded) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-020",
+            severity: "error",
+            message: `Type parameter ${argument.name} is already ${describeTypeNode(existing)} and cannot also be ${encoded}.`,
+            span,
+            hint: "One type parameter stands for one type across the whole call.",
+            backendProfile: null,
+          }),
+        );
+        return false;
+      }
+      if (!existing) {
+        const node = decodeMangledType(encoded, span);
+        if (!node) {
+          return false;
+        }
+        bindings.set(argument.name, node);
+      }
+    }
+  }
+
+  return true;
+}
+
+/** True for a written decimal literal, whose scale is its own, not the target's. */
+function isLiteralDecimal(type: ResolvedType): boolean {
+  return type.kind === "decimal" && type.literal === true;
+}
+
+/** Rebuilds a type node from a resolved type, for use as a type argument. */
+function typeToTypeNode(type: ResolvedType, span: SourceSpan): TypeNode | null {
+  switch (type.kind) {
+    case "decimal":
+      return {
+        kind: "DecimalType",
+        precision: type.precision,
+        scale: type.scale,
+        span,
+      };
+    case "string":
+      return { kind: "StringType", length: type.length, span };
+    case "bool":
+      return { kind: "BoolType", span };
+    case "currency":
+      return {
+        kind: "CurrencyType",
+        code: type.code,
+        precision: type.precision,
+        scale: type.scale,
+        span,
+      };
+    case "record":
+    case "enum":
+      return {
+        kind: "TypeReference",
+        name: type.name,
+        typeArguments: [],
+        span,
+      };
+    case "nullable": {
+      const inner = typeToTypeNode(type.inner, span);
+      return inner ? { kind: "NullableType", inner, span } : null;
+    }
+    case "array": {
+      const element = typeToTypeNode(type.element, span);
+      return element
+        ? { kind: "ArrayType", element, length: type.length, span }
+        : null;
+    }
+  }
+}
+
+/** Reverses `describeTypeNode` for the forms a mangled name can contain. */
+function decodeMangledType(encoded: string, span: SourceSpan): TypeNode | null {
+  const decimal = /^dec(\d+)_(\d+)$/.exec(encoded);
+  if (decimal) {
+    return {
+      kind: "DecimalType",
+      precision: Number(decimal[1]),
+      scale: Number(decimal[2]),
+      span,
+    };
+  }
+
+  const text = /^str(\d+)$/.exec(encoded);
+  if (text) {
+    return { kind: "StringType", length: Number(text[1]), span };
+  }
+
+  if (encoded === "bool") {
+    return { kind: "BoolType", span };
+  }
+
+  const money = /^cur([A-Z]+)(\d+)_(\d+)$/.exec(encoded);
+  if (money) {
+    return {
+      kind: "CurrencyType",
+      code: money[1],
+      precision: Number(money[2]),
+      scale: Number(money[3]),
+      span,
+    };
+  }
+
+  return { kind: "TypeReference", name: encoded, typeArguments: [], span };
 }
 
 const COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "==", "!="]);
@@ -3135,6 +4366,31 @@ function resolveReference(
   diagnostics: Diagnostic[],
   span: SourceSpan,
 ): ResolvedType | null {
+  if (node.typeArguments.length > 0) {
+    return instantiateGenericRecord(
+      node,
+      aliases,
+      recordMap,
+      diagnostics,
+      span,
+    );
+  }
+
+  const generic = genericRecords.get(node.name);
+  if (generic) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-018",
+        severity: "error",
+        message: `${node.name} is generic and needs ${generic.typeParameters.length} type argument(s).`,
+        span,
+        hint: `Write ${node.name}<${generic.typeParameters.map((parameter) => parameter.name).join(", ")}> with concrete types. COBOL has no boxed values, so the layout has to be fixed at compile time.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
   const alias = aliases[node.name];
   if (alias) {
     return alias;
@@ -3148,6 +4404,28 @@ function resolveReference(
       span: record.span,
       fields: record.fields,
     };
+  }
+
+  // A record whose declaration sits further down the file, reached through a
+  // field or a base clause rather than in declaration order.
+  if (pendingRecordDeclarations.has(node.name)) {
+    const resolved = ensureRecordResolved(
+      node.name,
+      aliases,
+      recordMap,
+      diagnostics,
+      span,
+      [],
+    );
+    if (resolved) {
+      return {
+        kind: "record",
+        name: resolved.name,
+        span: resolved.span,
+        fields: resolved.fields,
+      };
+    }
+    return null;
   }
 
   const enumType = enumMap.get(node.name);

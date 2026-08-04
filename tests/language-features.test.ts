@@ -197,6 +197,26 @@ describe("arithmetic and rounding", () => {
 describe("function calls", () => {
   it("lowers a call to argument moves and a PERFORM", () => {
     const result = compileBody(
+      `function twice(a: MoneyBDT): MoneyBDT {
+  return a + a;
+}
+
+function f(a: MoneyBDT): MoneyBDT {
+  return twice(a);
+}`,
+    );
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("MOVE F-P1 TO TWICE-P1");
+    expect(result.cobol).toContain("PERFORM TWICE");
+  });
+
+  /**
+   * `DOUBLE` is a COBOL reserved word, so a function named `double` cannot
+   * become a paragraph of that name.
+   */
+  it("renames a function whose name is reserved in COBOL", () => {
+    const result = compileBody(
       `function double(a: MoneyBDT): MoneyBDT {
   return a + a;
 }
@@ -207,8 +227,8 @@ function f(a: MoneyBDT): MoneyBDT {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("MOVE F-P1 TO DOUBLE-P1");
-    expect(result.cobol).toContain("PERFORM DOUBLE");
+    expect(result.cobol).toContain("PERFORM DOUBLE-FLD");
+    expect(result.cobol).not.toMatch(/PERFORM DOUBLE$/m);
   });
 
   it("declares each parameter in working storage", () => {

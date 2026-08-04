@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/dist/audit/copybook-layout.md
+Artifact: /workspace/Code/banklang/dist/audit/copybook-layout.md
 
 ## ACCOUNT-RECORD
 

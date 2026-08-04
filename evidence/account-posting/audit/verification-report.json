@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/examples/account-posting/src/main.bank.ts",
+  "project": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/dist/cobol/ACCOUNT-POSTING.cbl"
+      "details": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/dist/maps/source-map.json"
+      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/dist/jcl/ACCOUNT-POSTING.jcl"
+      "details": "/workspace/Code/banklang/dist/jcl/ACCOUNT-POSTING.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/dist/audit"
+      "details": "/workspace/Code/banklang/dist/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -51,8 +51,8 @@
     },
     {
       "name": "GnuCOBOL validation",
-      "status": "skipped",
-      "details": "No local cobc executable was available."
+      "status": "passed",
+      "details": "Local cobc validation passed."
     },
     {
       "name": "Audit schema",
@@ -61,20 +61,20 @@
     }
   ],
   "artifacts": [
-    "/workspace/dist/cobol/ACCOUNT-POSTING.cbl",
-    "/workspace/dist/maps/source-map.json",
-    "/workspace/dist/copybooks/TRANSFER-REQUEST.cpy",
-    "/workspace/dist/jcl/ACCOUNT-POSTING.jcl",
-    "/workspace/dist/audit/diagnostics.json",
-    "/workspace/dist/audit/source-map.json",
-    "/workspace/dist/audit/decimal-analysis.json",
-    "/workspace/dist/audit/transaction-analysis.json",
-    "/workspace/dist/audit/copybook-layout.json",
-    "/workspace/dist/audit/generated-artifacts.json",
-    "/workspace/dist/audit/verification-report.md",
-    "/workspace/dist/audit/verification-report.json",
-    "/workspace/dist/audit/validation-matrix.md",
-    "/workspace/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
+    "/workspace/Code/banklang/dist/maps/source-map.json",
+    "/workspace/Code/banklang/dist/copybooks/TRANSFER-REQUEST.cpy",
+    "/workspace/Code/banklang/dist/jcl/ACCOUNT-POSTING.jcl",
+    "/workspace/Code/banklang/dist/audit/diagnostics.json",
+    "/workspace/Code/banklang/dist/audit/source-map.json",
+    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
+    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/dist/audit/verification-report.md",
+    "/workspace/Code/banklang/dist/audit/verification-report.json",
+    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
+    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",
@@ -94,16 +94,16 @@
     "sourceArtifact": "examples/account-posting/src/main.bank.ts",
     "sourceArtifactHash": "4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9",
     "generatedArtifact": "dist/gnucobol/cobol/ACCOUNT-POSTING.cbl",
-    "generatedArtifactHash": "43b004ac3d73e0b3ae7b32bdc29b574d7ed49c4424a013d701c5d2ed31c39e2e",
+    "generatedArtifactHash": "e3eb20ee670e5c7150fdec3788ae28d88ceba8b9db3cec87afce1a84ae6d8d35",
     "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "7e2137939b3df0a355817e82a0ad736793b5c1d58b1ee11bdeef25ed34df052d",
-    "compilerExecutable": null,
-    "compilerVersion": null,
-    "compilerCommand": "cobc not found",
-    "compilerExitCode": null,
-    "compilerStatus": "skipped",
+    "sourceMapArtifactHash": "4e4491eba5b14ae8e278ff63936a36e9ab1bf970501946bd365369e305209128",
+    "compilerExecutable": "cobc",
+    "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
+    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/ACCOUNT-POSTING.cbl -o dist/gnucobol/bin/account-posting",
+    "compilerExitCode": 0,
+    "compilerStatus": "passed",
     "compilerOutput": null,
-    "validatedWithGnucobol": false,
+    "validatedWithGnucobol": true,
     "knownBackendGaps": [
       "This local profile covers the account-transfer subset only.",
       "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",

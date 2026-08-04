@@ -70,6 +70,9 @@
            05  BANK-AUDIT-CORRELATION   PIC X(64).
 
        PROCEDURE DIVISION.
+       BANK-MAIN.
+           PERFORM RUN-BATCH
+           GOBACK.
        IS-ELIGIBLE.
            IF (IS-ELIGIBLE-P1 >= IS-ELIGIBLE-P2) AND (IS-ELIGIBLE-P1 > 0.00)
                MOVE 'Y' TO IS-ELIGIBLE-RESULT

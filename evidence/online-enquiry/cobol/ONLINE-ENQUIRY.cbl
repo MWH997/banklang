@@ -43,6 +43,9 @@
            05  LK-IDEMPOTENCY-KEY   PIC X(36).
 
        PROCEDURE DIVISION.
+       BANK-MAIN.
+           PERFORM ACCOUNT-ENQUIRY
+           GOBACK.
        IS-AVAILABLE.
            IF IS-AVAILABLE-P1 = "OPEN"
                MOVE 'Y' TO IS-AVAILABLE-RESULT

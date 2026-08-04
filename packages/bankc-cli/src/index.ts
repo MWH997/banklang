@@ -920,6 +920,8 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         files: [],
         enums: [],
         sql: [],
+        callTargets: new Map(),
+        recordBases: new Map(),
       };
   const ir = parsed.program
     ? lowerProgramToIR(typechecked)

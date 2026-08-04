@@ -80,6 +80,78 @@ Rules:
 - nested records are allowed
 - arrays must be bounded
 
+### 5a. Inheritance
+
+A record may extend another. The base fields are laid out first, so the derived
+record's leading storage is the base record's storage byte for byte:
+
+```ts
+record CurrentAccount {
+  accountId: string<16>;
+  balance: currency<"BDT", 18, 2>;
+}
+
+record SavingsAccount extends CurrentAccount {
+  minimumBalance: currency<"BDT", 18, 2>;
+}
+```
+
+That layout guarantee is the point: an existing copybook for the base still
+reads a derived record correctly.
+
+Inheritance does **not** make a derived record substitutable for its base at a
+call site. A record parameter binds to that record's group item in working
+storage, so a function declared over `CurrentAccount` reads
+`01 CURRENT-ACCOUNT` whatever the caller passed. Passing a `SavingsAccount`
+there is rejected rather than silently reading the wrong storage.
+
+Redeclaring an inherited field is `BANK-TYPE-017`; a cycle is `BANK-TYPE-016`.
+
+### 5b. Generics
+
+Records and functions may take type parameters. There is no runtime
+polymorphism in COBOL and no boxing, so every instantiation is expanded into a
+concrete declaration at compile time:
+
+```ts
+record Slot<T> {
+  value: T;
+  present: bool;
+}
+
+record Holder {
+  money: Slot<currency<"BDT", 18, 2>>;
+  count: Slot<decimal<9, 0>>;
+}
+```
+
+That emits two records, `SLOT-CUR-BDT18-2` and `SLOT-DEC9-0`, each with its own
+storage. Two instantiations of one generic cost two copies of the layout and,
+for a function, two copies of the code. Type arguments are normalised through
+the resolver first, so `Slot<Money>` and `Slot<currency<"BDT", 18, 2>>` are one
+record rather than two identical ones.
+
+Generic functions take their type arguments by inference from the argument
+types, never explicitly:
+
+```ts
+function larger<T>(left: T, right: T): T {
+  if left >= right {
+    return left;
+  } else {
+    return right;
+  }
+}
+```
+
+`larger(a, b)` instantiates from the types of `a` and `b`. There is no
+`larger<Money>(a, b)` syntax, because `f<T>(x)` cannot be told apart from two
+comparisons without unbounded lookahead. A type parameter that appears in no
+parameter type therefore cannot be inferred, and is `BANK-TYPE-020`.
+
+A generic that is never instantiated generates nothing and is never checked
+against real types, which is reported as `BANK-TYPE-015`.
+
 ## 6. Bounded arrays
 
 ```ts
@@ -110,12 +182,18 @@ function validateAmount(amount: decimal<18, 2>): bool {
 
 Restrictions:
 
-- no closures in v0.1
+- no closures
 - no generators
 - no async functions
-- no higher-order functions in v0.1
-- recursion disabled by default
+- no higher-order functions
 - every function has explicit parameter and return types
+
+Recursion is supported. A COBOL paragraph is not reentrant, so a recursive
+function is emitted as a sibling `RECURSIVE` program with its locals in
+`LOCAL-STORAGE`, reached with `CALL` rather than `PERFORM`. Mutual recursion is
+detected through the call graph.
+
+Functions may take type parameters; see section 5b.
 
 ## 9. Control flow
 
@@ -127,9 +205,12 @@ while ... limit <n>
 return
 ```
 
-Not yet implemented: `for each` over bounded arrays, and `switch` over enums.
+Also supported: `for each` over bounded arrays, `switch` over enums, and
+`raise` with an `on failure` handler (section 10b).
 
-Never supported: `try`/`catch`, `throw`, `async`/`await`, `yield`.
+Never supported: `try`/`catch`, `throw`, `async`/`await`, `yield`. Failure is
+modelled as an abandoned unit of work rather than a thrown value, because COBOL
+has neither exceptions nor stack unwinding.
 
 ### `for each`
 
@@ -268,6 +349,82 @@ Rules:
 - debit and credit totals must balance for ledger-posting operations
 - rollback path must be representable in target backend
 - generated COBOL must expose transaction boundary in source map
+
+### 10a. Entry point
+
+COBOL enters a program at the first statement of the `PROCEDURE DIVISION`.
+Without a designated entry that would be whichever declaration happened to be
+emitted first, which no caller can rely on. `entry` names the transaction the
+program starts at:
+
+```ts
+entry transaction runBatch(account: Account, advice: Advice) { ... }
+```
+
+The backend emits a `BANK-MAIN` paragraph that performs it. A program with no
+`entry` starts at its first declared transaction. Two `entry` transactions is
+`BANK-TXN-010`.
+
+## 10b. Failures
+
+COBOL has no exceptions and no stack unwinding, so BankTS models failure as an
+abandoned unit of work rather than as a thrown value.
+
+`raise` records a code and abandons the rest of the body:
+
+```ts
+function permittedAmount(account: SavingsAccount, requested: MoneyBDT): MoneyBDT {
+  if requested <= 0.00 {
+    raise "NON_POSITIVE_AMOUNT";
+  }
+  return requested;
+}
+```
+
+`if <bad> { raise "..."; }` is a guard clause. It needs no `else`, because
+control only reaches the next statement when the guard did not fire.
+
+A transaction is the unit of work, so it is the only place a handler can sit:
+
+```ts
+entry transaction withdraw(account: SavingsAccount, result: WithdrawalResult) {
+  on failure {
+    audit("WITHDRAWAL_REJECTED", account.idempotencyKey);
+  }
+  ...
+}
+```
+
+The handler is declared before the statements it covers, so a reader meets the
+recovery path before the code that can trigger it. It runs when anything in the
+body raises, including inside a function the body called.
+
+What the backend generates:
+
+- `BANK-FAILURE-CODE`, an `EXTERNAL` `PIC X(32)`, so a recursive function —
+  which is a sibling program rather than a paragraph — raises into the same
+  field its caller tests
+- a wrapper paragraph that performs the body `THRU` its exit paragraph, then
+  inspects the code. `THRU` is required: a `GO TO` out of a plain `PERFORM`
+  range leaves the flow of control undefined
+- a test after every `PERFORM` of a function that can fail, because COBOL will
+  not propagate anything on its own
+- a `ROLLBK` call to the ledger on the failure path, before the handler, for a
+  transaction that posted. BankLang does not own the ledger and does not invent
+  compensating postings
+
+A transaction that cannot reach a failure generates none of this.
+
+A handler may not itself raise (`BANK-TXN-009`): it is the last line of defence,
+and there is no outer handler to catch it.
+
+Failure codes are literals rather than expressions, so every failure a program
+can signal is visible in the source, and in the audit report, without running
+it. A code must be non-empty and fit `BANK-FAILURE-CODE` (`BANK-TXN-008`).
+
+An out-of-range computed subscript raises `BANK-BOUNDS-VIOLATION` where a
+handler can see it. It is not clamped: running the statement against a
+substituted element is the defect the check exists to prevent.
 
 ## 11. Audit events
 

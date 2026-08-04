@@ -29,6 +29,7 @@ import type {
   IRCicsStatement,
   IRTransaction,
   IRForEachStatement,
+  IRRaiseStatement,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -72,6 +73,26 @@ const FILE_STATUS_PICTURE = "PIC XX";
  * of silently corrupting the record next door.
  */
 const BOUNDS_STATUS_FIELD = "BANK-BOUNDS-STATUS";
+
+/**
+ * Field holding the code of the failure currently being propagated.
+ *
+ * COBOL has no exceptions and no stack unwinding, so a raise is a flag plus a
+ * jump to the enclosing body's exit. Spaces mean no failure is in flight.
+ */
+const FAILURE_CODE_FIELD = "BANK-FAILURE-CODE";
+
+/** Failure code raised when a computed subscript falls outside its table. */
+const BOUNDS_FAILURE_CODE = "BANK-BOUNDS-VIOLATION";
+
+/**
+ * Exit paragraph the current body jumps to when it raises.
+ *
+ * `GO TO` is the only way out of a COBOL paragraph mid-sentence. The target is
+ * always the end of the range the caller performed, so control returns to the
+ * caller exactly as a normal fall-through would.
+ */
+let currentExitLabel: string | null = null;
 
 /** Index used when copying a table between a file record and working storage. */
 const COPY_INDEX_FIELD = "BANK-COPY-INDEX";
@@ -122,6 +143,47 @@ function recursiveProgramName(name: string): string {
 function paragraphName(name: string): string {
   const base = toCobolParagraphName(name);
   return declaredDataNames.has(base) ? `${base}-PARA` : base;
+}
+
+/** The paragraph the generated program starts at. */
+const MAIN_PARAGRAPH = "BANK-MAIN";
+
+/**
+ * The transaction the program starts at.
+ *
+ * `entry transaction` names it explicitly. Falling back to the first declared
+ * transaction keeps a single-transaction program working without ceremony,
+ * which is the shape most programs have.
+ */
+function findEntryTransaction(program: IRProgram): IRTransaction | null {
+  return (
+    program.transactions.find((transaction) => transaction.isEntry) ??
+    program.transactions[0] ??
+    null
+  );
+}
+
+/** The paragraph a raise inside `name` jumps to. */
+function exitParagraphName(name: string): string {
+  return `${paragraphName(name)}-EXIT`;
+}
+
+/** The paragraph holding a transaction's statements, under its wrapper. */
+function bodyParagraphName(name: string): string {
+  return `${paragraphName(name)}-BODY`;
+}
+
+/** The paragraph holding a transaction's `on failure` statements. */
+function failureParagraphName(name: string): string {
+  return `${paragraphName(name)}-FAILURE`;
+}
+
+/** True when any function or transaction in the program can raise. */
+function programCanFail(program: IRProgram): boolean {
+  return (
+    program.functions.some((fn) => fn.canFail) ||
+    program.transactions.some((transaction) => transaction.canFail)
+  );
 }
 
 function collectDataNames(program: IRProgram): Set<string> {
@@ -339,6 +401,11 @@ export function emitCobol(
     );
     addLine(`       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP.`);
   }
+  if (programCanFail(program)) {
+    // EXTERNAL so a recursive function, which is a sibling program rather than
+    // a paragraph, raises into the same field the caller tests.
+    addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
+  }
 
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
@@ -478,6 +545,16 @@ export function emitCobol(
   addLine("");
   addLine(`       PROCEDURE DIVISION.`);
 
+  // COBOL enters a program at the first statement of the PROCEDURE DIVISION.
+  // Without this paragraph the starting point would be whichever function
+  // happened to be declared first, which is not something a caller can rely on.
+  const entryTransaction = findEntryTransaction(program);
+  if (entryTransaction) {
+    addLine(`       ${MAIN_PARAGRAPH}.`);
+    addLine(`           PERFORM ${paragraphName(entryTransaction.name)}`);
+    addLine(`           GOBACK.`);
+  }
+
   for (const fn of program.functions) {
     if (fn.isRecursive) {
       continue;
@@ -505,14 +582,20 @@ export function emitCobol(
       transaction.name,
       transaction.parameters,
     );
-    emitTransactionBody(transaction.body, addLine, 11);
+
+    if (transaction.canFail) {
+      emitFailingTransaction(transaction, addLine);
+    } else {
+      emitTransactionBody(transaction.body, addLine, 11);
+      // A CICS program returns control to CICS rather than to a caller.
+      addLine(
+        transaction.isCics
+          ? `           EXEC CICS RETURN END-EXEC.`
+          : `           GOBACK.`,
+      );
+    }
+
     currentParameters = new Map();
-    // A CICS program returns control to CICS rather than to a caller.
-    addLine(
-      transaction.isCics
-        ? `           EXEC CICS RETURN END-EXEC.`
-        : `           GOBACK.`,
-    );
     const transactionEnd = lineNumber() - 1;
     entries.push({
       sourceFile: program.sourceFile,
@@ -939,9 +1022,39 @@ function emitFunctionBody(
   addLine: (line?: string) => void,
 ): void {
   currentParameters = parameterBindings(fn.name, fn.parameters);
+  // A function that can raise needs somewhere to jump to. Its callers perform
+  // it THRU the exit paragraph, so the jump stays inside the performed range.
+  currentExitLabel = fn.canFail ? exitParagraphName(fn.name) : null;
   emitStatement(fn.body, addLine, 11, functionResultName(fn.name));
   currentParameters = new Map();
-  addLine(`           GOBACK.`);
+
+  if (fn.canFail) {
+    addLine(`           CONTINUE.`);
+    addLine(`       ${exitParagraphName(fn.name)}.`);
+    addLine(`           EXIT.`);
+  } else {
+    addLine(`           GOBACK.`);
+  }
+
+  currentExitLabel = null;
+}
+
+/**
+ * Emits a raise: record the code, then leave the body.
+ *
+ * The two statements have to stay together. Setting the code without leaving
+ * would run the rest of the body with a failure already in flight, which is
+ * exactly the half-posted transaction the model exists to prevent.
+ */
+function emitRaiseStatement(
+  statement: IRRaiseStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(`${indent}MOVE "${statement.code}" TO ${FAILURE_CODE_FIELD}`);
+  if (currentExitLabel) {
+    addLine(`${indent}GO TO ${currentExitLabel}`);
+  }
 }
 
 function emitStatement(
@@ -994,12 +1107,76 @@ function emitStatement(
           false,
         );
         break;
+      case "RaiseStatement":
+        emitRaiseStatement(statement, addLine, indent);
+        break;
       default:
         throw new Error(
           `Unsupported statement in function body: ${statement.kind}`,
         );
     }
   }
+}
+
+/**
+ * Emits a transaction that can abandon its work.
+ *
+ * The shape is the standard COBOL one for a body with an early exit: a wrapper
+ * that performs the body THRU its exit paragraph, then inspects the outcome.
+ * Performing THRU matters — a `GO TO` out of a plain `PERFORM` range leaves the
+ * flow of control undefined.
+ *
+ *     POST-TRANSFER.
+ *         MOVE SPACES TO BANK-FAILURE-CODE
+ *         PERFORM POST-TRANSFER-BODY THRU POST-TRANSFER-BODY-EXIT
+ *         IF BANK-FAILURE-CODE NOT = SPACES
+ *             PERFORM POST-TRANSFER-FAILURE
+ *         END-IF
+ *         GOBACK.
+ */
+function emitFailingTransaction(
+  transaction: IRTransaction,
+  addLine: (line?: string) => void,
+): void {
+  const body = bodyParagraphName(transaction.name);
+  const exit = `${body}-EXIT`;
+  const failure = failureParagraphName(transaction.name);
+
+  addLine(`           MOVE SPACES TO ${FAILURE_CODE_FIELD}`);
+  addLine(`           PERFORM ${body} THRU ${exit}`);
+  addLine(`           IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
+  addLine(`               PERFORM ${failure}`);
+  addLine(`           END-IF`);
+  addLine(
+    transaction.isCics
+      ? `           EXEC CICS RETURN END-EXEC.`
+      : `           GOBACK.`,
+  );
+
+  addLine(`       ${body}.`);
+  currentExitLabel = exit;
+  emitTransactionBody(transaction.body, addLine, 11);
+  currentExitLabel = null;
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exit}.`);
+  addLine(`           EXIT.`);
+
+  addLine(`       ${failure}.`);
+  if (transaction.postsToLedger) {
+    // The postings already made are not this program's to keep. Unwinding them
+    // is the ledger's job, so the failure path tells it to, rather than
+    // generating compensating debits and credits of its own invention.
+    addLine(`           MOVE "ROLLBK" TO ${LEDGER_OPERATION_FIELD}`);
+    addLine(`           MOVE SPACES TO ${LEDGER_ACCOUNT_FIELD}`);
+    addLine(`           MOVE 0 TO ${LEDGER_AMOUNT_FIELD}`);
+    addLine(
+      `           CALL "${LEDGER_PROGRAM}" USING ${LEDGER_INTERFACE_GROUP}`,
+    );
+  }
+  if (transaction.failureHandler) {
+    emitTransactionBody(transaction.failureHandler, addLine, 11);
+  }
+  addLine(`           EXIT.`);
 }
 
 /**
@@ -1056,6 +1233,9 @@ function emitTransactionBody(
         break;
       case "ForEachStatement":
         emitForEachStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "RaiseStatement":
+        emitRaiseStatement(statement, addLine, indent);
         break;
       default:
         throw new Error(
@@ -1347,8 +1527,20 @@ function emitBoundsChecks(
     addLine(
       `${indent}IF ${check.index} < 1 OR ${check.index} > ${check.length}`,
     );
+    // "23" is the COBOL file-status convention for a key outside the file, and
+    // is kept so an operator reading a dump sees a familiar code.
     addLine(`${indent}    MOVE "23" TO ${BOUNDS_STATUS_FIELD}`);
-    addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
+    if (currentExitLabel) {
+      // Raising leaves the subscript untouched: clamping it would let the
+      // statement run against the wrong element, which is the defect the check
+      // exists to prevent.
+      addLine(
+        `${indent}    MOVE "${BOUNDS_FAILURE_CODE}" TO ${FAILURE_CODE_FIELD}`,
+      );
+      addLine(`${indent}    GO TO ${currentExitLabel}`);
+    } else {
+      addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
+    }
     addLine(`${indent}END-IF`);
   }
 }
@@ -1425,6 +1617,13 @@ function emitCallsIn(
       // paragraph is performed or the program is called.
       if (!recursiveContext || expression.callee !== recursiveContext.name) {
         expression.args.forEach((argument, index) => {
+          // A record parameter has no storage of its own: the callee reads the
+          // record's own group item, because a record type is a single group in
+          // working storage. Moving into a `-Pn` field that was never declared
+          // is what this skip avoids.
+          if (argument.resolvedType.kind === "record") {
+            return;
+          }
           emitArgumentInto(
             parameterFieldName(expression.callee, index),
             argument,
@@ -1458,8 +1657,21 @@ function emitCallsIn(
         addLine(
           `${indent}CALL "${recursiveProgramName(expression.callee)}" USING ${operands.join(", ")}`,
         );
+      } else if (callee?.canFail) {
+        // THRU keeps the callee's `GO TO` inside the performed range.
+        addLine(
+          `${indent}PERFORM ${paragraphName(expression.callee)} THRU ${exitParagraphName(expression.callee)}`,
+        );
       } else {
         addLine(`${indent}PERFORM ${paragraphName(expression.callee)}`);
+      }
+
+      // COBOL does not unwind, so a failure raised inside the callee only
+      // propagates if the caller checks for it and leaves too.
+      if (callee?.canFail && currentExitLabel) {
+        addLine(`${indent}IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
+        addLine(`${indent}    GO TO ${currentExitLabel}`);
+        addLine(`${indent}END-IF`);
       }
       return;
     case "BinaryComparison":
