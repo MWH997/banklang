@@ -1,0 +1,71 @@
+{
+  "name": "banklang-vscode",
+  "displayName": "BankLang",
+  "description": "BankTS language support: banking safety diagnostics, formatting, and COBOL traceability.",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:bankts"
+  ],
+  "main": "./dist/extension.cjs",
+  "contributes": {
+    "languages": [
+      {
+        "id": "bankts",
+        "aliases": [
+          "BankTS",
+          "bankts"
+        ],
+        "extensions": [
+          ".bank.ts"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bankts",
+        "scopeName": "source.bankts",
+        "path": "./syntaxes/bankts.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "BankLang",
+      "properties": {
+        "banklang.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the BankLang language server entry point. Leave empty to use the bundled server."
+        },
+        "banklang.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

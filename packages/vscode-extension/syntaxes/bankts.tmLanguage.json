@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "BankTS",
+  "scopeName": "source.bankts",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#declarations" },
+    { "include": "#operations" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#strings" },
+    { "include": "#numbers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.bankts",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "match": "\\b(module)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.control.bankts" },
+            "2": { "name": "entity.name.namespace.bankts" }
+          }
+        },
+        {
+          "match": "\\b(record|type)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.control.bankts" },
+            "2": { "name": "entity.name.type.bankts" }
+          }
+        },
+        {
+          "match": "\\b(function|transaction|file)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.control.bankts" },
+            "2": { "name": "entity.name.function.bankts" }
+          }
+        }
+      ]
+    },
+    "operations": {
+      "patterns": [
+        {
+          "comment": "Ledger and audit operations are contextual, matched only in call position.",
+          "match": "\\b(debit|credit|audit)\\s*(?=\\()",
+          "name": "support.function.builtin.bankts"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.bankts",
+          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else)\\b"
+        },
+        {
+          "name": "constant.language.bankts",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "storage.modifier.bankts",
+          "match": "\\b(sequential|input|output|status)\\b"
+        },
+        {
+          "name": "keyword.operator.bankts",
+          "match": "(\\+|-|>|=)"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.primitive.bankts",
+          "match": "\\b(decimal|string|bool)\\b"
+        },
+        {
+          "name": "entity.name.type.bankts",
+          "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.bankts",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.bankts", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.bankts",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        }
+      ]
+    }
+  }
+}

@@ -38,8 +38,14 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Check formatting
+        run: pnpm fmt:check
+
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Typecheck VS Code extension
+        run: npx tsc -p packages/vscode-extension/tsconfig.json
 
       - name: Test
         run: pnpm test
@@ -51,6 +57,22 @@ jobs:
             pnpm bankc test "$example"
             echo "::endgroup::"
           done
+
+      # Banking safety diagnostics as SARIF, so they appear as inline
+      # annotations on a pull request rather than only in this log.
+      - name: Produce SARIF report
+        if: always()
+        run: pnpm bankc check examples/account-posting --format sarif --output bankc.sarif
+
+      # Requires a public repository or GitHub Advanced Security, so this does
+      # not fail the build while the repository is private.
+      - name: Upload SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bankc.sarif
+          category: banklang
 
       # The playground bundles the compiler for the browser. Building it here
       # catches anything that accidentally introduces a Node-only dependency

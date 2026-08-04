@@ -13,5 +13,6 @@
     "types": ["node", "vitest/globals"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["packages/**/*.ts", "tests/**/*.ts", "tools/**/*.ts", "*.ts"]
+  "include": ["packages/**/*.ts", "tests/**/*.ts", "tools/**/*.ts", "*.ts"],
+  "exclude": ["packages/vscode-extension/**"]
 }

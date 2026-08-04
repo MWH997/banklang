@@ -258,7 +258,25 @@ export interface ProgramNode extends NodeBase {
   declarations: DeclarationNode[];
 }
 
+/**
+ * A source comment, captured as trivia rather than as an AST node.
+ *
+ * Comments do not affect compilation, but the formatter must be able to put
+ * them back, so the lexer records them instead of discarding them.
+ */
+export interface CommentTrivia {
+  /** Comment text without the leading `//`, trailing whitespace trimmed. */
+  text: string;
+  span: SourceSpan;
+  /**
+   * True when the comment is the first thing on its line. A trailing comment
+   * stays on the line it annotates; a leading comment gets its own line.
+   */
+  ownLine: boolean;
+}
+
 export interface ParsedProgram {
   program: ProgramNode | null;
   diagnostics: Diagnostic[];
+  comments: CommentTrivia[];
 }
