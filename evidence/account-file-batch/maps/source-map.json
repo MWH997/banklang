@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+  "artifact": "/workspace/dist/maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 24
+      },
+      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "targetStartLine": 4,
+      "targetEndLine": 5,
+      "category": "module",
+      "symbol": "AccountFileBatch"
+    },
+    {
+      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 5,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 8,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "targetStartLine": 26,
+      "targetEndLine": 28,
+      "category": "record",
+      "symbol": "AccountRecord"
+    },
+    {
+      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 6,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 6,
+        "column": 25
+      },
+      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "targetStartLine": 27,
+      "targetEndLine": 27,
+      "category": "field",
+      "symbol": "accountId"
+    },
+    {
+      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 7,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 7,
+        "column": 21
+      },
+      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "targetStartLine": 28,
+      "targetEndLine": 28,
+      "category": "field",
+      "symbol": "balance"
+    },
+    {
+      "sourceFile": "/workspace/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 2
+      },
+      "artifact": "/workspace/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "targetStartLine": 32,
+      "targetEndLine": 38,
+      "category": "function",
+      "symbol": "isOverdrawn"
+    }
+  ]
+}

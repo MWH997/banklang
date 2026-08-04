@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "postTransfer",
+      "parameters": ["request"],
+      "ledgerPostings": [
+        {
+          "operation": "debit",
+          "account": "request.debitAccount",
+          "amount": "request.amount"
+        },
+        {
+          "operation": "credit",
+          "account": "request.creditAccount",
+          "amount": "request.amount"
+        }
+      ],
+      "auditEvents": [
+        {
+          "event": "TRANSFER_POSTED",
+          "correlation": "request.idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

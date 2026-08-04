@@ -4,12 +4,12 @@
 | -------------------------- | ---------------------------------------------------------------- |
 | validated-with-gnucobol    | no                                                               |
 | backend-profile            | gnucobol-local                                                   |
-| source-artifact            | examples/batch-interest-accrual/src/main.bank.ts                 |
-| source-artifact-sha256     | 271e70e778647fe020d67b563de3036df6c562b56471c1c3f4c1aed4bc0e95a2 |
-| generated-artifact         | dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl                   |
-| generated-artifact-sha256  | 508812fd13bde5ccb268fe6dcfaea7ba9ee7d18b73364d7706f0d9ac84d5b592 |
+| source-artifact            | examples/account-file-batch/src/main.bank.ts                     |
+| source-artifact-sha256     | 561b89ea4116a112a95061ece3e92d7df8aa8e0f44c86899be645f0a6df5de6e |
+| generated-artifact         | dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl                       |
+| generated-artifact-sha256  | 69cde0f4a4c52f101b2857d8bcbbf750ff9125738a360eb9869fa2bbfdf137a7 |
 | source-map-artifact        | dist/gnucobol/maps/source-map.json                               |
-| source-map-artifact-sha256 | efa4096fe29f50ac94f54d6237b979bf7ae8ec04cfd57a894142d3752fa7e936 |
+| source-map-artifact-sha256 | 7c74125925270be440e2e3814f5747cc5c23a7385b514a08cbbceaa0d829fa45 |
 | compiler-executable        | not found                                                        |
 | compiler-version           | unavailable                                                      |
 | compiler-command           | cobc not found                                                   |

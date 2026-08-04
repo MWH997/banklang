@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/examples/batch-interest-accrual/src/main.bank.ts",
+  "project": "/workspace/examples/account-posting/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl"
+      "details": "/workspace/dist/cobol/ACCOUNT-POSTING.cbl"
     },
     {
       "name": "Copybook emit",
@@ -32,7 +32,7 @@
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl"
+      "details": "/workspace/dist/jcl/ACCOUNT-POSTING.jcl"
     },
     {
       "name": "Audit artifacts",
@@ -47,7 +47,7 @@
     {
       "name": "Source map coverage",
       "status": "passed",
-      "details": "5/5 traced symbols, all entries anchored in the generated COBOL."
+      "details": "7/7 traced symbols, all entries anchored in the generated COBOL."
     },
     {
       "name": "GnuCOBOL validation",
@@ -61,10 +61,10 @@
     }
   ],
   "artifacts": [
-    "/workspace/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
+    "/workspace/dist/cobol/ACCOUNT-POSTING.cbl",
     "/workspace/dist/maps/source-map.json",
-    "/workspace/dist/copybooks/INTEREST-ACCOUNT.cpy",
-    "/workspace/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl",
+    "/workspace/dist/copybooks/TRANSFER-REQUEST.cpy",
+    "/workspace/dist/jcl/ACCOUNT-POSTING.jcl",
     "/workspace/dist/audit/diagnostics.json",
     "/workspace/dist/audit/source-map.json",
     "/workspace/dist/audit/decimal-analysis.json",
@@ -82,18 +82,18 @@
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
   },
   "sourceMapCoverage": {
-    "expectedSymbolCount": 5,
-    "coveredSymbolCount": 5,
+    "expectedSymbolCount": 7,
+    "coveredSymbolCount": 7,
     "diagnostics": []
   },
   "gnucobolValidation": {
     "backendProfile": "gnucobol-local",
-    "sourceArtifact": "examples/batch-interest-accrual/src/main.bank.ts",
-    "sourceArtifactHash": "271e70e778647fe020d67b563de3036df6c562b56471c1c3f4c1aed4bc0e95a2",
-    "generatedArtifact": "dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl",
-    "generatedArtifactHash": "508812fd13bde5ccb268fe6dcfaea7ba9ee7d18b73364d7706f0d9ac84d5b592",
+    "sourceArtifact": "examples/account-posting/src/main.bank.ts",
+    "sourceArtifactHash": "4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9",
+    "generatedArtifact": "dist/gnucobol/cobol/ACCOUNT-POSTING.cbl",
+    "generatedArtifactHash": "43b004ac3d73e0b3ae7b32bdc29b574d7ed49c4424a013d701c5d2ed31c39e2e",
     "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "efa4096fe29f50ac94f54d6237b979bf7ae8ec04cfd57a894142d3752fa7e936",
+    "sourceMapArtifactHash": "7e2137939b3df0a355817e82a0ad736793b5c1d58b1ee11bdeef25ed34df052d",
     "compilerExecutable": null,
     "compilerVersion": null,
     "compilerCommand": "cobc not found",
