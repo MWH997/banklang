@@ -254,15 +254,40 @@ function canonicalExpression(expression: IRExpression): string {
   }
 }
 
+/**
+ * Every statement a body contains, however deeply nested.
+ *
+ * Descending only into `if` left the banking checks blind to anything in a
+ * loop or a `switch` branch: a transaction whose only posting was inside a
+ * `while` had, as far as the double-entry check could see, no postings at all,
+ * and so balanced trivially. Money moving inside a loop is money moving.
+ */
 function flattenStatements(statements: IRStatement[]): IRStatement[] {
   const flattened: IRStatement[] = [];
   for (const statement of statements) {
     flattened.push(statement);
-    if (statement.kind === "IfStatement") {
-      flattened.push(...flattenStatements(statement.thenBranch.statements));
-      if (statement.elseBranch) {
-        flattened.push(...flattenStatements(statement.elseBranch.statements));
-      }
+    switch (statement.kind) {
+      case "IfStatement":
+        flattened.push(...flattenStatements(statement.thenBranch.statements));
+        if (statement.elseBranch) {
+          flattened.push(...flattenStatements(statement.elseBranch.statements));
+        }
+        break;
+      case "WhileStatement":
+      case "ForEachStatement":
+      case "CursorLoopStatement":
+        flattened.push(...flattenStatements(statement.body.statements));
+        break;
+      case "SwitchStatement":
+        for (const branch of statement.cases) {
+          flattened.push(...flattenStatements(branch.body.statements));
+        }
+        if (statement.otherwise) {
+          flattened.push(...flattenStatements(statement.otherwise.statements));
+        }
+        break;
+      default:
+        break;
     }
   }
 

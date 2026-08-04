@@ -3,6 +3,7 @@ import {
   createDiagnostic,
   type BlockNode,
   type BooleanLiteralNode,
+  type CursorLoopStatementNode,
   type BinaryExpressionNode,
   type DeclarationNode,
   type DecimalLiteralNode,
@@ -98,6 +99,7 @@ const KEYWORDS = new Set([
   "case",
   "enum",
   "sql",
+  "cursor",
   "execute",
   "cics",
   "link",
@@ -589,7 +591,11 @@ class Parser {
     }
 
     if (this.matchKeyword("sql")) {
-      return this.parseSqlDeclaration();
+      return this.parseSqlDeclaration("statement");
+    }
+
+    if (this.matchKeyword("cursor")) {
+      return this.parseSqlDeclaration("cursor");
     }
 
     this.errorAtCurrent(
@@ -600,7 +606,9 @@ class Parser {
     return null;
   }
 
-  private parseSqlDeclaration(): SqlDeclarationNode | null {
+  private parseSqlDeclaration(
+    form: "statement" | "cursor",
+  ): SqlDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected SQL statement name.");
     this.expectPunctuation("(", "Expected `(` after SQL statement name.");
     const parameters = this.parseParameters();
@@ -661,6 +669,7 @@ class Parser {
       name: nameToken.text,
       parameters,
       resultTypeName,
+      form,
       text: captured.text.trim(),
       hostVariables,
       span: {
@@ -1169,11 +1178,24 @@ class Parser {
     return null;
   }
 
-  private parseForEachStatement(): ForEachStatementNode | null {
+  private parseForEachStatement():
+    ForEachStatementNode | CursorLoopStatementNode | null {
     const forToken = this.previous;
     this.expectKeyword("each", "Expected `each` after `for`.");
     const indexToken = this.expectIdentifier("Expected a loop index name.");
     this.expectKeyword("in", "Expected `in` after the loop index name.");
+
+    // `name(` reads a cursor; anything else names an array. One token of
+    // lookahead separates them, because an array is never called.
+    if (
+      forToken &&
+      indexToken &&
+      this.current.kind === "identifier" &&
+      this.next.kind === "punctuation" &&
+      this.next.text === "("
+    ) {
+      return this.parseCursorLoopStatement(forToken, indexToken);
+    }
 
     const arrayToken = this.expectIdentifier("Expected an array to iterate.");
     if (!arrayToken) {
@@ -1214,6 +1236,67 @@ class Parser {
       kind: "ForEachStatement",
       indexName: indexToken.text,
       array,
+      body,
+      span: {
+        sourceFile: forToken.span.sourceFile,
+        start: forToken.span.start,
+        end: body.span.end,
+      },
+    };
+  }
+
+  /**
+   * `for each <row> in <cursor>(args) limit <n> { ... }`
+   *
+   * The bound is required for the same reason a `while` bound is: a cursor over
+   * a table nobody sized is an unbounded loop holding database locks.
+   */
+  private parseCursorLoopStatement(
+    forToken: Token,
+    rowToken: Token,
+  ): CursorLoopStatementNode | null {
+    const cursorToken = this.advance();
+    this.expectPunctuation("(", "Expected `(` after the cursor name.");
+
+    const args: ExpressionNode[] = [];
+    if (!this.isPunctuation(")")) {
+      do {
+        const argument = this.parseExpression();
+        if (!argument) {
+          return null;
+        }
+        args.push(argument);
+      } while (this.matchPunctuation(","));
+    }
+    this.expectPunctuation(")", "Expected `)` after the cursor arguments.");
+
+    const limitWord = this.current;
+    if (limitWord.kind !== "identifier" || limitWord.text !== "limit") {
+      this.errorAtCurrent(
+        "BANK-TXN-004",
+        "A cursor loop must declare a static row limit.",
+        "Write `for each <row> in <cursor>(...) limit <n> { ... }`.",
+      );
+      return null;
+    }
+    this.advance();
+
+    const limitToken = this.expectNumber("Expected the row limit.");
+    const body = this.parseBlock();
+
+    if (!limitToken || !body) {
+      return null;
+    }
+
+    return {
+      kind: "CursorLoopStatement",
+      cursorName: cursorToken.text,
+      cursorSpan: cursorToken.span,
+      args,
+      rowName: rowToken.text,
+      rowSpan: rowToken.span,
+      limit: Number(limitToken.text),
+      limitSpan: limitToken.span,
       body,
       span: {
         sourceFile: forToken.span.sourceFile,

@@ -42,19 +42,32 @@ Both are invisible until the program runs. That is what these programs are for.
 and every command returns `NORMAL` — which leaves half of every generated
 program unreachable. A test can therefore script what they report:
 
-| File                | Line format       | Meaning                          |
-| ------------------- | ----------------- | -------------------------------- |
-| `sql-outcomes.txt`  | `0002 +100 02000` | statement 2 reports no row found |
-| `cics-outcomes.txt` | `0001 +027 +000`  | command 1 fails with `PGMIDERR`  |
+| File                | Line format            | Meaning                          |
+| ------------------- | ---------------------- | -------------------------------- |
+| `sql-outcomes.txt`  | `0002 +100 02000 0000` | statement 2 reports no row found |
+| `sql-outcomes.txt`  | `0002 +000 00000 0003` | statement 2 succeeds three times |
+| `cics-outcomes.txt` | `0001 +027 +000`       | command 1 fails with `PGMIDERR`  |
 
-Statements are numbered as the precompiler numbers them; commands are numbered in
-the order the program issues them. Anything not listed succeeds, and with no file
-at all every call succeeds. `tests/conformance.test.ts` writes these through
+Statements are numbered as the precompiler numbers them, counting only executable
+blocks — a cursor's `DECLARE` is read at precompile time and takes no number.
+Commands are numbered in the order the program issues them.
+
+The trailing count on a SQL line is how many calls the entry applies to, `0000`
+meaning every remaining one. That is what scripts a cursor: a `FETCH` is one
+statement run many times, so `n` successes followed by an unbounded `+100` is a
+result set of `n` rows. Anything not listed succeeds, and with no file at all
+every call succeeds. `tests/conformance.test.ts` writes these through
 `sqlOutcomes` and `cicsOutcomes` rather than by hand.
 
 **Scripting an outcome proves something about the generated program, not about
 Db2 or CICS.** A scripted `SQLCODE 100` shows the program handles a missing row;
 it does not show Db2 would return 100 for that query.
+
+`DSNHLI` never writes host variables. They are passed, so the COBOL compiler
+checks that each one resolves, but the program has no way to know their types or
+lengths and does not touch them. A fetched row therefore arrives unchanged: a
+test can assert how many rows a loop processed and that it opened, bounded, and
+closed correctly, but not what was in them.
 
 ## What it does not establish
 

@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/ONLINE-ENQUIRY.precompiled.cbl -o dist/gnucobol/bin/online-enquiry
+- compiler-command: cobc -x -free dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl -o dist/gnucobol/bin/online-enquiry
 - compiler-exit-code: 0

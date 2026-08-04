@@ -149,6 +149,12 @@ export interface SqlDeclarationNode extends NodeBase {
   name: string;
   parameters: ParameterNode[];
   resultTypeName: string | null;
+  /**
+   * `sql` returns at most one row and is run with `execute`. `cursor` returns a
+   * stream and is read with a bounded loop, which lowers to a different set of
+   * Db2 statements: `DECLARE`, `OPEN`, `FETCH`, `CLOSE`.
+   */
+  form: "statement" | "cursor";
   /** Raw SQL text as written. */
   text: string;
   /** `:name` references found in the text, with their positions. */
@@ -161,6 +167,29 @@ export interface SqlStatementNode extends NodeBase {
   name: string;
   args: ExpressionNode[];
   intoRecord: string | null;
+}
+
+/**
+ * `for each row in accountsByBranch(branchId) limit 1000 { ... }`
+ *
+ * Reading a cursor is a loop over rows the database supplies, so the language
+ * gives it the same shape as any other loop and the same mandatory bound. The
+ * `OPEN` and the `CLOSE` are generated around the body rather than written, so
+ * a cursor cannot be left open — the defect that holds Db2 locks for the rest of
+ * a batch window.
+ */
+export interface CursorLoopStatementNode extends NodeBase {
+  kind: "CursorLoopStatement";
+  cursorName: string;
+  cursorSpan: SourceSpan;
+  args: ExpressionNode[];
+  /** Record each fetched row lands in. Must match the cursor's result type. */
+  rowName: string;
+  rowSpan: SourceSpan;
+  /** The most rows the loop may process. Mandatory, as for `while`. */
+  limit: number;
+  limitSpan: SourceSpan;
+  body: BlockNode;
 }
 
 export interface EnumDeclarationNode extends NodeBase {
@@ -437,6 +466,7 @@ export type StatementNode =
   | SqlStatementNode
   | CicsStatementNode
   | ForEachStatementNode
+  | CursorLoopStatementNode
   | RaiseStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {

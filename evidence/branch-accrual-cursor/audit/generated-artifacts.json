@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifacts": [
+    "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+    "/workspace/Code/banklang/dist/maps/source-map.json",
+    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-REQUEST.cpy",
+    "/workspace/Code/banklang/dist/copybooks/ACCOUNT-ROW.cpy",
+    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-SUMMARY.cpy",
+    "/workspace/Code/banklang/dist/jcl/BRANCH-ACCRUAL-CURSOR.jcl",
+    "/workspace/Code/banklang/dist/audit/diagnostics.json",
+    "/workspace/Code/banklang/dist/audit/source-map.json",
+    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
+    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/dist/audit/verification-report.md",
+    "/workspace/Code/banklang/dist/audit/verification-report.json",
+    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
+    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+  ]
+}

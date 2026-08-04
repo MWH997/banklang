@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
+  "project": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/cobol/ONLINE-ENQUIRY.cbl"
+      "details": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl"
     },
     {
       "name": "Copybook emit",
@@ -32,7 +32,7 @@
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/jcl/ONLINE-ENQUIRY.jcl"
+      "details": "/workspace/Code/banklang/dist/jcl/BRANCH-ACCRUAL-CURSOR.jcl"
     },
     {
       "name": "Audit artifacts",
@@ -47,12 +47,12 @@
     {
       "name": "Source map coverage",
       "status": "passed",
-      "details": "15/15 traced symbols, all entries anchored in the generated COBOL."
+      "details": "17/17 traced symbols, all entries anchored in the generated COBOL."
     },
     {
       "name": "GnuCOBOL validation",
       "status": "passed",
-      "details": "Local cobc validation passed after precompiling (db2-precompiler and cics-translator)."
+      "details": "Local cobc validation passed after precompiling (db2-precompiler)."
     },
     {
       "name": "Audit schema",
@@ -61,12 +61,12 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/ONLINE-ENQUIRY.cbl",
+    "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
     "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/ENQUIRY-REQUEST.cpy",
+    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-REQUEST.cpy",
     "/workspace/Code/banklang/dist/copybooks/ACCOUNT-ROW.cpy",
-    "/workspace/Code/banklang/dist/copybooks/ENQUIRY-REPLY.cpy",
-    "/workspace/Code/banklang/dist/jcl/ONLINE-ENQUIRY.jcl",
+    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-SUMMARY.cpy",
+    "/workspace/Code/banklang/dist/jcl/BRANCH-ACCRUAL-CURSOR.jcl",
     "/workspace/Code/banklang/dist/audit/diagnostics.json",
     "/workspace/Code/banklang/dist/audit/source-map.json",
     "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
@@ -84,30 +84,30 @@
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
   },
   "sourceMapCoverage": {
-    "expectedSymbolCount": 15,
-    "coveredSymbolCount": 15,
+    "expectedSymbolCount": 17,
+    "coveredSymbolCount": 17,
     "diagnostics": []
   },
   "gnucobolValidation": {
-    "backendRequirements": ["db2-precompiler", "cics-translator"],
+    "backendRequirements": ["db2-precompiler"],
     "precompiled": true,
-    "precompiledArtifact": "dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl",
+    "precompiledArtifact": "dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl",
     "backendProfile": "gnucobol-local",
-    "sourceArtifact": "examples/online-enquiry/src/main.bank.ts",
-    "sourceArtifactHash": "b063de9a71be722c8b71124fa6f15e42b5aaeee5f80d4e91c348b4805b1e3347",
-    "generatedArtifact": "dist/gnucobol/cobol/ONLINE-ENQUIRY.cbl",
-    "generatedArtifactHash": "84e9ebb01199f72406484d6d4a39851b6b2049ee530d36c2aea8cb9f37e34076",
+    "sourceArtifact": "examples/branch-accrual-cursor/src/main.bank.ts",
+    "sourceArtifactHash": "2bda6c970730d7b02bfe14fb7826d0c55a27c34d3a5eaf70887cadb5d0f0b811",
+    "generatedArtifact": "dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+    "generatedArtifactHash": "0a7ee2861e56b4adc0c2341028d4e13ff1b5327c3d6cb45d32420550882c0d3c",
     "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "8fe89a14db121a59ebcf7238e6387ebd348285b0297508e793d1a8cefded6849",
+    "sourceMapArtifactHash": "8620611aa73072bf320d25ec2dc1ff9409d514c5ddeb6ad6555490de7feb12cc",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl -o dist/gnucobol/bin/online-enquiry",
+    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
     "validatedWithGnucobol": true,
     "knownBackendGaps": [
-      "This program requires db2-precompiler and cics-translator. It was translated by the BankLang precompiler before compiling, which checks the surrounding COBOL and every host variable but does not validate SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.",
+      "This program requires db2-precompiler. It was translated by the BankLang precompiler before compiling, which checks the surrounding COBOL and every host variable but does not validate SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.",
       "This local profile covers the account-transfer subset only.",
       "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
       "Db2, CICS, and VSAM sections are not exercised by this example."

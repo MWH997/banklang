@@ -102,6 +102,10 @@ export function precompile(cobol: string): PrecompileResult {
   const output: string[] = [];
   let sqlBlocks = 0;
   let cicsBlocks = 0;
+  // Numbered separately from the block count, because a DECLARE CURSOR is read
+  // at precompile time and never executed. Giving it a number would shift every
+  // statement after it and make a scripted outcome name the wrong one.
+  let sqlStatements = 0;
 
   const usesSql = /^\s*EXEC\s+SQL\b/im.test(cobol);
   const usesCics = /^\s*EXEC\s+CICS\b/im.test(cobol);
@@ -156,7 +160,12 @@ export function precompile(cobol: string): PrecompileResult {
 
     if (kind === "SQL") {
       sqlBlocks += 1;
-      output.push(...translateSql(body, indent, terminated, sqlBlocks));
+      if (isCursorDeclaration(body)) {
+        output.push(...translateCursorDeclaration(body, indent));
+      } else {
+        sqlStatements += 1;
+        output.push(...translateSql(body, indent, terminated, sqlStatements));
+      }
     } else {
       cicsBlocks += 1;
       output.push(...translateCics(body, indent, terminated));
@@ -188,6 +197,27 @@ function translateSql(
     ...commentedSource(body, indent),
     `${indent}MOVE ${String(statementNumber).padStart(4, "0")} TO ${SQL_STATEMENT_FIELD}`,
     `${indent}CALL "${SQL_RUNTIME}" USING ${operands.join(", ")}${terminated ? "." : ""}`,
+  ];
+}
+
+/** True for `DECLARE <name> CURSOR FOR ...`, which declares rather than runs. */
+function isCursorDeclaration(body: string): boolean {
+  return /^\s*DECLARE\b[\s\S]*\bCURSOR\b/i.test(body);
+}
+
+/**
+ * A cursor declaration becomes a comment, which is what Db2's precompiler does
+ * with it.
+ *
+ * `DECLARE CURSOR` is not executable: the precompiler reads it to build the
+ * statement it will later run for `OPEN`, and emits nothing the COBOL compiler
+ * has to understand. Translating it into a call would put an executable
+ * statement in the DATA DIVISION, where no statement may appear at all.
+ */
+function translateCursorDeclaration(body: string, indent: string): string[] {
+  return [
+    `${indent}*> DECLARE CURSOR read by the BankLang precompiler.`,
+    ...commentedSource(body, indent),
   ];
 }
 

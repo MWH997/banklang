@@ -2,6 +2,7 @@ import {
   createDiagnostic,
   type BinaryExpressionNode,
   type BlockNode,
+  type CursorLoopStatementNode,
   type BooleanLiteralNode,
   type DeclarationNode,
   type DecimalLiteralNode,
@@ -188,7 +189,20 @@ export interface ResolvedSql {
   span: SourceSpan;
   parameters: ResolvedParameter[];
   result: ResolvedRecord | null;
+  /** `statement` is run with `execute`; `cursor` is read with a bounded loop. */
+  form: "statement" | "cursor";
   text: string;
+  /**
+   * A cursor's SELECT with its `INTO` clause removed, and that clause on its
+   * own. `DECLARE CURSOR` may not carry an `INTO` — Db2 puts the row's
+   * destination on the `FETCH`, which is where the row actually arrives.
+   * Writing it on the SELECT is how the query reads, so the author writes it
+   * there and the compiler moves it to the statement that needs it.
+   *
+   * Null for a plain statement, whose `INTO` stays where it was written.
+   */
+  cursorSelect: string | null;
+  cursorInto: string | null;
   /** Host variables resolved to a parameter or a result field. */
   hostVariables: { name: string; origin: "parameter" | "result" }[];
 }
@@ -655,13 +669,73 @@ function resolveSql(
     );
   }
 
+  const cursor =
+    declaration.form === "cursor"
+      ? resolveCursorText(declaration, result, diagnostics)
+      : { select: null, into: null };
+
   return {
     name: declaration.name,
     span: declaration.span,
     parameters,
     result,
+    form: declaration.form,
     text: declaration.text,
+    cursorSelect: cursor.select,
+    cursorInto: cursor.into,
     hostVariables,
+  };
+}
+
+/**
+ * Splits a cursor's SELECT from the `INTO` clause that names where a row lands.
+ *
+ * A cursor with nowhere to put a row is not a cursor anyone can read, so both
+ * halves of that binding — a result record and an `INTO` — are required rather
+ * than defaulted. Defaulting would mean binding the SELECT list to the record's
+ * fields positionally, and this compiler does not parse SQL well enough to know
+ * whether that lines up.
+ */
+function resolveCursorText(
+  declaration: SqlDeclarationNode,
+  result: ResolvedRecord | null,
+  diagnostics: Diagnostic[],
+): { select: string | null; into: string | null } {
+  if (!result) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-006",
+        severity: "error",
+        message: `Cursor ${declaration.name} declares no result record.`,
+        span: declaration.span,
+        hint: `Write \`cursor ${declaration.name}(...): <Record> { ... }\`.`,
+        backendProfile: null,
+      }),
+    );
+    return { select: null, into: null };
+  }
+
+  const match = /\bINTO\b([\s\S]*?)\bFROM\b/i.exec(declaration.text);
+  if (!match) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-006",
+        severity: "error",
+        message: `Cursor ${declaration.name} has no INTO clause, so a fetched row has nowhere to go.`,
+        span: declaration.span,
+        hint: `Write \`INTO :${result.fields[0]?.name ?? "field"}, ...\` between the select list and FROM.`,
+        backendProfile: null,
+      }),
+    );
+    return { select: null, into: null };
+  }
+
+  return {
+    select:
+      `${declaration.text.slice(0, match.index)}FROM${declaration.text.slice(
+        match.index + match[0].length,
+      )}`.trim(),
+    into: match[1].trim(),
   };
 }
 
@@ -873,7 +947,8 @@ function findRaiseStatement(block: BlockNode): RaiseStatementNode | null {
         break;
       }
       case "WhileStatement":
-      case "ForEachStatement": {
+      case "ForEachStatement":
+      case "CursorLoopStatement": {
         const found = findRaiseStatement(statement.body);
         if (found) {
           return found;
@@ -995,6 +1070,7 @@ function validateTransactionBody(
       case "SqlStatement":
       case "CicsStatement":
       case "ForEachStatement":
+      case "CursorLoopStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -1159,6 +1235,17 @@ function validateEffectStatement(
         inTransaction,
       );
       return true;
+    case "CursorLoopStatement":
+      validateCursorLoopStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
+      return true;
     case "SwitchStatement":
       validateSwitchStatement(
         statement,
@@ -1262,6 +1349,22 @@ function validateSqlStatement(
         message: `Unresolved SQL statement: ${statement.name}.`,
         span: statement.span,
         hint: "Declare it with `sql <name>(...) : <Record> { ... }`.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  // A cursor returns a stream. `execute` would fetch nothing at all, because
+  // the row arrives on a FETCH the compiler only generates inside a loop.
+  if (declared.form === "cursor") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-005",
+        severity: "error",
+        message: `${statement.name} is a cursor, so it is read row by row rather than executed once.`,
+        span: statement.span,
+        hint: `Write \`for each <row> in ${statement.name}(...) limit <n> { ... }\`.`,
         backendProfile: null,
       }),
     );
@@ -1608,6 +1711,143 @@ function validateForEachStatement(
   } else {
     scope.delete(statement.indexName);
   }
+}
+
+/**
+ * `for each <row> in <cursor>(args) limit <n> { ... }`
+ *
+ * The generated loop tests SQLCODE itself to decide when the rows have run out,
+ * so a cursor loop does not put the body under `BANK-SQL-001`. An `execute` in
+ * the body still does: that outcome is the author's to interpret.
+ */
+function validateCursorLoopStatement(
+  statement: CursorLoopStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const declared = sqlMap.get(statement.cursorName);
+  if (!declared) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved cursor: ${statement.cursorName}.`,
+        span: statement.cursorSpan,
+        hint: "Declare the cursor before the transaction that reads it.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (declared.form !== "cursor") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-005",
+        severity: "error",
+        message: `${statement.cursorName} is a SQL statement, not a cursor, so it returns at most one row.`,
+        span: statement.cursorSpan,
+        hint: `Write \`execute ${statement.cursorName}(...) into <record>;\`, or declare it with \`cursor\`.`,
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.args.length !== declared.parameters.length) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-003",
+        severity: "error",
+        message: `Cursor ${statement.cursorName} expects ${declared.parameters.length} argument(s) but received ${statement.args.length}.`,
+        span: statement.cursorSpan,
+        hint: "Pass one value per declared parameter.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (let index = 0; index < statement.args.length; index += 1) {
+    const actual = inferExpressionType(
+      statement.args[index],
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    const expected = declared.parameters[index]?.type;
+    if (actual && expected && !typesCompatible(expected, actual)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-003",
+          severity: "error",
+          message: `Argument ${index + 1} of ${statement.cursorName} expects ${describeType(expected)} but received ${describeType(actual)}.`,
+          span: statement.args[index].span,
+          hint: "A host variable must match the declared parameter layout.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  const row = scope.get(statement.rowName);
+  if (!row) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved record variable: ${statement.rowName}.`,
+        span: statement.rowSpan,
+        hint: "Pass a record-typed parameter and fetch into it.",
+        backendProfile: null,
+      }),
+    );
+  } else if (
+    row.kind !== "record" ||
+    !declared.result ||
+    row.name !== declared.result.name
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-003",
+        severity: "error",
+        message: `Cursor ${statement.cursorName} returns ${declared.result?.name ?? "no record"}, but ${statement.rowName} is ${describeType(row)}.`,
+        span: statement.rowSpan,
+        hint: "Fetch into a record of the cursor's declared result type.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (!Number.isInteger(statement.limit) || statement.limit <= 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TXN-004",
+        severity: "error",
+        message: "A loop limit must be a positive whole number.",
+        span: statement.limitSpan,
+        hint: "Write `limit 1000`.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const previousInLoop = inLoopBody;
+  inLoopBody = true;
+  validateBranchBody(
+    statement.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+    inTransaction,
+  );
+  inLoopBody = previousInLoop;
 }
 
 function validateWhileStatement(
@@ -2661,6 +2901,7 @@ function resolveTerminalStatementType(
     case "SqlStatement":
     case "CicsStatement":
     case "ForEachStatement":
+    case "CursorLoopStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;
@@ -3301,7 +3542,11 @@ function declareCicsRespSymbols(
         declareCicsRespSymbols(statement.elseBranch, scope);
       }
     }
-    if (statement.kind === "WhileStatement") {
+    if (
+      statement.kind === "WhileStatement" ||
+      statement.kind === "ForEachStatement" ||
+      statement.kind === "CursorLoopStatement"
+    ) {
       declareCicsRespSymbols(statement.body, scope);
     }
     if (statement.kind === "SwitchStatement") {

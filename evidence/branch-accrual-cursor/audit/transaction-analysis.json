@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "accrueBranch",
+      "parameters": ["request", "row", "summary"],
+      "ledgerPostings": [],
+      "auditEvents": [
+        {
+          "event": "BRANCH_ACCRUAL_COMPLETED",
+          "correlation": "request.idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

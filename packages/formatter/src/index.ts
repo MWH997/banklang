@@ -251,7 +251,7 @@ function printDeclaration(
         ? `: ${declaration.resultTypeName}`
         : "";
       printer.push(
-        `sql ${declaration.name}(${printParameters(declaration.parameters)})${result} {${trailing}`,
+        `${declaration.form === "cursor" ? "cursor" : "sql"} ${declaration.name}(${printParameters(declaration.parameters)})${result} {${trailing}`,
       );
       for (const line of declaration.text.split("\n")) {
         printer.push(line.trim().length > 0 ? `${INDENT}${line.trim()}` : "");
@@ -408,6 +408,16 @@ function printStatement(
     case "ForEachStatement": {
       printer.push(
         `${indent}for each ${statement.indexName} in ${printExpression(statement.array)} {${trailing}`,
+      );
+      printBlockBody(statement.body, printer, depth + 1);
+      printer.push(`${indent}}`);
+      return;
+    }
+
+    case "CursorLoopStatement": {
+      const args = statement.args.map(printExpression).join(", ");
+      printer.push(
+        `${indent}for each ${statement.rowName} in ${statement.cursorName}(${args}) limit ${statement.limit} {${trailing}`,
       );
       printBlockBody(statement.body, printer, depth + 1);
       printer.push(`${indent}}`);

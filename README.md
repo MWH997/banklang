@@ -193,6 +193,7 @@ See [docs/toolchain.md](docs/toolchain.md).
 | [`account-posting`](examples/account-posting/)                   | Transactions, ledger postings, audit events        |
 | [`account-file-batch`](examples/account-file-batch/)             | Sequential files, `FILE-CONTROL` and `FD` sections |
 | [`withdrawal-with-recovery`](examples/withdrawal-with-recovery/) | Inheritance, `raise` / `on failure`, **executed**  |
+| [`branch-accrual-cursor`](examples/branch-accrual-cursor/)       | Db2 cursors, bounded row loops, **executed**       |
 
 Every example is compiled with GnuCOBOL in CI, and each has a checked-in
 [evidence bundle](evidence/) holding its generated artifacts and verification
