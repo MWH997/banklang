@@ -505,6 +505,7 @@ function printExpression(expression: ExpressionNode): string {
       return `${printExpression(expression.target)}[${printExpression(expression.index)}]`;
     case "StringCall":
       return `${expression.operation}(${expression.args.map(printExpression).join(", ")})`;
+    case "NumericCall":
     case "TemporalCall":
       return `${expression.operation}(${expression.args.map(printExpression).join(", ")})`;
     case "NullableCheck":

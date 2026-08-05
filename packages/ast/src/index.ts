@@ -490,6 +490,32 @@ export interface TemporalCallNode extends NodeBase {
 }
 
 /**
+ * The arithmetic COBOL already knows how to do, including the two it knows
+ * because it was written for this industry.
+ *
+ * `annuity` is the repayment factor of a loan and `presentValue` discounts a
+ * series of cash flows: they are COBOL intrinsics, not something this compiler
+ * computes, and a bank that reimplements either in a loop gets the rounding
+ * wrong. `mod` is what a check digit is. `isNumeric` is how a batch decides
+ * whether a field from a flat file can be converted at all, before it tries —
+ * which is the difference between rejecting a record and abending on it.
+ */
+export interface NumericCallNode extends NodeBase {
+  kind: "NumericCall";
+  operation:
+    | "abs"
+    | "mod"
+    | "rem"
+    | "min"
+    | "max"
+    | "annuity"
+    | "presentValue"
+    | "isNumeric"
+    | "toNumber";
+  args: ExpressionNode[];
+}
+
+/**
  * `trim`, `upper`, `lower`, `substring`, `concat`, and `now`.
  *
  * COBOL builds strings with `STRING`, takes them apart with reference
@@ -539,6 +565,7 @@ export type ExpressionNode =
   | IndexAccessNode
   | NullableCheckNode
   | TemporalCallNode
+  | NumericCallNode
   | StringCallNode;
 
 /**

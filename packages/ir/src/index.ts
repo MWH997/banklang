@@ -10,6 +10,7 @@ import {
   type ReturnStatementNode,
   type ReportGroupNode,
   type ReportPageNode,
+  type NumericCallNode,
   type SourceSpan,
   type MemberAccessNode,
   type ComparisonOperator,
@@ -592,6 +593,7 @@ export type IRExpression =
   | IRIndexAccessExpression
   | IRNullableCheckExpression
   | IRTemporalCallExpression
+  | IRNumericCallExpression
   | IRStringCallExpression;
 
 /**
@@ -625,6 +627,32 @@ export interface IRTemporalCallExpression {
   kind: "TemporalCall";
   span: SourceSpan;
   operation: "today" | "addDays" | "daysBetween";
+  args: IRExpression[];
+  resolvedType: IRType;
+}
+
+/**
+ * `FUNCTION ABS`, `MOD`, `REM`, `MIN`, `MAX`, `ANNUITY`, `PRESENT-VALUE`,
+ * `TEST-NUMVAL`, and `NUMVAL`.
+ *
+ * COBOL computes all of these itself, which is the point of using them: a
+ * repayment factor worked out in a loop rounds differently from the one the
+ * language's own intrinsic produces, and the difference shows up in a customer's
+ * final instalment.
+ */
+export interface IRNumericCallExpression {
+  kind: "NumericCall";
+  span: SourceSpan;
+  operation:
+    | "abs"
+    | "mod"
+    | "rem"
+    | "min"
+    | "max"
+    | "annuity"
+    | "presentValue"
+    | "isNumeric"
+    | "toNumber";
   args: IRExpression[];
   resolvedType: IRType;
 }
@@ -1426,12 +1454,49 @@ function expressionNeedsBoundsCheck(expression: IRExpression): boolean {
     case "NullableCheck":
       return expressionNeedsBoundsCheck(expression.operand);
     case "TemporalCall":
+    case "NumericCall":
     case "StringCall":
       return expression.args.some(expressionNeedsBoundsCheck);
     case "Call":
       return expression.args.some(expressionNeedsBoundsCheck);
     default:
       return false;
+  }
+}
+
+/**
+ * What a numeric builtin's result is held in.
+ *
+ * `abs`, `min`, and `max` give back what they were given. `mod` and `rem` give
+ * a whole number. The financial three have no scale of their own — a repayment
+ * factor is a ratio, and a parsed number is whatever the field it lands in
+ * holds — so they take the widest packed decimal and let the receiving field's
+ * picture decide, which is what COMPUTE does anyway.
+ */
+function numericCallType(
+  expression: NumericCallNode,
+  args: IRExpression[],
+): IRType {
+  switch (expression.operation) {
+    case "isNumeric":
+      return { kind: "bool" };
+    case "abs":
+    case "min":
+    case "max":
+    case "mod":
+    case "rem":
+      return (
+        args[0]?.resolvedType ?? {
+          kind: "decimal",
+          precision: 18,
+          scale: 2,
+          usage: "packed",
+        }
+      );
+    case "annuity":
+    case "presentValue":
+    case "toNumber":
+      return { kind: "decimal", precision: 18, scale: 2, usage: "packed" };
   }
 }
 
@@ -1534,6 +1599,7 @@ function collectCalls(block: IRBlock): Set<string> {
         walkExpression(expression.operand);
         return;
       case "TemporalCall":
+      case "NumericCall":
       case "StringCall":
         expression.args.forEach(walkExpression);
         return;
@@ -2162,6 +2228,18 @@ function lowerExpression(
         ),
         resolvedType: stringCallType(expression, scopeTypes),
       };
+    case "NumericCall": {
+      const args = expression.args.map((argument) =>
+        lowerExpression(argument, scopeTypes),
+      );
+      return {
+        kind: "NumericCall",
+        span: expression.span,
+        operation: expression.operation,
+        args,
+        resolvedType: numericCallType(expression, args),
+      };
+    }
     case "TemporalCall":
       return {
         kind: "TemporalCall",

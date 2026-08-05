@@ -43,6 +43,7 @@ import type {
   IRXmlParseStatement,
   IRSplitStatement,
   IRStringCallExpression,
+  IRNumericCallExpression,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
 import {
@@ -4020,6 +4021,46 @@ function emitReturnStatement(
  * than on the digits — which is the difference between the 2nd of March and the
  * 61st of January.
  */
+/**
+ * A numeric builtin, as the COBOL intrinsic that does the same thing.
+ *
+ * Every one of these is COBOL's own arithmetic rather than something this
+ * compiler works out, which is the reason to route through them: `ANNUITY` is
+ * the repayment factor Enterprise COBOL was given for exactly this industry,
+ * and a version written in a loop rounds differently in the final instalment.
+ */
+function renderNumericCall(expression: IRNumericCallExpression): string {
+  const args = expression.args.map(renderExpression);
+  const [first, second] = args;
+
+  switch (expression.operation) {
+    case "abs":
+      return `FUNCTION ABS(${first})`;
+    case "mod":
+      return `FUNCTION MOD(${first}, ${second})`;
+    case "rem":
+      return `FUNCTION REM(${first}, ${second})`;
+    case "min":
+      return `FUNCTION MIN(${first}, ${second})`;
+    case "max":
+      return `FUNCTION MAX(${first}, ${second})`;
+    case "annuity":
+      return `FUNCTION ANNUITY(${first}, ${second})`;
+    case "presentValue":
+      return `FUNCTION PRESENT-VALUE(${first}, ${second})`;
+    case "toNumber":
+      // NUMVAL-C rather than NUMVAL: a number arriving as text in a banking
+      // feed carries grouping and a currency symbol as often as not, and
+      // NUMVAL-C reads both. It reads a plain number too.
+      return `FUNCTION NUMVAL-C(${first})`;
+    case "isNumeric":
+      // TEST-NUMVAL-C returns zero when the characters convert, and otherwise
+      // the position of the one that stopped it. Asking first is the
+      // difference between rejecting a record and abending on it.
+      return `(FUNCTION TEST-NUMVAL-C(${first}) = 0)`;
+  }
+}
+
 function renderTemporalCall(expression: IRTemporalCallExpression): string {
   const [first, second] = expression.args;
 
@@ -4148,6 +4189,8 @@ function renderExpression(expression: IRExpression): string {
       return renderStringCall(expression);
     case "TemporalCall":
       return renderTemporalCall(expression);
+    case "NumericCall":
+      return renderNumericCall(expression);
     case "Identifier":
       return resolveIdentifier(expression.name);
     case "DecimalLiteral":

@@ -26,6 +26,7 @@ import {
   type StringTypeNode,
   type EditedTypeNode,
   type StringCallNode,
+  type NumericCallNode,
   type TemporalCallNode,
   type TemporalTypeNode,
   type ReturnCodeStatementNode,
@@ -255,6 +256,24 @@ const CICS_COMMANDS = new Set([
 ]);
 
 const TEMPORAL_BUILTINS = new Set(["today", "addDays", "daysBetween"]);
+
+/**
+ * Arithmetic COBOL has intrinsics for, including its two financial ones.
+ *
+ * Contextual rather than reserved, like every other builtin family, so `min`
+ * and `max` stay usable as field names.
+ */
+const NUMERIC_BUILTINS = new Set([
+  "abs",
+  "mod",
+  "rem",
+  "min",
+  "max",
+  "annuity",
+  "presentValue",
+  "isNumeric",
+  "toNumber",
+]);
 
 /** String builtins. Contextual names, not reserved words. */
 const STRING_BUILTINS = new Set([
@@ -3586,6 +3605,42 @@ class Parser {
             end: close.span.end,
           },
         } satisfies StringCallNode;
+      }
+
+      if (
+        NUMERIC_BUILTINS.has(this.current.text) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
+      ) {
+        const nameToken = this.advance();
+        this.expectPunctuation("(", "Expected `(` after the builtin name.");
+        const args: ExpressionNode[] = [];
+        if (!this.isPunctuation(")")) {
+          do {
+            const argument = this.parseExpression();
+            if (!argument) {
+              return null;
+            }
+            args.push(argument);
+          } while (this.matchPunctuation(","));
+        }
+        const close = this.expectPunctuation(
+          ")",
+          "Expected `)` after the builtin arguments.",
+        );
+        if (!close) {
+          return null;
+        }
+        return {
+          kind: "NumericCall",
+          operation: nameToken.text as NumericCallNode["operation"],
+          args,
+          span: {
+            sourceFile: nameToken.span.sourceFile,
+            start: nameToken.span.start,
+            end: close.span.end,
+          },
+        } satisfies NumericCallNode;
       }
 
       if (
