@@ -3513,12 +3513,21 @@ function emitSplitStatement(
   indent: string,
 ): void {
   const source = renderExpression(statement.source);
+  const targets = statement.targets.map((target) => renderExpression(target));
+
+  // UNSTRING stops "when all the characters in the sending field have been
+  // transferred", so a receiver it never reaches is left holding whatever was
+  // in it. Nothing clears one. In a read loop that is the previous record's
+  // value: split `AAA-BBB-CCC` and then `XXX-YYY` into three fields, and the
+  // third still reads CCC — a value that belongs to a record already
+  // processed, in a field the program believes it just filled.
+  //
+  // Every target is a `string<n>`, so spaces are what an unfilled one means.
+  addLine(`${indent}MOVE SPACES TO ${targets.join(" ")}`);
   addLine(
     `${indent}UNSTRING ${source} DELIMITED BY ${renderExpression(statement.delimiter)}`,
   );
-  addLine(
-    `${indent}    INTO ${statement.targets.map((target) => renderExpression(target)).join(" ")}`,
-  );
+  addLine(`${indent}    INTO ${targets.join(" ")}`);
   // The overflow condition is raised when every receiver has been filled and
   // the sending field still has characters nobody looked at. Without the phrase
   // those characters are simply dropped: a reference split into two when it had

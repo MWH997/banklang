@@ -94,6 +94,26 @@ describe("UNSTRING", () => {
 
     expect(ids(result)).toContain("BANK-TYPE-003");
   });
+
+  /**
+   * UNSTRING stops "when all the characters in the sending field have been
+   * transferred", so a receiver it never reaches keeps what it already held.
+   * Nothing in the statement clears one. In a read loop that value belongs to
+   * a record already processed: split `AAA-BBB-CCC` and then `XXX-YYY` into
+   * three fields, and the third still reads CCC.
+   */
+  it("clears the receivers, so a short value leaves none of the last one", () => {
+    const result = txn('  split st.reference by "-" into st.branch, st.found;');
+
+    expect(result.diagnostics).toEqual([]);
+    const text = flowed(result.cobol);
+    expect(text).toContain(
+      flowed("MOVE SPACES TO BRANCH OF STATEMENT1 FOUND OF STATEMENT1"),
+    );
+    expect(text.indexOf("MOVE SPACES TO BRANCH")).toBeLessThan(
+      text.indexOf("UNSTRING"),
+    );
+  });
 });
 
 describe("SEARCH", () => {
