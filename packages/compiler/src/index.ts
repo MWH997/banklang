@@ -153,10 +153,13 @@ export function compile(
   // Warnings from the earlier phases travel with the result. Dropping them on
   // the way to a successful compile would make a hazard the compiler found
   // invisible to everyone downstream of it.
+  //
+  // Lowering reports nothing of its own — it forwards the typechecker's list so
+  // that a caller which bails on `!ir.program` still has something to print — so
+  // adding both would report every typechecker warning twice.
   const diagnostics = [
     ...parsed.diagnostics,
     ...typechecked.diagnostics,
-    ...lowered.diagnostics,
     ...semantics.diagnostics,
     ...coverage.diagnostics,
   ];

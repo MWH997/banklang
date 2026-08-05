@@ -339,6 +339,41 @@ transaction touch(idempotencyKey: string<36>) {
 
     expect(ids(result)).toContain("BANK-TYPE-015");
   });
+
+  /**
+   * The warning says no COBOL is generated *for the generic*. Lowering used to
+   * stop on any diagnostic at all, so in fact no COBOL was generated for
+   * anything: the program came back `ok: false` with nothing but a warning to
+   * explain it, and a warning that refuses to compile the program is an error
+   * wearing the wrong label.
+   */
+  it("still compiles the rest of the program", () => {
+    const result = compile(`${PREAMBLE}
+function unused<T>(value: T): T {
+  return value;
+}
+
+transaction touch(idempotencyKey: string<36>) {
+  audit("TOUCHED", idempotencyKey);
+}`);
+
+    expect(result.ok).toBe(true);
+    expect(result.cobol).toContain("PROGRAM-ID.");
+  });
+
+  /** Reported once, by the phase that found it. */
+  it("reports the warning once", () => {
+    const result = compile(`${PREAMBLE}
+function unused<T>(value: T): T {
+  return value;
+}
+
+transaction touch(idempotencyKey: string<36>) {
+  audit("TOUCHED", idempotencyKey);
+}`);
+
+    expect(ids(result).filter((id) => id === "BANK-TYPE-015")).toHaveLength(1);
+  });
 });
 
 /**
