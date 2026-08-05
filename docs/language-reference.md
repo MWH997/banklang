@@ -1136,7 +1136,23 @@ it. A code must be non-empty and fit `BANK-FAILURE-CODE` (`BANK-TXN-008`).
 
 An out-of-range computed subscript raises `BANK-BOUNDS-VIOLATION` where a
 handler can see it. It is not clamped: running the statement against a
-substituted element is the defect the check exists to prevent.
+substituted element is the defect the check exists to prevent. Every subscript a
+statement evaluates is guarded, not only the ones in the value being assigned —
+the subscript on an assignment's _target_ is the one that writes past the table,
+and inside a record the storage past a table is the next field.
+
+A `while` condition is guarded twice, once before the loop and once at the end
+of the body, because it is evaluated again before every iteration and the body
+may have moved the subscript in between. Inside a sort procedure the guard
+cannot raise, since control may not leave one while the sort is running: it
+names the subscript, sets `SORT-RETURN` to 16 to stop the sort, and brings the
+index inside the table so the guarded statement cannot write over the record on
+its way out.
+
+When a transaction has no `on failure` handler, a raise names the code in the
+job log and sets a return code of 12. Without that the body simply stopped where
+it failed and the step ended with return code zero, which is what a transaction
+that finished its work also returns.
 
 ## 11. Audit events
 
