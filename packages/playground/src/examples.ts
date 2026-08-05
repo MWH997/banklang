@@ -40,6 +40,42 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "Sequential file declarations producing FILE-CONTROL and FD sections.",
     order: 4,
   },
+  "interest-posting-batch": {
+    title: "Interest posting batch",
+    blurb:
+      "A batch that reads accounts, accrues interest, and posts both sides of each entry.",
+    order: 5,
+  },
+  "amortisation-schedule": {
+    title: "Amortisation schedule",
+    blurb:
+      "A bounded array walked with `for each`, lowering to PERFORM VARYING over an OCCURS table.",
+    order: 6,
+  },
+  "statement-generation": {
+    title: "Statement generation",
+    blurb:
+      "Enums, nullable values, an indexed file, and `sensitive` fields that cannot reach a log.",
+    order: 7,
+  },
+  "withdrawal-with-recovery": {
+    title: "Withdrawal with recovery",
+    blurb:
+      "Record inheritance, `raise` with an `on failure` handler, and a ledger rollback. Executed in CI.",
+    order: 8,
+  },
+  "online-enquiry": {
+    title: "Online enquiry",
+    blurb:
+      "A CICS transaction reading Db2: COMMAREA input, SQLCODE handling, and syncpoint or rollback.",
+    order: 9,
+  },
+  "branch-accrual-cursor": {
+    title: "Branch accrual cursor",
+    blurb:
+      "A Db2 cursor read with a bounded loop. The OPEN and CLOSE are generated, so it cannot be left open.",
+    order: 10,
+  },
 };
 
 function idFromPath(path: string): string {
