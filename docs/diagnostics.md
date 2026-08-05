@@ -497,6 +497,18 @@ What it rejects:
 - **A `depending on` on the redefining field.** Neither end of a redefinition
   may vary in length: the area's size has to be known to lay out what follows.
 
+On `depending on`, this compiler is **stricter than COBOL and says so**: the
+varying table has to be the last field in the record that takes storage. A field
+declared after it is _variably located_ — it sits at the start of the table plus
+the count times the entry, so it moves every time the count does. IBM calls this
+complex `ODO` and permits it. The layout report and the copybook could then only
+state the offset that field has when the table is full, which is an offset no
+other record has, and a copybook naming a byte position nothing is at is worse
+than no copybook. GnuCOBOL refuses the shape outright ("cannot have OCCURS
+DEPENDING because of ..."), so a program built this way could not be executed
+locally either. The convention it stands against is ordinary: a variable-length
+record ends with its table.
+
 ### `BANK-COPY-005` invalid field clause
 
 `justified` right-aligns an alphanumeric value, so a number cannot carry it — a
