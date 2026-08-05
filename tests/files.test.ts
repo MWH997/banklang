@@ -179,3 +179,136 @@ describe("file COBOL emission", () => {
     expect(occurrences).toBe(1);
   });
 });
+
+/**
+ * `rewrite` and `delete` on a file the program reads sequentially.
+ *
+ * Both replace the record the last `read` returned, so on a sequentially
+ * accessed file they need one. Without it the operation **is not performed and
+ * the status is 92** — no abend, no exception, so a program that does not test
+ * the status carries on believing it updated something.
+ *
+ * Only sequential and relative files: an indexed file is `ACCESS MODE IS
+ * DYNAMIC`, where the record key in the record area says which record is meant.
+ */
+describe("updating a record nothing read", () => {
+  const program = (
+    decls: string,
+    body: string,
+  ): ReturnType<typeof compileSource> =>
+    compileSource(`${RECORD}
+${decls}
+
+entry transaction settle(account: AccountRecord, idempotencyKey: string<36>) {
+${body}
+  audit("SETTLED", idempotencyKey);
+}`);
+
+  const ids = (result: ReturnType<typeof compileSource>): string[] =>
+    result.typechecked.diagnostics.map((entry) => entry.id);
+
+  it("rejects a rewrite with no read before it", () => {
+    const result = program(
+      "file feed sequential update record AccountRecord status feedStatus;",
+      "  open feed;\n  rewrite feed from account;\n  close feed;",
+    );
+
+    expect(ids(result)).toContain("BANK-FILE-010");
+  });
+
+  it("accepts one the read reaches", () => {
+    const result = program(
+      "file feed sequential update record AccountRecord status feedStatus;",
+      "  open feed;\n  read feed into account;\n  rewrite feed from account;\n  close feed;",
+    );
+
+    expect(ids(result)).not.toContain("BANK-FILE-010");
+  });
+
+  /**
+   * A read inside a branch does not travel back out: the path that skipped the
+   * branch reaches the update with nothing read.
+   */
+  it("does not count a read the update can be reached without", () => {
+    const result = program(
+      "file feed sequential update record AccountRecord status feedStatus;",
+      `  open feed;
+  if feedStatus == "00" {
+    read feed into account;
+  }
+  rewrite feed from account;
+  close feed;`,
+    );
+
+    expect(ids(result)).toContain("BANK-FILE-010");
+  });
+
+  /** A read in an enclosing block does cover a branch inside it. */
+  it("counts a read the branch sits under", () => {
+    const result = program(
+      "file feed sequential update record AccountRecord status feedStatus;",
+      `  open feed;
+  read feed into account;
+  if feedStatus == "00" {
+    rewrite feed from account;
+  }
+  close feed;`,
+    );
+
+    expect(ids(result)).not.toContain("BANK-FILE-010");
+  });
+
+  /** An indexed file is addressed by key, so it needs no prior read. */
+  it("says nothing about an indexed file", () => {
+    const result = program(
+      "file feed indexed update record AccountRecord key accountId status feedStatus;",
+      "  open feed;\n  rewrite feed from account;\n  close feed;",
+    );
+
+    expect(ids(result)).not.toContain("BANK-FILE-010");
+  });
+});
+
+/**
+ * Enterprise COBOL has no `DELETE` for a file with sequential organization: a
+ * record is removed by leaving it out of the file the next program writes.
+ *
+ * GnuCOBOL compiles the statement, which is exactly why nothing local caught
+ * it — the generated program passed every check here and would have been
+ * rejected by IGYCRCTL.
+ */
+describe("deleting from a sequential file", () => {
+  it("is rejected", () => {
+    const result = compileSource(`${RECORD}
+file feed sequential update record AccountRecord status feedStatus;
+
+entry transaction settle(account: AccountRecord, idempotencyKey: string<36>) {
+  open feed;
+  read feed into account;
+  delete feed;
+  close feed;
+  audit("SETTLED", idempotencyKey);
+}`);
+
+    expect(result.typechecked.diagnostics.map((entry) => entry.id)).toContain(
+      "BANK-FILE-011",
+    );
+  });
+
+  it("is allowed on a relative file the program read", () => {
+    const result = compileSource(`${RECORD}
+file feed relative update record AccountRecord status feedStatus;
+
+entry transaction settle(account: AccountRecord, idempotencyKey: string<36>) {
+  open feed;
+  read feed into account;
+  delete feed;
+  close feed;
+  audit("SETTLED", idempotencyKey);
+}`);
+
+    expect(
+      result.typechecked.diagnostics.map((entry) => entry.id),
+    ).not.toContain("BANK-FILE-011");
+  });
+});

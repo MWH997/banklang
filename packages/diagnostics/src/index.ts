@@ -727,6 +727,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-010",
+    title: "Update with nothing read",
+    explanation:
+      "`rewrite` and `delete` replace the record the last `read` returned, so on a file the program accesses sequentially they need one. Without it the operation is not performed and the file status is 92 — no abend and no exception, so a program that does not test the status carries on believing it updated something. Only sequential and relative files are affected: an indexed file is accessed dynamically, where the record key in the record area says which record is meant. A read in an enclosing block covers a branch inside it, but a read inside a branch does not travel back out, because the path that skipped it reaches the update with nothing read.",
+    remediation:
+      "Read the record before replacing or deleting it, or put the read where every path to the update passes through it.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
+    id: "BANK-FILE-011",
+    title: "Delete on a sequential file",
+    explanation:
+      "Enterprise COBOL has no `DELETE` for a file with sequential organization: a record is removed by leaving it out of the file the next program writes, not by deleting it in place. GnuCOBOL compiles the statement, so local validation does not catch this one.",
+    remediation:
+      "Copy the records worth keeping into a new file, or declare the file `indexed` or `relative` so a record can be addressed for removal.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-DLI-001",
     title: "Invalid DL/I access",
     explanation:

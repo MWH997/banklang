@@ -501,6 +501,31 @@ no longer than the longest.
 The file has to be `sequential`: an indexed or relative dataset addresses a
 record by key or by position, which a varying length would move.
 
+### `BANK-FILE-010` update with nothing read
+
+`rewrite` and `delete` replace the record the last `read` returned, so on a file
+the program accesses sequentially they need one. Without it the operation **is
+not performed and the file status is 92** — no abend and no exception, so a
+program that does not test the status carries on believing it updated something.
+
+Only `sequential` and `relative` files are affected. An indexed file is
+`ACCESS MODE IS DYNAMIC`, where the record key in the record area says which
+record is meant and no prior read is required.
+
+A read in an enclosing block covers a branch inside it, but a read inside a
+branch does not travel back out — the path that skipped the branch reaches the
+update with nothing read. This is the same rule, and the same reasoning, as
+`BANK-DLI-002`.
+
+### `BANK-FILE-011` delete on a sequential file
+
+Enterprise COBOL has no `DELETE` for a file with sequential organization: a
+record is removed by leaving it out of the file the next program writes, not by
+deleting it in place.
+
+GnuCOBOL compiles the statement, so local validation does not catch this one —
+the program passed every check here and would have been rejected by `IGYCRCTL`.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified
