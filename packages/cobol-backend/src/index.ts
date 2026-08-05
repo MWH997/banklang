@@ -2687,7 +2687,7 @@ function formatCobolType(type: IRType): string {
     case "temporal":
       return temporalPicture(type.unit);
     case "decimal":
-      return decimalPicture(type.precision, type.scale);
+      return decimalPicture(type.precision, type.scale, type.usage);
     case "string":
       return `PIC X(${type.length})`;
     case "bool":

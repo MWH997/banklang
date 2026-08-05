@@ -722,7 +722,7 @@ export function toCobolPicture(type: IRType): string {
     case "temporal":
       return temporalPicture(type.unit);
     case "decimal":
-      return decimalPicture(type.precision, type.scale);
+      return decimalPicture(type.precision, type.scale, type.usage);
     case "currency":
       // Currency is a compile-time distinction; the storage is packed decimal.
       return decimalPicture(type.precision, type.scale);
@@ -741,15 +741,65 @@ export function toCobolPicture(type: IRType): string {
   }
 }
 
-export function decimalPicture(precision: number, scale: number): string {
-  const integerDigits = precision - scale;
-  if (scale === 0) {
-    return `PIC S9(${integerDigits}) COMP-3`;
-  }
+/**
+ * How a number is held in storage.
+ *
+ * A value's precision and scale say what it means; its usage says how the bytes
+ * are arranged. Money is `packed` because COMP-3 is what a ledger is stored in.
+ * A counter or a subscript is `binary`, which is a halfword or fullword the
+ * hardware adds to directly. `display` is zoned decimal, one byte per digit,
+ * which is what a great deal of legacy input arrives as — and the reason this
+ * distinction exists at all is that a compiler that only knows COMP-3 cannot
+ * read an existing estate's copybooks.
+ */
+export type NumericUsage = "packed" | "binary" | "display";
 
-  return `PIC S9(${integerDigits})V${"9".repeat(scale)} COMP-3`;
+export function decimalPicture(
+  precision: number,
+  scale: number,
+  usage: NumericUsage = "packed",
+): string {
+  const integerDigits = precision - scale;
+  const digits =
+    scale === 0
+      ? `S9(${integerDigits})`
+      : `S9(${integerDigits})V${"9".repeat(scale)}`;
+
+  switch (usage) {
+    case "packed":
+      return `PIC ${digits} COMP-3`;
+    case "binary":
+      return `PIC ${digits} COMP`;
+    case "display":
+      // Zoned decimal keeps the sign as an overpunch on the last digit unless
+      // told otherwise. SIGN IS TRAILING SEPARATE spends one more byte and
+      // makes the field readable as plain text, which is what a file a person
+      // or another system reads needs.
+      return `PIC ${digits} SIGN IS TRAILING SEPARATE`;
+  }
 }
 
 export function packedDecimalByteLength(precision: number): number {
   return Math.ceil((precision + 1) / 2);
+}
+
+/**
+ * Bytes a number occupies, by usage.
+ *
+ * Binary rounds up to the halfword, fullword, or doubleword that holds the
+ * declared number of digits, which is how IBM Enterprise COBOL allocates
+ * `COMP`. Zoned decimal is one byte per digit plus the separate sign.
+ */
+export function numericByteLength(
+  precision: number,
+  usage: NumericUsage,
+): number {
+  switch (usage) {
+    case "packed":
+      return packedDecimalByteLength(precision);
+    case "binary":
+      return precision <= 4 ? 2 : precision <= 9 ? 4 : 8;
+    case "display":
+      return precision + 1;
+  }
 }

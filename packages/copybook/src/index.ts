@@ -7,6 +7,7 @@ import {
   toCobolPicture,
   temporalLength,
   editedLength,
+  numericByteLength,
 } from "../../cobol-ir/src/index";
 
 export interface CopybookFieldLayout {
@@ -129,7 +130,7 @@ export function fieldLength(type: IRType): number {
     case "array":
       return fieldLength(type.element) * type.length;
     case "decimal":
-      return packedDecimalByteLength(type.precision);
+      return numericByteLength(type.precision, type.usage);
     case "string":
       return type.length;
     case "bool":
@@ -484,7 +485,11 @@ function formatLayoutType(type: IRType): string {
     case "temporal":
       return type.unit;
     case "decimal":
-      return `decimal<${type.precision},${type.scale}>`;
+      return type.usage === "binary"
+        ? `binary<${type.precision}>`
+        : type.usage === "display"
+          ? `zoned<${type.precision},${type.scale}>`
+          : `decimal<${type.precision},${type.scale}>`;
     case "string":
       return `string<${type.length}>`;
     case "bool":
@@ -518,7 +523,11 @@ function formatLayoutUsage(type: IRType): string {
     case "temporal":
       return "DISPLAY";
     case "decimal":
-      return "COMP-3";
+      return type.usage === "binary"
+        ? "COMP"
+        : type.usage === "display"
+          ? "DISPLAY"
+          : "COMP-3";
     case "currency":
       return "COMP-3";
     case "enum":
