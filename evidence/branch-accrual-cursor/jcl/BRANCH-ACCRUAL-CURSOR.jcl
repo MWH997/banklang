@@ -6,7 +6,38 @@
 //* COPYBOOK source: dist/copybooks/ACCRUAL-REQUEST.cpy
 //* COPYBOOK source: dist/copybooks/ACCOUNT-ROW.cpy
 //* COPYBOOK source: dist/copybooks/ACCRUAL-SUMMARY.cpy
-//COMPILE  EXEC PGM=IGYCRCTL
+//* EXEC SQL must be precompiled, and the resulting DBRM bound, before
+//* the program can run. Neither step is optional.
+//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'
+//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD
+//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB(BRANCHAC)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD DISP=SHR,DSN=DIST.COBOL.BRANCHACCRUALCURSOR
-//* The compile step above is a documentation-friendly skeleton.
+//SYSCIN   DD DSN=&&PRECOUT,DISP=(NEW,PASS),UNIT=SYSDA,
+//            SPACE=(CYL,(1,1))
+//COMPILE  EXEC PGM=IGYCRCTL
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD DSN=&&PRECOUT,DISP=(OLD,DELETE)
+//SYSLIN   DD DSN=&&OBJ,DISP=(NEW,PASS),UNIT=SYSDA,
+//            SPACE=(CYL,(1,1))
+//LKED     EXEC PGM=IEWL,COND=(4,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSLIN   DD DSN=&&OBJ,DISP=(OLD,DELETE)
+//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(BRANCHAC)
+//BIND     EXEC PGM=IKJEFT01,COND=(4,LT)
+//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD
+//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB
+//SYSTSPRT DD SYSOUT=*
+//SYSTSIN  DD *
+  DSN SYSTEM(DSN)
+  BIND PACKAGE(BANKLANG) MEMBER(BRANCHAC) ACT(REP) ISO(CS)
+  END
+/*
+//RUN      EXEC PGM=BRANCHAC
+//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD
+//SYSOUT   DD SYSOUT=*
+//SUMMARYO DD DSN=BANKLANG.SUMMARYO,DISP=(NEW,CATLG),
+//            UNIT=SYSDA,SPACE=(CYL,(1,1))
+//* This job is a documentation-friendly skeleton. Dataset names, unit
+//* and space parameters, and the Db2 subsystem and package names are
+//* placeholders for an installation's own standards.

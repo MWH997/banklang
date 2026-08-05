@@ -9,4 +9,17 @@
 //COMPILE  EXEC PGM=IGYCRCTL
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD DISP=SHR,DSN=DIST.COBOL.STATEMENTGENERATION
-//* The compile step above is a documentation-friendly skeleton.
+//SYSLIN   DD DSN=&&OBJ,DISP=(NEW,PASS),UNIT=SYSDA,
+//            SPACE=(CYL,(1,1))
+//LKED     EXEC PGM=IEWL,COND=(4,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSLIN   DD DSN=&&OBJ,DISP=(OLD,DELETE)
+//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(STATEMEN)
+//RUN      EXEC PGM=STATEMEN
+//SYSOUT   DD SYSOUT=*
+//ACCOUNTM DD DISP=SHR,DSN=BANKLANG.ACCOUNTM
+//STATEMEN DD DSN=BANKLANG.STATEMEN,DISP=(NEW,CATLG),
+//            UNIT=SYSDA,SPACE=(CYL,(1,1))
+//* This job is a documentation-friendly skeleton. Dataset names, unit
+//* and space parameters, and the load library name are
+//* placeholders for an installation's own standards.
