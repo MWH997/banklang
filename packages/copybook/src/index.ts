@@ -8,6 +8,8 @@ import {
   temporalLength,
   editedLength,
   numericByteLength,
+  alignmentOf,
+  slackBefore,
 } from "../../cobol-ir/src/index";
 
 export interface CopybookFieldLayout {
@@ -93,6 +95,9 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
 
   for (const field of record.fields) {
     const length = fieldLength(field.type);
+    if (field.synchronized) {
+      offset += slackBefore(offset, alignmentOf(field.type));
+    }
     fields.push({
       name: field.name,
       cobolName: toCobolName(field.name),
@@ -357,12 +362,19 @@ export function buildCopybookLayoutReport(
     // A redefining field reports the offset of what it redefines, because that
     // is the storage it reads. Reporting where it happens to be declared would
     // describe a field that is not there.
+    // A SYNCHRONIZED field starts on its own boundary, and the bytes skipped to
+    // reach it are slack the record still occupies. This is the one clause that
+    // moves every later field without appearing in any field's own length.
+    const aligned = field.synchronized
+      ? offset + slackBefore(offset, alignmentOf(field.type))
+      : offset;
+
     const start = field.redefines
       ? (startOffsets.get(field.redefines) ?? offset)
-      : offset;
+      : aligned;
     startOffsets.set(field.name, start);
 
-    const before = offset;
+    const before = aligned;
     offset = collectLayoutEntries(
       field,
       `${toCobolName(record.name)}.${toCobolName(field.name)}`,

@@ -752,7 +752,7 @@ export function toCobolPicture(type: IRType): string {
  * distinction exists at all is that a compiler that only knows COMP-3 cannot
  * read an existing estate's copybooks.
  */
-export type NumericUsage = "packed" | "binary" | "display";
+export type NumericUsage = "packed" | "binary" | "display" | "native";
 
 export function decimalPicture(
   precision: number,
@@ -770,6 +770,11 @@ export function decimalPicture(
       return `PIC ${digits} COMP-3`;
     case "binary":
       return `PIC ${digits} COMP`;
+    case "native":
+      // COMP-5 holds the full range the storage can express rather than
+      // truncating to the picture's decimal digits, which is what an interface
+      // to something outside COBOL needs.
+      return `PIC ${digits} COMP-5`;
     case "display":
       // Zoned decimal keeps the sign as an overpunch on the last digit unless
       // told otherwise. SIGN IS TRAILING SEPARATE spends one more byte and
@@ -790,6 +795,29 @@ export function packedDecimalByteLength(precision: number): number {
  * declared number of digits, which is how IBM Enterprise COBOL allocates
  * `COMP`. Zoned decimal is one byte per digit plus the separate sign.
  */
+/**
+ * The boundary a `SYNCHRONIZED` item starts on.
+ *
+ * Binary items align to their own width; everything else is byte-aligned and
+ * needs no slack. Getting this wrong is how a copybook read against a real
+ * dataset lands every later field at the wrong offset.
+ */
+export function alignmentOf(type: IRType): number {
+  if (
+    type.kind === "decimal" &&
+    (type.usage === "binary" || type.usage === "native")
+  ) {
+    return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
+  }
+  return 1;
+}
+
+/** Slack bytes inserted before an aligned item at the given offset. */
+export function slackBefore(offset: number, alignment: number): number {
+  const remainder = offset % alignment;
+  return remainder === 0 ? 0 : alignment - remainder;
+}
+
 export function numericByteLength(
   precision: number,
   usage: NumericUsage,
@@ -798,6 +826,7 @@ export function numericByteLength(
     case "packed":
       return packedDecimalByteLength(precision);
     case "binary":
+    case "native":
       return precision <= 4 ? 2 : precision <= 9 ? 4 : 8;
     case "display":
       return precision + 1;

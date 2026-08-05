@@ -97,6 +97,26 @@ Zoned decimal is one byte per digit with the sign kept separate, so the field
 reads as plain text, which is what a file another system or a person reads
 needs.
 
+`native<n>` is `COMP-5`, which holds the full range its storage can express
+rather than truncating to the picture's decimal digits. That is what an
+interface to something outside COBOL needs, and it is why the SQLCA uses it.
+
+### Alignment
+
+```ts
+counter: binary < 9 > sync;
+```
+
+`sync` aligns a field on its natural boundary — a halfword, fullword, or
+doubleword, by width — and the compiler inserts slack bytes before it to get
+there.
+
+It is the one layout clause that moves every later field without appearing in
+any field's own length, so a copybook that uses it and a reader that ignores it
+disagree **silently**: every field after the first aligned one is read from the
+wrong place. The layout report accounts for the slack, and counts it in the
+record's length.
+
 **Usage is representation, not meaning.** A count is a count whichever bytes
 hold it, so usage takes no part in type compatibility — only in the picture and
 the byte count. Currency stays nominally typed regardless: a BDT amount is still

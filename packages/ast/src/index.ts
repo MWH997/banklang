@@ -83,7 +83,7 @@ export interface DecimalTypeNode extends NodeBase {
    * `decimal`, because the choice is about the bytes and belongs next to the
    * digit count that decides how many of them there are.
    */
-  usage?: "packed" | "binary" | "display";
+  usage?: "packed" | "binary" | "display" | "native";
 }
 
 export interface StringTypeNode extends NodeBase {
@@ -281,6 +281,16 @@ export interface FieldDeclarationNode extends NodeBase {
    * variable-length record variable.
    */
   dependingOn: string | null;
+  /**
+   * `sync` — align the field on its natural boundary.
+   *
+   * A `SYNCHRONIZED` binary field starts on a halfword, fullword, or doubleword
+   * boundary, and the compiler inserts slack bytes before it to get there. That
+   * makes it the one layout clause that changes offsets without appearing in
+   * any field's own length, which is why a copybook using it and a compiler
+   * ignoring it disagree silently.
+   */
+  synchronized: boolean;
 }
 
 export interface RecordDeclarationNode extends NodeBase {
