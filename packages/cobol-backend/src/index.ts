@@ -881,10 +881,31 @@ export function emitCobol(
     addLine(`       LINKAGE SECTION.`);
   }
 
-  // The region passes a PCB per database, in the order the PSB lists them, and
-  // the program never allocates one. The mask is the standard DB PCB: the name
-  // of the DBD, the level and status of the last call, the processing options,
-  // the segment reached, and the key feedback area.
+  // The I/O PCB comes first, always. A batch program needs it to make system
+  // service calls, so `CMPAT=YES` is what IBM says to specify — and with it the
+  // region passes the I/O PCB ahead of every database PCB. Omitting it does not
+  // fail to compile: it shifts every DB PCB by one, so the program reads the
+  // I/O PCB as its first database and works on whatever that memory holds.
+  if (program.databases.length > 0) {
+    addLine(`       01  ${IO_PCB_NAME}.`);
+    addLine(`           05  ${`${IO_PCB_NAME}-LTERM`.padEnd(24)} PIC X(8).`);
+    addLine(`           05  FILLER                   PIC XX.`);
+    addLine(`           05  ${`${IO_PCB_NAME}-STATUS`.padEnd(24)} PIC XX.`);
+    addLine(
+      `           05  ${`${IO_PCB_NAME}-DATE`.padEnd(24)} PIC S9(7) COMP-3.`,
+    );
+    addLine(
+      `           05  ${`${IO_PCB_NAME}-TIME`.padEnd(24)} PIC S9(6)V9 COMP-3.`,
+    );
+    addLine(
+      `           05  ${`${IO_PCB_NAME}-MSG-SEQ`.padEnd(24)} PIC S9(7) COMP.`,
+    );
+    addLine(`           05  ${`${IO_PCB_NAME}-MOD-NAME`.padEnd(24)} PIC X(8).`);
+    addLine(`           05  ${`${IO_PCB_NAME}-USER-ID`.padEnd(24)} PIC X(8).`);
+  }
+
+  // Then a PCB per database, in the order the PSB lists them. The program never
+  // allocates one: the mask describes storage IMS owns.
   for (const database of program.databases) {
     const pcb = pcbName(database.name);
     addLine(`       01  ${pcb}.`);
@@ -938,9 +959,10 @@ export function emitCobol(
   // the PROCEDURE DIVISION rather than being started like a batch program.
   addLine(
     program.databases.length > 0
-      ? `       PROCEDURE DIVISION USING ${program.databases
-          .map((database) => pcbName(database.name))
-          .join(" ")}.`
+      ? `       PROCEDURE DIVISION USING ${[
+          IO_PCB_NAME,
+          ...program.databases.map((database) => pcbName(database.name)),
+        ].join(" ")}.`
       : `       PROCEDURE DIVISION.`,
   );
 
@@ -3066,6 +3088,14 @@ function emitDliWorkingStorage(
       `           05  ${`${ssaName(database.name)}-VALUE`.padEnd(20)} PIC X(${Math.max(width, 1)}).`,
     );
     addLine(`           05  FILLER               PIC X VALUE ")".`);
+
+    // Nine bytes: the segment name and a trailing space, which is what makes it
+    // unqualified rather than the start of a qualification.
+    addLine(`       01  ${unqualifiedSsaName(database.name)}.`);
+    addLine(
+      `           05  FILLER               PIC X(8) VALUE "${database.segmentName.padEnd(8)}".`,
+    );
+    addLine(`           05  FILLER               PIC X VALUE " ".`);
   }
 }
 
@@ -3103,6 +3133,10 @@ function dliStatements(program: IRProgram): IRDliStatement[] {
 const DLI_FUNCTIONS: Record<IRDliStatement["operation"], string> = {
   getUnique: "GU  ",
   getNext: "GN  ",
+  // A get-hold retrieves the segment *and* holds it, which is the only thing
+  // that makes a later REPL or DLET legal — without it DL/I answers DJ.
+  getHoldUnique: "GHU ",
+  getHoldNext: "GHN ",
   insertSegment: "ISRT",
   replaceSegment: "REPL",
   deleteSegment: "DLET",
@@ -3112,12 +3146,33 @@ function dliFunctionName(operation: IRDliStatement["operation"]): string {
   return `DLI-${DLI_FUNCTIONS[operation].trim()}`;
 }
 
+/**
+ * The I/O PCB, which every IMS program receives first.
+ *
+ * Its mask is not a database PCB: it carries the logical terminal name, the
+ * date and time of the message, and the sequence number, and its status is
+ * where a system service call reports itself.
+ */
+const IO_PCB_NAME = "IO-PCB";
+
 function pcbName(database: string): string {
   return `${toCobolName(database)}-PCB`;
 }
 
+/** The qualified search argument: segment, field, operator, value. */
 function ssaName(database: string): string {
   return `${toCobolName(database)}-SSA`;
+}
+
+/**
+ * The unqualified search argument: eight bytes of segment name and a space.
+ *
+ * `GN` without one returns the next segment of *any* type in hierarchical
+ * order, which is almost never what a program reading one segment type wants,
+ * and `ISRT` without one has nothing telling DL/I which segment to insert.
+ */
+function unqualifiedSsaName(database: string): string {
+  return `${toCobolName(database)}-SSA-U`;
 }
 
 /**
@@ -3144,15 +3199,33 @@ function emitDliStatement(
   if (statement.recordName) {
     operands.push(resolveIdentifier(statement.recordName));
   } else {
-    // DLET replaces the segment it was held for, so the area is still passed.
+    // DLET acts on the segment the preceding get-hold left held, but the area
+    // is still an operand of the call.
     operands.push(toCobolName(database.record.name));
   }
 
-  if (statement.operation === "getUnique") {
-    addLine(
-      `${indent}MOVE ${renderExpression(statement.key as IRExpression)} TO ${ssaName(statement.databaseName)}-VALUE`,
-    );
-    operands.push(ssaName(statement.databaseName));
+  switch (statement.operation) {
+    // A unique read is qualified: it names the segment, the field, and the
+    // value to match.
+    case "getUnique":
+    case "getHoldUnique":
+      addLine(
+        `${indent}MOVE ${renderExpression(statement.key as IRExpression)} TO ${ssaName(statement.databaseName)}-VALUE`,
+      );
+      operands.push(ssaName(statement.databaseName));
+      break;
+    // A next read and an insert name the segment without qualifying it. The
+    // read would otherwise walk segments of every type; the insert would have
+    // nothing saying what to insert.
+    case "getNext":
+    case "getHoldNext":
+    case "insertSegment":
+      operands.push(unqualifiedSsaName(statement.databaseName));
+      break;
+    // REPL and DLET take no argument: they act on what the get-hold held.
+    case "replaceSegment":
+    case "deleteSegment":
+      break;
   }
 
   addLine(`${indent}CALL "CBLTDLI" USING ${operands.join(", ")}`);

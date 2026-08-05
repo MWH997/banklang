@@ -392,6 +392,8 @@ export interface IRDliStatement {
   operation:
     | "getUnique"
     | "getNext"
+    | "getHoldUnique"
+    | "getHoldNext"
     | "insertSegment"
     | "replaceSegment"
     | "deleteSegment";

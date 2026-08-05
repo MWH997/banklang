@@ -35,6 +35,8 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "database",
   "getUnique",
   "getNext",
+  "getHoldUnique",
+  "getHoldNext",
   "insertSegment",
   "replaceSegment",
   "deleteSegment",

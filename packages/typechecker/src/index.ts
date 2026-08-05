@@ -636,6 +636,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   drainInstantiations(aliases, recordMap, functions, diagnostics);
 
   reportUnusedGenerics(program, diagnostics);
+  reportUnheldDliUpdates(program, diagnostics);
   reportRecursiveNestedFunctions(program, diagnostics);
   validateFileErrorHandlers(fileErrorHandlers, aliases, recordMap, diagnostics);
 
@@ -6094,6 +6095,75 @@ let declaredFiles = new Map<string, ResolvedFile>();
 
 /** Declared reports, for resolving initiate, generate, and terminate. */
 let declaredReports = new Map<string, ResolvedReport>();
+
+/**
+ * Reports a `replaceSegment` or `deleteSegment` with no get-hold before it.
+ *
+ * DL/I will not update a segment the program has not held. `REPL` or `DLET`
+ * after a plain `getUnique` comes back `DJ` — no preceding get-hold — and the
+ * update silently does not happen, because the status is the only thing that
+ * says so.
+ *
+ * A hold earlier in an enclosing block covers a branch inside it, because every
+ * path through the branch has already passed the hold. A hold *inside* a branch
+ * does not travel back out, because the path that skipped the branch reaches
+ * the update unheld — which is the case worth catching.
+ */
+function reportUnheldDliUpdates(
+  program: ProgramNode,
+  diagnostics: Diagnostic[],
+): void {
+  const walk = (block: BlockNode, enclosing: ReadonlySet<string>): void => {
+    const held = new Set(enclosing);
+    for (const statement of block.statements) {
+      if (statement.kind === "DliStatement") {
+        if (
+          statement.operation === "getHoldUnique" ||
+          statement.operation === "getHoldNext"
+        ) {
+          held.add(statement.databaseName);
+        }
+        if (
+          (statement.operation === "replaceSegment" ||
+            statement.operation === "deleteSegment") &&
+          !held.has(statement.databaseName)
+        ) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-DLI-002",
+              severity: "error",
+              message: `${statement.operation} on ${statement.databaseName} is not preceded by a get-hold.`,
+              span: statement.span,
+              hint: "DL/I will not update a segment the program has not held: it answers `DJ` and the update does not happen. Read it with `getHoldUnique` or `getHoldNext` first.",
+              backendProfile: "ibm-enterprise-cobol-zos",
+            }),
+          );
+        }
+      }
+
+      for (const nested of [
+        (statement as { body?: BlockNode }).body,
+        (statement as { notFound?: BlockNode }).notFound,
+        (statement as { thenBranch?: BlockNode }).thenBranch,
+        (statement as { elseBranch?: BlockNode | null }).elseBranch,
+        (statement as { onError?: BlockNode | null }).onError,
+      ]) {
+        if (nested) {
+          walk(nested, held);
+        }
+      }
+    }
+  };
+
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "TransactionDeclaration" ||
+      declaration.kind === "FunctionDeclaration"
+    ) {
+      walk(declaration.body, new Set());
+    }
+  }
+}
 
 /** Declared databases, for resolving DL/I statements. */
 let declaredDatabases = new Map<string, ResolvedDatabase>();

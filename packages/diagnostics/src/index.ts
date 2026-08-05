@@ -737,6 +737,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-DLI-002",
+    title: "Segment updated without being held",
+    explanation:
+      "DL/I will not update a segment the program has not held. A `REPL` or `DLET` after a plain `getUnique` comes back with status `DJ` — no preceding get-hold — and the update simply does not happen, which the program only discovers if it tests the status. A get-hold both retrieves the segment and locks it, which is what makes the later update legal.",
+    remediation:
+      "Read the segment with `getHoldUnique` or `getHoldNext` before replacing or deleting it, in the same block — a hold inside a branch leaves the path that skipped the branch reaching the update unheld.",
+    specReference: "language-reference.md section 12a",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:
