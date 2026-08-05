@@ -683,6 +683,62 @@ Comparisons do not chain.
 Multiplication adds the operand scales: `decimal<18,2> * decimal<9,4>` produces
 scale 6. That result usually needs rounding before it can be stored as money.
 
+### Numbers COBOL already knows how to work out
+
+| Written                    | COBOL                    | Gives                                    |
+| -------------------------- | ------------------------ | ---------------------------------------- |
+| `abs(x)`                   | `FUNCTION ABS`           | the magnitude, keeping `x`'s type        |
+| `min(a, b)` / `max(a, b)`  | `FUNCTION MIN` / `MAX`   | one of the two, which must be like-typed |
+| `mod(a, b)` / `rem(a, b)`  | `FUNCTION MOD` / `REM`   | whole-number remainder                   |
+| `annuity(rate, periods)`   | `FUNCTION ANNUITY`       | the repayment factor of a loan           |
+| `presentValue(rate, cash)` | `FUNCTION PRESENT-VALUE` | a cash flow discounted one period        |
+| `isNumeric(text)`          | `FUNCTION TEST-NUMVAL-C` | whether the characters will convert      |
+| `toNumber(text)`           | `FUNCTION NUMVAL-C`      | the number those characters spell        |
+
+Two of these are in COBOL because COBOL was written for this industry.
+`annuity` is the repayment factor of a loan, so a mortgage quote is one line:
+
+```ts
+mortgage.payment = round(
+  mortgage.principal * annuity(mortgage.monthlyRate, mortgage.termMonths),
+  "HALF_UP",
+);
+```
+
+£100,000 at 0.5% a month over 240 months gives £716.43 — and it is COBOL that
+computes it, not this compiler. That is the reason to route to the intrinsic
+rather than write the series out: a repayment factor worked out in a loop rounds
+differently, and the difference shows up in a customer's final instalment.
+
+The rate is a fraction per period, so a monthly rate is the annual one divided
+by twelve: `decimal<9, 6>` holding `0.005000` for 0.5%. The term is a whole
+number of periods.
+
+`annuity`, `presentValue`, and `toNumber` take the scale of whatever they are
+assigned to, the way `round` does — a repayment factor has no natural scale of
+its own, and the only one that matters is the scale of the money it multiplies.
+
+`mod` is what a check digit is: `mod(accountNumber, 97)` is the arithmetic
+behind an IBAN.
+
+`isNumeric` is worth its own line. A batch reading a flat file gets fields that
+are supposed to be numbers and sometimes are not, and converting one that is not
+is how a job abends at three in the morning. Asking first turns that into a
+rejected record:
+
+```ts
+if isNumeric(feed.rawAmount) {
+  feed.parsed = toNumber(feed.rawAmount);
+} else {
+  returnCode = 12;
+}
+```
+
+Both read grouping and a currency symbol as well as plain digits, because
+`NUMVAL-C` does.
+
+These are contextual names, so `min`, `max`, and `abs` remain usable as fields.
+
 ### Rounding is explicit
 
 Division cannot be exact and narrowing a scale discards digits, so both require

@@ -10,6 +10,7 @@ import {
   type CursorLoopStatementNode,
   type EditedTypeNode,
   type MemberAccessNode,
+  type NumericCallNode,
   type TemporalCallNode,
   type ReturnCodeStatementNode,
   type SearchStatementNode,
@@ -4056,6 +4057,155 @@ const DAY_COUNT: ResolvedType = {
  * Adding a day to 20260131 is not adding one to the digits, so the arguments
  * are checked as calendar values rather than as numbers that happen to fit.
  */
+/**
+ * `abs`, `mod`, `rem`, `min`, `max`, `annuity`, `presentValue`, `isNumeric`,
+ * and `toNumber`.
+ *
+ * Each is a COBOL intrinsic, so the checking here is about arity and about
+ * what the intrinsic will accept — not about the arithmetic, which COBOL does.
+ *
+ * `annuity`, `presentValue`, and `toNumber` come back `rounded`, meaning they
+ * take the scale of whatever they are assigned to. That is not a shortcut: a
+ * repayment factor has no natural scale of its own, and the only scale that
+ * matters is the one the money it multiplies is held at.
+ */
+function inferNumericCall(
+  expression: NumericCallNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  const args = expression.args.map((argument) =>
+    inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
+  );
+
+  const reject = (message: string, hint: string): null => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message,
+        span: expression.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  };
+
+  const arity: Record<NumericCallNode["operation"], number> = {
+    abs: 1,
+    mod: 2,
+    rem: 2,
+    min: 2,
+    max: 2,
+    annuity: 2,
+    presentValue: 2,
+    isNumeric: 1,
+    toNumber: 1,
+  };
+  if (args.length !== arity[expression.operation]) {
+    return reject(
+      `${expression.operation} takes ${arity[expression.operation]} argument${arity[expression.operation] === 1 ? "" : "s"}.`,
+      "Check the argument list against the reference.",
+    );
+  }
+  if (args.some((argument) => argument === null)) {
+    return null;
+  }
+
+  const numeric = (type: ResolvedType | null): boolean =>
+    type !== null && (isDecimalType(type) || type.kind === "currency");
+
+  // A rounded result takes the target's scale, which is what these have: a
+  // repayment factor is a ratio, and a parsed number is whatever the field it
+  // lands in holds.
+  const rounded: ResolvedType = {
+    kind: "decimal",
+    precision: 18,
+    scale: 2,
+    rounded: true,
+  };
+
+  switch (expression.operation) {
+    case "isNumeric":
+    case "toNumber": {
+      const text = args[0];
+      if (!text || text.kind !== "string" || text.national) {
+        return reject(
+          `${expression.operation} reads text.`,
+          "Pass a string<n> field holding the characters to examine.",
+        );
+      }
+      return expression.operation === "isNumeric" ? { kind: "bool" } : rounded;
+    }
+    case "abs": {
+      if (!numeric(args[0])) {
+        return reject(
+          "abs takes a number.",
+          "Pass a decimal, a binary, or a currency amount.",
+        );
+      }
+      return args[0];
+    }
+    case "mod":
+    case "rem": {
+      // COBOL's MOD and REM are defined on integers, and a check digit — the
+      // reason to have them — is integer arithmetic.
+      for (const argument of args) {
+        if (!argument || !isDecimalType(argument) || argument.scale !== 0) {
+          return reject(
+            `${expression.operation} takes whole numbers.`,
+            "Declare both as binary<n> or decimal<n, 0>.",
+          );
+        }
+      }
+      return args[1];
+    }
+    case "min":
+    case "max": {
+      if (!numeric(args[0]) || !numeric(args[1])) {
+        return reject(
+          `${expression.operation} compares two numbers.`,
+          "Pass two decimals, or two amounts of the same currency.",
+        );
+      }
+      if (!typesCompatible(args[0] as ResolvedType, args[1] as ResolvedType)) {
+        return reject(
+          `${expression.operation} compares ${describeType(args[0] as ResolvedType)} with ${describeType(args[1] as ResolvedType)}.`,
+          "Both sides have to be the same type, for the same reason a comparison does.",
+        );
+      }
+      return args[0];
+    }
+    case "annuity":
+    case "presentValue": {
+      if (!numeric(args[0])) {
+        return reject(
+          `${expression.operation} takes a rate per period as its first argument.`,
+          "A monthly rate is the annual rate divided by twelve, as a fraction: `decimal<9, 6>` holding 0.005 for 0.5%.",
+        );
+      }
+      if (expression.operation === "annuity") {
+        const periods = args[1];
+        if (!periods || !isDecimalType(periods) || periods.scale !== 0) {
+          return reject(
+            "annuity takes a whole number of periods.",
+            "Declare the term as binary<n> or decimal<n, 0>.",
+          );
+        }
+      } else if (!numeric(args[1])) {
+        return reject(
+          "presentValue discounts an amount.",
+          "Pass the cash flow to discount as a decimal or a currency amount.",
+        );
+      }
+      return rounded;
+    }
+  }
+}
+
 function inferTemporalCall(
   expression: TemporalCallNode,
   scope: Map<string, ResolvedType>,
@@ -5628,6 +5778,14 @@ function inferExpressionType(
     }
     case "StringCall":
       return inferStringCall(
+        expression,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+    case "NumericCall":
+      return inferNumericCall(
         expression,
         scope,
         aliases,

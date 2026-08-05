@@ -286,6 +286,7 @@ function canonicalExpression(expression: IRExpression): string {
   switch (expression.kind) {
     case "StringCall":
     case "TemporalCall":
+    case "NumericCall":
       return `${expression.operation}(${expression.args.map(canonicalExpression).join(", ")})`;
     case "Identifier":
       return expression.name;
