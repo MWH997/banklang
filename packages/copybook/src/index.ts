@@ -94,6 +94,11 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
   let offset = 0;
 
   for (const field of record.fields) {
+    // A renames is a second name for a run already laid out, so it is not part
+    // of the layout — the emitter writes it as a level-66 after the fields.
+    if (field.renames) {
+      continue;
+    }
     const length = fieldLength(field.type);
     if (field.synchronized) {
       offset += slackBefore(offset, alignmentOf(field.type));
@@ -212,7 +217,9 @@ export function inspectGeneratedCopybook(
   const openGroups: { name: string; start: number; level: number }[] = [];
 
   for (const entry of entries) {
-    if (entry.level === 1 || entry.level === 88) {
+    // A 66 renames a run of fields that is already counted, and an 88 is a
+    // condition name. Neither is storage.
+    if (entry.level === 1 || entry.level === 66 || entry.level === 88) {
       continue;
     }
     while (
@@ -440,6 +447,9 @@ export function buildCopybookLayoutReport(
   let offset = 0;
 
   for (const field of record.fields) {
+    if (field.renames) {
+      continue;
+    }
     // A redefining field reports the offset of what it redefines, because that
     // is the storage it reads. Reporting where it happens to be declared would
     // describe a field that is not there.

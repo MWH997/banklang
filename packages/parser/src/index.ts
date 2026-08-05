@@ -19,6 +19,7 @@ import {
   type ParameterNode,
   type ProgramNode,
   type RecordDeclarationNode,
+  type RenamesDeclarationNode,
   type ReturnStatementNode,
   type SourcePosition,
   type SourceSpan,
@@ -127,6 +128,8 @@ export const KEYWORDS = new Set([
   "enum",
   "sensitive",
   "redefines",
+  "renames",
+  "through",
   "depending",
   "sync",
   "justified",
@@ -1080,8 +1083,26 @@ class Parser {
       "Expected `{` to start record body.",
     );
     const fields: FieldDeclarationNode[] = [];
+    const renames: RenamesDeclarationNode[] = [];
 
     while (!this.is("eof") && !this.matchPunctuation("}")) {
+      // `wholeDate renames yearPart through dayPart;` — a level-66 regrouping.
+      // Recognised by the second token, because there is no `:` and no type:
+      // a RENAMES entry has no picture of its own, only a span of bytes.
+      if (
+        this.current.kind === "identifier" &&
+        this.next.kind === "keyword" &&
+        this.next.text === "renames"
+      ) {
+        const entry = this.parseRenamesDeclaration();
+        if (!entry) {
+          this.synchronizeToFieldOrRecordEnd();
+          continue;
+        }
+        renames.push(entry);
+        continue;
+      }
+
       const field = this.parseFieldDeclaration();
       if (!field) {
         this.synchronizeToFieldOrRecordEnd();
@@ -1101,10 +1122,54 @@ class Parser {
       typeParameters,
       baseType,
       fields,
+      renames,
       span: {
         sourceFile: nameToken.span.sourceFile,
         start: nameToken.span.start,
         end: endToken.span.end,
+      },
+    };
+  }
+
+  /**
+   * `wholeDate renames yearPart through dayPart;`
+   *
+   * A legacy copybook splits a date into year, month, and day and then wants to
+   * move all three at once. `RENAMES` is how COBOL gives that run of fields a
+   * second name without a second copy of the storage.
+   */
+  private parseRenamesDeclaration(): RenamesDeclarationNode | null {
+    const nameToken = this.advance();
+    this.advance();
+    const fromToken = this.expectIdentifier(
+      "Expected the first field renamed.",
+    );
+    if (!this.matchKeyword("through")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `through` between the first and last field renamed.",
+        "Write `wholeDate renames yearPart through dayPart;`.",
+      );
+      return null;
+    }
+    const toToken = this.expectIdentifier("Expected the last field renamed.");
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after the renames declaration.",
+    );
+    if (!fromToken || !toToken || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "RenamesDeclaration",
+      name: nameToken.text,
+      from: fromToken.text,
+      to: toToken.text,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: semicolon.span.end,
       },
     };
   }

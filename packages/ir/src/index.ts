@@ -166,6 +166,13 @@ export interface IRField {
   justified: boolean;
   /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
   blankWhenZero: boolean;
+  /**
+   * `RENAMES` — the run of fields this one is a second name for.
+   *
+   * It carries no storage: the emitters skip it among the record's own entries
+   * and write it as a level-66 after them, which is where COBOL requires it.
+   */
+  renames: { from: string; to: string } | null;
 }
 
 export interface IRFunction {
@@ -788,10 +795,14 @@ export function lowerProgramToIR(
       organization: file.organization,
       statusName: file.statusName,
       keyFieldName: file.keyField?.name ?? null,
-      recordFields: file.record.fields.map((field) => ({
-        name: field.name,
-        arrayLength: field.type.kind === "array" ? field.type.length : null,
-      })),
+      // A renames overlaps the run it names, so mapping it too would move the
+      // same bytes twice.
+      recordFields: file.record.fields
+        .filter((field) => !field.renames)
+        .map((field) => ({
+          name: field.name,
+          arrayLength: field.type.kind === "array" ? field.type.length : null,
+        })),
     });
   }
 
@@ -1542,6 +1553,7 @@ function lowerRecord(
       synchronized: field.synchronized,
       justified: field.justified,
       blankWhenZero: field.blankWhenZero,
+      renames: field.renames,
     })),
   };
 }
@@ -2457,6 +2469,7 @@ function lowerType(type: ResolvedType): IRType {
           synchronized: field.synchronized,
           justified: field.justified,
           blankWhenZero: field.blankWhenZero,
+          renames: field.renames,
         })),
       };
   }

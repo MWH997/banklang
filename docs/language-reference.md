@@ -122,6 +122,35 @@ hold it, so usage takes no part in type compatibility — only in the picture an
 the byte count. Currency stays nominally typed regardless: a BDT amount is still
 not an unqualified number that happens to have two decimals.
 
+### Naming a run of fields
+
+```ts
+record LegacyDate {
+  yearPart: zoned<4, 0>;
+  monthPart: zoned<2, 0>;
+  dayPart: zoned<2, 0>;
+
+  wholeDate renames yearPart through dayPart;
+}
+```
+
+A legacy copybook splits a date into year, month, and day and then wants to move
+all three at once. `renames` emits a level-66, which gives that run a second
+name without a second copy of the storage — that is what distinguishes it from
+`redefines`, which is a new _reading_ of the same bytes.
+
+It costs nothing and appears after the record's own fields, which is where COBOL
+requires it. Both ends are qualified by the group in the generated code, because
+the same record is emitted in working storage and again inside every `FD` that
+holds it.
+
+The name reads as the alphanumeric span it covers — `string<11>` above, since
+zoned decimal is a byte per digit plus one for the separate sign — which is
+exactly what a COBOL group move treats it as. Both ends have to be fields of the
+record, the first has to come before the last, and the run cannot cross a table
+whose length depends on a count, since a 66 has no length of its own
+(`BANK-COPY-004`).
+
 ### How a field is presented
 
 ```ts
