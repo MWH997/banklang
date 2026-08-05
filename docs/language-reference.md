@@ -1198,6 +1198,32 @@ widely.
 Clearing it field by field is the same thing written out, and drifts the moment
 the record gains a field.
 
+### Paginating a report
+
+```ts
+file statementReport sequential output record ReportLine
+  page 60 footing 55 top 3 bottom 3 status reportStatus;
+
+write statementReport from heading advancing page;
+write statementReport from line advancing 1 on page {
+  write statementReport from heading advancing page;
+};
+```
+
+`page` emits `LINAGE`. It is what makes a report paginate: COBOL counts the
+lines written and signals end of page at the footing, which is where a program
+writes its carried-forward total and the next page's heading. Without it a
+statement run is one unbroken column of text. `footing`, `top`, and `bottom` are
+optional; a depth alone is a page.
+
+`advancing <n>` and `advancing page` emit `AFTER ADVANCING`, so a line is
+written after spacing rather than on top of the last one.
+
+`on page { ... }` is `AT END-OF-PAGE`. It needs the file to declare a depth,
+since otherwise there is no page for a write to reach the end of
+(`BANK-FILE-007`), and a page depth belongs to a `sequential output` file —
+a keyed file has records, not lines to space.
+
 ### What the copybook contains
 
 A generated copybook is the record's own COBOL declaration, not a summary of it:

@@ -303,6 +303,13 @@ An input procedure that never reaches a `release` sorts an empty file, and a
 arrive in order, and a procedure that could drop or reorder records would break
 it.
 
+### `BANK-FILE-007` invalid page declaration
+
+A page depth describes a print file, so it belongs to a sequential output file,
+and its footing has to be a line the page has — past the end it would never be
+reached. `advancing` writes a report line, and `on page` is signalled from the
+page counter, so a file with no declared depth never reaches the end of one.
+
 ## 11. Copybook diagnostics
 
 ### `BANK-COPY-001` unsupported PIC clause

@@ -310,6 +310,24 @@ export interface FieldDeclarationNode extends NodeBase {
   blankWhenZero: boolean;
 }
 
+/**
+ * `page 60 footing 55 top 3 bottom 3` — the `LINAGE` clause of a print file.
+ *
+ * It is what makes a report paginate: COBOL counts the lines written and
+ * signals `AT END-OF-PAGE` when the footing line is reached, which is where a
+ * program writes its totals and its next heading. Without it a report is one
+ * unbroken column of text.
+ */
+export interface FileLinageNode {
+  /** Lines in the page body. */
+  lines: number;
+  /** Line at which END-OF-PAGE is signalled. Defaults to the page depth. */
+  footingAt: number | null;
+  linesAtTop: number | null;
+  linesAtBottom: number | null;
+  span: SourceSpan;
+}
+
 export interface RecordDeclarationNode extends NodeBase {
   kind: "RecordDeclaration";
   name: string;
@@ -605,6 +623,21 @@ export interface FileStatementNode extends NodeBase {
   recordName: string | null;
   /** Key expression for a keyed read on an indexed file. */
   key: ExpressionNode | null;
+  /**
+   * `advancing <n>` or `advancing page` — `WRITE ... AFTER ADVANCING`.
+   *
+   * A report line is written after spacing rather than on top of the last one,
+   * and a new page is how a heading starts one.
+   */
+  advancing: number | "page" | null;
+  /**
+   * `on page { ... }` — `AT END-OF-PAGE`.
+   *
+   * COBOL signals it when the write reaches the file's footing line, which is
+   * where a report writes its totals and the next page's heading. It needs the
+   * file to declare a page depth, since otherwise there is no page to end.
+   */
+  atEndOfPage: BlockNode | null;
 }
 
 export type StatementNode =
@@ -723,6 +756,8 @@ export interface FileDeclarationNode extends NodeBase {
    * Alternates allow duplicates; the primary does not.
    */
   alternateKeys: string[];
+  /** `page ...` — page depth, for a print file that paginates. */
+  linage: FileLinageNode | null;
 }
 
 export interface TransactionDeclarationNode extends NodeBase {
