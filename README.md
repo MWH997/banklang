@@ -55,7 +55,7 @@ From one BankTS module, `bankc build` emits:
 | COBOL program       | Readable, stable names, no timestamps                       |
 | Copybooks           | `PIC X(n)` and `COMP-3` layouts for every record            |
 | Source map          | Every module, record, field, function, and transaction      |
-| JCL skeleton        | A structurally sane job for the generated program           |
+| JCL skeleton        | A job whose steps match what the program needs to build     |
 | Audit bundle        | Diagnostics, decimal analysis, transaction analysis, layout |
 | Verification report | Determinism, source-map coverage, local compile results     |
 

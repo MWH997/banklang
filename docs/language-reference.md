@@ -695,6 +695,18 @@ return.
 The translated output exists only for verification. The shipped artifact keeps
 its `EXEC SQL` and `EXEC CICS` blocks.
 
+The generated JCL carries the steps those blocks require, in the order z/OS
+needs them: the CICS translator first, then the Db2 precompiler, then the
+compiler, the link-edit, and the bind. A job that omitted the precompile step
+would not be an incomplete skeleton but a wrong one — it would describe a build
+that cannot succeed. A batch program's declared files become DD statements named
+after the same DD the generated `SELECT` assigns to. A CICS program gets no run
+step at all: it is started by a transaction identifier in a region, not by
+`EXEC PGM` in a job.
+
+Dataset names, unit and space parameters, and the Db2 subsystem and package
+names are placeholders for an installation's own standards.
+
 ## 13. File declarations
 
 ```ts
