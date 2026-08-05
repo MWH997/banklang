@@ -607,6 +607,8 @@ export type StatementNode =
   | CursorLoopStatementNode
   | UnitOfWorkStatementNode
   | ReturnCodeStatementNode
+  | ConsoleStatementNode
+  | ResetStatementNode
   | SplitStatementNode
   | SortStatementNode
   | CheckpointStatementNode
@@ -804,6 +806,35 @@ export interface SearchStatementNode extends NodeBase {
   body: BlockNode;
   /** Runs when no element matched. Required: a search that can fail must say so. */
   notFound: BlockNode;
+}
+
+/**
+ * `log "MESSAGE", value;` and `accept parameter into field;`
+ *
+ * `DISPLAY` is how a batch program talks to the job log — the operator's only
+ * view of what happened between the return code and the abend. `ACCEPT` reads
+ * what the job passed it: a run date, a cycle number, a mode.
+ */
+export interface ConsoleStatementNode extends NodeBase {
+  kind: "ConsoleStatement";
+  operation: "log" | "accept";
+  /** Values to write, for `log`. */
+  values: ExpressionNode[];
+  /** Where to read into, and what source, for `accept`. */
+  target: MemberAccessNode | IdentifierNode | null;
+  source: "parameter" | "date" | "time" | null;
+}
+
+/**
+ * `reset record;` — set every field to its type's empty value.
+ *
+ * `INITIALIZE` clears a group in one statement: alphanumerics to spaces,
+ * numerics to zero. Doing it field by field is the same thing written out, and
+ * drifts the moment the record gains a field.
+ */
+export interface ResetStatementNode extends NodeBase {
+  kind: "ResetStatement";
+  recordName: string;
 }
 
 export interface ReturnCodeStatementNode extends NodeBase {
