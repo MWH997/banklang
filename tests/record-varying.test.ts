@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { parmDriver } from "./helpers";
 
 /**
  * `varying <min> to <max> length <field>` — `RECORD IS VARYING IN SIZE`.
@@ -163,6 +164,10 @@ describe("executed", () => {
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-varying-"));
     writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    // The record length is an entry parameter, so it arrives in the job's PARM
+    // and the program takes `PROCEDURE DIVISION USING`. The driver supplies the
+    // parameter list the initiator would.
+    writeFileSync(join(dir, "driver.cbl"), parmDriver(result.program!), "utf8");
 
     // GnuCOBOL's default assign clause does not bind an unquoted ASSIGN to the
     // DD name; `external` does. On z/OS the DD comes from the JCL.
@@ -172,6 +177,7 @@ describe("executed", () => {
         "-x",
         "-fixed",
         "-fassign-clause=external",
+        "driver.cbl",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

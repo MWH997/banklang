@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, parmDriver } from "./helpers";
 
 /**
  * `JSON PARSE` and `XML PARSE`, executed.
@@ -61,6 +61,10 @@ function run(result: ReturnType<typeof compile>, runtimes: string[]) {
     precompile(result.cobol ?? "").cobol,
     "utf8",
   );
+  // The document is an entry parameter, so the program reads it from the job's
+  // PARM and takes `PROCEDURE DIVISION USING`. An executable cannot have one,
+  // so the driver is the entry point and supplies the parameter list.
+  writeFileSync(join(dir, "driver.cbl"), parmDriver(result.program!), "utf8");
 
   const built = spawnSync(
     "cobc",
@@ -68,6 +72,7 @@ function run(result: ReturnType<typeof compile>, runtimes: string[]) {
       "-x",
       "-fixed",
       "-Wcolumn-overflow",
+      "driver.cbl",
       "program.cbl",
       ...runtimes.map((name) => join(process.cwd(), `runtime/${name}.cbl`)),
       join(process.cwd(), "runtime/BANKAUDT.cbl"),

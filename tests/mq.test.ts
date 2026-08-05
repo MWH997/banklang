@@ -156,7 +156,7 @@ describe("connecting and opening", () => {
         'DISPLAY "MQCONN FAILED paymentOut COMPCODE " PAYMENT-OUT-COMPCODE " REASON " PAYMENT-OUT-REASON',
       ),
     );
-    expect(text).toContain("MOVE 12 TO RETURN-CODE");
+    expect(text).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 });
 
@@ -306,13 +306,30 @@ entry transaction relay(payment: Payment) {
     expect(result.backendRequirements).toContain("mq");
   });
 
+  /**
+   * `COPY CMQV` resolves against the compiler's SYSLIB, which under IGYWCL is
+   * qualified by the procedure step whose DD it is.
+   */
   it("puts the copybook library on SYSLIB for the compile", () => {
-    expect(result.jcl).toContain("//         DD DISP=SHR,DSN=MQM.SCSQCOBC");
+    const jcl = result.jcl ?? "";
+    const compile = jcl.slice(
+      jcl.indexOf("//COBOL.SYSLIB"),
+      jcl.indexOf("//LKED.SYSLIB"),
+    );
+
+    expect(compile).toContain("//               DD DISP=SHR,DSN=MQM.SCSQCOBC");
   });
 
   it("puts the stub and run-time libraries where the link and run need them", () => {
-    expect(result.jcl).toContain("//SYSLIB   DD DISP=SHR,DSN=MQM.SCSQLOAD");
-    expect(result.jcl).toContain("//STEPLIB  DD DISP=SHR,DSN=MQM.SCSQANLE");
+    const jcl = result.jcl ?? "";
+    const link = jcl.slice(jcl.indexOf("//LKED.SYSLIB"), jcl.indexOf("//RUN "));
+    const run = jcl.slice(jcl.indexOf("//RUN "));
+
+    // The stub is what turns each MQI CALL into an entry the queue manager
+    // resolves; the run-time libraries are what it resolves against.
+    expect(link).toContain("//               DD DISP=SHR,DSN=MQM.SCSQLOAD");
+    expect(run).toContain("//         DD DISP=SHR,DSN=MQM.SCSQANLE");
+    expect(run).toContain("//         DD DISP=SHR,DSN=MQM.SCSQLOAD");
   });
 
   it("leaves a program with no queue alone", () => {

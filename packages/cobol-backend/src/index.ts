@@ -1,7 +1,12 @@
-import type { SourcePosition, SourceSpan } from "../../ast/src/index";
+import type {
+  RoundingMode,
+  SourcePosition,
+  SourceSpan,
+} from "../../ast/src/index";
 import type {
   IRBinaryComparisonExpression,
   IRBinaryArithmeticExpression,
+  IRRoundedExpression,
   IRBlock,
   IRBooleanLiteralExpression,
   IRDecimalLiteralExpression,
@@ -56,6 +61,8 @@ import type {
 import {
   copybookMemberName,
   decimalPicture,
+  divisionRemainderShape,
+  fitCobolWord,
   packedDecimalByteLength,
   toCobolFieldName,
   toCobolName,
@@ -63,6 +70,7 @@ import {
   toCobolPicture,
   toCobolProgramId,
   enumWidth,
+  temporalLength,
   temporalPicture,
   editedPicture,
 } from "../../cobol-ir/src/index";
@@ -89,7 +97,22 @@ const LEDGER_ACCOUNT_LENGTH = 32;
 const LEDGER_AMOUNT_PICTURE = "PIC S9(16)V99 COMP-3";
 const AUDIT_EVENT_LENGTH = 32;
 const AUDIT_CORRELATION_LENGTH = 64;
-const FILE_STATUS_PICTURE = "PIC XX";
+const FILE_STATUS_PICTURE = "PIC X(2)";
+
+/**
+ * One COBOL word assembled from a base name and the suffixes the backend adds
+ * to it, kept inside the 30 characters Enterprise COBOL allows.
+ *
+ * Every generated name that is not simply the user's own — `-RESULT`, `-P1`,
+ * `-EXIT`, `-IDX`, a host variable's `-H2` — is built here rather than by
+ * string concatenation, because concatenation is what produced
+ * `IS-ELIGIBLE-FOR-INTEREST-RESULT`: a base already at the limit with seven
+ * more characters stuck on the end, accepted by GnuCOBOL's default dialect and
+ * rejected by the target.
+ */
+function cobolWord(...parts: string[]): string {
+  return fitCobolWord(parts.filter((part) => part.length > 0).join("-"));
+}
 
 /**
  * Field set when a computed array index falls outside its declared bounds.
@@ -137,6 +160,22 @@ const BOUNDS_FAILURE_CODE = "BANK-BOUNDS-VIOLATION";
  * caller exactly as a normal fall-through would.
  */
 let currentExitLabel: string | null = null;
+
+/** True when the program being emitted is entered by CICS rather than by JCL. */
+let currentProgramIsCics = false;
+
+/** Set when something jumped to `BANK-ABEND`, so the paragraph is emitted. */
+let abendParagraphUsed = false;
+
+/**
+ * Declared return type of the routine being emitted.
+ *
+ * A `return round(...)` has no target to read a scale from — the receiving
+ * field is the routine's own result cell — and rounding is decided by the
+ * receiver, so the type has to travel with the emission rather than with the
+ * expression.
+ */
+let currentReturnType: IRType | null = null;
 
 /** Index used when copying a table between a file record and working storage. */
 const COPY_INDEX_FIELD = "BANK-COPY-INDEX";
@@ -209,7 +248,7 @@ function nestedProgramName(name: string): string {
 
 function paragraphName(name: string): string {
   const base = toCobolParagraphName(name);
-  return declaredDataNames.has(base) ? `${base}-PARA` : base;
+  return declaredDataNames.has(base) ? cobolWord(base, "PARA") : base;
 }
 
 /**
@@ -250,6 +289,32 @@ function collectRecordParameterCells(
 const MAIN_PARAGRAPH = "BANK-MAIN";
 
 /**
+ * The one paragraph a failure with nowhere else to go ends the step from.
+ *
+ * Reached only from places that are not inside a routine — a `USE AFTER
+ * STANDARD ERROR` declarative, an XML handler section — because everywhere else
+ * a failure jumps to the enclosing routine's own exit and lets whatever
+ * `on failure` handler exists run first.
+ */
+const ABEND_PARAGRAPH = "BANK-ABEND";
+
+/** The paragraph that splits the job's PARM into the entry's parameters. */
+const PARM_PARAGRAPH = "BANK-ACCEPT-PARM";
+
+/** The linkage group a batch program is entered with. */
+const PARM_GROUP = "BANK-PARM";
+const PARM_LENGTH_FIELD = "BANK-PARM-LENGTH";
+const PARM_DATA_GROUP = "BANK-PARM-DATA";
+
+/**
+ * Abend code a CICS transaction ends with when it has failed.
+ *
+ * Four characters, which is what `ABCODE` takes, and not one of the codes CICS
+ * itself issues (those start with `A`).
+ */
+const CICS_ABEND_CODE = "BLNG";
+
+/**
  * The section the program's own paragraphs live in.
  *
  * Only needed when DECLARATIVES exist: everything after them has to be in a
@@ -259,11 +324,11 @@ const MAIN_SECTION = "BANK-BODY";
 
 /** The DECLARATIVES section and paragraph handling one file's I/O errors. */
 function errorSectionName(fileName: string): string {
-  return `${toCobolName(fileName)}-ERROR-SECTION`;
+  return cobolWord(toCobolName(fileName), "ERROR-SECTION");
 }
 
 function errorParagraphName(fileName: string): string {
-  return `${toCobolName(fileName)}-ERROR`;
+  return cobolWord(toCobolName(fileName), "ERROR");
 }
 
 /**
@@ -281,28 +346,222 @@ function findEntryTransaction(program: IRProgram): IRTransaction | null {
   );
 }
 
+/**
+ * The job's PARM, split into the entry transaction's scalar parameters.
+ *
+ * A batch program's input has to come from somewhere. Record parameters do not:
+ * a record a batch entry declares is a buffer it fills from a file, and it
+ * starts empty by design. A scalar does — a run date, a branch code, the
+ * idempotency key — and there was no convention for one at all, so the
+ * generated program left it in uninitialised working storage and moved it
+ * straight into the audit correlation.
+ *
+ * The convention is the one z/OS has: `PROCEDURE DIVISION USING` a parameter
+ * list whose first halfword is the length of what follows, positional, each
+ * parameter occupying its declared width. A CICS transaction is excluded — it
+ * is passed a COMMAREA and is started by a transaction identifier, not by an
+ * EXEC statement — and so is an IMS program, which the region enters with its
+ * PCBs.
+ *
+ * See `docs/jcl-model.md` for the PARM string a job supplies, and
+ * `emitParmParagraph` for how a PARM of the wrong length is refused.
+ */
+export interface BatchParmField {
+  /** BankTS parameter name, as the PARM template documents it. */
+  source: string;
+  /** COBOL name inside the linkage group. */
+  name: string;
+  picture: string;
+  /** Character positions the field occupies in the PARM text. */
+  width: number;
+  /** True when the field is numeric, so the text has to be tested before use. */
+  numeric: boolean;
+  /** The working-storage field the parameter is read into. */
+  target: string;
+}
+
+export function batchParmFields(program: IRProgram): BatchParmField[] {
+  const transaction = findEntryTransaction(program);
+  // An IMS program is entered by the region with its PCBs on the PROCEDURE
+  // DIVISION, so there is no parameter list left for a PARM to arrive on. It
+  // used to get one anyway: the linkage group was declared, the USING clause
+  // named the PCBs instead, and the program read a PARM area whose address
+  // nothing had set — then rejected it and ended the step with return code 12.
+  if (!transaction || transaction.isCics || program.databases.length > 0) {
+    return [];
+  }
+
+  const fields: BatchParmField[] = [];
+  transaction.parameters.forEach((parameter, index) => {
+    if (parameter.type.kind === "record" || parameter.type.kind === "array") {
+      return;
+    }
+    fields.push({
+      source: parameter.name,
+      name: cobolWord(PARM_GROUP, toCobolName(parameter.name)),
+      picture: parmPicture(parameter.type),
+      width: parmWidth(parameter.type),
+      numeric: isParmNumeric(parameter.type),
+      target: parameterFieldName(transaction.name, index),
+    });
+  });
+  return fields;
+}
+
+/**
+ * How a parameter is written in the PARM text.
+ *
+ * Everything is DISPLAY, because a PARM is characters someone types on an EXEC
+ * statement. A number therefore arrives as zoned decimal with a separate
+ * leading sign, which is a form a person can read and write and which MOVEs
+ * into the packed field the program computes on.
+ */
+function parmPicture(type: IRType): string {
+  switch (type.kind) {
+    case "decimal":
+    case "currency":
+      return `PIC S9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""} SIGN IS LEADING SEPARATE`;
+    case "temporal":
+      return temporalPicture(type.unit);
+    case "enum":
+      return `PIC X(${enumWidth(type.members)})`;
+    case "bool":
+      // `Y` or `N`, which is the same one byte the boolean field itself holds.
+      return "PIC X(1)";
+    case "nullable":
+      return parmPicture(type.inner);
+    default:
+      return `PIC X(${type.kind === "string" ? type.length : 1})`;
+  }
+}
+
+function parmWidth(type: IRType): number {
+  switch (type.kind) {
+    case "decimal":
+    case "currency":
+      // One position for the separate sign, then every digit.
+      return type.precision + 1;
+    case "temporal":
+      return temporalLength(type.unit);
+    case "enum":
+      return enumWidth(type.members);
+    case "bool":
+      return 1;
+    case "nullable":
+      return parmWidth(type.inner);
+    case "string":
+      return type.length;
+    default:
+      return 1;
+  }
+}
+
+function isParmNumeric(type: IRType): boolean {
+  switch (type.kind) {
+    case "decimal":
+    case "currency":
+    case "temporal":
+      return true;
+    case "nullable":
+      return isParmNumeric(type.inner);
+    default:
+      return false;
+  }
+}
+
+/**
+ * The paragraph that reads the PARM, and refuses one that is the wrong shape.
+ *
+ * A PARM shorter than the fields it feeds is a job submitted wrong. Running it
+ * anyway means the trailing parameters are whatever the region left there,
+ * which for an idempotency key means a duplicate posting nobody can trace. The
+ * step ends with return code 12 and says what it wanted instead.
+ */
+function emitParmParagraph(
+  program: IRProgram,
+  addLine: (line?: string) => void,
+): void {
+  const fields = batchParmFields(program);
+  const total = fields.reduce((sum, field) => sum + field.width, 0);
+  const exit = cobolWord(PARM_PARAGRAPH, "EXIT");
+
+  addLine(`       ${PARM_PARAGRAPH}.`);
+  addLine(`      *> The job's PARM, positional. See the JCL for the layout.`);
+  // Under z/OS a batch program is always entered with a parameter list, but a
+  // module called with none addresses storage it was not given, so the address
+  // is tested before the length is read.
+  addLine(`           IF ADDRESS OF ${PARM_GROUP} = NULL`);
+  addLine(
+    `               DISPLAY "NO PARM PASSED, ${total} BYTES REQUIRED" UPON SYSOUT`,
+  );
+  addLine(`               MOVE 12 TO ${RETURN_CODE_FIELD}`);
+  addLine(`               GO TO ${exit}`);
+  addLine(`           END-IF`);
+  addLine(`           IF ${PARM_LENGTH_FIELD} < ${total}`);
+  addLine(
+    `               DISPLAY "PARM IS " ${PARM_LENGTH_FIELD} " BYTES, ${total} REQUIRED" UPON SYSOUT`,
+  );
+  addLine(`               MOVE 12 TO ${RETURN_CODE_FIELD}`);
+  addLine(`               GO TO ${exit}`);
+  addLine(`           END-IF`);
+  for (const field of fields) {
+    if (field.numeric) {
+      // `MOVE` from a zoned field holding text that is not a number stores
+      // whatever those bytes are and computes on them afterwards. The class
+      // test is what turns a mistyped PARM into a rejected job.
+      addLine(`           IF ${field.name} IS NOT NUMERIC`);
+      addLine(
+        `               DISPLAY "PARM ${field.source.toUpperCase()} IS NOT NUMERIC" UPON SYSOUT`,
+      );
+      addLine(`               MOVE 12 TO ${RETURN_CODE_FIELD}`);
+      addLine(`               GO TO ${exit}`);
+      addLine(`           END-IF`);
+    }
+    addLine(`           MOVE ${field.name} TO ${field.target}`);
+  }
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exit}.`);
+  addLine(`           EXIT.`);
+}
+
 /** The paragraph a raise inside `name` jumps to. */
 function exitParagraphName(name: string): string {
-  return `${paragraphName(name)}-EXIT`;
+  return cobolWord(paragraphName(name), "EXIT");
 }
 
 /** The paragraph holding a transaction's statements, under its wrapper. */
 function bodyParagraphName(name: string): string {
-  return `${paragraphName(name)}-BODY`;
+  return cobolWord(paragraphName(name), "BODY");
 }
 
 /** The paragraph holding a transaction's `on failure` statements. */
 function failureParagraphName(name: string): string {
-  return `${paragraphName(name)}-FAILURE`;
+  return cobolWord(paragraphName(name), "FAILURE");
 }
 
-/** True when any function or transaction in the program can raise. */
-function programCanFail(program: IRProgram): boolean {
-  return (
-    program.functions.some((fn) => fn.canFail) ||
-    program.transactions.some((transaction) => transaction.canFail)
-  );
-}
+/**
+ * The two registers every generated program carries, in the words both the
+ * container and its contained programs describe them by.
+ *
+ * They used to be declared only when a `fail` statement appeared somewhere in
+ * the program, and written from anywhere: an OCCURS guard, an overflow, a
+ * failed OPEN. A program that declared no failure of its own but had a
+ * generated guard therefore moved into a field it never declared — and a
+ * contained program, which cannot see its container's ordinary working storage,
+ * did it whether the container declared one or not.
+ *
+ * EXTERNAL is what makes the second case work: a nested or recursive function
+ * is a separate program rather than a paragraph, so the run unit has to hold
+ * the register rather than any one program. Neither carries a VALUE clause.
+ * IBM honours VALUE on an elementary EXTERNAL item and GnuCOBOL ignores it,
+ * leaving the storage at LOW-VALUES, so a program relying on it would start
+ * from a different state on the two targets — `BANK-FAILURE-CODE NOT = SPACES`
+ * being true before anything had failed. `BANK-MAIN` sets both instead.
+ */
+const FAILURE_REGISTERS = [
+  `       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`,
+  `       01  ${RETURN_CODE_FIELD.padEnd(20)} PIC S9(4) COMP EXTERNAL.`,
+];
 
 function collectDataNames(program: IRProgram): Set<string> {
   const names = new Set<string>();
@@ -364,15 +623,30 @@ const COBOL_COMPARISONS: Record<string, string> = {
   "!=": "NOT =",
 };
 
-/** BankTS rounding modes to COBOL `ROUNDED MODE IS` phrases. */
-const COBOL_ROUNDING_MODES: Record<string, string> = {
-  HALF_EVEN: "NEAREST-EVEN",
-  HALF_UP: "NEAREST-AWAY-FROM-ZERO",
-  HALF_DOWN: "NEAREST-TOWARD-ZERO",
-  UP: "AWAY-FROM-ZERO",
-  DOWN: "TRUNCATION",
-  CEILING: "TOWARD-GREATER",
-  FLOOR: "TOWARD-LESSER",
+/**
+ * What Enterprise COBOL does for a rounding mode without being told how.
+ *
+ * The Language Reference defines exactly one rounding behaviour: "When ROUNDED
+ * is specified, the least significant digit of the resultant identifier is
+ * increased by 1 whenever the most significant digit of the excess is greater
+ * than or equal to 5" — half up, away from zero. Omitting the phrase truncates
+ * towards zero, which is `DOWN`.
+ *
+ * There is no `MODE IS` sub-phrase. `ROUNDED MODE IS NEAREST-EVEN` is COBOL
+ * 2002; `MODE IS` appears in the whole 6.4 Language Reference only as `ACCESS
+ * MODE IS`, and `NEAREST-EVEN` does not appear at all. GnuCOBOL's default
+ * dialect accepts it, which is how every `round(...)` in the repository passed
+ * a green local gate while emitting a phrase the target rejects. The other five
+ * modes are generated from the arithmetic; see `emitRounded`.
+ */
+const NATIVE_ROUNDING: Record<RoundingMode, "rounded" | "truncate" | null> = {
+  HALF_UP: "rounded",
+  DOWN: "truncate",
+  HALF_EVEN: null,
+  HALF_DOWN: null,
+  UP: null,
+  CEILING: null,
+  FLOOR: null,
 };
 
 export interface SourceMapEntry {
@@ -433,6 +707,21 @@ export interface JclEmitOptions {
    * the copy statements resolve to nothing and the program will not compile.
    */
   usesCopybooks?: boolean;
+  /**
+   * Whether the compile and link-edit steps `EXEC` IBM's cataloged procedure or
+   * are written out in full.
+   *
+   * `cataloged` is the default and is what a shop submits: `//COMPILE EXEC
+   * IGYWCL` with only the site-specific DDs overridden, so every STEPLIB, work
+   * file and LE library comes from the procedure rather than from this
+   * emitter's memory of it. `expanded` writes the same steps out, for a site
+   * that has no IGYWCL installed or wants to see what the procedure does.
+   *
+   * A program needing the CICS translator, the Db2 precompiler or the Report
+   * Writer precompiler is expanded whatever this says: those steps run ahead of
+   * the compiler, and a cataloged procedure has no step to put one in.
+   */
+  mode?: "cataloged" | "expanded";
   jclArtifactPath?: string;
 }
 
@@ -456,7 +745,25 @@ export function emitCobol(
       .map((entry) => entry.name),
   );
   currentDecimalPoint = options.decimalPoint ?? "point";
+  currentProgramIsCics = program.transactions.some(
+    (transaction) => transaction.isCics,
+  );
+  abendParagraphUsed = false;
   currentLocalFields = planLocalFields(program);
+  // The main program's rounding work fields cover every routine emitted into
+  // it. A recursive or nested function is its own program with its own storage,
+  // so it plans its own; see `emitRecursiveProgram` and `emitNestedProgram`.
+  currentRoundingGroups = planRoundingGroups([
+    ...program.functions
+      .filter((fn) => !fn.isRecursive && !fn.isNested)
+      .map((fn) => ({ body: fn.body, returnType: fn.returnType })),
+    ...program.transactions.flatMap((transaction) => [
+      { body: transaction.body, returnType: null },
+      ...(transaction.failureHandler
+        ? [{ body: transaction.failureHandler, returnType: null }]
+        : []),
+    ]),
+  ]);
   declaredDataNames = collectDataNames(program);
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
   currentRecords = new Map(
@@ -731,12 +1038,15 @@ export function emitCobol(
     );
     addLine(`       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP.`);
   }
-  if (programCanFail(program)) {
-    // EXTERNAL so a recursive function, which is a sibling program rather than
-    // a paragraph, raises into the same field the caller tests.
-    addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
+  for (const line of FAILURE_REGISTERS) {
+    addLine(line);
   }
-  addLine(`       01  ${RETURN_CODE_FIELD.padEnd(20)} PIC S9(4) COMP VALUE 0.`);
+
+  // Work fields for the rounding modes Enterprise COBOL has no phrase for. See
+  // `emitRounded` for what each one holds.
+  for (const line of roundingFieldDeclarations(currentRoundingGroups)) {
+    addLine(line);
+  }
 
   // IBM MQ. The constants come once, from `CMQV`; the control blocks come once
   // per queue, because each carries the state of its own open object and the
@@ -1031,13 +1341,32 @@ export function emitCobol(
     emitCursorDeclarations(program.sql, addLine);
   }
 
+  const parmFields = batchParmFields(program);
+
   if (
     recordParameterCells.length > 0 ||
     cicsTransactions.length > 0 ||
-    program.databases.length > 0
+    program.databases.length > 0 ||
+    parmFields.length > 0
   ) {
     addLine("");
     addLine(`       LINKAGE SECTION.`);
+  }
+
+  // What the job passed on the EXEC statement's PARM.
+  //
+  // A halfword length ahead of the text is what z/OS puts there and what the
+  // program is entered with; there is no other way in for a batch program's
+  // input. Without this the entry transaction's parameters were working storage
+  // nothing ever wrote — so `POST-ACCOUNTS-P3`, the idempotency key that
+  // satisfies BANK-TXN-001, was whatever the region left in that storage.
+  if (parmFields.length > 0) {
+    addLine(`       01  ${PARM_GROUP}.`);
+    addLine(`           05  ${PARM_LENGTH_FIELD.padEnd(24)} PIC S9(4) COMP.`);
+    addLine(`           05  ${PARM_DATA_GROUP}.`);
+    for (const field of parmFields) {
+      addLine(`               10  ${field.name.padEnd(20)} ${field.picture}.`);
+    }
   }
 
   // The I/O PCB comes first, always. A batch program needs it to make system
@@ -1054,8 +1383,8 @@ export function emitCobol(
   if (program.databases.length > 0) {
     addLine(`       01  ${IO_PCB_NAME}.`);
     addLine(`           05  ${`${IO_PCB_NAME}-LTERM`.padEnd(24)} PIC X(8).`);
-    addLine(`           05  FILLER                   PIC XX.`);
-    addLine(`           05  ${`${IO_PCB_NAME}-STATUS`.padEnd(24)} PIC XX.`);
+    addLine(`           05  FILLER                   PIC X(2).`);
+    addLine(`           05  ${`${IO_PCB_NAME}-STATUS`.padEnd(24)} PIC X(2).`);
     addLine(
       `           05  ${`${IO_PCB_NAME}-DATE`.padEnd(24)} PIC S9(7) COMP-3.`,
     );
@@ -1094,8 +1423,8 @@ export function emitCobol(
     const pcb = pcbName(database.name);
     addLine(`       01  ${pcb}.`);
     addLine(`           05  ${`${pcb}-DBD-NAME`.padEnd(24)} PIC X(8).`);
-    addLine(`           05  ${`${pcb}-SEG-LEVEL`.padEnd(24)} PIC XX.`);
-    addLine(`           05  ${`${pcb}-STATUS`.padEnd(24)} PIC XX.`);
+    addLine(`           05  ${`${pcb}-SEG-LEVEL`.padEnd(24)} PIC X(2).`);
+    addLine(`           05  ${`${pcb}-STATUS`.padEnd(24)} PIC X(2).`);
     addLine(`           05  ${`${pcb}-PROC-OPTS`.padEnd(24)} PIC X(4).`);
     addLine(`           05  FILLER                   PIC S9(5) COMP.`);
     addLine(`           05  ${`${pcb}-SEG-NAME`.padEnd(24)} PIC X(8).`);
@@ -1147,7 +1476,9 @@ export function emitCobol(
           IO_PCB_NAME,
           ...program.databases.map((database) => pcbName(database.name)),
         ].join(" ")}.`
-      : `       PROCEDURE DIVISION.`,
+      : parmFields.length > 0
+        ? `       PROCEDURE DIVISION USING ${PARM_GROUP}.`
+        : `       PROCEDURE DIVISION.`,
   );
 
   // DECLARATIVES come first and are the only thing allowed to precede the
@@ -1176,9 +1507,61 @@ export function emitCobol(
   const entryTransaction = findEntryTransaction(program);
   if (entryTransaction) {
     addLine(`       ${MAIN_PARAGRAPH}.`);
-    addLine(`           PERFORM ${paragraphName(entryTransaction.name)}`);
-    addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
-    addLine(`           GOBACK.`);
+    // Both registers are EXTERNAL, and a VALUE clause on an EXTERNAL item is
+    // honoured by Enterprise COBOL and ignored by GnuCOBOL. Set here, the two
+    // targets start from the same state instead of one of them beginning with
+    // a failure code of LOW-VALUES that nothing raised.
+    addLine(`           MOVE 0 TO ${RETURN_CODE_FIELD}`);
+    addLine(`           MOVE SPACES TO ${FAILURE_CODE_FIELD}`);
+    const takesParm = batchParmFields(program).length > 0;
+    if (takesParm) {
+      addLine(
+        `           PERFORM ${PARM_PARAGRAPH} THRU ${cobolWord(PARM_PARAGRAPH, "EXIT")}`,
+      );
+      // A rejected PARM must not be followed by the work it was meant to
+      // parameterise.
+      addLine(`           IF ${RETURN_CODE_FIELD} = 0`);
+      addLine(
+        `               PERFORM ${paragraphName(entryTransaction.name)} THRU ${exitParagraphName(entryTransaction.name)}`,
+      );
+      addLine(`           END-IF`);
+    } else {
+      addLine(
+        `           PERFORM ${paragraphName(entryTransaction.name)} THRU ${exitParagraphName(entryTransaction.name)}`,
+      );
+    }
+    if (entryTransaction.isCics) {
+      // A CICS program has no return code: RETURN-CODE is a batch step's
+      // answer to JCL, and nothing under CICS reads it. What a transaction that
+      // has failed owes the region is an abend, which is what backs out the
+      // unit of work and puts something in the log with a code on it.
+      addLine(`           IF ${RETURN_CODE_FIELD} NOT = 0`);
+      addLine(
+        `               EXEC CICS ABEND ABCODE("${CICS_ABEND_CODE}") END-EXEC`,
+      );
+      addLine(`           END-IF`);
+      if (endsWithReturnTransid(entryTransaction.body)) {
+        // The body already returned, naming what runs next. A second RETURN
+        // would be unreachable and would read as a mistake.
+        addLine(`           GOBACK.`);
+      } else {
+        // RETURN and then GOBACK, which is how the CICS Application
+        // Programming Guide's own sample ends (Figure 31, "Sample code for
+        // loading the CWA"). Ending the task is something CICS does, not
+        // something COBOL does: without the GOBACK this paragraph falls
+        // through into the next one, and under a run time where RETURN is an
+        // ordinary call — which is what the conformance harness has — the
+        // transaction ran its whole body a second time.
+        addLine(`           EXEC CICS RETURN END-EXEC`);
+        addLine(`           GOBACK.`);
+      }
+    } else {
+      addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
+      addLine(`           GOBACK.`);
+    }
+    if (takesParm) {
+      emitParmParagraph(program, addLine);
+    }
   }
 
   for (const fn of program.functions) {
@@ -1210,20 +1593,16 @@ export function emitCobol(
     if (transaction.canFail) {
       emitFailingTransaction(transaction, addLine);
     } else {
+      // One exit, like every other routine. Ending the program is BANK-MAIN's
+      // job, which is what makes the two lines after its PERFORM reachable
+      // rather than dead.
+      currentExitLabel = exitParagraphName(transaction.name);
       emitTransactionBody(transaction.body, addLine, 11);
       emitCommareaExit(transaction, addLine);
-      // The last thing before leaving, so no call can overwrite it.
-      addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
-      // A CICS program returns control to CICS rather than to a caller.
-      addLine(
-        transaction.isCics
-          ? endsWithReturnTransid(transaction.body)
-            ? // The body already returned, naming what runs next. A second
-              // RETURN would be unreachable and would read as a mistake.
-              `           GOBACK.`
-            : `           EXEC CICS RETURN END-EXEC.`
-          : `           GOBACK.`,
-      );
+      currentExitLabel = null;
+      addLine(`           CONTINUE.`);
+      addLine(`       ${exitParagraphName(transaction.name)}.`);
+      addLine(`           EXIT.`);
     }
 
     currentBindings = new Map();
@@ -1238,6 +1617,24 @@ export function emitCobol(
       category: "transaction",
       symbol: transaction.name,
     });
+  }
+
+  // Reached from the places a failure has no enclosing routine to jump to: a
+  // file error declarative, an XML handler section. Emitted only when something
+  // jumps to it, so a program with no such path does not carry a paragraph
+  // nothing reaches.
+  if (abendParagraphUsed) {
+    addLine(`       ${ABEND_PARAGRAPH}.`);
+    if (currentProgramIsCics) {
+      addLine(
+        `           EXEC CICS ABEND ABCODE("${CICS_ABEND_CODE}") END-EXEC`,
+      );
+      addLine(`           EXEC CICS RETURN END-EXEC`);
+      addLine(`           GOBACK.`);
+    } else {
+      addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
+      addLine(`           GOBACK.`);
+    }
   }
 
   // An XML handler is a section, so it goes after the last GOBACK for the same
@@ -1340,6 +1737,42 @@ export function emitCobol(
   };
 }
 
+/**
+ * The datasets a generated job reads and writes.
+ *
+ * Every qualifier is eight characters or fewer and the whole name is well
+ * inside 44, which the JCL Reference requires and the previous emitter did not
+ * meet: it turned the build path into a name by replacing the slashes, so
+ * `dist/cobol/BATCH-INTEREST-ACCRUAL.cbl` became
+ * `DIST.COBOL.BATCHINTERESTACCRUAL` — a 20-character middle qualifier, and a
+ * JCL error before the compiler was ever reached.
+ *
+ * They are placeholders for a site's own standards, and `docs/jcl-model.md`
+ * says which ones a site changes.
+ */
+const JCL_SOURCE_LIBRARY = "BANKLANG.COBOL";
+const JCL_COPY_LIBRARY = "BANKLANG.COPYLIB";
+const JCL_LOAD_LIBRARY = "BANKLANG.LOADLIB";
+const JCL_OBJECT_LIBRARY = "BANKLANG.OBJLIB";
+const JCL_DBRM_LIBRARY = "BANKLANG.DBRMLIB";
+const JCL_DATA_PREFIX = "BANKLANG";
+
+/**
+ * Where Enterprise COBOL and Language Environment are installed.
+ *
+ * The values IBM's own cataloged procedures default to — `IGYWCL PROC
+ * LNGPRFX='IGY.V6R4M0', LIBPRFX='CEE'` — because a site that has moved them
+ * knows it has, and a site that has not gets a job that runs.
+ */
+const JCL_COMPILER_PREFIX = "IGY.V6R4M0";
+const JCL_LE_PREFIX = "CEE";
+
+/** Work files IBM's procedure allocates for the compiler. All sixteen. */
+const COMPILER_WORK_DDS = [
+  ...Array.from({ length: 15 }, (_unused, index) => `SYSUT${index + 1}`),
+  "SYSMDECK",
+];
+
 export function emitJcl(
   program: IRProgram,
   options: JclEmitOptions = {},
@@ -1347,10 +1780,6 @@ export function emitJcl(
   const jclArtifactPath =
     options.jclArtifactPath ?? defaultJclArtifactPath(program.moduleName);
   const jobName = toJclJobName(program.moduleName);
-  const cobolArtifactPath = defaultCobolArtifactPath(program.moduleName);
-  const copybookArtifactPaths = program.records.map(
-    (record) => `dist/copybooks/${copybookMemberName(record.name)}.cpy`,
-  );
 
   const needsDb2 = program.backendRequirements.includes("db2-precompiler");
   const needsCics = program.backendRequirements.includes("cics-translator");
@@ -1373,17 +1802,36 @@ export function emitJcl(
   // transform the job name uses, so every name in this job agrees.
   const moduleName = toJclJobName(program.moduleName);
 
-  const lines = [
-    "//* Generated by bankc.",
-    "//* Do not edit this file directly.",
-    `//${jobName} JOB (BANKLANG),'${toCobolName(program.moduleName)}',CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID`,
+  // A step ahead of the compiler means the compiler reads that step's output
+  // rather than the source library, and it means the expanded form is the only
+  // one available: a cataloged procedure has no step to put a translator in
+  // front of. This is not a preference — it is what the program needs.
+  const preprocessed = needsReportWriter || needsCics || needsDb2;
+  const expanded = options.mode === "expanded" || preprocessed;
+
+  const entryTransaction = findEntryTransaction(program);
+  const parmFields = batchParmFields(program);
+  const parmTemplate = parmFields
+    .map((field) => "x".repeat(field.width))
+    .join("");
+
+  // A COPY resolves against SYSLIB, and so does `COPY CMQV`: an MQ program
+  // reads the queue manager's own copybooks whether or not the record layouts
+  // were written to a library.
+  const usesCopyLibrary = options.usesCopybooks || needsMq;
+
+  const lines: string[] = [
+    "//* Generated by bankc. Do not edit this file directly.",
+    `//${jobName} JOB (BANKLANG),'${toCobolName(program.moduleName)}',`,
+    "//             CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID,REGION=0M",
     needsCics
       ? "//* Build job for the generated CICS program. It is installed, not run."
-      : "//* Batch job example for the generated COBOL artifact.",
-    `//* COBOL source: ${cobolArtifactPath}`,
-    ...copybookArtifactPaths.map(
-      (copybookPath) => `//* COPYBOOK source: ${copybookPath}`,
-    ),
+      : "//* Compile, link-edit, and run the generated COBOL program.",
+    `//* Source member:   ${JCL_SOURCE_LIBRARY}(${moduleName})`,
+    ...(usesCopyLibrary ? [`//* Copybooks:       ${JCL_COPY_LIBRARY}`] : []),
+    `//* Load module:     ${JCL_LOAD_LIBRARY}(${moduleName})`,
+    "//* Dataset names, unit and space parameters are placeholders for a",
+    "//* site's own standards. See docs/jcl-model.md.",
   ];
 
   // Every step after the first is bypassed when an earlier one failed. Without
@@ -1391,12 +1839,14 @@ export function emitJcl(
   // whatever load module the library already held — the previous version — and
   // the job ends with a return code that says it worked.
   //
-  // COND states when to *skip*: 4 less than the highest return code so far.
+  // `COND=(4,LT)` is what BankLang used to write everywhere; IBM's own
+  // procedures write `COND=(8,LT,COBOL)` on the link-edit, because a compile
+  // that only warned returns 4 and its object module is still good.
   const cond = ",COND=(4,LT)";
 
-  // The source each step reads: the artifact, or whatever the step before it
-  // wrote. Chaining them by name here keeps the order in one place.
-  let source = `//SYSIN    DD DISP=SHR,DSN=${toJclDatasetName(cobolArtifactPath)}`;
+  // The source each step reads: the library member, or whatever the step before
+  // it wrote. Chaining them by name here keeps the order in one place.
+  let source = `//SYSIN    DD DISP=SHR,DSN=${JCL_SOURCE_LIBRARY}(${moduleName})`;
   let earlierStep = false;
 
   // Report Writer runs before everything else. It passes EXEC ... END-EXEC
@@ -1410,12 +1860,12 @@ export function emitJcl(
     lines.push(
       "//* A REPORT SECTION is not Enterprise COBOL. It is expanded by the",
       "//* Report Writer precompiler (5798-DYR) before the compiler sees it.",
-      "//RWPRE    EXEC PGM=SPCRWCOB",
+      "//RWPRE    EXEC PGM=SPCRWCOB,REGION=0M",
       "//STEPLIB  DD DISP=SHR,DSN=RW.SCXRPREC",
       "//SYSPRINT DD SYSOUT=*",
       source,
-      "//RWWORK   DD UNIT=SYSDA,SPACE=(CYL,(1,1))",
-      "//SYSINS   DD DSN=&&RWOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
+      "//RWWORK   DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))",
+      "//SYSINS   DD DSN=&&RWOUT,DISP=(NEW,PASS),UNIT=SYSALLDA,",
       "//            SPACE=(CYL,(1,1))",
     );
     source = "//SYSIN    DD DSN=&&RWOUT,DISP=(OLD,DELETE)";
@@ -1427,11 +1877,11 @@ export function emitJcl(
   if (needsCics) {
     lines.push(
       "//* EXEC CICS must be translated before any compiler reads the source.",
-      `//TRANSLAT EXEC PGM=DFHECP1$${earlierStep ? cond : ""}`,
+      `//TRANSLAT EXEC PGM=DFHECP1$,REGION=0M${earlierStep ? cond : ""}`,
       "//STEPLIB  DD DISP=SHR,DSN=CICSTS.SDFHLOAD",
       "//SYSPRINT DD SYSOUT=*",
       source,
-      "//SYSPUNCH DD DSN=&&TRANOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
+      "//SYSPUNCH DD DSN=&&TRANOUT,DISP=(NEW,PASS),UNIT=SYSALLDA,",
       "//            SPACE=(CYL,(1,1))",
     );
     source = "//SYSIN    DD DSN=&&TRANOUT,DISP=(OLD,DELETE)";
@@ -1442,54 +1892,70 @@ export function emitJcl(
     lines.push(
       "//* EXEC SQL must be precompiled, and the resulting DBRM bound, before",
       "//* the program can run. Neither step is optional.",
-      `//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'${earlierStep ? cond : ""}`,
+      `//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)',REGION=0M${earlierStep ? cond : ""}`,
       "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
-      `//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB(${moduleName})`,
+      `//DBRMLIB  DD DISP=SHR,DSN=${JCL_DBRM_LIBRARY}(${moduleName})`,
       "//SYSPRINT DD SYSOUT=*",
       source,
-      "//SYSCIN   DD DSN=&&PRECOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
+      "//SYSCIN   DD DSN=&&PRECOUT,DISP=(NEW,PASS),UNIT=SYSALLDA,",
       "//            SPACE=(CYL,(1,1))",
     );
     source = "//SYSIN    DD DSN=&&PRECOUT,DISP=(OLD,DELETE)";
     earlierStep = true;
   }
 
-  lines.push(
-    `//COMPILE  EXEC PGM=IGYCRCTL${earlierStep ? cond : ""}`,
-    "//SYSPRINT DD SYSOUT=*",
-    // A COPY resolves against SYSLIB. Without it the copy statements find
-    // nothing and the compile fails on undefined data names.
-    ...(options.usesCopybooks || needsMq
-      ? [
-          "//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB",
-          // CMQV, CMQODV, CMQMDV, CMQPMOV and CMQGMOV live in the MQ
-          // installation's COBOL copybook library, not in this repository.
-          ...(needsMq ? ["//         DD DISP=SHR,DSN=MQM.SCSQCOBC"] : []),
-        ]
-      : []),
-    source,
-    "//SYSLIN   DD DSN=&&OBJ,DISP=(NEW,PASS),UNIT=SYSDA,",
-    "//            SPACE=(CYL,(1,1))",
-    // The link-edit step is what gives the load module its name, which is what
-    // a later EXEC PGM= and a BIND MEMBER() have to agree with.
-    "//LKED     EXEC PGM=IEWL,COND=(4,LT)",
-    "//SYSPRINT DD SYSOUT=*",
-    "//SYSLIN   DD DSN=&&OBJ,DISP=(OLD,DELETE)",
-    // The precompiler leaves external references to the Report Writer run time
-    // library, so the link-edit has to resolve them. Without it the load module
-    // is short of every routine the expansion calls.
-    ...(needsReportWriter ? ["//SYSLIB   DD DISP=SHR,DSN=RW.SCXRRUN"] : []),
-    // CSQBSTUB is the batch stub: it turns each MQI CALL into an entry the
-    // queue manager resolves at run time. Without it the link-edit leaves
-    // MQCONN and the rest unresolved.
-    ...(needsMq
-      ? [
-          "//SYSLIB   DD DISP=SHR,DSN=MQM.SCSQLOAD",
-          "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
-        ]
-      : []),
-    `//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(${moduleName})`,
-  );
+  if (expanded) {
+    lines.push(
+      ...expandedCompileAndLink(source, moduleName, {
+        usesCopyLibrary,
+        needsMq,
+        needsReportWriter,
+        cond: earlierStep ? cond : "",
+      }),
+    );
+  } else {
+    // What a shop actually submits. IGYWCL is IBM's own two-step compile and
+    // link-edit procedure, so every STEPLIB, every one of the sixteen work
+    // files, the LE link libraries, and REGION=0M come from the procedure
+    // rather than from this emitter's memory of them. The job supplies only
+    // what the procedure documents as the caller's: SYSIN, SYSLIB, and where
+    // the load module goes.
+    lines.push(
+      "//* IGYWCL is IBM's compile-and-link cataloged procedure. It supplies",
+      "//* STEPLIB, SYSUT1-SYSUT15, SYSMDECK, the LE link libraries, and",
+      "//* REGION=0M. Only the site-specific DDs are overridden here.",
+      "//* PGMLIB must name a load library that already exists: the",
+      "//* procedure allocates SYSLMOD DISP=(MOD,PASS), so a library that",
+      "//* does not exist is created, passed, and gone at end of job.",
+      "//COMPILE  EXEC IGYWCL,",
+      `//             LNGPRFX='${JCL_COMPILER_PREFIX}',LIBPRFX='${JCL_LE_PREFIX}',`,
+      `//             PGMLIB='${JCL_LOAD_LIBRARY}',GOPGM=${moduleName}`,
+      `//COBOL.SYSIN    DD DISP=SHR,DSN=${JCL_SOURCE_LIBRARY}(${moduleName})`,
+      ...(usesCopyLibrary
+        ? [
+            `//COBOL.SYSLIB   DD DISP=SHR,DSN=${JCL_COPY_LIBRARY}`,
+            // CMQV, CMQODV, CMQMDV, CMQPMOV and CMQGMOV live in the MQ
+            // installation's COBOL copybook library, not in this repository.
+            ...(needsMq
+              ? ["//               DD DISP=SHR,DSN=MQM.SCSQCOBC"]
+              : []),
+          ]
+        : []),
+      // Every `CALL "BANKLEDG"` is static under the default NODYNAM, so the
+      // binder has to find those modules. Automatic call resolution searches
+      // SYSLIB; without it the load module is short of every routine it calls
+      // and fails at bind, not at run time.
+      `//LKED.SYSLIB    DD DISP=SHR,DSN=${JCL_OBJECT_LIBRARY}`,
+      `//               DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEELKEX`,
+      `//               DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEELKED`,
+      ...(needsMq
+        ? [
+            "//               DD DISP=SHR,DSN=MQM.SCSQLOAD",
+            "//               DD DISP=SHR,DSN=MQM.SCSQANLE",
+          ]
+        : []),
+    );
+  }
 
   if (needsDb2) {
     lines.push(
@@ -1497,9 +1963,9 @@ export function emitJcl(
       // and IKJEFT1B stops the moment anything returns non-zero — so the plan
       // below would not be bound because the package warned. The step
       // allocates no datasets, so nothing turns on its abend behaviour.
-      "//BIND     EXEC PGM=IKJEFT01,COND=(4,LT)",
+      "//BIND     EXEC PGM=IKJEFT01,REGION=0M,COND=(4,LT)",
       "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
-      "//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB",
+      `//DBRMLIB  DD DISP=SHR,DSN=${JCL_DBRM_LIBRARY}`,
       "//SYSTSPRT DD SYSOUT=*",
       "//SYSTSIN  DD *",
       "  DSN SYSTEM(DSN)",
@@ -1520,6 +1986,15 @@ export function emitJcl(
   // A CICS program has no run step at all: it is started by a transaction
   // identifier in a region, not by EXEC PGM in a job.
   if (!needsCics) {
+    if (parmFields.length > 0) {
+      lines.push(
+        "//* PARM layout, positional, one field per entry parameter:",
+        ...parmFields.map(
+          (field) =>
+            `//*   ${field.source} ${field.picture.replace(/^PIC /, "")} (${field.width})`,
+        ),
+      );
+    }
     if (needsDb2) {
       // A program with embedded SQL cannot be started by EXEC PGM=. It needs a
       // thread to Db2, and what establishes one is the DSN command processor:
@@ -1538,29 +2013,57 @@ export function emitJcl(
       lines.push(
         "//* A Db2 program is run by the DSN command processor under TSO in",
         "//* batch, not by EXEC PGM=. Starting it directly gives it no thread.",
-        `//RUN      EXEC PGM=IKJEFT1B,DYNAMNBR=20${cond}`,
+        `//RUN      EXEC PGM=IKJEFT1B,DYNAMNBR=20,REGION=0M${cond}`,
         "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
+        `//         DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
+        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
+        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
         "//SYSTSPRT DD SYSOUT=*",
       );
     } else {
-      lines.push(`//RUN      EXEC PGM=${moduleName}${cond}`);
+      lines.push(
+        `//RUN      EXEC PGM=${moduleName}${parmFields.length > 0 ? `,PARM='${parmTemplate}'` : ""},`,
+        `//             REGION=0M${cond}`,
+        // Without STEPLIB the module that was just written to the load library
+        // is not on any search the step makes, and the step ends S806 — module
+        // not found — having compiled and linked perfectly.
+        `//STEPLIB  DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
+        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
+        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
+      );
     }
     // The MQ run-time libraries. The stub linked into the load module resolves
     // each MQI call through them, so without these the program abends on its
     // first MQCONN rather than reporting a reason code.
     if (needsMq) {
       lines.push(
-        "//STEPLIB  DD DISP=SHR,DSN=MQM.SCSQANLE",
+        "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
         "//         DD DISP=SHR,DSN=MQM.SCSQLOAD",
       );
     }
     lines.push(
       "//SYSOUT   DD SYSOUT=*",
+      // Language Environment reads its run-time options from here. A batch step
+      // that has none stated runs on whatever the installation defaults are,
+      // which is not something a job's behaviour should depend on silently.
+      "//CEEOPTS  DD *",
+      "  TERMTHDACT(UADUMP)",
+      "  TRAP(ON)",
+      "/*",
       // Without these an abend produces no readable dump, and what is left to
       // diagnose it with is the return code.
       "//CEEDUMP  DD SYSOUT=*",
       "//SYSUDUMP DD SYSOUT=*",
     );
+    // `ACCEPT ... FROM SYSIN` reads a card from this DD. The statement used to
+    // be emitted with no DD allocated for it at all.
+    if (readsSysin(program)) {
+      lines.push(
+        "//* The program ACCEPTs control input from SYSIN.",
+        "//SYSIN    DD *",
+        "/*",
+      );
+    }
     // The sort product spills to work datasets, and three is the customary
     // allocation. A merge needs none — its inputs already arrive in order — so
     // this asks for a real SORT rather than for a SortStatement.
@@ -1575,13 +2078,17 @@ export function emitJcl(
     ) {
       for (const index of [1, 2, 3]) {
         lines.push(
-          `//SORTWK0${index} DD UNIT=SYSDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
+          `//SORTWK0${index} DD UNIT=SYSALLDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
         );
       }
     }
     for (const file of program.files) {
       const dd = toDdName(file.name).padEnd(8);
-      const dsn = `BANKLANG.${toDdName(file.name)}`;
+      const dsn = `${JCL_DATA_PREFIX}.${toDdName(file.name)}`;
+      // The record length is the record the FD describes, which the compiler
+      // has already laid out. A dataset created without one is allocated with
+      // the system default and the first WRITE fails on a length mismatch.
+      const lrecl = describeRecordLayout(file.record).totalLength;
       if (file.mode === "input") {
         lines.push(`//${dd} DD DISP=SHR,DSN=${dsn}`);
       } else if (file.mode === "update") {
@@ -1597,7 +2104,8 @@ export function emitJcl(
         // complete.
         lines.push(
           `//${dd} DD DSN=${dsn},DISP=(NEW,CATLG,DELETE),`,
-          "//            UNIT=SYSDA,SPACE=(CYL,(1,1))",
+          "//            UNIT=SYSALLDA,SPACE=(CYL,(1,1)),",
+          `//            DCB=(RECFM=FB,LRECL=${lrecl},BLKSIZE=0)`,
         );
       }
     }
@@ -1608,7 +2116,8 @@ export function emitJcl(
         "//SYSTSIN  DD *",
         "  DSN SYSTEM(DSN)",
         `  RUN PROGRAM(${moduleName}) PLAN(${moduleName}) -`,
-        "      LIB('BANKLANG.LOADLIB')",
+        `      LIB('${JCL_LOAD_LIBRARY}')${parmFields.length > 0 ? " -" : ""}`,
+        ...(parmFields.length > 0 ? [`      PARM('${parmTemplate}')`] : []),
         "  END",
         "/*",
       );
@@ -1623,20 +2132,139 @@ export function emitJcl(
     );
   }
 
-  lines.push(
-    "//* This job is a documentation-friendly skeleton. Dataset names, unit",
-    needsDb2
-      ? "//* and space parameters, and the Db2 subsystem and package names are"
-      : "//* and space parameters, and the load library name are",
-    "//* placeholders for an installation's own standards.",
-  );
-
   // The JCL has no source map to keep in step, so the cards are laid out once
   // at the end rather than statement by statement.
   return {
     jcl: `${lines.flatMap((line) => toJclStatement(line)).join("\n")}\n`,
     jclArtifactPath,
   };
+}
+
+/**
+ * The compile and link-edit steps written out, for a job that cannot use the
+ * cataloged procedure.
+ *
+ * A program needing the CICS translator, the Db2 precompiler, or the Report
+ * Writer precompiler has a step ahead of the compiler, and IGYWCL has nowhere
+ * to put one — so the steps are written here instead. Every DD comes from
+ * IGYWCL as the Programming Guide prints it: the three STEPLIB libraries, the
+ * fifteen SYSUT work files and SYSMDECK, `REGION=0M` on both steps, the two LE
+ * link libraries on the binder's SYSLIB, `PGM=IEWBLINK`, and
+ * `COND=(8,LT,COBOL)` rather than 4 — a compile that only warned still produces
+ * an object module worth binding.
+ */
+function expandedCompileAndLink(
+  source: string,
+  moduleName: string,
+  options: {
+    usesCopyLibrary: boolean;
+    needsMq: boolean;
+    needsReportWriter: boolean;
+    cond: string;
+  },
+): string[] {
+  return [
+    "//* Written out rather than EXEC IGYWCL, because a translator or a",
+    "//* precompiler runs ahead of the compiler and a cataloged procedure has",
+    "//* no step to put one in. The DDs are IGYWCL's own.",
+    `//COBOL    EXEC PGM=IGYCRCTL,REGION=0M${options.cond}`,
+    `//STEPLIB  DD DISP=SHR,DSN=${JCL_COMPILER_PREFIX}.SIGYCOMP`,
+    `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
+    `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
+    "//SYSPRINT DD SYSOUT=*",
+    // A COPY resolves against SYSLIB. Without it the copy statements find
+    // nothing and the compile fails on undefined data names.
+    ...(options.usesCopyLibrary
+      ? [
+          `//SYSLIB   DD DISP=SHR,DSN=${JCL_COPY_LIBRARY}`,
+          ...(options.needsMq
+            ? ["//         DD DISP=SHR,DSN=MQM.SCSQCOBC"]
+            : []),
+        ]
+      : []),
+    source,
+    // IGYWCL's own SYSLIN, with SYSLBLK at the 3200 its parameter list
+    // documents as the default block size for the object dataset.
+    "//SYSLIN   DD DSN=&&LOADSET,UNIT=SYSALLDA,",
+    "//            DISP=(MOD,PASS),SPACE=(CYL,(1,1)),BLKSIZE=3200",
+    ...COMPILER_WORK_DDS.map(
+      (dd) => `//${dd.padEnd(8)} DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))`,
+    ),
+    // The link-edit step is what gives the load module its name, which is what
+    // a later EXEC PGM= and a BIND MEMBER() have to agree with.
+    "//LKED     EXEC PGM=IEWBLINK,REGION=0M,COND=(8,LT,COBOL)",
+    "//SYSPRINT DD SYSOUT=*",
+    "//SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)",
+    "//         DD DDNAME=SYSIN",
+    // Automatic call resolution searches SYSLIB, which is how a static
+    // `CALL "BANKLEDG"` under the default NODYNAM is resolved at all.
+    `//SYSLIB   DD DISP=SHR,DSN=${JCL_OBJECT_LIBRARY}`,
+    `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEELKEX`,
+    `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEELKED`,
+    // The precompiler leaves external references to the Report Writer run time
+    // library, so the link-edit has to resolve them. Without it the load module
+    // is short of every routine the expansion calls.
+    ...(options.needsReportWriter
+      ? ["//         DD DISP=SHR,DSN=RW.SCXRRUN"]
+      : []),
+    // CSQBSTUB is the batch stub: it turns each MQI CALL into an entry the
+    // queue manager resolves at run time. Without it the link-edit leaves
+    // MQCONN and the rest unresolved.
+    ...(options.needsMq
+      ? [
+          "//         DD DISP=SHR,DSN=MQM.SCSQLOAD",
+          "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
+        ]
+      : []),
+    // IGYWCL's SYSLMOD with `&PGMLIB(&GOPGM)` resolved. `DISP=(MOD,PASS)`
+    // rather than SHR: two jobs writing members of one PDS under SHR can
+    // corrupt its directory, and MOD serialises on the dataset the way OLD
+    // does while still adding a member rather than replacing the library.
+    `//SYSLMOD  DD DSN=${JCL_LOAD_LIBRARY}(${moduleName}),`,
+    "//            SPACE=(CYL,(3,1,1)),",
+    "//            UNIT=SYSALLDA,DISP=(MOD,PASS),DSNTYPE=LIBRARY",
+    "//SYSUT1   DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))",
+  ];
+}
+
+/** True when the program reads a card from SYSIN, so the job has to allocate it. */
+function readsSysin(program: IRProgram): boolean {
+  const inBlock = (block: IRBlock): boolean =>
+    block.statements.some(function check(statement: IRStatement): boolean {
+      switch (statement.kind) {
+        case "ConsoleStatement":
+          return (
+            statement.operation === "accept" && statement.source === "parameter"
+          );
+        case "IfStatement":
+          return (
+            inBlock(statement.thenBranch) ||
+            (statement.elseBranch ? inBlock(statement.elseBranch) : false)
+          );
+        case "WhileStatement":
+        case "ForEachStatement":
+        case "CursorLoopStatement":
+          return inBlock(statement.body);
+        case "SwitchStatement":
+          return (
+            statement.cases.some((branch) => inBlock(branch.body)) ||
+            (statement.otherwise ? inBlock(statement.otherwise) : false)
+          );
+        default:
+          return false;
+      }
+    });
+
+  return (
+    program.functions.some((fn) => inBlock(fn.body)) ||
+    program.transactions.some(
+      (transaction) =>
+        inBlock(transaction.body) ||
+        (transaction.failureHandler
+          ? inBlock(transaction.failureHandler)
+          : false),
+    )
+  );
 }
 
 /**
@@ -1715,7 +2343,7 @@ function fdFieldName(file: IRFile, fieldName: string): string {
 }
 
 function relativeKeyName(file: IRFile): string {
-  return `${toCobolName(file.name)}-RRN`;
+  return cobolWord(toCobolName(file.name), "RRN");
 }
 
 /**
@@ -1792,11 +2420,11 @@ function emitRelativeKeys(
  * data name. The suffix is also the conventional COBOL spelling.
  */
 function fileCobolName(fileName: string): string {
-  return `${toCobolName(fileName)}-FILE`;
+  return cobolWord(toCobolName(fileName), "FILE");
 }
 
 function fileRecordName(file: IRFile): string {
-  return `${toCobolName(file.name)}-RECORD`;
+  return cobolWord(toCobolName(file.name), "RECORD");
 }
 
 /**
@@ -2086,7 +2714,10 @@ let suppressInitialValues = false;
  * dimension has to be named even though nothing in the source names it.
  */
 function innerTableName(fieldName: string): string {
-  return `${fieldName}Item`;
+  // Composed from the COBOL name rather than from the source one, so the
+  // declaration and every reference shorten by the same steps when the base is
+  // long enough to need shortening at all.
+  return cobolWord(toCobolFieldName(fieldName), "ITEM");
 }
 
 /**
@@ -2096,19 +2727,23 @@ function innerTableName(fieldName: string): string {
  * itself gains the suffix, so the group it belongs to still qualifies it.
  */
 function withInnerTableName(base: string, depth: number): string {
-  const suffix = "-ITEM".repeat(depth);
   const separator = base.indexOf(" OF ");
-  return separator < 0
-    ? `${base}${suffix}`
-    : `${base.slice(0, separator)}${suffix}${base.slice(separator)}`;
+  let name = separator < 0 ? base : base.slice(0, separator);
+  const qualifier = separator < 0 ? "" : base.slice(separator);
+  // One level at a time, which is how the declaration builds it: shortening the
+  // whole chain in one step would not land on the same name.
+  for (let level = 0; level < depth; level += 1) {
+    name = cobolWord(name, "ITEM");
+  }
+  return `${name}${qualifier}`;
 }
 
 function nullIndicatorName(fieldName: string): string {
-  return `${toCobolFieldName(fieldName)}-IND`;
+  return cobolWord(toCobolFieldName(fieldName), "IND");
 }
 
 function enumConditionName(fieldName: string, member: string): string {
-  return `${toCobolFieldName(fieldName)}-${toCobolName(member)}`;
+  return cobolWord(toCobolFieldName(fieldName), toCobolName(member));
 }
 
 /**
@@ -2209,11 +2844,31 @@ function emitRecursiveProgram(
     (_parameter, index) => `WS-ARG-${index + 1}`,
   );
 
+  // A contained program cannot see the container's ordinary working storage, so
+  // its roundings need work fields of their own.
+  const previousRoundingGroups = currentRoundingGroups;
+  currentRoundingGroups = planRoundingGroups([
+    { body: fn.body, returnType: fn.returnType },
+  ]);
+
+  // The failure registers, which cannot go in LOCAL-STORAGE: the Language
+  // Reference says "data items defined in the LOCAL-STORAGE SECTION cannot
+  // specify the EXTERNAL clause", and per-invocation storage is the wrong place
+  // for them anyway — a failure raised three levels down has to be visible to
+  // the caller that tests for it.
+  addLine(`       WORKING-STORAGE SECTION.`);
+  for (const line of FAILURE_REGISTERS) {
+    addLine(line);
+  }
+
   addLine(`       LOCAL-STORAGE SECTION.`);
   for (const local of locals) {
     addLine(
       `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
     );
+  }
+  for (const line of roundingFieldDeclarations(currentRoundingGroups)) {
+    addLine(line);
   }
   // Storage for the arguments of a nested call, per invocation.
   fn.parameters.forEach((parameter, index) => {
@@ -2241,6 +2896,8 @@ function emitRecursiveProgram(
 
   const previousBindings = currentBindings;
   const previousRecursive = recursiveContext;
+  const previousReturnType = currentReturnType;
+  currentReturnType = fn.returnType;
   currentBindings = new Map([
     // A recursive function is its own program, so its locals sit in that
     // program's LOCAL-STORAGE under their own names and can never collide with
@@ -2266,13 +2923,28 @@ function emitRecursiveProgram(
   };
 
   const previousContained = inContainedProgram;
+  const previousExitLabel = currentExitLabel;
   inContainedProgram = true;
+  // A contained program has an exit paragraph like any other routine, so a
+  // guard inside it has somewhere to go. Without one the failure path fell
+  // through to `GO TO BANK-ABEND`, which is a paragraph of the *container* —
+  // storage and paragraphs a separate program cannot see, and a compile error
+  // rather than a wrong answer only because the name happened not to exist.
+  currentExitLabel = exitParagraphName(fn.name);
   emitStatement(fn.body, addLine, 11, resultName);
   inContainedProgram = previousContained;
+  currentExitLabel = previousExitLabel;
 
   currentBindings = previousBindings;
   recursiveContext = previousRecursive;
+  currentReturnType = previousReturnType;
+  currentRoundingGroups = previousRoundingGroups;
 
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exitParagraphName(fn.name)}.`);
+  // GOBACK, not EXIT: this program was reached by CALL, and returning to the
+  // caller is what ends it. The caller reads the outcome from the failure
+  // registers, which are EXTERNAL for exactly that.
   addLine(`           GOBACK.`);
   addLine(`       END PROGRAM ${programName}.`);
 }
@@ -2314,13 +2986,25 @@ function emitNestedProgram(
   addLine(`       PROGRAM-ID. ${programName} COMMON.`);
   addLine("");
   addLine(`       DATA DIVISION.`);
-  if (locals.length > 0) {
-    addLine(`       WORKING-STORAGE SECTION.`);
-    for (const local of locals) {
-      addLine(
-        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
-      );
-    }
+  const previousRoundingGroups = currentRoundingGroups;
+  currentRoundingGroups = planRoundingGroups([
+    { body: fn.body, returnType: fn.returnType },
+  ]);
+  const roundingFields = roundingFieldDeclarations(currentRoundingGroups);
+  addLine(`       WORKING-STORAGE SECTION.`);
+  // The container's copies of these are its own storage, which a contained
+  // program cannot address however closely the two are written together. They
+  // are EXTERNAL in both, so both descriptions name the run unit's one copy.
+  for (const line of FAILURE_REGISTERS) {
+    addLine(line);
+  }
+  for (const local of locals) {
+    addLine(
+      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+    );
+  }
+  for (const line of roundingFields) {
+    addLine(line);
   }
 
   addLine(`       LINKAGE SECTION.`);
@@ -2343,6 +3027,8 @@ function emitNestedProgram(
   addLine(`       ${toCobolParagraphName(fn.name)}-BODY.`);
 
   const previousBindings = currentBindings;
+  const previousReturnType = currentReturnType;
+  currentReturnType = fn.returnType;
   currentBindings = new Map([
     ...locals.map(
       (local) => [local.name, toCobolFieldName(local.name)] as [string, string],
@@ -2359,12 +3045,19 @@ function emitNestedProgram(
   ]);
 
   const previousContained = inContainedProgram;
+  const previousExitLabel = currentExitLabel;
   inContainedProgram = true;
+  currentExitLabel = exitParagraphName(fn.name);
   emitStatement(fn.body, addLine, 11, resultName);
   inContainedProgram = previousContained;
+  currentExitLabel = previousExitLabel;
 
   currentBindings = previousBindings;
+  currentReturnType = previousReturnType;
+  currentRoundingGroups = previousRoundingGroups;
 
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exitParagraphName(fn.name)}.`);
   addLine(`           GOBACK.`);
   addLine(`       END PROGRAM ${programName}.`);
 }
@@ -2374,25 +3067,28 @@ function emitFunctionBody(
   addLine: (line?: string) => void,
 ): void {
   currentBindings = routineBindings(fn.name, fn.parameters, true);
-  // A function that can raise needs somewhere to jump to. Its callers perform
-  // it THRU the exit paragraph, so the jump stays inside the performed range.
-  currentExitLabel = fn.canFail ? exitParagraphName(fn.name) : null;
+  currentReturnType = fn.returnType;
+  // Every routine has an exit paragraph and every caller performs it THRU that
+  // paragraph, whether or not the routine can raise. A `GO TO` out of the
+  // middle of a body — a raise, a failed OPEN, an overflow — then always lands
+  // inside the range the caller performed, and there is one shape to read
+  // rather than two. It also costs nothing when nothing jumps: `EXIT` is a
+  // paragraph that does nothing, and falling into it is the same as falling
+  // past it.
+  currentExitLabel = exitParagraphName(fn.name);
   emitStatement(fn.body, addLine, 11, functionResultName(fn.name));
   currentBindings = new Map();
 
-  if (fn.canFail) {
-    addLine(`           CONTINUE.`);
-    addLine(`       ${exitParagraphName(fn.name)}.`);
-    addLine(`           EXIT.`);
-  } else {
-    // Not GOBACK. A function is reached with PERFORM, and PERFORM returns at
-    // the end of the paragraph on its own; GOBACK here would end the whole
-    // program at the first function call. That compiles perfectly, which is
-    // why it survived until a generated program was actually executed.
-    addLine(`           CONTINUE.`);
-  }
+  // Not GOBACK. A function is reached with PERFORM, and PERFORM returns at the
+  // end of the range on its own; GOBACK here would end the whole program at the
+  // first function call. That compiles perfectly, which is why it survived
+  // until a generated program was actually executed.
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exitParagraphName(fn.name)}.`);
+  addLine(`           EXIT.`);
 
   currentExitLabel = null;
+  currentReturnType = null;
 }
 
 /**
@@ -2597,20 +3293,21 @@ function emitFailingTransaction(
   addLine: (line?: string) => void,
 ): void {
   const body = bodyParagraphName(transaction.name);
-  const exit = `${body}-EXIT`;
+  const exit = cobolWord(body, "EXIT");
   const failure = failureParagraphName(transaction.name);
 
   addLine(`           MOVE SPACES TO ${FAILURE_CODE_FIELD}`);
   addLine(`           PERFORM ${body} THRU ${exit}`);
   addLine(`           IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
-  addLine(`               PERFORM ${failure}`);
-  addLine(`           END-IF`);
-  addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
   addLine(
-    transaction.isCics
-      ? `           EXEC CICS RETURN END-EXEC.`
-      : `           GOBACK.`,
+    `               PERFORM ${failure} THRU ${cobolWord(failure, "EXIT")}`,
   );
+  addLine(`           END-IF`);
+  // No terminator here. BANK-MAIN is the only paragraph that ends the program,
+  // so this one falls through to its own exit and returns to it.
+  addLine(`           CONTINUE.`);
+  addLine(`       ${exitParagraphName(transaction.name)}.`);
+  addLine(`           EXIT.`);
 
   addLine(`       ${body}.`);
   currentExitLabel = exit;
@@ -2646,6 +3343,8 @@ function emitFailingTransaction(
     );
     addLine(`           MOVE 12 TO ${RETURN_CODE_FIELD}`);
   }
+  addLine(`           CONTINUE.`);
+  addLine(`       ${cobolWord(failure, "EXIT")}.`);
   addLine(`           EXIT.`);
 }
 
@@ -2984,7 +3683,11 @@ function emitConsoleStatement(
       addLine(`${indent}ACCEPT ${target} FROM TIME`);
       return;
     default:
-      // What the job passed on the EXEC statement's PARM.
+      // A card from the job's SYSIN, which is a different mechanism from the
+      // PARM on the EXEC statement — the comment here used to say PARM, and the
+      // generated job allocated no SYSIN at all, so the statement read from a
+      // DD that was not there. The PARM is `BANK-ACCEPT-PARM`'s job; this reads
+      // a line of control input, and the run step allocates SYSIN for it.
       addLine(`${indent}ACCEPT ${target} FROM SYSIN`);
       return;
   }
@@ -3113,12 +3816,12 @@ function emitNestedBlock(
 
 /** True when a restart found the position it was looking for. */
 function restartFoundFlag(fileName: string): string {
-  return `${toCobolName(fileName)}-RS-FOUND`;
+  return cobolWord(toCobolName(fileName), "RS-FOUND");
 }
 
 /** Records taken since the last restart point was written. */
 function checkpointCounterName(fileName: string): string {
-  return `${toCobolName(fileName)}-CP-COUNT`;
+  return cobolWord(toCobolName(fileName), "CP-COUNT");
 }
 
 /**
@@ -3189,8 +3892,7 @@ function emitFileStatusCheck(
     // statement is what then stops the job.
     addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
   } else {
-    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    ${failStepStatement()}`);
+    emitStepFailure(addLine, `${indent}    `, 12, `${operation}-FAILED`);
   }
   addLine(`${indent}END-IF`);
 }
@@ -3250,8 +3952,7 @@ function emitSortStatement(
   addLine(
     `${indent}    DISPLAY "${operation} FAILED ${statement.output} SORT-RETURN " SORT-RETURN UPON SYSOUT`,
   );
-  addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
-  addLine(`${indent}    ${failStepStatement()}`);
+  emitStepFailure(addLine, `${indent}    `, 16, `${operation}-FAILED`);
   addLine(`${indent}END-IF`);
 
   // SORT-RETURN is not the whole story for the files the sort opens itself.
@@ -3276,8 +3977,7 @@ function emitSortStatement(
     addLine(
       `${indent}    DISPLAY "${operation} FAILED ${file} STATUS " ${status} UPON SYSOUT`,
     );
-    addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
-    addLine(`${indent}    ${failStepStatement()}`);
+    emitStepFailure(addLine, `${indent}    `, 16, `${operation}-FAILED`);
     addLine(`${indent}END-IF`);
   }
 }
@@ -3788,8 +4488,38 @@ let inContainedProgram = false;
  * program needs; the outermost program reaches the same place with `GOBACK`,
  * and that is left alone so the ordinary path is unchanged.
  */
-function failStepStatement(): string {
-  return inContainedProgram ? "STOP RUN" : "GOBACK";
+/**
+ * The one way out of a step that has failed.
+ *
+ * Every failure path in a generated program ends here: a file status the
+ * program did not expect, an arithmetic overflow, a subscript outside its
+ * table, an MQ reason code, a sort that gave up. They used to end in a `GOBACK`
+ * written at the point of failure, which had two consequences. The `GOBACK` sat
+ * inside a range the caller had performed, so a transaction with an
+ * `on failure` handler ran the handler for a bounds violation and skipped it
+ * for an arithmetic overflow — the same program treating two failures
+ * differently for no reason anybody chose. And it wrote `RETURN-CODE` directly
+ * while every other path set `BANK-RETURN-CODE`, so the program carried two
+ * return-code conventions.
+ *
+ * One convention: set `BANK-RETURN-CODE`, name the failure, and jump to the
+ * enclosing routine's exit. The handler runs if there is one, control returns
+ * to `BANK-MAIN`, and `BANK-MAIN` is the only paragraph that ends the program.
+ */
+function emitStepFailure(
+  addLine: (line?: string) => void,
+  indent: string,
+  returnCode: number,
+  failureCode: string,
+): void {
+  addLine(`${indent}MOVE ${returnCode} TO ${RETURN_CODE_FIELD}`);
+  addLine(`${indent}MOVE "${failureCode}" TO ${FAILURE_CODE_FIELD}`);
+  if (currentExitLabel) {
+    addLine(`${indent}GO TO ${currentExitLabel}`);
+    return;
+  }
+  abendParagraphUsed = true;
+  addLine(`${indent}GO TO ${ABEND_PARAGRAPH}`);
 }
 
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
@@ -3985,7 +4715,7 @@ function emitDliWorkingStorage(
   for (const database of program.databases) {
     if (database.statusName) {
       addLine(
-        `       01  ${toCobolFieldName(database.statusName).padEnd(20)} PIC XX.`,
+        `       01  ${toCobolFieldName(database.statusName).padEnd(20)} PIC X(2).`,
       );
     }
     const key = database.record.fields.find(
@@ -4001,9 +4731,9 @@ function emitDliWorkingStorage(
     addLine(
       `           05  FILLER               PIC X(8) VALUE "${database.keyName.padEnd(8)}".`,
     );
-    addLine(`           05  FILLER               PIC XX VALUE " =".`);
+    addLine(`           05  FILLER               PIC X(2) VALUE " =".`);
     addLine(
-      `           05  ${`${ssaName(database.name)}-VALUE`.padEnd(20)} PIC X(${Math.max(width, 1)}).`,
+      `           05  ${ssaValueName(database.name).padEnd(20)} PIC X(${Math.max(width, 1)}).`,
     );
     addLine(`           05  FILLER               PIC X VALUE ")".`);
 
@@ -4074,12 +4804,17 @@ function dliFunctionName(operation: IRDliStatement["operation"]): string {
 const IO_PCB_NAME = "IO-PCB";
 
 function pcbName(database: string): string {
-  return `${toCobolName(database)}-PCB`;
+  return cobolWord(toCobolName(database), "PCB");
 }
 
 /** The qualified search argument: segment, field, operator, value. */
 function ssaName(database: string): string {
-  return `${toCobolName(database)}-SSA`;
+  return cobolWord(toCobolName(database), "SSA");
+}
+
+/** The key value inside a qualified SSA, which the program moves the key into. */
+function ssaValueName(database: string): string {
+  return cobolWord(ssaName(database), "VALUE");
 }
 
 /**
@@ -4090,7 +4825,7 @@ function ssaName(database: string): string {
  * and `ISRT` without one has nothing telling DL/I which segment to insert.
  */
 function unqualifiedSsaName(database: string): string {
-  return `${toCobolName(database)}-SSA-U`;
+  return cobolWord(toCobolName(database), "SSA-U");
 }
 
 /**
@@ -4128,7 +4863,7 @@ function emitDliStatement(
     case "getUnique":
     case "getHoldUnique":
       addLine(
-        `${indent}MOVE ${renderExpression(statement.key as IRExpression)} TO ${ssaName(statement.databaseName)}-VALUE`,
+        `${indent}MOVE ${renderExpression(statement.key as IRExpression)} TO ${ssaValueName(statement.databaseName)}`,
       );
       operands.push(ssaName(statement.databaseName));
       break;
@@ -4156,7 +4891,7 @@ function emitDliStatement(
 
 /** Working-storage names for one queue's MQI control blocks and handles. */
 function mqName(queue: string, part: string): string {
-  return `${toCobolName(queue)}-${part}`;
+  return cobolWord(toCobolName(queue), part);
 }
 
 /**
@@ -4206,8 +4941,7 @@ function emitMqCheck(
   if (inSortProcedure) {
     addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
   } else {
-    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    ${failStepStatement()}`);
+    emitStepFailure(addLine, `${indent}    `, 12, `MQ-${operation}-FAILED`);
   }
   addLine(`${indent}END-IF`);
 }
@@ -4371,8 +5105,7 @@ function emitQueueStatement(
       if (inSortProcedure) {
         addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
       } else {
-        addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
-        addLine(`${indent}        ${failStepStatement()}`);
+        emitStepFailure(addLine, `${indent}        `, 12, "MQ-GET-FAILED");
       }
       addLine(`${indent}END-EVALUATE`);
       return;
@@ -4929,17 +5662,19 @@ function emitOccursCountGuard(
   addLine(
     `${indent}    DISPLAY "OCCURS COUNT OUT OF RANGE ${reference} " ${reference} UPON SYSOUT`,
   );
-  if (currentExitLabel) {
-    addLine(
-      `${indent}    MOVE "${BOUNDS_FAILURE_CODE}" TO ${FAILURE_CODE_FIELD}`,
-    );
-    addLine(`${indent}    GO TO ${currentExitLabel}`);
-  } else if (inSortProcedure) {
+  if (inSortProcedure) {
+    // Control may not leave a sort procedure while the sort is running, so the
+    // count is also brought inside the table: the step is already failing, and
+    // an in-range access is the one that cannot corrupt the record on the way
+    // out.
     addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
     addLine(`${indent}    MOVE ${bound} TO ${reference}`);
   } else {
-    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    ${failStepStatement()}`);
+    // Through the one failure path, which sets the return code as well as the
+    // failure name. Jumping to the routine's exit directly — which is what this
+    // used to do whenever there was a routine to jump to — left the step ending
+    // with return code zero after a record the program could not address.
+    emitStepFailure(addLine, `${indent}    `, 12, BOUNDS_FAILURE_CODE);
   }
   addLine(`${indent}END-IF`);
 }
@@ -4951,7 +5686,7 @@ function recordTarget(statement: IRFileStatement): string {
 }
 
 function fileRecordNameFor(fileName: string): string {
-  return `${toCobolName(fileName)}-RECORD`;
+  return cobolWord(toCobolName(fileName), "RECORD");
 }
 
 /** Deterministic counter name, derived from the loop's source position. */
@@ -4979,32 +5714,22 @@ function emitBoundsChecks(
     // "23" is the COBOL file-status convention for a key outside the file, and
     // is kept so an operator reading a dump sees a familiar code.
     addLine(`${indent}    MOVE "23" TO ${BOUNDS_STATUS_FIELD}`);
-    if (currentExitLabel) {
-      // Raising leaves the subscript untouched: clamping it would let the
-      // statement run against the wrong element, which is the defect the check
-      // exists to prevent.
-      addLine(
-        `${indent}    MOVE "${BOUNDS_FAILURE_CODE}" TO ${FAILURE_CODE_FIELD}`,
-      );
-      addLine(`${indent}    GO TO ${currentExitLabel}`);
+    addLine(
+      `${indent}    DISPLAY "SUBSCRIPT OUT OF RANGE " ${check.index} UPON SYSOUT`,
+    );
+    if (inSortProcedure) {
+      // Control may not leave a sort procedure while the sort is running, so
+      // the subscript is also brought inside the table: the step is already
+      // failing, and an in-range access is the one that cannot corrupt the
+      // record on the way out.
+      addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
+      addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
     } else {
-      // No routine to raise into — a sort procedure, or a handler entered by
-      // the run time rather than called. The failure is named and the step is
-      // failed rather than left to a status field nothing reads.
-      addLine(
-        `${indent}    DISPLAY "SUBSCRIPT OUT OF RANGE " ${check.index} UPON SYSOUT`,
-      );
-      if (inSortProcedure) {
-        // Control may not leave a sort procedure while the sort is running, so
-        // the subscript is also brought inside the table: the step is already
-        // failing, and an in-range access is the one that cannot corrupt the
-        // record on the way out.
-        addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
-        addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
-      } else {
-        addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-        addLine(`${indent}    ${failStepStatement()}`);
-      }
+      // The subscript is left untouched: clamping it would let the statement
+      // run against the wrong element, which is the defect the check exists to
+      // prevent. The step fails through the one path, so it fails with a
+      // return code whether or not there was a routine to raise into.
+      emitStepFailure(addLine, `${indent}    `, 12, BOUNDS_FAILURE_CODE);
     }
     addLine(`${indent}END-IF`);
   }
@@ -5176,18 +5901,20 @@ function emitCallsIn(
         addLine(
           `${indent}CALL "${recursiveProgramName(expression.callee)}" USING ${operands.join(", ")}`,
         );
-      } else if (callee?.canFail) {
+      } else {
         // THRU keeps the callee's `GO TO` inside the performed range.
         addLine(
           `${indent}PERFORM ${paragraphName(expression.callee)} THRU ${exitParagraphName(expression.callee)}`,
         );
-      } else {
-        addLine(`${indent}PERFORM ${paragraphName(expression.callee)}`);
       }
 
       // COBOL does not unwind, so a failure raised inside the callee only
-      // propagates if the caller checks for it and leaves too.
-      if (callee?.canFail && currentExitLabel) {
+      // propagates if the caller checks for it and leaves too. Every call site
+      // checks, rather than only those whose callee was declared able to raise:
+      // an overflow, a failed READ or a subscript outside its table is a
+      // failure the callee never declared, and checking only declared raises is
+      // how one used to run on regardless.
+      if (currentExitLabel) {
         addLine(`${indent}IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
         addLine(`${indent}    GO TO ${currentExitLabel}`);
         addLine(`${indent}END-IF`);
@@ -5302,13 +6029,7 @@ function emitComputeInto(
   }
 
   if (expression.kind === "Rounded") {
-    emitCompute(
-      `${indent}COMPUTE ${target} ROUNDED MODE IS ${COBOL_ROUNDING_MODES[expression.mode]} = ${renderDecimalExpression(expression.operand)}`,
-      target,
-      expression,
-      addLine,
-      indent,
-    );
+    emitRounded(target, expression, targetType, addLine, indent);
     return;
   }
 
@@ -5319,6 +6040,332 @@ function emitComputeInto(
     addLine,
     indent,
   );
+}
+
+/**
+ * The receiving field of a rounding, and the value being rounded into it.
+ *
+ * Rounding is decided by the receiver — that is what `ROUNDED` attaches to in
+ * COBOL and what BankTS copies — so the generated sequence needs the receiver's
+ * scale, not the expression's. Where the declared target type is known it wins;
+ * a `return` uses the routine's return type, which the emitter tracks.
+ */
+function roundingShape(
+  expression: IRRoundedExpression,
+  targetType: IRType | undefined,
+): RoundingShape {
+  const receiver = numericShapeOf(targetType) ??
+    numericShapeOf(currentReturnType ?? undefined) ?? {
+      precision: expression.resolvedType.precision,
+      scale: expression.resolvedType.scale,
+    };
+
+  // `divide(a, b, mode)` lowers to a rounded division, and a division is the
+  // one case where the value being rounded has no exact scale of its own. It is
+  // rounded from DIVIDE's own remainder instead.
+  const division =
+    expression.operand.kind === "BinaryArithmetic" &&
+    expression.operand.operator === "/"
+      ? expression.operand
+      : null;
+
+  const operandScale =
+    numericShapeOf(expression.operand.resolvedType)?.scale ?? receiver.scale;
+
+  return {
+    precision: receiver.precision,
+    scale: receiver.scale,
+    operandScale,
+    division: division
+      ? {
+          dividend: numericShapeOf(division.left.resolvedType) ?? receiver,
+          divisor: numericShapeOf(division.right.resolvedType) ?? receiver,
+        }
+      : null,
+  };
+}
+
+interface RoundingShape {
+  precision: number;
+  scale: number;
+  operandScale: number;
+  division: {
+    dividend: { precision: number; scale: number };
+    divisor: { precision: number; scale: number };
+  } | null;
+}
+
+/** Precision and scale of a numeric type, or null for anything else. */
+function numericShapeOf(
+  type: IRType | undefined,
+): { precision: number; scale: number } | null {
+  if (!type) {
+    return null;
+  }
+  if (type.kind === "decimal" || type.kind === "currency") {
+    return { precision: type.precision, scale: type.scale };
+  }
+  if (type.kind === "nullable") {
+    return numericShapeOf(type.inner);
+  }
+  return null;
+}
+
+/**
+ * A rounding, as arithmetic Enterprise COBOL actually has.
+ *
+ * Two of the seven modes are phrases the compiler already performs: `HALF_UP`
+ * is what `ROUNDED` means, and `DOWN` is what leaving it off means. The other
+ * five have no phrase at all — `ROUNDED MODE IS` is COBOL 2002 — so they are
+ * built out of the two primitives COBOL does have.
+ *
+ * The construction is the same in every case. Truncate towards zero into a work
+ * field with the receiver's own picture; work out the excess that truncation
+ * discarded; then step the last place by one when the mode says to. Written
+ * that way the tie test is on the real discarded digits rather than on a
+ * comparison of the stored result with something, which is what makes
+ * `HALF_EVEN` — banker's rounding, and the default for interest in most
+ * jurisdictions — provable rather than asserted. `tests/rounding-oracle.test.ts`
+ * proves each mode against an exact decimal oracle.
+ *
+ * Division is the exception, and it is why `DIVIDE ... REMAINDER` exists: a
+ * quotient has no exact scale, so `(a / b) - truncated` would be computed from
+ * an intermediate whose number of places the compiler chose. `DIVIDE` hands
+ * back the truncated quotient *and* the exact remainder, and comparing twice
+ * the remainder with the divisor is the tie test with nothing rounded on the
+ * way to it.
+ */
+function emitRounded(
+  target: string,
+  expression: IRRoundedExpression,
+  targetType: IRType | undefined,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const native = NATIVE_ROUNDING[expression.mode];
+  if (native) {
+    emitCompute(
+      `${indent}COMPUTE ${target}${native === "rounded" ? " ROUNDED" : ""} = ${renderDecimalExpression(expression.operand)}`,
+      target,
+      expression,
+      addLine,
+      indent,
+    );
+    return;
+  }
+
+  const shape = roundingShape(expression, targetType);
+
+  // Nothing to round: the value being stored has no more fractional digits than
+  // the field receiving it, so every mode gives the same answer and the plain
+  // COMPUTE is that answer.
+  if (!shape.division && shape.operandScale <= shape.scale) {
+    emitCompute(
+      `${indent}COMPUTE ${target} = ${renderDecimalExpression(expression.operand)}`,
+      target,
+      expression,
+      addLine,
+      indent,
+    );
+    return;
+  }
+
+  const group = requireRoundingGroup(shape);
+  const value = roundingFieldName(group, "VALUE");
+  const step = roundingFieldName(group, "STEP");
+  const excess = roundingFieldName(group, "EXCESS");
+  const units = roundingFieldName(group, "UNITS");
+  const ulp = renderNumericLiteral(unitInLastPlace(shape.scale));
+  const half = renderNumericLiteral(halfUnitInLastPlace(shape.scale));
+
+  // Short enough to survive reference format at any nesting depth: a comment
+  // that wraps mid-sentence reads worse than no comment.
+  addLine(`${indent}*> ${expression.mode} is generated. COBOL has`);
+  addLine(`${indent}*> only ROUNDED, which is HALF_UP.`);
+
+  if (shape.division) {
+    const dividend = roundingFieldName(group, "DIVIDEND");
+    const divisor = roundingFieldName(group, "DIVISOR");
+    const remainder = roundingFieldName(group, "REMAINDER");
+    addLine(
+      `${indent}COMPUTE ${dividend} = ${renderDecimalExpression((expression.operand as IRBinaryArithmeticExpression).left)}`,
+    );
+    addLine(
+      `${indent}COMPUTE ${divisor} = ${renderDecimalExpression((expression.operand as IRBinaryArithmeticExpression).right)}`,
+    );
+    emitCompute(
+      [
+        `${indent}DIVIDE ${dividend} BY ${divisor}`,
+        `${indent}    GIVING ${value} REMAINDER ${remainder}`,
+      ],
+      target,
+      expression,
+      addLine,
+      indent,
+      "END-DIVIDE",
+    );
+    // The remainder carries the dividend's sign, so the exact quotient runs past
+    // the truncated one in the direction the two signs agree on.
+    addLine(`${indent}COMPUTE ${step} = ${ulp}`);
+    addLine(`${indent}IF (${remainder} < 0 AND ${divisor} > 0) OR`);
+    addLine(`${indent}   (${remainder} > 0 AND ${divisor} < 0)`);
+    addLine(
+      `${indent}    COMPUTE ${step} = ${renderNumericLiteral(`-${unitInLastPlace(shape.scale)}`)}`,
+    );
+    addLine(`${indent}END-IF`);
+    if (expression.mode === "HALF_EVEN") {
+      addLine(
+        `${indent}COMPUTE ${units} = ${value} * ${scaleFactorLiteral(shape.scale)}`,
+      );
+    }
+    // Twice the remainder against the divisor is |excess| against half a unit,
+    // both multiplied by the same positive number, so the comparison is the same
+    // one with no division in it.
+    const excessTest = `FUNCTION ABS (${remainder}) * ${scaleFactorLiteral(shape.scale)} * 2`;
+    const divisorTest = `FUNCTION ABS (${divisor})`;
+    emitRoundingAdjustment(
+      expression.mode,
+      {
+        over: `${excessTest} > ${divisorTest}`,
+        tie: `${excessTest} = ${divisorTest}`,
+        nonZero: `${remainder} NOT = 0`,
+        above: `${remainder} NOT = 0 AND ${step} > 0`,
+        below: `${remainder} NOT = 0 AND ${step} < 0`,
+      },
+      value,
+      step,
+      units,
+      addLine,
+      indent,
+    );
+  } else {
+    emitCompute(
+      `${indent}COMPUTE ${value} = ${renderDecimalExpression(expression.operand)}`,
+      target,
+      expression,
+      addLine,
+      indent,
+    );
+    // Re-stating the expression rather than holding it in a wider field is what
+    // keeps this exact: the subtraction is evaluated in COBOL's own intermediate
+    // result, which carries more digits than any field the backend could
+    // declare. Every call in the expression was already made and left its answer
+    // in a result field, so naming it twice reads it twice rather than running
+    // it twice.
+    addLine(`${indent}COMPUTE ${excess} =`);
+    addLine(
+      `${indent}    ${renderDecimalExpression(expression.operand)} - ${value}`,
+    );
+    addLine(`${indent}COMPUTE ${step} = ${ulp}`);
+    addLine(`${indent}IF ${excess} < 0`);
+    addLine(
+      `${indent}    COMPUTE ${step} = ${renderNumericLiteral(`-${unitInLastPlace(shape.scale)}`)}`,
+    );
+    addLine(`${indent}END-IF`);
+    if (expression.mode === "HALF_EVEN") {
+      addLine(
+        `${indent}COMPUTE ${units} = ${value} * ${scaleFactorLiteral(shape.scale)}`,
+      );
+    }
+    emitRoundingAdjustment(
+      expression.mode,
+      {
+        over: `FUNCTION ABS (${excess}) > ${half}`,
+        tie: `FUNCTION ABS (${excess}) = ${half}`,
+        nonZero: `${excess} NOT = 0`,
+        above: `${excess} > 0`,
+        below: `${excess} < 0`,
+      },
+      value,
+      step,
+      units,
+      addLine,
+      indent,
+    );
+  }
+
+  addLine(`${indent}MOVE ${value} TO ${target}`);
+}
+
+/** The conditions a rounding mode tests, phrased for one of the two shapes. */
+interface RoundingTests {
+  /** The discarded digits are more than half a unit. */
+  over: string;
+  /** They are exactly half a unit. */
+  tie: string;
+  /** Anything at all was discarded. */
+  nonZero: string;
+  /** What was discarded is positive, so the exact value is above the truncation. */
+  above: string;
+  /** What was discarded is negative. */
+  below: string;
+}
+
+/** The step, if any, each mode takes once the excess is known. */
+function emitRoundingAdjustment(
+  mode: RoundingMode,
+  tests: RoundingTests,
+  value: string,
+  step: string,
+  units: string,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const takeStep = `${indent}    ADD ${step} TO ${value}`;
+  switch (mode) {
+    case "UP":
+      addLine(`${indent}IF ${tests.nonZero}`);
+      addLine(takeStep);
+      addLine(`${indent}END-IF`);
+      return;
+    case "CEILING":
+      addLine(`${indent}IF ${tests.above}`);
+      addLine(takeStep);
+      addLine(`${indent}END-IF`);
+      return;
+    case "FLOOR":
+      addLine(`${indent}IF ${tests.below}`);
+      addLine(takeStep);
+      addLine(`${indent}END-IF`);
+      return;
+    case "HALF_DOWN":
+      // Strictly greater: an exact half stays where truncation put it, which is
+      // what distinguishes HALF_DOWN from IBM's own ROUNDED.
+      addLine(`${indent}IF ${tests.over}`);
+      addLine(takeStep);
+      addLine(`${indent}END-IF`);
+      return;
+    case "HALF_EVEN":
+      addLine(`${indent}EVALUATE TRUE`);
+      addLine(`${indent}    WHEN ${tests.over}`);
+      addLine(`${indent}        ADD ${step} TO ${value}`);
+      addLine(`${indent}    WHEN ${tests.tie}`);
+      // An exact half goes to the even neighbour, so it only moves when the
+      // last place is currently odd. MOD is never negative for a positive
+      // divisor, so one test covers both signs.
+      addLine(`${indent}        IF FUNCTION MOD (${units}, 2) = 1`);
+      addLine(`${indent}            ADD ${step} TO ${value}`);
+      addLine(`${indent}        END-IF`);
+      addLine(`${indent}END-EVALUATE`);
+      return;
+    default:
+      return;
+  }
+}
+
+/** `0.01` for a scale of two: one unit in the receiver's last place. */
+function unitInLastPlace(scale: number): string {
+  return scale === 0 ? "1" : `0.${"0".repeat(scale - 1)}1`;
+}
+
+/** `0.005` for a scale of two: the exact half that decides a tie. */
+function halfUnitInLastPlace(scale: number): string {
+  return scale === 0 ? "0.5" : `0.${"0".repeat(scale)}5`;
+}
+
+/** `100` for a scale of two: what turns the value into whole last places. */
+function scaleFactorLiteral(scale: number): string {
+  return `1${"0".repeat(scale)}`;
 }
 
 /**
@@ -5343,18 +6390,21 @@ function emitComputeInto(
  * morning.
  */
 function emitCompute(
-  statement: string,
+  statement: string | string[],
   target: string,
   expression: IRExpression,
   addLine: (line?: string) => void,
   indent: string,
+  /** `END-DIVIDE` when the guarded statement is a generated `DIVIDE`. */
+  terminator = "END-COMPUTE",
 ): void {
+  const lines = Array.isArray(statement) ? statement : [statement];
   if (!canSizeError(expression)) {
-    addLine(statement);
+    lines.forEach((line) => addLine(line));
     return;
   }
 
-  addLine(statement);
+  lines.forEach((line) => addLine(line));
   addLine(`${indent}    ON SIZE ERROR`);
   addLine(
     `${indent}        DISPLAY "ARITHMETIC OVERFLOW ${target}" UPON SYSOUT`,
@@ -5364,10 +6414,9 @@ function emitCompute(
     // same reason the file status check sets SORT-RETURN rather than returning.
     addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
   } else {
-    addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}        ${failStepStatement()}`);
+    emitStepFailure(addLine, `${indent}        `, 12, "ARITHMETIC-OVERFLOW");
   }
-  addLine(`${indent}END-COMPUTE`);
+  addLine(`${indent}${terminator}`);
 }
 
 /**
@@ -5702,7 +6751,7 @@ function emitCicsStatement(
 }
 
 function sqlParameterName(statementName: string, index: number): string {
-  return `${toCobolName(statementName)}-H${index + 1}`;
+  return cobolWord(toCobolName(statementName), `H${index + 1}`);
 }
 
 /**
@@ -5734,11 +6783,11 @@ function sortWorkDdName(_fileName: string): string {
 
 /** The sort-work file a SORT or MERGE runs through. */
 function sortWorkName(fileName: string): string {
-  return `${toCobolName(fileName)}-SORT-FILE`;
+  return cobolWord(toCobolName(fileName), "SORT-FILE");
 }
 
 function sortWorkRecordName(fileName: string): string {
-  return `${toCobolName(fileName)}-SORT-RECORD`;
+  return cobolWord(toCobolName(fileName), "SORT-RECORD");
 }
 
 /** Output files a program sorts or merges into, each needing an SD. */
@@ -5826,7 +6875,7 @@ function sortProcedureEndFlag(
   statement: IRSortStatement,
   kind: "input" | "output",
 ): string {
-  return `${sortProcedureName(statement, kind)}-END`;
+  return cobolWord(sortProcedureName(statement, kind), "END");
 }
 
 /**
@@ -5837,12 +6886,12 @@ function sortProcedureEndFlag(
  * idiomatic declaration either way.
  */
 function tableIndexName(fieldName: string): string {
-  return `${toCobolFieldName(fieldName)}-IDX`;
+  return cobolWord(toCobolFieldName(fieldName), "IDX");
 }
 
 /** Counts the rows a cursor loop has taken, so the declared bound can stop it. */
 function cursorRowCounter(cursorName: string): string {
-  return `${toCobolName(cursorName)}-ROWS`;
+  return cobolWord(toCobolName(cursorName), "ROWS");
 }
 
 /**
@@ -6016,7 +7065,7 @@ function emitSqlStatement(
 }
 
 function parameterFieldName(functionName: string, index: number): string {
-  return `${toCobolName(functionName)}-P${index + 1}`;
+  return cobolWord(toCobolName(functionName), `P${index + 1}`);
 }
 
 function emitLetStatement(
@@ -6502,6 +7551,218 @@ function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
 
   visit(block);
   return locals;
+}
+
+/**
+ * The work fields one generated rounding needs.
+ *
+ * Grouped by the shape of the arithmetic rather than by the statement, so ten
+ * roundings of `decimal<16, 2>` from a `decimal<16, 4>` product share one set of
+ * fields instead of emitting ten. The signature is built from the pictures, so
+ * the grouping — and therefore the numbering — is a function of the program and
+ * not of the order anything was walked in.
+ */
+interface RoundingGroup {
+  ordinal: number;
+  shape: RoundingShape;
+  /** True when some mode using this shape is HALF_EVEN, which tests the last digit. */
+  needsUnits: boolean;
+}
+
+/** Rounding work fields available to the program or contained program in hand. */
+let currentRoundingGroups = new Map<string, RoundingGroup>();
+
+function roundingSignature(shape: RoundingShape): string {
+  return [
+    shape.precision,
+    shape.scale,
+    shape.operandScale,
+    shape.division
+      ? `${shape.division.dividend.precision}.${shape.division.dividend.scale}/${shape.division.divisor.precision}.${shape.division.divisor.scale}`
+      : "-",
+  ].join(":");
+}
+
+function requireRoundingGroup(shape: RoundingShape): RoundingGroup {
+  const group = currentRoundingGroups.get(roundingSignature(shape));
+  if (!group) {
+    throw new Error(
+      `Unplanned rounding shape during emission: ${roundingSignature(shape)}`,
+    );
+  }
+  return group;
+}
+
+function roundingFieldName(group: RoundingGroup, part: string): string {
+  return cobolWord("BANK-RND", String(group.ordinal), part);
+}
+
+/**
+ * The rounding work fields one emission unit needs.
+ *
+ * An emission unit is the main program or one contained program: a recursive
+ * function's storage is its own LOCAL-STORAGE, so a rounding inside one cannot
+ * borrow a field declared in the container.
+ */
+function planRoundingGroups(
+  routines: { body: IRBlock; returnType: IRType | null }[],
+): Map<string, RoundingGroup> {
+  const shapes = new Map<
+    string,
+    { shape: RoundingShape; needsUnits: boolean }
+  >();
+
+  for (const routine of routines) {
+    const previousReturnType = currentReturnType;
+    currentReturnType = routine.returnType;
+    for (const { expression, targetType } of collectRoundings(routine.body)) {
+      const shape = roundingShape(expression, targetType);
+      if (NATIVE_ROUNDING[expression.mode]) {
+        continue;
+      }
+      if (!shape.division && shape.operandScale <= shape.scale) {
+        continue;
+      }
+      const signature = roundingSignature(shape);
+      const existing = shapes.get(signature);
+      shapes.set(signature, {
+        shape,
+        needsUnits:
+          (existing?.needsUnits ?? false) || expression.mode === "HALF_EVEN",
+      });
+    }
+    currentReturnType = previousReturnType;
+  }
+
+  // Numbered by signature rather than by position, so adding a blank line to
+  // the source cannot rename a field — the same reason loop counters are named
+  // for their routine rather than for their line.
+  return new Map(
+    [...shapes.entries()]
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([signature, entry], index) => [
+        signature,
+        {
+          ordinal: index + 1,
+          shape: entry.shape,
+          needsUnits: entry.needsUnits,
+        },
+      ]),
+  );
+}
+
+/** WORKING-STORAGE or LOCAL-STORAGE declarations for a unit's rounding fields. */
+function roundingFieldDeclarations(
+  groups: Map<string, RoundingGroup>,
+): string[] {
+  const lines: string[] = [];
+  for (const group of [...groups.values()].sort(
+    (left, right) => left.ordinal - right.ordinal,
+  )) {
+    const { shape } = group;
+    const declare = (part: string, picture: string): void => {
+      lines.push(
+        `       01  ${roundingFieldName(group, part).padEnd(20)} ${picture}.`,
+      );
+    };
+    declare("VALUE", decimalPicture(shape.precision, shape.scale));
+    declare("STEP", decimalPicture(shape.precision, shape.scale));
+    if (group.needsUnits) {
+      declare("UNITS", decimalPicture(shape.precision, 0));
+    }
+    if (shape.division) {
+      declare(
+        "DIVIDEND",
+        decimalPicture(
+          shape.division.dividend.precision,
+          shape.division.dividend.scale,
+        ),
+      );
+      declare(
+        "DIVISOR",
+        decimalPicture(
+          shape.division.divisor.precision,
+          shape.division.divisor.scale,
+        ),
+      );
+      const remainder = divisionRemainderShape(
+        shape.division.dividend,
+        shape.division.divisor,
+        shape.scale,
+      );
+      declare(
+        "REMAINDER",
+        decimalPicture(remainder.integer + remainder.scale, remainder.scale),
+      );
+    } else {
+      // The excess is what truncation discarded, so it is always less than one
+      // unit in the receiver's last place: no integer digits, and every
+      // fractional digit the value being rounded can carry.
+      lines.push(
+        `       01  ${roundingFieldName(group, "EXCESS").padEnd(20)} PIC SV9(${shape.operandScale}) COMP-3.`,
+      );
+    }
+  }
+  return lines;
+}
+
+/** Every `round(...)` and `divide(...)` in a routine, with the field it lands in. */
+function collectRoundings(
+  block: IRBlock,
+): { expression: IRRoundedExpression; targetType: IRType | undefined }[] {
+  const found: {
+    expression: IRRoundedExpression;
+    targetType: IRType | undefined;
+  }[] = [];
+
+  const take = (
+    expression: IRExpression | undefined,
+    targetType: IRType | undefined,
+  ): void => {
+    if (expression?.kind === "Rounded") {
+      found.push({ expression, targetType });
+    }
+  };
+
+  const visit = (current: IRBlock): void => {
+    for (const statement of current.statements) {
+      switch (statement.kind) {
+        case "LetStatement":
+          take(statement.initializer, statement.declaredType);
+          break;
+        case "AssignStatement":
+          take(statement.expression, statement.target.resolvedType);
+          break;
+        case "ReturnStatement":
+          take(statement.expression, currentReturnType ?? undefined);
+          break;
+        case "IfStatement":
+          visit(statement.thenBranch);
+          if (statement.elseBranch) {
+            visit(statement.elseBranch);
+          }
+          break;
+        case "WhileStatement":
+        case "ForEachStatement":
+        case "CursorLoopStatement":
+          visit(statement.body);
+          break;
+        case "SwitchStatement":
+          for (const branch of statement.cases) {
+            visit(branch.body);
+          }
+          if (statement.otherwise) {
+            visit(statement.otherwise);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  visit(block);
+  return found;
 }
 
 /**

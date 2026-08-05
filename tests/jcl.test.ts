@@ -15,7 +15,10 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
  * it can never be started by.
  */
 
-function jclFor(source: string): string {
+function jclFor(
+  source: string,
+  options: Parameters<typeof emitJcl>[1] = {},
+): string {
   const parsed = parseBankTs(source, "main.bank.ts");
   const checked = typecheckProgram(parsed.program);
   const ir = lowerProgramToIR(checked);
@@ -26,7 +29,7 @@ function jclFor(source: string): string {
         .join(", ")}`,
     );
   }
-  return emitJcl(ir.program).jcl;
+  return emitJcl(ir.program, options).jcl;
 }
 
 const PLAIN = `module PlainBatch;
@@ -117,11 +120,20 @@ cics transaction enquire(request: Request) {
 }`;
 
 describe("a plain batch job", () => {
-  it("compiles, link-edits, and runs the program", () => {
+  /**
+   * What a shop submits: IBM's own cataloged procedure, with only the DDs its
+   * parameter list documents as the caller's. Every STEPLIB, all sixteen work
+   * files, both LE link libraries and `REGION=0M` come from the procedure, so
+   * none of them can be forgotten here.
+   */
+  it("compiles and link-edits through IBM's cataloged procedure", () => {
     const jcl = jclFor(PLAIN);
 
-    expect(jcl).toContain("//COMPILE  EXEC PGM=IGYCRCTL");
-    expect(jcl).toContain("//LKED     EXEC PGM=IEWL");
+    expect(jcl).toContain("//COMPILE  EXEC IGYWCL,");
+    expect(jcl).toContain("//             LNGPRFX='IGY.V6R4M0',LIBPRFX='CEE',");
+    expect(jcl).toContain(
+      "//COBOL.SYSIN    DD DISP=SHR,DSN=BANKLANG.COBOL(PLAINBAT)",
+    );
     expect(jcl).toContain("//RUN      EXEC PGM=PLAINBAT");
   });
 
@@ -141,9 +153,118 @@ describe("a plain batch job", () => {
     const jcl = jclFor(PLAIN);
 
     expect(jcl).toContain(
-      "//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(PLAINBAT)",
+      "//             PGMLIB='BANKLANG.LOADLIB',GOPGM=PLAINBAT",
     );
     expect(jcl).toContain("//RUN      EXEC PGM=PLAINBAT");
+  });
+
+  /**
+   * A load module written to a library the run step cannot see is a job that
+   * compiles, links, and then ends S806 — module not found — with nothing in
+   * the log to say the build was fine.
+   */
+  it("puts the library it just wrote to on the run step's search order", () => {
+    const jcl = jclFor(PLAIN);
+    const run = jcl.slice(jcl.indexOf("//RUN "));
+
+    expect(run).toContain("//STEPLIB  DD DISP=SHR,DSN=BANKLANG.LOADLIB");
+    expect(run).toContain("//         DD DISP=SHR,DSN=CEE.SCEERUN");
+    expect(run).toContain("//         DD DISP=SHR,DSN=CEE.SCEERUN2");
+  });
+
+  /**
+   * A step with no REGION runs in whatever the installation's default is, and
+   * the compiler is not a small program. IGYWCL states `REGION=0M` on both of
+   * its steps for that reason, and so does every step this emitter writes.
+   */
+  it("states a region on the job and on every step it writes", () => {
+    for (const source of [PLAIN, WITH_FILES, WITH_SQL, WITH_CICS]) {
+      const jcl = jclFor(source);
+      for (const line of jcl.split("\n")) {
+        if (/^\/\/\w+\s+EXEC PGM=/.test(line)) {
+          expect(`${line} in\n${jcl}`).toContain("REGION=0M");
+        }
+      }
+    }
+  });
+
+  /**
+   * A dataset name is at most 44 characters and each qualifier at most 8. The
+   * emitter used to build one from the build path, so
+   * `dist/cobol/BATCH-INTEREST-ACCRUAL.cbl` became
+   * `DIST.COBOL.BATCHINTERESTACCRUAL` — a 20-character qualifier, and a JCL
+   * error before the compiler was ever reached.
+   */
+  it("writes dataset names z/OS accepts", () => {
+    for (const source of [PLAIN, WITH_FILES, WITH_SQL, WITH_CICS]) {
+      const jcl = jclFor(source);
+      for (const [, dsn] of jcl.matchAll(/DSN(?:AME)?=([A-Z0-9.@#$&]+)/g)) {
+        // `&&NAME` is a temporary dataset, which the system names itself.
+        if (dsn.startsWith("&&")) continue;
+        const name = dsn.replace(/\(.*/, "");
+        expect(`${name} in\n${jcl}`).toSatisfy(() => name.length <= 44);
+        for (const qualifier of name.split(".")) {
+          expect(`${qualifier} of ${name}`).toSatisfy(
+            () => qualifier.length > 0 && qualifier.length <= 8,
+          );
+        }
+      }
+    }
+  });
+});
+
+/**
+ * The expanded form, for a site with no IGYWCL installed and for a program that
+ * cannot use it. Every DD comes from the procedure's printed text rather than
+ * from this emitter's memory of it, which is the only way the two forms can be
+ * held to describing the same build.
+ */
+describe("the expanded compile and link-edit", () => {
+  it("writes the compiler's own libraries and all sixteen work files", () => {
+    const jcl = jclFor(PLAIN, { mode: "expanded" });
+
+    expect(jcl).toContain("//COBOL    EXEC PGM=IGYCRCTL,REGION=0M");
+    expect(jcl).toContain("//STEPLIB  DD DISP=SHR,DSN=IGY.V6R4M0.SIGYCOMP");
+    for (let index = 1; index <= 15; index += 1) {
+      expect(jcl).toContain(`//SYSUT${index}`);
+    }
+    expect(jcl).toContain("//SYSMDECK DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))");
+  });
+
+  /**
+   * `COND=(8,LT,COBOL)`, not `(4,LT)`: a compile that only warned returns 4 and
+   * its object module is still worth binding. IGYWCL says so itself.
+   */
+  it("binds an object module the compiler only warned about", () => {
+    expect(jclFor(PLAIN, { mode: "expanded" })).toContain(
+      "//LKED     EXEC PGM=IEWBLINK,REGION=0M,COND=(8,LT,COBOL)",
+    );
+  });
+
+  /**
+   * Every `CALL "BANKLEDG"` is static under the default NODYNAM, so the binder
+   * resolves it by searching SYSLIB. Without the object library there the load
+   * module is short of every routine it calls and fails at bind.
+   */
+  it("gives the binder somewhere to resolve the static calls from", () => {
+    const jcl = jclFor(PLAIN, { mode: "expanded" });
+    const lked = jcl.slice(jcl.indexOf("//LKED "));
+
+    expect(lked).toContain("//SYSLIB   DD DISP=SHR,DSN=BANKLANG.OBJLIB");
+    expect(lked).toContain("//         DD DISP=SHR,DSN=CEE.SCEELKEX");
+    expect(lked).toContain("//         DD DISP=SHR,DSN=CEE.SCEELKED");
+  });
+
+  /**
+   * A program whose source has to be read by a translator or a precompiler
+   * first cannot use the cataloged procedure at all: those steps run ahead of
+   * the compiler, and a procedure has no step to put one in.
+   */
+  it("is what a program with a precompiler gets, whatever the caller asked", () => {
+    const jcl = jclFor(WITH_SQL, { mode: "cataloged" });
+
+    expect(jcl).toContain("//COBOL    EXEC PGM=IGYCRCTL");
+    expect(jcl).not.toContain("//COMPILE  EXEC IGYWCL");
   });
 });
 
@@ -211,17 +332,30 @@ entry transaction settle(account: Account) {
  */
 describe("what happens after a step fails", () => {
   it("bypasses the run step", () => {
-    expect(jclFor(PLAIN)).toContain("//RUN      EXEC PGM=PLAINBAT,COND=(4,LT)");
+    const jcl = jclFor(PLAIN);
+
+    expect(jcl).toContain("//RUN      EXEC PGM=PLAINBAT,");
+    expect(jcl).toContain("//             REGION=0M,COND=(4,LT)");
   });
 
+  /**
+   * Every step after the first carries a condition. The link-edit's is
+   * `(8,LT,COBOL)` — IGYWCL's own — because a compile that only warned still
+   * produced an object module; the rest are `(4,LT)`.
+   */
   it("bypasses every step after the first", () => {
-    const steps = jclFor(WITH_SQL)
+    const jcl = jclFor(WITH_SQL);
+    const steps = jcl
       .split("\n")
-      .filter((line) => /^\/\/\w+\s+EXEC PGM=/.test(line));
+      .flatMap((line, index) =>
+        /^\/\/\w+\s+EXEC PGM=/.test(line)
+          ? [`${line}${jcl.split("\n")[index + 1] ?? ""}`]
+          : [],
+      );
 
     expect(steps.length).toBeGreaterThan(1);
     for (const step of steps.slice(1)) {
-      expect(step).toContain("COND=(4,LT)");
+      expect(step).toMatch(/COND=\(4,LT\)|COND=\(8,LT,COBOL\)/);
     }
   });
 });
@@ -270,8 +404,8 @@ entry transaction order(posting: Posting) {
       ),
     );
 
-    expect(jcl).toContain("//SORTWK01 DD UNIT=SYSDA");
-    expect(jcl).toContain("//SORTWK03 DD UNIT=SYSDA");
+    expect(jcl).toContain("//SORTWK01 DD UNIT=SYSALLDA");
+    expect(jcl).toContain("//SORTWK03 DD UNIT=SYSALLDA");
   });
 
   it("allocates none for a merge", () => {
@@ -295,7 +429,10 @@ describe("a Db2 job", () => {
     const jcl = jclFor(WITH_SQL);
 
     expect(jcl.indexOf("PGM=DSNHPC")).toBeLessThan(jcl.indexOf("PGM=IGYCRCTL"));
-    expect(jcl.indexOf("PGM=IEWL")).toBeLessThan(jcl.indexOf("PGM=IKJEFT01"));
+    expect(jcl.indexOf("PGM=IEWBLINK")).toBeGreaterThan(0);
+    expect(jcl.indexOf("PGM=IEWBLINK")).toBeLessThan(
+      jcl.indexOf("PGM=IKJEFT01"),
+    );
     expect(jcl).toContain("BIND PACKAGE(BANKLANG) MEMBER(SQLBATCH)");
   });
 

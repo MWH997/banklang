@@ -63,7 +63,7 @@ describe("the program the region enters", () => {
       "PROCEDURE DIVISION USING IO-PCB ACCOUNT-DB-PCB.",
     );
     expect(result.cobol).toContain("01  ACCOUNT-DB-PCB.");
-    expect(result.cobol).toContain("05  ACCOUNT-DB-PCB-STATUS    PIC XX.");
+    expect(result.cobol).toContain("05  ACCOUNT-DB-PCB-STATUS    PIC X(2).");
   });
 
   /**
@@ -132,7 +132,7 @@ describe("the program the region enters", () => {
     expect(text).toContain(
       '05  FILLER               PIC X(8) VALUE "ACCTID  ".',
     );
-    expect(text).toContain('05  FILLER               PIC XX VALUE " =".');
+    expect(text).toContain('05  FILLER               PIC X(2) VALUE " =".');
     expect(text).toContain("05  ACCOUNT-DB-SSA-VALUE PIC X(10).");
     expect(text).toContain('05  FILLER               PIC X VALUE ")".');
   });

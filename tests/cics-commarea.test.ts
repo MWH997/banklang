@@ -76,9 +76,17 @@ describe("a CICS transaction", () => {
    */
   it("writes the record back before returning", () => {
     const text = result.cobol ?? "";
+    const body = text.slice(
+      text.indexOf("\n       ENQUIRE.\n"),
+      text.indexOf("\n       ENQUIRE-EXIT.\n"),
+    );
 
-    expect(text).toContain("MOVE REQUEST TO DFHCOMMAREA");
-    expect(text.indexOf("MOVE REQUEST TO DFHCOMMAREA")).toBeLessThan(
+    // The write-back is the last thing the transaction does. `EXEC CICS RETURN`
+    // is `BANK-MAIN`'s, after the PERFORM, because `BANK-MAIN` is the only
+    // paragraph that ends the program — so the two are ordered by control flow
+    // rather than by which line of the file they sit on.
+    expect(body).toContain("MOVE REQUEST TO DFHCOMMAREA");
+    expect(text.indexOf("PERFORM ENQUIRE THRU ENQUIRE-EXIT")).toBeLessThan(
       text.indexOf("EXEC CICS RETURN"),
     );
   });
@@ -239,13 +247,20 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
     );
   });
 
-  /** A zero return code on a failed open is what makes it invisible to the job. */
+  /**
+   * A zero return code on a failed open is what makes it invisible to the job.
+   *
+   * Leaving is a `GO TO` at the enclosing routine's exit rather than a `GOBACK`
+   * written where the failure was found: the `GOBACK` sat inside a range the
+   * caller had performed, so which paragraph a failure ended in decided whether
+   * the transaction's `on failure` handler ran at all.
+   */
   it("stops with a non-zero return code", () => {
     const text = result.cobol ?? "";
     const check = text.indexOf('IF FEED-STATUS(1:1) NOT = "0"');
 
-    expect(text.slice(check)).toContain("MOVE 12 TO RETURN-CODE");
-    expect(text.slice(check)).toContain("GOBACK");
+    expect(text.slice(check)).toContain("MOVE 12 TO BANK-RETURN-CODE");
+    expect(text.slice(check)).toMatch(/GO TO \S+-EXIT/);
   });
 });
 

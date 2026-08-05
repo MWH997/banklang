@@ -25,6 +25,9 @@ describe("gnucobol validation report", () => {
       compilerExitCode: 0,
       compilerStatus: "passed",
       compilerOutput: "compiled",
+      defaultDialectStatus: "passed",
+      defaultDialectOutput: "compiled",
+      dialectsDiverge: false,
       validatedWithGnucobol: true,
       knownBackendGaps: [
         "This local profile covers the account-transfer subset only.",
@@ -37,5 +40,9 @@ describe("gnucobol validation report", () => {
     expect(report).toContain("generated-artifact-sha256");
     expect(report).toContain("compiler-command");
     expect(report).toContain("Known Backend Gaps");
+    // The IBM-shaped dialect and the default one are reported apart, because a
+    // pass under one and a failure under the other is the finding.
+    expect(report).toContain("default-dialect-status | passed");
+    expect(report).toContain("dialects-diverge | no");
   });
 });

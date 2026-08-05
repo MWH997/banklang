@@ -363,6 +363,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-DEC-006",
+    title: "Rounding cannot be generated",
+    explanation:
+      "Enterprise COBOL has one rounding phrase, `ROUNDED`, which is half up away from zero; leaving it off truncates. The other five modes are generated arithmetic, and that generation has preconditions: the rounded value must be the whole value being stored, because COBOL attaches ROUNDED to the receiving field, and a rounded division's remainder must fit an eighteen-digit item, because the tie test is run against it.",
+    remediation:
+      "Bind the rounded value to its own `let` before combining it, or reduce the divisor's precision or the result's scale so the remainder fits.",
+    specReference: "numeric-model.md",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-005",
     title: "Currency mismatch",
     explanation:

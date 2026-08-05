@@ -181,10 +181,20 @@ describe("the step's condition code", () => {
     // with the called program's own — a `returnCode = 4` followed by the audit
     // call used to reach the operating system as zero.
     expect(cobol).toContain("MOVE 4 TO BANK-RETURN-CODE");
-    expect(cobol).toContain("MOVE BANK-RETURN-CODE TO RETURN-CODE");
+    // It reaches the special register once, in `BANK-MAIN`, after everything
+    // the program performs has returned — which is what makes the ordering a
+    // property of the control flow rather than of where the line happens to
+    // sit in the file.
+    expect(cobol).toContain(
+      [
+        "           PERFORM SWEEP THRU SWEEP-EXIT",
+        "           MOVE BANK-RETURN-CODE TO RETURN-CODE",
+        "           GOBACK.",
+      ].join("\n"),
+    );
     expect(
-      cobol.lastIndexOf("MOVE BANK-RETURN-CODE TO RETURN-CODE"),
-    ).toBeGreaterThan(cobol.lastIndexOf('CALL "BANKAUDT"'));
+      cobol.match(/MOVE BANK-RETURN-CODE TO RETURN-CODE/g) ?? [],
+    ).toHaveLength(1);
   });
 
   it("rejects a fraction, which is not a condition code", () => {

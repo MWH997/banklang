@@ -6,7 +6,8 @@
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP VALUE 0.
+       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
        01  TRANSFER-REQUEST.
            05  DEBIT-ACCOUNT        PIC X(16).
            05  CREDIT-ACCOUNT       PIC X(16).
@@ -22,3 +23,5 @@
                MOVE 'N' TO VALIDATE-AMOUNT-RESULT
            END-IF
            CONTINUE.
+       VALIDATE-AMOUNT-EXIT.
+           EXIT.

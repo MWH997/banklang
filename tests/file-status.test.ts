@@ -179,7 +179,7 @@ describe("which statements are checked", () => {
       (result.cobol ?? "").indexOf('DISPLAY "WRITE FAILED'),
     );
 
-    expect(after).toContain("MOVE 12 TO RETURN-CODE");
+    expect(after).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 });
 
