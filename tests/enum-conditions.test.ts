@@ -111,6 +111,64 @@ entry transaction shift(account: Account, mirror: Mirror) {
 });
 
 /**
+ * Testing a field is the other half, and it was still comparing the member's
+ * spelling as a literal — the construct the level-88 exists to replace. The
+ * condition name says which state is being asked about; a string comparison
+ * repeats the spelling in the procedure division and has to be kept in step
+ * with the 88 by hand.
+ */
+describe("testing an enum field", () => {
+  it("tests the condition rather than the spelling", () => {
+    const result = program(`  if account.status == Status.CLOSED {
+    log "SHUT";
+  }`);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("IF STATUS-FLD-CLOSED OF ACCOUNT");
+    expect(result.cobol).not.toContain('= "CLOSED"');
+  });
+
+  /** COBOL negates a condition name with NOT, there being no other operator. */
+  it("negates with NOT", () => {
+    const result = program(`  if account.status != Status.CLOSED {
+    log "OPEN FOR BUSINESS";
+  }`);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("IF NOT STATUS-FLD-CLOSED OF ACCOUNT");
+  });
+
+  /** Either way round, since the field is what carries the conditions. */
+  it("reads the same written the other way round", () => {
+    const result = program(`  if Status.CLOSED == account.status {
+    log "SHUT";
+  }`);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("IF STATUS-FLD-CLOSED OF ACCOUNT");
+  });
+
+  /**
+   * Two enum fields compared with each other have no single condition to name,
+   * so that stays an ordinary comparison of the two fields.
+   */
+  it("leaves a field compared with another field alone", () => {
+    const result = compile(`${PREAMBLE}
+record Mirror {
+  status: Status;
+}
+
+entry transaction shift(account: Account, mirror: Mirror) {
+  if account.status == mirror.status {
+    log "SAME";
+  }
+  audit("SHIFTED", account.idempotencyKey);
+}`);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain(
+      "IF STATUS-FLD OF ACCOUNT = STATUS-FLD OF MIRROR",
+    );
+  });
+});
+
+/**
  * A `SET` that names the wrong condition still compiles, so the value that
  * lands in the field is what gets checked.
  */

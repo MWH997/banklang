@@ -75,6 +75,48 @@ describe("a computation that cannot", () => {
 });
 
 /**
+ * A contained program is where "fail the step" needs a different statement.
+ *
+ * `GOBACK` in the outermost program returns to the operating system, so a guard
+ * that sets a return code and goes back ends the job. In a contained program it
+ * returns to the *container*, which carries straight on and then overwrites the
+ * return code with its own on the way out — so an overflow inside a nested
+ * function reported itself to the job log and the step still ended with zero.
+ */
+describe("a computation inside a nested function", () => {
+  const result = compile(`module Nest;
+
+record Book {
+  total: decimal<9, 2>;
+  a: decimal<9, 2>;
+  b: decimal<9, 2>;
+  idempotencyKey: string<36>;
+}
+
+nested function addUp(book: Book): decimal<9, 2> {
+  return book.a + book.b;
+}
+
+entry transaction go(book: Book) {
+  book.total = addUp(book);
+  audit("DONE", book.idempotencyKey);
+}`);
+
+  it("compiles", () => {
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("ends the run unit rather than returning to the container", () => {
+    const text = result.cobol ?? "";
+    expect(text).toContain("ON SIZE ERROR");
+    expect(text).toContain("STOP RUN");
+    // The container's own paths are unchanged: only the guard inside the
+    // contained program needs the stronger statement.
+    expect(text).toContain("END PROGRAM ADDUP");
+  });
+});
+
+/**
  * The point of the whole thing, run rather than read.
  *
  * Before the phrase was emitted this printed 9,999,999.98 and exited zero: the
