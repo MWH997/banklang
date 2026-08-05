@@ -650,9 +650,9 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-COPY-004",
     title: "Invalid variant record clause",
     explanation:
-      "A `redefines` names a field that is not declared before it, or is longer than what it redefines — a redefining field gets no storage of its own, so a longer one reads past the end. A `depending on` names something that is not a count declared before the table, which COBOL reads to decide the record's length.",
+      "A `redefines` names a field that is not declared before it, or is longer than what it redefines. A `depending on` names something that is not a count declared before the table, which COBOL reads to decide the record's length. On the length: COBOL itself permits a longer redefining item except where the redefined item is an external data record — the redefinition extends the storage area rather than overrunning it. This compiler refuses it anyway, which is a deliberate narrowing rather than COBOL's rule: a redefinition that changes the record's length moves every field after it, and a copybook whose length depends on which of several readings is the longest is the kind that is read wrong by the program on the other side of the interface.",
     remediation:
-      "Declare the field being redefined first and keep the redefining field no longer, and declare the count as `binary<n>` or `decimal<n, 0>` before the table.",
+      "Declare the field being redefined first and keep the redefining field no longer, and declare the count as `binary<n>` or `decimal<n, 0>` before the table. If the layout genuinely needs a longer reading, declare the longer field first and redefine it with the shorter one.",
     specReference: "language-reference.md section 5c",
     implemented: true,
   },

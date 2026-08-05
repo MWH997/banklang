@@ -470,9 +470,20 @@ New copybook layout changes field offsets or byte lengths incompatibly.
 ### `BANK-COPY-004` invalid variant record clause
 
 A `redefines` names a field that is not declared before it, or is longer than
-what it redefines — a redefining field gets no storage of its own, so a longer
-one reads past the end. A `depending on` names something that is not a count
-declared before the table, which COBOL reads to decide the record's length.
+what it redefines. A `depending on` names something that is not a count declared
+before the table, which COBOL reads to decide the record's length.
+
+On the length, this compiler is **stricter than COBOL and says so**. Enterprise
+COBOL permits a longer redefining item except where the redefined item is an
+external data record; the redefinition extends the storage area rather than
+overrunning it, and the Language Reference gives `05 A PIC X(6).` redefined by
+`05 B REDEFINES A PIC N(4).` — eight bytes over six — as a legal example.
+
+The narrowing is deliberate. A redefinition that changes the record's length
+moves every field after it, and a copybook whose length depends on which of
+several readings happens to be longest is the kind that gets read wrong by the
+program on the other side of the interface. If a layout genuinely needs the
+longer reading, declare the longer field first and redefine it with the shorter.
 
 ### `BANK-COPY-005` invalid field clause
 

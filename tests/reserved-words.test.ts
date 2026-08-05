@@ -131,3 +131,57 @@ entry transaction t(r: R) {
     expect(result.cobol).toContain("DISPLAY");
   });
 });
+
+/**
+ * `redefines`, and the one place this compiler is deliberately stricter than
+ * COBOL rather than accidentally different from it.
+ *
+ * Enterprise COBOL permits a longer redefining item except where the redefined
+ * item is an external data record — the redefinition extends the storage area
+ * rather than overrunning it, and the Language Reference gives `05 A PIC X(6).`
+ * redefined by `05 B REDEFINES A PIC N(4).` as a legal example. The compiler
+ * refuses it anyway, because a redefinition that changes the record's length
+ * moves every field after it.
+ *
+ * The point of the test is that the refusal is a choice with a stated reason,
+ * not a belief that COBOL forbids it — the diagnostic used to say the longer
+ * field would "read past the end", which is not what happens.
+ */
+describe("a redefines longer than what it redefines", () => {
+  it("is refused, and the refusal is the compiler's own rule", () => {
+    const result = compile(`module Redef;
+
+record Master {
+  a: string<6>;
+  b: national<4> redefines a;
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(master: Master) {
+  audit("TOUCHED", master.idempotencyKey);
+}`);
+
+    expect(result.diagnostics.map((entry) => entry.id)).toContain(
+      "BANK-COPY-004",
+    );
+  });
+
+  /** Declaring the longer reading first is the way to express the same layout. */
+  it("accepts the same storage described the other way round", () => {
+    const result = compile(`module Redef;
+
+record Master {
+  b: national<4>;
+  a: string<6> redefines b;
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(master: Master) {
+  audit("TOUCHED", master.idempotencyKey);
+}`);
+
+    expect(
+      result.diagnostics.filter((entry) => entry.severity === "error"),
+    ).toEqual([]);
+  });
+});
