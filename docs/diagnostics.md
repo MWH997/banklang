@@ -133,6 +133,22 @@ An `edited<T, "style">` field names a style the compiler does not know, or asks
 to render something with no edited form. A picture nobody checked is a report
 column that silently loses digits.
 
+### `BANK-TYPE-024` national layout is not locally verifiable
+
+A warning, on every `national<n>` field.
+
+`national<n>` emits `PIC N(n) USAGE NATIONAL`. Enterprise COBOL holds each
+character in two bytes of UTF-16, and that is the width the layout report, the
+copybook, and the copybook inspector all use. GnuCOBOL 3.2.0 allocates four
+bytes per character inside a group — measured, not assumed — and warns on every
+such line that its handling of `USAGE NATIONAL` is unfinished.
+
+Byte-exact layout is the only thing the type promises, so this is the one place
+where the compiler emits a record its own validator reads differently: under
+GnuCOBOL every field after a national sits at a different offset. The warning is
+there so the local evidence cannot be mistaken for a check that happened.
+`zos/README.md` records the divergence as something to verify first.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden

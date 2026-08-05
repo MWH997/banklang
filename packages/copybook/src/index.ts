@@ -145,7 +145,8 @@ export function fieldLength(type: IRType): number {
     case "decimal":
       return numericByteLength(type.precision, type.usage);
     case "string":
-      return type.length;
+      // `length` counts characters. A national character is two bytes.
+      return type.national ? type.length * 2 : type.length;
     case "bool":
       return 1;
     case "record":
@@ -559,6 +560,14 @@ function inspectPictureLength(picture: string): number {
     return 1;
   }
 
+  // `PIC N(n) USAGE NATIONAL` counts characters, and each is two bytes. Reading
+  // it as n would put every later field in the record two bytes per character
+  // too early, which is the mistake the type exists to prevent.
+  const national = body.match(/^N\((\d+)\)(?: USAGE NATIONAL)?$/);
+  if (national) {
+    return Number(national[1]) * 2;
+  }
+
   // A numeric-edited picture is one character per position, and every position
   // is written out, so its own length is the byte count.
   if (/[Z*,.\/]/.test(body) && !body.includes("COMP")) {
@@ -647,7 +656,7 @@ function formatLayoutType(type: IRType): string {
           ? `zoned<${type.precision},${type.scale}>`
           : `decimal<${type.precision},${type.scale}>`;
     case "string":
-      return `string<${type.length}>`;
+      return `${type.national ? "national" : "string"}<${type.length}>`;
     case "bool":
       return "bool";
     case "record":
@@ -693,7 +702,7 @@ function formatLayoutUsage(type: IRType): string {
     case "array":
       return formatLayoutUsage(type.element);
     case "string":
-      return "DISPLAY";
+      return type.national ? "NATIONAL" : "DISPLAY";
     case "bool":
       return "DISPLAY";
     case "record":

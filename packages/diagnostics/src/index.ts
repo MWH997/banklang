@@ -264,6 +264,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-024",
+    title: "National layout is not locally verifiable",
+    explanation:
+      "A `national<n>` field is `PIC N(n) USAGE NATIONAL`. Enterprise COBOL holds each character in two bytes of UTF-16, which is the width the layout report and the copybook use. GnuCOBOL 3.2.0 allocates four bytes per character inside a group — measured, not assumed — and warns on every such line that its handling of USAGE NATIONAL is unfinished. Byte-exact layout is the only thing the type promises, so the one compiler available to check it disagrees about the one thing that matters.",
+    remediation:
+      "Use the type when a mainframe record requires it, and verify the record on z/OS before relying on the offsets. `zos/README.md` records the divergence.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:

@@ -456,7 +456,7 @@ function printType(type: TypeNode): string {
           ? `zoned<${type.precision}, ${type.scale}>`
           : `decimal<${type.precision}, ${type.scale}>`;
     case "StringType":
-      return `string<${type.length}>`;
+      return `${type.national ? "national" : "string"}<${type.length}>`;
     case "BoolType":
       return "bool";
     case "TemporalType":

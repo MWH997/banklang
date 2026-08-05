@@ -3895,7 +3895,9 @@ function formatCobolType(type: IRType): string {
     case "decimal":
       return decimalPicture(type.precision, type.scale, type.usage);
     case "string":
-      return `PIC X(${type.length})`;
+      return type.national
+        ? `PIC N(${type.length}) USAGE NATIONAL`
+        : `PIC X(${type.length})`;
     case "bool":
       return "PIC X VALUE 'N'";
     case "record":

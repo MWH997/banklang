@@ -748,7 +748,9 @@ export function toCobolPicture(type: IRType): string {
     case "array":
       return toCobolPicture(type.element);
     case "string":
-      return `PIC X(${type.length})`;
+      return type.national
+        ? `PIC N(${type.length}) USAGE NATIONAL`
+        : `PIC X(${type.length})`;
     case "bool":
       return `PIC X VALUE 'N'`;
     case "record":

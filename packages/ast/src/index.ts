@@ -89,6 +89,15 @@ export interface DecimalTypeNode extends NodeBase {
 export interface StringTypeNode extends NodeBase {
   kind: "StringType";
   length: number;
+  /**
+   * `national<n>` — `PIC N(n) USAGE NATIONAL`, two bytes per character.
+   *
+   * A field kept in UTF-16 rather than the code page. It is a flag on the
+   * string type rather than a type of its own because everything else about it
+   * is the same: a fixed run of characters, moved as a whole. What differs is
+   * the byte count, and getting that wrong misplaces every field after it.
+   */
+  national?: boolean;
 }
 
 export interface BoolTypeNode extends NodeBase {

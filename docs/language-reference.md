@@ -22,6 +22,7 @@ Supported primitive types:
 bool;
 decimal<precision, scale>;
 string<length>;
+national<length>;
 date;
 time;
 timestamp;
@@ -169,6 +170,59 @@ conditional. Numbers and edited fields only, since there has to be a zero to
 blank.
 
 `sync`, `justified`, and `blankWhenZero` may be written in any order.
+
+### National characters
+
+```ts
+given: national<20>;
+```
+
+`national<n>` emits `PIC N(n) USAGE NATIONAL`. The length counts characters;
+Enterprise COBOL holds each in **two bytes** of UTF-16, so the field occupies
+`2n`, and every field after it is placed accordingly. That arithmetic is the only
+reason the type exists. A mainframe record with a national field does not line up
+if the field is counted as `n` bytes, and a copybook that miscounts it puts
+everything after it at the wrong offset.
+
+It is a storage type, not a text type. A national may be assigned from, compared
+with, and passed as another national of the same length; it can be read from and
+written to files like any other field. What it cannot do is mix with
+`string<n>` — in either direction, literals included:
+
+```ts
+name.given = "SMITH"; // BANK-TYPE-003
+name.given = name.branch; // BANK-TYPE-003
+```
+
+The two hold different bytes for the same characters, and converting between them
+needs `NATIONAL-OF` or `DISPLAY-OF`, which GnuCOBOL does not implement. Rather
+than emit a move whose result differs between compilers, the compiler declines.
+
+#### The caveat, stated plainly
+
+**A national field is the one thing this compiler emits that its own validation
+does not cover**, and every such field carries a warning (`BANK-TYPE-024`) saying
+so.
+
+GnuCOBOL 3.2.0 — the compiler everything else here is checked against —
+allocates **four** bytes per national character inside a group, not two. That is
+measured, not assumed:
+
+```cobol
+01  H.
+    05  A2 PIC N(4) USAGE NATIONAL.
+    05  C2 PIC X(4).
+```
+
+`C2` starts at byte 17 under GnuCOBOL and byte 9 under Enterprise COBOL.
+GnuCOBOL also warns on every such line that its handling of `USAGE NATIONAL` is
+unfinished, and allocates two bytes per character for the same picture at the 01
+level, which makes it an inconsistency there rather than a rule.
+
+This compiler emits the Enterprise COBOL width, because Enterprise COBOL is what
+it targets. Verify the record on z/OS before relying on the offsets;
+[`zos/README.md`](../zos/README.md) records the divergence as the first thing to
+check.
 
 ### 3b. Edited fields
 

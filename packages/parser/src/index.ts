@@ -112,6 +112,7 @@ export const KEYWORDS = new Set([
   "false",
   "decimal",
   "string",
+  "national",
   "bool",
   "date",
   "time",
@@ -3229,16 +3230,23 @@ class Parser {
       } satisfies DecimalTypeNode);
     }
 
-    if (this.matchKeyword("string")) {
+    // `string<n>` and `national<n>` differ only in how a character is stored, so
+    // they share a node and a parse. The flag decides the picture and the width.
+    if (this.matchKeyword("string") || this.matchKeyword("national")) {
       const keyword = this.previous;
+      const word = keyword?.text ?? "string";
       const openAngle = this.expectPunctuation(
         "<",
-        "Expected `<` after `string`.",
+        `Expected \`<\` after \`${word}\`.`,
       );
-      const lengthToken = this.expectNumber("Expected string length.");
+      const lengthToken = this.expectNumber(
+        word === "national"
+          ? "Expected character count."
+          : "Expected string length.",
+      );
       const closeAngle = this.expectPunctuation(
         ">",
-        "Expected `>` to close string type.",
+        `Expected \`>\` to close ${word} type.`,
       );
       if (!keyword || !openAngle || !lengthToken || !closeAngle) {
         return null;
@@ -3246,6 +3254,7 @@ class Parser {
       return this.withArraySuffix({
         kind: "StringType",
         length: Number(lengthToken.text),
+        national: word === "national",
         span: {
           sourceFile: keyword.span.sourceFile,
           start: keyword.span.start,
