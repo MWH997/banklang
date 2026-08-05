@@ -361,6 +361,10 @@ export interface CobolEmitOptions {
    * programs rather than a document that can drift from them.
    */
   copybookMode?: "inline" | "copy";
+  /** `DECIMAL-POINT IS COMMA`, for a program written for a comma locale. */
+  decimalPoint?: "point" | "comma";
+  /** `CURRENCY SIGN IS`, for what an edited picture's currency position prints. */
+  currencySign?: string;
 }
 
 export interface JclEmitResult {
@@ -406,6 +410,7 @@ export function emitCobol(
       .filter((entry) => entry.form === "cursor")
       .map((entry) => entry.name),
   );
+  currentDecimalPoint = options.decimalPoint ?? "point";
   currentLocalFields = planLocalFields(program);
   declaredDataNames = collectDataNames(program);
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
@@ -424,8 +429,30 @@ export function emitCobol(
   addLine(`       PROGRAM-ID. ${toCobolProgramId(program.moduleName)}.`);
   addLine("");
 
-  if (program.files.length > 0) {
+  // SPECIAL-NAMES sets conventions for the whole program, so it comes before
+  // FILE-CONTROL and exists even in a program with no files.
+  const specialNames: string[] = [];
+  if (options.decimalPoint === "comma") {
+    specialNames.push(`           DECIMAL-POINT IS COMMA`);
+  }
+  if (options.currencySign && options.currencySign !== "$") {
+    specialNames.push(`           CURRENCY SIGN IS "${options.currencySign}"`);
+  }
+
+  if (program.files.length > 0 || specialNames.length > 0) {
     addLine(`       ENVIRONMENT DIVISION.`);
+  }
+
+  if (specialNames.length > 0) {
+    addLine(`       CONFIGURATION SECTION.`);
+    addLine(`       SPECIAL-NAMES.`);
+    specialNames.forEach((clause, index) => {
+      addLine(index === specialNames.length - 1 ? `${clause}.` : clause);
+    });
+    addLine("");
+  }
+
+  if (program.files.length > 0) {
     addLine(`       INPUT-OUTPUT SECTION.`);
     addLine(`       FILE-CONTROL.`);
     for (const file of program.files) {
@@ -1025,6 +1052,15 @@ function emitFileControlEntry(
       clauses.push(
         `               RECORD KEY IS ${fdFieldName(file, file.keyFieldName)}`,
       );
+    }
+    // An alternate key is a second way into the same record. WITH DUPLICATES
+    // because that is nearly always why one exists: many accounts per customer,
+    // many postings per date.
+    for (const alternate of file.alternateKeyNames) {
+      clauses.push(
+        `               ALTERNATE RECORD KEY IS ${fdFieldName(file, alternate)}`,
+      );
+      clauses.push(`                   WITH DUPLICATES`);
     }
   } else if (file.organization === "relative") {
     clauses.push(`               ACCESS MODE IS SEQUENTIAL`);
@@ -2694,6 +2730,14 @@ function sqlParameterName(statementName: string, index: number): string {
   return `${toCobolName(statementName)}-H${index + 1}`;
 }
 
+/**
+ * The decimal point convention of the program being emitted.
+ *
+ * It changes how an edited picture is written, so it has to reach
+ * `formatCobolType`, which has no other route to the emit options.
+ */
+let currentDecimalPoint: "point" | "comma" = "point";
+
 /** Cursors the program declares, for rewriting `WHERE CURRENT OF`. */
 let cursorNames = new Set<string>();
 
@@ -3421,7 +3465,12 @@ function toJclDatasetName(cobolArtifactPath: string): string {
 function formatCobolType(type: IRType): string {
   switch (type.kind) {
     case "edited":
-      return editedPicture(type.style, type.precision, type.scale);
+      return editedPicture(
+        type.style,
+        type.precision,
+        type.scale,
+        currentDecimalPoint,
+      );
     case "temporal":
       return temporalPicture(type.unit);
     case "decimal":

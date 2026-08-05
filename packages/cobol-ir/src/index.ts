@@ -678,10 +678,23 @@ export function editedPicture(
   style: EditStyle,
   precision: number,
   scale: number,
+  /**
+   * The program's decimal point convention.
+   *
+   * `DECIMAL-POINT IS COMMA` swaps the roles of the comma and the point
+   * *inside pictures too*, so a grouped amount is written `Z.ZZZ.ZZ9,99`. A
+   * picture built the other way round is not merely printed oddly — the COBOL
+   * compiler rejects it, because the separator would then appear more than
+   * once.
+   */
+  decimalPoint: "point" | "comma" = "point",
 ): string {
   if (style === "slashed") {
     return "PIC 9999/99/99";
   }
+
+  const groupSeparator = decimalPoint === "comma" ? "." : ",";
+  const pointCharacter = decimalPoint === "comma" ? "," : ".";
 
   const integerDigits = Math.max(precision - scale, 1);
   const suppression = style === "protected" ? "*" : "Z";
@@ -693,11 +706,11 @@ export function editedPicture(
     // keeps a zero visible and the separators land every third digit.
     body = (index === 0 ? "9" : suppression) + body;
     if (grouped && index % 3 === 2 && index < integerDigits - 1) {
-      body = `,${body}`;
+      body = `${groupSeparator}${body}`;
     }
   }
 
-  const decimals = scale > 0 ? `.${"9".repeat(scale)}` : "";
+  const decimals = scale > 0 ? `${pointCharacter}${"9".repeat(scale)}` : "";
   const sign = style === "signed" ? "-" : style === "credit" ? "CR" : "";
 
   return `PIC ${body}${decimals}${sign}`;
@@ -709,6 +722,8 @@ export function editedLength(
   precision: number,
   scale: number,
 ): number {
+  // Length does not depend on the convention: swapping the separators changes
+  // which character sits where, not how many there are.
   const picture = editedPicture(style, precision, scale).slice("PIC ".length);
   // Every character in an edited picture is one position, except the repeat
   // notation this builder never emits.

@@ -97,6 +97,8 @@ export interface IRFile {
   record: IRRecord;
   statusName: string | null;
   keyFieldName: string | null;
+  /** Alternate record keys, which allow duplicates. */
+  alternateKeyNames: string[];
 }
 
 export interface IRTransaction {
@@ -816,6 +818,7 @@ export function lowerProgramToIR(
     record: lowerRecord(file.record, recordTypeMap),
     statusName: file.statusName,
     keyFieldName: file.keyField?.name ?? null,
+    alternateKeyNames: file.alternateKeys.map((field) => field.name),
   }));
 
   return {
