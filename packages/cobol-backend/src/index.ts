@@ -924,10 +924,11 @@ function emitFileControlEntry(
     `               ORGANIZATION IS ${file.organization.toUpperCase()}`,
   ];
 
-  // An indexed file is read by key, so it uses random access and names its
-  // record key. Sequential and relative files stay sequential.
+  // DYNAMIC rather than RANDOM: an indexed file is read by key *and* browsed
+  // with START and READ NEXT, and RANDOM allows only the first. Sequential and
+  // relative files stay sequential.
   if (file.organization === "indexed") {
-    clauses.push(`               ACCESS MODE IS RANDOM`);
+    clauses.push(`               ACCESS MODE IS DYNAMIC`);
     if (file.keyFieldName) {
       clauses.push(
         `               RECORD KEY IS ${fdFieldName(file, file.keyFieldName)}`,
@@ -1674,10 +1675,16 @@ function emitFileStatement(
 ): void {
   const file = fileCobolName(statement.fileName);
 
+  const status = statement.statusName
+    ? toCobolFieldName(statement.statusName)
+    : null;
+
   switch (statement.operation) {
     case "open":
+      // I-O is what a master file update needs: the same OPEN serves the READ
+      // that finds a record and the REWRITE that puts it back.
       addLine(
-        `${indent}OPEN ${statement.fileMode === "input" ? "INPUT" : "OUTPUT"} ${file}`,
+        `${indent}OPEN ${statement.fileMode === "input" ? "INPUT" : statement.fileMode === "output" ? "OUTPUT" : "I-O"} ${file}`,
       );
       return;
     case "close":
@@ -1707,9 +1714,62 @@ function emitFileStatement(
       // and does not depend on the two layouts being byte-identical.
       emitRecordFieldMapping(statement, addLine, indent, "read");
       return;
+    case "readNext":
+      // A browse walks from wherever START left the file, so the read is
+      // sequential even on an indexed dataset and reports end of data.
+      addLine(`${indent}READ ${file} NEXT RECORD`);
+      if (status) {
+        addLine(`${indent}    AT END MOVE "10" TO ${status}`);
+      }
+      addLine(`${indent}END-READ`);
+      emitRecordFieldMapping(statement, addLine, indent, "read");
+      return;
+    case "start":
+      // Positions the browse. `KEY IS NOT LESS THAN` starts at the first record
+      // at or after the key, which is what a range walk wants; an exact match
+      // would make a browse from a partial key impossible.
+      if (statement.key && statement.keyFieldName) {
+        addLine(
+          `${indent}MOVE ${renderExpression(statement.key)} TO ${toCobolFieldName(statement.keyFieldName)} OF ${fileRecordNameFor(statement.fileName)}`,
+        );
+      }
+      addLine(
+        `${indent}START ${file} KEY IS NOT LESS THAN ${statement.keyFieldName ? `${toCobolFieldName(statement.keyFieldName)} OF ${fileRecordNameFor(statement.fileName)}` : ""}`.trimEnd(),
+      );
+      if (status) {
+        addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
+      }
+      addLine(`${indent}END-START`);
+      return;
     case "write":
       emitRecordFieldMapping(statement, addLine, indent, "write");
       addLine(`${indent}WRITE ${fileRecordNameFor(statement.fileName)}`);
+      if (status && statement.fileOrganization === "indexed") {
+        // A duplicate key is the failure a WRITE to a KSDS actually has, and
+        // it is silent unless the status is captured.
+        addLine(`${indent}    INVALID KEY MOVE "22" TO ${status}`);
+        addLine(`${indent}END-WRITE`);
+      }
+      return;
+    case "rewrite":
+      emitRecordFieldMapping(statement, addLine, indent, "write");
+      addLine(`${indent}REWRITE ${fileRecordNameFor(statement.fileName)}`);
+      if (status && statement.fileOrganization === "indexed") {
+        addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
+        addLine(`${indent}END-REWRITE`);
+      }
+      return;
+    case "delete":
+      if (statement.key && statement.keyFieldName) {
+        addLine(
+          `${indent}MOVE ${renderExpression(statement.key)} TO ${toCobolFieldName(statement.keyFieldName)} OF ${fileRecordNameFor(statement.fileName)}`,
+        );
+      }
+      addLine(`${indent}DELETE ${file} RECORD`);
+      if (status) {
+        addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
+        addLine(`${indent}END-DELETE`);
+      }
       return;
   }
 }

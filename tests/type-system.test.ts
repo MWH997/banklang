@@ -305,7 +305,7 @@ transaction t(holder: Holder) {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("ORGANIZATION IS INDEXED");
-    expect(result.cobol).toContain("ACCESS MODE IS RANDOM");
+    expect(result.cobol).toContain("ACCESS MODE IS DYNAMIC");
     expect(result.cobol).toContain("RECORD KEY IS ACCOUNT-ID OF MASTER-RECORD");
   });
 

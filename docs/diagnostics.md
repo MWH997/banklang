@@ -286,6 +286,12 @@ Copybook contains a PIC clause not supported by current parser.
 
 New copybook layout changes field offsets or byte lengths incompatibly.
 
+### `BANK-FILE-005` file operation does not match the declaration
+
+A `rewrite` or `delete` needs the file open for `update`, because updating a
+record in place means finding it first. A `start` or `readNext` browses an
+index, which a sequential file does not have.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified

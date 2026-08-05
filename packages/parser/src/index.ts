@@ -139,7 +139,7 @@ export const KEYWORDS = new Set([
  * File declaration clause words are matched contextually so `sequential`,
  * `input`, `output`, and `status` stay usable as field and parameter names.
  */
-const FILE_MODES = new Set(["input", "output"]);
+const FILE_MODES = new Set(["input", "output", "update"]);
 const FILE_ORGANIZATIONS = new Set(["sequential", "indexed", "relative"]);
 
 /** Built-ins for working with nullable values. */
@@ -192,7 +192,16 @@ const ROUNDING_MODES = new Set([
 ]);
 
 /** File operation keywords, matched contextually in statement position. */
-const FILE_OPERATIONS = new Set(["open", "read", "write", "close"]);
+const FILE_OPERATIONS = new Set([
+  "open",
+  "read",
+  "readNext",
+  "write",
+  "rewrite",
+  "delete",
+  "start",
+  "close",
+]);
 
 class Lexer {
   private readonly source: string;
@@ -814,7 +823,7 @@ class Parser {
       kind: "FileDeclaration",
       name: nameToken.text,
       organization: organizationToken.text as FileOrganization,
-      mode: modeToken.text as "input" | "output",
+      mode: modeToken.text as "input" | "output" | "update",
       recordTypeName: recordTypeToken.text,
       statusName,
       keyField,
@@ -1610,8 +1619,14 @@ class Parser {
     const operation = operationToken.text as FileStatementNode["operation"];
     let recordName: string | null = null;
 
-    if (operation === "read" || operation === "write") {
-      const clause = operation === "read" ? "into" : "from";
+    if (
+      operation === "read" ||
+      operation === "readNext" ||
+      operation === "write" ||
+      operation === "rewrite"
+    ) {
+      const clause =
+        operation === "read" || operation === "readNext" ? "into" : "from";
       const clauseToken = this.current;
       if (clauseToken.kind !== "identifier" || clauseToken.text !== clause) {
         this.errorAtCurrent(
@@ -1630,10 +1645,12 @@ class Parser {
     }
 
     let key: ExpressionNode | null = null;
+    // `read ... key <expr>` reads one record by key; `start ... key <expr>`
+    // positions a browse at it, and `delete ... key <expr>` removes it.
     if (
       this.current.kind === "identifier" &&
       this.current.text === "key" &&
-      operation === "read"
+      (operation === "read" || operation === "start" || operation === "delete")
     ) {
       this.advance();
       key = this.parseExpression();

@@ -867,6 +867,13 @@ The `status` clause names the field that receives the COBOL `FILE STATUS`
 value. It is optional at parse time so that a missing status is reported as
 `BANK-FILE-001` with a remediation hint rather than as a syntax error.
 
+A file is declared `input`, `output`, or `update`. `update` opens I-O, which is
+what a master file update needs: the same `OPEN` serves the read that finds a
+record and the `rewrite` that puts it back.
+
+An indexed file is declared `ACCESS MODE IS DYNAMIC`, not `RANDOM`, because it
+is both read by key and browsed, and `RANDOM` allows only the first.
+
 ### File operations
 
 ```ts
@@ -899,6 +906,37 @@ The `FD` record is emitted as an unstructured buffer sized from the copybook
 layout, and the structured record is declared once in working storage. Emitting
 the record inside each `FD` as well would duplicate field names and make every
 unqualified reference ambiguous.
+
+### Browsing an indexed file
+
+```ts
+start accountMaster key master.accountId;   // position at or after the key
+readNext accountMaster into master;         // walk from there
+```
+
+`START` uses `KEY IS NOT LESS THAN`, which begins at the first record at or
+after the key — what a range walk wants. An exact match would make a browse from
+a partial key impossible.
+
+`readNext` reports end of data through the file status, the way a sequential
+read does, because a browse runs out rather than failing.
+
+### Updating in place
+
+```ts
+read accountMaster into master key master.accountId;
+master.balance = master.balance + amount;
+rewrite accountMaster from master;
+
+delete accountMaster key master.accountId;
+```
+
+`rewrite` and `delete` need the file open for `update`, because updating a
+record in place means finding it first (`BANK-FILE-005`). `start` and `readNext`
+need an `indexed` file, because there is no index to walk otherwise. A `write`
+or `rewrite` to an indexed file captures `INVALID KEY` in the file status: a
+duplicate key is the failure a KSDS write actually has, and it is silent
+otherwise.
 
 ## 14. Banned features
 

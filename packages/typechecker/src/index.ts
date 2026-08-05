@@ -231,7 +231,7 @@ export interface ResolvedFile {
   span: SourceSpan;
   organization: FileOrganization;
   keyField: ResolvedField | null;
-  mode: "input" | "output";
+  mode: "input" | "output" | "update";
   record: ResolvedRecord;
   statusName: string | null;
 }
@@ -2124,27 +2124,69 @@ function validateFileStatement(
     return;
   }
 
-  if (statement.operation === "read" && file.mode !== "input") {
+  // What each operation needs the file to have been opened for. `update` is
+  // COBOL's I-O: the same OPEN serves the read that finds a record and the
+  // rewrite that puts it back, which is what a master file update is.
+  const readingOperations = new Set(["read", "readNext", "start"]);
+  const writingOperations = new Set(["write", "rewrite", "delete"]);
+
+  if (readingOperations.has(statement.operation) && file.mode === "output") {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-FILE-001",
         severity: "error",
-        message: `Cannot read from ${file.name}, which is declared as output.`,
+        message: `Cannot ${statement.operation} from ${file.name}, which is declared as output.`,
         span: statement.span,
-        hint: "Declare the file as input, or use write.",
+        hint: "Declare the file as input, or as update to both read and write it.",
         backendProfile: null,
       }),
     );
   }
 
-  if (statement.operation === "write" && file.mode !== "output") {
+  if (writingOperations.has(statement.operation) && file.mode === "input") {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-FILE-001",
         severity: "error",
-        message: `Cannot write to ${file.name}, which is declared as input.`,
+        message: `Cannot ${statement.operation} to ${file.name}, which is declared as input.`,
         span: statement.span,
-        hint: "Declare the file as output, or use read.",
+        hint: "Declare the file as output, or as update to both read and write it.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // Updating a record in place means finding it first, so these only make sense
+  // on a file the program can also read.
+  if (
+    (statement.operation === "rewrite" || statement.operation === "delete") &&
+    file.mode !== "update"
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-005",
+        severity: "error",
+        message: `${statement.operation} needs ${file.name} open for update, not ${file.mode}.`,
+        span: statement.span,
+        hint: `Declare it as \`file ${file.name} ${file.organization} update record ...\`, which opens I-O.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // A browse walks an index. There is no order to walk on a sequential file
+  // that the program is not already reading in order.
+  if (
+    (statement.operation === "start" || statement.operation === "readNext") &&
+    file.organization !== "indexed"
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-005",
+        severity: "error",
+        message: `${statement.operation} browses an index, but ${file.name} is ${file.organization}.`,
+        span: statement.span,
+        hint: "Declare the file as indexed with a record key, or read it sequentially.",
         backendProfile: null,
       }),
     );
@@ -2156,7 +2198,7 @@ function validateFileStatement(
         createDiagnostic({
           id: "BANK-FILE-004",
           severity: "error",
-          message: `Only an indexed file supports a keyed read, but ${file.name} is ${file.organization}.`,
+          message: `Only an indexed file supports a key, but ${file.name} is ${file.organization}.`,
           span: statement.span,
           hint: "Declare the file as indexed with a record key.",
           backendProfile: null,
