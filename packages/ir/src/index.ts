@@ -83,7 +83,7 @@ export interface IRFile {
   name: string;
   span: SourceSpan;
   organization: "sequential" | "indexed" | "relative";
-  mode: "input" | "output";
+  mode: "input" | "output" | "update";
   record: IRRecord;
   statusName: string | null;
   keyFieldName: string | null;
@@ -274,11 +274,19 @@ export interface IRExpressionStatement {
 export interface IRFileStatement {
   kind: "FileStatement";
   span: SourceSpan;
-  operation: "open" | "read" | "write" | "close";
+  operation:
+    | "open"
+    | "read"
+    | "readNext"
+    | "write"
+    | "rewrite"
+    | "delete"
+    | "start"
+    | "close";
   fileName: string;
   recordName: string | null;
   /** Mode of the declared file, needed to emit OPEN INPUT vs OPEN OUTPUT. */
-  fileMode: "input" | "output";
+  fileMode: "input" | "output" | "update";
   fileOrganization: "sequential" | "indexed" | "relative";
   statusName: string | null;
   keyFieldName: string | null;
@@ -723,7 +731,7 @@ export function lowerProgramToIR(
 const fileTable = new Map<
   string,
   {
-    mode: "input" | "output";
+    mode: "input" | "output" | "update";
     organization: "sequential" | "indexed" | "relative";
     statusName: string | null;
     keyFieldName: string | null;

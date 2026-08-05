@@ -518,7 +518,23 @@ export interface SwitchStatementNode extends NodeBase {
   otherwise: BlockNode | null;
 }
 
-export type FileOperation = "open" | "read" | "write" | "close";
+/**
+ * What a program does to a file.
+ *
+ * `rewrite` and `delete` update a record in place, which needs the file open
+ * for both reading and writing. `start` positions a browse and `readNext` walks
+ * it — together the most common VSAM pattern there is, and the reason a master
+ * file update was unwritable without them.
+ */
+export type FileOperation =
+  | "open"
+  | "read"
+  | "readNext"
+  | "write"
+  | "rewrite"
+  | "delete"
+  | "start"
+  | "close";
 
 export type FileOrganization = "sequential" | "indexed" | "relative";
 
@@ -616,7 +632,7 @@ export interface FileDeclarationNode extends NodeBase {
   kind: "FileDeclaration";
   name: string;
   organization: FileOrganization;
-  mode: "input" | "output";
+  mode: "input" | "output" | "update";
   recordTypeName: string;
   statusName: string | null;
   /** Record key field, required for an indexed file. */

@@ -570,6 +570,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-005",
+    title: "File operation does not match the declaration",
+    explanation:
+      "A `rewrite` or `delete` needs the file open for update, because updating a record in place means finding it first. A `start` or `readNext` browses an index, which a sequential file does not have.",
+    remediation:
+      "Declare the file as `update` to both read and write it, and as `indexed` with a record key to browse it.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:
