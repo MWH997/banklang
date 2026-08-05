@@ -878,6 +878,34 @@ BankTS rejects:
 - ambient runtime mutation
 - time-zone-dependent operations without explicit calendar/time-zone policy
 
+## 14a. Copybooks in the program
+
+`bankc` emits a `.cpy` file for every record. Whether the generated program
+writes those layouts out or copies them in is a project setting:
+
+```json
+{ "copybookMode": "inline" }
+```
+
+| Mode     | Generated program               | For                                         |
+| -------- | ------------------------------- | ------------------------------------------- |
+| `inline` | `01 TRANSFER-REQUEST.` + fields | a self-contained artifact, reviewable alone |
+| `copy`   | `COPY TRANSFER-REQUEST.`        | a shop with a shared copybook library       |
+
+`inline` is the default: it is what the playground shows and what a reviewer
+reads on its own.
+
+`copy` is the shape a real shop expects, where the copybook is the contract
+between programs rather than a document that can drift from them. The generated
+job then carries a `SYSLIB` for the copybook library — without it the copy
+statements resolve to nothing and every data name is undefined — and local
+GnuCOBOL validation puts the copybook directory on the compiler's search path,
+so the mode that ships is the mode that is checked.
+
+The record stays traceable in `copy` mode: the source map carries one entry for
+the record and none for its fields, because the fields are in the copybook and
+have a layout report of their own.
+
 ## 15. Naming strategy
 
 Source identifiers are converted to COBOL names deterministically.
