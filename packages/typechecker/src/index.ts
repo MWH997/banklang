@@ -192,6 +192,8 @@ export interface ResolvedField {
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
+  /** True when the field is aligned on its natural boundary. */
+  synchronized: boolean;
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
 }
@@ -3346,6 +3348,7 @@ function resolveRecord(
       sensitive: field.sensitive,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
+      synchronized: field.synchronized,
     });
   }
 

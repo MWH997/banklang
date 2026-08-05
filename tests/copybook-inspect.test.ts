@@ -59,9 +59,10 @@ describe("every picture the compiler emits", () => {
 `;
 
     const lengths = Object.fromEntries(
-      (inspectGeneratedCopybook(copybook, "Legacy").fields ?? []).map(
-        (field) => [field.cobolName, field.length],
-      ),
+      (inspectGeneratedCopybook(copybook).fields ?? []).map((field) => [
+        field.cobolName,
+        field.length,
+      ]),
     );
 
     expect(lengths).toEqual({

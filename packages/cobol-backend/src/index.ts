@@ -557,6 +557,7 @@ export function emitCobol(
       emitField(field.name, field.type, 1, " ".repeat(11), addLine, {
         redefines: field.redefines,
         dependingOn: field.dependingOn,
+        synchronized: field.synchronized,
       });
     }
     const recordEnd = lineNumber() - 1;
@@ -1139,6 +1140,7 @@ function emitRecordFields(
     emitField(field.name, field.type, level, indent, addLine, {
       redefines: field.redefines,
       dependingOn: field.dependingOn,
+      synchronized: field.synchronized,
     });
   }
 }
@@ -1155,7 +1157,11 @@ function emitField(
   indent: string,
   addLine: (line?: string) => void,
   /** `REDEFINES`, and `DEPENDING ON` for a variable-length table. */
-  clauses: { redefines?: string | null; dependingOn?: string | null } = {},
+  clauses: {
+    redefines?: string | null;
+    dependingOn?: string | null;
+    synchronized?: boolean;
+  } = {},
 ): void {
   const cobolName = toCobolFieldName(name);
   const lvl = levelNumber(level);
@@ -1169,6 +1175,9 @@ function emitField(
   const depending = clauses.dependingOn
     ? ` DEPENDING ON ${toCobolFieldName(clauses.dependingOn)}`
     : "";
+  // SYNC goes after the picture, and is what tells the compiler to insert the
+  // slack bytes the layout report accounts for.
+  const sync = clauses.synchronized ? " SYNCHRONIZED" : "";
 
   // A bounded array becomes OCCURS. Arrays of records nest their fields.
   if (type.kind === "array") {
@@ -1206,7 +1215,7 @@ function emitField(
   }
 
   addLine(
-    `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type)}.`,
+    `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type)}${sync}.`,
   );
 
   // Enum members become level-88 condition names, the idiomatic COBOL form.

@@ -31,6 +31,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "checkpoint",
   "every",
   "depending",
+  "sync",
   "sql",
   "cursor",
   "execute",
@@ -67,6 +68,7 @@ export const PLAYGROUND_TYPES = new Set([
   "edited",
   "binary",
   "zoned",
+  "native",
 ]);
 
 /** Ledger and audit operations are contextual in the grammar, not reserved. */

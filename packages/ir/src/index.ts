@@ -135,6 +135,8 @@ export interface IRField {
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
+  /** True when the field is aligned on its natural boundary. */
+  synchronized: boolean;
 }
 
 export interface IRFunction {
@@ -1443,6 +1445,7 @@ function lowerRecord(
       sensitive: field.sensitive,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
+      synchronized: field.synchronized,
     })),
   };
 }
@@ -2312,6 +2315,7 @@ function lowerType(type: ResolvedType): IRType {
           sensitive: field.sensitive,
           redefines: field.redefines,
           dependingOn: field.dependingOn,
+          synchronized: field.synchronized,
         })),
       };
   }

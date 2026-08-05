@@ -122,6 +122,7 @@ export const KEYWORDS = new Set([
   "sensitive",
   "redefines",
   "depending",
+  "sync",
   "sql",
   "cursor",
   "execute",
@@ -150,6 +151,7 @@ export const KEYWORDS = new Set([
   "edited",
   "binary",
   "zoned",
+  "native",
   "transaction",
   "file",
   "extends",
@@ -1023,6 +1025,8 @@ class Parser {
       redefines = targetToken?.text ?? null;
     }
 
+    const synchronized = this.matchKeyword("sync");
+
     let dependingOn: string | null = null;
     if (this.matchKeyword("depending")) {
       this.expectKeyword("on", "Expected `on` after `depending`.");
@@ -1048,6 +1052,7 @@ class Parser {
       sensitive: modifierToken !== null,
       redefines,
       dependingOn,
+      synchronized,
       span: {
         sourceFile: (modifierToken ?? nameToken).span.sourceFile,
         start: (modifierToken ?? nameToken).span.start,
@@ -2836,7 +2841,7 @@ class Parser {
       }
     }
 
-    for (const usage of ["binary", "zoned"] as const) {
+    for (const usage of ["binary", "zoned", "native"] as const) {
       if (this.matchKeyword(usage)) {
         const keyword = this.previous;
         this.expectPunctuation("<", `Expected \`<\` after \`${usage}\`.`);
@@ -2865,7 +2870,12 @@ class Parser {
           kind: "DecimalType",
           precision: Number(precisionToken.text),
           scale: scaleToken ? Number(scaleToken.text) : 0,
-          usage: usage === "binary" ? "binary" : "display",
+          usage:
+            usage === "binary"
+              ? "binary"
+              : usage === "native"
+                ? "native"
+                : "display",
           span: {
             sourceFile: keyword.span.sourceFile,
             start: keyword.span.start,
