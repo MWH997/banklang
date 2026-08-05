@@ -131,6 +131,10 @@ export interface IRField {
    * read the BankTS source to find out.
    */
   sensitive: boolean;
+  /** The field whose storage this one re-reads, for a variant record. */
+  redefines: string | null;
+  /** The field holding how much of this table the record uses. */
+  dependingOn: string | null;
 }
 
 export interface IRFunction {
@@ -1362,6 +1366,8 @@ function lowerRecord(
       span: field.span,
       type: lowerType(field.type),
       sensitive: field.sensitive,
+      redefines: field.redefines,
+      dependingOn: field.dependingOn,
     })),
   };
 }
@@ -2155,6 +2161,8 @@ function lowerType(type: ResolvedType): IRType {
           span: field.span,
           type: lowerType(field.type),
           sensitive: field.sensitive,
+          redefines: field.redefines,
+          dependingOn: field.dependingOn,
         })),
       };
   }

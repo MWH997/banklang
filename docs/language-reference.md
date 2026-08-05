@@ -185,6 +185,36 @@ Rules:
 - nested records are allowed
 - arrays must be bounded
 
+### 5c. Variant records and variable-length tables
+
+Two clauses a real copybook is built on:
+
+```ts
+record LegacyRecord {
+  recordType: string<2>;
+  personalName: string<40>;
+  companyName: string<40> redefines personalName;
+
+  lineCount: binary<4>;
+  lines: Entry[100] depending on lineCount;
+}
+```
+
+`redefines` is a second reading of storage another field already occupies —
+how a legacy layout says "this area means different things depending on the
+record type". The field it redefines must be declared before it, and it must be
+no longer, because COBOL gives a redefining field no storage of its own and a
+longer one reads past the end into whatever follows (`BANK-COPY-004`). The
+layout report shows it at the offset it shares, and the record's length is
+unchanged by it.
+
+`depending on` names the field holding how much of a table this record uses,
+which is what makes a variable-length record variable. The fixed bound stays as
+the maximum — the storage still has to be reserved — so the emitted clause is
+`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT`. The count must be a whole
+number declared before the table, because COBOL reads it to decide the record's
+length and cannot read a field it has not reached.
+
 ### 5a. Inheritance
 
 A record may extend another. The base fields are laid out first, so the derived

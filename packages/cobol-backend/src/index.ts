@@ -516,7 +516,10 @@ export function emitCobol(
     const fieldLines: number[] = [];
     for (const field of record.fields) {
       fieldLines.push(lineNumber());
-      emitField(field.name, field.type, 1, " ".repeat(11), addLine);
+      emitField(field.name, field.type, 1, " ".repeat(11), addLine, {
+        redefines: field.redefines,
+        dependingOn: field.dependingOn,
+      });
     }
     const recordEnd = lineNumber() - 1;
     entries.push({
@@ -1092,7 +1095,10 @@ function emitRecordFields(
 ): void {
   const indent = " ".repeat(7 + level * 4);
   for (const field of fields) {
-    emitField(field.name, field.type, level, indent, addLine);
+    emitField(field.name, field.type, level, indent, addLine, {
+      redefines: field.redefines,
+      dependingOn: field.dependingOn,
+    });
   }
 }
 
@@ -1107,26 +1113,42 @@ function emitField(
   level: number,
   indent: string,
   addLine: (line?: string) => void,
+  /** `REDEFINES`, and `DEPENDING ON` for a variable-length table. */
+  clauses: { redefines?: string | null; dependingOn?: string | null } = {},
 ): void {
   const cobolName = toCobolFieldName(name);
   const lvl = levelNumber(level);
+  // A redefining field is a second reading of storage another field already
+  // occupies, so the clause goes on the name and no storage is added.
+  const redefines = clauses.redefines
+    ? ` REDEFINES ${toCobolFieldName(clauses.redefines)}`
+    : "";
+  // DEPENDING ON says how much of the table this record uses. The fixed bound
+  // stays as the maximum, because the storage still has to be reserved.
+  const depending = clauses.dependingOn
+    ? ` DEPENDING ON ${toCobolFieldName(clauses.dependingOn)}`
+    : "";
 
   // A bounded array becomes OCCURS. Arrays of records nest their fields.
   if (type.kind === "array") {
     if (type.element.kind === "record") {
-      addLine(`${indent}${lvl}  ${cobolName} OCCURS ${type.length} TIMES.`);
+      addLine(
+        `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}.`,
+      );
       emitRecordFields(type.element.fields, level + 1, addLine);
       return;
     }
     addLine(
-      `${indent}${lvl}  ${cobolName.padEnd(20)} ${formatCobolType(type.element)}`,
+      `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type.element)}`,
     );
-    addLine(`${indent}        OCCURS ${type.length} TIMES.`);
+    addLine(
+      `${indent}        OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}.`,
+    );
     return;
   }
 
   if (type.kind === "record") {
-    addLine(`${indent}${lvl}  ${cobolName}.`);
+    addLine(`${indent}${lvl}  ${cobolName}${redefines}.`);
     emitRecordFields(type.fields, level + 1, addLine);
     return;
   }
@@ -1140,7 +1162,9 @@ function emitField(
     return;
   }
 
-  addLine(`${indent}${lvl}  ${cobolName.padEnd(20)} ${formatCobolType(type)}.`);
+  addLine(
+    `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type)}.`,
+  );
 
   // Enum members become level-88 condition names, the idiomatic COBOL form.
   if (type.kind === "enum") {

@@ -21,6 +21,8 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "case",
   "enum",
   "sensitive",
+  "redefines",
+  "depending",
   "sql",
   "cursor",
   "execute",

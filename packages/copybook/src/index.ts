@@ -100,7 +100,10 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
       length,
       picture: toCobolPicture(field.type),
     });
-    offset += length;
+    // A redefining field shares storage rather than adding any.
+    if (!field.redefines) {
+      offset += length;
+    }
   }
 
   return {
@@ -346,20 +349,35 @@ export function buildCopybookLayoutReport(
   record: IRRecord,
 ): CopybookLayoutReport {
   const entries: CopybookLayoutEntry[] = [];
+  const startOffsets = new Map<string, number>();
   let order = 0;
   let offset = 0;
 
   for (const field of record.fields) {
+    // A redefining field reports the offset of what it redefines, because that
+    // is the storage it reads. Reporting where it happens to be declared would
+    // describe a field that is not there.
+    const start = field.redefines
+      ? (startOffsets.get(field.redefines) ?? offset)
+      : offset;
+    startOffsets.set(field.name, start);
+
+    const before = offset;
     offset = collectLayoutEntries(
       field,
       `${toCobolName(record.name)}.${toCobolName(field.name)}`,
-      offset,
+      start,
       entries,
       () => {
         order += 1;
         return order;
       },
     );
+    // The redefining field added nothing, so the record goes on from where it
+    // already was rather than from the storage this field re-read.
+    if (field.redefines) {
+      offset = before;
+    }
   }
 
   return {
@@ -447,6 +465,10 @@ function collectLayoutEntries(
 ): number {
   const length = fieldLength(field.type);
   const order = nextOrder();
+  // A redefining field is a second reading of storage that already exists, so
+  // it reports the same offset as what it redefines and adds nothing to the
+  // record's length. Advancing here would push every later field along.
+  const occupiesStorage = !field.redefines;
 
   entries.push({
     order,
@@ -461,7 +483,7 @@ function collectLayoutEntries(
   });
 
   if (field.type.kind !== "record") {
-    return offset + length;
+    return occupiesStorage ? offset + length : offset;
   }
 
   let childOffset = offset;
@@ -475,7 +497,7 @@ function collectLayoutEntries(
     );
   }
 
-  return offset + length;
+  return occupiesStorage ? offset + length : offset;
 }
 
 function formatLayoutType(type: IRType): string {

@@ -572,6 +572,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-COPY-004",
+    title: "Invalid variant record clause",
+    explanation:
+      "A `redefines` names a field that is not declared before it, or is longer than what it redefines — a redefining field gets no storage of its own, so a longer one reads past the end. A `depending on` names something that is not a count declared before the table, which COBOL reads to decide the record's length.",
+    remediation:
+      "Declare the field being redefined first and keep the redefining field no longer, and declare the count as `binary<n>` or `decimal<n, 0>` before the table.",
+    specReference: "language-reference.md section 5c",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-005",
     title: "File operation does not match the declaration",
     explanation:

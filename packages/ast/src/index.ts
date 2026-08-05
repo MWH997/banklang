@@ -263,6 +263,24 @@ export interface FieldDeclarationNode extends NodeBase {
    * written to a file, which is where such data legitimately lives.
    */
   sensitive: boolean;
+  /**
+   * `redefines otherField` — a second reading of storage another field already
+   * occupies.
+   *
+   * The variant record is how a legacy copybook says "this area means different
+   * things depending on the record type", and it is everywhere in a real estate.
+   * The redefining field must be no longer than what it redefines, because
+   * COBOL gives it no storage of its own.
+   */
+  redefines: string | null;
+  /**
+   * `occurs depending on countField` — a table whose used length is a field.
+   *
+   * A fixed `OCCURS` reserves the maximum every time. `OCCURS ... DEPENDING ON`
+   * says how much of it this record actually uses, which is what makes a
+   * variable-length record variable.
+   */
+  dependingOn: string | null;
 }
 
 export interface RecordDeclarationNode extends NodeBase {
