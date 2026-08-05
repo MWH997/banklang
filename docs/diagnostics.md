@@ -294,6 +294,13 @@ A `rewrite` or `delete` needs the file open for `update`, because updating a
 record in place means finding it first. A `start` or `readNext` browses an
 index, which a sequential file does not have.
 
+### `BANK-COPY-004` invalid variant record clause
+
+A `redefines` names a field that is not declared before it, or is longer than
+what it redefines — a redefining field gets no storage of its own, so a longer
+one reads past the end. A `depending on` names something that is not a count
+declared before the table, which COBOL reads to decide the record's length.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified

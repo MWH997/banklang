@@ -116,6 +116,8 @@ export const KEYWORDS = new Set([
   "case",
   "enum",
   "sensitive",
+  "redefines",
+  "depending",
   "sql",
   "cursor",
   "execute",
@@ -998,6 +1000,24 @@ class Parser {
     const nameToken = this.expectIdentifier("Expected field name.");
     this.expectPunctuation(":", "Expected `:` after field name.");
     const type = this.parseTypeNode();
+
+    let redefines: string | null = null;
+    if (this.matchKeyword("redefines")) {
+      const targetToken = this.expectIdentifier(
+        "Expected the field being redefined.",
+      );
+      redefines = targetToken?.text ?? null;
+    }
+
+    let dependingOn: string | null = null;
+    if (this.matchKeyword("depending")) {
+      this.expectKeyword("on", "Expected `on` after `depending`.");
+      const countToken = this.expectIdentifier(
+        "Expected the field holding the used length.",
+      );
+      dependingOn = countToken?.text ?? null;
+    }
+
     const semicolon = this.expectPunctuation(
       ";",
       "Expected `;` after field declaration.",
@@ -1012,6 +1032,8 @@ class Parser {
       name: nameToken.text,
       type,
       sensitive: modifierToken !== null,
+      redefines,
+      dependingOn,
       span: {
         sourceFile: (modifierToken ?? nameToken).span.sourceFile,
         start: (modifierToken ?? nameToken).span.start,

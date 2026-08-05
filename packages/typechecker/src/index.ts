@@ -184,6 +184,10 @@ export interface ResolvedField {
   name: string;
   span: SourceSpan;
   type: ResolvedType;
+  /** The field whose storage this one re-reads, for a variant record. */
+  redefines: string | null;
+  /** The field holding how much of this table the record uses. */
+  dependingOn: string | null;
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
 }
@@ -2951,14 +2955,151 @@ function resolveRecord(
       span: field.span,
       type: resolved,
       sensitive: field.sensitive,
+      redefines: field.redefines,
+      dependingOn: field.dependingOn,
     });
   }
+
+  validateVariantFields(declaration, fields, diagnostics);
 
   return {
     name: declaration.name,
     span: declaration.span,
     fields,
   };
+}
+
+/**
+ * `redefines` and `depending on`.
+ *
+ * A redefining field is a second reading of storage another field already
+ * occupies, so it must name a field declared before it and must be no longer
+ * than what it redefines — COBOL gives it no storage of its own, and a longer
+ * one would read past the end into whatever follows.
+ *
+ * `depending on` names the field holding how much of a table this record uses,
+ * which must be a whole number declared before the table: COBOL reads it to
+ * decide the record's length, and cannot read a field it has not reached.
+ */
+function validateVariantFields(
+  declaration: RecordDeclarationNode,
+  fields: ResolvedField[],
+  diagnostics: Diagnostic[],
+): void {
+  /**
+   * Bytes a field occupies, for the redefines length check.
+   *
+   * Mirrors the emitter's layout rules rather than importing them: the
+   * typechecker runs before lowering, and the check only needs to compare two
+   * declared fields, not describe a whole record.
+   */
+  const byteLength = (type: ResolvedType): number => {
+    switch (type.kind) {
+      case "string":
+        return type.length;
+      case "bool":
+        return 1;
+      case "temporal":
+        return type.unit === "date" ? 8 : type.unit === "time" ? 6 : 26;
+      case "decimal":
+      case "currency": {
+        const usage =
+          type.kind === "decimal" ? (type.usage ?? "packed") : "packed";
+        if (usage === "binary") {
+          return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
+        }
+        return usage === "display"
+          ? type.precision + 1
+          : Math.ceil((type.precision + 1) / 2);
+      }
+      case "enum":
+        return Math.max(...type.members.map((member) => member.length), 1);
+      case "nullable":
+        return byteLength(type.inner) + 2;
+      case "array":
+        return byteLength(type.element) * type.length;
+      case "record":
+        return type.fields.reduce(
+          (total, entry) =>
+            // A redefining field adds nothing, because it re-reads storage.
+            entry.redefines ? total : total + byteLength(entry.type),
+          0,
+        );
+      case "edited":
+        return 0;
+    }
+  };
+
+  fields.forEach((field, index) => {
+    const earlier = fields.slice(0, index);
+
+    if (field.redefines) {
+      const target = earlier.find((entry) => entry.name === field.redefines);
+      if (!target) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.name} redefines ${field.redefines}, which is not declared before it in ${declaration.name}.`,
+            span: field.span,
+            hint: "A redefining field re-reads storage that already exists, so the field it redefines has to come first.",
+            backendProfile: null,
+          }),
+        );
+      } else if (byteLength(field.type) > byteLength(target.type)) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.name} is ${byteLength(field.type)} bytes but redefines ${target.name}, which is ${byteLength(target.type)}.`,
+            span: field.span,
+            hint: "A redefining field gets no storage of its own, so a longer one reads past the end into whatever follows.",
+            backendProfile: null,
+          }),
+        );
+      }
+    }
+
+    if (field.dependingOn) {
+      if (field.type.kind !== "array") {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.name} has a depending clause but is not a table.`,
+            span: field.span,
+            hint: "`depending on` says how much of a table is used, so it applies to a T[n] field.",
+            backendProfile: null,
+          }),
+        );
+      }
+
+      const counter = earlier.find((entry) => entry.name === field.dependingOn);
+      if (!counter) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.name} depends on ${field.dependingOn}, which is not declared before it in ${declaration.name}.`,
+            span: field.span,
+            hint: "COBOL reads the count to decide the record's length, and cannot read a field it has not reached.",
+            backendProfile: null,
+          }),
+        );
+      } else if (!isDecimalType(counter.type) || counter.type.scale !== 0) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.dependingOn} holds ${describeType(counter.type)}, which is not a count of entries.`,
+            span: field.span,
+            hint: "Declare it as binary<n> or decimal<n, 0>.",
+            backendProfile: null,
+          }),
+        );
+      }
+    }
+  });
 }
 
 /**
