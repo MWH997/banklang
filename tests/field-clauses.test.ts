@@ -206,3 +206,63 @@ entry transaction render(line: StatementLine) {
     ).toBe(6);
   });
 });
+
+/**
+ * A transaction's record parameters live in working storage, one COBOL group
+ * per record *type*. Two parameters of the same type were therefore two names
+ * for one piece of storage: `a.value = 1; b.value = 2;` compiled to two writes
+ * of the same field, and the program silently disagreed with its source.
+ */
+describe("two record parameters of one type", () => {
+  const source = (parameters: string) => `module Alias;
+
+record Rec {
+  value: decimal<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+record Other {
+  otherValue: decimal<9, 0>;
+}
+
+entry transaction post(${parameters}) {
+  audit("DONE", a.idempotencyKey);
+}`;
+
+  it("is reported", () => {
+    const result = compile(source("a: Rec, b: Rec"));
+
+    expect(result.diagnostics.map((entry) => entry.id)).toContain(
+      "BANK-TYPE-022",
+    );
+  });
+
+  it("leaves different types alone", () => {
+    expect(compile(source("a: Rec, b: Other")).diagnostics).toEqual([]);
+  });
+
+  /**
+   * A function's record parameters are LINKAGE cells the caller rebinds, so
+   * each addresses its own argument and two of a type are fine.
+   */
+  it("does not apply to a function", () => {
+    const result = compile(`module Alias;
+
+record Rec {
+  value: decimal<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+function total(a: Rec, b: Rec): decimal<9, 0> {
+  return a.value + b.value;
+}
+
+entry transaction post(one: Rec) {
+  audit("DONE", one.idempotencyKey);
+}`);
+
+    expect(result.diagnostics.map((entry) => entry.id)).not.toContain(
+      "BANK-TYPE-022",
+    );
+  });
+});

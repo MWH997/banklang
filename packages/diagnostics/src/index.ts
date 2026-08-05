@@ -244,6 +244,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-022",
+    title: "Two transaction parameters share one record",
+    explanation:
+      "A transaction is a program entry point, so its record parameters live in working storage — one COBOL group per record type. Two parameters of the same type would be two names for one piece of storage, and writing through either would be visible through the other.",
+    remediation:
+      "Declare a second record type, or take one parameter and fill it twice. A function is unaffected: its record parameters are LINKAGE cells the caller rebinds.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
     id: "BANK-TYPE-023",
     title: "Invalid edited field",
     explanation:
