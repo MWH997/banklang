@@ -210,6 +210,8 @@ export interface ResolvedField {
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
+  /** `ASCENDING KEY` — the field the table is ordered by, for a binary search. */
+  ascendingKey: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
   /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
@@ -3046,6 +3048,41 @@ function validateXmlParseStatement(
  * body, the way a loop index is, so the condition can talk about the row it is
  * testing rather than about a subscript.
  */
+/** The `ascending` key the searched table declares, if it declares one. */
+function searchedTableKey(
+  array: MemberAccessNode | IdentifierNode,
+  scope: Map<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+): string | null {
+  if (array.kind !== "MemberAccess" || array.target.kind !== "Identifier") {
+    return null;
+  }
+  const holder = scope.get(array.target.name);
+  const record =
+    holder?.kind === "record" ? recordMap.get(holder.name) : undefined;
+  return (
+    record?.fields.find((field) => field.name === array.member)?.ascendingKey ??
+    null
+  );
+}
+
+/** True when the condition is `<element>.<key> == <value>`, which is all COBOL bisects on. */
+function testsKeyForEquality(
+  statement: SearchStatementNode,
+  key: string,
+): boolean {
+  const condition = statement.condition;
+  if (condition.kind !== "BinaryExpression" || condition.operator !== "==") {
+    return false;
+  }
+  const names = (side: ExpressionNode): boolean =>
+    side.kind === "MemberAccess" &&
+    side.target.kind === "Identifier" &&
+    side.target.name === statement.elementName &&
+    side.member === key;
+  return names(condition.left) || names(condition.right);
+}
+
 function validateSearchStatement(
   statement: SearchStatementNode,
   scope: Map<string, ResolvedType>,
@@ -3065,6 +3102,36 @@ function validateSearchStatement(
 
   if (!arrayType) {
     return;
+  }
+
+  // COBOL will bisect a table only if the declaration says it is ordered, and
+  // only on equality against that key — anything else has no ordering to cut in
+  // half. Both are checked here rather than found later as a wrong answer.
+  if (statement.sorted) {
+    const key = searchedTableKey(statement.array, scope, recordMap);
+    if (!key) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-028",
+          severity: "error",
+          message: `${statement.elementName} searches a table that does not declare an order.`,
+          span: statement.span,
+          hint: "Add `ascending <field>` to the table's declaration, and keep it sorted. A binary search on an unsorted table returns the wrong row rather than falling back to a scan.",
+          backendProfile: null,
+        }),
+      );
+    } else if (!testsKeyForEquality(statement, key)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-028",
+          severity: "error",
+          message: `A sorted search has to test ${key} for equality.`,
+          span: statement.condition.span,
+          hint: `Write \`${statement.elementName}.${key} == <value>\`. Bisecting needs the key the table is ordered by; any other test has no ordering to cut in half.`,
+          backendProfile: null,
+        }),
+      );
+    }
   }
 
   if (arrayType.kind !== "array") {
@@ -4513,6 +4580,7 @@ function resolveRecord(
       sensitive: field.sensitive,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
+      ascendingKey: field.ascendingKey,
       synchronized: field.synchronized,
       justified: field.justified,
       blankWhenZero: field.blankWhenZero,
@@ -4609,6 +4677,7 @@ function resolveRenames(
       // A renames is a second name for storage that is already initialised by
       // the fields it covers, so it carries no VALUE of its own.
       initialValue: null,
+      ascendingKey: null,
       sensitive: fields.slice(from, to + 1).some((field) => field.sensitive),
       redefines: null,
       dependingOn: null,

@@ -634,6 +634,36 @@ to be pointing, and a stale one silently skips the front of the table.
 The element name stands for the entry the index is pointing at, so the condition
 and the body talk about the row rather than about a subscript.
 
+#### Bisecting a sorted table
+
+```ts
+record Book {
+  bands: Band[400] ascending upper;
+}
+
+search sorted band in book.bands where band.upper == target {
+  book.rate = band.rate;
+} else {
+  raise "NO_BAND";
+}
+```
+
+`SEARCH ALL`. A linear scan of four hundred bands reads two hundred rows to find
+one; bisecting reads nine.
+
+COBOL will do it only on a table whose declaration says it is ordered —
+`ascending <field>` becomes `ASCENDING KEY IS` — and only on equality against
+that key, because anything else has no ordering to cut in half. Both are checked
+(`BANK-TYPE-028`).
+
+**Keeping the table sorted is the program's job**, and the consequence of not
+doing it is worse than slowness: `SEARCH ALL` on an unsorted table does not fall
+back to a scan. It returns the wrong row, or reports no match on a row that is
+sitting there.
+
+`SEARCH ALL` sets the index itself, so unlike a plain `search` there is no
+`SET ... TO 1` before it.
+
 ### `for each`
 
 Iterating a bounded array needs no limit clause, because the array supplies the

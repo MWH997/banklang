@@ -304,6 +304,14 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   dependingOn: string | null;
   /**
+   * `ascending <field>` — the key a table is ordered by, for a binary search.
+   *
+   * COBOL will bisect a table only if the declaration says it is ordered, which
+   * is a promise the program has to keep: `SEARCH ALL` on a table that is not
+   * actually sorted does not scan it anyway, it returns the wrong row or none.
+   */
+  ascendingKey: string | null;
+  /**
    * `sync` — align the field on its natural boundary.
    *
    * A `SYNCHRONIZED` binary field starts on a halfword, fullword, or doubleword
@@ -1178,6 +1186,16 @@ export interface SearchStatementNode extends NodeBase {
   body: BlockNode;
   /** Runs when no element matched. Required: a search that can fail must say so. */
   notFound: BlockNode;
+  /**
+   * `search sorted` — COBOL `SEARCH ALL`, a binary search.
+   *
+   * A linear scan of a rate table with a thousand bands reads five hundred rows
+   * to find one; a binary search reads ten. COBOL will do it only if the table
+   * says it is ordered, which is what `ascending` on the declaration is for, and
+   * only on equality against that key — anything else has no ordering to
+   * bisect on.
+   */
+  sorted: boolean;
 }
 
 /**
