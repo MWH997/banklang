@@ -227,6 +227,7 @@ export type IRStatement =
   | IRUnitOfWorkStatement
   | IRReturnCodeStatement
   | IRSplitStatement
+  | IRSerializeStatement
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
@@ -308,6 +309,17 @@ export interface IRSplitStatement {
   source: IRExpression;
   delimiter: IRExpression;
   targets: IRExpression[];
+}
+
+/** `JSON GENERATE t FROM r COUNT IN n` and its `XML GENERATE` twin. */
+export interface IRSerializeStatement {
+  kind: "SerializeStatement";
+  span: SourceSpan;
+  format: "json" | "xml";
+  target: IRExpression;
+  source: IRExpression;
+  count: IRExpression | null;
+  onError: IRBlock | null;
 }
 
 /** `SEARCH table AT END <notFound> WHEN <condition> <body>`. */
@@ -1742,6 +1754,20 @@ function lowerStatement(
         targets: statement.targets.map((target) =>
           lowerExpression(target, scopeTypes),
         ),
+      };
+    case "SerializeStatement":
+      return {
+        kind: "SerializeStatement",
+        span: statement.span,
+        format: statement.format,
+        target: lowerExpression(statement.target, scopeTypes),
+        source: lowerExpression(statement.source, scopeTypes),
+        count: statement.count
+          ? lowerExpression(statement.count, scopeTypes)
+          : null,
+        onError: statement.onError
+          ? lowerBlock(statement.onError, scopeTypes)
+          : null,
       };
     case "SearchStatement": {
       const array = lowerExpression(statement.array, scopeTypes);

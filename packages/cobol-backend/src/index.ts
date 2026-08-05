@@ -38,6 +38,7 @@ import type {
   IRSortProcedure,
   IRSortStatement,
   IRReleaseStatement,
+  IRSerializeStatement,
   IRSplitStatement,
   IRStringCallExpression,
   IRTemporalCallExpression,
@@ -1676,6 +1677,15 @@ function emitStatement(
       case "SplitStatement":
         emitSplitStatement(statement, addLine, indent);
         break;
+      case "SerializeStatement":
+        emitSerializeStatement(
+          statement,
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
@@ -1843,6 +1853,9 @@ function emitTransactionBody(
         break;
       case "SplitStatement":
         emitSplitStatement(statement, addLine, indent);
+        break;
+      case "SerializeStatement":
+        emitSerializeStatement(statement, addLine, indentLevel, "", true);
         break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
@@ -2298,6 +2311,42 @@ function emitSplitStatement(
     `${indent}    INTO ${statement.targets.map((target) => renderExpression(target)).join(" ")}`,
   );
   addLine(`${indent}END-UNSTRING`);
+}
+
+/**
+ * `JSON GENERATE` and `XML GENERATE`.
+ *
+ * COBOL builds the document from the group's own field names, so nothing here
+ * describes the shape — the record is the schema. The target is a fixed field
+ * and the compiler space-fills whatever the document does not reach, which is
+ * why `count` matters: it is the only way the caller can tell the text from the
+ * padding when it comes to write it out.
+ */
+function emitSerializeStatement(
+  statement: IRSerializeStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const verb = statement.format.toUpperCase();
+  const count = statement.count
+    ? ` COUNT IN ${renderExpression(statement.count)}`
+    : "";
+
+  addLine(
+    `${indent}${verb} GENERATE ${renderExpression(statement.target)} FROM ${renderExpression(statement.source)}${count}`,
+  );
+  if (statement.onError) {
+    addLine(`${indent}    ON EXCEPTION`);
+    if (inTransaction) {
+      emitTransactionBody(statement.onError, addLine, indentLevel + 8);
+    } else {
+      emitStatement(statement.onError, addLine, indentLevel + 8, resultName);
+    }
+  }
+  addLine(`${indent}END-${verb}`);
 }
 
 /**

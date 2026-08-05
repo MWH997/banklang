@@ -25,6 +25,8 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "renames",
   "through",
   "split",
+  "json",
+  "xml",
   "by",
   "search",
   "sort",

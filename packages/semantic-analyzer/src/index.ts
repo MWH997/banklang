@@ -351,6 +351,11 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
           );
         }
         break;
+      case "SerializeStatement":
+        if (statement.onError) {
+          flattened.push(...flattenStatements(statement.onError.statements));
+        }
+        break;
       case "SortStatement":
         for (const procedure of [
           statement.inputProcedure,

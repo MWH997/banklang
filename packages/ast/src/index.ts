@@ -687,6 +687,7 @@ export type StatementNode =
   | ConsoleStatementNode
   | ResetStatementNode
   | SplitStatementNode
+  | SerializeStatementNode
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
@@ -921,6 +922,26 @@ export interface SplitStatementNode extends NodeBase {
   source: ExpressionNode;
   delimiter: ExpressionNode;
   targets: (MemberAccessNode | IdentifierNode)[];
+}
+
+/**
+ * `json <target> from <record> count <length> on error { ... };`
+ *
+ * `JSON GENERATE` and `XML GENERATE`. A mainframe batch that has to hand a
+ * record to something outside the estate — a queue, an API gateway, a file a
+ * distributed system reads — otherwise builds the text by hand with `STRING`,
+ * which is where the quoting and the escaping go wrong.
+ *
+ * `count` is the length actually generated: the target is a fixed COBOL field,
+ * so without it the caller cannot tell the text from the padding.
+ */
+export interface SerializeStatementNode extends NodeBase {
+  kind: "SerializeStatement";
+  format: "json" | "xml";
+  target: MemberAccessNode | IdentifierNode;
+  source: MemberAccessNode | IdentifierNode;
+  count: MemberAccessNode | IdentifierNode | null;
+  onError: BlockNode | null;
 }
 
 /**
