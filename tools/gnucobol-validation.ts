@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -336,12 +336,27 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  // Accept a project path so the lane can validate any example.
+  // A project path validates that one; without it, every example. Defaulting to
+  // a single example made "validated against GnuCOBOL" mean one program out of
+  // ten, which is not what anyone reading it takes it to mean.
   const project = process.argv[2];
-  const summary = project
-    ? runGnucobolValidation(process.cwd(), project)
-    : runGnucobolValidation();
-  if (summary.compilerStatus === "failed") {
-    process.exitCode = 1;
+  const projects = project ? [project] : listExampleProjects(process.cwd());
+
+  for (const path of projects) {
+    const summary = runGnucobolValidation(process.cwd(), path);
+    const status = summary.compilerStatus;
+    process.stdout.write(`${status.padEnd(8)} ${path}\n`);
+    if (status === "failed") {
+      process.exitCode = 1;
+    }
   }
+}
+
+/** Every example project, so the lane covers what the repo ships. */
+function listExampleProjects(cwd: string): string[] {
+  const root = resolve(cwd, "examples");
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `examples/${entry.name}`)
+    .sort();
 }
