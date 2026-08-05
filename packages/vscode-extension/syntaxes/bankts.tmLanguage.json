@@ -58,7 +58,7 @@
       "patterns": [
         {
           "name": "keyword.control.bankts",
-          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else|while|for|each|in|switch|case|enum|sensitive|redefines|depending|sql|cursor|execute|cics|link|syncpoint|rollback|commit|returnCode|readFile|writeFile|rewriteFile|writeQueue|readQueue|returnTransid|extends|entry|raise|on|failure)\\b"
+          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else|while|for|each|in|switch|case|enum|sensitive|redefines|depending|split|by|search|sql|cursor|execute|cics|link|syncpoint|rollback|commit|returnCode|readFile|writeFile|rewriteFile|writeQueue|readQueue|returnTransid|extends|entry|raise|on|failure)\\b"
         },
         {
           "name": "constant.language.bankts",

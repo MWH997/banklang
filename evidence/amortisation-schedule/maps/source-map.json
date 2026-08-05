@@ -80,7 +80,7 @@
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
       "targetStartLine": 18,
-      "targetEndLine": 26,
+      "targetEndLine": 27,
       "category": "record",
       "symbol": "Loan"
     },
@@ -160,7 +160,7 @@
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
       "targetStartLine": 23,
-      "targetEndLine": 25,
+      "targetEndLine": 26,
       "category": "field",
       "symbol": "schedule"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
-      "targetStartLine": 26,
-      "targetEndLine": 26,
+      "targetStartLine": 27,
+      "targetEndLine": 27,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
-      "targetStartLine": 44,
-      "targetEndLine": 46,
+      "targetStartLine": 45,
+      "targetEndLine": 47,
       "category": "function",
       "symbol": "interestFor"
     },
@@ -207,8 +207,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
-      "targetStartLine": 47,
-      "targetEndLine": 64,
+      "targetStartLine": 48,
+      "targetEndLine": 65,
       "category": "transaction",
       "symbol": "buildSchedule"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl",
-      "targetStartLine": 66,
-      "targetEndLine": 96,
+      "targetStartLine": 67,
+      "targetEndLine": 97,
       "category": "function",
       "symbol": "compound"
     }

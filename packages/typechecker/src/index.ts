@@ -12,6 +12,8 @@ import {
   type MemberAccessNode,
   type TemporalCallNode,
   type ReturnCodeStatementNode,
+  type SearchStatementNode,
+  type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
   type DeclarationNode,
@@ -1007,7 +1009,8 @@ function findRaiseStatement(block: BlockNode): RaiseStatementNode | null {
       }
       case "WhileStatement":
       case "ForEachStatement":
-      case "CursorLoopStatement": {
+      case "CursorLoopStatement":
+      case "SearchStatement": {
         const found = findRaiseStatement(statement.body);
         if (found) {
           return found;
@@ -1132,6 +1135,8 @@ function validateTransactionBody(
       case "CursorLoopStatement":
       case "UnitOfWorkStatement":
       case "ReturnCodeStatement":
+      case "SplitStatement":
+      case "SearchStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -1298,6 +1303,20 @@ function validateEffectStatement(
       return true;
     case "UnitOfWorkStatement":
       validateUnitOfWorkStatement(statement, diagnostics);
+      return true;
+    case "SplitStatement":
+      validateSplitStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "SearchStatement":
+      validateSearchStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
       return true;
     case "ReturnCodeStatement":
       validateReturnCodeStatement(
@@ -1834,6 +1853,164 @@ function validateForEachStatement(
  * the step's condition code. A value outside 0–4095 is not a condition code any
  * `COND=` can test.
  */
+/**
+ * `split source by "," into a, b, c;`
+ *
+ * Every receiver has to be a string the compiler can name a length for, because
+ * `UNSTRING` writes into fixed fields.
+ */
+function validateSplitStatement(
+  statement: SplitStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const source = inferExpressionType(
+    statement.source,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  const delimiter = inferExpressionType(
+    statement.delimiter,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (
+    (source && source.kind !== "string") ||
+    (delimiter && delimiter.kind !== "string")
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "split takes a string apart at a string delimiter.",
+        span: statement.span,
+        hint: 'Write `split key by "-" into branch, account;`.',
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const target of statement.targets) {
+    const type = inferExpressionType(
+      target,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (type && type.kind !== "string") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `A split target is ${describeType(type)}; a split writes strings.`,
+          span: target.span,
+          hint: "Split into string<n> fields and convert afterwards.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
+/**
+ * `search row in table where <condition> { ... } else { ... }`
+ *
+ * The element name is bound to one entry of the table for the condition and the
+ * body, the way a loop index is, so the condition can talk about the row it is
+ * testing rather than about a subscript.
+ */
+function validateSearchStatement(
+  statement: SearchStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const arrayType = inferExpressionType(
+    statement.array,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (!arrayType) {
+    return;
+  }
+
+  if (arrayType.kind !== "array") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `Cannot search ${describeType(arrayType)}, which is not a table.`,
+        span: statement.array.span,
+        hint: "Search a field declared as T[n].",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  const shadowed = scope.get(statement.elementName);
+  scope.set(statement.elementName, arrayType.element);
+
+  const condition = inferExpressionType(
+    statement.condition,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (condition && !isBoolType(condition)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: "A search condition must be bool.",
+        span: statement.condition.span,
+        hint: "Compare a field of the element with the value being looked for.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  validateBranchBody(
+    statement.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+    inTransaction,
+  );
+  validateBranchBody(
+    statement.notFound,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+    inTransaction,
+  );
+
+  if (shadowed) {
+    scope.set(statement.elementName, shadowed);
+  } else {
+    scope.delete(statement.elementName);
+  }
+}
+
 function validateReturnCodeStatement(
   statement: ReturnCodeStatementNode,
   scope: Map<string, ResolvedType>,
@@ -2612,6 +2789,44 @@ function inferStringCall(
         return reject("now() takes no arguments.", "Write `now()`.");
       }
       return { kind: "temporal", unit: "timestamp" };
+
+    case "countOf": {
+      const length = stringLength(args[0]);
+      if (args.length !== 2 || length === null || args[1]?.kind !== "string") {
+        return reject(
+          "countOf expects a string and the characters to count.",
+          'Write `countOf(narrative, ",")`.',
+        );
+      }
+      return { kind: "decimal", precision: 9, scale: 0 };
+    }
+
+    case "replaceChars": {
+      const length = stringLength(args[0]);
+      const from = args[1]?.kind === "string" ? args[1].length : null;
+      const to = args[2]?.kind === "string" ? args[2].length : null;
+      if (
+        args.length !== 3 ||
+        length === null ||
+        from === null ||
+        to === null
+      ) {
+        return reject(
+          "replaceChars expects a string, the characters to replace, and what to replace them with.",
+          'Write `replaceChars(reference, " ", "0")`.',
+        );
+      }
+      if (from !== to) {
+        // INSPECT CONVERTING maps character to character, so the two sets have
+        // to be the same size. Anything else is a substitution, not a
+        // conversion, and COBOL has no single statement for it.
+        return reject(
+          `replaceChars converts character by character, so "${from}" characters cannot become "${to}".`,
+          "Give both sides the same number of characters.",
+        );
+      }
+      return { kind: "string", length, literal: true };
+    }
 
     case "trim":
     case "upper":
@@ -3607,6 +3822,8 @@ function resolveTerminalStatementType(
     case "CursorLoopStatement":
     case "UnitOfWorkStatement":
     case "ReturnCodeStatement":
+    case "SplitStatement":
+    case "SearchStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;

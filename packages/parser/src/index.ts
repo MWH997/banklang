@@ -28,6 +28,8 @@ import {
   type TemporalCallNode,
   type TemporalTypeNode,
   type ReturnCodeStatementNode,
+  type SearchStatementNode,
+  type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
   type TypeNode,
@@ -133,6 +135,9 @@ export const KEYWORDS = new Set([
   "readQueue",
   "returnTransid",
   "returnCode",
+  "split",
+  "by",
+  "search",
   "currency",
   "nullable",
   "edited",
@@ -204,6 +209,8 @@ const STRING_BUILTINS = new Set([
   "substring",
   "concat",
   "now",
+  "countOf",
+  "replaceChars",
 ]);
 
 const ROUNDING_MODES = new Set([
@@ -1188,6 +1195,146 @@ class Parser {
 
     if (this.matchKeyword("raise")) {
       return this.parseRaiseStatement();
+    }
+
+    if (this.isKeyword("split")) {
+      const keyword = this.advance();
+      const source = this.parseExpression();
+      this.expectKeyword("by", "Expected `by` before the delimiter.");
+      const delimiter = this.parseExpression();
+      // `into` is contextual, like the file statement's clause words.
+      if (this.current.kind !== "identifier" || this.current.text !== "into") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `into` before the targets.",
+          'Write `split key by "-" into branch, account;`.',
+        );
+        return null;
+      }
+      this.advance();
+
+      const targets: (MemberAccessNode | IdentifierNode)[] = [];
+      do {
+        const targetToken = this.expectIdentifier("Expected a target field.");
+        if (!targetToken) {
+          return null;
+        }
+        let target: MemberAccessNode | IdentifierNode = {
+          kind: "Identifier",
+          name: targetToken.text,
+          span: targetToken.span,
+        };
+        if (this.matchPunctuation(".")) {
+          const memberToken = this.expectIdentifier(
+            "Expected a field name after `.`.",
+          );
+          if (!memberToken) {
+            return null;
+          }
+          target = {
+            kind: "MemberAccess",
+            target: target as IdentifierNode,
+            member: memberToken.text,
+            span: {
+              sourceFile: targetToken.span.sourceFile,
+              start: targetToken.span.start,
+              end: memberToken.span.end,
+            },
+          };
+        }
+        targets.push(target);
+      } while (this.matchPunctuation(","));
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the split statement.",
+      );
+      if (!source || !delimiter || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "SplitStatement",
+        source,
+        delimiter,
+        targets,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies SplitStatementNode;
+    }
+
+    if (this.isKeyword("search")) {
+      const keyword = this.advance();
+      const elementToken = this.expectIdentifier(
+        "Expected a name for the matching element.",
+      );
+      this.expectKeyword("in", "Expected `in` after the element name.");
+      const arrayToken = this.expectIdentifier("Expected a table to search.");
+      if (!elementToken || !arrayToken) {
+        return null;
+      }
+      let array: MemberAccessNode | IdentifierNode = {
+        kind: "Identifier",
+        name: arrayToken.text,
+        span: arrayToken.span,
+      };
+      if (this.matchPunctuation(".")) {
+        const memberToken = this.expectIdentifier(
+          "Expected a field name after `.`.",
+        );
+        if (!memberToken) {
+          return null;
+        }
+        array = {
+          kind: "MemberAccess",
+          target: array as IdentifierNode,
+          member: memberToken.text,
+          span: {
+            sourceFile: arrayToken.span.sourceFile,
+            start: arrayToken.span.start,
+            end: memberToken.span.end,
+          },
+        };
+      }
+      if (this.current.kind !== "identifier" || this.current.text !== "where") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `where` before the condition.",
+          "Write `search <name> in <table> where <condition> { ... } else { ... }`.",
+        );
+        return null;
+      }
+      this.advance();
+      const condition = this.parseExpression();
+      const body = this.parseBlock();
+      // The not-found branch is required. A search that can fail and does not
+      // say what then is the half a hand-written scan usually forgets.
+      if (!this.matchKeyword("else")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `else` after a search body.",
+          "Write `search <name> in <table> where <condition> { ... } else { ... }`.",
+        );
+        return null;
+      }
+      const notFound = this.parseBlock();
+      if (!condition || !body || !notFound) {
+        return null;
+      }
+      return {
+        kind: "SearchStatement",
+        elementName: elementToken.text,
+        array,
+        condition,
+        body,
+        notFound,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: notFound.span.end,
+        },
+      } satisfies SearchStatementNode;
     }
 
     if (this.isKeyword("returnCode")) {

@@ -96,7 +96,7 @@ describe("occurs depending on", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain(
-      "05  LINES-FLD OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT.",
+      "05  LINES-FLD OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT",
     );
   });
 

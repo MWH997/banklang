@@ -400,6 +400,29 @@ Never supported: `try`/`catch`, `throw`, `async`/`await`, `yield`. Failure is
 modelled as an abandoned unit of work rather than a thrown value, because COBOL
 has neither exceptions nor stack unwinding.
 
+### `search`
+
+```ts
+search row in statement.lines where row.entryKind == "DEBIT" {
+  // the first matching row, bound to `row`
+} else {
+  // no row matched
+}
+```
+
+A linear scan with `for each` finds a row too, but it runs the whole table every
+time and says nothing about what it was looking for. `SEARCH` stops at the first
+match, and its `AT END` covers the case a hand-written scan usually forgets —
+which is why the `else` is required rather than optional.
+
+Every `OCCURS` carries an `INDEXED BY`, because COBOL's `SEARCH` walks an index
+rather than a subscript. It costs nothing when nothing searches the table. The
+index is set to 1 before each search: `SEARCH` begins wherever the index happens
+to be pointing, and a stale one silently skips the front of the table.
+
+The element name stands for the entry the index is pointing at, so the condition
+and the body talk about the row rather than about a subscript.
+
 ### `for each`
 
 Iterating a bounded array needs no limit clause, because the array supplies the
@@ -465,9 +488,23 @@ function maskPan(pan: string<19>): string<16> {
 }
 ```
 
-**Not yet available:** `INSPECT` (counting and replacing characters),
-`UNSTRING` (splitting a field), and `SEARCH` over a table. A linear scan with
-`for each` covers the last of those today, less efficiently.
+Two more work on characters rather than whole fields, and lower to `INSPECT`:
+
+```ts
+row.commas = countOf(row.narrative, ","); // INSPECT ... TALLYING
+row.branch = replaceChars(row.branch, " ", "0"); // INSPECT ... CONVERTING
+```
+
+`replaceChars` converts character by character, so the two sets must be the same
+size — anything else is a substitution, which COBOL has no single statement for.
+
+`split` takes a field apart, which is `UNSTRING`:
+
+```ts
+split reference by "-" into request.branch, request.account;
+```
+
+Every receiver is a string, because `UNSTRING` writes into fixed fields.
 
 ## 9a. Operators
 
