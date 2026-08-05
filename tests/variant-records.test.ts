@@ -128,3 +128,38 @@ describe("occurs depending on", () => {
     expect(ids(result)).toContain("BANK-COPY-004");
   });
 });
+
+/**
+ * Where a redefining field is reported.
+ *
+ * It re-reads the bytes the field it redefines occupies, so it starts where
+ * that field starts. The layout report put it at the running offset — after the
+ * storage it shares — so a copybook checked against a real dataset had the
+ * redefinition pointing at the field beyond it.
+ */
+describe("the offset a redefines is reported at", () => {
+  it("is the start of what it redefines, not the byte after it", () => {
+    const result = compile(`module Variant;
+
+record Master {
+  a: string<6>;
+  b: string<4> redefines a;
+  tail: string<4>;
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(master: Master) {
+  audit("TOUCHED", master.idempotencyKey);
+}`);
+
+    const layout = result.layout?.reports.find(
+      (entry) => entry.recordName === "Master",
+    );
+    const at = (path: string) =>
+      layout?.entries.find((entry) => entry.path === path)?.offset;
+
+    expect(at("MASTER.A")).toBe(0);
+    expect(at("MASTER.B")).toBe(0);
+    expect(at("MASTER.TAIL")).toBe(6);
+  });
+});

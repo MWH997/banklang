@@ -92,6 +92,8 @@ export interface CopybookLayoutDocument {
 export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
   const fields: CopybookFieldLayout[] = [];
   let offset = 0;
+  /** Where the field currently being redefined starts. */
+  let anchor = 0;
 
   for (const field of record.fields) {
     // A renames is a second name for a run already laid out, so it is not part
@@ -99,19 +101,30 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
     if (field.renames) {
       continue;
     }
+    // A redefining field starts where the field it redefines starts — it is a
+    // second reading of the same bytes, not the next ones. Reporting it at the
+    // running offset put it after the storage it shares.
+    //
+    // It may also be longer, which COBOL permits: the redefinition extends the
+    // area rather than overrunning it, so the record grows to the longest
+    // reading of it.
+    const start = field.redefines ? anchor : offset;
     if (field.synchronized) {
       offset += slackBefore(offset, alignmentOf(field.type));
     }
-    const length = fieldLength(field.type, offset);
+    const at = field.redefines ? start : offset;
+    const length = fieldLength(field.type, at);
     fields.push({
       name: field.name,
       cobolName: toCobolName(field.name),
-      offset,
+      offset: at,
       length,
       picture: toCobolPicture(field.type),
     });
-    // A redefining field shares storage rather than adding any.
-    if (!field.redefines) {
+    if (field.redefines) {
+      offset = Math.max(offset, at + length);
+    } else {
+      anchor = offset;
       offset += length;
     }
   }
@@ -187,6 +200,7 @@ function groupLength(
   base: number,
 ): { length: number; alignment: number } {
   let offset = base;
+  let anchor = base;
   let alignment = 1;
 
   for (const field of fields) {
@@ -200,9 +214,12 @@ function groupLength(
       offset += slackBefore(offset, boundary);
       alignment = Math.max(alignment, boundary);
     }
-    const inner = innerAlignmentOf(field.type, offset);
-    alignment = Math.max(alignment, inner);
-    if (!field.redefines) {
+    const at = field.redefines ? anchor : offset;
+    alignment = Math.max(alignment, innerAlignmentOf(field.type, at));
+    if (field.redefines) {
+      offset = Math.max(offset, at + fieldLength(field.type, at));
+    } else {
+      anchor = offset;
       offset += fieldLength(field.type, offset);
     }
   }
