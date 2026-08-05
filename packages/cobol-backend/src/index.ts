@@ -2836,6 +2836,33 @@ function emitSortStatement(
   addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
   addLine(`${indent}    GOBACK`);
   addLine(`${indent}END-IF`);
+
+  // SORT-RETURN is not the whole story for the files the sort opens itself.
+  // Under NOFASTSRT the sort does not check open, close, or I/O errors on a
+  // USING or GIVING file, and IBM's guidance for a program that declares a file
+  // status and no ERROR declarative — which is every program this compiler
+  // emits — is to test the status key as well as SORT-RETURN. The status is
+  // set either way; without this nothing reads it.
+  //
+  // A file handled by a procedure is not tested here, because the procedure
+  // opened it and already checked.
+  const unchecked = [
+    ...(statement.inputProcedure ? [] : statement.inputs),
+    ...(statement.outputProcedure ? [] : [statement.output]),
+  ];
+  for (const file of [...new Set(unchecked)]) {
+    const status = fileStatusNames.get(file);
+    if (!status) {
+      continue;
+    }
+    addLine(`${indent}IF ${openFailed(status)}`);
+    addLine(
+      `${indent}    DISPLAY "${operation} FAILED ${file} STATUS " ${status} UPON SYSOUT`,
+    );
+    addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
+    addLine(`${indent}    GOBACK`);
+    addLine(`${indent}END-IF`);
+  }
 }
 
 /**

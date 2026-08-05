@@ -311,6 +311,37 @@ describe("the sort's own outcome", () => {
     expect(cobol.slice(check)).toContain("GOBACK");
   });
 
+  /**
+   * `SORT-RETURN` is not the whole story for the files the sort opens itself.
+   * Under NOFASTSRT the sort does not check open, close, or I/O errors on a
+   * USING or GIVING file, and IBM's guidance for a program that declares a file
+   * status and no ERROR declarative — which is every program this compiler
+   * emits — is to test the status key *as well as* SORT-RETURN. The status is
+   * set either way; without this nothing reads it.
+   */
+  it("tests the status of each file the sort handled itself", () => {
+    const cobol =
+      txn("  sort rawPostings into sortedPostings on branchId;").cobol ?? "";
+
+    expect(cobol).toContain('IF RAW-STATUS(1:1) NOT = "0"');
+    expect(cobol).toContain('IF SORTED-STATUS(1:1) NOT = "0"');
+    expect(cobol).toContain(
+      'DISPLAY "SORT FAILED rawPostings STATUS " RAW-STATUS UPON SYSOUT',
+    );
+  });
+
+  /** A file a procedure opened was already checked there; twice says nothing. */
+  it("leaves the files a procedure handled to that procedure", () => {
+    const cobol = result.cobol ?? "";
+    const body = cobol.slice(
+      cobol.indexOf("ORDER-POSTINGS."),
+      cobol.search(/BANK-SORT-IN-\d+-\d+ SECTION\./),
+    );
+
+    expect(body).not.toContain("RAW-STATUS");
+    expect(body).not.toContain("SORTED-STATUS");
+  });
+
   it("is tested after a MERGE too", () => {
     const merged =
       txn(`  merge rawPostings, otherPostings into sortedPostings on branchId;`)
