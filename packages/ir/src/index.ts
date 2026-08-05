@@ -188,7 +188,31 @@ export type IRStatement =
   | IRCursorLoopStatement
   | IRUnitOfWorkStatement
   | IRReturnCodeStatement
+  | IRSplitStatement
+  | IRSearchStatement
   | IRRaiseStatement;
+
+/** `UNSTRING source DELIMITED BY d INTO a b c`. */
+export interface IRSplitStatement {
+  kind: "SplitStatement";
+  span: SourceSpan;
+  source: IRExpression;
+  delimiter: IRExpression;
+  targets: IRExpression[];
+}
+
+/** `SEARCH table AT END <notFound> WHEN <condition> <body>`. */
+export interface IRSearchStatement {
+  kind: "SearchStatement";
+  span: SourceSpan;
+  elementName: string;
+  /** COBOL group the table field is qualified by, and the field itself. */
+  arrayRecordName: string;
+  arrayFieldName: string;
+  condition: IRExpression;
+  body: IRBlock;
+  notFound: IRBlock;
+}
 
 /** `MOVE <n> TO RETURN-CODE` — the step's condition code. */
 export interface IRReturnCodeStatement {
@@ -393,7 +417,15 @@ export type IRExpression =
 export interface IRStringCallExpression {
   kind: "StringCall";
   span: SourceSpan;
-  operation: "trim" | "upper" | "lower" | "substring" | "concat" | "now";
+  operation:
+    | "trim"
+    | "upper"
+    | "lower"
+    | "substring"
+    | "concat"
+    | "now"
+    | "countOf"
+    | "replaceChars";
   args: IRExpression[];
   resolvedType: IRType;
 }
@@ -1090,6 +1122,11 @@ function blockCanFail(block: IRBlock): boolean {
           return true;
         }
         break;
+      case "SearchStatement":
+        if (blockCanFail(statement.body) || blockCanFail(statement.notFound)) {
+          return true;
+        }
+        break;
       case "SwitchStatement":
         if (
           statement.cases.some((entry) => blockCanFail(entry.body)) ||
@@ -1190,6 +1227,14 @@ function blockPostsToLedger(block: IRBlock): boolean {
       case "ForEachStatement":
       case "CursorLoopStatement":
         if (blockPostsToLedger(statement.body)) {
+          return true;
+        }
+        break;
+      case "SearchStatement":
+        if (
+          blockPostsToLedger(statement.body) ||
+          blockPostsToLedger(statement.notFound)
+        ) {
           return true;
         }
         break;
@@ -1299,6 +1344,10 @@ function collectCalls(block: IRBlock): Set<string> {
         case "ForEachStatement":
         case "CursorLoopStatement":
           walkBlock(statement.body);
+          break;
+        case "SearchStatement":
+          walkBlock(statement.body);
+          walkBlock(statement.notFound);
           break;
         case "SwitchStatement":
           for (const branch of statement.cases) {
@@ -1470,6 +1519,52 @@ function lowerStatement(
         span: statement.span,
         code: statement.code,
       };
+    case "SplitStatement":
+      return {
+        kind: "SplitStatement",
+        span: statement.span,
+        source: lowerExpression(statement.source, scopeTypes),
+        delimiter: lowerExpression(statement.delimiter, scopeTypes),
+        targets: statement.targets.map((target) =>
+          lowerExpression(target, scopeTypes),
+        ),
+      };
+    case "SearchStatement": {
+      const array = lowerExpression(statement.array, scopeTypes);
+      const arrayType =
+        array.kind === "Identifier" || array.kind === "MemberAccess"
+          ? array.resolvedType
+          : undefined;
+      if (!arrayType || arrayType.kind !== "array") {
+        throw new Error("search requires a table during IR lowering.");
+      }
+
+      // The element is bound for the condition and the body, the way a loop
+      // index is, so both can talk about the row rather than a subscript.
+      const bodyScope = new Map(scopeTypes);
+      bodyScope.set(statement.elementName, arrayType.element);
+
+      return {
+        kind: "SearchStatement",
+        span: statement.span,
+        elementName: statement.elementName,
+        arrayRecordName:
+          array.kind === "MemberAccess"
+            ? array.recordName
+            : array.kind === "Identifier"
+              ? array.name
+              : "",
+        arrayFieldName:
+          array.kind === "MemberAccess"
+            ? array.member
+            : array.kind === "Identifier"
+              ? array.name
+              : "",
+        condition: lowerExpression(statement.condition, bodyScope),
+        body: lowerBlock(statement.body, bodyScope),
+        notFound: lowerBlock(statement.notFound, bodyScope),
+      };
+    }
     case "ReturnCodeStatement":
       return {
         kind: "ReturnCodeStatement",
@@ -1674,6 +1769,10 @@ function stringCallType(
   switch (expression.operation) {
     case "now":
       return { kind: "temporal", unit: "timestamp" };
+    case "countOf":
+      return { kind: "decimal", precision: 9, scale: 0, usage: "packed" };
+    case "replaceChars":
+      return { kind: "string", length: lengthOf(expression.args[0]) };
     case "substring":
       return {
         kind: "string",

@@ -427,7 +427,15 @@ export interface TemporalCallNode extends NodeBase {
  */
 export interface StringCallNode extends NodeBase {
   kind: "StringCall";
-  operation: "trim" | "upper" | "lower" | "substring" | "concat" | "now";
+  operation:
+    | "trim"
+    | "upper"
+    | "lower"
+    | "substring"
+    | "concat"
+    | "now"
+    | "countOf"
+    | "replaceChars";
   args: ExpressionNode[];
 }
 
@@ -589,6 +597,8 @@ export type StatementNode =
   | CursorLoopStatementNode
   | UnitOfWorkStatementNode
   | ReturnCodeStatementNode
+  | SplitStatementNode
+  | SearchStatementNode
   | RaiseStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
@@ -714,6 +724,39 @@ export type CicsOperation =
  * found nothing or warned, 8 failed. Without it every step reports success and
  * a job that found no records looks exactly like one that processed a million.
  */
+/**
+ * `split source by "," into first, second, third;`
+ *
+ * COBOL takes a field apart with `UNSTRING`, which is a statement because it
+ * writes several receivers at once. Parsing a composite key — a branch, an
+ * account, and a suffix in one field — is what legacy input constantly asks for.
+ */
+export interface SplitStatementNode extends NodeBase {
+  kind: "SplitStatement";
+  source: ExpressionNode;
+  delimiter: ExpressionNode;
+  targets: (MemberAccessNode | IdentifierNode)[];
+}
+
+/**
+ * `search row in statement.lines where <condition> { ... } else { ... }`
+ *
+ * A linear scan with `for each` finds a row too, but it runs the whole table
+ * every time and says nothing about what it was looking for. `SEARCH` stops at
+ * the first match and has an `AT END` for the case where there is none, which
+ * is the half a hand-written scan usually forgets.
+ */
+export interface SearchStatementNode extends NodeBase {
+  kind: "SearchStatement";
+  /** Name bound to the matching element inside the condition and the body. */
+  elementName: string;
+  array: MemberAccessNode | IdentifierNode;
+  condition: ExpressionNode;
+  body: BlockNode;
+  /** Runs when no element matched. Required: a search that can fail must say so. */
+  notFound: BlockNode;
+}
+
 export interface ReturnCodeStatementNode extends NodeBase {
   kind: "ReturnCodeStatement";
   value: ExpressionNode;

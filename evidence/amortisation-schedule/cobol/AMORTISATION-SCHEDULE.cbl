@@ -20,7 +20,8 @@
            05  PRINCIPAL            PIC S9(16)V99 COMP-3.
            05  MONTHLY-RATE         PIC S9(5)V9999 COMP-3.
            05  TERM-MONTHS          PIC S9(9) COMP-3.
-           05  SCHEDULE OCCURS 36 TIMES.
+           05  SCHEDULE OCCURS 36 TIMES
+                   INDEXED BY SCHEDULE-IDX.
                10  DUE-BALANCE          PIC S9(16)V99 COMP-3.
                10  INTEREST-DUE         PIC S9(16)V99 COMP-3.
            05  IDEMPOTENCY-KEY      PIC X(36).

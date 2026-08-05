@@ -31,6 +31,8 @@ import type {
   IRTransaction,
   IRForEachStatement,
   IRRaiseStatement,
+  IRSearchStatement,
+  IRSplitStatement,
   IRStringCallExpression,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
@@ -1133,8 +1135,9 @@ function emitField(
   if (type.kind === "array") {
     if (type.element.kind === "record") {
       addLine(
-        `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}.`,
+        `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}`,
       );
+      addLine(`${indent}        INDEXED BY ${tableIndexName(name)}.`);
       emitRecordFields(type.element.fields, level + 1, addLine);
       return;
     }
@@ -1142,8 +1145,9 @@ function emitField(
       `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type.element)}`,
     );
     addLine(
-      `${indent}        OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}.`,
+      `${indent}        OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}`,
     );
+    addLine(`${indent}        INDEXED BY ${tableIndexName(name)}.`);
     return;
   }
 
@@ -1393,6 +1397,12 @@ function emitStatement(
           `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
         );
         break;
+      case "SplitStatement":
+        emitSplitStatement(statement, addLine, indent);
+        break;
+      case "SearchStatement":
+        emitSearchStatement(statement, addLine, indentLevel, resultName, false);
+        break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
         break;
@@ -1537,6 +1547,12 @@ function emitTransactionBody(
         addLine(
           `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
         );
+        break;
+      case "SplitStatement":
+        emitSplitStatement(statement, addLine, indent);
+        break;
+      case "SearchStatement":
+        emitSearchStatement(statement, addLine, indentLevel, "", true);
         break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
@@ -1695,6 +1711,70 @@ function emitWhileStatement(
   }
   addLine(`${indent}END-PERFORM`);
 }
+
+/** `UNSTRING source DELIMITED BY d INTO a b c`. */
+function emitSplitStatement(
+  statement: IRSplitStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(
+    `${indent}UNSTRING ${renderExpression(statement.source)} DELIMITED BY ${renderExpression(statement.delimiter)}`,
+  );
+  addLine(
+    `${indent}    INTO ${statement.targets.map((target) => renderExpression(target)).join(" ")}`,
+  );
+  addLine(`${indent}END-UNSTRING`);
+}
+
+/**
+ * `SEARCH` over a table.
+ *
+ * The index is set to 1 first, because SEARCH begins wherever the index happens
+ * to be pointing and a stale one silently skips the front of the table. `AT END`
+ * comes before the `WHEN`, which is the order COBOL requires and also the order
+ * that makes the not-found case impossible to leave out.
+ */
+function emitSearchStatement(
+  statement: IRSearchStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const table = `${toCobolFieldName(statement.arrayFieldName)} OF ${toCobolName(statement.arrayRecordName)}`;
+  const index = tableIndexName(statement.arrayFieldName);
+  const previous = currentSearchElement;
+  currentSearchElement = {
+    name: statement.elementName,
+    reference: `${table} (${index})`,
+  };
+
+  addLine(`${indent}SET ${index} TO 1`);
+  addLine(`${indent}SEARCH ${table}`);
+  addLine(`${indent}    AT END`);
+  if (inTransaction) {
+    emitTransactionBody(statement.notFound, addLine, indentLevel + 8);
+  } else {
+    emitStatement(statement.notFound, addLine, indentLevel + 8, resultName);
+  }
+  addLine(`${indent}    WHEN ${renderCondition(statement.condition)}`);
+  if (inTransaction) {
+    emitTransactionBody(statement.body, addLine, indentLevel + 8);
+  } else {
+    emitStatement(statement.body, addLine, indentLevel + 8, resultName);
+  }
+  addLine(`${indent}END-SEARCH`);
+
+  currentSearchElement = previous;
+}
+
+/**
+ * The element name a `search` binds, and the subscripted table entry it stands
+ * for, while that search's condition and body are being emitted.
+ */
+let currentSearchElement: { name: string; reference: string } | null = null;
 
 function emitAssignStatement(
   statement: IRAssignStatement,
@@ -2130,7 +2210,10 @@ function emitComputeInto(
   // cannot be the right-hand side of a MOVE.
   if (
     expression.kind === "StringCall" &&
-    (expression.operation === "concat" || expression.operation === "now")
+    (expression.operation === "concat" ||
+      expression.operation === "now" ||
+      expression.operation === "countOf" ||
+      expression.operation === "replaceChars")
   ) {
     emitStringAssignment(target, expression, addLine, indent);
     return;
@@ -2383,6 +2466,17 @@ function sqlParameterName(statementName: string, index: number): string {
 
 /** Cursors the program declares, for rewriting `WHERE CURRENT OF`. */
 let cursorNames = new Set<string>();
+
+/**
+ * The index register a table is searched through.
+ *
+ * COBOL's SEARCH walks an index rather than a subscript, so every OCCURS
+ * carries one. It costs nothing when nothing searches the table, and it is the
+ * idiomatic declaration either way.
+ */
+function tableIndexName(fieldName: string): string {
+  return `${toCobolFieldName(fieldName)}-IDX`;
+}
 
 /** Counts the rows a cursor loop has taken, so the declared bound can stop it. */
 function cursorRowCounter(cursorName: string): string {
@@ -2649,6 +2743,8 @@ function renderStringCall(expression: IRStringCallExpression): string {
       return `${renderExpression(first)}(${renderExpression(second)}:${renderExpression(third)})`;
     case "concat":
     case "now":
+    case "countOf":
+    case "replaceChars":
       throw new Error(
         `${expression.operation} builds a value and is emitted as a statement.`,
       );
@@ -2676,6 +2772,26 @@ function emitStringAssignment(
   addLine: (line?: string) => void,
   indent: string,
 ): void {
+  // INSPECT counts and converts in place, so both need a statement and a
+  // target that already holds the value being examined.
+  if (expression.operation === "countOf") {
+    addLine(`${indent}MOVE 0 TO ${target}`);
+    addLine(
+      `${indent}INSPECT ${renderExpression(expression.args[0])} TALLYING ${target} FOR ALL ${renderExpression(expression.args[1])}`,
+    );
+    return;
+  }
+
+  if (expression.operation === "replaceChars") {
+    addLine(
+      `${indent}MOVE ${renderExpression(expression.args[0])} TO ${target}`,
+    );
+    addLine(
+      `${indent}INSPECT ${target} CONVERTING ${renderExpression(expression.args[1])} TO ${renderExpression(expression.args[2])}`,
+    );
+    return;
+  }
+
   if (expression.operation === "now") {
     // CURRENT-DATE is YYYYMMDDHHMMSShh...; a Db2 timestamp is
     // YYYY-MM-DD-HH.MM.SS.NNNNNN. Hundredths are all the clock offers, so the
@@ -2776,6 +2892,12 @@ function nullIndicatorFor(expression: IRExpression): string {
  * whatever happened to be in that group and silently return the wrong number.
  */
 function recordGroupFor(expression: IRMemberAccessExpression): string {
+  // Inside a search, the bound element name stands for the table entry the
+  // index is pointing at, so a field of it qualifies by the subscripted table.
+  if (currentSearchElement?.name === expression.targetName) {
+    return currentSearchElement.reference;
+  }
+
   return (
     currentBindings.get(expression.targetName) ??
     toCobolName(expression.recordName)

@@ -281,6 +281,10 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
       case "CursorLoopStatement":
         flattened.push(...flattenStatements(statement.body.statements));
         break;
+      case "SearchStatement":
+        flattened.push(...flattenStatements(statement.body.statements));
+        flattened.push(...flattenStatements(statement.notFound.statements));
+        break;
       case "SwitchStatement":
         for (const branch of statement.cases) {
           flattened.push(...flattenStatements(branch.body.statements));
