@@ -569,6 +569,7 @@ export type StatementNode =
   | CicsStatementNode
   | ForEachStatementNode
   | CursorLoopStatementNode
+  | UnitOfWorkStatementNode
   | RaiseStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
@@ -667,6 +668,19 @@ export interface TransactionDeclarationNode extends NodeBase {
 
 /** `link "PROGRAM" commarea record resp status;` and syncpoint operations. */
 export type CicsOperation = "link" | "syncpoint" | "rollback";
+
+/**
+ * `commit;` and `rollback;` — the unit of work, in a batch Db2 program.
+ *
+ * Deliberately not available inside a `cics transaction`: there, CICS owns the
+ * syncpoint and commits Db2's work along with everything else, so an
+ * `EXEC SQL COMMIT` is both wrong and rejected by Db2 at run time. Writing one
+ * is `BANK-SQL-004`, and the fix is the `syncpoint` statement.
+ */
+export interface UnitOfWorkStatementNode extends NodeBase {
+  kind: "UnitOfWorkStatement";
+  operation: "commit" | "rollback";
+}
 
 export interface CicsStatementNode extends NodeBase {
   kind: "CicsStatement";

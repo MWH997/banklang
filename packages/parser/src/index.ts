@@ -27,6 +27,7 @@ import {
   type StringCallNode,
   type TemporalCallNode,
   type TemporalTypeNode,
+  type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
   type TypeNode,
   type TypeReferenceNode,
@@ -121,6 +122,7 @@ export const KEYWORDS = new Set([
   "link",
   "syncpoint",
   "rollback",
+  "commit",
   "currency",
   "nullable",
   "edited",
@@ -1143,6 +1145,34 @@ class Parser {
 
     if (this.matchKeyword("raise")) {
       return this.parseRaiseStatement();
+    }
+
+    // `commit;` and `rollback;` are the unit of work. `rollback resp x;` is the
+    // CICS command, which takes a response code; the bare form does not.
+    if (
+      this.current.kind === "keyword" &&
+      (this.current.text === "commit" ||
+        (this.current.text === "rollback" &&
+          this.next.kind === "punctuation" &&
+          this.next.text === ";"))
+    ) {
+      const operationToken = this.advance();
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the unit of work statement.",
+      );
+      if (!semicolon) {
+        return null;
+      }
+      return {
+        kind: "UnitOfWorkStatement",
+        operation: operationToken.text as "commit" | "rollback",
+        span: {
+          sourceFile: operationToken.span.sourceFile,
+          start: operationToken.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies UnitOfWorkStatementNode;
     }
 
     if (

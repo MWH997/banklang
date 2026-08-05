@@ -481,9 +481,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-SQL-004",
     title: "Transaction commit ambiguity",
     explanation:
-      "A SQL statement participates in a transaction with no clear commit or rollback mapping.",
-    remediation: "Reserved for the Db2 profile.",
-    implemented: false,
+      "A `commit` or `rollback` appears inside a CICS transaction. CICS owns the unit of work there and commits Db2's work along with everything else, so an EXEC SQL COMMIT is not merely redundant — Db2 rejects it at run time.",
+    remediation:
+      "Use `syncpoint resp <status>;` or `rollback resp <status>;`, the CICS commands, which cover Db2's work too.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
   },
   {
     id: "BANK-SQL-005",

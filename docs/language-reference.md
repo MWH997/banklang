@@ -713,6 +713,38 @@ identical to one that was.
 Dynamic SQL (`EXECUTE IMMEDIATE`, `PREPARE`) is `BANK-SQL-002`, because it
 cannot be precompiled, bound, or checked ahead of time.
 
+### Writing, and the unit of work
+
+A `sql` declaration carries whatever statement was written, so `INSERT`,
+`UPDATE`, and `DELETE` need nothing special:
+
+```ts
+sql insertPosting(keyAccount: string<16>, keyAmount: MoneyBDT) {
+  INSERT INTO POSTING (ACCOUNT_ID, AMOUNT) VALUES (:keyAccount, :keyAmount)
+}
+```
+
+`commit;` and `rollback;` end the unit of work in a batch program, lowering to
+`EXEC SQL COMMIT` and `EXEC SQL ROLLBACK`.
+
+Neither is available inside a `cics transaction` (`BANK-SQL-004`). There CICS
+owns the syncpoint and commits Db2's work along with everything else, so an
+`EXEC SQL COMMIT` is not merely redundant — Db2 rejects it at run time. Use
+`syncpoint resp <status>;` instead, which is why that statement exists.
+
+**Positioned update.** `WHERE CURRENT OF <cursor>` names a cursor the program
+declared, and the compiler rewrites it to that cursor's COBOL name — without
+which the update would refer to a cursor Db2 has never heard of:
+
+```ts
+sql zeroCurrentRow() {
+  UPDATE ACCOUNT SET BALANCE = 0 WHERE CURRENT OF accountsInBranch
+}
+```
+
+The cursor it names must be declared `FOR UPDATE OF` the columns being changed.
+BankLang does not parse SQL, so it cannot check that for you.
+
 ### Cursors
 
 A query that returns many rows is declared with `cursor` and read with a bounded

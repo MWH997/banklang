@@ -182,7 +182,15 @@ export type IRStatement =
   | IRCicsStatement
   | IRForEachStatement
   | IRCursorLoopStatement
+  | IRUnitOfWorkStatement
   | IRRaiseStatement;
+
+/** `EXEC SQL COMMIT` or `EXEC SQL ROLLBACK` — the batch unit of work. */
+export interface IRUnitOfWorkStatement {
+  kind: "UnitOfWorkStatement";
+  span: SourceSpan;
+  operation: "commit" | "rollback";
+}
 
 /**
  * A bounded read of a Db2 cursor.
@@ -1434,6 +1442,12 @@ function lowerStatement(
         kind: "RaiseStatement",
         span: statement.span,
         code: statement.code,
+      };
+    case "UnitOfWorkStatement":
+      return {
+        kind: "UnitOfWorkStatement",
+        span: statement.span,
+        operation: statement.operation,
       };
     case "CursorLoopStatement": {
       const cursor = sqlTable.get(statement.cursorName);

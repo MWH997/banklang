@@ -231,7 +231,9 @@ SQL host variable does not match expected COBOL field layout.
 
 ### `BANK-SQL-004` transaction commit ambiguity
 
-SQL statement participates in a transaction without clear commit/rollback mapping.
+A `commit` or `rollback` appears inside a CICS transaction. CICS owns the unit
+of work there and commits Db2's work along with everything else, so an
+`EXEC SQL COMMIT` is not merely redundant — Db2 rejects it at run time.
 
 ### `BANK-SQL-005` cursor and statement confused
 
