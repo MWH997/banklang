@@ -715,6 +715,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-009",
+    title: "Invalid varying record",
+    explanation:
+      "`varying <min> to <max> length <field>` becomes `RECORD IS VARYING IN SIZE`. The bounds have to be a range of lengths — a shortest of at least one character, and no longer than the longest — and the file has to be sequential, because an indexed or relative dataset addresses a record by key or by position, which a varying length would move.",
+    remediation:
+      "Give the shortest and longest lengths in that order, and declare the file `sequential`.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:

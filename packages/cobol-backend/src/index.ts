@@ -511,6 +511,29 @@ export function emitCobol(
         continue;
       }
 
+      // RECORD IS VARYING writes only what the record uses rather than padding
+      // every one to the longest it might hold, and the depending field is how
+      // the program says how much that is.
+      if (file.recordVarying) {
+        addLine(
+          `       FD  ${fileCobolName(file.name)} RECORD IS VARYING IN SIZE FROM ${file.recordVarying.min} TO ${file.recordVarying.max} CHARACTERS`,
+        );
+        addLine(
+          `               DEPENDING ON ${toCobolFieldName(file.recordVarying.lengthName)}.`,
+        );
+        addLine(`       01  ${fileRecordName(file)}.`);
+        suppressInitialValues = true;
+        emitRecordFields(file.record.fields, 1, addLine);
+        suppressInitialValues = false;
+        emitAllRenames(
+          file.record,
+          fileRecordName(file),
+          addLine,
+          " ".repeat(11),
+        );
+        continue;
+      }
+
       if (file.linage) {
         const clauses = [`           LINAGE IS ${file.linage.lines} LINES`];
         if (file.linage.footingAt !== null) {
@@ -593,6 +616,13 @@ export function emitCobol(
     if (file.statusName) {
       addLine(
         `       01  ${toCobolFieldName(file.statusName).padEnd(20)} ${FILE_STATUS_PICTURE}.`,
+      );
+    }
+    // The used length of a varying record: set before a write, filled by a
+    // read. It is the program's, not the file's, which is why it lives here.
+    if (file.recordVarying) {
+      addLine(
+        `       01  ${toCobolFieldName(file.recordVarying.lengthName).padEnd(20)} PIC S9(4) COMP.`,
       );
     }
   }

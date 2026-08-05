@@ -1323,6 +1323,45 @@ class Parser {
       };
     }
 
+    // `varying <min> to <max> length <field>` — a record whose written length
+    // is decided per record rather than padded to the longest one.
+    let recordVarying: {
+      min: number;
+      max: number;
+      lengthName: string;
+    } | null = null;
+    if (this.matchContextual("varying")) {
+      const min = this.expectNumber("Expected the shortest record length.");
+      if (!this.matchContextual("to")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `to` between the record lengths.",
+          "Write `varying 10 to 80 length feedLength`.",
+        );
+        return null;
+      }
+      const max = this.expectNumber("Expected the longest record length.");
+      if (!this.matchContextual("length")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `length` before the field holding the used length.",
+          "Write `varying 10 to 80 length feedLength`.",
+        );
+        return null;
+      }
+      const lengthToken = this.expectIdentifier(
+        "Expected the field holding the used length.",
+      );
+      if (!min || !max || !lengthToken) {
+        return null;
+      }
+      recordVarying = {
+        min: Number(min.text),
+        max: Number(max.text),
+        lengthName: lengthToken.text,
+      };
+    }
+
     let statusName: string | null = null;
     if (
       this.current.kind === "identifier" &&
@@ -1362,6 +1401,7 @@ class Parser {
       keyField,
       alternateKeys,
       linage,
+      recordVarying,
       span: {
         sourceFile: fileToken.span.sourceFile,
         start: fileToken.span.start,

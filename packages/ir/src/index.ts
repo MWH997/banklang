@@ -121,6 +121,8 @@ export interface IRFile {
   mode: "input" | "output" | "update";
   record: IRRecord;
   statusName: string | null;
+  /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
+  recordVarying: { min: number; max: number; lengthName: string } | null;
   keyFieldName: string | null;
   /** Alternate record keys, which allow duplicates. */
   alternateKeyNames: string[];
@@ -932,6 +934,7 @@ export function lowerProgramToIR(
       mode: file.mode,
       organization: file.organization,
       statusName: file.statusName,
+      recordVarying: file.recordVarying,
       keyFieldName: file.keyField?.name ?? null,
       // A renames overlaps the run it names, so mapping it too would move the
       // same bytes twice.
@@ -1013,6 +1016,7 @@ export function lowerProgramToIR(
     mode: file.mode,
     record: lowerRecord(file.record, recordTypeMap),
     statusName: file.statusName,
+    recordVarying: file.recordVarying,
     keyFieldName: file.keyField?.name ?? null,
     alternateKeyNames: file.alternateKeys.map((field) => field.name),
     linage: file.linage,
@@ -1080,6 +1084,7 @@ const fileTable = new Map<
     mode: "input" | "output" | "update";
     organization: "sequential" | "indexed" | "relative";
     statusName: string | null;
+    recordVarying: { min: number; max: number; lengthName: string } | null;
     keyFieldName: string | null;
     recordFields: { name: string; arrayLength: number | null }[];
   }
@@ -1115,6 +1120,16 @@ function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
   for (const [, file] of fileTable) {
     if (file.statusName && !scopeTypes.has(file.statusName)) {
       scopeTypes.set(file.statusName, { kind: "string", length: 2 });
+    }
+    // The used length of a varying record is the program's to set and read, so
+    // it is in scope alongside the file status.
+    if (file.recordVarying && !scopeTypes.has(file.recordVarying.lengthName)) {
+      scopeTypes.set(file.recordVarying.lengthName, {
+        kind: "decimal",
+        precision: 4,
+        scale: 0,
+        usage: "binary",
+      });
     }
   }
 
