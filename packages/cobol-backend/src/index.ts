@@ -1675,6 +1675,34 @@ function enumConditionName(fieldName: string, member: string): string {
 }
 
 /**
+ * The level-88 to `SET`, when an assignment sets an enum field to a member.
+ *
+ * Only a record field, and only qualified by the group it sits in — which is
+ * exactly the qualification the equivalent `MOVE` already carries, and it is
+ * needed for the same reason: the same record is emitted in working storage and
+ * again inside every `FD` that holds it, so an unqualified condition name is
+ * ambiguous the moment a second record has a field of the same name.
+ *
+ * A local of enum type keeps its `MOVE`. Locals are `01` items that the emitter
+ * only qualifies when two routines collide, so a condition name on one has no
+ * group to be qualified by, and a `SET` there would be right until the day
+ * somebody declared the same local elsewhere.
+ */
+function enumConditionAssignment(statement: IRAssignStatement): string | null {
+  const target = statement.target;
+  const value = statement.expression;
+  if (
+    target.kind !== "MemberAccess" ||
+    target.resolvedType.kind !== "enum" ||
+    value.kind !== "EnumMember"
+  ) {
+    return null;
+  }
+
+  return `${enumConditionName(target.member, value.member)} OF ${toCobolName(target.recordName)}`;
+}
+
+/**
  * Return statements only assign the result field. The paragraph ends with a
  * single `GOBACK.`, because a period inside an `IF` branch would terminate the
  * COBOL sentence and leave the following `ELSE` and `END-IF` dangling.
@@ -3103,6 +3131,16 @@ function emitAssignStatement(
   addLine: (line?: string) => void,
   indent: string,
 ): void {
+  // Setting an enum field to one of its members is what the level-88 condition
+  // names are for. `SET STATE-CLOSED OF R TO TRUE` says which state it is;
+  // `MOVE "CLOSED" TO STATE OF R` repeats the spelling of the member in the
+  // procedure division, where it can drift from the 88 that defines it.
+  const condition = enumConditionAssignment(statement);
+  if (condition) {
+    addLine(`${indent}SET ${condition} TO TRUE`);
+    return;
+  }
+
   const target =
     statement.target.kind === "Identifier"
       ? resolveIdentifier(statement.target.name)
