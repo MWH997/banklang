@@ -407,9 +407,27 @@ the Language Reference's own example, and leaves the next field at byte 8.
 `depending on` names the field holding how much of a table this record uses,
 which is what makes a variable-length record variable. The fixed bound stays as
 the maximum — the storage still has to be reserved — so the emitted clause is
-`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT`. The count must be a whole
-number declared before the table, because COBOL reads it to decide the record's
-length and cannot read a field it has not reached.
+`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT OF BATCH`. The count must be a
+whole number declared before the table, because COBOL reads it to decide the
+record's length and cannot read a field it has not reached.
+
+The count is qualified by its group because the same record is laid out in
+working storage and again inside every `FD` that holds it, so the bare name
+exists twice and both compilers reject it as ambiguous. The Language Reference
+allows the qualification: "All data-names used in the `OCCURS` clause can be
+qualified; they cannot be subscripted or indexed."
+
+**The count is checked before anything uses it.** The Language Reference says
+"the behavior is undefined if the value of the object is outside of the range",
+and the object decides how long the record containing the table is — a count of
+500 on a table declared to hold 100 describes a record longer than the storage
+allocated for it, so every group move, write, or call using that record runs off
+the end. The check matters most where the value is least controlled: the count
+usually arrives in the record read from the file, so it holds whatever was in
+the dataset. Out of range, the count is named in the job log and the step fails
+with a return code of 12. A `read` also copies only the occurrences the count
+says are there, rather than the declared maximum, which would read past the data
+the read delivered.
 
 **The varying table has to be the last field that takes storage.** A field
 declared after it is _variably located_: it sits at the start of the table plus

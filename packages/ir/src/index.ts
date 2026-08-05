@@ -247,6 +247,21 @@ export interface IRBlock {
   statements: IRStatement[];
 }
 
+/**
+ * One field of a file record, for the per-field mapping a `read` or a `write`
+ * generates.
+ *
+ * An array field carries its bound, because COBOL cannot move an `OCCURS` item
+ * without a subscript, and the item its length depends on when it has one — the
+ * mapping has to stop at the occurrences the record is actually using rather
+ * than at the declared maximum.
+ */
+export interface IRMappedField {
+  name: string;
+  arrayLength: number | null;
+  dependingOn: string | null;
+}
+
 export type IRStatement =
   | IRLetStatement
   | IRReturnStatement
@@ -305,7 +320,7 @@ export interface IRCheckpointStatement {
   every: number;
   /** True when the program has SQL, so the checkpoint also commits it. */
   commitsSql: boolean;
-  recordFields: { name: string; arrayLength: number | null }[];
+  recordFields: IRMappedField[];
   /** The key the position is written under, so a rerun can find it again. */
   keyFieldName: string | null;
 }
@@ -323,7 +338,7 @@ export interface IRRestartStatement {
   fileName: string;
   recordName: string;
   keyFieldName: string | null;
-  recordFields: { name: string; arrayLength: number | null }[];
+  recordFields: IRMappedField[];
   resumed: IRBlock;
   fresh: IRBlock | null;
 }
@@ -338,7 +353,7 @@ export interface IRRestartStatement {
 export interface IRSortProcedure {
   recordName: string;
   /** The record's fields, for mapping to and from the FD or SD record. */
-  recordFields: { name: string; arrayLength: number | null }[];
+  recordFields: IRMappedField[];
   body: IRBlock;
 }
 
@@ -608,7 +623,7 @@ export interface IRFileStatement {
    * The file record's fields, for per-field mapping. An array field carries
    * its bound, because COBOL cannot move an OCCURS item without a subscript.
    */
-  recordFields: { name: string; arrayLength: number | null }[];
+  recordFields: IRMappedField[];
   /** `AFTER ADVANCING`, on a write to a print file. */
   advancing: number | "page" | null;
   /** `AT END-OF-PAGE` — where a report writes its totals and next heading. */
@@ -1003,6 +1018,7 @@ export function lowerProgramToIR(
         .map((field) => ({
           name: field.name,
           arrayLength: field.type.kind === "array" ? field.type.length : null,
+          dependingOn: field.dependingOn,
         })),
     });
   }
@@ -1163,7 +1179,7 @@ const fileTable = new Map<
     statusName: string | null;
     recordVarying: { min: number; max: number; lengthName: string } | null;
     keyFieldName: string | null;
-    recordFields: { name: string; arrayLength: number | null }[];
+    recordFields: IRMappedField[];
   }
 >();
 const functionTable = new Map<string, IRType>();
