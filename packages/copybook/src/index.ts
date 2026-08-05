@@ -423,29 +423,60 @@ export function renderCopybookLayoutDocument(
   return `${lines.join("\n")}`;
 }
 
+/**
+ * Bytes a generated picture occupies, for the copybook inspector and diff.
+ *
+ * This reads what this compiler emits, which is a narrower language than COBOL
+ * allows — a general copybook parser is a different and larger job. It has to
+ * keep up with the emitter, though: it once knew only `PIC X` and `COMP-3`, and
+ * every field the numeric-usage, temporal, and edited work added made it throw
+ * on the compiler's own output.
+ */
 function inspectPictureLength(picture: string): number {
   const normalized = picture.replace(/\s+/g, " ").trim().toUpperCase();
+  const body = normalized.replace(/^PIC /, "").replace(/ VALUE '.+'$/, "");
 
-  const alphanumeric = normalized.match(/^PIC X\((\d+)\)(?: VALUE '.+')?$/);
+  const digitsIn = (text: string): number => {
+    const repeated = /9\((\d+)\)/g;
+    let total = 0;
+    let rest = text;
+    for (const match of text.matchAll(repeated)) {
+      total += Number(match[1]);
+    }
+    rest = text.replace(repeated, "");
+    total += (rest.match(/9/g) ?? []).length;
+    return total;
+  };
+
+  const alphanumeric = body.match(/^X\((\d+)\)$/);
   if (alphanumeric) {
     return Number(alphanumeric[1]);
   }
-
-  const packed = normalized.match(
-    /^PIC S9\((\d+)\)(?:V(9+))?\s+COMP-3(?: VALUE '.+')?$/,
-  );
-  if (packed) {
-    const wholeDigits = Number(packed[1]);
-    const scaleDigits = packed[2]?.length ?? 0;
-    return packedDecimalByteLength(wholeDigits + scaleDigits);
-  }
-
-  const singleByte = normalized.match(/^PIC X(?: VALUE '.+')?$/);
-  if (singleByte) {
+  if (body === "X") {
     return 1;
   }
 
-  throw new Error(`Unsupported generated picture clause: ${picture}`);
+  // A numeric-edited picture is one character per position, and every position
+  // is written out, so its own length is the byte count.
+  if (/[Z*,.\/]/.test(body) && !body.includes("COMP")) {
+    return body.replace(/CR|DB/g, "XX").length;
+  }
+
+  const digits = digitsIn(body);
+  if (digits === 0) {
+    throw new Error(`Unsupported generated picture clause: ${picture}`);
+  }
+
+  if (body.endsWith("COMP-3")) {
+    return packedDecimalByteLength(digits);
+  }
+  if (/\bCOMP-5\b/.test(body) || /\bCOMP\b/.test(body)) {
+    // Binary is held in the halfword, fullword, or doubleword that fits.
+    return digits <= 4 ? 2 : digits <= 9 ? 4 : 8;
+  }
+
+  // Zoned decimal: one byte per digit, plus a byte when the sign is separate.
+  return digits + (body.includes("SEPARATE") ? 1 : 0);
 }
 
 function renderFieldSummary(field: CopybookInspectionField | null): string {
