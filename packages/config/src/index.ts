@@ -13,7 +13,25 @@ export interface BankLangConfig {
   backendProfile: BackendProfile;
   /** Fail the build when the formatter would change a source file. */
   formatCheck: boolean;
+  /**
+   * Whether record layouts are written into the program or copied into it.
+   *
+   * `inline` puts every `01` item in the program, which keeps the artifact
+   * self-contained and reviewable on its own — the default, and what the
+   * playground and the evidence bundles show.
+   *
+   * `copy` emits `COPY <NAME>.` instead, which is the shape a shop with a
+   * shared copybook library expects: the copybook becomes the contract between
+   * programs rather than a document that can drift from them. The generated JCL
+   * then carries a SYSLIB for the copybook library, and local validation puts
+   * the copybook directory on the compiler's search path.
+   */
+  copybookMode: CopybookMode;
 }
+
+export type CopybookMode = "inline" | "copy";
+
+const COPYBOOK_MODES: CopybookMode[] = ["inline", "copy"];
 
 export interface LoadedConfig {
   config: BankLangConfig;
@@ -30,6 +48,7 @@ export const DEFAULT_CONFIG: BankLangConfig = {
   outDir: "dist",
   backendProfile: "ibm-enterprise-cobol-zos",
   formatCheck: false,
+  copybookMode: "inline",
 };
 
 const BACKEND_PROFILES: BackendProfile[] = [
@@ -108,6 +127,19 @@ export function loadConfig(projectPath: string, cwd: string): LoadedConfig {
       config.outDir = source.outDir;
     } else {
       problems.push(`"outDir" must be a non-empty string.`);
+    }
+  }
+
+  if (source.copybookMode !== undefined) {
+    if (
+      typeof source.copybookMode === "string" &&
+      (COPYBOOK_MODES as string[]).includes(source.copybookMode)
+    ) {
+      config.copybookMode = source.copybookMode as CopybookMode;
+    } else {
+      problems.push(
+        `"copybookMode" must be one of: ${COPYBOOK_MODES.join(", ")}.`,
+      );
     }
   }
 

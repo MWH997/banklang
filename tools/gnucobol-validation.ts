@@ -5,11 +5,12 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 import { formatDiagnostic, type Diagnostic } from "../packages/ast/src/index";
-import { emitCobol } from "../packages/cobol-backend/src/index";
+import { emitCobol, renderCopybook } from "../packages/cobol-backend/src/index";
+import { loadConfig } from "../packages/config/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
-import { toCobolProgramId } from "../packages/cobol-ir/src/index";
+import { toCobolName, toCobolProgramId } from "../packages/cobol-ir/src/index";
 import { precompile } from "../packages/precompiler/src/index";
 
 export interface GnucobolValidationSummary {
@@ -43,6 +44,8 @@ interface ValidationArtifacts {
   sourceMapPath: string;
   cobolPath: string;
   binaryPath: string;
+  /** Where copybooks are written, and the compiler's search path for them. */
+  copybookDir: string;
 }
 
 export function runGnucobolValidation(
@@ -78,14 +81,28 @@ export function runGnucobolValidation(
     sourceMapPath: join(gnucobolRoot, "maps", "source-map.json"),
     cobolPath: join(gnucobolRoot, "cobol", `${moduleArtifactName}.cbl`),
     binaryPath: join(gnucobolRoot, "bin", moduleArtifactName.toLowerCase()),
+    copybookDir: join(gnucobolRoot, "copybooks"),
   } satisfies ValidationArtifacts;
+
+  // The project decides whether record layouts are written into the program or
+  // copied into it, and validation has to compile whichever it actually ships.
+  const copybookMode = loadConfig(projectPath, cwd).config.copybookMode;
 
   const emit = emitCobol(ir.program, {
     cobolArtifactPath: artifacts.cobolPath,
     sourceMapArtifactPath: artifacts.sourceMapPath,
+    copybookMode,
   });
   writeCobolOutputs(emit);
   mkdirSync(dirname(artifacts.binaryPath), { recursive: true });
+  mkdirSync(artifacts.copybookDir, { recursive: true });
+  for (const record of ir.program.records) {
+    writeFileSync(
+      join(artifacts.copybookDir, `${toCobolName(record.name)}.cpy`),
+      renderCopybook(record),
+      "utf8",
+    );
+  }
 
   const sourceMapArtifactHash = hashText(
     readFileSync(artifacts.sourceMapPath, "utf8"),
@@ -129,6 +146,11 @@ export function runGnucobolValidation(
     const compileArgs = [
       "-x",
       "-free",
+      // A program that COPYs its record layouts needs the copybook directory
+      // on the search path, the local equivalent of SYSLIB. Without it the
+      // copy statements resolve to nothing and every data name is undefined.
+      "-I",
+      relative(cwd, artifacts.copybookDir),
       relative(cwd, compileTarget),
       "-o",
       relative(cwd, artifacts.binaryPath),

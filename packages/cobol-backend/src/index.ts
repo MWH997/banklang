@@ -329,6 +329,15 @@ export interface CobolEmitResult {
 export interface CobolEmitOptions {
   cobolArtifactPath?: string;
   sourceMapArtifactPath?: string;
+  /**
+   * Whether record layouts are written into the program or copied into it.
+   *
+   * `inline` keeps the artifact self-contained and reviewable on its own.
+   * `copy` emits `COPY <NAME>.`, which is the shape a shop with a shared
+   * copybook library expects: the copybook becomes the contract between
+   * programs rather than a document that can drift from them.
+   */
+  copybookMode?: "inline" | "copy";
 }
 
 export interface JclEmitResult {
@@ -337,6 +346,13 @@ export interface JclEmitResult {
 }
 
 export interface JclEmitOptions {
+  /**
+   * True when the program `COPY`s its record layouts.
+   *
+   * The compile step then needs a SYSLIB pointing at the copybook library, or
+   * the copy statements resolve to nothing and the program will not compile.
+   */
+  usesCopybooks?: boolean;
   jclArtifactPath?: string;
 }
 
@@ -457,11 +473,31 @@ export function emitCobol(
     addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
   }
 
+  const copybookMode = options.copybookMode ?? "inline";
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
     const recordStart = lineNumber();
     const layout = describeRecordLayout(record);
     recordLayouts.push(layout);
+
+    // A COPY brings in the whole record, so there is one generated line and one
+    // source-map entry for the record, and no per-field entries: the fields are
+    // in the copybook, which has a layout report of its own.
+    if (copybookMode === "copy") {
+      addLine(`           COPY ${layout.cobolName}.`);
+      entries.push({
+        sourceFile: program.sourceFile,
+        sourceStart: record.span.start,
+        sourceEnd: record.span.end,
+        artifact: cobolArtifactPath,
+        targetStartLine: recordStart,
+        targetEndLine: recordStart,
+        category: "record",
+        symbol: record.name,
+      });
+      continue;
+    }
+
     addLine(`       01  ${layout.cobolName}.`);
     // Field start lines are recorded as they are emitted, because a field can
     // span several lines: an enum adds level-88 entries, a nullable adds an
@@ -787,6 +823,11 @@ export function emitJcl(
   lines.push(
     "//COMPILE  EXEC PGM=IGYCRCTL",
     "//SYSPRINT DD SYSOUT=*",
+    // A COPY resolves against SYSLIB. Without it the copy statements find
+    // nothing and the compile fails on undefined data names.
+    ...(options.usesCopybooks
+      ? ["//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB"]
+      : []),
     needsDb2
       ? "//SYSIN    DD DSN=&&PRECOUT,DISP=(OLD,DELETE)"
       : needsCics

@@ -76,6 +76,8 @@ export interface CliResult {
 
 interface CompiledProject {
   sourceFile: string;
+  /** How record layouts reach the program, from the project's configuration. */
+  copybookMode: "inline" | "copy";
   sourceText: string;
   parsed: ReturnType<typeof parseBankTs>;
   typechecked: ReturnType<typeof typecheckProgram>;
@@ -296,6 +298,7 @@ function runEmit(args: string[], cwd: string): CliResult {
         outputRoot,
       ),
       sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+      copybookMode: compiled.copybookMode,
     });
     writeCobolOutputs(emitResult);
     return {
@@ -362,6 +365,7 @@ function runEmit(args: string[], cwd: string): CliResult {
         compiled.ir.program as IRProgram,
         outputRoot,
       ),
+      usesCopybooks: compiled.copybookMode === "copy",
     });
     writeJclOutputs(jclResult);
     return {
@@ -404,6 +408,7 @@ function runBuild(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    copybookMode: compiled.copybookMode,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -415,6 +420,7 @@ function runBuild(args: string[], cwd: string): CliResult {
       compiled.ir.program as IRProgram,
       outputRoot,
     ),
+    usesCopybooks: compiled.copybookMode === "copy",
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -464,6 +470,7 @@ function runAuditReport(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    copybookMode: compiled.copybookMode,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -475,6 +482,7 @@ function runAuditReport(args: string[], cwd: string): CliResult {
       compiled.ir.program as IRProgram,
       outputRoot,
     ),
+    usesCopybooks: compiled.copybookMode === "copy",
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -521,6 +529,7 @@ function runVerify(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    copybookMode: compiled.copybookMode,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -532,6 +541,7 @@ function runVerify(args: string[], cwd: string): CliResult {
       compiled.ir.program as IRProgram,
       outputRoot,
     ),
+    usesCopybooks: compiled.copybookMode === "copy",
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -908,6 +918,7 @@ function describeExpression(expression: IRExpression): string {
 
 function compileProject(projectPath: string, cwd: string): CompiledProject {
   const sourceFile = resolveSourceFile(projectPath, cwd);
+  const copybookMode = loadConfig(projectPath, cwd).config.copybookMode;
   const sourceText = readFileSync(sourceFile, "utf8");
   const parsed = parseBankTs(sourceText, sourceFile);
   const typechecked = parsed.program
@@ -945,6 +956,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
 
   return {
     sourceFile,
+    copybookMode,
     sourceText,
     parsed,
     typechecked,
@@ -1156,6 +1168,7 @@ function runConfig(args: string[], cwd: string): CliResult {
     `outDir: ${loaded.config.outDir}`,
     `backendProfile: ${loaded.config.backendProfile}`,
     `formatCheck: ${loaded.config.formatCheck}`,
+    `copybookMode: ${loaded.config.copybookMode}`,
   ];
 
   if (loaded.problems.length > 0) {
