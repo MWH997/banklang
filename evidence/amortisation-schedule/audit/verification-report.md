@@ -5,19 +5,19 @@ Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
 
-| Check                      | Status | Details                                                                         |
-| -------------------------- | ------ | ------------------------------------------------------------------------------- |
-| Parse                      | passed | 0 diagnostics                                                                   |
-| Typecheck                  | passed | 0 diagnostics                                                                   |
-| COBOL emit                 | passed | /workspace/Code/banklang/dist/cobol/AMORTISATION-SCHEDULE.cbl                   |
-| Copybook emit              | passed | 2 copybook file(s)                                                              |
-| Source map emit            | passed | /workspace/Code/banklang/dist/maps/source-map.json                              |
-| JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/AMORTISATION-SCHEDULE.jcl                     |
-| Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
+| Check | Status | Details |
+| --- | --- | --- |
+| Parse | passed | 0 diagnostics |
+| Typecheck | passed | 0 diagnostics |
+| COBOL emit | passed | /workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl |
+| Copybook emit | passed | 2 copybook file(s) |
+| Source map emit | passed | /workspace/Code/banklang/evidence/amortisation-schedule/maps/source-map.json |
+| JCL emit | passed | /workspace/Code/banklang/evidence/amortisation-schedule/jcl/AMORTISA.jcl |
+| Audit artifacts | passed | /workspace/Code/banklang/evidence/amortisation-schedule/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 14/14 traced symbols, all entries anchored in the generated COBOL.              |
-| GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
-| Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
+| Source map coverage | passed | 14/14 traced symbols, all entries anchored in the generated COBOL. |
+| GnuCOBOL validation | passed | Local cobc validation passed. |
+| Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
 ## Notes
 
@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule
+- compiler-command: cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/amortisation-schedule/gnucobol/copybooks evidence/amortisation-schedule/gnucobol/cobol/AMORTISA.cbl -o evidence/amortisation-schedule/gnucobol/bin/amortisa
 - compiler-exit-code: 0

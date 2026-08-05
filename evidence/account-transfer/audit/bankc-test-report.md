@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/account-transfer/
+Project: examples/account-transfer
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                                        |
-| --------------- | ------- | -------------------------------------------------------------- |
-| Check           | passed  | OK: examples/account-transfer/                                 |
-| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/ACCOUNT-TRANSFER.cbl |
-| Verify          | passed  | Verified examples/account-transfer/                            |
-| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md     |
+| Step | Status | Details |
+| --- | --- | --- |
+| Check | passed | OK: examples/account-transfer |
+| Build | passed | Wrote evidence/account-transfer/cobol/ACCOUNTT.cbl |
+| Verify | passed | Verified examples/account-transfer |
+| GnuCOBOL report | emitted | evidence/account-transfer/audit/gnucobol-validation.md |
 
 ## Notes
 

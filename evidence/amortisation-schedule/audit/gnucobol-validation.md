@@ -1,20 +1,22 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                                                                                             |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| validated-with-gnucobol    | yes                                                                                                                               |
-| backend-profile            | gnucobol-local                                                                                                                    |
-| source-artifact            | examples/amortisation-schedule/src/main.bank.ts                                                                                   |
-| source-artifact-sha256     | 1a2193f454760ceae605f6901d0b6bb6c6e14ce0fb869f34a5e9b02f849cef57                                                                  |
-| generated-artifact         | dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl                                                                                     |
-| generated-artifact-sha256  | a1b78e2da2df5413b4b35242c194954a848a720b0d756c8b0e01306696a33be8                                                                  |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                                                |
-| source-map-artifact-sha256 | 3b5c27c2e06f1c25accb2ea050763006c6b21a9d9659149ee6858b00ec173331                                                                  |
-| compiler-executable        | cobc                                                                                                                              |
-| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                                             |
-| compiler-command           | cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule |
-| compiler-exit-code         | 0                                                                                                                                 |
-| compiler-status            | passed                                                                                                                            |
+| Field | Value |
+| --- | --- |
+| validated-with-gnucobol | yes |
+| backend-profile | gnucobol-local |
+| source-artifact | examples/amortisation-schedule/src/main.bank.ts |
+| source-artifact-sha256 | 1a2193f454760ceae605f6901d0b6bb6c6e14ce0fb869f34a5e9b02f849cef57 |
+| generated-artifact | evidence/amortisation-schedule/gnucobol/cobol/AMORTISA.cbl |
+| generated-artifact-sha256 | 6b932d1e08e905f85750a6a758954bb2f6ae38814ad4e2513ebb2aaa5825833b |
+| source-map-artifact | evidence/amortisation-schedule/gnucobol/maps/source-map.json |
+| source-map-artifact-sha256 | 956fd26afb4c51c3e0ae3029a273c96b421201564f7aee25d6498ce364423c91 |
+| compiler-executable | cobc |
+| compiler-version | cobc (GnuCOBOL) 3.2.0 |
+| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/amortisation-schedule/gnucobol/copybooks evidence/amortisation-schedule/gnucobol/cobol/AMORTISA.cbl -o evidence/amortisation-schedule/gnucobol/bin/amortisa |
+| compiler-exit-code | 0 |
+| compiler-status | passed |
+| default-dialect-status | passed |
+| dialects-diverge | no |
 
 ## Compiler Output
 

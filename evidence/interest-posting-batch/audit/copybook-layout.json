@@ -1,16 +1,16 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/audit/copybook-layout.md",
   "reports": [
     {
-      "recordName": "InterestAccount",
-      "cobolName": "INTEREST-ACCOUNT",
+      "recordName": "AccrualFeedRow",
+      "cobolName": "ACCRUAL-FEED-ROW",
       "totalLength": 80,
       "entries": [
         {
           "order": 1,
-          "path": "INTEREST-ACCOUNT.ACCOUNT-ID",
+          "path": "ACCRUAL-FEED-ROW.ACCOUNT-ID",
           "type": "string<16>",
           "picture": "PIC X(16)",
           "usage": "DISPLAY",
@@ -21,7 +21,7 @@
         },
         {
           "order": 2,
-          "path": "INTEREST-ACCOUNT.BRANCH-CODE",
+          "path": "ACCRUAL-FEED-ROW.BRANCH-CODE",
           "type": "string<8>",
           "picture": "PIC X(8)",
           "usage": "DISPLAY",
@@ -32,7 +32,7 @@
         },
         {
           "order": 3,
-          "path": "INTEREST-ACCOUNT.BALANCE",
+          "path": "ACCRUAL-FEED-ROW.BALANCE",
           "type": "decimal<18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
@@ -43,7 +43,7 @@
         },
         {
           "order": 4,
-          "path": "INTEREST-ACCOUNT.ACCRUED-INTEREST",
+          "path": "ACCRUAL-FEED-ROW.ACCRUED-INTEREST",
           "type": "decimal<18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
@@ -54,7 +54,7 @@
         },
         {
           "order": 5,
-          "path": "INTEREST-ACCOUNT.IDEMPOTENCY-KEY",
+          "path": "ACCRUAL-FEED-ROW.IDEMPOTENCY-KEY",
           "type": "string<36>",
           "picture": "PIC X(36)",
           "usage": "DISPLAY",

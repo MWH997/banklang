@@ -5,19 +5,19 @@ Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
 
-| Check                      | Status | Details                                                                         |
-| -------------------------- | ------ | ------------------------------------------------------------------------------- |
-| Parse                      | passed | 0 diagnostics                                                                   |
-| Typecheck                  | passed | 0 diagnostics                                                                   |
-| COBOL emit                 | passed | /workspace/Code/banklang/dist/cobol/WITHDRAWAL-WITH-RECOVERY.cbl                |
-| Copybook emit              | passed | 3 copybook file(s)                                                              |
-| Source map emit            | passed | /workspace/Code/banklang/dist/maps/source-map.json                              |
-| JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/WITHDRAWAL-WITH-RECOVERY.jcl                  |
-| Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
+| Check | Status | Details |
+| --- | --- | --- |
+| Parse | passed | 0 diagnostics |
+| Typecheck | passed | 0 diagnostics |
+| COBOL emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl |
+| Copybook emit | passed | 3 copybook file(s) |
+| Source map emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/maps/source-map.json |
+| JCL emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl |
+| Audit artifacts | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 19/19 traced symbols, all entries anchored in the generated COBOL.              |
-| GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
-| Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
+| Source map coverage | passed | 19/19 traced symbols, all entries anchored in the generated COBOL. |
+| GnuCOBOL validation | passed | Local cobc validation passed. |
+| Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
 ## Notes
 
@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery
+- compiler-command: cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/withdrawal-with-recovery/gnucobol/copybooks evidence/withdrawal-with-recovery/gnucobol/cobol/WITHDRAW.cbl -o evidence/withdrawal-with-recovery/gnucobol/bin/withdraw
 - compiler-exit-code: 0

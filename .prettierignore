@@ -3,10 +3,24 @@ dist/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
-tests/fixtures/**/*.cbl
-examples/**/*.bank.ts
-evidence/**/*.bank.ts
-evidence/**/*.cbl
-evidence/**/*.cpy
 tmp/
+
+# Generated artifacts, whose format is the generator's to decide.
+#
+# A file that a tool writes and a formatter then rewrites is a file that no
+# longer matches what the tool produces, so the next run of the tool shows a
+# diff that is not a change. `pnpm evidence:refresh` and
+# `pnpm fixtures:refresh` write these; `pnpm lint:conformance` is what checks
+# them, against the target's rules rather than against a style.
+tests/fixtures/**
+examples/**/*.bank.ts
+evidence/**/audit/**
+evidence/**/cobol/**
+evidence/**/copybooks/**
+evidence/**/jcl/**
+evidence/**/maps/**
+evidence/**/source/**
 *.jcl
+
+# Documents received from outside, kept as they were written.
+docs/audit-*.md

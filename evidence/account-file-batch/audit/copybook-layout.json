@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "artifact": "/workspace/Code/banklang/evidence/account-file-batch/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "AccountRecord",
@@ -28,6 +28,46 @@
           "offset": 16,
           "length": 10,
           "bytes": 10,
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "recordName": "PostingRecord",
+      "cobolName": "POSTING-RECORD",
+      "totalLength": 27,
+      "entries": [
+        {
+          "order": 1,
+          "path": "POSTING-RECORD.POSTING-ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 16,
+          "bytes": 16,
+          "sensitive": false
+        },
+        {
+          "order": 2,
+          "path": "POSTING-RECORD.POSTING-BALANCE",
+          "type": "decimal<18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 16,
+          "length": 10,
+          "bytes": 10,
+          "sensitive": false
+        },
+        {
+          "order": 3,
+          "path": "POSTING-RECORD.POSTING-FLAG",
+          "type": "string<1>",
+          "picture": "PIC X(1)",
+          "usage": "DISPLAY",
+          "offset": 26,
+          "length": 1,
+          "bytes": 1,
           "sensitive": false
         }
       ]

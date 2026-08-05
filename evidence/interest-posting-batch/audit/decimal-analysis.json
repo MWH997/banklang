@@ -4,7 +4,7 @@
   "entries": [
     {
       "category": "record-field",
-      "owner": "InterestAccount",
+      "owner": "AccrualFeedRow",
       "symbol": "balance",
       "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
@@ -25,7 +25,7 @@
     },
     {
       "category": "record-field",
-      "owner": "InterestAccount",
+      "owner": "AccrualFeedRow",
       "symbol": "accruedInterest",
       "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {

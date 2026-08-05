@@ -36,6 +36,8 @@ importers:
 
   packages/config: {}
 
+  packages/conformance-lint: {}
+
   packages/copybook: {}
 
   packages/diagnostics: {}

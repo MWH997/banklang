@@ -5,19 +5,19 @@ Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
 
-| Check                      | Status | Details                                                                         |
-| -------------------------- | ------ | ------------------------------------------------------------------------------- |
-| Parse                      | passed | 0 diagnostics                                                                   |
-| Typecheck                  | passed | 0 diagnostics                                                                   |
-| COBOL emit                 | passed | /workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl                    |
-| Copybook emit              | passed | 3 copybook file(s)                                                              |
-| Source map emit            | passed | /workspace/Code/banklang/dist/maps/source-map.json                              |
-| JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/STATEMENT-GENERATION.jcl                      |
-| Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
+| Check | Status | Details |
+| --- | --- | --- |
+| Parse | passed | 0 diagnostics |
+| Typecheck | passed | 0 diagnostics |
+| COBOL emit | passed | /workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl |
+| Copybook emit | passed | 3 copybook file(s) |
+| Source map emit | passed | /workspace/Code/banklang/evidence/statement-generation/maps/source-map.json |
+| JCL emit | passed | /workspace/Code/banklang/evidence/statement-generation/jcl/STATEMEN.jcl |
+| Audit artifacts | passed | /workspace/Code/banklang/evidence/statement-generation/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 22/22 traced symbols, all entries anchored in the generated COBOL.              |
-| GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
-| Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
+| Source map coverage | passed | 22/22 traced symbols, all entries anchored in the generated COBOL. |
+| GnuCOBOL validation | passed | Local cobc validation passed. |
+| Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
 ## Notes
 
@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/STATEMENT-GENERATION.cbl -o dist/gnucobol/bin/statement-generation
+- compiler-command: cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/statement-generation/gnucobol/copybooks evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl -o evidence/statement-generation/gnucobol/bin/statemen
 - compiler-exit-code: 0

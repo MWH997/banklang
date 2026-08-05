@@ -5,12 +5,25 @@ arrays, nullable values, and an indexed KSDS-style file.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/STATEMENT-GENERATION.cbl`
-- `copybooks/` for each record
-- `jcl/STATEMENT-GENERATION.jcl`
+- `audit/bankc-test-report.md`
+- `audit/copybook-layout.json`
+- `audit/copybook-layout.md`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
+- `audit/gnucobol-validation.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/STATEMEN.cbl`
+- `copybooks/ACCOUNTM.cpy`
+- `copybooks/LEDGEREN.cpy`
+- `copybooks/STATEMEN.cpy`
+- `jcl/STATEMEN.jcl`
 - `maps/source-map.json`
-- the audit bundle under `audit/`
+- `source/main.bank.ts`
 
 ## What this bundle shows
 

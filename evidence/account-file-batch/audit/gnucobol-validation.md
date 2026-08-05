@@ -1,24 +1,29 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                                                                                       |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| validated-with-gnucobol    | yes                                                                                                                         |
-| backend-profile            | gnucobol-local                                                                                                              |
-| source-artifact            | examples/account-file-batch/src/main.bank.ts                                                                                |
-| source-artifact-sha256     | 561b89ea4116a112a95061ece3e92d7df8aa8e0f44c86899be645f0a6df5de6e                                                            |
-| generated-artifact         | dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl                                                                                  |
-| generated-artifact-sha256  | 9ff65d9eb2d51a4dbc6899db263a72e854e4ef74ae741eef6909f94849ce0355                                                            |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                                          |
-| source-map-artifact-sha256 | 087933891b236b452012c20191e24120aa525d70108f47f4cb320043cddee663                                                            |
-| compiler-executable        | cobc                                                                                                                        |
-| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                                       |
-| compiler-command           | cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl -o dist/gnucobol/bin/account-file-batch |
-| compiler-exit-code         | 0                                                                                                                           |
-| compiler-status            | passed                                                                                                                      |
+| Field | Value |
+| --- | --- |
+| validated-with-gnucobol | yes |
+| backend-profile | gnucobol-local |
+| source-artifact | examples/account-file-batch/src/main.bank.ts |
+| source-artifact-sha256 | 7241aff02790e99f62a8557c129e93e9c4b3542fc73d83d54561262d3b4311ac |
+| generated-artifact | evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl |
+| generated-artifact-sha256 | 65e77f667acf2d8385a51974fefd65607e1c5a9030a24f0f928da999b3ef7a62 |
+| source-map-artifact | evidence/account-file-batch/gnucobol/maps/source-map.json |
+| source-map-artifact-sha256 | 5fc724c7928a122e6a83e398d2643536c92a18b3d592e662fb564332b67f5b7b |
+| compiler-executable | cobc |
+| compiler-version | cobc (GnuCOBOL) 3.2.0 |
+| compiler-command | cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl -o evidence/account-file-batch/gnucobol/bin/accountf |
+| compiler-exit-code | 0 |
+| compiler-status | passed |
+| default-dialect-status | passed |
+| dialects-diverge | no |
 
 ## Compiler Output
 
-_No compiler output recorded._
+```text
+ld: warning: -undefined suppress is deprecated
+ld: warning: -undefined suppress is deprecated
+```
 
 ## Known Backend Gaps
 

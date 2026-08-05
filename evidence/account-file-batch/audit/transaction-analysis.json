@@ -1,6 +1,22 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "transactions": [],
-  "status": "no-transactions"
+  "transactions": [
+    {
+      "name": "postAccounts",
+      "parameters": [
+        "account",
+        "posting",
+        "idempotencyKey"
+      ],
+      "ledgerPostings": [],
+      "auditEvents": [
+        {
+          "event": "ACCOUNTS_POSTED",
+          "correlation": "idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
 }

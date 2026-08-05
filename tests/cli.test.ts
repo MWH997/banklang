@@ -47,13 +47,9 @@ describe("bankc cli", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      expect(existsSync(join(outDir, "cobol", "ACCOUNT-TRANSFER.cbl"))).toBe(
-        true,
-      );
+      expect(existsSync(join(outDir, "cobol", "ACCOUNTT.cbl"))).toBe(true);
       expect(existsSync(join(outDir, "copybooks", "TRANSFER.cpy"))).toBe(true);
-      expect(existsSync(join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl"))).toBe(
-        true,
-      );
+      expect(existsSync(join(outDir, "jcl", "ACCOUNTT.jcl"))).toBe(true);
       expect(existsSync(join(outDir, "audit", "validation-matrix.md"))).toBe(
         true,
       );
@@ -119,7 +115,7 @@ describe("bankc cli", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      const jclPath = join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl");
+      const jclPath = join(outDir, "jcl", "ACCOUNTT.jcl");
       expect(existsSync(jclPath)).toBe(true);
       expect(readFileSync(jclPath, "utf8")).toContain("ACCOUNTT JOB");
     } finally {

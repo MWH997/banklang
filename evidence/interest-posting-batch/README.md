@@ -5,12 +5,24 @@ tiered interest, fees, balanced posting, a bounded batch loop, and file I/O.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/INTEREST-POSTING-BATCH.cbl`
-- `copybooks/INTEREST-ACCOUNT.cpy`, `copybooks/POSTING-ADVICE.cpy`
-- `jcl/INTEREST-POSTING-BATCH.jcl`
+- `audit/bankc-test-report.md`
+- `audit/copybook-layout.json`
+- `audit/copybook-layout.md`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
+- `audit/gnucobol-validation.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/INTEREST.cbl`
+- `copybooks/ACCRUALF.cpy`
+- `copybooks/POSTINGA.cpy`
+- `jcl/INTEREST.jcl`
 - `maps/source-map.json`
-- the audit bundle under `audit/`
+- `source/main.bank.ts`
 
 ## What this bundle shows
 

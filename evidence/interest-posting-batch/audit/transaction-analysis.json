@@ -4,7 +4,10 @@
   "transactions": [
     {
       "name": "postInterest",
-      "parameters": ["account", "advice"],
+      "parameters": [
+        "account",
+        "advice"
+      ],
       "ledgerPostings": [
         {
           "operation": "credit",
@@ -36,7 +39,10 @@
     },
     {
       "name": "runBatch",
-      "parameters": ["account", "advice"],
+      "parameters": [
+        "account",
+        "advice"
+      ],
       "ledgerPostings": [],
       "auditEvents": [
         {

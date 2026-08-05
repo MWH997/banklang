@@ -4,7 +4,10 @@
   "transactions": [
     {
       "name": "generateStatement",
-      "parameters": ["statement", "master"],
+      "parameters": [
+        "statement",
+        "master"
+      ],
       "ledgerPostings": [],
       "auditEvents": [
         {

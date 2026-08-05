@@ -4,7 +4,11 @@
   "transactions": [
     {
       "name": "accountEnquiry",
-      "parameters": ["request", "row", "reply"],
+      "parameters": [
+        "request",
+        "row",
+        "reply"
+      ],
       "ledgerPostings": [],
       "auditEvents": [
         {

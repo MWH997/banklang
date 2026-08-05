@@ -1,20 +1,22 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                                                                                               |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| validated-with-gnucobol    | yes                                                                                                                                 |
-| backend-profile            | gnucobol-local                                                                                                                      |
-| source-artifact            | examples/interest-posting-batch/src/main.bank.ts                                                                                    |
-| source-artifact-sha256     | 81c36c8bf27bfbe952b76b039551af8b91dcf672a40dcdc1afdf6f91aa32c36d                                                                    |
-| generated-artifact         | dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl                                                                                      |
-| generated-artifact-sha256  | 4999c230532dd2e5cb08fbef15971505415af666e9ceea0e1d3da6145d8509f2                                                                    |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                                                  |
-| source-map-artifact-sha256 | c5a549b651c2c383361db43a061f05969971358cde9e9eac5f4577020586c791                                                                    |
-| compiler-executable        | cobc                                                                                                                                |
-| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                                               |
-| compiler-command           | cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl -o dist/gnucobol/bin/interest-posting-batch |
-| compiler-exit-code         | 0                                                                                                                                   |
-| compiler-status            | passed                                                                                                                              |
+| Field | Value |
+| --- | --- |
+| validated-with-gnucobol | yes |
+| backend-profile | gnucobol-local |
+| source-artifact | examples/interest-posting-batch/src/main.bank.ts |
+| source-artifact-sha256 | 35acc811cd349652b86bcdde8ee2355c97cf5f8a5b8434b79327ea599fc61049 |
+| generated-artifact | evidence/interest-posting-batch/gnucobol/cobol/INTEREST.cbl |
+| generated-artifact-sha256 | 5173fa153ba3d47f12e4edd92a5375ae2a5a81f782d3a4bf14cf0221119f2367 |
+| source-map-artifact | evidence/interest-posting-batch/gnucobol/maps/source-map.json |
+| source-map-artifact-sha256 | d630b79448acb84de4894bff57def9a5758d2f92fcd578df6f3d693884f2eb23 |
+| compiler-executable | cobc |
+| compiler-version | cobc (GnuCOBOL) 3.2.0 |
+| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/interest-posting-batch/gnucobol/copybooks evidence/interest-posting-batch/gnucobol/cobol/INTEREST.cbl -o evidence/interest-posting-batch/gnucobol/bin/interest |
+| compiler-exit-code | 0 |
+| compiler-status | passed |
+| default-dialect-status | passed |
+| dialects-diverge | no |
 
 ## Compiler Output
 

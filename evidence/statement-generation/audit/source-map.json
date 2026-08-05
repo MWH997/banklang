@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "artifact": "/workspace/Code/banklang/evidence/statement-generation/maps/source-map.json",
   "entries": [
     {
       "sourceFile": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
@@ -14,7 +14,7 @@
         "line": 1,
         "column": 27
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
@@ -30,9 +30,9 @@
         "line": 25,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 59,
-      "targetEndLine": 64,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 60,
+      "targetEndLine": 65,
       "category": "record",
       "symbol": "LedgerEntry"
     },
@@ -46,9 +46,9 @@
         "line": 22,
         "column": 24
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 60,
-      "targetEndLine": 62,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 61,
+      "targetEndLine": 63,
       "category": "field",
       "symbol": "entryKind"
     },
@@ -62,9 +62,9 @@
         "line": 23,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 63,
-      "targetEndLine": 63,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 64,
+      "targetEndLine": 64,
       "category": "field",
       "symbol": "narrative"
     },
@@ -78,9 +78,9 @@
         "line": 24,
         "column": 15
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 64,
-      "targetEndLine": 64,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 65,
+      "targetEndLine": 65,
       "category": "field",
       "symbol": "amount"
     },
@@ -94,9 +94,9 @@
         "line": 42,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 65,
-      "targetEndLine": 85,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 66,
+      "targetEndLine": 86,
       "category": "record",
       "symbol": "Statement"
     },
@@ -110,9 +110,9 @@
         "line": 28,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 66,
-      "targetEndLine": 66,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 67,
+      "targetEndLine": 67,
       "category": "field",
       "symbol": "accountId"
     },
@@ -126,9 +126,9 @@
         "line": 32,
         "column": 36
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 67,
-      "targetEndLine": 67,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 68,
+      "targetEndLine": 68,
       "category": "field",
       "symbol": "holderName"
     },
@@ -142,9 +142,9 @@
         "line": 33,
         "column": 36
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 68,
-      "targetEndLine": 68,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 69,
+      "targetEndLine": 69,
       "category": "field",
       "symbol": "nationalId"
     },
@@ -158,9 +158,9 @@
         "line": 34,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 69,
-      "targetEndLine": 73,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 70,
+      "targetEndLine": 74,
       "category": "field",
       "symbol": "status"
     },
@@ -174,9 +174,9 @@
         "line": 35,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 74,
-      "targetEndLine": 74,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 75,
+      "targetEndLine": 75,
       "category": "field",
       "symbol": "openingBalance"
     },
@@ -190,9 +190,9 @@
         "line": 36,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 75,
-      "targetEndLine": 75,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 76,
+      "targetEndLine": 76,
       "category": "field",
       "symbol": "closingBalance"
     },
@@ -206,9 +206,9 @@
         "line": 38,
         "column": 27
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 76,
-      "targetEndLine": 82,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 77,
+      "targetEndLine": 83,
       "category": "field",
       "symbol": "lines"
     },
@@ -222,9 +222,9 @@
         "line": 40,
         "column": 45
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 83,
-      "targetEndLine": 84,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 84,
+      "targetEndLine": 85,
       "category": "field",
       "symbol": "relationshipManager"
     },
@@ -238,9 +238,9 @@
         "line": 41,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 85,
-      "targetEndLine": 85,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 86,
+      "targetEndLine": 86,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -254,9 +254,9 @@
         "line": 48,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 86,
-      "targetEndLine": 93,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 87,
+      "targetEndLine": 94,
       "category": "record",
       "symbol": "AccountMaster"
     },
@@ -270,9 +270,9 @@
         "line": 45,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 87,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 88,
+      "targetEndLine": 88,
       "category": "field",
       "symbol": "accountId"
     },
@@ -286,9 +286,9 @@
         "line": 46,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 88,
-      "targetEndLine": 92,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 89,
+      "targetEndLine": 93,
       "category": "field",
       "symbol": "status"
     },
@@ -302,9 +302,9 @@
         "line": 47,
         "column": 16
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 93,
-      "targetEndLine": 93,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 94,
+      "targetEndLine": 94,
       "category": "field",
       "symbol": "balance"
     },
@@ -318,9 +318,9 @@
         "line": 58,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 114,
-      "targetEndLine": 120,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 118,
+      "targetEndLine": 127,
       "category": "function",
       "symbol": "isStatementable"
     },
@@ -334,9 +334,9 @@
         "line": 73,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 121,
-      "targetEndLine": 131,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 128,
+      "targetEndLine": 140,
       "category": "function",
       "symbol": "suppressionReason"
     },
@@ -350,9 +350,9 @@
         "line": 108,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/STATEMENT-GENERATION.cbl",
-      "targetStartLine": 132,
-      "targetEndLine": 200,
+      "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
+      "targetStartLine": 141,
+      "targetEndLine": 308,
       "category": "transaction",
       "symbol": "generateStatement"
     }

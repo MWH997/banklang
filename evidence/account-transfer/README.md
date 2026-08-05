@@ -4,23 +4,23 @@ This bundle captures the generated artifacts for the account-transfer example.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/ACCOUNT-TRANSFER.cbl`
-- `copybooks/TRANSFER-REQUEST.cpy`
-- `jcl/ACCOUNT-TRANSFER.jcl`
-- `maps/source-map.json`
-- `audit/diagnostics.json`
-- `audit/source-map.json`
-- `audit/generated-artifacts.json`
-- `audit/decimal-analysis.json`
-- `audit/transaction-analysis.json`
+- `audit/bankc-test-report.md`
 - `audit/copybook-layout.json`
 - `audit/copybook-layout.md`
-- `audit/validation-matrix.md`
-- `audit/verification-report.md`
-- `audit/verification-report.json`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
 - `audit/gnucobol-validation.md`
-- `audit/bankc-test-report.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/ACCOUNTT.cbl`
+- `copybooks/TRANSFER.cpy`
+- `jcl/ACCOUNTT.jcl`
+- `maps/source-map.json`
+- `source/main.bank.ts`
 
 ## Related tester notes
 

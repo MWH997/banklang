@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/account-posting/
+Project: examples/account-posting
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                                       |
-| --------------- | ------- | ------------------------------------------------------------- |
-| Check           | passed  | OK: examples/account-posting/                                 |
-| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl |
-| Verify          | passed  | Verified examples/account-posting/                            |
-| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md    |
+| Step | Status | Details |
+| --- | --- | --- |
+| Check | passed | OK: examples/account-posting |
+| Build | passed | Wrote evidence/account-posting/cobol/ACCOUNTP.cbl |
+| Verify | passed | Verified examples/account-posting |
+| GnuCOBOL report | emitted | evidence/account-posting/audit/gnucobol-validation.md |
 
 ## Notes
 

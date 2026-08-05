@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/maps/source-map.json",
   "entries": [
     {
       "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
@@ -14,7 +14,7 @@
         "line": 1,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
@@ -30,11 +30,11 @@
         "line": 13,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 36,
-      "targetEndLine": 41,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 42,
+      "targetEndLine": 47,
       "category": "record",
-      "symbol": "InterestAccount"
+      "symbol": "AccrualFeedRow"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
@@ -46,9 +46,9 @@
         "line": 8,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 37,
-      "targetEndLine": 37,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 43,
+      "targetEndLine": 43,
       "category": "field",
       "symbol": "accountId"
     },
@@ -62,9 +62,9 @@
         "line": 9,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 38,
-      "targetEndLine": 38,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 44,
+      "targetEndLine": 44,
       "category": "field",
       "symbol": "branchCode"
     },
@@ -78,9 +78,9 @@
         "line": 10,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 39,
-      "targetEndLine": 39,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 45,
+      "targetEndLine": 45,
       "category": "field",
       "symbol": "balance"
     },
@@ -94,9 +94,9 @@
         "line": 11,
         "column": 29
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 40,
-      "targetEndLine": 40,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 46,
+      "targetEndLine": 46,
       "category": "field",
       "symbol": "accruedInterest"
     },
@@ -110,9 +110,9 @@
         "line": 12,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 41,
-      "targetEndLine": 41,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 47,
+      "targetEndLine": 47,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -126,9 +126,9 @@
         "line": 19,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 42,
-      "targetEndLine": 45,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 48,
+      "targetEndLine": 51,
       "category": "record",
       "symbol": "PostingAdvice"
     },
@@ -142,9 +142,9 @@
         "line": 16,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 43,
-      "targetEndLine": 43,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 49,
+      "targetEndLine": 49,
       "category": "field",
       "symbol": "accountId"
     },
@@ -158,9 +158,9 @@
         "line": 17,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 44,
-      "targetEndLine": 44,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 50,
+      "targetEndLine": 50,
       "category": "field",
       "symbol": "interestAmount"
     },
@@ -174,9 +174,9 @@
         "line": 18,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 45,
-      "targetEndLine": 45,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 51,
+      "targetEndLine": 51,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -190,9 +190,9 @@
         "line": 28,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 76,
-      "targetEndLine": 82,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 85,
+      "targetEndLine": 94,
       "category": "function",
       "symbol": "isEligible"
     },
@@ -206,9 +206,9 @@
         "line": 37,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 83,
-      "targetEndLine": 89,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 95,
+      "targetEndLine": 103,
       "category": "function",
       "symbol": "rateFor"
     },
@@ -222,9 +222,9 @@
         "line": 43,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 90,
-      "targetEndLine": 92,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 104,
+      "targetEndLine": 133,
       "category": "function",
       "symbol": "accrue"
     },
@@ -238,9 +238,9 @@
         "line": 52,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 93,
-      "targetEndLine": 99,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 134,
+      "targetEndLine": 142,
       "category": "function",
       "symbol": "feeFor"
     },
@@ -254,9 +254,9 @@
         "line": 83,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 100,
-      "targetEndLine": 147,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 143,
+      "targetEndLine": 207,
       "category": "transaction",
       "symbol": "postInterest"
     },
@@ -267,12 +267,12 @@
         "column": 19
       },
       "sourceEnd": {
-        "line": 99,
+        "line": 107,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/INTEREST-POSTING-BATCH.cbl",
-      "targetStartLine": 148,
-      "targetEndLine": 172,
+      "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
+      "targetStartLine": 208,
+      "targetEndLine": 289,
       "category": "transaction",
       "symbol": "runBatch"
     }

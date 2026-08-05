@@ -1,20 +1,22 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| validated-with-gnucobol    | yes                                                                                                                                   |
-| backend-profile            | gnucobol-local                                                                                                                        |
-| source-artifact            | examples/branch-accrual-cursor/src/main.bank.ts                                                                                       |
-| source-artifact-sha256     | 2bda6c970730d7b02bfe14fb7826d0c55a27c34d3a5eaf70887cadb5d0f0b811                                                                      |
-| generated-artifact         | dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR.cbl                                                                                         |
-| generated-artifact-sha256  | 0a7ee2861e56b4adc0c2341028d4e13ff1b5327c3d6cb45d32420550882c0d3c                                                                      |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                                                    |
-| source-map-artifact-sha256 | 8620611aa73072bf320d25ec2dc1ff9409d514c5ddeb6ad6555490de7feb12cc                                                                      |
-| compiler-executable        | cobc                                                                                                                                  |
-| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                                                 |
-| compiler-command           | cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor |
-| compiler-exit-code         | 0                                                                                                                                     |
-| compiler-status            | passed                                                                                                                                |
+| Field | Value |
+| --- | --- |
+| validated-with-gnucobol | yes |
+| backend-profile | gnucobol-local |
+| source-artifact | examples/branch-accrual-cursor/src/main.bank.ts |
+| source-artifact-sha256 | 2da557dc9a311acc9b5820327100ca0050a66992ddd30ec490c6bb8b9769f04c |
+| generated-artifact | evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC.cbl |
+| generated-artifact-sha256 | 38ff6a47433d83645f587cace6743abd3f196f31806c975118df21a7e99b0543 |
+| source-map-artifact | evidence/branch-accrual-cursor/gnucobol/maps/source-map.json |
+| source-map-artifact-sha256 | 9df8eb073db2793ac87ec4f9241eaae47ee04ef95f9054c03d9dfbf8b2195446 |
+| compiler-executable | cobc |
+| compiler-version | cobc (GnuCOBOL) 3.2.0 |
+| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/branch-accrual-cursor/gnucobol/copybooks evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl -o evidence/branch-accrual-cursor/gnucobol/bin/branchac |
+| compiler-exit-code | 0 |
+| compiler-status | passed |
+| default-dialect-status | passed |
+| dialects-diverge | no |
 
 ## Compiler Output
 

@@ -5,23 +5,23 @@ which exercises transactions, ledger postings, and audit events.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/ACCOUNT-POSTING.cbl`
-- `copybooks/TRANSFER-REQUEST.cpy`
-- `jcl/ACCOUNT-POSTING.jcl`
-- `maps/source-map.json`
-- `audit/diagnostics.json`
-- `audit/source-map.json`
-- `audit/generated-artifacts.json`
-- `audit/decimal-analysis.json`
-- `audit/transaction-analysis.json`
+- `audit/bankc-test-report.md`
 - `audit/copybook-layout.json`
 - `audit/copybook-layout.md`
-- `audit/validation-matrix.md`
-- `audit/verification-report.md`
-- `audit/verification-report.json`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
 - `audit/gnucobol-validation.md`
-- `audit/bankc-test-report.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/ACCOUNTP.cbl`
+- `copybooks/POSTTRAN.cpy`
+- `jcl/ACCOUNTP.jcl`
+- `maps/source-map.json`
+- `source/main.bank.ts`
 
 ## What this bundle shows
 

@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/maps/source-map.json",
   "entries": [
     {
       "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
@@ -14,7 +14,7 @@
         "line": 1,
         "column": 27
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
@@ -30,7 +30,7 @@
         "line": 9,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 36,
       "targetEndLine": 39,
       "category": "record",
@@ -46,7 +46,7 @@
         "line": 6,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 37,
       "targetEndLine": 37,
       "category": "field",
@@ -62,7 +62,7 @@
         "line": 7,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 38,
       "targetEndLine": 38,
       "category": "field",
@@ -78,7 +78,7 @@
         "line": 8,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 39,
       "targetEndLine": 39,
       "category": "field",
@@ -94,11 +94,11 @@
         "line": 15,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 40,
       "targetEndLine": 43,
       "category": "record",
-      "symbol": "AccountRow"
+      "symbol": "AccountBalanceRow"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
@@ -110,7 +110,7 @@
         "line": 12,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 41,
       "targetEndLine": 41,
       "category": "field",
@@ -126,7 +126,7 @@
         "line": 13,
         "column": 19
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 42,
       "targetEndLine": 42,
       "category": "field",
@@ -142,7 +142,7 @@
         "line": 14,
         "column": 24
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 43,
       "targetEndLine": 43,
       "category": "field",
@@ -158,7 +158,7 @@
         "line": 23,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 44,
       "targetEndLine": 49,
       "category": "record",
@@ -174,7 +174,7 @@
         "line": 18,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 45,
       "targetEndLine": 45,
       "category": "field",
@@ -190,7 +190,7 @@
         "line": 19,
         "column": 31
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 46,
       "targetEndLine": 46,
       "category": "field",
@@ -206,7 +206,7 @@
         "line": 20,
         "column": 34
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 47,
       "targetEndLine": 47,
       "category": "field",
@@ -222,7 +222,7 @@
         "line": 21,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 48,
       "targetEndLine": 48,
       "category": "field",
@@ -238,7 +238,7 @@
         "line": 22,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 49,
       "targetEndLine": 49,
       "category": "field",
@@ -254,9 +254,9 @@
         "line": 40,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
-      "targetStartLine": 66,
-      "targetEndLine": 68,
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "targetStartLine": 77,
+      "targetEndLine": 106,
       "category": "function",
       "symbol": "interestOn"
     },
@@ -270,9 +270,9 @@
         "line": 68,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
-      "targetStartLine": 69,
-      "targetEndLine": 118,
+      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "targetStartLine": 107,
+      "targetEndLine": 224,
       "category": "transaction",
       "symbol": "accrueBranch"
     }

@@ -4,7 +4,7 @@
   "entries": [
     {
       "category": "record-field",
-      "owner": "TransferRequest",
+      "owner": "PostTransferRequest",
       "symbol": "amount",
       "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
       "sourceSpan": {

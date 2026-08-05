@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "artifact": "/workspace/Code/banklang/evidence/account-file-batch/maps/source-map.json",
   "entries": [
     {
       "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
@@ -14,7 +14,7 @@
         "line": 1,
         "column": 24
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
@@ -30,9 +30,9 @@
         "line": 8,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
-      "targetStartLine": 32,
-      "targetEndLine": 34,
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 35,
+      "targetEndLine": 37,
       "category": "record",
       "symbol": "AccountRecord"
     },
@@ -46,9 +46,9 @@
         "line": 6,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
-      "targetStartLine": 33,
-      "targetEndLine": 33,
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 36,
+      "targetEndLine": 36,
       "category": "field",
       "symbol": "accountId"
     },
@@ -62,27 +62,107 @@
         "line": 7,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
-      "targetStartLine": 34,
-      "targetEndLine": 34,
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 37,
+      "targetEndLine": 37,
       "category": "field",
       "symbol": "balance"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
+        "line": 10,
+        "column": 8
+      },
+      "sourceEnd": {
         "line": 14,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 38,
+      "targetEndLine": 41,
+      "category": "record",
+      "symbol": "PostingRecord"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 11,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 11,
+        "column": 32
+      },
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 39,
+      "targetEndLine": 39,
+      "category": "field",
+      "symbol": "postingAccountId"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 12,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 12,
+        "column": 28
+      },
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 40,
+      "targetEndLine": 40,
+      "category": "field",
+      "symbol": "postingBalance"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 13,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 13,
+        "column": 26
+      },
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 41,
+      "targetEndLine": 41,
+      "category": "field",
+      "symbol": "postingFlag"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 20,
         "column": 10
       },
       "sourceEnd": {
-        "line": 16,
+        "line": 22,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl",
-      "targetStartLine": 39,
-      "targetEndLine": 45,
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 87,
+      "targetEndLine": 95,
       "category": "function",
       "symbol": "isOverdrawn"
+    },
+    {
+      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceStart": {
+        "line": 28,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 55,
+        "column": 2
+      },
+      "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
+      "targetStartLine": 96,
+      "targetEndLine": 184,
+      "category": "transaction",
+      "symbol": "postAccounts"
     }
   ]
 }

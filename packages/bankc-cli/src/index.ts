@@ -5,7 +5,7 @@ import {
   watch,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 import {
   formatDiagnostic,
@@ -42,7 +42,7 @@ import { typecheckProgram } from "../../typechecker/src/index";
 import {
   copybookMemberName,
   decimalPicture,
-  toCobolName,
+  toCobolProgramId,
 } from "../../cobol-ir/src/index";
 import {
   DIAGNOSTICS,
@@ -1806,7 +1806,7 @@ function writeTestReport(
     `| Check | ${checkResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(checkResult)} |`,
     `| Build | ${buildResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(buildResult)} |`,
     `| Verify | ${verifyResult.exitCode === 0 ? "passed" : "failed"} | ${summarizeCliResult(verifyResult)} |`,
-    `| GnuCOBOL report | ${existsSync(gnucobolReportPath) ? "emitted" : "skipped"} | ${gnucobolReportPath} |`,
+    `| GnuCOBOL report | ${existsSync(gnucobolReportPath) ? "emitted" : "skipped"} | ${relative(process.cwd(), gnucobolReportPath)} |`,
     "",
     "## Notes",
     "",
@@ -1820,13 +1820,22 @@ function writeTestReport(
   return reportPath;
 }
 
-function summarizeCliResult(result: CliResult): string {
+/**
+ * One line of a command's output, with this machine's path taken out of it.
+ *
+ * The report goes into a checked-in evidence bundle, and a bundle holding
+ * `/Users/somebody/Code/banklang/dist/...` is one nobody else can reproduce
+ * byte for byte — which is the whole claim the bundle is there to support.
+ */
+function summarizeCliResult(result: CliResult, cwd = process.cwd()): string {
   const firstLine =
     result.stdout
       .split("\n")
       .map((line) => line.trim())
       .find((line) => line.length > 0) ?? result.stderr.trim();
-  return firstLine.length > 0 ? firstLine : "no additional output";
+  return firstLine.length > 0
+    ? firstLine.split(`${cwd}/`).join("")
+    : "no additional output";
 }
 
 function writeLayoutOutputs(
@@ -2022,10 +2031,22 @@ function packedDecimalBytes(precision: number): number {
   return Math.ceil((precision + 1) / 2);
 }
 
+/**
+ * Where the generated program is written, named for the PDS member it becomes.
+ *
+ * The same rule as the `PROGRAM-ID`, the load module, and the `EXEC PGM=` in
+ * the job, for the same reason the copybook file is named for its member: a
+ * file named any other way is one the reader has to translate before finding
+ * the member it corresponds to.
+ */
 function getCobolArtifactPath(program: IRProgram, outputRoot: string): string {
-  return join(outputRoot, "cobol", `${toCobolName(program.moduleName)}.cbl`);
+  return join(
+    outputRoot,
+    "cobol",
+    `${toCobolProgramId(program.moduleName)}.cbl`,
+  );
 }
 
 function getJclArtifactPath(program: IRProgram, outputRoot: string): string {
-  return join(outputRoot, "jcl", `${toCobolName(program.moduleName)}.jcl`);
+  return join(outputRoot, "jcl", `${toCobolProgramId(program.moduleName)}.jcl`);
 }
