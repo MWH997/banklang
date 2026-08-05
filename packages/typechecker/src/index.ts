@@ -18,6 +18,10 @@ import {
   type ReleaseStatementNode,
   type SortProcedureNode,
   type SortStatementNode,
+  type ReportDeclarationNode,
+  type ReportGroupNode,
+  type ReportPageNode,
+  type ReportStatementNode,
   type SerializeStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -290,6 +294,24 @@ export interface ResolvedFile {
   statusName: string | null;
 }
 
+/**
+ * A `report` declaration, resolved against the file it is written to.
+ *
+ * The file's record is the report's source of values: every field a column
+ * names has to be one of its fields, because that record is what the program
+ * fills before it generates a detail.
+ */
+export interface ResolvedReport {
+  name: string;
+  span: SourceSpan;
+  file: ResolvedFile;
+  controls: string[];
+  page: ReportPageNode | null;
+  groups: ReportGroupNode[];
+  /** Detail group names, which is what `generate` may name. */
+  detailNames: string[];
+}
+
 export interface ResolvedSql {
   name: string;
   span: SourceSpan;
@@ -321,6 +343,8 @@ export interface TypeCheckResult {
   functions: ResolvedFunction[];
   transactions: ResolvedTransaction[];
   files: ResolvedFile[];
+  /** `report` declarations, which become the REPORT SECTION. */
+  reports: ResolvedReport[];
   /** `on error <file>` handlers, which become DECLARATIVES. */
   fileErrorHandlers: ResolvedFileErrorHandler[];
   enums: ResolvedEnum[];
@@ -354,6 +378,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       functions: [],
       transactions: [],
       files: [],
+      reports: [],
       fileErrorHandlers: [],
       enums: [],
       sql: [],
@@ -370,6 +395,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const functions: ResolvedFunction[] = [];
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
+  const reports: ResolvedReport[] = [];
   const fileErrorHandlers: ResolvedFileErrorHandler[] = [];
   const enums: ResolvedEnum[] = [];
   const sqlStatements: ResolvedSql[] = [];
@@ -518,6 +544,19 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     }
   }
 
+  // Pass 2b: reports, which resolve against files and so come after them.
+  declaredReports = new Map();
+  for (const declaration of program.declarations) {
+    if (declaration.kind !== "ReportDeclaration") {
+      continue;
+    }
+    const resolvedReport = resolveReport(declaration, diagnostics);
+    if (resolvedReport) {
+      reports.push(resolvedReport);
+      declaredReports.set(resolvedReport.name, resolvedReport);
+    }
+  }
+
   // Pass 3: bodies.
   for (const declaration of program.declarations) {
     if (declaration.kind === "FunctionDeclaration") {
@@ -570,6 +609,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     functions,
     transactions,
     files,
+    reports,
     fileErrorHandlers,
     enums,
     sql: sqlStatements,
@@ -1322,6 +1362,7 @@ function validateTransactionBody(
       case "ReturnCodeStatement":
       case "SplitStatement":
       case "SerializeStatement":
+      case "ReportStatement":
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
@@ -1497,6 +1538,9 @@ function validateEffectStatement(
       return true;
     case "SplitStatement":
       validateSplitStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "ReportStatement":
+      validateReportStatement(statement, diagnostics);
       return true;
     case "SerializeStatement":
       validateSerializeStatement(
@@ -4824,6 +4868,7 @@ function resolveTerminalStatementType(
     case "ReturnCodeStatement":
     case "SplitStatement":
     case "SerializeStatement":
+    case "ReportStatement":
     case "SortStatement":
     case "ReleaseStatement":
     case "CheckpointStatement":
@@ -5407,6 +5452,219 @@ let functionSignatures = new Map<string, ResolvedFunctionSignature>();
 
 /** Declared files, for resolving file statements. */
 let declaredFiles = new Map<string, ResolvedFile>();
+
+/** Declared reports, for resolving initiate, generate, and terminate. */
+let declaredReports = new Map<string, ResolvedReport>();
+
+/**
+ * Resolves a `report` declaration against the file it writes to.
+ *
+ * The checks are the ones that decide whether the generated COBOL means
+ * anything: the file has to exist and be written rather than read, a control
+ * field has to be a field of its record, and a `generate` has to have a detail
+ * group to name. The rest of the report — where a column sits, how deep a page
+ * is — is COBOL's own business once the names resolve.
+ */
+function resolveReport(
+  declaration: ReportDeclarationNode,
+  diagnostics: Diagnostic[],
+): ResolvedReport | null {
+  const file = declaredFiles.get(declaration.fileName);
+  if (!file) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-002",
+        severity: "error",
+        message: `Report ${declaration.name} is written to ${declaration.fileName}, which is not declared.`,
+        span: declaration.fileSpan,
+        hint: "Declare the file first; a report is a description of what goes into one.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  if (file.mode !== "output" || file.organization !== "sequential") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-007",
+        severity: "error",
+        message: `Report ${declaration.name} is written to ${file.name}, which is a ${file.organization} ${file.mode} file.`,
+        span: declaration.fileSpan,
+        hint: "A report is printed, so its file is `sequential output`.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // A file cannot carry a LINAGE page and a report at once: both decide where
+  // the page ends, and COBOL rejects the FD that says so twice.
+  if (file.linage) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-007",
+        severity: "error",
+        message: `${file.name} declares a page depth and also carries report ${declaration.name}.`,
+        span: declaration.fileSpan,
+        hint: "A report counts the lines itself. Drop the `page ...` clause from the file and declare the depth on the report.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const control of declaration.controls) {
+    if (!file.record.fields.some((field) => field.name === control.name)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-008",
+          severity: "error",
+          message: `Control field ${control.name} is not a field of ${file.record.name}.`,
+          span: control.span,
+          hint: "A control break is a change in the record the report prints, so the field has to be in that record.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  const declaredControls = new Set(
+    declaration.controls.map((control) => control.name),
+  );
+  const detailNames: string[] = [];
+  for (const group of declaration.groups) {
+    if (group.type === "detail") {
+      if (!group.name) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-FILE-008",
+            severity: "error",
+            message: `A detail group in report ${declaration.name} has no name.`,
+            span: group.span,
+            hint: "`generate` names the group it prints, so it needs one: `detail statementLine { ... }`.",
+            backendProfile: null,
+          }),
+        );
+        continue;
+      }
+      detailNames.push(group.name);
+      continue;
+    }
+
+    // A control heading or footing has to name a control the report breaks on,
+    // or nothing, which means FINAL.
+    if (
+      (group.type === "controlHeading" || group.type === "controlFooting") &&
+      group.control &&
+      !declaredControls.has(group.control)
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-008",
+          severity: "error",
+          message: `${group.type} names ${group.control}, which report ${declaration.name} does not control on.`,
+          span: group.span,
+          hint: `Add it to the report's \`control\` list, or leave the name off for the final total.`,
+          backendProfile: null,
+        }),
+      );
+    }
+
+    validateReportSums(group, declaration, diagnostics);
+  }
+
+  if (detailNames.length === 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-008",
+        severity: "error",
+        message: `Report ${declaration.name} has no detail group.`,
+        span: declaration.span,
+        hint: "A report with nothing to generate prints its headings and stops. Add `detail <name> { ... }`.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    file,
+    controls: declaration.controls.map((control) => control.name),
+    page: declaration.page,
+    groups: declaration.groups,
+    detailNames,
+  };
+}
+
+/**
+ * `sum` totals across the lines a group covers, so COBOL only accepts it where
+ * there is something to have accumulated: a footing.
+ */
+function validateReportSums(
+  group: ReportGroupNode,
+  declaration: ReportDeclarationNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (group.type === "controlFooting" || group.type === "pageFooting") {
+    return;
+  }
+
+  for (const line of group.lines) {
+    for (const column of line.columns) {
+      if (column.source.kind !== "ReportSum") {
+        continue;
+      }
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-008",
+          severity: "error",
+          message: `A ${group.type} in report ${declaration.name} totals a field, but nothing has been counted yet.`,
+          span: column.span,
+          hint: "`sum` accumulates across the details a group covers, so it belongs in a controlFooting or a pageFooting.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
+/** `initiate <report>;`, `generate <detail>;`, `terminate <report>;`. */
+function validateReportStatement(
+  statement: ReportStatementNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (statement.operation === "generate") {
+    const owner = [...declaredReports.values()].find((report) =>
+      report.detailNames.includes(statement.target),
+    );
+    if (!owner) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-008",
+          severity: "error",
+          message: `${statement.target} is not a detail group of any report.`,
+          span: statement.targetSpan,
+          hint: "`generate` prints a detail group. Name one a report declares.",
+          backendProfile: null,
+        }),
+      );
+    }
+    return;
+  }
+
+  if (!declaredReports.has(statement.target)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-008",
+        severity: "error",
+        message: `${statement.target} is not a declared report.`,
+        span: statement.targetSpan,
+        hint: `\`${statement.operation}\` names the report itself, not a group in it.`,
+        backendProfile: null,
+      }),
+    );
+  }
+}
 
 /** Declared enums, for resolving member references and switch cases. */
 let enumMap = new Map<string, ResolvedEnum>();

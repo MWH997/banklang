@@ -645,6 +645,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-008",
+    title: "Invalid report description",
+    explanation:
+      "A report's names have to resolve for the generated COBOL to mean anything: a control field must be a field of the record the report prints, a control heading or footing must name a control the report breaks on, `sum` must sit in a footing where something has been counted, and `generate` must name a detail group while `initiate` and `terminate` name the report.",
+    remediation:
+      "Add the field to the record or to the report's `control` list, move a `sum` into a `controlFooting` or `pageFooting`, and give the report at least one `detail` group for `generate` to name.",
+    specReference: "language-reference.md section 13b",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:

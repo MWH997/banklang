@@ -334,6 +334,25 @@ and its footing has to be a line the page has — past the end it would never be
 reached. `advancing` writes a report line, and `on page` is signalled from the
 page counter, so a file with no declared depth never reaches the end of one.
 
+It also covers a `report` on a file that is read rather than written, and a
+report on a file that already declares a page depth: both decide where the page
+ends, and COBOL rejects an `FD` that says so twice.
+
+### `BANK-FILE-008` invalid report description
+
+A report's names have to resolve, or the generated COBOL means nothing:
+
+- a control field must be a field of the record the report prints;
+- a `controlHeading` or `controlFooting` must name a control the report breaks
+  on, or none at all, which means `FINAL`;
+- `sum` accumulates across the details a group covers, so it belongs in a
+  `controlFooting` or a `pageFooting` — anywhere else nothing has been counted
+  yet;
+- a report needs at least one `detail` group, since a report with nothing to
+  generate prints its headings and stops;
+- `generate` names a detail group, while `initiate` and `terminate` name the
+  report itself.
+
 ## 11. Copybook diagnostics
 
 ### `BANK-COPY-001` unsupported PIC clause

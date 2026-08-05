@@ -954,6 +954,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         functions: [],
         transactions: [],
         files: [],
+        reports: [],
         fileErrorHandlers: [],
         enums: [],
         sql: [],

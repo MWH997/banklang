@@ -38,6 +38,7 @@ import type {
   IRSortProcedure,
   IRSortStatement,
   IRReleaseStatement,
+  IRReport,
   IRSerializeStatement,
   IRSplitStatement,
   IRStringCallExpression,
@@ -484,6 +485,19 @@ export function emitCobol(
       // LINAGE is what makes a report paginate: COBOL counts the lines written
       // and signals AT END-OF-PAGE at the footing, which is where the totals
       // and the next heading go.
+      // A file carrying a report says so on the FD, and the RD in the REPORT
+      // SECTION describes what goes into it. The two are exclusive: a report
+      // counts the lines itself, so it does not also take a LINAGE.
+      const reports = program.reports.filter(
+        (report) => report.fileName === file.name,
+      );
+      if (reports.length > 0) {
+        addLine(
+          `       FD  ${fileCobolName(file.name)} REPORT IS ${reports.map((report) => toCobolName(report.name)).join(" ")}.`,
+        );
+        continue;
+      }
+
       if (file.linage) {
         const clauses = [`           LINAGE IS ${file.linage.lines} LINES`];
         if (file.linage.footingAt !== null) {
@@ -807,6 +821,19 @@ export function emitCobol(
       }
     } else {
       addLine(`           05  FILLER               PIC X(1).`);
+    }
+  }
+
+  // The REPORT SECTION comes after LINKAGE, which is the order COBOL fixes.
+  if (program.reports.length > 0) {
+    addLine("");
+    addLine(`       REPORT SECTION.`);
+    for (const report of program.reports) {
+      currentReportRecord =
+        program.records.find((record) => record.name === report.recordName) ??
+        null;
+      emitReport(report, addLine);
+      currentReportRecord = null;
     }
   }
 
@@ -1686,6 +1713,11 @@ function emitStatement(
           false,
         );
         break;
+      case "ReportStatement":
+        addLine(
+          `${indent}${statement.operation.toUpperCase()} ${toCobolName(statement.target)}`,
+        );
+        break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
@@ -1856,6 +1888,11 @@ function emitTransactionBody(
         break;
       case "SerializeStatement":
         emitSerializeStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "ReportStatement":
+        addLine(
+          `${indent}${statement.operation.toUpperCase()} ${toCobolName(statement.target)}`,
+        );
         break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
@@ -2312,6 +2349,159 @@ function emitSplitStatement(
   );
   addLine(`${indent}END-UNSTRING`);
 }
+
+/**
+ * One `RD` and its report groups.
+ *
+ * The control hierarchy is written outermost first with `FINAL` in front, which
+ * is the order COBOL breaks in: a change in an outer control breaks every inner
+ * one too, and the final total comes last of all.
+ */
+function emitReport(report: IRReport, addLine: (line?: string) => void): void {
+  const controls = [
+    "FINAL",
+    ...report.controls.map(
+      (control) =>
+        `${toCobolFieldName(control)} OF ${toCobolName(report.recordName)}`,
+    ),
+  ];
+  const clauses = [
+    `       RD  ${toCobolName(report.name)}`,
+    `           CONTROLS ARE ${controls.join(" ")}`,
+  ];
+  if (report.page) {
+    const margins = [`           PAGE LIMIT ${report.page.limit} LINES`];
+    if (report.page.heading !== null) {
+      margins.push(`HEADING ${report.page.heading}`);
+    }
+    if (report.page.firstDetail !== null) {
+      margins.push(`FIRST DETAIL ${report.page.firstDetail}`);
+    }
+    if (report.page.lastDetail !== null) {
+      margins.push(`LAST DETAIL ${report.page.lastDetail}`);
+    }
+    if (report.page.footing !== null) {
+      margins.push(`FOOTING ${report.page.footing}`);
+    }
+    clauses.push(margins.join(" "));
+  }
+  clauses.forEach((clause, index) =>
+    addLine(index === clauses.length - 1 ? `${clause}.` : clause),
+  );
+
+  for (const group of report.groups) {
+    emitReportGroup(group, report, addLine);
+  }
+  addLine("");
+}
+
+/** The `TYPE IS` clause for each group, as COBOL spells it. */
+const REPORT_GROUP_CLAUSES: Record<IRReport["groups"][number]["type"], string> =
+  {
+    pageHeading: "PAGE HEADING",
+    pageFooting: "PAGE FOOTING",
+    detail: "DETAIL",
+    controlHeading: "CONTROL HEADING",
+    controlFooting: "CONTROL FOOTING",
+  };
+
+function emitReportGroup(
+  group: IRReport["groups"][number],
+  report: IRReport,
+  addLine: (line?: string) => void,
+): void {
+  const control =
+    group.type === "controlHeading" || group.type === "controlFooting"
+      ? ` ${group.control ? `${toCobolFieldName(group.control)} OF ${toCobolName(report.recordName)}` : "FINAL"}`
+      : "";
+  const name = group.name ? `${toCobolName(group.name)} ` : "";
+  addLine(
+    `       01  ${name}TYPE IS ${REPORT_GROUP_CLAUSES[group.type]}${control}.`,
+  );
+
+  for (const line of group.lines) {
+    const position =
+      line.position.kind === "absolute"
+        ? `LINE ${line.position.value}`
+        : `LINE PLUS ${line.position.value}`;
+    addLine(`           05  ${position}.`);
+    for (const column of line.columns) {
+      addLine(
+        `               10  COLUMN ${column.column} ${reportColumnClause(column, report)}.`,
+      );
+    }
+  }
+}
+
+/**
+ * The picture and the source of one printed column.
+ *
+ * A literal prints itself and the picture is its own width. A field or a total
+ * prints the value, so the picture comes from the field's type — which is why
+ * an amount reaches a report readable: a `COMP-3` balance cannot be printed,
+ * and its edited picture is generated from its own precision and scale rather
+ * than counted out by hand.
+ */
+function reportColumnClause(
+  column: IRReport["groups"][number]["lines"][number]["columns"][number],
+  report: IRReport,
+): string {
+  const source = column.source;
+  if (source.kind === "ReportLiteral") {
+    return `PIC X(${source.value.length}) VALUE "${source.value}"`;
+  }
+  if (source.kind === "ReportPageNumber") {
+    return "PIC ZZZ9 SOURCE PAGE-COUNTER";
+  }
+
+  const reference = reportFieldReference(source.field, report);
+  const picture = reportFieldPicture(source.field);
+  return source.kind === "ReportSum"
+    ? `${picture} SUM ${reference}`
+    : `${picture} SOURCE ${reference}`;
+}
+
+/**
+ * The COBOL name a report column reads, qualified by the record it belongs to.
+ *
+ * Qualification is not optional here: the same record is emitted in working
+ * storage and again inside any FD that holds it, so an unqualified field name
+ * is ambiguous exactly when the report is useful.
+ */
+function reportFieldReference(field: string, report: IRReport): string {
+  return `${toCobolFieldName(field)} OF ${toCobolName(report.recordName)}`;
+}
+
+/**
+ * The picture a report column prints a field with.
+ *
+ * A report is what a person reads, so a number is printed in its edited form
+ * rather than as stored. That is the point: a `COMP-3` balance cannot be
+ * printed at all, and here its edited picture comes from its own precision and
+ * scale rather than being counted out by hand.
+ */
+function reportFieldPicture(field: string): string {
+  const declared = currentReportRecord?.fields.find(
+    (entry) => entry.name === field,
+  );
+  if (!declared) {
+    return "PIC X(20)";
+  }
+
+  const type = declared.type;
+  if (type.kind === "decimal" || type.kind === "currency") {
+    return editedPicture(
+      type.scale > 0 ? "grouped" : "plain",
+      type.precision,
+      type.scale,
+      currentDecimalPoint,
+    );
+  }
+  return formatCobolType(type);
+}
+
+/** The record a report's columns read from, while that report is emitted. */
+let currentReportRecord: IRRecord | null = null;
 
 /**
  * `JSON GENERATE` and `XML GENERATE`.
