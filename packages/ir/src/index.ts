@@ -8,6 +8,8 @@ import {
   type LetStatementNode,
   type StatementNode,
   type ReturnStatementNode,
+  type ReportGroupNode,
+  type ReportPageNode,
   type SourceSpan,
   type MemberAccessNode,
   type ComparisonOperator,
@@ -44,6 +46,7 @@ export interface IRProgram {
   functions: IRFunction[];
   transactions: IRTransaction[];
   files: IRFile[];
+  reports: IRReport[];
   /** `USE AFTER ERROR` procedures, one per file that declares a handler. */
   fileErrorHandlers: IRFileErrorHandler[];
   enums: IREnum[];
@@ -87,6 +90,25 @@ export interface IRFileErrorHandler {
   fileName: string;
   span: SourceSpan;
   body: IRBlock;
+}
+
+/**
+ * A `report` declaration, lowered to what the REPORT SECTION needs.
+ *
+ * The groups are carried through as declared rather than reshaped: COBOL's own
+ * report description is already the right structure, so lowering resolves the
+ * names and leaves the shape alone.
+ */
+export interface IRReport {
+  kind: "Report";
+  span: SourceSpan;
+  name: string;
+  fileName: string;
+  /** The record the report reads its values from, for qualifying references. */
+  recordName: string;
+  controls: string[];
+  page: ReportPageNode | null;
+  groups: ReportGroupNode[];
 }
 
 export interface IRFile {
@@ -228,6 +250,7 @@ export type IRStatement =
   | IRReturnCodeStatement
   | IRSplitStatement
   | IRSerializeStatement
+  | IRReportStatement
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
@@ -309,6 +332,14 @@ export interface IRSplitStatement {
   source: IRExpression;
   delimiter: IRExpression;
   targets: IRExpression[];
+}
+
+/** `INITIATE`, `GENERATE`, and `TERMINATE`. */
+export interface IRReportStatement {
+  kind: "ReportStatement";
+  span: SourceSpan;
+  operation: "initiate" | "generate" | "terminate";
+  target: string;
 }
 
 /** `JSON GENERATE t FROM r COUNT IN n` and its `XML GENERATE` twin. */
@@ -916,6 +947,16 @@ export function lowerProgramToIR(
       functions,
       transactions,
       files,
+      reports: typechecked.reports.map((report) => ({
+        kind: "Report" as const,
+        span: report.span,
+        name: report.name,
+        fileName: report.file.name,
+        recordName: report.file.record.name,
+        controls: report.controls,
+        page: report.page,
+        groups: report.groups,
+      })),
       fileErrorHandlers,
       enums: typechecked.enums.map((entry) => ({
         kind: "Enum" as const,
@@ -1754,6 +1795,13 @@ function lowerStatement(
         targets: statement.targets.map((target) =>
           lowerExpression(target, scopeTypes),
         ),
+      };
+    case "ReportStatement":
+      return {
+        kind: "ReportStatement",
+        span: statement.span,
+        operation: statement.operation,
+        target: statement.target,
       };
     case "SerializeStatement":
       return {

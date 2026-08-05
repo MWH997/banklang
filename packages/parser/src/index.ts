@@ -38,6 +38,14 @@ import {
   type FileLinageNode,
   type SortProcedureNode,
   type SortStatementNode,
+  type ReportColumnNode,
+  type ReportDeclarationNode,
+  type ReportGroupNode,
+  type ReportGroupType,
+  type ReportLineNode,
+  type ReportPageNode,
+  type ReportSourceNode,
+  type ReportStatementNode,
   type SerializeStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -158,6 +166,10 @@ export const KEYWORDS = new Set([
   "search",
   "sort",
   "merge",
+  "report",
+  "initiate",
+  "generate",
+  "terminate",
   "release",
   "descending",
   "checkpoint",
@@ -187,6 +199,18 @@ export const KEYWORDS = new Set([
  */
 const FILE_MODES = new Set(["input", "output", "update"]);
 const FILE_ORGANIZATIONS = new Set(["sequential", "indexed", "relative"]);
+
+/**
+ * Report group words, matched contextually so none is taken away as a field
+ * name. Each maps to the `TYPE IS` clause COBOL writes on the group.
+ */
+const REPORT_GROUP_TYPES = new Map<string, ReportGroupType>([
+  ["pageHeading", "pageHeading"],
+  ["pageFooting", "pageFooting"],
+  ["detail", "detail"],
+  ["controlHeading", "controlHeading"],
+  ["controlFooting", "controlFooting"],
+]);
 
 /** Built-ins for working with nullable values. */
 const NULLABLE_BUILTINS = new Set(["isPresent", "valueOf"]);
@@ -688,6 +712,10 @@ class Parser {
       return this.parseFileDeclaration();
     }
 
+    if (this.matchKeyword("report")) {
+      return this.parseReportDeclaration();
+    }
+
     if (this.matchKeyword("enum")) {
       return this.parseEnumDeclaration();
     }
@@ -848,6 +876,324 @@ class Parser {
         start: nameToken.span.start,
         end: close.span.end,
       },
+    };
+  }
+
+  /**
+   * `report <name> on <file> control <field>, <field> page ... { <groups> }`
+   *
+   * The clause words after the name are contextual, the way a file
+   * declaration's are, so `control`, `page`, and the page margins stay usable
+   * as field names.
+   */
+  private parseReportDeclaration(): ReportDeclarationNode | null {
+    const keyword = this.previous;
+    const nameToken = this.expectIdentifier("Expected report name.");
+    if (!nameToken || !keyword) {
+      return null;
+    }
+
+    if (!this.matchKeyword("on")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `on` before the file the report is written to.",
+        "Write `report statementReport on statementFile { ... }`.",
+      );
+      return null;
+    }
+    const fileToken = this.expectIdentifier(
+      "Expected the file the report is written to.",
+    );
+    if (!fileToken) {
+      return null;
+    }
+
+    const controls: { name: string; span: SourceSpan }[] = [];
+    if (this.matchContextual("control")) {
+      do {
+        const controlToken = this.expectIdentifier(
+          "Expected a control field name.",
+        );
+        if (!controlToken) {
+          return null;
+        }
+        controls.push({ name: controlToken.text, span: controlToken.span });
+      } while (this.matchPunctuation(","));
+    }
+
+    const page = this.parseReportPage();
+
+    if (!this.expectPunctuation("{", "Expected `{` to open the report body.")) {
+      return null;
+    }
+    const groups: ReportGroupNode[] = [];
+    while (!this.isPunctuation("}") && !this.is("eof")) {
+      const group = this.parseReportGroup();
+      if (!group) {
+        return null;
+      }
+      groups.push(group);
+    }
+    const close = this.expectPunctuation(
+      "}",
+      "Expected `}` to close the report body.",
+    );
+    if (!close) {
+      return null;
+    }
+
+    return {
+      kind: "ReportDeclaration",
+      name: nameToken.text,
+      fileName: fileToken.text,
+      fileSpan: fileToken.span,
+      controls,
+      page,
+      groups,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: close.span.end,
+      },
+    } satisfies ReportDeclarationNode;
+  }
+
+  /** `page 60 heading 1 firstDetail 4 lastDetail 55 footing 58`. */
+  private parseReportPage(): ReportPageNode | null {
+    if (!this.matchContextual("page")) {
+      return null;
+    }
+    const limitToken = this.expectNumber("Expected the page depth in lines.");
+    if (!limitToken) {
+      return null;
+    }
+
+    const margins: Record<string, number | null> = {
+      heading: null,
+      firstDetail: null,
+      lastDetail: null,
+      footing: null,
+    };
+    for (let matching = true; matching;) {
+      matching = false;
+      for (const word of Object.keys(margins)) {
+        if (this.matchContextual(word)) {
+          const value = this.expectNumber(
+            `Expected a line number for ${word}.`,
+          );
+          if (!value) {
+            return null;
+          }
+          margins[word] = Number(value.text);
+          matching = true;
+        }
+      }
+    }
+
+    return {
+      kind: "ReportPage",
+      limit: Number(limitToken.text),
+      heading: margins.heading,
+      firstDetail: margins.firstDetail,
+      lastDetail: margins.lastDetail,
+      footing: margins.footing,
+      span: limitToken.span,
+    } satisfies ReportPageNode;
+  }
+
+  /**
+   * `detail <name> { ... }`, `pageHeading { ... }`,
+   * `controlFooting <field> { ... }`.
+   *
+   * A detail is named because `generate` names it. A heading or footing is not,
+   * because nothing refers to one: the compiler decides when it prints.
+   */
+  private parseReportGroup(): ReportGroupNode | null {
+    const typeToken = this.current;
+    const type = REPORT_GROUP_TYPES.get(typeToken.text);
+    if (typeToken.kind !== "identifier" || !type) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected a report group.",
+        `Write one of ${[...REPORT_GROUP_TYPES.keys()].join(", ")}.`,
+      );
+      return null;
+    }
+    this.advance();
+
+    let name: string | null = null;
+    let control: string | null = null;
+    if (this.current.kind === "identifier" && !this.isPunctuation("{")) {
+      const word = this.advance();
+      if (type === "detail") {
+        name = word.text;
+      } else {
+        control = word.text;
+      }
+    }
+
+    if (
+      !this.expectPunctuation("{", "Expected `{` to open the report group.")
+    ) {
+      return null;
+    }
+    const lines: ReportLineNode[] = [];
+    while (!this.isPunctuation("}") && !this.is("eof")) {
+      const line = this.parseReportLine();
+      if (!line) {
+        return null;
+      }
+      lines.push(line);
+    }
+    const close = this.expectPunctuation(
+      "}",
+      "Expected `}` to close the report group.",
+    );
+    if (!close) {
+      return null;
+    }
+
+    return {
+      kind: "ReportGroup",
+      type,
+      name,
+      control,
+      lines,
+      span: {
+        sourceFile: typeToken.span.sourceFile,
+        start: typeToken.span.start,
+        end: close.span.end,
+      },
+    } satisfies ReportGroupNode;
+  }
+
+  /** `line 1 { ... }`, `line next { ... }`, `line plus 2 { ... }`. */
+  private parseReportLine(): ReportLineNode | null {
+    if (!this.matchContextual("line")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `line` inside a report group.",
+        'Write `line next { column 1 "TOTAL"; }`.',
+      );
+      return null;
+    }
+    const keyword = this.previous;
+
+    let position: ReportLineNode["position"];
+    if (this.matchContextual("next")) {
+      position = { kind: "relative", value: 1 };
+    } else if (this.matchContextual("plus")) {
+      const value = this.expectNumber("Expected the number of lines to space.");
+      if (!value) {
+        return null;
+      }
+      position = { kind: "relative", value: Number(value.text) };
+    } else {
+      const value = this.expectNumber("Expected a line number.");
+      if (!value) {
+        return null;
+      }
+      position = { kind: "absolute", value: Number(value.text) };
+    }
+
+    if (!this.expectPunctuation("{", "Expected `{` to open the report line.")) {
+      return null;
+    }
+    const columns: ReportColumnNode[] = [];
+    while (!this.isPunctuation("}") && !this.is("eof")) {
+      const column = this.parseReportColumn();
+      if (!column) {
+        return null;
+      }
+      columns.push(column);
+    }
+    const close = this.expectPunctuation(
+      "}",
+      "Expected `}` to close the report line.",
+    );
+    if (!close || !keyword) {
+      return null;
+    }
+
+    return {
+      kind: "ReportLine",
+      position,
+      columns,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: close.span.end,
+      },
+    } satisfies ReportLineNode;
+  }
+
+  /** `column <n> <literal | field | sum field | pageNumber>;`. */
+  private parseReportColumn(): ReportColumnNode | null {
+    if (!this.matchContextual("column")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `column` inside a report line.",
+        'Write `column 1 "TOTAL";`.',
+      );
+      return null;
+    }
+    const keyword = this.previous;
+    const columnToken = this.expectNumber("Expected a column number.");
+    if (!columnToken || !keyword) {
+      return null;
+    }
+
+    const source = this.parseReportSource();
+    if (!source) {
+      return null;
+    }
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after the column.",
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "ReportColumn",
+      column: Number(columnToken.text),
+      source,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies ReportColumnNode;
+  }
+
+  private parseReportSource(): ReportSourceNode | null {
+    if (this.is("string")) {
+      const token = this.advance();
+      return {
+        kind: "ReportLiteral",
+        value: token.text,
+        span: token.span,
+      };
+    }
+
+    if (this.matchContextual("pageNumber")) {
+      return { kind: "ReportPageNumber", span: this.previous!.span };
+    }
+
+    const summed = this.matchContextual("sum");
+    const field = this.expectIdentifier(
+      summed
+        ? "Expected the field to total."
+        : "Expected a literal, a field, `sum <field>`, or `pageNumber`.",
+    );
+    if (!field) {
+      return null;
+    }
+    return {
+      kind: summed ? "ReportSum" : "ReportField",
+      field: field.text,
+      span: field.span,
     };
   }
 
@@ -1827,6 +2173,35 @@ class Parser {
     for (const format of ["json", "xml"] as const) {
       if (this.isKeyword(format)) {
         return this.parseSerializeStatement(format);
+      }
+    }
+
+    for (const operation of ["initiate", "generate", "terminate"] as const) {
+      if (this.isKeyword(operation)) {
+        const keyword = this.advance();
+        const targetToken = this.expectIdentifier(
+          operation === "generate"
+            ? "Expected the detail group to print."
+            : "Expected the report name.",
+        );
+        const semicolon = this.expectPunctuation(
+          ";",
+          `Expected \`;\` after \`${operation}\`.`,
+        );
+        if (!targetToken || !semicolon) {
+          return null;
+        }
+        return {
+          kind: "ReportStatement",
+          operation,
+          target: targetToken.text,
+          targetSpan: targetToken.span,
+          span: {
+            sourceFile: keyword.span.sourceFile,
+            start: keyword.span.start,
+            end: semicolon.span.end,
+          },
+        } satisfies ReportStatementNode;
       }
     }
 

@@ -688,6 +688,7 @@ export type StatementNode =
   | ResetStatementNode
   | SplitStatementNode
   | SerializeStatementNode
+  | ReportStatementNode
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
@@ -787,6 +788,99 @@ export interface FileDeclarationNode extends NodeBase {
   /** `page ...` — page depth, for a print file that paginates. */
   linage: FileLinageNode | null;
 }
+
+/**
+ * `report <name> on <file> ...` — a COBOL `RD` in the REPORT SECTION.
+ *
+ * `page ... footing ...` on a file paginates: the program still writes every
+ * line itself and counts nothing. A report declares the *shape* and lets the
+ * compiler run it — headings repeated on each page, a footing at each change of
+ * a control field, and totals that accumulate without a variable to forget to
+ * clear. That last part is the reason to have it: a hand-written subtotal that
+ * is reset in the wrong place is a report that is wrong and still balances.
+ */
+export interface ReportDeclarationNode extends NodeBase {
+  kind: "ReportDeclaration";
+  name: string;
+  fileName: string;
+  fileSpan: SourceSpan;
+  /**
+   * Control fields, outermost first. `FINAL` is always the outermost and is
+   * implied, so this holds only the named ones.
+   */
+  controls: { name: string; span: SourceSpan }[];
+  page: ReportPageNode | null;
+  groups: ReportGroupNode[];
+}
+
+/** `page 60 heading 1 firstDetail 4 lastDetail 55` on a report. */
+export interface ReportPageNode extends NodeBase {
+  kind: "ReportPage";
+  limit: number;
+  heading: number | null;
+  firstDetail: number | null;
+  lastDetail: number | null;
+  footing: number | null;
+}
+
+export type ReportGroupType =
+  | "pageHeading"
+  | "pageFooting"
+  | "detail"
+  | "controlHeading"
+  | "controlFooting";
+
+/**
+ * One report group: what COBOL prints, and when.
+ *
+ * A `detail` is printed by `generate`. Everything else the compiler prints on
+ * its own — a page heading when the page turns, a control footing when the
+ * named field changes — which is exactly the bookkeeping a hand-written report
+ * gets wrong.
+ */
+export interface ReportGroupNode extends NodeBase {
+  kind: "ReportGroup";
+  type: ReportGroupType;
+  name: string | null;
+  /** The control field a heading or footing belongs to; `null` means FINAL. */
+  control: string | null;
+  lines: ReportLineNode[];
+}
+
+/** `line 1 { ... }` or `line next { ... }` or `line plus 2 { ... }`. */
+export interface ReportLineNode extends NodeBase {
+  kind: "ReportLine";
+  position: { kind: "absolute" | "relative"; value: number };
+  columns: ReportColumnNode[];
+}
+
+/**
+ * `column <n> <source>` — one field of a printed line.
+ *
+ * The source is a literal, a field the report reads when it prints, `sum` of a
+ * field, or the page number. `SUM` is the one that carries its weight: COBOL
+ * accumulates it and clears it at the control break, so there is no counter to
+ * reset in the wrong place.
+ */
+export interface ReportColumnNode extends NodeBase {
+  kind: "ReportColumn";
+  column: number;
+  source: ReportSourceNode;
+}
+
+/**
+ * What one column prints.
+ *
+ * A field is named bare — `column 1 branch;` — and resolved against the record
+ * the report's file holds. Nothing else would mean anything: a report is
+ * declared at the top level, where no transaction's variables are in scope, and
+ * the record is the only thing it reads.
+ */
+export type ReportSourceNode =
+  | { kind: "ReportLiteral"; value: string; span: SourceSpan }
+  | { kind: "ReportField"; field: string; span: SourceSpan }
+  | { kind: "ReportSum"; field: string; span: SourceSpan }
+  | { kind: "ReportPageNumber"; span: SourceSpan };
 
 export interface TransactionDeclarationNode extends NodeBase {
   kind: "TransactionDeclaration";
@@ -925,6 +1019,20 @@ export interface SplitStatementNode extends NodeBase {
 }
 
 /**
+ * `initiate <report>;`, `generate <group>;`, `terminate <report>;`
+ *
+ * `initiate` and `terminate` name the report; `generate` names a detail group,
+ * because that is the thing being printed. Everything between the two is the
+ * compiler's: it turns the page, repeats the heading, and breaks the totals.
+ */
+export interface ReportStatementNode extends NodeBase {
+  kind: "ReportStatement";
+  operation: "initiate" | "generate" | "terminate";
+  target: string;
+  targetSpan: SourceSpan;
+}
+
+/**
  * `json <target> from <record> count <length> on error { ... };`
  *
  * `JSON GENERATE` and `XML GENERATE`. A mainframe batch that has to hand a
@@ -1032,6 +1140,7 @@ export type DeclarationNode =
   | FunctionDeclarationNode
   | TransactionDeclarationNode
   | FileDeclarationNode
+  | ReportDeclarationNode
   | EnumDeclarationNode
   | FileErrorHandlerNode
   | SqlDeclarationNode;

@@ -58,6 +58,25 @@ the bytes would differ between the two compilers and neither `NATIONAL-OF` nor
 this repository to be wrong, and it is the cheapest to check: compile the
 fragment above and print the offsets.
 
+## Two GnuCOBOL quirks that are not defects here
+
+Neither affects the generated program on z/OS. Both will confuse anyone
+validating locally, so they are written down.
+
+**A report file will not bind to a DD name.** GnuCOBOL's default `assign_clause`
+resolves an unquoted `ASSIGN TO <name>` on a file carrying `REPORT IS` to
+report-section storage rather than to the DD name, so the output lands in a file
+named after a printed value — a filename like `        0.00`. It reproduces in a
+hand-written program with no BankLang involved. Compile with
+`-fassign-clause=external` (or `=ibm`) to bind it. On z/OS the DD comes from the
+JCL and the question does not arise.
+
+**`JSON PARSE` and `XML PARSE` compile and do nothing.** GnuCOBOL warns
+`-Wpending` that they are not implemented, then leaves the target untouched and
+raises no exception. This compiler does not offer either, for that reason;
+`JSON GENERATE` and `XML GENERATE` are implemented and are executed by the
+tests.
+
 ## What to run
 
 ```bash

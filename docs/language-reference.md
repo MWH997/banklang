@@ -1344,6 +1344,105 @@ a function is the declassification point.
 `JSON PARSE` and `XML PARSE` are not included, and
 [section 14](#14-banned-features) says why.
 
+### 13b. Reports
+
+`page ... footing ...` on a file paginates, but the program still writes every
+line itself and counts nothing. A `report` declares the shape and lets COBOL run
+it:
+
+```ts
+file statementFile sequential output record StatementLine status reportStatus;
+
+report branchSummary on statementFile control branch
+  page 20 heading 1 firstDetail 4 lastDetail 15 {
+  pageHeading {
+    line 1 {
+      column 1 "BRANCH SUMMARY";
+      column 40 "PAGE ";
+      column 46 pageNumber;
+    }
+  }
+  detail lineDetail {
+    line next {
+      column 1 branch;
+      column 10 amount;
+    }
+  }
+  controlFooting branch {
+    line next {
+      column 1 "SUBTOTAL:";
+      column 10 sum amount;
+    }
+  }
+  controlFooting {
+    line next {
+      column 1 "TOTAL:";
+      column 10 sum amount;
+    }
+  }
+}
+```
+
+Driven by three statements:
+
+```ts
+initiate branchSummary;
+generate lineDetail;
+terminate branchSummary;
+```
+
+`generate` names the detail group, because that is the thing being printed;
+`initiate` and `terminate` name the report. Everything between the two is the
+compiler's: it turns the page, repeats the heading, and breaks the totals.
+
+Printing the source above three times — twice for LONDON, once for LEEDS —
+produces:
+
+```
+BRANCH SUMMARY                         PAGE     1
+
+LONDON          42.50
+LONDON          42.50
+SUBTOTAL:       85.00
+LEEDS           42.50
+SUBTOTAL:       42.50
+TOTAL:         127.50
+```
+
+**Nothing in the source adds anything up.** That is the reason to have it: a
+hand-written subtotal reset in the wrong place is a report that is wrong and
+still balances, which is the kind of defect that survives review.
+
+A column prints a literal, a field, `sum` of a field, or `pageNumber`. A field is
+named bare and resolved against the record the report's file holds — a report is
+declared at the top level, where no transaction's variables are in scope, and
+that record is the only thing it reads. An amount is printed in its edited form,
+with the picture taken from the field's own precision and scale, which is what
+lets a `COMP-3` balance reach a page at all.
+
+Groups are `pageHeading`, `pageFooting`, `detail`, `controlHeading`, and
+`controlFooting`. A heading or footing may name a control field or leave it off,
+which means `FINAL` — the total over everything. Lines are placed with
+`line <n>` for an absolute line, or `line next` / `line plus <n>` to space.
+
+The checks are `BANK-FILE-008`: a control field has to be in the record, a
+control heading or footing has to name a control the report breaks on, a `sum`
+has to sit where something has been counted, and there has to be a detail group
+for `generate` to name. A report's file is `sequential output` and may not also
+carry a `page ...` clause, since both decide where the page ends
+(`BANK-FILE-007`).
+
+#### Verifying one locally
+
+GnuCOBOL implements Report Writer and [the tests
+execute one](../tests/report-writer.test.ts) — headings, control breaks, and
+totals all check out. One local wrinkle is worth knowing: GnuCOBOL's default
+`assign_clause` resolves an unquoted `ASSIGN TO <name>` on a file carrying
+`REPORT IS` to report-section storage rather than to the DD name, so the output
+lands in a file named after a printed value. Compile with
+`-fassign-clause=external` to bind it. On z/OS the DD comes from the JCL and the
+question does not arise; `zos/README.md` records it.
+
 ### Paginating a report
 
 ```ts
