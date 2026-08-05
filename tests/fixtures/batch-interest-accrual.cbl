@@ -6,6 +6,7 @@
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
+       01  BANK-RETURN-CODE     PIC S9(4) COMP VALUE 0.
        01  INTEREST-ACCOUNT.
            05  ACCOUNT-ID           PIC X(16).
            05  BALANCE              PIC S9(16)V99 COMP-3.

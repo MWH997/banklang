@@ -1,3 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
@@ -166,15 +171,68 @@ describe("the step's condition code", () => {
    * every step reports success, and a job that found no records looks exactly
    * like one that processed a million.
    */
-  it("moves the value into RETURN-CODE", () => {
+  it("carries the value out to RETURN-CODE", () => {
     const result = txn("  returnCode = 4;");
+    const cobol = result.cobol ?? "";
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("MOVE 4 TO RETURN-CODE");
+    // Held in working storage while the program runs, because RETURN-CODE is a
+    // shared special register and every call the program makes overwrites it
+    // with the called program's own — a `returnCode = 4` followed by the audit
+    // call used to reach the operating system as zero.
+    expect(cobol).toContain("MOVE 4 TO BANK-RETURN-CODE");
+    expect(cobol).toContain("MOVE BANK-RETURN-CODE TO RETURN-CODE");
+    expect(
+      cobol.lastIndexOf("MOVE BANK-RETURN-CODE TO RETURN-CODE"),
+    ).toBeGreaterThan(cobol.lastIndexOf('CALL "BANKAUDT"'));
   });
 
   it("rejects a fraction, which is not a condition code", () => {
     expect(ids(txn("  returnCode = 4.5;"))).toContain("BANK-TYPE-003");
+  });
+
+  /**
+   * Run it, because this is a defect nothing about the source shows.
+   *
+   * `MOVE 8 TO RETURN-CODE` reads correctly and compiles. The Language
+   * Reference says what happens next: "the RETURN-CODE special register in the
+   * calling program is set to the value of the RETURN-CODE special register in
+   * the called program". Every generated transaction ends by calling BANKAUDT,
+   * so the operating system saw the audit program's zero and the job reported
+   * success on a run the program had already condemned.
+   */
+  it.skipIf(
+    spawnSync("cobc", ["--version"], { encoding: "utf8" }).status !== 0,
+  )("reaches the operating system past the audit call", () => {
+    // No embedded SQL here: this is about the return code, and plain cobc
+    // cannot read an EXEC SQL block.
+    const result = compile(`module Rc;
+
+record Row { idempotencyKey: string<36>; }
+
+entry transaction sweep(row: Row) {
+  returnCode = 8;
+  audit("SWEPT", row.idempotencyKey);
+}`);
+    expect(result.diagnostics).toEqual([]);
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-rc-"));
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-fixed",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    expect(spawnSync("./program", [], { cwd: dir }).status).toBe(8);
   });
 
   /** RETURN-CODE is a halfword; 0 to 4095 is what a COND= can test. */

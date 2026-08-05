@@ -21,13 +21,13 @@ describe("source map", () => {
     });
     expect(emit.sourceMap.entries[1]).toMatchObject({
       symbol: "TransferRequest",
-      targetStartLine: 9,
-      targetEndLine: 12,
+      targetStartLine: 10,
+      targetEndLine: 13,
     });
     expect(emit.sourceMap.entries[5]).toMatchObject({
       symbol: "validateAmount",
-      targetStartLine: 17,
-      targetEndLine: 23,
+      targetStartLine: 18,
+      targetEndLine: 24,
     });
   });
 });

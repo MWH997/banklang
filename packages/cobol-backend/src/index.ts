@@ -104,6 +104,24 @@ const BOUNDS_STATUS_FIELD = "BANK-BOUNDS-STATUS";
  */
 const FAILURE_CODE_FIELD = "BANK-FAILURE-CODE";
 
+/**
+ * The return code the program means to end with.
+ *
+ * `RETURN-CODE` cannot hold it while the program is still running. It is a
+ * shared special register, and the Language Reference is explicit about what a
+ * call does to it: "the RETURN-CODE special register in the calling program is
+ * set to the value of the RETURN-CODE special register in the called program".
+ * Every generated transaction ends by calling BANKAUDT, so a `returnCode = 8`
+ * set anywhere before that was overwritten with the audit program's zero, and
+ * the job reported success on a run the program had already condemned — with
+ * every `COND=(4,LT)` step after it running on that basis.
+ *
+ * Held here and moved into `RETURN-CODE` on the way out, after the last call.
+ * The failure paths do not use it: each sets `RETURN-CODE` and returns with
+ * nothing in between, so there is nothing left to overwrite it.
+ */
+const RETURN_CODE_FIELD = "BANK-RETURN-CODE";
+
 /** Failure code raised when a computed subscript falls outside its table. */
 const BOUNDS_FAILURE_CODE = "BANK-BOUNDS-VIOLATION";
 
@@ -697,6 +715,7 @@ export function emitCobol(
     // a paragraph, raises into the same field the caller tests.
     addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
   }
+  addLine(`       01  ${RETURN_CODE_FIELD.padEnd(20)} PIC S9(4) COMP VALUE 0.`);
   // A sort procedure's loop stops on a flag of its own rather than on the
   // file's status field, because a sort's input file need not declare one and
   // a RETURN has no status field at all.
@@ -1067,6 +1086,7 @@ export function emitCobol(
   if (entryTransaction) {
     addLine(`       ${MAIN_PARAGRAPH}.`);
     addLine(`           PERFORM ${paragraphName(entryTransaction.name)}`);
+    addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
     addLine(`           GOBACK.`);
   }
 
@@ -1101,6 +1121,8 @@ export function emitCobol(
     } else {
       emitTransactionBody(transaction.body, addLine, 11);
       emitCommareaExit(transaction, addLine);
+      // The last thing before leaving, so no call can overwrite it.
+      addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
       // A CICS program returns control to CICS rather than to a caller.
       addLine(
         transaction.isCics
@@ -2265,7 +2287,7 @@ function emitStatement(
         break;
       case "ReturnCodeStatement":
         addLine(
-          `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
+          `${indent}MOVE ${renderExpression(statement.value)} TO ${RETURN_CODE_FIELD}`,
         );
         break;
       case "SplitStatement":
@@ -2381,6 +2403,7 @@ function emitFailingTransaction(
   addLine(`           IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
   addLine(`               PERFORM ${failure}`);
   addLine(`           END-IF`);
+  addLine(`           MOVE ${RETURN_CODE_FIELD} TO RETURN-CODE`);
   addLine(
     transaction.isCics
       ? `           EXEC CICS RETURN END-EXEC.`
@@ -2483,7 +2506,7 @@ function emitTransactionBody(
         break;
       case "ReturnCodeStatement":
         addLine(
-          `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
+          `${indent}MOVE ${renderExpression(statement.value)} TO ${RETURN_CODE_FIELD}`,
         );
         break;
       case "SplitStatement":
@@ -3256,12 +3279,31 @@ function emitSplitStatement(
   addLine: (line?: string) => void,
   indent: string,
 ): void {
+  const source = renderExpression(statement.source);
   addLine(
-    `${indent}UNSTRING ${renderExpression(statement.source)} DELIMITED BY ${renderExpression(statement.delimiter)}`,
+    `${indent}UNSTRING ${source} DELIMITED BY ${renderExpression(statement.delimiter)}`,
   );
   addLine(
     `${indent}    INTO ${statement.targets.map((target) => renderExpression(target)).join(" ")}`,
   );
+  // The overflow condition is raised when every receiver has been filled and
+  // the sending field still has characters nobody looked at. Without the phrase
+  // those characters are simply dropped: a reference split into two when it had
+  // three parts leaves the third nowhere, and the program carries on holding a
+  // value that is a prefix of the one it was given.
+  //
+  // Reported rather than raised, because taking the first parts of a longer
+  // field is a thing a program may mean to do — but a return code of 4 says the
+  // run was not the ordinary one, without stopping a job that is fine.
+  addLine(`${indent}    ON OVERFLOW`);
+  addLine(
+    `${indent}        DISPLAY "SPLIT OVERFLOW ${source}: MORE PARTS THAN RECEIVERS" UPON SYSOUT`,
+  );
+  // Never downwards: an earlier step of the same run may already have set 8 or
+  // 12, and a warning must not report the job as less wrong than it is.
+  addLine(`${indent}        IF ${RETURN_CODE_FIELD} < 4`);
+  addLine(`${indent}            MOVE 4 TO ${RETURN_CODE_FIELD}`);
+  addLine(`${indent}        END-IF`);
   addLine(`${indent}END-UNSTRING`);
 }
 

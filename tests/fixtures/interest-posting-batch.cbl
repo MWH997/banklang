@@ -33,6 +33,7 @@
        WORKING-STORAGE SECTION.
        01  ACCOUNT-FEED-STATUS  PIC XX.
        01  ADVICE-OUTPUT-STATUS PIC XX.
+       01  BANK-RETURN-CODE     PIC S9(4) COMP VALUE 0.
        01  INTEREST-ACCOUNT.
            05  ACCOUNT-ID           PIC X(16).
            05  BRANCH-CODE          PIC X(8).
@@ -72,6 +73,7 @@
        PROCEDURE DIVISION.
        BANK-MAIN.
            PERFORM RUN-BATCH
+           MOVE BANK-RETURN-CODE TO RETURN-CODE
            GOBACK.
        IS-ELIGIBLE.
            IF (IS-ELIGIBLE-P1 >= IS-ELIGIBLE-P2) AND (IS-ELIGIBLE-P1 >
@@ -149,6 +151,7 @@
            MOVE IDEMPOTENCY-KEY OF INTEREST-ACCOUNT TO
                BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE
+           MOVE BANK-RETURN-CODE TO RETURN-CODE
            GOBACK.
        RUN-BATCH.
            OPEN INPUT ACCOUNT-FEED-FILE
@@ -172,6 +175,13 @@
                READ ACCOUNT-FEED-FILE
                    AT END MOVE "10" TO ACCOUNT-FEED-STATUS
                END-READ
+               IF ACCOUNT-FEED-STATUS(1:1) NOT = "0" AND
+                   ACCOUNT-FEED-STATUS NOT = "10"
+                   DISPLAY "READ FAILED accountFeed STATUS "
+                       ACCOUNT-FEED-STATUS UPON SYSOUT
+                   MOVE 12 TO RETURN-CODE
+                   GOBACK
+               END-IF
                MOVE ACCOUNT-ID OF ACCOUNT-FEED-RECORD TO ACCOUNT-ID OF
                    INTEREST-ACCOUNT
                MOVE BRANCH-CODE OF ACCOUNT-FEED-RECORD TO BRANCH-CODE OF
@@ -190,12 +200,31 @@
                    MOVE IDEMPOTENCY-KEY OF POSTING-ADVICE TO
                        IDEMPOTENCY-KEY OF ADVICE-OUTPUT-RECORD
                    WRITE ADVICE-OUTPUT-RECORD
+                   IF ADVICE-OUTPUT-STATUS(1:1) NOT = "0"
+                       DISPLAY "WRITE FAILED adviceOutput STATUS "
+                           ADVICE-OUTPUT-STATUS UPON SYSOUT
+                       MOVE 12 TO RETURN-CODE
+                       GOBACK
+                   END-IF
                END-IF
            END-PERFORM
            CLOSE ACCOUNT-FEED-FILE
+           IF ACCOUNT-FEED-STATUS(1:1) NOT = "0"
+               DISPLAY "CLOSE FAILED accountFeed STATUS "
+                   ACCOUNT-FEED-STATUS UPON SYSOUT
+               MOVE 12 TO RETURN-CODE
+               GOBACK
+           END-IF
            CLOSE ADVICE-OUTPUT-FILE
+           IF ADVICE-OUTPUT-STATUS(1:1) NOT = "0"
+               DISPLAY "CLOSE FAILED adviceOutput STATUS "
+                   ADVICE-OUTPUT-STATUS UPON SYSOUT
+               MOVE 12 TO RETURN-CODE
+               GOBACK
+           END-IF
            MOVE "INTEREST_BATCH_COMPLETED" TO BANK-AUDIT-EVENT
            MOVE IDEMPOTENCY-KEY OF INTEREST-ACCOUNT TO
                BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE
+           MOVE BANK-RETURN-CODE TO RETURN-CODE
            GOBACK.
