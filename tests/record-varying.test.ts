@@ -197,3 +197,39 @@ describe("executed", () => {
     expect(written.toString("latin1")).not.toContain("SHORTER ONE   ");
   });
 });
+
+/**
+ * The length field cannot be a member of the record whose length it gives.
+ *
+ * Inside it, it would be part of the data it is measuring. And the generated
+ * `DEPENDING ON` names it bare, which resolves twice — the record is laid out
+ * in working storage and again inside the FD — so `cobc` answers "is ambiguous;
+ * needs qualification" and there is no qualification that fixes it, because the
+ * item may not be in the record at all.
+ *
+ * Found by compiling every construct under GnuCOBOL rather than the one example
+ * the validator defaulted to.
+ */
+describe("where the length field lives", () => {
+  it("rejects one declared inside the record", () => {
+    const result = compile(`module M;
+
+record V {
+  text: string<80>;
+  len: binary<4>;
+}
+
+file f sequential output record V varying 1 to 80 length len status fs;
+
+entry transaction t(v: V, idempotencyKey: string<36>) {
+  open f;
+  write f from v;
+  close f;
+  audit("A", idempotencyKey);
+}`);
+
+    expect(result.diagnostics.map((entry) => entry.id)).toContain(
+      "BANK-FILE-009",
+    );
+  });
+});

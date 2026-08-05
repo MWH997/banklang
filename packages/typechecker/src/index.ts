@@ -1187,7 +1187,7 @@ function resolveFile(
     mode: declaration.mode,
     record,
     statusName: declaration.statusName,
-    recordVarying: validateRecordVarying(declaration, diagnostics),
+    recordVarying: validateRecordVarying(declaration, recordMap, diagnostics),
     linage: linage
       ? {
           lines: linage.lines,
@@ -3235,6 +3235,7 @@ function validateXmlParseStatement(
  */
 function validateRecordVarying(
   declaration: FileDeclarationNode,
+  recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): { min: number; max: number; lengthName: string } | null {
   const varying = declaration.recordVarying;
@@ -3255,6 +3256,24 @@ function validateRecordVarying(
     );
     return null;
   };
+
+  // The depending item lives outside the record whose length it gives. Inside
+  // it, it would be part of the data it is measuring — and the generated
+  // `DEPENDING ON` names it bare, which resolves twice, because the record is
+  // laid out in working storage and again inside the FD. Both compilers reject
+  // that: cobc with "is ambiguous; needs qualification", and there is no
+  // qualification that fixes it, since the item may not be in the record at all.
+  const record = recordMap.get(declaration.recordTypeName);
+  if (
+    record?.fields.some(
+      (field: { name: string }) => field.name === varying.lengthName,
+    )
+  ) {
+    return reject(
+      `${varying.lengthName} is a field of ${declaration.recordTypeName}, so it cannot be the length ${declaration.name} varies by.`,
+      `Declare the length outside the record — the field that says how much of a record is in use is not part of the record it measures.`,
+    );
+  }
 
   if (varying.min <= 0 || varying.min > varying.max) {
     return reject(
