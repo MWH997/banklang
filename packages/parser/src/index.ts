@@ -47,6 +47,8 @@ import {
   type ReportSourceNode,
   type ReportStatementNode,
   type SerializeStatementNode,
+  type XmlBindingNode,
+  type XmlParseStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
@@ -1740,13 +1742,19 @@ class Parser {
    */
   private parseSerializeStatement(
     format: "json" | "xml",
-  ): SerializeStatementNode | null {
+  ): SerializeStatementNode | XmlParseStatementNode | null {
     const keyword = this.advance();
     const target = this.parseFieldReference(
       `Expected the field holding the ${format} text.`,
     );
     if (!target) {
       return null;
+    }
+
+    // `xml <text> processing { ... }` is the event form, which is the only one
+    // COBOL has for reading a document into fields.
+    if (format === "xml" && this.matchContextual("processing")) {
+      return this.parseXmlProcessing(keyword, target);
     }
 
     let direction: "generate" | "parse";
@@ -1815,6 +1823,117 @@ class Parser {
         end: semicolon.span.end,
       },
     } satisfies SerializeStatementNode;
+  }
+
+  /**
+   * The bindings of an `xml ... processing { ... }`, and its failure handler.
+   *
+   * `element` is contextual, so it stays usable as a field name.
+   */
+  private parseXmlProcessing(
+    keyword: Token,
+    source: MemberAccessNode | IdentifierNode,
+  ): XmlParseStatementNode | null {
+    if (
+      !this.expectPunctuation("{", "Expected `{` to open the xml bindings.")
+    ) {
+      return null;
+    }
+
+    const bindings: XmlBindingNode[] = [];
+    while (!this.isPunctuation("}") && !this.is("eof")) {
+      if (!this.matchContextual("element")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `element` inside the xml bindings.",
+          'Write `element "BALANCE" into account.balance;`.',
+        );
+        return null;
+      }
+      const start = this.previous;
+      if (!this.is("string")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected the element name as a literal.",
+          "The name is matched against the document, so it is written out.",
+        );
+        return null;
+      }
+      const nameToken = this.advance();
+
+      if (!this.matchContextual("into")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `into` before the field.",
+          'Write `element "BALANCE" into account.balance;`.',
+        );
+        return null;
+      }
+      const target = this.parseFieldReference(
+        "Expected the field the element is read into.",
+      );
+      if (!target) {
+        return null;
+      }
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the binding.",
+      );
+      if (!semicolon || !start) {
+        return null;
+      }
+      bindings.push({
+        kind: "XmlBinding",
+        element: nameToken.text,
+        elementSpan: nameToken.span,
+        target,
+        span: {
+          sourceFile: start.span.sourceFile,
+          start: start.span.start,
+          end: semicolon.span.end,
+        },
+      });
+    }
+
+    if (
+      !this.expectPunctuation("}", "Expected `}` to close the xml bindings.")
+    ) {
+      return null;
+    }
+
+    let onError: BlockNode | null = null;
+    if (
+      this.isKeyword("on") &&
+      this.next.kind === "keyword" &&
+      this.next.text === "error"
+    ) {
+      this.advance();
+      this.advance();
+      onError = this.parseBlock();
+      if (!onError) {
+        return null;
+      }
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after the xml statement.",
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "XmlParseStatement",
+      source,
+      bindings,
+      onError,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies XmlParseStatementNode;
   }
 
   /**

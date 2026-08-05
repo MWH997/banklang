@@ -1381,11 +1381,73 @@ raised. A program reading a payload therefore runs clean and processes an empty
 record. Verify on z/OS before relying on what it reads, and check the record
 rather than trusting the failure path.
 
-There is no `xml ... into ...` (`BANK-TYPE-026`). `XML PARSE` has no form that
-fills a record, in Enterprise COBOL or in GnuCOBOL: it is event-driven —
-`XML PARSE <text> PROCESSING PROCEDURE <para>` — and the handler walks the
-`XML-EVENT` and `XML-TEXT` special registers, moving what it recognises itself.
-There is nothing for `xml payload into account` to become.
+#### Reading XML
+
+XML is different, and not by choice: `XML PARSE` is event-driven in Enterprise
+COBOL and in GnuCOBOL alike. COBOL calls a procedure once per token of the
+document — a start tag, its content, an end tag — and the procedure works out
+what to keep by reading the `XML-EVENT` and `XML-TEXT` special registers. There
+is no form that fills a record, so there is no `xml ... into ...`
+(`BANK-TYPE-026`).
+
+What there is says which elements go where:
+
+```ts
+xml message.body processing {
+  element "ID" into account.accountId;
+  element "BAL" into account.balance;
+} on error {
+  returnCode = 12;
+};
+```
+
+and the compiler writes the state machine:
+
+```cobol
+       XML PARSE BODY OF MESSAGE-FLD
+           PROCESSING PROCEDURE BANK-XML-1
+           ON EXCEPTION
+               MOVE 12 TO RETURN-CODE
+       END-XML
+...
+       BANK-XML-1 SECTION.
+           EVALUATE XML-EVENT
+             WHEN "START-OF-ELEMENT"
+               MOVE XML-TEXT TO BANK-XML-1-ELEM
+             WHEN "CONTENT-CHARACTERS"
+               EVALUATE BANK-XML-1-ELEM
+                 WHEN "ID"
+                   MOVE XML-TEXT TO ACCOUNT-ID OF ACCOUNT
+                 WHEN "BAL"
+                   COMPUTE BALANCE OF ACCOUNT = FUNCTION NUMVAL(XML-TEXT)
+               END-EVALUATE
+             WHEN "END-OF-ELEMENT"
+               MOVE SPACES TO BANK-XML-1-ELEM
+           END-EVALUATE.
+```
+
+Three things there are worth pointing at, because they are where a hand-written
+handler goes wrong. The element a start tag opened has to be **remembered**,
+since its content arrives as a separate event. It has to be **forgotten** at the
+end tag, or a parent's whitespace is filed under the child that just closed. And
+a number has to go through `NUMVAL` rather than `MOVE`: moving characters into a
+numeric picture reads the digits positionally and puts the decimal point
+somewhere else.
+
+The handler is a section placed after the last `GOBACK`, because a section in
+the flow of control would be run again on the way past.
+
+Bindings must name at least one element, must not bind one twice, and must read
+into a `string<n>` or a number — COBOL hands the content over as characters.
+
+**The same warning applies, and harder** (`BANK-TYPE-025`). GnuCOBOL compiles all
+of this, including the special registers, warns that `XML PARSE` is not
+implemented, and then does nothing: no field is filled, and **neither the
+exception nor the not-exception branch is taken**, so a document that failed
+looks exactly like one that worked. What the local build does establish is that
+the COBOL is accepted — the handler is a section in the right place, the
+registers are the ones COBOL defines, and the conversions are legal. The rest
+waits for z/OS.
 
 ### 13b. Reports
 

@@ -40,6 +40,7 @@ import type {
   IRReleaseStatement,
   IRReport,
   IRSerializeStatement,
+  IRXmlParseStatement,
   IRSplitStatement,
   IRStringCallExpression,
   IRTemporalCallExpression,
@@ -645,6 +646,20 @@ export function emitCobol(
     }
   }
 
+  // Each handler needs a name, and the statement and its section are emitted in
+  // different places, so the names are assigned once up front.
+  const xmlParses = xmlParseStatements(program);
+  xmlHandlerIndexes = new Map(
+    xmlParses.map((owned, index) => [owned.statement, index]),
+  );
+  for (let index = 0; index < xmlParses.length; index += 1) {
+    // The element a start tag opened, so the content that follows can be filed
+    // under it. XML-EVENT names the token; nothing carries the element itself.
+    addLine(
+      `       01  ${`${xmlHandlerName(index)}-ELEM`.padEnd(20)} PIC X(30).`,
+    );
+  }
+
   const copybookMode = options.copybookMode ?? "inline";
   // A contained program reads the container's storage only where the container
   // says GLOBAL, and reading the module's records without being passed them is
@@ -938,6 +953,19 @@ export function emitCobol(
       category: "transaction",
       symbol: transaction.name,
     });
+  }
+
+  // An XML handler is a section, so it goes after the last GOBACK for the same
+  // reason a sort procedure does: a section in the flow of control would be run
+  // again on the way past. XML PARSE enters it and nothing else does.
+  for (const owned of xmlParses) {
+    currentBindings = routineBindings(owned.owner, owned.parameters);
+    emitXmlHandlerSection(
+      owned.statement,
+      xmlHandlerIndexes.get(owned.statement) ?? 0,
+      addLine,
+    );
+    currentBindings = new Map();
   }
 
   // Sort procedures come after the last GOBACK. A section placed in the flow of
@@ -1842,6 +1870,16 @@ function emitStatement(
           false,
         );
         break;
+      case "XmlParseStatement":
+        emitXmlParseStatement(
+          statement,
+          xmlHandlerIndexes.get(statement) ?? 0,
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "ReportStatement":
         addLine(
           `${indent}${statement.operation.toUpperCase()} ${toCobolName(statement.target)}`,
@@ -2017,6 +2055,16 @@ function emitTransactionBody(
         break;
       case "SerializeStatement":
         emitSerializeStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "XmlParseStatement":
+        emitXmlParseStatement(
+          statement,
+          xmlHandlerIndexes.get(statement) ?? 0,
+          addLine,
+          indentLevel,
+          "",
+          true,
+        );
         break;
       case "ReportStatement":
         addLine(
@@ -2629,6 +2677,14 @@ function reportFieldPicture(field: string): string {
   return formatCobolType(type);
 }
 
+/**
+ * The handler index for each `xml ... processing`, keyed by the statement.
+ *
+ * The statement and its handler section are emitted in different places, so
+ * both look the name up here rather than counting independently.
+ */
+let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
+
 /** The record a report's columns read from, while that report is emitted. */
 let currentReportRecord: IRRecord | null = null;
 
@@ -2672,6 +2728,142 @@ function emitSerializeStatement(
     }
   }
   addLine(`${indent}END-${verb}`);
+}
+
+/**
+ * Every `xml ... processing` in the program, in emission order.
+ *
+ * The handler is a section, and a section has to sit outside the flow of
+ * control, so the statement and its handler are emitted in different places and
+ * have to agree on a name.
+ */
+function xmlParseStatements(program: IRProgram): {
+  statement: IRXmlParseStatement;
+  owner: string;
+  parameters: IRParameter[];
+  inTransaction: boolean;
+}[] {
+  type Owned = {
+    statement: IRXmlParseStatement;
+    owner: string;
+    parameters: IRParameter[];
+    inTransaction: boolean;
+  };
+  const found: Owned[] = [];
+  let owner: Omit<Owned, "statement"> = {
+    inTransaction: false,
+    owner: "",
+    parameters: [],
+  };
+
+  const walk = (block: IRBlock): void => {
+    for (const statement of block.statements) {
+      if (statement.kind === "XmlParseStatement") {
+        found.push({ statement, ...owner });
+      }
+      for (const nested of [
+        (statement as { body?: IRBlock }).body,
+        (statement as { notFound?: IRBlock }).notFound,
+        (statement as { thenBranch?: IRBlock }).thenBranch,
+        (statement as { elseBranch?: IRBlock | null }).elseBranch,
+        (statement as { onError?: IRBlock | null }).onError,
+      ]) {
+        if (nested) {
+          walk(nested);
+        }
+      }
+    }
+  };
+
+  // Transactions first, then functions, which is the order the statements are
+  // emitted in — the handler's name has to match the one the statement wrote.
+  for (const transaction of program.transactions) {
+    owner = {
+      inTransaction: true,
+      owner: transaction.name,
+      parameters: transaction.parameters,
+    };
+    walk(transaction.body);
+  }
+  for (const fn of program.functions) {
+    owner = { inTransaction: false, owner: fn.name, parameters: fn.parameters };
+    walk(fn.body);
+  }
+  return found;
+}
+
+/** The section name a handler is reached by, and the element register it uses. */
+function xmlHandlerName(index: number): string {
+  return `BANK-XML-${index + 1}`;
+}
+
+/**
+ * `XML PARSE`, and the handler section that reads the document.
+ *
+ * COBOL calls the procedure once per token — a start tag, its content, an end
+ * tag — and the procedure decides what to keep by reading `XML-EVENT` and
+ * `XML-TEXT`. Writing that by hand is where an XML reader goes wrong, so the
+ * bindings are declared and this generates the machine: remember the element a
+ * start tag opened, move the content of the ones that were named, forget it
+ * again at the end tag.
+ */
+function emitXmlParseStatement(
+  statement: IRXmlParseStatement,
+  index: number,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  addLine(`${indent}XML PARSE ${renderExpression(statement.source)}`);
+  addLine(`${indent}    PROCESSING PROCEDURE ${xmlHandlerName(index)}`);
+  if (statement.onError) {
+    addLine(`${indent}    ON EXCEPTION`);
+    if (inTransaction) {
+      emitTransactionBody(statement.onError, addLine, indentLevel + 8);
+    } else {
+      emitStatement(statement.onError, addLine, indentLevel + 8, resultName);
+    }
+  }
+  addLine(`${indent}END-XML`);
+}
+
+/** The handler section for one `xml ... processing`. */
+function emitXmlHandlerSection(
+  statement: IRXmlParseStatement,
+  index: number,
+  addLine: (line?: string) => void,
+): void {
+  const name = xmlHandlerName(index);
+  addLine("");
+  addLine(`       ${name} SECTION.`);
+  addLine(`           EVALUATE XML-EVENT`);
+  // The content of an element arrives after its start tag, so the name has to
+  // be remembered to know what the characters belong to.
+  addLine(`             WHEN "START-OF-ELEMENT"`);
+  addLine(`               MOVE XML-TEXT TO ${name}-ELEM`);
+  addLine(`             WHEN "CONTENT-CHARACTERS"`);
+  addLine(`               EVALUATE ${name}-ELEM`);
+  for (const binding of statement.bindings) {
+    addLine(`                 WHEN "${binding.element}"`);
+    const target = renderExpression(binding.target);
+    if (binding.numeric) {
+      // The content is characters. NUMVAL reads them as a number rather than
+      // moving them into a picture that would read the digits positionally.
+      addLine(
+        `                   COMPUTE ${target} = FUNCTION NUMVAL(XML-TEXT)`,
+      );
+    } else {
+      addLine(`                   MOVE XML-TEXT TO ${target}`);
+    }
+  }
+  addLine(`               END-EVALUATE`);
+  // Forgetting the element at its end tag keeps content that belongs to a
+  // parent from being filed under the child that just closed.
+  addLine(`             WHEN "END-OF-ELEMENT"`);
+  addLine(`               MOVE SPACES TO ${name}-ELEM`);
+  addLine(`           END-EVALUATE.`);
 }
 
 /**

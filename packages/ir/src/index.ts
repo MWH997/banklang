@@ -256,6 +256,7 @@ export type IRStatement =
   | IRReturnCodeStatement
   | IRSplitStatement
   | IRSerializeStatement
+  | IRXmlParseStatement
   | IRReportStatement
   | IRSortStatement
   | IRReleaseStatement
@@ -338,6 +339,26 @@ export interface IRSplitStatement {
   source: IRExpression;
   delimiter: IRExpression;
   targets: IRExpression[];
+}
+
+/**
+ * `XML PARSE <text> PROCESSING PROCEDURE <section>`.
+ *
+ * The bindings are carried through rather than lowered to statements: the
+ * handler COBOL needs is a state machine over the event registers, and the
+ * backend is the only place that knows how to write one.
+ */
+export interface IRXmlParseStatement {
+  kind: "XmlParseStatement";
+  span: SourceSpan;
+  source: IRExpression;
+  bindings: {
+    element: string;
+    target: IRExpression;
+    /** True when the content has to go through `FUNCTION NUMVAL` to land. */
+    numeric: boolean;
+  }[];
+  onError: IRBlock | null;
 }
 
 /** `INITIATE`, `GENERATE`, and `TERMINATE`. */
@@ -1810,6 +1831,27 @@ function lowerStatement(
         span: statement.span,
         operation: statement.operation,
         target: statement.target,
+      };
+    case "XmlParseStatement":
+      return {
+        kind: "XmlParseStatement",
+        span: statement.span,
+        source: lowerExpression(statement.source, scopeTypes),
+        bindings: statement.bindings.map((binding) => {
+          const target = lowerExpression(binding.target, scopeTypes);
+          return {
+            element: binding.element,
+            target,
+            // Text arrives as characters, so a number has to be converted
+            // rather than moved: MOVE would read the digits as a picture.
+            numeric:
+              target.resolvedType.kind === "decimal" ||
+              target.resolvedType.kind === "currency",
+          };
+        }),
+        onError: statement.onError
+          ? lowerBlock(statement.onError, scopeTypes)
+          : null,
       };
     case "SerializeStatement":
       return {

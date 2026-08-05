@@ -162,16 +162,23 @@ Verify the program on z/OS before relying on what it reads, and check the record
 rather than trusting the failure path — a parse that did nothing does not report
 one. `zos/README.md` records the divergence.
 
-### `BANK-TYPE-026` xml cannot parse into a record
+### `BANK-TYPE-026` invalid xml read
 
-`JSON PARSE` fills a record from a document, and `json <text> into <record>`
-becomes exactly that. `XML PARSE` has no such form — in Enterprise COBOL as in
-GnuCOBOL it is event-driven, `XML PARSE <text> PROCESSING PROCEDURE <para>`, and
-the handler walks the `XML-EVENT` and `XML-TEXT` special registers moving what it
-recognises. There is no COBOL for an `xml ... into ...` to become.
+`XML PARSE` is event-driven, so `xml <text> into <record>` has no COBOL to
+become: neither Enterprise COBOL nor GnuCOBOL has a form that fills a record.
+The form that exists is
 
-Use `json <text> into <record>`, or take the document apart with `split` and
-`substring`.
+```ts
+xml message.body processing {
+  element "BALANCE" into account.balance;
+};
+```
+
+and its bindings have to make sense: at least one element, each element bound
+once — a second binding for the same name would never be reached — and each read
+into something characters can be moved into, which is a `string<n>` or a number.
+
+`json <text> into <record>` fills a record directly if the document is JSON.
 
 ### `BANK-TYPE-027` nested function is recursive
 
