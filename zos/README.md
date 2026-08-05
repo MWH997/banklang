@@ -27,6 +27,37 @@ places the two most plausibly disagree:
 
 Anything found here is a real defect in this compiler, not in the runner.
 
+## The one place they are already known to disagree
+
+`USAGE NATIONAL` is not a "could differ" — it is measured. GnuCOBOL 3.2.0
+allocates **four bytes per national character inside a group**, where Enterprise
+COBOL holds each in two bytes of UTF-16. Standalone at the 01 level GnuCOBOL
+allocates two, which is an inconsistency in GnuCOBOL rather than a rule. It also
+warns on every such line that its handling of `USAGE NATIONAL` is unfinished, and
+implements neither `NATIONAL-OF` nor `DISPLAY-OF`.
+
+Reproduce it with:
+
+```cobol
+01  H.
+    05  A2 PIC N(4) USAGE NATIONAL.
+    05  C2 PIC X(4).
+01  FLAT REDEFINES H PIC X(100).
+```
+
+`C2` starts at byte 17 under GnuCOBOL and at byte 9 under Enterprise COBOL.
+
+This compiler emits the Enterprise COBOL width, because that is the backend it
+targets, and warns (`BANK-TYPE-024`) on every `national<n>` field to say that the
+local validation does not cover it. Because of that, the conversion between an
+alphanumeric and a national is the one move the compiler refuses to emit at all:
+the bytes would differ between the two compilers and neither `NATIONAL-OF` nor
+`DISPLAY-OF` is available to make them agree.
+
+**Verify this first.** A record with a national field is the most likely thing in
+this repository to be wrong, and it is the cheapest to check: compile the
+fragment above and print the offsets.
+
 ## What to run
 
 ```bash

@@ -51,7 +51,8 @@ export function describeTypeNode(node: TypeNode): string {
       // different storage generate different COBOL.
       return `${node.usage === "binary" ? "bin" : node.usage === "display" ? "zon" : "dec"}${node.precision}_${node.scale}`;
     case "StringType":
-      return `str${node.length}`;
+      // A national is twice the bytes, so it is a different instantiation.
+      return `${node.national ? "nat" : "str"}${node.length}`;
     case "BoolType":
       return "bool";
     case "TemporalType":

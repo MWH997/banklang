@@ -68,6 +68,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
 export const PLAYGROUND_TYPES = new Set([
   "decimal",
   "string",
+  "national",
   "bool",
   "currency",
   "nullable",

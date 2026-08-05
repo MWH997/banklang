@@ -102,6 +102,14 @@ export interface StringType {
    * hold it. COBOL `MOVE` pads with spaces, so this is not a silent truncation.
    */
   literal?: boolean;
+  /**
+   * `national<n>` — `PIC N(n) USAGE NATIONAL`, two bytes to a character.
+   *
+   * A different storage width is a different record layout, so a national and
+   * an alphanumeric of the same character count are not the same type. Mixing
+   * them would move UTF-16 bytes into a field that reads them as EBCDIC.
+   */
+  national?: boolean;
 }
 
 export interface BoolType {
@@ -4004,7 +4012,9 @@ function resolveRenames(
 function declaredByteLength(type: ResolvedType): number {
   switch (type.kind) {
     case "string":
-      return type.length;
+      // A national character is two bytes, which is the whole reason the type
+      // exists: a record holding one does not line up if it is counted as one.
+      return type.national ? type.length * 2 : type.length;
     case "bool":
       return 1;
     case "temporal":
@@ -4162,6 +4172,22 @@ function validateVariantFields(
           span: field.span,
           hint: "`blankWhenZero` applies to a number or an edited field.",
           backendProfile: null,
+        }),
+      );
+    }
+
+    // A national field is the one place this compiler emits a layout its own
+    // validator does not agree with, so it says so rather than letting the
+    // evidence imply a check that did not happen.
+    if (field.type.kind === "string" && field.type.national) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-024",
+          severity: "warning",
+          message: `${field.name} is national, so its layout cannot be checked locally.`,
+          span: field.span,
+          hint: "Enterprise COBOL holds a national character in two bytes (UTF-16), which is the width reported here. GnuCOBOL 3.2.0 allocates four inside a group and warns that its USAGE NATIONAL handling is unfinished, so every field after this one sits at a different offset there. Verify the record on z/OS before relying on it — see zos/README.md.",
+          backendProfile: "ibm-enterprise-cobol-zos",
         }),
       );
     }
@@ -5907,7 +5933,12 @@ function typeToTypeNode(type: ResolvedType, span: SourceSpan): TypeNode | null {
         span,
       };
     case "string":
-      return { kind: "StringType", length: type.length, span };
+      return {
+        kind: "StringType",
+        length: type.length,
+        national: type.national,
+        span,
+      };
     case "bool":
       return { kind: "BoolType", span };
     case "temporal":
@@ -6033,7 +6064,7 @@ function describeType(type: ResolvedType): string {
           ? `zoned<${type.precision}, ${type.scale}>`
           : `decimal<${type.precision}, ${type.scale}>`;
     case "string":
-      return `string<${type.length}>`;
+      return `${type.national ? "national" : "string"}<${type.length}>`;
     case "bool":
       return "bool";
     case "temporal":
@@ -6595,7 +6626,7 @@ function resolveString(
     return null;
   }
 
-  return { kind: "string", length: node.length };
+  return { kind: "string", length: node.length, national: node.national };
 }
 
 function resolveReference(
@@ -6802,6 +6833,13 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
   }
 
   if (left.kind === "string" && right.kind === "string") {
+    // Alphanumeric and national are different bytes for the same characters,
+    // and converting between them is exactly what GnuCOBOL leaves unfinished
+    // (`NATIONAL-OF` and `DISPLAY-OF` are not implemented). Rather than emit a
+    // move whose result differs between compilers, the two do not mix at all.
+    if ((left.national ?? false) !== (right.national ?? false)) {
+      return false;
+    }
     // A value whose length the compiler knows fits any field long enough to
     // hold it, because COBOL pads a shorter alphanumeric with spaces. That
     // covers a written literal and equally a `concat` or `substring` result:
