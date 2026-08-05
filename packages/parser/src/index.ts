@@ -24,6 +24,7 @@ import {
   type SourceSpan,
   type StringTypeNode,
   type EditedTypeNode,
+  type StringCallNode,
   type TemporalCallNode,
   type TemporalTypeNode,
   type TypeAliasDeclarationNode,
@@ -169,6 +170,16 @@ const ROUNDING_BUILTINS = new Set(["round", "divide"]);
 
 /** Calendar-aware builtins. They are contextual names, not reserved words. */
 const TEMPORAL_BUILTINS = new Set(["today", "addDays", "daysBetween"]);
+
+/** String builtins. Contextual names, not reserved words. */
+const STRING_BUILTINS = new Set([
+  "trim",
+  "upper",
+  "lower",
+  "substring",
+  "concat",
+  "now",
+]);
 
 const ROUNDING_MODES = new Set([
   "HALF_EVEN",
@@ -2058,6 +2069,42 @@ class Parser {
             end: close.span.end,
           },
         } satisfies NullableCheckNode;
+      }
+
+      if (
+        STRING_BUILTINS.has(this.current.text) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
+      ) {
+        const nameToken = this.advance();
+        this.expectPunctuation("(", "Expected `(` after the builtin name.");
+        const args: ExpressionNode[] = [];
+        if (!this.isPunctuation(")")) {
+          do {
+            const argument = this.parseExpression();
+            if (!argument) {
+              return null;
+            }
+            args.push(argument);
+          } while (this.matchPunctuation(","));
+        }
+        const close = this.expectPunctuation(
+          ")",
+          "Expected `)` after the builtin arguments.",
+        );
+        if (!close) {
+          return null;
+        }
+        return {
+          kind: "StringCall",
+          operation: nameToken.text as StringCallNode["operation"],
+          args,
+          span: {
+            sourceFile: nameToken.span.sourceFile,
+            start: nameToken.span.start,
+            end: close.span.end,
+          },
+        } satisfies StringCallNode;
       }
 
       if (

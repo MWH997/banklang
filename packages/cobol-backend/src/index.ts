@@ -31,6 +31,7 @@ import type {
   IRTransaction,
   IRForEachStatement,
   IRRaiseStatement,
+  IRStringCallExpression,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
 import {
@@ -460,6 +461,11 @@ export function emitCobol(
         `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
       );
     });
+  }
+  // `now()` reads the clock into a field before taking it apart, so the field
+  // only exists in a program that asks for the time.
+  if (programUsesNow(program)) {
+    addLine(`       01  ${CURRENT_DATE_FIELD.padEnd(20)} PIC X(21).`);
   }
   if (programUsesArrays(program)) {
     addLine(
@@ -2000,6 +2006,16 @@ function emitComputeInto(
   emitCallsIn(expression, addLine, indent);
   emitBoundsChecks(expression, addLine, indent);
 
+  // `concat` and `now` assemble a value with STRING, which is a statement and
+  // cannot be the right-hand side of a MOVE.
+  if (
+    expression.kind === "StringCall" &&
+    (expression.operation === "concat" || expression.operation === "now")
+  ) {
+    emitStringAssignment(target, expression, addLine, indent);
+    return;
+  }
+
   if (targetType?.kind === "edited") {
     addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
     return;
@@ -2083,6 +2099,13 @@ function resolveIdentifier(name: string): string {
 }
 
 /** `for each` index variables need storage, like any other local. */
+/** True when the program calls `now()`, so the clock field is needed. */
+function programUsesNow(program: IRProgram): boolean {
+  return JSON.stringify([program.functions, program.transactions]).includes(
+    '"operation":"now"',
+  );
+}
+
 /** True when any record declares an array, so the bounds field is needed. */
 function programUsesArrays(program: IRProgram): boolean {
   const hasArray = (fields: IRRecord["fields"]): boolean =>
@@ -2415,8 +2438,94 @@ function renderTemporalCall(expression: IRTemporalCallExpression): string {
   }
 }
 
+/**
+ * A string builtin, as the COBOL that does the same thing.
+ *
+ * `trim`, `upper`, and `lower` are intrinsic functions. `substring` is
+ * reference modification, `s(start:length)`, which is why its bounds have to be
+ * written as literals — a COBOL field has a fixed length and the compiler has to
+ * know it. `concat` and `now` build a value rather than name one, so they cannot
+ * appear inline; `emitStringAssignment` handles those.
+ */
+function renderStringCall(expression: IRStringCallExpression): string {
+  const [first, second, third] = expression.args;
+
+  switch (expression.operation) {
+    case "trim":
+      return `FUNCTION TRIM(${renderExpression(first)})`;
+    case "upper":
+      return `FUNCTION UPPER-CASE(${renderExpression(first)})`;
+    case "lower":
+      return `FUNCTION LOWER-CASE(${renderExpression(first)})`;
+    case "substring":
+      return `${renderExpression(first)}(${renderExpression(second)}:${renderExpression(third)})`;
+    case "concat":
+    case "now":
+      throw new Error(
+        `${expression.operation} builds a value and is emitted as a statement.`,
+      );
+  }
+}
+
+/**
+ * The field `now()` reads the clock into.
+ *
+ * `FUNCTION CURRENT-DATE` returns 21 characters, and a Db2 timestamp is 26 in a
+ * different arrangement, so the value has to land somewhere before it can be
+ * taken apart.
+ */
+const CURRENT_DATE_FIELD = "BANK-CURRENT-DATE";
+
+/**
+ * `concat` and `now`, which build a value rather than name one.
+ *
+ * COBOL assembles a string with `STRING ... INTO`, which is a statement, so
+ * these cannot render inline the way an intrinsic function can.
+ */
+function emitStringAssignment(
+  target: string,
+  expression: IRStringCallExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (expression.operation === "now") {
+    // CURRENT-DATE is YYYYMMDDHHMMSShh...; a Db2 timestamp is
+    // YYYY-MM-DD-HH.MM.SS.NNNNNN. Hundredths are all the clock offers, so the
+    // last four digits of the microseconds are zeros rather than invented.
+    addLine(`${indent}MOVE FUNCTION CURRENT-DATE TO ${CURRENT_DATE_FIELD}`);
+    addLine(`${indent}STRING ${CURRENT_DATE_FIELD}(1:4) DELIMITED BY SIZE`);
+    for (const [literal, slice] of [
+      ["-", "(5:2)"],
+      ["-", "(7:2)"],
+      ["-", "(9:2)"],
+      [".", "(11:2)"],
+      [".", "(13:2)"],
+      [".", "(15:2)"],
+    ] as const) {
+      addLine(`${indent}       "${literal}" DELIMITED BY SIZE`);
+      addLine(
+        `${indent}       ${CURRENT_DATE_FIELD}${slice} DELIMITED BY SIZE`,
+      );
+    }
+    addLine(`${indent}       "0000" DELIMITED BY SIZE`);
+    addLine(`${indent}       INTO ${target}`);
+    return;
+  }
+
+  addLine(`${indent}MOVE SPACES TO ${target}`);
+  addLine(
+    `${indent}STRING ${renderExpression(expression.args[0])} DELIMITED BY SIZE`,
+  );
+  for (const argument of expression.args.slice(1)) {
+    addLine(`${indent}       ${renderExpression(argument)} DELIMITED BY SIZE`);
+  }
+  addLine(`${indent}       INTO ${target}`);
+}
+
 function renderExpression(expression: IRExpression): string {
   switch (expression.kind) {
+    case "StringCall":
+      return renderStringCall(expression);
     case "TemporalCall":
       return renderTemporalCall(expression);
     case "Identifier":

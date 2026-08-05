@@ -72,9 +72,9 @@ January is the 2nd of March, which arithmetic on `20260131` would never produce.
 A date is therefore not something you can add to directly, and a fraction of a
 day is not a number of days (`BANK-TYPE-003`).
 
-**Not yet available:** constructing a `timestamp` in the program. One is read
-from a Db2 column or a file record; there is no `now()` yet, because building
-the 26-character format needs `STRING`, which the subset does not have.
+`now()` reads the clock and assembles a `timestamp`. `CURRENT-DATE` offers
+hundredths of a second, so the last four digits of the microseconds are zeros
+rather than invented.
 
 ### 3c. How a number is stored
 
@@ -400,6 +400,44 @@ safe bound, so a missing limit is `BANK-TXN-004`.
 
 The limit becomes a real guard counter in the generated COBOL, so a loop whose
 condition never goes false still terminates.
+
+## 8a. Strings
+
+Six builtins cover what a banking program does to text:
+
+```ts
+trim(name)                      // FUNCTION TRIM
+upper(name)  lower(name)        // FUNCTION UPPER-CASE / LOWER-CASE
+substring(cardNumber, 16, 4)    // reference modification: field(16:4)
+concat(prefix, " ", suffix)     // STRING ... DELIMITED BY SIZE INTO
+now()                           // a Db2 timestamp, from CURRENT-DATE
+```
+
+Every result has a length the compiler can name, because a COBOL field has a
+fixed one. `substring` therefore takes **literal** bounds — a length decided at
+run time has no `PIC X(n)` to land in — and a slice that runs past the end of
+its string is rejected outright. `concat` sums its arguments' lengths.
+
+A computed string pads into a wider field, exactly as a written literal does,
+because COBOL pads a shorter alphanumeric with spaces. It will not truncate into
+a narrower one.
+
+`concat` and `now` build a value rather than name one, so they lower to a
+`STRING` statement rather than appearing inline; the target is cleared first,
+because `STRING` leaves whatever was past the end of the new value alone.
+
+This is also what makes masking expressible, and therefore what the `sensitive`
+declassification rule in section 11 rests on:
+
+```ts
+function maskPan(pan: string<19>): string<16> {
+  return concat("************", substring(pan, 16, 4));
+}
+```
+
+**Not yet available:** `INSPECT` (counting and replacing characters),
+`UNSTRING` (splitting a field), and `SEARCH` over a table. A linear scan with
+`for each` covers the last of those today, less efficiently.
 
 ## 9a. Operators
 

@@ -885,6 +885,7 @@ function flattenTransactionStatements(
 
 function describeExpression(expression: IRExpression): string {
   switch (expression.kind) {
+    case "StringCall":
     case "TemporalCall":
       return `${expression.operation}(${expression.args.map(describeExpression).join(", ")})`;
     case "Identifier":

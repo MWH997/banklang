@@ -27,6 +27,7 @@ import {
   type RecordDeclarationNode,
   type ReturnStatementNode,
   type SourceSpan,
+  type StringCallNode,
   type StringTypeNode,
   type TypeAliasDeclarationNode,
   type TypeNode,
@@ -2400,6 +2401,118 @@ function isSensitiveExpression(
   }
 }
 
+/**
+ * `trim`, `upper`, `lower`, `substring`, `concat`, and `now`.
+ *
+ * Every result has a length the compiler can name, because a COBOL field has a
+ * fixed one. `substring` therefore takes literal bounds: a length decided at run
+ * time has no `PIC X(n)` to land in.
+ */
+function inferStringCall(
+  expression: StringCallNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  const args = expression.args.map((argument) =>
+    inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
+  );
+
+  const reject = (message: string, hint: string): null => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message,
+        span: expression.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  };
+
+  const stringLength = (type: ResolvedType | null): number | null =>
+    type?.kind === "string" ? type.length : null;
+
+  switch (expression.operation) {
+    case "now":
+      if (args.length !== 0) {
+        return reject("now() takes no arguments.", "Write `now()`.");
+      }
+      return { kind: "temporal", unit: "timestamp" };
+
+    case "trim":
+    case "upper":
+    case "lower": {
+      const length = stringLength(args[0]);
+      if (args.length !== 1 || length === null) {
+        return reject(
+          `${expression.operation} expects one string.`,
+          `Write \`${expression.operation}(name)\`.`,
+        );
+      }
+      return { kind: "string", length, literal: true };
+    }
+
+    case "substring": {
+      const length = stringLength(args[0]);
+      const [, startNode, lengthNode] = expression.args;
+      const start = literalWholeNumber(startNode);
+      const width = literalWholeNumber(lengthNode);
+      if (args.length !== 3 || length === null) {
+        return reject(
+          "substring expects a string, a start position, and a length.",
+          "Write `substring(cardNumber, 13, 4)`.",
+        );
+      }
+      if (start === null || width === null) {
+        return reject(
+          "substring bounds must be written as whole numbers.",
+          "A length decided at run time has no fixed COBOL field to land in.",
+        );
+      }
+      if (start < 1 || width < 1 || start + width - 1 > length) {
+        return reject(
+          `substring(${start}, ${width}) falls outside a string<${length}>.`,
+          "Positions start at 1, and the slice must end inside the string.",
+        );
+      }
+      return { kind: "string", length: width, literal: true };
+    }
+
+    case "concat": {
+      if (args.length < 2) {
+        return reject(
+          "concat expects at least two strings.",
+          'Write `concat(prefix, "-", suffix)`.',
+        );
+      }
+      let total = 0;
+      for (const type of args) {
+        const length = stringLength(type);
+        if (length === null) {
+          return reject(
+            "concat joins strings.",
+            "Convert a number to a string before joining it.",
+          );
+        }
+        total += length;
+      }
+      return { kind: "string", length: total, literal: true };
+    }
+  }
+}
+
+/** A literal whole number written in the source, or null for anything else. */
+function literalWholeNumber(node: ExpressionNode | undefined): number | null {
+  if (!node || node.kind !== "DecimalLiteral" || node.text.includes(".")) {
+    return null;
+  }
+  return Number(node.text);
+}
+
 /** A whole number of days, the type `daysBetween` returns and `addDays` takes. */
 const DAY_COUNT: ResolvedType = {
   kind: "decimal",
@@ -3679,6 +3792,14 @@ function inferExpressionType(
 
       return target.element;
     }
+    case "StringCall":
+      return inferStringCall(
+        expression,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
     case "TemporalCall":
       return inferTemporalCall(
         expression,
@@ -5298,7 +5419,10 @@ function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
   }
 
   if (left.kind === "string" && right.kind === "string") {
-    // A literal fits any field long enough to hold it; COBOL pads with spaces.
+    // A value whose length the compiler knows fits any field long enough to
+    // hold it, because COBOL pads a shorter alphanumeric with spaces. That
+    // covers a written literal and equally a `concat` or `substring` result:
+    // both have an exact known length and neither can truncate the target.
     if (right.literal) {
       return right.length <= left.length;
     }

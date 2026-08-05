@@ -399,6 +399,20 @@ export interface TemporalCallNode extends NodeBase {
   args: ExpressionNode[];
 }
 
+/**
+ * `trim`, `upper`, `lower`, `substring`, `concat`, and `now`.
+ *
+ * COBOL builds strings with `STRING`, takes them apart with reference
+ * modification, and folds case with intrinsic functions. Without these a
+ * program cannot assemble a narrative, parse a composite key, or mask a card
+ * number — and masking is what the `sensitive` declassification rule rests on.
+ */
+export interface StringCallNode extends NodeBase {
+  kind: "StringCall";
+  operation: "trim" | "upper" | "lower" | "substring" | "concat" | "now";
+  args: ExpressionNode[];
+}
+
 /** A call to a user-declared function. */
 export interface CallExpressionNode extends NodeBase {
   kind: "CallExpression";
@@ -426,7 +440,8 @@ export type ExpressionNode =
   | EnumMemberNode
   | IndexAccessNode
   | NullableCheckNode
-  | TemporalCallNode;
+  | TemporalCallNode
+  | StringCallNode;
 
 /**
  * A ledger posting operation inside a transaction body.
