@@ -868,6 +868,23 @@ class Parser {
       keyField = keyToken?.text ?? null;
     }
 
+    const alternateKeys: string[] = [];
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "alternate"
+    ) {
+      this.advance();
+      do {
+        const alternateToken = this.expectIdentifier(
+          "Expected an alternate key field name.",
+        );
+        if (!alternateToken) {
+          return null;
+        }
+        alternateKeys.push(alternateToken.text);
+      } while (this.matchPunctuation(","));
+    }
+
     let statusName: string | null = null;
     if (
       this.current.kind === "identifier" &&
@@ -905,6 +922,7 @@ class Parser {
       recordTypeName: recordTypeToken.text,
       statusName,
       keyField,
+      alternateKeys,
       span: {
         sourceFile: fileToken.span.sourceFile,
         start: fileToken.span.start,

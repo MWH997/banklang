@@ -1058,6 +1058,21 @@ layout, and the structured record is declared once in working storage. Emitting
 the record inside each `FD` as well would duplicate field names and make every
 unqualified reference ambiguous.
 
+### Alternate keys
+
+```ts
+file accountMaster indexed input record Account
+  key accountId alternate customerId, branchId status masterStatus;
+```
+
+A KSDS is read by its primary key and browsed by any of its alternates. A
+program that can only name the primary cannot open a file whose alternate index
+is the whole reason it exists — an account file read by customer, say.
+
+Each alternate is declared `WITH DUPLICATES`, because many accounts per customer
+is nearly always why one exists. Only an indexed file has them
+(`BANK-FILE-004`).
+
 ### When an operation fails anyway
 
 ```ts
@@ -1233,6 +1248,27 @@ so the mode that ships is the mode that is checked.
 The record stays traceable in `copy` mode: the source map carries one entry for
 the record and none for its fields, because the fields are in the copybook and
 have a layout report of their own.
+
+## 14b. Locale conventions
+
+Two `SPECIAL-NAMES` clauses are program-wide facts rather than per-field ones,
+so they are project settings:
+
+```json
+{ "decimalPoint": "comma", "currencySign": "#" }
+```
+
+`DECIMAL-POINT IS COMMA` is what much of Europe writes: 1.234,56. It swaps the
+roles of the comma and the point **inside pictures too**, so a grouped amount
+becomes `PIC Z.ZZZ.ZZ9,99` — the compiler rewrites edited pictures to match. A
+picture built the other way round is not merely printed oddly; the COBOL
+compiler rejects it, because the separator would appear more than once.
+
+`CURRENCY SIGN` must be a single ASCII character that a picture does not already
+use. `E` is exponent notation, `Z` is suppression, `V` is the implied point, and
+so on; `£` and `€` are more than one byte and cannot sit in a picture position
+at all. An invalid one is reported when the configuration is read rather than
+producing a program the COBOL compiler refuses.
 
 ## 15. Naming strategy
 

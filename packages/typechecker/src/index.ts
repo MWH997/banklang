@@ -251,6 +251,8 @@ export interface ResolvedFile {
   span: SourceSpan;
   organization: FileOrganization;
   keyField: ResolvedField | null;
+  /** Alternate record keys, which allow duplicates. */
+  alternateKeys: ResolvedField[];
   mode: "input" | "output" | "update";
   record: ResolvedRecord;
   statusName: string | null;
@@ -892,11 +894,47 @@ function resolveFile(
     );
   }
 
+  // An alternate key is a second way into the same record, so it names a field
+  // of that record like the primary does. Unlike the primary it allows
+  // duplicates, which is usually the reason it exists.
+  const alternateKeys: ResolvedField[] = [];
+  for (const name of declaration.alternateKeys) {
+    const field = record?.fields.find((entry) => entry.name === name);
+    if (!field) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-004",
+          severity: "error",
+          message: `Record ${record?.name ?? declaration.recordTypeName} has no field named ${name} to use as an alternate key.`,
+          span: declaration.span,
+          hint: "An alternate key is a field of the record the file holds.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    if (declaration.organization !== "indexed") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-004",
+          severity: "error",
+          message: `Only an indexed file has alternate keys, but ${declaration.name} is ${declaration.organization}.`,
+          span: declaration.span,
+          hint: "Declare the file as indexed.",
+          backendProfile: null,
+        }),
+      );
+      break;
+    }
+    alternateKeys.push(field);
+  }
+
   return {
     name: declaration.name,
     span: declaration.span,
     organization: declaration.organization,
     keyField,
+    alternateKeys,
     mode: declaration.mode,
     record,
     statusName: declaration.statusName,

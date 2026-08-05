@@ -696,6 +696,15 @@ export interface FileDeclarationNode extends NodeBase {
   statusName: string | null;
   /** Record key field, required for an indexed file. */
   keyField: string | null;
+  /**
+   * `alternate <field>, <field>` — alternate record keys.
+   *
+   * A KSDS is read by its primary key and browsed by any of its alternates. A
+   * program that can only name the primary cannot open a file whose alternate
+   * index is the whole reason it exists — an account file read by customer, say.
+   * Alternates allow duplicates; the primary does not.
+   */
+  alternateKeys: string[];
 }
 
 export interface TransactionDeclarationNode extends NodeBase {

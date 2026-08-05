@@ -78,6 +78,8 @@ interface CompiledProject {
   sourceFile: string;
   /** How record layouts reach the program, from the project's configuration. */
   copybookMode: "inline" | "copy";
+  decimalPoint: "point" | "comma";
+  currencySign: string;
   sourceText: string;
   parsed: ReturnType<typeof parseBankTs>;
   typechecked: ReturnType<typeof typecheckProgram>;
@@ -299,6 +301,8 @@ function runEmit(args: string[], cwd: string): CliResult {
       ),
       sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
       copybookMode: compiled.copybookMode,
+      decimalPoint: compiled.decimalPoint,
+      currencySign: compiled.currencySign,
     });
     writeCobolOutputs(emitResult);
     return {
@@ -410,6 +414,8 @@ function runBuild(args: string[], cwd: string): CliResult {
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
     copybookMode: compiled.copybookMode,
+    decimalPoint: compiled.decimalPoint,
+    currencySign: compiled.currencySign,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -473,6 +479,8 @@ function runAuditReport(args: string[], cwd: string): CliResult {
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
     copybookMode: compiled.copybookMode,
+    decimalPoint: compiled.decimalPoint,
+    currencySign: compiled.currencySign,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -533,6 +541,8 @@ function runVerify(args: string[], cwd: string): CliResult {
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
     copybookMode: compiled.copybookMode,
+    decimalPoint: compiled.decimalPoint,
+    currencySign: compiled.currencySign,
   });
   writeCobolOutputs(emitResult);
   const writtenCopybooks = writeCopybookOutputs(
@@ -930,7 +940,8 @@ function usesSort(program: IRProgram): boolean {
 
 function compileProject(projectPath: string, cwd: string): CompiledProject {
   const sourceFile = resolveSourceFile(projectPath, cwd);
-  const copybookMode = loadConfig(projectPath, cwd).config.copybookMode;
+  const projectConfig = loadConfig(projectPath, cwd).config;
+  const copybookMode = projectConfig.copybookMode;
   const sourceText = readFileSync(sourceFile, "utf8");
   const parsed = parseBankTs(sourceText, sourceFile);
   const typechecked = parsed.program
@@ -970,6 +981,8 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
   return {
     sourceFile,
     copybookMode,
+    decimalPoint: projectConfig.decimalPoint,
+    currencySign: projectConfig.currencySign,
     sourceText,
     parsed,
     typechecked,
@@ -1182,6 +1195,8 @@ function runConfig(args: string[], cwd: string): CliResult {
     `backendProfile: ${loaded.config.backendProfile}`,
     `formatCheck: ${loaded.config.formatCheck}`,
     `copybookMode: ${loaded.config.copybookMode}`,
+    `decimalPoint: ${loaded.config.decimalPoint}`,
+    `currencySign: ${loaded.config.currencySign}`,
   ];
 
   if (loaded.problems.length > 0) {

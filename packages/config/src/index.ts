@@ -27,11 +27,39 @@ export interface BankLangConfig {
    * the copybook directory on the compiler's search path.
    */
   copybookMode: CopybookMode;
+  /**
+   * `DECIMAL-POINT IS COMMA`.
+   *
+   * Much of Europe writes 1.234,56. The convention is program-wide in COBOL —
+   * one `SPECIAL-NAMES` clause swaps the roles of the comma and the point in
+   * every picture and every literal — so it belongs to the project rather than
+   * to a field.
+   */
+  decimalPoint: "point" | "comma";
+  /**
+   * `CURRENCY SIGN IS "<c>"`, for what an edited picture's currency position
+   * prints. Defaults to the dollar sign COBOL assumes.
+   */
+  currencySign: string;
 }
 
 export type CopybookMode = "inline" | "copy";
 
 const COPYBOOK_MODES: CopybookMode[] = ["inline", "copy"];
+
+/**
+ * Characters a picture clause already means something by.
+ *
+ * A currency sign is one character, and it cannot be one of these: `E` is
+ * exponent notation, `Z` is zero suppression, `V` the implied decimal point,
+ * `S` the sign, and so on. Using one produces a program the COBOL compiler
+ * rejects.
+ */
+const RESERVED_PICTURE_CHARACTERS = new Set([
+  ..."0123456789",
+  ..."ABCDENPRSVXZ",
+  ...'*+-,.;()"/= ',
+]);
 
 export interface LoadedConfig {
   config: BankLangConfig;
@@ -49,6 +77,8 @@ export const DEFAULT_CONFIG: BankLangConfig = {
   backendProfile: "ibm-enterprise-cobol-zos",
   formatCheck: false,
   copybookMode: "inline",
+  decimalPoint: "point",
+  currencySign: "$",
 };
 
 const BACKEND_PROFILES: BackendProfile[] = [
@@ -140,6 +170,39 @@ export function loadConfig(projectPath: string, cwd: string): LoadedConfig {
       problems.push(
         `"copybookMode" must be one of: ${COPYBOOK_MODES.join(", ")}.`,
       );
+    }
+  }
+
+  if (source.decimalPoint !== undefined) {
+    if (source.decimalPoint === "point" || source.decimalPoint === "comma") {
+      config.decimalPoint = source.decimalPoint;
+    } else {
+      problems.push(`"decimalPoint" must be "point" or "comma".`);
+    }
+  }
+
+  if (source.currencySign !== undefined) {
+    // COBOL's currency sign is a single character, and not one a picture
+    // already uses for something else: `E` is exponent notation, `Z` is
+    // suppression, `V` is the implied point. Emitting one of those produces a
+    // program the compiler rejects, so it is caught here instead.
+    if (
+      typeof source.currencySign !== "string" ||
+      source.currencySign.length !== 1 ||
+      source.currencySign.codePointAt(0)! > 127
+    ) {
+      // A single byte, because that is what a picture position holds. `£` and
+      // `€` are two or three bytes in UTF-8 and belong to a code page rather
+      // than to the source.
+      problems.push(`"currencySign" must be a single ASCII character.`);
+    } else if (
+      RESERVED_PICTURE_CHARACTERS.has(source.currencySign.toUpperCase())
+    ) {
+      problems.push(
+        `"currencySign" cannot be ${source.currencySign}: a picture clause already uses that character.`,
+      );
+    } else {
+      config.currencySign = source.currencySign;
     }
   }
 
