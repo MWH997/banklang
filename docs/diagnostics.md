@@ -436,9 +436,15 @@ A report's names have to resolve, or the generated COBOL means nothing:
 - a control field must be a field of the record the report prints;
 - a `controlHeading` or `controlFooting` must name a control the report breaks
   on, or none at all, which means `FINAL`;
-- `sum` accumulates across the details a group covers, so it belongs in a
-  `controlFooting` or a `pageFooting` — anywhere else nothing has been counted
-  yet;
+- `sum` totals a numeric field — a `decimal` or a currency amount. It
+  accumulates with COBOL's `ADD`, which will not take a string, and will not
+  take an already-edited field either, that being a display form rather than a
+  number;
+- `sum` belongs in a `controlFooting` or a `pageFooting`. This one is stricter
+  than COBOL: Report Writer allows a `SUM` clause in a group of any type,
+  including a heading, and prints whatever had accumulated when the heading was
+  written. banklang refuses it because a total read before the details it covers
+  is a figure no reader can check against the lines around it;
 - a report needs at least one `detail` group, since a report with nothing to
   generate prints its headings and stops;
 - `generate` names a detail group, while `initiate` and `terminate` name the

@@ -6775,7 +6775,7 @@ function resolveReport(
       );
     }
 
-    validateReportSums(group, declaration, diagnostics);
+    validateReportSums(group, declaration, file.record.fields, diagnostics);
   }
 
   if (detailNames.length === 0) {
@@ -6936,33 +6936,67 @@ function resolveInitialValue(
 }
 
 /**
- * `sum` totals across the lines a group covers, so COBOL only accepts it where
- * there is something to have accumulated: a footing.
+ * Where a `sum` may appear, and what it may total.
+ *
+ * Report Writer itself allows a SUM clause in a group of any type, including a
+ * heading, where the total is whatever had accumulated when the heading was
+ * printed. banklang is deliberately narrower: a total read before the details it
+ * covers is a number nobody can check, so `sum` is confined to the footings,
+ * where it means what a reader takes it to mean. That is a banklang rule, not a
+ * COBOL one, and the diagnostic says so.
+ *
+ * What COBOL does require is that the thing totalled be numeric. A report field
+ * is printed through an edited picture, but the item it accumulates has to be
+ * something `ADD` accepts — so a `string` cannot be totalled, and neither can
+ * an already-edited field, which is a display form rather than a number.
  */
 function validateReportSums(
   group: ReportGroupNode,
   declaration: ReportDeclarationNode,
+  recordFields: ResolvedField[],
   diagnostics: Diagnostic[],
 ): void {
-  if (group.type === "controlFooting" || group.type === "pageFooting") {
-    return;
-  }
+  const totallable =
+    group.type === "controlFooting" || group.type === "pageFooting";
 
   for (const line of group.lines) {
     for (const column of line.columns) {
-      if (column.source.kind !== "ReportSum") {
+      const source = column.source;
+      if (source.kind !== "ReportSum") {
         continue;
       }
-      diagnostics.push(
-        createDiagnostic({
-          id: "BANK-FILE-008",
-          severity: "error",
-          message: `A ${group.type} in report ${declaration.name} totals a field, but nothing has been counted yet.`,
-          span: column.span,
-          hint: "`sum` accumulates across the details a group covers, so it belongs in a controlFooting or a pageFooting.",
-          backendProfile: null,
-        }),
-      );
+
+      if (!totallable) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-FILE-008",
+            severity: "error",
+            message: `A ${group.type} in report ${declaration.name} totals a field, but nothing has been counted yet.`,
+            span: column.span,
+            hint: "banklang confines `sum` to a controlFooting or a pageFooting. Report Writer would accept it here and print whatever had accumulated so far, which is a figure that cannot be checked against the lines above it.",
+            backendProfile: null,
+          }),
+        );
+        continue;
+      }
+
+      const field = recordFields.find((entry) => entry.name === source.field);
+      if (
+        field &&
+        field.type.kind !== "decimal" &&
+        field.type.kind !== "currency"
+      ) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-FILE-008",
+            severity: "error",
+            message: `Report ${declaration.name} totals ${source.field}, which is ${describeType(field.type)}.`,
+            span: column.span,
+            hint: "`sum` accumulates with COBOL's ADD, so it totals a numeric field — a decimal or a currency amount.",
+            backendProfile: null,
+          }),
+        );
+      }
     }
   }
 }
