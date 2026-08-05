@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, parmDriver } from "./helpers";
+import { flowed, localCobol, parmDriver } from "./helpers";
 
 /**
  * Computed subscripts, and every place one can appear.
@@ -227,7 +227,7 @@ describe("executed", () => {
     // builds one the way the initiator would, which is also the only way to
     // choose the subscript from outside the program.
     const dir = mkdtempSync(join(tmpdir(), "bankc-bounds-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
     writeFileSync(
       join(dir, "driver.cbl"),
       parmDriver(result.program!, { at }),

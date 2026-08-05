@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed, parmDriver } from "./helpers";
+import { flowed, localCobol, parmDriver } from "./helpers";
 
 /**
  * `JSON PARSE` and `XML PARSE`, executed.
@@ -56,11 +56,7 @@ ${body}
 /** Compile the translated program against the stubs and run it. */
 function run(result: ReturnType<typeof compile>, runtimes: string[]) {
   const dir = mkdtempSync(join(tmpdir(), "bankc-parse-"));
-  writeFileSync(
-    join(dir, "program.cbl"),
-    precompile(result.cobol ?? "").cobol,
-    "utf8",
-  );
+  writeFileSync(join(dir, "program.cbl"), localCobol(precompile(result.cobol ?? "").cobol), "utf8");
   // The document is an entry parameter, so the program reads it from the job's
   // PARM and takes `PROCEDURE DIVISION USING`. An executable cannot have one,
   // so the driver is the entry point and supplies the parameter list.

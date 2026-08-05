@@ -7,12 +7,12 @@
 | source-artifact | examples/account-file-batch/src/main.bank.ts |
 | source-artifact-sha256 | 7241aff02790e99f62a8557c129e93e9c4b3542fc73d83d54561262d3b4311ac |
 | generated-artifact | evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl |
-| generated-artifact-sha256 | 07f32c390dcefc84c0b1787cdecddfd8ccceb943eac7d38dfecd23d08de7a875 |
+| generated-artifact-sha256 | feb1ba4ab67391ea81ebc65ad9623bd428704998f737dfdab0589094b1d7d20b |
 | source-map-artifact | evidence/account-file-batch/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 70e203a9fb0abe0f616b1506c0d551b75c30e1015bc4383ad29a751340b06a1f |
+| source-map-artifact-sha256 | 4e85232f676d7e16893217dc240dd3c6e3fa8e98791fb6c7df32be5aa170b5c3 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
-| compiler-command | cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl -o evidence/account-file-batch/gnucobol/bin/accountf |
+| compiler-command | cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF-PRE.cbl -o evidence/account-file-batch/gnucobol/bin/accountf |
 | compiler-exit-code | 0 |
 | compiler-status | passed |
 | default-dialect-status | passed |

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, localCobol } from "./helpers";
 
 /**
  * IMS DL/I: `CALL "CBLTDLI"` with a function code.
@@ -378,7 +378,7 @@ describe("executed against the reference DL/I runtime", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-dli-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
     writeFileSync(join(dir, "driver.cob"), DRIVER, "utf8");
     if (script !== null) {
       writeFileSync(join(dir, "dli-outcomes.txt"), script, "utf8");

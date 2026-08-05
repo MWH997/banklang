@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, localCobol } from "./helpers";
 
 /**
  * IBM MQ — the message queue interface.
@@ -376,11 +376,7 @@ describe("executed against the reference MQI", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-mq-"));
-    writeFileSync(
-      join(dir, "program.cbl"),
-      precompile(result.cobol ?? "").cobol,
-      "utf8",
-    );
+    writeFileSync(join(dir, "program.cbl"), localCobol(precompile(result.cobol ?? "").cobol), "utf8");
 
     const built = spawnSync(
       "cobc",

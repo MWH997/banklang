@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { precompile } from "../packages/precompiler/src/index";
+import { withoutCompilerOptions } from "../packages/precompiler/src/index";
+import { localCobol } from "./helpers";
 
 /**
  * Every construct the language has, compiled under GnuCOBOL.
@@ -147,12 +148,11 @@ describe("every construct, under GnuCOBOL", () => {
 
     it.skipIf(!available)(`compiles ${name} with cobc`, () => {
       const result = compile(source);
-      const cobol = result.cobol ?? "";
-      const text = NEEDS_PRECOMPILE.test(cobol)
-        ? precompile(cobol).cobol
-        : cobol;
+      // Always translated, not only when a statement needs it: every artifact
+      // opens with the `CBL` statement naming its compiler options, which IBM
+      // reads and GnuCOBOL cannot.
       const file = join(dir, `${name}.cbl`);
-      writeFileSync(file, text, "utf8");
+      writeFileSync(file, localCobol(result.cobol), "utf8");
 
       const built = spawnSync("cobc", ["-x", "-fixed", "-fsyntax-only", file], {
         encoding: "utf8",
@@ -178,7 +178,10 @@ describe("every construct, under GnuCOBOL", () => {
   it.skipIf(!available)("warns in exactly the places accounted for", () => {
     const warned = new Set<string>();
     for (const [name, source] of cases) {
-      const cobol = compile(source).cobol ?? "";
+      // Only the compiler-option statement is taken out. Translating the rest
+      // would answer a different question — the point here is which constructs
+      // GnuCOBOL does not implement in the artifact as it ships.
+      const cobol = withoutCompilerOptions(compile(source).cobol ?? "");
       const file = join(dir, `check-${name}.cbl`);
       writeFileSync(file, cobol, "utf8");
       const built = spawnSync("cobc", ["-x", "-fixed", "-fsyntax-only", file], {

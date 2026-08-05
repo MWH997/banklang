@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { emitCobol, renderCopybook } from "../packages/cobol-backend/src/index";
 import { compile } from "../packages/compiler/src/index";
 import { copybookMemberName } from "../packages/cobol-ir/src/index";
-import { compileSource } from "./helpers";
+import { compileSource, localCobol } from "./helpers";
 
 /**
  * What a copybook is called on the library it lives in.
@@ -131,7 +131,7 @@ entry transaction post(request: TransferRequest) {
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-copy-"));
     mkdirSync(join(dir, "cpy"), { recursive: true });
-    writeFileSync(join(dir, "program.cbl"), cobol, "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(cobol), "utf8");
     for (const record of ir.program!.records) {
       writeFileSync(
         join(dir, "cpy", `${copybookMemberName(record.name)}.cpy`),

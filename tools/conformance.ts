@@ -137,11 +137,11 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
   mkdirSync(workDir, { recursive: true });
 
   // Embedded SQL and CICS have to be translated before any compiler will read
-  // them, exactly as on z/OS.
-  const cobol =
-    result.backendRequirements.length > 0
-      ? precompile(result.cobol).cobol
-      : result.cobol;
+  // them, exactly as on z/OS — and every artifact opens with the `CBL`
+  // statement naming its compiler options, which IBM's compiler reads and
+  // GnuCOBOL cannot. So everything goes through the precompiler, which is the
+  // same path `tools/gnucobol-validation.ts` takes.
+  const cobol = precompile(result.cobol).cobol;
 
   const programPath = join(workDir, "program.cbl");
   writeFileSync(programPath, cobol, "utf8");

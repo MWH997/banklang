@@ -15,8 +15,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 4,
-      "targetEndLine": 5,
+      "targetStartLine": 6,
+      "targetEndLine": 7,
       "category": "module",
       "symbol": "AmortisationSchedule"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 21,
-      "targetEndLine": 23,
+      "targetStartLine": 23,
+      "targetEndLine": 25,
       "category": "record",
       "symbol": "Instalment"
     },
@@ -47,8 +47,8 @@
         "column": 19
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 22,
-      "targetEndLine": 22,
+      "targetStartLine": 24,
+      "targetEndLine": 24,
       "category": "field",
       "symbol": "dueBalance"
     },
@@ -63,8 +63,8 @@
         "column": 20
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 23,
-      "targetEndLine": 23,
+      "targetStartLine": 25,
+      "targetEndLine": 25,
       "category": "field",
       "symbol": "interestDue"
     },
@@ -79,8 +79,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 24,
-      "targetEndLine": 33,
+      "targetStartLine": 26,
+      "targetEndLine": 35,
       "category": "record",
       "symbol": "Loan"
     },
@@ -95,8 +95,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 25,
-      "targetEndLine": 25,
+      "targetStartLine": 27,
+      "targetEndLine": 27,
       "category": "field",
       "symbol": "accountId"
     },
@@ -111,8 +111,8 @@
         "column": 18
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 26,
-      "targetEndLine": 26,
+      "targetStartLine": 28,
+      "targetEndLine": 28,
       "category": "field",
       "symbol": "principal"
     },
@@ -127,8 +127,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 27,
-      "targetEndLine": 27,
+      "targetStartLine": 29,
+      "targetEndLine": 29,
       "category": "field",
       "symbol": "monthlyRate"
     },
@@ -143,8 +143,8 @@
         "column": 22
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 28,
-      "targetEndLine": 28,
+      "targetStartLine": 30,
+      "targetEndLine": 30,
       "category": "field",
       "symbol": "termMonths"
     },
@@ -159,8 +159,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 29,
-      "targetEndLine": 32,
+      "targetStartLine": 31,
+      "targetEndLine": 34,
       "category": "field",
       "symbol": "schedule"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 33,
-      "targetEndLine": 33,
+      "targetStartLine": 35,
+      "targetEndLine": 35,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 54,
-      "targetEndLine": 84,
+      "targetStartLine": 56,
+      "targetEndLine": 86,
       "category": "function",
       "symbol": "interestFor"
     },
@@ -207,8 +207,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 85,
-      "targetEndLine": 112,
+      "targetStartLine": 87,
+      "targetEndLine": 114,
       "category": "transaction",
       "symbol": "buildSchedule"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-      "targetStartLine": 114,
-      "targetEndLine": 181,
+      "targetStartLine": 116,
+      "targetEndLine": 183,
       "category": "function",
       "symbol": "compound"
     }

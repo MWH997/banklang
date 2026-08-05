@@ -7,9 +7,9 @@
 | source-artifact | examples/online-enquiry/src/main.bank.ts |
 | source-artifact-sha256 | 5b1f8ecf61fcd8d1b5ea8fd15ae6fa9092343285d1ead18fae8d6fd703c21382 |
 | generated-artifact | evidence/online-enquiry/gnucobol/cobol/ONLINEEN.cbl |
-| generated-artifact-sha256 | b1f262e8807e71009052c79d377e1245c7060014e4ed4894836f872a190eefa1 |
+| generated-artifact-sha256 | b4b49ba1522e9fa12643c04ec405e110b76f1448c0950eb07a6f7621a27c795d |
 | source-map-artifact | evidence/online-enquiry/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 6ef6f166ab19f6f8a0b34d2fbdc6639ce0f5df3db2c6158d43e5b890a9b8c541 |
+| source-map-artifact-sha256 | 362fa306035fad13f5acfcd8ab8e42a0be8fe812399dec2a2e64ef08ad6dfea2 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/online-enquiry/gnucobol/copybooks evidence/online-enquiry/gnucobol/cobol/ONLINEEN-PRE.cbl -o evidence/online-enquiry/gnucobol/bin/onlineen |
