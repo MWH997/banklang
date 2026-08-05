@@ -638,6 +638,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
 
   reportUnusedGenerics(program, diagnostics);
   reportUnheldDliUpdates(program, diagnostics);
+  reportUnreadFileUpdates(program, diagnostics);
   reportRecursiveNestedFunctions(program, diagnostics);
   validateFileErrorHandlers(fileErrorHandlers, aliases, recordMap, diagnostics);
 
@@ -3906,6 +3907,23 @@ function validateFileStatement(
     );
   }
 
+  // Enterprise COBOL has no DELETE for a sequential file: a record is removed
+  // by leaving it out of the file the next program writes, not by deleting it
+  // in place. GnuCOBOL compiles the statement, which is why nothing local
+  // caught this.
+  if (statement.operation === "delete" && file.organization === "sequential") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-011",
+        severity: "error",
+        message: `delete needs a keyed or relative file, and ${file.name} is sequential.`,
+        span: statement.span,
+        hint: "A sequential file has no record to address for removal. Copy the records worth keeping into a new file, or declare this one indexed or relative.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+  }
+
   // A browse walks an index. There is no order to walk on a sequential file
   // that the program is not already reading in order.
   if (
@@ -6290,6 +6308,79 @@ function reportUnheldDliUpdates(
         if (nested) {
           walk(nested, held);
         }
+      }
+    }
+  };
+
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "TransactionDeclaration" ||
+      declaration.kind === "FunctionDeclaration"
+    ) {
+      walk(declaration.body, new Set());
+    }
+  }
+}
+
+/**
+ * `rewrite` and `delete` on a file the program reads sequentially.
+ *
+ * Both replace the record the last `read` returned, so on a sequentially
+ * accessed file they need one: without it the operation is not performed and
+ * the status is 92 — no abend, no exception, and a program that does not test
+ * the status carries on believing it updated something.
+ *
+ * Only sequential and relative files, because those are the ones the backend
+ * gives `ACCESS MODE IS SEQUENTIAL`. An indexed file is `DYNAMIC`, where the
+ * record key in the record area says which record is meant and no prior read is
+ * required.
+ *
+ * The same shape as the DL/I hold rule, and for the same reason: a read in an
+ * enclosing block covers a branch inside it, but a read inside a branch does
+ * not travel back out, because the path that skipped it reaches the update with
+ * nothing read.
+ */
+function reportUnreadFileUpdates(
+  program: ProgramNode,
+  diagnostics: Diagnostic[],
+): void {
+  const sequentiallyAccessed = new Set(
+    [...declaredFiles.values()]
+      .filter((file) => file.organization !== "indexed")
+      .map((file) => file.name),
+  );
+
+  const walk = (block: BlockNode, enclosing: ReadonlySet<string>): void => {
+    const read = new Set(enclosing);
+    for (const statement of block.statements) {
+      if (statement.kind === "FileStatement") {
+        if (
+          statement.operation === "read" ||
+          statement.operation === "readNext"
+        ) {
+          read.add(statement.fileName);
+        }
+        if (
+          (statement.operation === "rewrite" ||
+            statement.operation === "delete") &&
+          sequentiallyAccessed.has(statement.fileName) &&
+          !read.has(statement.fileName)
+        ) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-FILE-010",
+              severity: "error",
+              message: `${statement.operation} on ${statement.fileName} is not preceded by a read.`,
+              span: statement.span,
+              hint: `${statement.operation} replaces the record the last read returned, and ${statement.fileName} is accessed sequentially. Without a read the operation does not happen and the status is 92. Read the record first.`,
+              backendProfile: "ibm-enterprise-cobol-zos",
+            }),
+          );
+        }
+      }
+
+      for (const nested of nestedBlocksOf(statement)) {
+        walk(nested, read);
       }
     }
   };
