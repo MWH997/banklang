@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 const PREAMBLE = `module Loops;
 
@@ -268,11 +269,15 @@ transaction load(ledger: Ledger) {
   audit("LOADED", ledger.idempotencyKey);
 }`);
 
-    expect(result.cobol).toContain(
-      "PERFORM VARYING BANK-COPY-INDEX FROM 1 BY 1 UNTIL BANK-COPY-INDEX > 25",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "PERFORM VARYING BANK-COPY-INDEX FROM 1 BY 1 UNTIL BANK-COPY-INDEX > 25",
+      ),
     );
-    expect(result.cobol).toContain(
-      "MOVE LINES-FLD OF FEED-RECORD (BANK-COPY-INDEX) TO LINES-FLD OF LEDGER (BANK-COPY-INDEX)",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "MOVE LINES-FLD OF FEED-RECORD (BANK-COPY-INDEX) TO LINES-FLD OF LEDGER (BANK-COPY-INDEX)",
+      ),
     );
   });
 

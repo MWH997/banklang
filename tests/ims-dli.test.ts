@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * IMS DL/I: `CALL "CBLTDLI"` with a function code.
@@ -137,8 +138,10 @@ describe("the program the region enters", () => {
   });
 
   it("calls DL/I and reads the status back", () => {
-    expect(result.cobol).toContain(
-      'CALL "CBLTDLI" USING DLI-GU, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT, ACCOUNT-DB-SSA',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'CALL "CBLTDLI" USING DLI-GU, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT, ACCOUNT-DB-SSA',
+      ),
     );
     expect(result.cobol).toContain("MOVE ACCOUNT-DB-PCB-STATUS TO DB-STATUS");
   });
@@ -180,20 +183,25 @@ describe("each operation is its own function code", () => {
    * because they act on what the get-hold held.
    */
   it("passes the search argument each call actually needs", () => {
+    // The trailing space is the assertion: `ACCOUNT-DB-SSA` is a prefix of
+    // `ACCOUNT-DB-SSA-U`, so without it a qualified argument would satisfy a
+    // test written to prove the call carries the unqualified one.
     expect(
-      program('  getUnique accountDb into segment key "1";').cobol,
-    ).toContain("ACCOUNT-SEGMENT, ACCOUNT-DB-SSA\n");
-    expect(program("  getNext accountDb into segment;").cobol).toContain(
-      "ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U\n",
-    );
-    expect(program("  insertSegment accountDb from segment;").cobol).toContain(
-      "ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U\n",
-    );
+      flowed(program('  getUnique accountDb into segment key "1";').cobol),
+    ).toContain("ACCOUNT-SEGMENT, ACCOUNT-DB-SSA ");
     expect(
-      program(`  getHoldNext accountDb into segment;
+      flowed(program("  getNext accountDb into segment;").cobol),
+    ).toContain("ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U ");
+    expect(
+      flowed(program("  insertSegment accountDb from segment;").cobol),
+    ).toContain("ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U ");
+    expect(
+      flowed(
+        program(`  getHoldNext accountDb into segment;
   deleteSegment accountDb;`).cobol,
+      ),
     ).toContain(
-      'CALL "CBLTDLI" USING DLI-DLET, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT\n',
+      'CALL "CBLTDLI" USING DLI-DLET, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT ',
     );
   });
 
@@ -331,32 +339,32 @@ describe("executed against the reference DL/I runtime", () => {
   const available =
     spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
 
-  const DRIVER = `IDENTIFICATION DIVISION.
-PROGRAM-ID. DRIVER.
-DATA DIVISION.
-WORKING-STORAGE SECTION.
-01  IO-PCB.
-    05  IO-LTERM       PIC X(8)  VALUE "LTERM01".
-    05  FILLER         PIC XX    VALUE SPACES.
-    05  IO-STATUS      PIC XX    VALUE SPACES.
-    05  IO-DATE        PIC S9(7) COMP-3 VALUE 0.
-    05  IO-TIME        PIC S9(6)V9 COMP-3 VALUE 0.
-    05  IO-MSG-SEQ     PIC S9(7) COMP VALUE 0.
-    05  IO-MOD-NAME    PIC X(8)  VALUE SPACES.
-    05  IO-USER-ID     PIC X(8)  VALUE SPACES.
-01  DB-PCB.
-    05  PCB-DBD-NAME   PIC X(8)  VALUE "ACCTDB".
-    05  PCB-SEG-LEVEL  PIC XX    VALUE "01".
-    05  PCB-STATUS     PIC XX    VALUE SPACES.
-    05  PCB-PROC-OPTS  PIC X(4)  VALUE "A".
-    05  FILLER         PIC S9(5) COMP VALUE 0.
-    05  PCB-SEG-NAME   PIC X(8)  VALUE SPACES.
-    05  PCB-KEY-LENGTH PIC S9(5) COMP VALUE 0.
-    05  PCB-SENSEG     PIC S9(5) COMP VALUE 1.
-    05  PCB-KEY-FB     PIC X(64) VALUE SPACES.
-PROCEDURE DIVISION.
-    CALL "ACCOUNT-IMS" USING IO-PCB DB-PCB
-    STOP RUN.
+  const DRIVER = `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DRIVER.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  IO-PCB.
+           05  IO-LTERM       PIC X(8)  VALUE "LTERM01".
+           05  FILLER         PIC XX    VALUE SPACES.
+           05  IO-STATUS      PIC XX    VALUE SPACES.
+           05  IO-DATE        PIC S9(7) COMP-3 VALUE 0.
+           05  IO-TIME        PIC S9(6)V9 COMP-3 VALUE 0.
+           05  IO-MSG-SEQ     PIC S9(7) COMP VALUE 0.
+           05  IO-MOD-NAME    PIC X(8)  VALUE SPACES.
+           05  IO-USER-ID     PIC X(8)  VALUE SPACES.
+       01  DB-PCB.
+           05  PCB-DBD-NAME   PIC X(8)  VALUE "ACCTDB".
+           05  PCB-SEG-LEVEL  PIC XX    VALUE "01".
+           05  PCB-STATUS     PIC XX    VALUE SPACES.
+           05  PCB-PROC-OPTS  PIC X(4)  VALUE "A".
+           05  FILLER         PIC S9(5) COMP VALUE 0.
+           05  PCB-SEG-NAME   PIC X(8)  VALUE SPACES.
+           05  PCB-KEY-LENGTH PIC S9(5) COMP VALUE 0.
+           05  PCB-SENSEG     PIC S9(5) COMP VALUE 1.
+           05  PCB-KEY-FB     PIC X(64) VALUE SPACES.
+       PROCEDURE DIVISION.
+           CALL "ACCOUNT-IMS" USING IO-PCB DB-PCB
+           STOP RUN.
 `;
 
   function run(script: string | null): string {
@@ -380,7 +388,7 @@ PROCEDURE DIVISION.
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "driver.cob",
         "program.cbl",
         join(process.cwd(), "runtime/CBLTDLI.cbl"),

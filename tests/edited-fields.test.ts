@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `edited<T, "style">` — numeric-edited items, which is how a mainframe program
@@ -109,8 +110,8 @@ describe("assignment is the formatting step", () => {
     const result = txn("  row.printedAmount = row.amount;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "MOVE AMOUNT OF STATEMENT-ROW TO PRINTED-AMOUNT OF STATEMENT-ROW",
+    expect(flowed(result.cobol)).toContain(
+      flowed("MOVE AMOUNT OF STATEMENT-ROW TO PRINTED-AMOUNT OF STATEMENT-ROW"),
     );
     expect(result.cobol).not.toContain("COMPUTE PRINTED-AMOUNT");
   });
@@ -119,8 +120,10 @@ describe("assignment is the formatting step", () => {
     const result = txn("  row.printedDate = row.postedOn;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "MOVE POSTED-ON OF STATEMENT-ROW TO PRINTED-DATE OF STATEMENT-ROW",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "MOVE POSTED-ON OF STATEMENT-ROW TO PRINTED-DATE OF STATEMENT-ROW",
+      ),
     );
   });
 

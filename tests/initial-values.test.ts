@@ -204,7 +204,7 @@ entry transaction run(counters: Counters) {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

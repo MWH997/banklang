@@ -1,10 +1,11 @@
        IDENTIFICATION DIVISION.
       *> Reference stand-in for the IMS DL/I language interface.
       *>
-      *> This is not IMS. It evaluates no database, holds no segments, and
-      *> honours no hierarchy: it reads a status code per call from
-      *> `dli-outcomes.txt` and puts it in the PCB, so a generated program can
-      *> be executed and its branches reached. See runtime/README.md.
+      *> This is not IMS. It evaluates no database, holds no segments,
+      *> and honours no hierarchy: it reads a status code per call from
+      *> `dli-outcomes.txt` and puts it in the PCB, so a generated
+      *> program can be executed and its branches reached. See
+      *> runtime/README.md.
        PROGRAM-ID. CBLTDLI.
 
        ENVIRONMENT DIVISION.
@@ -21,8 +22,9 @@
 
        WORKING-STORAGE SECTION.
        01  OUTCOME-STATUS        PIC XX      VALUE SPACES.
-      *> Which call this is. A script line names the call it applies to, so a
-      *> test can make the third GU miss and leave the rest alone.
+      *> Which call this is. A script line names the call it applies
+      *> to, so a test can make the third GU miss and leave the rest
+      *> alone.
        01  CALL-NUMBER           PIC S9(4) COMP VALUE 0.
        01  WANTED-CALL           PIC S9(4) COMP VALUE 0.
        01  SCRIPTED-STATUS       PIC XX      VALUE SPACES.
@@ -51,8 +53,8 @@
            MOVE "N" TO FOUND-ENTRY
            MOVE SPACES TO SCRIPTED-STATUS
 
-      *> No script at all means every call succeeds, which is what makes the
-      *> happy path runnable without a fixture.
+      *> No script at all means every call succeeds, which is what
+      *> makes the happy path runnable without a fixture.
            OPEN INPUT OUTCOME-FILE
            IF OUTCOME-STATUS = "00"
                MOVE "N" TO END-OF-FILE
@@ -79,9 +81,10 @@
                MOVE SPACES TO PCB-STATUS
            END-IF
 
-      *> The segment name the last call reached. A real PCB reports the segment
-      *> DL/I positioned on; this reports the one it was asked for, which is
-      *> enough for a program that tests its own status and no more.
+      *> The segment name the last call reached. A real PCB reports the
+      *> segment DL/I positioned on; this reports the one it was asked
+      *> for, which is enough for a program that tests its own status
+      *> and no more.
            MOVE DLI-FUNCTION TO PCB-SEG-NAME
            GOBACK.
 

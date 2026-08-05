@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * The arithmetic COBOL already knows how to do — including the two it knows
@@ -100,7 +101,7 @@ describe("each becomes its COBOL intrinsic", () => {
       const result = program(source);
 
       expect(result.diagnostics).toEqual([]);
-      expect(result.cobol).toContain(expected);
+      expect(flowed(result.cobol)).toContain(expected);
     });
   }
 });
@@ -219,7 +220,7 @@ describe("executed", () => {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",
@@ -265,7 +266,7 @@ describe("executed", () => {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

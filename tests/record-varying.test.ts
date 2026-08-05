@@ -170,7 +170,7 @@ describe("executed", () => {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "-fassign-clause=external",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),

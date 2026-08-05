@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `binary<n>` and `zoned<p, s>` alongside packed `decimal<p, s>`.
@@ -87,8 +88,10 @@ describe("zoned decimal fields", () => {
    * text — which is what a file another system or a person reads needs.
    */
   it("emits a display picture with a separate sign", () => {
-    expect(txn("").cobol).toContain(
-      "05  LEGACY-BALANCE       PIC S9(9)V99 SIGN IS TRAILING SEPARATE.",
+    expect(flowed(txn("").cobol)).toContain(
+      flowed(
+        "05  LEGACY-BALANCE       PIC S9(9)V99 SIGN IS TRAILING SEPARATE.",
+      ),
     );
   });
 
@@ -135,8 +138,10 @@ describe("usage is representation, not meaning", () => {
     const result = txn("  master.lineCount = master.lineCount + 1;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "COMPUTE LINE-COUNT OF LEGACY-MASTER = (LINE-COUNT OF LEGACY-MASTER + 1)",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "COMPUTE LINE-COUNT OF LEGACY-MASTER = (LINE-COUNT OF LEGACY-MASTER + 1)",
+      ),
     );
   });
 

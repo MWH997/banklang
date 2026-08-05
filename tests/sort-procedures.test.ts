@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `INPUT PROCEDURE` and `OUTPUT PROCEDURE` — the form a sort takes when there is
@@ -126,8 +127,10 @@ describe("release", () => {
   it("moves the record into the sort file and releases it", () => {
     const cobol = txn(BOTH).cobol ?? "";
 
-    expect(cobol).toContain(
-      "MOVE BRANCH-ID OF POSTING TO BRANCH-ID OF SORTED-POSTINGS-SORT-RECORD",
+    expect(flowed(cobol)).toContain(
+      flowed(
+        "MOVE BRANCH-ID OF POSTING TO BRANCH-ID OF SORTED-POSTINGS-SORT-RECORD",
+      ),
     );
     expect(cobol).toContain("RELEASE SORTED-POSTINGS-SORT-RECORD");
   });
@@ -189,8 +192,10 @@ describe("output procedure", () => {
 
   /** The body sees the returned record through an ordinary record variable. */
   it("maps the sorted record into the procedure's record", () => {
-    expect(txn(BOTH).cobol).toContain(
-      "MOVE BRANCH-ID OF SORTED-POSTINGS-SORT-RECORD TO BRANCH-ID OF POSTING",
+    expect(flowed(txn(BOTH).cobol)).toContain(
+      flowed(
+        "MOVE BRANCH-ID OF SORTED-POSTINGS-SORT-RECORD TO BRANCH-ID OF POSTING",
+      ),
     );
   });
 });
@@ -298,8 +303,10 @@ describe("the sort's own outcome", () => {
 
   /** A job log saying only "sort failed" starts an investigation. */
   it("says which file failed and what the sort returned", () => {
-    expect(result.cobol).toContain(
-      'DISPLAY "SORT FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'DISPLAY "SORT FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+      ),
     );
   });
 
@@ -325,8 +332,10 @@ describe("the sort's own outcome", () => {
 
     expect(cobol).toContain('IF RAW-STATUS(1:1) NOT = "0"');
     expect(cobol).toContain('IF SORTED-STATUS(1:1) NOT = "0"');
-    expect(cobol).toContain(
-      'DISPLAY "SORT FAILED rawPostings STATUS " RAW-STATUS UPON SYSOUT',
+    expect(flowed(cobol)).toContain(
+      flowed(
+        'DISPLAY "SORT FAILED rawPostings STATUS " RAW-STATUS UPON SYSOUT',
+      ),
     );
   });
 
@@ -347,8 +356,10 @@ describe("the sort's own outcome", () => {
       txn(`  merge rawPostings, otherPostings into sortedPostings on branchId;`)
         .cobol ?? "";
 
-    expect(merged).toContain(
-      'DISPLAY "MERGE FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+    expect(flowed(merged)).toContain(
+      flowed(
+        'DISPLAY "MERGE FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+      ),
     );
   });
 
@@ -388,7 +399,7 @@ describe("executed", () => {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `RENAMES`, the level-66 regrouping.
@@ -42,8 +43,10 @@ describe("declaring one", () => {
     const cobol = withRecord(WHOLE).cobol ?? "";
 
     expect(withRecord(WHOLE).diagnostics).toEqual([]);
-    expect(cobol).toContain(
-      "66  WHOLE-DATE RENAMES YEAR-PART OF LEGACY-DATE THRU DAY-PART OF LEGACY-DATE.",
+    expect(flowed(cobol)).toContain(
+      flowed(
+        "66  WHOLE-DATE RENAMES YEAR-PART OF LEGACY-DATE THRU DAY-PART OF LEGACY-DATE.",
+      ),
     );
     expect(cobol.indexOf("05  DAY-PART")).toBeLessThan(
       cobol.indexOf("66  WHOLE-DATE"),

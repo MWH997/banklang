@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `report` — COBOL's Report Writer.
@@ -127,7 +128,9 @@ describe("the report description", () => {
    */
   it("qualifies every field it reads", () => {
     expect(result.cobol).toContain("SOURCE BRANCH OF STATEMENT-LINE");
-    expect(result.cobol).toContain("SUM AMOUNT OF STATEMENT-LINE");
+    expect(flowed(result.cobol)).toContain(
+      flowed("SUM AMOUNT OF STATEMENT-LINE"),
+    );
   });
 
   /**
@@ -306,7 +309,7 @@ describe("executed", () => {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "-fassign-clause=external",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),

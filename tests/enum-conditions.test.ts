@@ -140,7 +140,7 @@ entry transaction shift(account: Account, mirror: Mirror) {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

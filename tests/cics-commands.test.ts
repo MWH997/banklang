@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * CICS beyond LINK, SYNCPOINT, and ROLLBACK.
@@ -50,8 +51,10 @@ describe("file commands", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      'EXEC CICS READ FILE("ACCTFILE") INTO(ACCOUNT-ROW) RIDFLD(ACCOUNT-ID OF REQUEST) RESP(READ-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS READ FILE("ACCTFILE") INTO(ACCOUNT-ROW) RIDFLD(ACCOUNT-ID OF REQUEST) RESP(READ-RESP) END-EXEC',
+      ),
     );
   });
 
@@ -61,8 +64,10 @@ describe("file commands", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      'EXEC CICS WRITE FILE("ACCTFILE") FROM(ACCOUNT-ROW) RIDFLD(ACCOUNT-ID OF REQUEST) RESP(WRITE-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS WRITE FILE("ACCTFILE") FROM(ACCOUNT-ROW) RIDFLD(ACCOUNT-ID OF REQUEST) RESP(WRITE-RESP) END-EXEC',
+      ),
     );
   });
 
@@ -74,8 +79,10 @@ describe("file commands", () => {
     const result = txn('  rewriteFile "ACCTFILE" from row resp writeResp;');
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      'EXEC CICS REWRITE FILE("ACCTFILE") FROM(ACCOUNT-ROW) RESP(WRITE-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS REWRITE FILE("ACCTFILE") FROM(ACCOUNT-ROW) RESP(WRITE-RESP) END-EXEC',
+      ),
     );
     expect(result.cobol).not.toContain(
       'REWRITE FILE("ACCTFILE") FROM(ACCOUNT-ROW) RIDFLD',
@@ -95,11 +102,15 @@ describe("temporary storage", () => {
   readQueue "ENQLOG" into row resp readResp;`);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      'EXEC CICS WRITEQ TS QUEUE("ENQLOG") FROM(ACCOUNT-ROW) RESP(WRITE-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS WRITEQ TS QUEUE("ENQLOG") FROM(ACCOUNT-ROW) RESP(WRITE-RESP) END-EXEC',
+      ),
     );
-    expect(result.cobol).toContain(
-      'EXEC CICS READQ TS QUEUE("ENQLOG") INTO(ACCOUNT-ROW) RESP(READ-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS READQ TS QUEUE("ENQLOG") INTO(ACCOUNT-ROW) RESP(READ-RESP) END-EXEC',
+      ),
     );
   });
 

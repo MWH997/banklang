@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * The rest of VSAM: `update` mode, `rewrite`, `delete`, and the `start` /
@@ -119,8 +120,10 @@ describe("browsing with start and readNext", () => {
     const result = txn("  start accountMaster key master.accountId;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "START ACCOUNT-MASTER-FILE KEY IS NOT LESS THAN ACCOUNT-ID OF ACCOUNT-MASTER-RECORD",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "START ACCOUNT-MASTER-FILE KEY IS NOT LESS THAN ACCOUNT-ID OF ACCOUNT-MASTER-RECORD",
+      ),
     );
   });
 

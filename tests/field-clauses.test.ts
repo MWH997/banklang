@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderCopybook } from "../packages/cobol-backend/src/index";
 import { compile } from "../packages/compiler/src/index";
 import { inspectGeneratedCopybook } from "../packages/copybook/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `JUSTIFIED RIGHT` and `BLANK WHEN ZERO`, and the copybook that has to carry
@@ -66,7 +67,7 @@ describe("blankWhenZero", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("BLANK WHEN ZERO.");
+    expect(flowed(result.cobol)).toContain(flowed("BLANK WHEN ZERO."));
   });
 
   it("applies to a plain amount too", () => {
@@ -148,8 +149,8 @@ describe("the copybook carries every clause", () => {
       throw new Error("Expected the record to compile.");
     }
 
-    expect(renderCopybook(result.program.records[0])).toContain(
-      "BLANK WHEN ZERO.",
+    expect(flowed(renderCopybook(result.program.records[0]))).toContain(
+      flowed("BLANK WHEN ZERO."),
     );
   });
 

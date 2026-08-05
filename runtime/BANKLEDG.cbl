@@ -1,21 +1,23 @@
-      *> Reference implementation of the BankLang ledger interface (ADR-0003).
+      *> Reference implementation of the BankLang ledger interface
+      *> (ADR-0003).
       *>
-      *> This is NOT a bank ledger. It is a deliberately small program that
-      *> honours the calling convention BankLang generates against, so that a
-      *> generated program can be executed end to end and its postings observed.
-      *> An institution supplies its own BANKLEDG; this one exists so the
-      *> project can show generated COBOL running rather than only compiling.
+      *> This is NOT a bank ledger. It is a deliberately small program
+      *> that honours the calling convention BankLang generates against,
+      *> so that a generated program can be executed end to end and its
+      *> postings observed. An institution supplies its own BANKLEDG;
+      *> this one exists so the project can show generated COBOL running
+      *> rather than only compiling.
       *>
       *> Behaviour:
-      *>   DEBIT  <account> <amount>   subtracts from the account balance
-      *>   CREDIT <account> <amount>   adds to the account balance
-      *>   ROLLBK                      reverses every posting since the last
-      *>                               ROLLBK, which is what the generated
-      *>                               failure path asks for
+      *>   DEBIT  <account> <amount>  subtracts from the balance
+      *>   CREDIT <account> <amount>  adds to the balance
+      *>   ROLLBK                     reverses every posting since the
+      *>                              last ROLLBK, which is what the
+      *>                              generated failure path asks for
       *>
-      *> There is no COMMIT in the BankLang calling convention, so the open unit
-      *> of work is everything posted since the last rollback. That is this
-      *> implementation's choice, not a BankLang guarantee.
+      *> There is no COMMIT in the BankLang calling convention, so the
+      *> open unit of work is everything posted since the last rollback.
+      *> That is this implementation's choice, not a BankLang guarantee.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. BANKLEDG.
 
@@ -37,8 +39,9 @@
        01  BALANCE-RECORD           PIC X(80).
 
        WORKING-STORAGE SECTION.
-      *> WORKING-STORAGE persists between calls, which is what lets this
-      *> program hold balances across the many calls one transaction makes.
+      *> WORKING-STORAGE persists between calls, which is what lets
+      *> this program hold balances across the many calls one
+      *> transaction makes.
        01  JOURNAL-STATUS           PIC XX.
        01  BALANCE-STATUS           PIC XX.
        01  WS-STARTED               PIC X VALUE "N".
@@ -98,7 +101,8 @@
            COMPUTE WS-ACCOUNT-BAL(WS-SLOT) =
                WS-ACCOUNT-BAL(WS-SLOT) + WS-SIGNED-AMOUNT
 
-      *> Remembered so a later ROLLBK can reverse exactly what was applied.
+      *> Remembered so a later ROLLBK can reverse exactly what was
+      *> applied.
            IF WS-POSTING-COUNT < 500
                ADD 1 TO WS-POSTING-COUNT
                MOVE BANK-LEDGER-ACCOUNT TO WS-POST-ID(WS-POSTING-COUNT)
@@ -115,8 +119,8 @@
                   INTO WS-LINE
            PERFORM WRITE-JOURNAL.
 
-      *> Reversal walks backwards so the balances retrace the same path they
-      *> took on the way in.
+      *> Reversal walks backwards so the balances retrace the same path
+      *> they took on the way in.
        APPLY-ROLLBACK.
            PERFORM VARYING WS-INDEX FROM WS-POSTING-COUNT BY -1
                    UNTIL WS-INDEX < 1
@@ -157,8 +161,9 @@
            WRITE JOURNAL-RECORD
            CLOSE JOURNAL-FILE.
 
-      *> Rewritten in full after every call, so the file always reflects the
-      *> current balances no matter where the program stopped.
+      *> Rewritten in full after every call, so the file always
+      *> reflects the current balances no matter where the program
+      *> stopped.
        WRITE-BALANCES.
            OPEN OUTPUT BALANCE-FILE
            PERFORM VARYING WS-INDEX FROM 1 BY 1

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * Db2 cursors: a declaration that returns rows, and a bounded loop that reads
@@ -90,8 +91,10 @@ describe("cursor declarations", () => {
     credit("SUSPENSE", row.rowBalance);`);
 
     expect(result.cobol).toContain("FETCH ACCOUNTS-IN-BRANCH");
-    expect(result.cobol).toContain(
-      "INTO :ROW-ACCOUNT-ID OF ACCOUNT-ROW, :ROW-BALANCE OF ACCOUNT-ROW",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "INTO :ROW-ACCOUNT-ID OF ACCOUNT-ROW, :ROW-BALANCE OF ACCOUNT-ROW",
+      ),
     );
   });
 
