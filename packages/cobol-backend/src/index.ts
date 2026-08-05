@@ -519,6 +519,15 @@ export function emitCobol(
         addLine(
           `       FD  ${fileCobolName(file.name)} RECORD IS VARYING IN SIZE FROM ${file.recordVarying.min} TO ${file.recordVarying.max} CHARACTERS`,
         );
+        // Unqualified, which is right only while the depending item lives
+        // outside the record being described — then there is one of it and the
+        // name resolves. A length declared as a *member* of that record is both
+        // ambiguous, because the record is emitted in working storage and again
+        // inside this FD, and wrong, because it would be part of the data whose
+        // length it is giving. Both compilers reject the result.
+        //
+        // KNOWN GAP: nothing checks that yet, so such a program compiles here
+        // and fails at cobc with "'<name>' is ambiguous; needs qualification".
         addLine(
           `               DEPENDING ON ${toCobolFieldName(file.recordVarying.lengthName)}.`,
         );
