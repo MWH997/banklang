@@ -101,7 +101,7 @@
     "sourceMapArtifactHash": "efe2b5634710faea435961a361c25fe31134fac4d4532bb86c2a4e0585eeb398",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery",
+    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,

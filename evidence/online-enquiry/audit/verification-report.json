@@ -101,7 +101,7 @@
     "sourceMapArtifactHash": "8fe89a14db121a59ebcf7238e6387ebd348285b0297508e793d1a8cefded6849",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl -o dist/gnucobol/bin/online-enquiry",
+    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl -o dist/gnucobol/bin/online-enquiry",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,

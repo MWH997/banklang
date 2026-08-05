@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor
 - compiler-exit-code: 0

@@ -101,7 +101,7 @@
     "sourceMapArtifactHash": "8620611aa73072bf320d25ec2dc1ff9409d514c5ddeb6ad6555490de7feb12cc",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor",
+    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,

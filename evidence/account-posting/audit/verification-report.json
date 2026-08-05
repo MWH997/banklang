@@ -99,7 +99,7 @@
     "sourceMapArtifactHash": "4e4491eba5b14ae8e278ff63936a36e9ab1bf970501946bd365369e305209128",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/ACCOUNT-POSTING.cbl -o dist/gnucobol/bin/account-posting",
+    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-POSTING.cbl -o dist/gnucobol/bin/account-posting",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
