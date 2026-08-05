@@ -11,6 +11,7 @@ import {
   type EditedTypeNode,
   type MemberAccessNode,
   type TemporalCallNode,
+  type ReturnCodeStatementNode,
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
   type DeclarationNode,
@@ -1126,6 +1127,7 @@ function validateTransactionBody(
       case "ForEachStatement":
       case "CursorLoopStatement":
       case "UnitOfWorkStatement":
+      case "ReturnCodeStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -1292,6 +1294,15 @@ function validateEffectStatement(
       return true;
     case "UnitOfWorkStatement":
       validateUnitOfWorkStatement(statement, diagnostics);
+      return true;
+    case "ReturnCodeStatement":
+      validateReturnCodeStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
       return true;
     case "CursorLoopStatement":
       validateCursorLoopStatement(
@@ -1786,6 +1797,57 @@ function validateForEachStatement(
  * Db2 rejects it at run time. That is exactly the ambiguity `BANK-SQL-004` was
  * reserved for.
  */
+/**
+ * `returnCode = <n>;`
+ *
+ * The value lands in COBOL's `RETURN-CODE`, a halfword, and reaches the job as
+ * the step's condition code. A value outside 0–4095 is not a condition code any
+ * `COND=` can test.
+ */
+function validateReturnCodeStatement(
+  statement: ReturnCodeStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const type = inferExpressionType(
+    statement.value,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  if (type && (!isDecimalType(type) || type.scale !== 0)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `A return code is a whole number, not ${describeType(type)}.`,
+        span: statement.span,
+        hint: "Write `returnCode = 4;`.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  const literal = literalWholeNumber(statement.value);
+  if (literal !== null && (literal < 0 || literal > 4095)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${literal} is not a condition code; RETURN-CODE holds 0 to 4095.`,
+        span: statement.span,
+        hint: "Conventionally 0 ran clean, 4 warned, 8 failed, 12 or more is fatal.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
 function validateUnitOfWorkStatement(
   statement: UnitOfWorkStatementNode,
   diagnostics: Diagnostic[],
@@ -3377,6 +3439,7 @@ function resolveTerminalStatementType(
     case "ForEachStatement":
     case "CursorLoopStatement":
     case "UnitOfWorkStatement":
+    case "ReturnCodeStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;

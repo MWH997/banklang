@@ -1360,6 +1360,11 @@ function emitStatement(
       case "UnitOfWorkStatement":
         emitExecSql([statement.operation.toUpperCase()], addLine, indent);
         break;
+      case "ReturnCodeStatement":
+        addLine(
+          `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
+        );
+        break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
         break;
@@ -1499,6 +1504,11 @@ function emitTransactionBody(
         break;
       case "UnitOfWorkStatement":
         emitExecSql([statement.operation.toUpperCase()], addLine, indent);
+        break;
+      case "ReturnCodeStatement":
+        addLine(
+          `${indent}MOVE ${renderExpression(statement.value)} TO RETURN-CODE`,
+        );
         break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);

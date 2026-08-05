@@ -183,7 +183,15 @@ export type IRStatement =
   | IRForEachStatement
   | IRCursorLoopStatement
   | IRUnitOfWorkStatement
+  | IRReturnCodeStatement
   | IRRaiseStatement;
+
+/** `MOVE <n> TO RETURN-CODE` — the step's condition code. */
+export interface IRReturnCodeStatement {
+  kind: "ReturnCodeStatement";
+  span: SourceSpan;
+  value: IRExpression;
+}
 
 /** `EXEC SQL COMMIT` or `EXEC SQL ROLLBACK` — the batch unit of work. */
 export interface IRUnitOfWorkStatement {
@@ -1442,6 +1450,12 @@ function lowerStatement(
         kind: "RaiseStatement",
         span: statement.span,
         code: statement.code,
+      };
+    case "ReturnCodeStatement":
+      return {
+        kind: "ReturnCodeStatement",
+        span: statement.span,
+        value: lowerExpression(statement.value, scopeTypes),
       };
     case "UnitOfWorkStatement":
       return {

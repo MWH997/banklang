@@ -986,6 +986,23 @@ BankTS rejects:
 - ambient runtime mutation
 - time-zone-dependent operations without explicit calendar/time-zone policy
 
+## 13a. Batch operations
+
+```ts
+returnCode = 4;
+```
+
+The step's condition code, which lands in COBOL's `RETURN-CODE` and reaches the
+job as the value the next step's `COND=` tests. Without it every step reports
+success, and a job that found no records looks exactly like one that processed a
+million. Conventionally 0 ran clean, 4 warned, 8 failed, 12 or more is fatal.
+
+It must be a whole number in 0–4095, which is what `RETURN-CODE` holds.
+
+**Not yet available:** `SORT` and `MERGE`, and checkpoint/restart. A batch that
+needs its input ordered takes it from a `SORT` step in the JCL today.
+`BANK-FILE-003` stays reserved for restart.
+
 ## 14a. Copybooks in the program
 
 `bankc` emits a `.cpy` file for every record. Whether the generated program

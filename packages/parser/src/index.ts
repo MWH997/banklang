@@ -27,6 +27,7 @@ import {
   type StringCallNode,
   type TemporalCallNode,
   type TemporalTypeNode,
+  type ReturnCodeStatementNode,
   type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
   type TypeNode,
@@ -123,6 +124,7 @@ export const KEYWORDS = new Set([
   "syncpoint",
   "rollback",
   "commit",
+  "returnCode",
   "currency",
   "nullable",
   "edited",
@@ -1145,6 +1147,28 @@ class Parser {
 
     if (this.matchKeyword("raise")) {
       return this.parseRaiseStatement();
+    }
+
+    if (this.isKeyword("returnCode")) {
+      const keyword = this.advance();
+      this.expectPunctuation("=", "Expected `=` after `returnCode`.");
+      const value = this.parseExpression();
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the return code.",
+      );
+      if (!value || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "ReturnCodeStatement",
+        value,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ReturnCodeStatementNode;
     }
 
     // `commit;` and `rollback;` are the unit of work. `rollback resp x;` is the
