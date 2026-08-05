@@ -2230,6 +2230,7 @@ function emitStatement(
 ): void {
   const indent = " ".repeat(indentLevel);
   for (const statement of block.statements) {
+    emitBoundsChecks(statement, addLine, indent);
     switch (statement.kind) {
       case "LetStatement":
         emitLetStatement(statement, addLine, indent);
@@ -2432,6 +2433,17 @@ function emitFailingTransaction(
   }
   if (transaction.failureHandler) {
     emitTransactionBody(transaction.failureHandler, addLine, 11);
+  } else {
+    // Nothing in the program says what to do about this. Leaving it here is
+    // what a raise used to do: the body stops where it failed, the wrapper
+    // returns, and the step ends with return code zero — a transaction that
+    // abandoned its work reported the same success as one that finished it.
+    // An operator gets the code that was raised and a return code that says
+    // the step did not do what it was submitted to do.
+    addLine(
+      `           DISPLAY "TRANSACTION FAILED ${transaction.name} " ${FAILURE_CODE_FIELD} UPON SYSOUT`,
+    );
+    addLine(`           MOVE 12 TO ${RETURN_CODE_FIELD}`);
   }
   addLine(`           EXIT.`);
 }
@@ -2449,6 +2461,7 @@ function emitTransactionBody(
   const indent = " ".repeat(indentLevel);
   void indentLevel;
   for (const statement of block.statements) {
+    emitBoundsChecks(statement, addLine, indent);
     switch (statement.kind) {
       case "LetStatement":
         emitLetStatement(statement, addLine, indent);
@@ -2719,6 +2732,15 @@ function emitWhileStatement(
   } else {
     emitStatement(statement.body, addLine, indentLevel + 4, resultName);
   }
+  // The condition is evaluated again before every iteration after the first,
+  // and the body may have moved the subscript it reads since the guard that
+  // ran ahead of the loop. Repeating it here covers each of those evaluations:
+  // the one before the loop covers the first, this one covers the rest.
+  emitBoundsChecks(
+    { ...statement, body: { ...statement.body, statements: [] } },
+    addLine,
+    " ".repeat(indentLevel + 4),
+  );
   addLine(`${indent}END-PERFORM`);
 }
 
@@ -4356,18 +4378,19 @@ function loopCounterName(statement: IRWhileStatement): string {
 }
 
 /**
- * Emits a range check for every computed subscript in an expression.
+ * Emits a range check for every computed subscript a statement evaluates.
  *
- * COBOL does not check subscripts, so an index past the end of a table reads
- * or writes whatever storage follows it. Clamping and recording the failure
- * turns silent corruption into an observable status.
+ * COBOL does not check subscripts. An index past the end of a table reads or
+ * writes whatever storage follows it, which inside a record is the next field:
+ * `bands[11]` of a ten-element table assigned to is the field declared after
+ * the table, silently holding a value nothing assigned to it.
  */
 function emitBoundsChecks(
-  expression: IRExpression,
+  statement: IRStatement,
   addLine: (line?: string) => void,
   indent: string,
 ): void {
-  for (const check of collectBoundsChecks(expression)) {
+  for (const check of collectStatementBoundsChecks(statement)) {
     addLine(
       `${indent}IF ${check.index} < 1 OR ${check.index} > ${check.length}`,
     );
@@ -4383,61 +4406,116 @@ function emitBoundsChecks(
       );
       addLine(`${indent}    GO TO ${currentExitLabel}`);
     } else {
-      addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
+      // No routine to raise into — a sort procedure, or a handler entered by
+      // the run time rather than called. The failure is named and the step is
+      // failed rather than left to a status field nothing reads.
+      addLine(
+        `${indent}    DISPLAY "SUBSCRIPT OUT OF RANGE " ${check.index} UPON SYSOUT`,
+      );
+      if (inSortProcedure) {
+        // Control may not leave a sort procedure while the sort is running, so
+        // the subscript is also brought inside the table: the step is already
+        // failing, and an in-range access is the one that cannot corrupt the
+        // record on the way out.
+        addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
+        addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
+      } else {
+        addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
+        addLine(`${indent}    GOBACK`);
+      }
     }
     addLine(`${indent}END-IF`);
   }
 }
 
+/**
+ * Every computed subscript a statement evaluates, in the order it evaluates
+ * them.
+ *
+ * The walk is structural rather than a case per expression kind, and that is
+ * deliberate. Guarding was previously written as a switch over the kinds an
+ * expression could be, reached only from the right-hand side of an assignment,
+ * and it leaked at every seam: the subscript on an assignment's *target* was
+ * unguarded, so `book.bands[at].cap = ...` with `at` past the end wrote over
+ * whatever followed the table — a neighbouring field of the same record, which
+ * then held a value nothing in the program had assigned to it. So were the
+ * subscripts in an `if` condition, in a `log`, and in every statement inside a
+ * sort procedure. Kinds the switch had never been extended for — the numeric,
+ * string, and temporal calls — dropped their arguments' subscripts too.
+ *
+ * Walking the statement's own data instead means a subscript is guarded because
+ * it is there, not because someone remembered to add its context to a list, and
+ * a statement kind added later is covered without being thought about.
+ *
+ * Nested blocks are skipped: their statements are emitted separately and guard
+ * themselves, and a guard hoisted out of a branch would run on the path that
+ * does not take it.
+ */
+function collectStatementBoundsChecks(
+  statement: IRStatement,
+): { index: string; length: number }[] {
+  const checks = collectBoundsChecks(statement);
+  const seen = new Set<string>();
+  return checks.filter((check) => {
+    const key = `${check.index} ${check.length}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function collectBoundsChecks(
-  expression: IRExpression,
+  root: unknown,
 ): { index: string; length: number }[] {
   const checks: { index: string; length: number }[] = [];
 
-  const walk = (node: IRExpression): void => {
-    switch (node.kind) {
-      case "IndexAccess":
-        walk(node.index);
-        if (node.needsBoundsCheck && node.length > 0) {
-          checks.push({
-            index: renderDecimalExpression(node.index),
-            length: node.length,
-          });
-        }
-        return;
-      case "MemberAccess":
-        if (node.index) {
-          walk(node.index);
-          if (node.indexNeedsBoundsCheck && node.indexLength > 0) {
-            checks.push({
-              index: renderDecimalExpression(node.index),
-              length: node.indexLength,
-            });
-          }
-        }
-        return;
-      case "BinaryComparison":
-      case "BinaryArithmetic":
-      case "Logical":
-        walk(node.left);
-        walk(node.right);
-        return;
-      case "Not":
-      case "Rounded":
-        walk(node.kind === "Not" ? node.operand : node.operand);
-        return;
-      case "Call":
-        node.args.forEach(walk);
-        return;
-      case "NullableCheck":
-        walk(node.operand);
-        return;
-      default:
-        return;
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== "object") {
+      return;
+    }
+    const entry = node as Record<string, unknown>;
+
+    // A block is emitted separately, with its own guards.
+    if (Array.isArray(entry.statements)) {
+      return;
+    }
+
+    // The subscript is evaluated before the element it selects, so an inner
+    // one is guarded before the outer one that uses it.
+    if (entry.kind === "IndexAccess") {
+      walk(entry.index);
+      if (entry.needsBoundsCheck && (entry.length as number) > 0) {
+        checks.push({
+          index: renderDecimalExpression(entry.index as IRExpression),
+          length: entry.length as number,
+        });
+      }
+      walk(entry.target);
+      return;
+    }
+    if (entry.kind === "MemberAccess" && entry.index) {
+      walk(entry.index);
+      if (entry.indexNeedsBoundsCheck && (entry.indexLength as number) > 0) {
+        checks.push({
+          index: renderDecimalExpression(entry.index as IRExpression),
+          length: entry.indexLength as number,
+        });
+      }
+      return;
+    }
+
+    for (const value of Object.values(entry)) {
+      walk(value);
     }
   };
 
-  walk(expression);
+  walk(root);
   // Only a variable subscript is worth guarding; a constant cannot drift.
   return checks.filter((check) => !/^\d+$/.test(check.index));
 }
@@ -4596,8 +4674,10 @@ function emitComputeInto(
    */
   targetType?: IRType,
 ): void {
+  // Subscripts are guarded once per statement, before anything it evaluates,
+  // rather than here — an assignment's target is subscripted too, and this is
+  // reached only for the value being assigned.
   emitCallsIn(expression, addLine, indent);
-  emitBoundsChecks(expression, addLine, indent);
 
   // `concat` and `now` assemble a value with STRING, which is a statement and
   // cannot be the right-hand side of a MOVE.
