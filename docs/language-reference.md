@@ -965,6 +965,31 @@ nothing is being entered, so there is no failure to catch.
 
 ## 9c. Assignment
 
+Assigning an enum field one of its members becomes `SET <condition> TO TRUE`,
+which is what the level-88 names generated beside the field are for:
+
+```ts
+account.status = Status.CLOSED;
+```
+
+```cobol
+SET STATUS-FLD-CLOSED OF ACCOUNT TO TRUE
+```
+
+rather than `MOVE "CLOSED" TO STATUS-FLD OF ACCOUNT`. The `MOVE` repeats the
+spelling of the member in the procedure division, where it can drift from the 88
+that defines it: rename the member and the `MOVE` still compiles, still runs, and
+writes a value no condition matches.
+
+The condition is qualified by its group, for the same reason the `MOVE` was —
+the record is emitted in working storage and again inside every `FD` that holds
+it.
+
+A local of enum type keeps its `MOVE`. A local is an `01` item the emitter only
+qualifies when two routines collide, so a condition on one has no group to be
+qualified by. So does a field assigned from another field, which moves a value
+rather than choosing a member.
+
 ```ts
 account.balance = account.balance + 1.0;
 advice.interestAmount = interest;
