@@ -352,7 +352,9 @@ export function inspectGeneratedCopybook(
     }
 
     // A redefining field is a second reading of storage that already exists, so
-    // it reports the offset of what it redefines and adds nothing.
+    // it reports the offset of what it redefines. It usually adds nothing; a
+    // redefinition longer than what it redefines extends the storage area, and
+    // the record runs to the end of the longest reading of it.
     const redefines = entry.text.match(/^REDEFINES\s+([A-Z0-9-]+)/);
     const start = redefines
       ? (startOffsets.get(redefines[1]) ?? offset)
@@ -366,9 +368,7 @@ export function inspectGeneratedCopybook(
       length,
       picture,
     });
-    if (!redefines) {
-      offset += length;
-    }
+    offset = redefines ? Math.max(offset, start + length) : offset + length;
   }
 
   for (const group of openGroups.reverse()) {
@@ -524,51 +524,22 @@ export function buildCopybookLayoutReport(
   record: IRRecord,
 ): CopybookLayoutReport {
   const entries: CopybookLayoutEntry[] = [];
-  const startOffsets = new Map<string, number>();
   let order = 0;
-  let offset = 0;
-
-  for (const field of record.fields) {
-    if (field.renames) {
-      continue;
-    }
-    // A redefining field reports the offset of what it redefines, because that
-    // is the storage it reads. Reporting where it happens to be declared would
-    // describe a field that is not there.
-    // A SYNCHRONIZED field starts on its own boundary, and the bytes skipped to
-    // reach it are slack the record still occupies. This is the one clause that
-    // moves every later field without appearing in any field's own length.
-    const aligned = field.synchronized
-      ? offset + slackBefore(offset, alignmentOf(field.type))
-      : offset;
-
-    const start = field.redefines
-      ? (startOffsets.get(field.redefines) ?? offset)
-      : aligned;
-    startOffsets.set(field.name, start);
-
-    const before = aligned;
-    offset = collectLayoutEntries(
-      field,
-      `${toCobolName(record.name)}.${toCobolName(field.name)}`,
-      start,
-      entries,
-      () => {
-        order += 1;
-        return order;
-      },
-    );
-    // The redefining field added nothing, so the record goes on from where it
-    // already was rather than from the storage this field re-read.
-    if (field.redefines) {
-      offset = before;
-    }
-  }
+  const totalLength = walkLayoutFields(
+    record.fields,
+    toCobolName(record.name),
+    0,
+    entries,
+    () => {
+      order += 1;
+      return order;
+    },
+  );
 
   return {
     recordName: record.name,
     cobolName: toCobolName(record.name),
-    totalLength: offset,
+    totalLength,
     entries,
   };
 }
@@ -680,6 +651,71 @@ function renderFieldSummary(field: CopybookInspectionField | null): string {
   return `${field.cobolName} (${field.picture}, offset ${field.offset}, length ${field.length})`;
 }
 
+/**
+ * Lay out a run of fields, reporting each and returning where the run ends.
+ *
+ * This is the third walker over the same rules, and the one the layout report
+ * is built from. It has to agree with `describeRecordLayout` and `groupLength`
+ * byte for byte: the report is what an auditor reads instead of the dataset, so
+ * a walker that disagrees with the emitter describes a record nobody has.
+ *
+ * It is used for a record's own fields and, recursively, for a group's, so a
+ * redefines nested inside a group is anchored the same way as one at the top.
+ * The recursion is why it existed as two half-implementations: the top level
+ * carried the anchor and the child loop did not, and a redefines inside a group
+ * was reported at the running offset — past the storage it aliases.
+ */
+function walkLayoutFields(
+  fields: IRRecord["fields"],
+  path: string,
+  base: number,
+  entries: CopybookLayoutEntry[],
+  nextOrder: () => number,
+): number {
+  let offset = base;
+  /** Where the field currently being redefined starts. */
+  let anchor = base;
+
+  for (const field of fields) {
+    // A renames is a second name for a run already laid out, so it is not part
+    // of the layout — the emitter writes it as a level-66 after the fields.
+    if (field.renames) {
+      continue;
+    }
+    // A SYNCHRONIZED field starts on its own boundary, and the bytes skipped to
+    // reach it are slack the record still occupies. This is the one clause that
+    // moves every later field without appearing in any field's own length.
+    if (field.synchronized) {
+      offset += slackBefore(offset, alignmentOf(field.type));
+    }
+    // A redefining field reports the offset of what it redefines, because that
+    // is the storage it reads. Reporting where it happens to be declared would
+    // describe a field that is not there.
+    const at = field.redefines ? anchor : offset;
+    const end = collectLayoutEntries(
+      field,
+      `${path}.${toCobolName(field.name)}`,
+      at,
+      entries,
+      nextOrder,
+    );
+
+    if (field.redefines) {
+      // The redefinition usually fits inside what it redefines and the record
+      // goes on from where it already was. Where it is longer, COBOL extends
+      // the storage area rather than overrunning it, so the record ends at the
+      // longest reading of it — reporting the shorter one would leave every
+      // later field described at an offset the dataset does not have.
+      offset = Math.max(offset, end);
+    } else {
+      anchor = offset;
+      offset = end;
+    }
+  }
+
+  return offset;
+}
+
 function collectLayoutEntries(
   field: IRRecord["fields"][number],
   path: string,
@@ -687,21 +723,10 @@ function collectLayoutEntries(
   entries: CopybookLayoutEntry[],
   nextOrder: () => number,
 ): number {
-  // The slack a SYNCHRONIZED item forces comes before it, so the offset it is
-  // reported at is past those bytes. Without this the report names an offset
-  // the dataset does not have, which is the one number anyone reads it for.
-  if (field.synchronized) {
-    offset += slackBefore(offset, alignmentOf(field.type));
-  }
   const length = fieldLength(field.type, offset);
-  const order = nextOrder();
-  // A redefining field is a second reading of storage that already exists, so
-  // it reports the same offset as what it redefines and adds nothing to the
-  // record's length. Advancing here would push every later field along.
-  const occupiesStorage = !field.redefines;
 
   entries.push({
-    order,
+    order: nextOrder(),
     path,
     type: formatLayoutType(field.type),
     picture: formatLayoutPicture(field.type),
@@ -712,22 +737,11 @@ function collectLayoutEntries(
     sensitive: field.sensitive,
   });
 
-  if (field.type.kind !== "record") {
-    return occupiesStorage ? offset + length : offset;
+  if (field.type.kind === "record") {
+    walkLayoutFields(field.type.fields, path, offset, entries, nextOrder);
   }
 
-  let childOffset = offset;
-  for (const child of field.type.fields) {
-    childOffset = collectLayoutEntries(
-      child,
-      `${path}.${toCobolName(child.name)}`,
-      childOffset,
-      entries,
-      nextOrder,
-    );
-  }
-
-  return occupiesStorage ? offset + length : offset;
+  return offset + length;
 }
 
 function formatLayoutType(type: IRType): string {

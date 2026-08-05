@@ -68,19 +68,88 @@ describe("redefines", () => {
     expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(42);
   });
 
-  /** No storage of its own means a longer one reads past the end. */
-  it("rejects a redefining field longer than what it redefines", () => {
+  /**
+   * COBOL lets the redefinition be longer, and then the area is as long as the
+   * longest reading of it. Refusing this rejected layouts a real estate has.
+   */
+  it("accepts a longer redefinition and extends the record by the overhang", () => {
     const result = withRecord(
       VARIANT.replace("companyName: string<40>", "companyName: string<50>"),
     );
+    const layout = result.layout?.reports.find(
+      (report) => report.recordName === "LegacyRecord",
+    );
+    const offsetOf = (path: string) =>
+      layout?.entries.find((entry) => entry.path === path)?.offset;
 
-    expect(ids(result)).toContain("BANK-COPY-004");
+    expect(result.diagnostics).toEqual([]);
+    expect(offsetOf("LEGACY-RECORD.COMPANY-NAME")).toBe(2);
+    // Ten bytes past the forty personalName occupies, so the count that used to
+    // sit at 42 sits at 52 and every field after it moves with it.
+    expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(52);
   });
 
   it("rejects redefining a field declared later", () => {
     const result = withRecord(
       VARIANT.replace("redefines personalName", "redefines idempotencyKey"),
     );
+
+    expect(ids(result)).toContain("BANK-COPY-004");
+  });
+
+  /**
+   * COBOL requires the redefinitions of an area to follow its description with
+   * nothing in between that takes storage of its own — "REDEFINES must follow
+   * the original definition", as GnuCOBOL puts it, and the Language Reference
+   * says the same. The compiler used to accept it and lay the redefinition out
+   * at the intervening field's offset, so the emitted program did not compile
+   * and the copybook described the alternate reading in the wrong place.
+   */
+  it("rejects a redefines separated from what it redefines", () => {
+    const result = withRecord(`  personalName: string<40>;
+  branch: string<3>;
+  companyName: string<40> redefines personalName;`);
+
+    expect(ids(result)).toContain("BANK-COPY-004");
+  });
+
+  /** Naming the redefinition before it is how a third reading is written. */
+  it("accepts a redefinition of the redefinition", () => {
+    const result = withRecord(`  personalName: string<40>;
+  companyName: string<40> redefines personalName;
+  tradingName: string<40> redefines companyName;`);
+    const layout = result.layout?.reports.find(
+      (report) => report.recordName === "LegacyRecord",
+    );
+    const offsetOf = (path: string) =>
+      layout?.entries.find((entry) => entry.path === path)?.offset;
+
+    expect(result.diagnostics).toEqual([]);
+    expect(offsetOf("LEGACY-RECORD.TRADING-NAME")).toBe(0);
+  });
+
+  /**
+   * A table is a repetition of an area rather than one area, so there is no
+   * single run of bytes for a redefinition to name. COBOL forbids OCCURS on a
+   * redefined item outright.
+   */
+  it("rejects redefining a table", () => {
+    const result = withRecord(`  rows: Entry[3];
+  flat: string<72> redefines rows;`);
+
+    expect(ids(result)).toContain("BANK-COPY-004");
+  });
+
+  /**
+   * Neither end of a redefinition may vary in length — the area's size has to
+   * be known to lay out what follows. The compiler used to emit
+   * `REDEFINES ... OCCURS 1 TO n DEPENDING ON`, which GnuCOBOL rejects as
+   * "cannot be variable length" and no COBOL accepts.
+   */
+  it("rejects a redefines that also depends on a count", () => {
+    const result = withRecord(`  lineCount: binary<4>;
+  area: string<72>;
+  rows: Entry[3] redefines area depending on lineCount;`);
 
     expect(ids(result)).toContain("BANK-COPY-004");
   });
@@ -161,5 +230,44 @@ entry transaction touch1(master: Master) {
     expect(at("MASTER.A")).toBe(0);
     expect(at("MASTER.B")).toBe(0);
     expect(at("MASTER.TAIL")).toBe(6);
+  });
+
+  /**
+   * The same rule one level down.
+   *
+   * The layout walker carried the anchor for a record's own fields and not for
+   * the fields of a group inside it, so a redefines nested in a group was
+   * reported forty bytes past the storage it aliases while its neighbours were
+   * right — the shape that gets read as a plausible layout rather than a bug.
+   */
+  it("is the start of what it redefines when the redefines is inside a group", () => {
+    const result = compile(`module Variant;
+
+record Names {
+  personalName: string<40>;
+  companyName: string<40> redefines personalName;
+  branch: string<3>;
+}
+
+record Master {
+  head: string<2>;
+  names: Names;
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(master: Master) {
+  audit("TOUCHED", master.idempotencyKey);
+}`);
+
+    const layout = result.layout?.reports.find(
+      (entry) => entry.recordName === "Master",
+    );
+    const at = (path: string) =>
+      layout?.entries.find((entry) => entry.path === path)?.offset;
+
+    expect(at("MASTER.NAMES.PERSONAL-NAME")).toBe(2);
+    expect(at("MASTER.NAMES.COMPANY-NAME")).toBe(2);
+    expect(at("MASTER.NAMES.BRANCH")).toBe(42);
+    expect(layout?.totalLength).toBe(81);
   });
 });

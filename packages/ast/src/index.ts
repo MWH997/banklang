@@ -291,8 +291,9 @@ export interface FieldDeclarationNode extends NodeBase {
    *
    * The variant record is how a legacy copybook says "this area means different
    * things depending on the record type", and it is everywhere in a real estate.
-   * The redefining field must be no longer than what it redefines, because
-   * COBOL gives it no storage of its own.
+   * It must name the field immediately before it, or a redefinition of that
+   * same area; it may be longer than what it redefines, which extends the
+   * storage area rather than overrunning it.
    */
   redefines: string | null;
   /**

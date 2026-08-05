@@ -133,27 +133,27 @@ entry transaction t(r: R) {
 });
 
 /**
- * `redefines`, and the one place this compiler is deliberately stricter than
- * COBOL rather than accidentally different from it.
+ * A redefinition longer than what it redefines, which is IBM's own example.
  *
- * Enterprise COBOL permits a longer redefining item except where the redefined
- * item is an external data record — the redefinition extends the storage area
- * rather than overrunning it, and the Language Reference gives `05 A PIC X(6).`
- * redefined by `05 B REDEFINES A PIC N(4).` as a legal example. The compiler
- * refuses it anyway, because a redefinition that changes the record's length
- * moves every field after it.
+ * The Language Reference gives `05 A PICTURE X(6).` redefined by
+ * `05 B REDEFINES A GLOBAL PICTURE N(4).` and says in as many words that B "can
+ * occupy more storage than the redefined item, A" — six bytes against eight.
+ * The redefinition extends the storage area; the only case it forbids is a
+ * redefined item declared as an external data record.
  *
- * The point of the test is that the refusal is a choice with a stated reason,
- * not a belief that COBOL forbids it — the diagnostic used to say the longer
- * field would "read past the end", which is not what happens.
+ * The compiler used to refuse it and say the longer field would read past the
+ * end into whatever follows, which is not what happens. The numbers below are
+ * the manual's, not this compiler's: A at 0 for 6, B at 0 for 8, and whatever
+ * comes next at 8 rather than at 6.
  */
 describe("a redefines longer than what it redefines", () => {
-  it("is refused, and the refusal is the compiler's own rule", () => {
+  it("extends the storage area, and the record grows with it", () => {
     const result = compile(`module Redef;
 
 record Master {
   a: string<6>;
   b: national<4> redefines a;
+  tail: string<4>;
   idempotencyKey: string<36>;
 }
 
@@ -161,12 +161,23 @@ entry transaction touch1(master: Master) {
   audit("TOUCHED", master.idempotencyKey);
 }`);
 
-    expect(result.diagnostics.map((entry) => entry.id)).toContain(
-      "BANK-COPY-004",
+    expect(
+      result.diagnostics.filter((entry) => entry.severity === "error"),
+    ).toEqual([]);
+
+    const layout = result.layout?.reports.find(
+      (report) => report.recordName === "Master",
     );
+    const offsetOf = (path: string) =>
+      layout?.entries.find((entry) => entry.path === path)?.offset;
+
+    expect(offsetOf("MASTER.A")).toBe(0);
+    expect(offsetOf("MASTER.B")).toBe(0);
+    expect(offsetOf("MASTER.TAIL")).toBe(8);
+    expect(layout?.totalLength).toBe(48);
   });
 
-  /** Declaring the longer reading first is the way to express the same layout. */
+  /** The same storage the other way round is the same record either way. */
   it("accepts the same storage described the other way round", () => {
     const result = compile(`module Redef;
 

@@ -392,11 +392,17 @@ record LegacyRecord {
 
 `redefines` is a second reading of storage another field already occupies —
 how a legacy layout says "this area means different things depending on the
-record type". The field it redefines must be declared before it, and it must be
-no longer, because COBOL gives a redefining field no storage of its own and a
-longer one reads past the end into whatever follows (`BANK-COPY-004`). The
-layout report shows it at the offset it shares, and the record's length is
-unchanged by it.
+record type". The layout report shows it at the offset it shares.
+
+It must name the field immediately before it, or a redefinition of that same
+area written since; COBOL requires the readings of an area to follow its
+description with nothing in between that takes storage of its own. It cannot
+redefine a table, and it cannot carry a `depending on` (`BANK-COPY-004`).
+
+It may be **longer** than what it redefines. COBOL then extends the storage
+area, so the record runs to the end of the longest reading of it and every field
+after it moves by the overhang — `a: string<6>` redefined by `national<4>` is
+the Language Reference's own example, and leaves the next field at byte 8.
 
 `depending on` names the field holding how much of a table this record uses,
 which is what makes a variable-length record variable. The fixed bound stays as
