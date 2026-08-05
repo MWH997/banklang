@@ -400,3 +400,79 @@ entry transaction publish(ledger: Ledger) {
     expect(result.diagnostics).toEqual([]);
   });
 });
+
+/**
+ * A `JSON PARSE` has two ways to go wrong and `ON EXCEPTION` catches one.
+ *
+ * Exception conditions terminate the statement and set JSON-CODE. Nonexception
+ * conditions do not terminate it, set JSON-STATUS, and — in IBM's words — "might
+ * result in the receiver being partially modified". So a document whose names do
+ * not line up with the record leaves the statement completing normally, the
+ * exception branch untaken, and the record holding some fields and not others.
+ * That is indistinguishable, to the program, from a document that parsed.
+ *
+ * Reported rather than raised: a nonexception condition is not always an error.
+ * A document carrying fields the record does not declare is one of them, and is
+ * often exactly what was expected.
+ */
+describe("what a JSON parse leaves behind", () => {
+  const PARSE = `module Feed;
+
+record Account {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+entry transaction load(account: Account, payload: string<200>) {
+  json payload into account;
+  audit("LOADED", account.idempotencyKey);
+}`;
+
+  it("reports a partially populated record", () => {
+    const cobol = compile(PARSE).cobol ?? "";
+
+    expect(cobol).toContain("IF JSON-STATUS NOT = 0");
+    expect(cobol).toContain(
+      'DISPLAY "JSON PARSE INCOMPLETE JSON-STATUS " JSON-STATUS UPON SYSOUT',
+    );
+    expect(cobol.indexOf("END-JSON")).toBeLessThan(
+      cobol.indexOf("IF JSON-STATUS NOT = 0"),
+    );
+  });
+
+  /** Generating has no receiver to leave half-filled. */
+  it("says nothing after a generate", () => {
+    const cobol =
+      compile(`module Feed;
+
+record Account {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+entry transaction save(account: Account, payload: string<200>) {
+  json payload from account;
+  audit("SAVED", account.idempotencyKey);
+}`).cobol ?? "";
+
+    expect(cobol).not.toContain("JSON-STATUS");
+  });
+
+  /** XML reports through its own register and a different mechanism. */
+  it("says nothing after an XML generate", () => {
+    const cobol =
+      compile(`module Feed;
+
+record Account {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+entry transaction save(account: Account, payload: string<200>) {
+  xml payload from account;
+  audit("SAVED", account.idempotencyKey);
+}`).cobol ?? "";
+
+    expect(cobol).not.toContain("JSON-STATUS");
+  });
+});

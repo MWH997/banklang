@@ -279,9 +279,9 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-TYPE-025",
     title: "Parsed document cannot be checked locally",
     explanation:
-      "`json <text> into <record>` and its `xml` twin become `JSON PARSE` and `XML PARSE`. Enterprise COBOL implements both. GnuCOBOL 3.2.0 compiles them, warns that they are not implemented, and then does nothing at run time: the record is left untouched and no exception is raised, so a program reading a payload runs clean and processes an empty record.",
+      "`json <text> into <record>` and its `xml` twin become `JSON PARSE` and `XML PARSE`. Enterprise COBOL implements both. GnuCOBOL 3.2.0 compiles them, warns that they are not implemented, and then does nothing at run time: the record is left untouched and no exception is raised, so a program reading a payload runs clean and processes an empty record. On Enterprise COBOL the hazard is different but has the same shape — a JSON PARSE can meet a nonexception condition, which does not terminate the statement and may leave the receiver partially modified, so the exception branch is never taken and the record holds some fields and not others. The compiler emits a JSON-STATUS test that reports it.",
     remediation:
-      "Verify the program on z/OS before relying on what it reads, and check the record rather than trusting the failure path — a parse that did nothing does not report an exception. `zos/README.md` records the divergence.",
+      "Verify the program on z/OS before relying on what it reads, and check the record rather than trusting the failure path — a parse that did nothing does not report an exception, and one that partly worked reports only in JSON-STATUS. `zos/README.md` records the divergence.",
     specReference: "language-reference.md section 13a",
     implemented: true,
   },

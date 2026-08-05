@@ -715,6 +715,16 @@ export function emitCobol(
     addLine(
       `       01  ${`${xmlHandlerName(index)}-ELEM`.padEnd(20)} PIC X(30).`,
     );
+    // Character content can be split across events at arbitrary points, so the
+    // pieces are accumulated here and assigned only once the parser says the
+    // value is complete. Moving each fragment straight to its field keeps the
+    // last one and loses the rest, which reads as a short but plausible value.
+    addLine(
+      `       01  ${`${xmlHandlerName(index)}-BUF`.padEnd(20)} PIC X(${XML_CONTENT_BUFFER}).`,
+    );
+    addLine(
+      `       01  ${`${xmlHandlerName(index)}-PTR`.padEnd(20)} PIC S9(9) COMP VALUE 1.`,
+    );
   }
 
   const copybookMode = options.copybookMode ?? "inline";
@@ -3328,6 +3338,25 @@ function emitSerializeStatement(
     }
   }
   addLine(`${indent}END-${verb}`);
+
+  // A JSON PARSE has two ways to go wrong and `ON EXCEPTION` catches one.
+  // Exception conditions terminate the statement and set JSON-CODE; nonexception
+  // conditions do not terminate it, set JSON-STATUS, and "might result in the
+  // receiver being partially modified". So a document whose names do not match
+  // the record leaves the statement completing normally, the exception branch
+  // untaken, and the record holding some fields and not others — which is the
+  // shape of a record that parsed cleanly.
+  //
+  // Reported rather than raised, because a nonexception condition is not always
+  // an error: a document carrying fields this record does not declare is one,
+  // and is often exactly what was expected of it.
+  if (statement.direction === "parse" && statement.format === "json") {
+    addLine(`${indent}IF JSON-STATUS NOT = 0`);
+    addLine(
+      `${indent}    DISPLAY "JSON PARSE INCOMPLETE JSON-STATUS " JSON-STATUS UPON SYSOUT`,
+    );
+    addLine(`${indent}END-IF`);
+  }
 }
 
 /**
@@ -3393,6 +3422,17 @@ function xmlParseStatements(program: IRProgram): {
 }
 
 /** The section name a handler is reached by, and the element register it uses. */
+/**
+ * How much split character content one XML element may accumulate.
+ *
+ * A split can happen at any point in the stream, so the pieces have to land
+ * somewhere before the value is complete. 4096 is well past any field this
+ * language can declare to receive one, so the buffer is never the thing that
+ * truncates -- the MOVE into the bound field is, which is what a MOVE does
+ * anyway and what the field itself declares.
+ */
+const XML_CONTENT_BUFFER = 4096;
+
 function xmlHandlerName(index: number): string {
   return `BANK-XML-${index + 1}`;
 }
@@ -3684,22 +3724,36 @@ function emitXmlHandlerSection(
   // be remembered to know what the characters belong to.
   addLine(`             WHEN "START-OF-ELEMENT"`);
   addLine(`               MOVE XML-TEXT TO ${name}-ELEM`);
+  // A new element starts a new value, so nothing of the last one is left to be
+  // concatenated onto.
+  addLine(`               MOVE SPACES TO ${name}-BUF`);
+  addLine(`               MOVE 1 TO ${name}-PTR`);
   addLine(`             WHEN "CONTENT-CHARACTERS"`);
-  addLine(`               EVALUATE ${name}-ELEM`);
+  // Every fragment is appended. XML-INFORMATION is 2 while the content is
+  // continued in a later event and 1 on the last piece, so the field is only
+  // assigned once the whole value is in hand. Where the register is not set at
+  // all the test is simply never 2, and each append is followed by an
+  // assignment — which still ends holding everything appended.
+  addLine(`               STRING XML-TEXT DELIMITED BY SIZE INTO ${name}-BUF`);
+  addLine(`                   WITH POINTER ${name}-PTR`);
+  addLine(`               END-STRING`);
+  addLine(`               IF XML-INFORMATION NOT = 2`);
+  addLine(`                 EVALUATE ${name}-ELEM`);
   for (const binding of statement.bindings) {
-    addLine(`                 WHEN "${binding.element}"`);
+    addLine(`                   WHEN "${binding.element}"`);
     const target = renderExpression(binding.target);
     if (binding.numeric) {
       // The content is characters. NUMVAL reads them as a number rather than
       // moving them into a picture that would read the digits positionally.
       addLine(
-        `                   COMPUTE ${target} = FUNCTION NUMVAL(XML-TEXT)`,
+        `                     COMPUTE ${target} = FUNCTION NUMVAL(${name}-BUF)`,
       );
     } else {
-      addLine(`                   MOVE XML-TEXT TO ${target}`);
+      addLine(`                     MOVE ${name}-BUF TO ${target}`);
     }
   }
-  addLine(`               END-EVALUATE`);
+  addLine(`                 END-EVALUATE`);
+  addLine(`               END-IF`);
   // Forgetting the element at its end tag keeps content that belongs to a
   // parent from being filed under the child that just closed.
   addLine(`             WHEN "END-OF-ELEMENT"`);
