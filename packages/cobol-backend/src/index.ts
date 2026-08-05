@@ -1241,6 +1241,15 @@ export function emitJcl(
 
   const needsDb2 = program.backendRequirements.includes("db2-precompiler");
   const needsCics = program.backendRequirements.includes("cics-translator");
+  // Report Writer is not part of Enterprise COBOL. The Language Reference says
+  // so in as many words: the Report Writer module "is supported with the
+  // optional IBM COBOL Report Writer Precompiler and Libraries (5798-DYR)", and
+  // RD, PAGE LIMIT, CONTROL HEADING/FOOTING, SUM and COLUMN are all on the list
+  // of features it supplies. A program with a REPORT SECTION handed straight to
+  // IGYCRCTL does not compile.
+  const needsReportWriter = program.backendRequirements.includes(
+    "report-writer-precompiler",
+  );
   // A load module name and a PDS member name are eight characters with no
   // hyphens, which the COBOL PROGRAM-ID need not be. They are the same
   // transform the job name uses, so every name in this job agrees.
@@ -1267,50 +1276,75 @@ export function emitJcl(
   // COND states when to *skip*: 4 less than the highest return code so far.
   const cond = ",COND=(4,LT)";
 
-  // The CICS translator runs first: it rewrites EXEC CICS into calls before
-  // anything else reads the source, and its output is what the precompiler and
-  // then the compiler see.
+  // The source each step reads: the artifact, or whatever the step before it
+  // wrote. Chaining them by name here keeps the order in one place.
+  let source = `//SYSIN    DD DISP=SHR,DSN=${toJclDatasetName(cobolArtifactPath)}`;
+  let earlierStep = false;
+
+  // Report Writer runs before everything else. It passes EXEC ... END-EXEC
+  // through unchanged, so the CICS translator and the Db2 precompiler still
+  // find their own blocks; the other way round each would have to read a REPORT
+  // SECTION, which neither of them knows.
+  //
+  // SPCRWCOB is the stand-alone precompiler: it reads SYSIN, needs RWWORK as
+  // work space, and writes the expanded COBOL to SYSINS.
+  if (needsReportWriter) {
+    lines.push(
+      "//* A REPORT SECTION is not Enterprise COBOL. It is expanded by the",
+      "//* Report Writer precompiler (5798-DYR) before the compiler sees it.",
+      "//RWPRE    EXEC PGM=SPCRWCOB",
+      "//STEPLIB  DD DISP=SHR,DSN=RW.SCXRPREC",
+      "//SYSPRINT DD SYSOUT=*",
+      source,
+      "//RWWORK   DD UNIT=SYSDA,SPACE=(CYL,(1,1))",
+      "//SYSINS   DD DSN=&&RWOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
+      "//            SPACE=(CYL,(1,1))",
+    );
+    source = "//SYSIN    DD DSN=&&RWOUT,DISP=(OLD,DELETE)";
+    earlierStep = true;
+  }
+
+  // The CICS translator runs next: it rewrites EXEC CICS into calls before the
+  // precompiler and then the compiler read the source.
   if (needsCics) {
     lines.push(
       "//* EXEC CICS must be translated before any compiler reads the source.",
-      "//TRANSLAT EXEC PGM=DFHECP1$",
+      `//TRANSLAT EXEC PGM=DFHECP1$${earlierStep ? cond : ""}`,
       "//STEPLIB  DD DISP=SHR,DSN=CICSTS.SDFHLOAD",
       "//SYSPRINT DD SYSOUT=*",
-      `//SYSIN    DD DISP=SHR,DSN=${toJclDatasetName(cobolArtifactPath)}`,
+      source,
       "//SYSPUNCH DD DSN=&&TRANOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
       "//            SPACE=(CYL,(1,1))",
     );
+    source = "//SYSIN    DD DSN=&&TRANOUT,DISP=(OLD,DELETE)";
+    earlierStep = true;
   }
 
   if (needsDb2) {
     lines.push(
       "//* EXEC SQL must be precompiled, and the resulting DBRM bound, before",
       "//* the program can run. Neither step is optional.",
-      `//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'${needsCics ? cond : ""}`,
+      `//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'${earlierStep ? cond : ""}`,
       "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
       `//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB(${moduleName})`,
       "//SYSPRINT DD SYSOUT=*",
-      needsCics
-        ? "//SYSIN    DD DSN=&&TRANOUT,DISP=(OLD,DELETE)"
-        : `//SYSIN    DD DISP=SHR,DSN=${toJclDatasetName(cobolArtifactPath)}`,
+      source,
       "//SYSCIN   DD DSN=&&PRECOUT,DISP=(NEW,PASS),UNIT=SYSDA,",
       "//            SPACE=(CYL,(1,1))",
     );
+    source = "//SYSIN    DD DSN=&&PRECOUT,DISP=(OLD,DELETE)";
+    earlierStep = true;
   }
 
   lines.push(
-    `//COMPILE  EXEC PGM=IGYCRCTL${needsCics || needsDb2 ? cond : ""}`,
+    `//COMPILE  EXEC PGM=IGYCRCTL${earlierStep ? cond : ""}`,
     "//SYSPRINT DD SYSOUT=*",
     // A COPY resolves against SYSLIB. Without it the copy statements find
     // nothing and the compile fails on undefined data names.
     ...(options.usesCopybooks
       ? ["//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB"]
       : []),
-    needsDb2
-      ? "//SYSIN    DD DSN=&&PRECOUT,DISP=(OLD,DELETE)"
-      : needsCics
-        ? "//SYSIN    DD DSN=&&TRANOUT,DISP=(OLD,DELETE)"
-        : `//SYSIN    DD DISP=SHR,DSN=${toJclDatasetName(cobolArtifactPath)}`,
+    source,
     "//SYSLIN   DD DSN=&&OBJ,DISP=(NEW,PASS),UNIT=SYSDA,",
     "//            SPACE=(CYL,(1,1))",
     // The link-edit step is what gives the load module its name, which is what
@@ -1318,6 +1352,10 @@ export function emitJcl(
     "//LKED     EXEC PGM=IEWL,COND=(4,LT)",
     "//SYSPRINT DD SYSOUT=*",
     "//SYSLIN   DD DSN=&&OBJ,DISP=(OLD,DELETE)",
+    // The precompiler leaves external references to the Report Writer run time
+    // library, so the link-edit has to resolve them. Without it the load module
+    // is short of every routine the expansion calls.
+    ...(needsReportWriter ? ["//SYSLIB   DD DISP=SHR,DSN=RW.SCXRRUN"] : []),
     `//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(${moduleName})`,
   );
 

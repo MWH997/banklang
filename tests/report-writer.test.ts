@@ -148,6 +148,70 @@ describe("the report description", () => {
   });
 });
 
+/**
+ * Report Writer is not part of Enterprise COBOL.
+ *
+ * The Language Reference says so plainly: the Report Writer module of the
+ * standard "is supported with the optional IBM COBOL Report Writer Precompiler
+ * and Libraries (5798-DYR)", and it lists `RD`, `PAGE LIMIT`, `CONTROL
+ * HEADING`, `PAGE FOOTING`, `SUM`, `COLUMN` and report description entries as
+ * features that precompiler supplies. A REPORT SECTION handed straight to
+ * IGYCRCTL does not compile, and the job the compiler wrote did exactly that —
+ * everything below is what the Installation and Operation manual's own sample
+ * JCL says the job needs.
+ *
+ * GnuCOBOL implements Report Writer natively, which is why the executed tests
+ * below pass and this went unnoticed: the local target needs no such step.
+ */
+describe("the job a report needs", () => {
+  const result = compile(program(REPORT), { emitJcl: true });
+
+  it("names the precompiler as a backend requirement", () => {
+    expect(result.backendRequirements).toContain("report-writer-precompiler");
+  });
+
+  it("runs the stand-alone precompiler before the compiler", () => {
+    const jcl = result.jcl ?? "";
+
+    expect(jcl).toContain("//RWPRE    EXEC PGM=SPCRWCOB");
+    // SYSIN in, RWWORK for working space, SYSINS out — and the compile step
+    // reads what it wrote rather than the original source.
+    expect(jcl).toContain("//RWWORK   DD UNIT=SYSDA");
+    expect(jcl).toContain("//SYSINS   DD DSN=&&RWOUT");
+    expect(jcl).toContain("//COMPILE  EXEC PGM=IGYCRCTL,COND=(4,LT)");
+    expect(jcl).toContain("//SYSIN    DD DSN=&&RWOUT,DISP=(OLD,DELETE)");
+    expect(jcl.indexOf("PGM=SPCRWCOB")).toBeLessThan(
+      jcl.indexOf("PGM=IGYCRCTL"),
+    );
+  });
+
+  /**
+   * The expansion calls the Report Writer run time routines, so the link-edit
+   * has to resolve them. Without the library the load module is short of every
+   * routine the precompiler generated a reference to.
+   */
+  it("links against the run time library", () => {
+    const jcl = result.jcl ?? "";
+    const linkStep = jcl.slice(jcl.indexOf("//LKED"));
+
+    expect(linkStep).toContain("//SYSLIB   DD DISP=SHR,DSN=RW.SCXRRUN");
+  });
+
+  it("leaves a program with no report alone", () => {
+    const plain = compile(
+      `module Plain;
+
+record Row { rowId: string<16>; idempotencyKey: string<36>; }
+
+entry transaction t(row: Row) { audit("A", row.idempotencyKey); }`,
+      { emitJcl: true },
+    );
+
+    expect(plain.backendRequirements).toEqual([]);
+    expect(plain.jcl ?? "").not.toContain("SPCRWCOB");
+  });
+});
+
 describe("what it will take", () => {
   const withReport = (report: string) => compile(program(report));
 

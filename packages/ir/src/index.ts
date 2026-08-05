@@ -63,7 +63,8 @@ export interface IRProgram {
   backendRequirements: BackendRequirement[];
 }
 
-export type BackendRequirement = "db2-precompiler" | "cics-translator";
+export type BackendRequirement =
+  "db2-precompiler" | "cics-translator" | "report-writer-precompiler";
 
 export interface IRSql {
   kind: "Sql";
@@ -1136,6 +1137,13 @@ export function lowerProgramToIR(
         hostVariables: entry.hostVariables,
       })),
       backendRequirements: [
+        // Report Writer runs first. It passes EXEC ... END-EXEC through
+        // unchanged, so the CICS translator and the Db2 precompiler still see
+        // their own blocks; the other way round they would have to read a
+        // REPORT SECTION, which neither of them knows.
+        ...(typechecked.reports.length > 0
+          ? (["report-writer-precompiler"] as const)
+          : []),
         ...(typechecked.sql.length > 0 ? (["db2-precompiler"] as const) : []),
         ...(typechecked.transactions.some((entry) => entry.isCics)
           ? (["cics-translator"] as const)

@@ -1955,6 +1955,26 @@ for `generate` to name. A report's file is `sequential output` and may not also
 carry a `page ...` clause, since both decide where the page ends
 (`BANK-FILE-007`).
 
+#### What a report costs on z/OS
+
+**Report Writer is not part of Enterprise COBOL.** The Language Reference says
+so: the Report Writer module of the standard "is supported with the optional IBM
+COBOL Report Writer Precompiler and Libraries (5798-DYR)", and `RD`,
+`PAGE LIMIT`, `CONTROL HEADING`, `PAGE FOOTING`, `SUM`, `COLUMN` and report
+description entries are all listed as features that precompiler supplies. A
+`REPORT SECTION` handed straight to `IGYCRCTL` does not compile.
+
+The generated job therefore runs the stand-alone precompiler first — `SPCRWCOB`,
+reading `SYSIN`, writing the expanded COBOL to `SYSINS`, with `RWWORK` as
+working space — and the compile step reads what it wrote. It runs before the
+CICS translator and the Db2 precompiler, because Report Writer passes
+`EXEC ... END-EXEC` through unchanged and neither of the others understands a
+`REPORT SECTION`. The link-edit step picks up the Report Writer run time library,
+since the expansion leaves external references to it.
+
+If your installation does not license 5798-DYR, do not use `report`: `page` on
+the file paginates with `LINAGE`, which is in the base compiler.
+
 #### Verifying one locally
 
 GnuCOBOL implements Report Writer and [the tests
