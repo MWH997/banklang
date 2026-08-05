@@ -274,6 +274,36 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-025",
+    title: "Parsed document cannot be checked locally",
+    explanation:
+      "`json <text> into <record>` and its `xml` twin become `JSON PARSE` and `XML PARSE`. Enterprise COBOL implements both. GnuCOBOL 3.2.0 compiles them, warns that they are not implemented, and then does nothing at run time: the record is left untouched and no exception is raised, so a program reading a payload runs clean and processes an empty record.",
+    remediation:
+      "Verify the program on z/OS before relying on what it reads, and check the record rather than trusting the failure path — a parse that did nothing does not report an exception. `zos/README.md` records the divergence.",
+    specReference: "language-reference.md section 13a",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-026",
+    title: "xml cannot parse into a record",
+    explanation:
+      "`JSON PARSE` fills a record from a document, and `json <text> into <record>` becomes exactly that. `XML PARSE` has no such form in Enterprise COBOL or in GnuCOBOL: it is event-driven — `XML PARSE <text> PROCESSING PROCEDURE <para>` — and the handler walks the XML-EVENT and XML-TEXT special registers, moving what it recognises. There is no COBOL for an `xml ... into ...` to become.",
+    remediation:
+      "Use `json <text> into <record>`, or take the document apart with `split` and `substring`.",
+    specReference: "language-reference.md section 13a",
+    implemented: true,
+  },
+  {
+    id: "BANK-TYPE-027",
+    title: "Nested function is recursive",
+    explanation:
+      "COBOL forbids `LOCAL-STORAGE` in a contained program, so a `nested function`'s locals sit in `WORKING-STORAGE` — one copy shared by every invocation. A recursive one would overwrite its own locals on the way down and read the innermost call's values on the way back out: it compiles, it runs, and it returns the wrong number.",
+    remediation:
+      "Drop `nested`. An ordinary recursive function is emitted as a sibling program with `LOCAL-STORAGE`, which is what makes recursion safe.",
+    specReference: "language-reference.md section 8",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:

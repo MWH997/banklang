@@ -36,6 +36,15 @@ function ids(result: { diagnostics: { id: string }[] }): string[] {
   return result.diagnostics.map((entry) => entry.id);
 }
 
+/** Parsing always warns, so the interesting question is what else it said. */
+function errors(result: {
+  diagnostics: { id: string; severity: string }[];
+}): string[] {
+  return result.diagnostics
+    .filter((entry) => entry.severity !== "warning")
+    .map((entry) => entry.id);
+}
+
 function program(body: string): ReturnType<typeof compile> {
   return compile(`${PREAMBLE}
 entry transaction publish(account: Account, message: Message) {
@@ -263,13 +272,122 @@ ${body}
   });
 });
 
-/** `from` and `count` read as field names everywhere else. */
+/**
+ * `json <text> into <record>` — `JSON PARSE`, the same statement reversed.
+ *
+ * This is the one construct in the compiler whose COBOL the local validator
+ * accepts and then does not run, so it carries a warning rather than being
+ * mistaken for something checked.
+ */
+describe("parsing", () => {
+  function ingest(body: string): ReturnType<typeof compile> {
+    return compile(`${PREAMBLE}
+entry transaction ingest(account: Account, message: Message) {
+${body}
+  audit("INGESTED", account.idempotencyKey);
+}`);
+  }
+
+  it("emits JSON PARSE", () => {
+    const result = ingest("  json message.body into account;");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain(
+      "JSON PARSE BODY OF MESSAGE-FLD INTO ACCOUNT",
+    );
+    expect(result.cobol).toContain("END-JSON");
+  });
+
+  it("takes a failure handler", () => {
+    const result = ingest(`  json message.body into account on error {
+    returnCode = 12;
+  };`);
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain("ON EXCEPTION");
+    expect(result.cobol).toContain("MOVE 12 TO RETURN-CODE");
+  });
+
+  /** A count is what was generated. Reading is told the length by the document. */
+  it("takes no count", () => {
+    expect(
+      ingest(
+        "  json message.body into account count message.length;",
+      ).diagnostics.map((entry) => entry.id),
+    ).toContain("BANK-SYN-001");
+  });
+
+  /**
+   * Restricted data is what a `sensitive` field is *for*. Text arriving from
+   * outside going into one is the marking working, not an escape.
+   */
+  it("allows a record carrying restricted data", () => {
+    const result = compile(`module Payload;
+
+record Card {
+  sensitive pan: string<16>;
+  idempotencyKey: string<36>;
+}
+
+record Message {
+  body: string<200>;
+}
+
+entry transaction ingest(card: Card, message: Message) {
+  json message.body into card;
+  audit("INGESTED", card.idempotencyKey);
+}`);
+
+    expect(errors(result)).toEqual([]);
+  });
+
+  it("warns that the local validator does not run it", () => {
+    const warning = ingest(
+      "  json message.body into account;",
+    ).diagnostics.find((entry) => entry.id === "BANK-TYPE-025");
+
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.hint).toContain("does nothing at run time");
+  });
+
+  it("says nothing about a program that only generates", () => {
+    expect(ids(program("  json message.body from account;"))).not.toContain(
+      "BANK-TYPE-025",
+    );
+  });
+});
+
+/**
+ * `XML PARSE` has no form that fills a record — in Enterprise COBOL as in
+ * GnuCOBOL it is event-driven, and the handler moves what it recognises itself.
+ * There is no COBOL for `xml payload into account` to become.
+ */
+describe("xml does not parse into a record", () => {
+  it("is reported", () => {
+    const result = compile(`${PREAMBLE}
+entry transaction ingest(account: Account, message: Message) {
+  xml message.body into account;
+  audit("INGESTED", account.idempotencyKey);
+}`);
+
+    expect(ids(result)).toContain("BANK-TYPE-026");
+  });
+
+  it("leaves xml generate alone", () => {
+    expect(ids(program("  xml message.body from account;"))).not.toContain(
+      "BANK-TYPE-026",
+    );
+  });
+});
+
+/** `from`, `into`, and `count` read as field names everywhere else. */
 describe("the clause words are not reserved", () => {
-  it("leaves `from` and `count` usable", () => {
+  it("leaves `from`, `into`, and `count` usable", () => {
     const result = compile(`module Payload;
 
 record Ledger {
   from: string<8>;
+  into: string<8>;
   count: binary<4>;
   idempotencyKey: string<36>;
 }

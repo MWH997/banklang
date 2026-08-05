@@ -159,6 +159,16 @@ function recursiveProgramName(name: string): string {
   return toCobolName(name).replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
+/**
+ * A contained program's name, which a `CALL` names as a literal.
+ *
+ * Same eight-character shape as a sibling's: a contained program is not
+ * link-edited separately, but the name still has to be one COBOL accepts.
+ */
+function nestedProgramName(name: string): string {
+  return recursiveProgramName(name);
+}
+
 function paragraphName(name: string): string {
   const base = toCobolParagraphName(name);
   return declaredDataNames.has(base) ? `${base}-PARA` : base;
@@ -181,9 +191,9 @@ function collectRecordParameterCells(
 ): RecordParameterCell[] {
   const cells: RecordParameterCell[] = [];
   for (const fn of program.functions) {
-    // A recursive function is a separate program and receives its records
-    // through its own PROCEDURE DIVISION USING clause instead.
-    if (fn.isRecursive) {
+    // A recursive or nested function is its own program and receives its
+    // records through its own PROCEDURE DIVISION USING clause instead.
+    if (fn.isRecursive || fn.isNested) {
       continue;
     }
     fn.parameters.forEach((parameter, index) => {
@@ -581,10 +591,10 @@ export function emitCobol(
   }
   emitRelativeKeys(program.files, addLine);
   emitCicsRespFields(program.transactions, addLine);
-  // A recursive function is called, not performed, so the caller still needs
-  // somewhere to put the arguments and receive the result.
+  // A recursive or nested function is called, not performed, so the caller
+  // still needs somewhere to put the arguments and receive the result.
   for (const fn of program.functions) {
-    if (!fn.isRecursive) {
+    if (!fn.isRecursive && !fn.isNested) {
       continue;
     }
     addLine(
@@ -636,6 +646,11 @@ export function emitCobol(
   }
 
   const copybookMode = options.copybookMode ?? "inline";
+  // A contained program reads the container's storage only where the container
+  // says GLOBAL, and reading the module's records without being passed them is
+  // the whole reason to write a nested function. Nothing else changes: GLOBAL
+  // adds no storage and moves no field.
+  const shareRecords = program.functions.some((fn) => fn.isNested);
   const recordLayouts: CopybookRecordLayout[] = [];
   for (const record of program.records) {
     const recordStart = lineNumber();
@@ -660,7 +675,7 @@ export function emitCobol(
       continue;
     }
 
-    addLine(`       01  ${layout.cobolName}.`);
+    addLine(`       01  ${layout.cobolName}${shareRecords ? " GLOBAL" : ""}.`);
     // Field start lines are recorded as they are emitted, because a field can
     // span several lines: an enum adds level-88 entries, a nullable adds an
     // indicator, and an array of records nests its own fields.
@@ -729,9 +744,9 @@ export function emitCobol(
   };
 
   for (const fn of program.functions) {
-    // A recursive function becomes its own program, so its result, parameters
-    // and locals live in that program's storage rather than here.
-    if (fn.isRecursive) {
+    // A recursive or nested function becomes its own program, so its result,
+    // parameters and locals live in that program's storage rather than here.
+    if (fn.isRecursive || fn.isNested) {
       continue;
     }
     addLine(
@@ -871,7 +886,7 @@ export function emitCobol(
   }
 
   for (const fn of program.functions) {
-    if (fn.isRecursive) {
+    if (fn.isRecursive || fn.isNested) {
       continue;
     }
     const functionStart = lineNumber();
@@ -948,10 +963,35 @@ export function emitCobol(
     symbol: program.moduleName,
   });
 
+  // Nested functions are contained programs, so they go inside the container —
+  // before its END PROGRAM, and before any sibling. That containment is the
+  // feature: a contained program reads the container's GLOBAL records without
+  // being passed them.
+  const nestedFunctions = program.functions.filter((fn) => fn.isNested);
+  for (const fn of nestedFunctions) {
+    const start = lineNumber();
+    emitNestedProgram(fn, addLine);
+    entries.push({
+      sourceFile: program.sourceFile,
+      sourceStart: fn.span.start,
+      sourceEnd: fn.span.end,
+      artifact: cobolArtifactPath,
+      targetStartLine: start,
+      targetEndLine: lineNumber() - 1,
+      category: "function",
+      symbol: fn.name,
+    });
+  }
+
   // Recursive functions are emitted as sibling programs. LOCAL-STORAGE gives
   // each invocation its own copy of the locals; WORKING-STORAGE would be
   // shared across the recursion and silently produce wrong answers.
   const recursiveFunctions = program.functions.filter((fn) => fn.isRecursive);
+  if (nestedFunctions.length > 0 && recursiveFunctions.length === 0) {
+    // A container that holds anything has to be closed explicitly; without a
+    // sibling to follow, nothing else would write the END PROGRAM.
+    addLine(`       END PROGRAM ${toCobolProgramId(program.moduleName)}.`);
+  }
   if (recursiveFunctions.length > 0) {
     addLine(`       END PROGRAM ${toCobolProgramId(program.moduleName)}.`);
     for (const fn of recursiveFunctions) {
@@ -1584,6 +1624,95 @@ function emitRecursiveProgram(
 
   currentBindings = previousBindings;
   recursiveContext = previousRecursive;
+
+  addLine(`           GOBACK.`);
+  addLine(`       END PROGRAM ${programName}.`);
+}
+
+/**
+ * A `nested function` as a COBOL contained program.
+ *
+ * The difference from a sibling is what it can see. A contained program reads
+ * the container's `GLOBAL` items directly, so the module's records are in scope
+ * without being passed — which is the whole reason to write one rather than
+ * take another parameter. `COMMON` lets the container's other contained
+ * programs call it too.
+ *
+ * Locals go in WORKING-STORAGE rather than LOCAL-STORAGE, because COBOL forbids
+ * LOCAL-STORAGE in a contained program. That is also why a nested function
+ * cannot recurse, and why `BANK-TYPE-027` says so rather than letting one
+ * quietly share a single copy of its locals across invocations.
+ */
+function emitNestedProgram(
+  fn: IRFunction,
+  addLine: (line?: string) => void,
+): void {
+  const programName = nestedProgramName(fn.name);
+  // A record parameter is not passed at all: the container declares the record
+  // GLOBAL, so the contained program reads it by its own name. Passing it as
+  // well would be a second name for storage it can already see. Scalars still
+  // come through LINKAGE, because a value has to be handed over.
+  const passed = fn.parameters
+    .map((parameter, index) => ({ parameter, index }))
+    .filter((entry) => entry.parameter.type.kind !== "record");
+  const linkageNames = new Map(
+    passed.map((entry, position) => [entry.index, `LK-P${position + 1}`]),
+  );
+  const resultName = "LK-RESULT";
+  const locals = collectFunctionLocals(fn.body);
+
+  addLine("");
+  addLine(`       IDENTIFICATION DIVISION.`);
+  addLine(`       PROGRAM-ID. ${programName} COMMON.`);
+  addLine("");
+  addLine(`       DATA DIVISION.`);
+  if (locals.length > 0) {
+    addLine(`       WORKING-STORAGE SECTION.`);
+    for (const local of locals) {
+      addLine(
+        `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      );
+    }
+  }
+
+  addLine(`       LINKAGE SECTION.`);
+  for (const entry of passed) {
+    addLine(
+      `       01  ${(linkageNames.get(entry.index) ?? "").padEnd(20)} ${formatCobolType(entry.parameter.type)}.`,
+    );
+  }
+  addLine(
+    `       01  ${resultName.padEnd(20)} ${formatCobolType(fn.returnType)}.`,
+  );
+
+  addLine("");
+  addLine(
+    `       PROCEDURE DIVISION USING ${[
+      ...passed.map((entry) => linkageNames.get(entry.index) ?? ""),
+      resultName,
+    ].join(" ")}.`,
+  );
+  addLine(`       ${toCobolParagraphName(fn.name)}-BODY.`);
+
+  const previousBindings = currentBindings;
+  currentBindings = new Map([
+    ...locals.map(
+      (local) => [local.name, toCobolFieldName(local.name)] as [string, string],
+    ),
+    ...fn.parameters.map(
+      (parameter, index) =>
+        [
+          parameter.name,
+          parameter.type.kind === "record"
+            ? toCobolName(parameter.type.name)
+            : (linkageNames.get(index) ?? ""),
+        ] as [string, string],
+    ),
+  ]);
+
+  emitStatement(fn.body, addLine, 11, resultName);
+
+  currentBindings = previousBindings;
 
   addLine(`           GOBACK.`);
   addLine(`       END PROGRAM ${programName}.`);
@@ -2504,13 +2633,14 @@ function reportFieldPicture(field: string): string {
 let currentReportRecord: IRRecord | null = null;
 
 /**
- * `JSON GENERATE` and `XML GENERATE`.
+ * `JSON GENERATE` / `XML GENERATE`, and the `PARSE` that reads one back.
  *
- * COBOL builds the document from the group's own field names, so nothing here
- * describes the shape — the record is the schema. The target is a fixed field
- * and the compiler space-fills whatever the document does not reach, which is
- * why `count` matters: it is the only way the caller can tell the text from the
- * padding when it comes to write it out.
+ * COBOL matches the document against the group's own field names, so nothing
+ * here describes the shape — the record is the schema, in both directions.
+ *
+ * Generating writes into a fixed field and space-fills the rest, which is why
+ * `count` matters: it is the only way the caller can tell the text from the
+ * padding. Parsing needs no count, because the document says where it ends.
  */
 function emitSerializeStatement(
   statement: IRSerializeStatement,
@@ -2521,13 +2651,18 @@ function emitSerializeStatement(
 ): void {
   const indent = " ".repeat(indentLevel);
   const verb = statement.format.toUpperCase();
-  const count = statement.count
-    ? ` COUNT IN ${renderExpression(statement.count)}`
-    : "";
+  const text = renderExpression(statement.target);
+  const record = renderExpression(statement.source);
+  const clause =
+    statement.direction === "generate"
+      ? `GENERATE ${text} FROM ${record}${
+          statement.count
+            ? ` COUNT IN ${renderExpression(statement.count)}`
+            : ""
+        }`
+      : `PARSE ${text} INTO ${record}`;
 
-  addLine(
-    `${indent}${verb} GENERATE ${renderExpression(statement.target)} FROM ${renderExpression(statement.source)}${count}`,
-  );
+  addLine(`${indent}${verb} ${clause}`);
   if (statement.onError) {
     addLine(`${indent}    ON EXCEPTION`);
     if (inTransaction) {
@@ -2937,7 +3072,7 @@ function emitCallsIn(
           // fields sit at exactly the offsets the cell describes.
           if (argument.resolvedType.kind === "record") {
             const callee = currentFunctions.get(expression.callee);
-            if (!callee?.isRecursive) {
+            if (!callee?.isRecursive && !callee?.isNested) {
               addLine(
                 `${indent}SET ADDRESS OF ${parameterFieldName(expression.callee, index)} TO ADDRESS OF ${renderExpression(argument)}`,
               );
@@ -2965,13 +3100,22 @@ function emitCallsIn(
         addLine(
           `${indent}CALL "${recursiveContext.programName}" USING ${[...recursiveContext.args, recursiveContext.subResult].join(", ")}`,
         );
-      } else if (callee?.isRecursive) {
+      } else if (callee?.isRecursive || callee?.isNested) {
         // COBOL paragraphs are not reentrant, so a recursive function is a
-        // separate RECURSIVE program reached with CALL.
+        // separate RECURSIVE program reached with CALL. A nested function is
+        // reached the same way, being a contained program rather than a
+        // paragraph.
         const operands = [
-          ...expression.args.map((_argument, index) =>
-            parameterFieldName(expression.callee, index),
-          ),
+          ...expression.args
+            // A nested function reads a record through the container's GLOBAL
+            // declaration, so only the scalars are handed over.
+            .map((argument, index) => ({ argument, index }))
+            .filter(
+              (entry) =>
+                !callee.isNested ||
+                entry.argument.resolvedType.kind !== "record",
+            )
+            .map((entry) => parameterFieldName(expression.callee, entry.index)),
           functionResultName(expression.callee),
         ];
         addLine(
@@ -4032,7 +4176,7 @@ function localOwners(
 ): { name: string; locals: IRLetStatement[] }[] {
   return [
     ...program.functions
-      .filter((fn) => !fn.isRecursive)
+      .filter((fn) => !fn.isRecursive && !fn.isNested)
       .map((fn) => ({
         name: fn.name,
         locals: collectFunctionLocals(fn.body),
