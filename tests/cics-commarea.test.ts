@@ -1,0 +1,193 @@
+import { describe, expect, it } from "vitest";
+
+import { compile } from "../packages/compiler/src/index";
+import { precompile } from "../packages/precompiler/src/index";
+
+/**
+ * The commarea a CICS transaction is passed, and the check that it is there.
+ *
+ * Three defects lived here together, and every test passed while they did.
+ *
+ * The transaction's first record parameter is working storage, and **nothing
+ * moved the commarea into it** — the program read uninitialised bytes for its
+ * input. Nothing moved it back either, so a caller expecting updated data got
+ * whatever it sent. And there was no `EIBCALEN` test, so a call with no
+ * commarea would have addressed storage belonging to something else, which is a
+ * violation rather than an empty record.
+ *
+ * None of it failed locally because the reference CICS runtime passes no
+ * commarea and the conformance assertions were about which branch ran.
+ */
+
+const SOURCE = `module Enquiry;
+
+record Request {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+cics transaction enquire(request: Request) {
+  audit("ENQUIRED", request.idempotencyKey);
+}`;
+
+describe("a CICS transaction", () => {
+  const result = compile(SOURCE);
+
+  it("compiles", () => {
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  /**
+   * IBM's guidance is to test `EIBCALEN` first, always. A commarea that was not
+   * passed is not an empty record: `DFHCOMMAREA` addresses whatever is there.
+   */
+  it("tests EIBCALEN before touching the commarea", () => {
+    const text = result.cobol ?? "";
+
+    expect(text).toContain("IF EIBCALEN = 0");
+    expect(text.indexOf("IF EIBCALEN = 0")).toBeLessThan(
+      text.indexOf("MOVE DFHCOMMAREA TO"),
+    );
+  });
+
+  /**
+   * No commarea where one is required is a broken contract, not an empty
+   * request. Returning quietly would make it look like the transaction ran.
+   */
+  it("abends rather than continuing without one", () => {
+    expect(result.cobol).toContain('EXEC CICS ABEND ABCODE("BKNC")');
+  });
+
+  it("reads the commarea into the record it was declared as", () => {
+    expect(result.cobol).toContain("MOVE DFHCOMMAREA TO REQUEST");
+  });
+
+  /**
+   * DFHCOMMAREA is the caller's own storage, so whatever the transaction
+   * changed is what the caller expects to see when it gets control back.
+   */
+  it("writes the record back before returning", () => {
+    const text = result.cobol ?? "";
+
+    expect(text).toContain("MOVE REQUEST TO DFHCOMMAREA");
+    expect(text.indexOf("MOVE REQUEST TO DFHCOMMAREA")).toBeLessThan(
+      text.indexOf("EXEC CICS RETURN"),
+    );
+  });
+
+  it("leaves a non-CICS transaction alone", () => {
+    const batch = compile(`module Batch;
+
+record Request {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+entry transaction run(request: Request) {
+  audit("RAN", request.idempotencyKey);
+}`);
+
+    expect(batch.cobol).not.toContain("EIBCALEN");
+    expect(batch.cobol).not.toContain("DFHCOMMAREA");
+  });
+});
+
+/**
+ * The translator supplies the EIB, and the reference CICS runtime writes into
+ * it through a LINKAGE description of the same storage. The two have to agree
+ * field for field: `EIBRESP` at the wrong offset means the runtime writes into
+ * some other field and the program reads a response it was never given.
+ *
+ * That is not hypothetical. Growing the EIB to add `EIBCALEN` without growing
+ * the runtime's copy made every CICS response read as zero, so a command that
+ * failed looked like one that worked.
+ */
+describe("the EXEC interface block", () => {
+  const { cobol } = precompile(compile(SOURCE).cobol ?? "");
+
+  it("carries the fields a program reads", () => {
+    expect(cobol).toContain("05  EIBCALEN");
+    expect(cobol).toContain("05  EIBRESP ");
+    expect(cobol).toContain("05  EIBRESP2");
+    expect(cobol).toContain("05  EIBTRNID");
+  });
+
+  /**
+   * Nothing local passes a commarea, so a zero here would abend every generated
+   * CICS program on its own guard and no branch beyond it would run. The guard
+   * is asserted against the generated source instead; on z/OS, CICS sets this.
+   */
+  it("presets EIBCALEN, because the block is simulated", () => {
+    expect(cobol).toContain("EIBCALEN      PIC S9(4) COMP VALUE 9999.");
+  });
+
+  /** CICS establishes addressability before the program runs. Nothing here does. */
+  it("points the commarea at storage the translator owns", () => {
+    expect(cobol).toContain("01  DFHCOMMAREA-SIM");
+    expect(cobol).toContain(
+      "SET ADDRESS OF DFHCOMMAREA TO ADDRESS OF DFHCOMMAREA-SIM",
+    );
+  });
+
+  /** A statement before the first paragraph label is not COBOL. */
+  it("establishes it inside the first paragraph", () => {
+    const division = cobol.indexOf("PROCEDURE DIVISION");
+    const set = cobol.indexOf("SET ADDRESS OF DFHCOMMAREA");
+    const label = cobol.indexOf("BANK-MAIN.");
+
+    expect(label).toBeGreaterThan(division);
+    expect(set).toBeGreaterThan(label);
+  });
+});
+
+/**
+ * Host variables must be declared in an SQL declare section. The markers are
+ * not statements — Db2 removes them — so translating one into a call would put
+ * an executable statement in the DATA DIVISION, where none may appear.
+ */
+describe("the SQL declare section", () => {
+  const SQL_SOURCE = `module Enquiry;
+
+record Row {
+  rowAccountId: string<16>;
+}
+
+sql fetchAccount(wanted: string<16>): Row {
+  SELECT ACCOUNT_ID INTO :rowAccountId FROM ACCOUNT WHERE ACCOUNT_ID = :wanted
+}
+
+entry transaction enquire(row: Row, idempotencyKey: string<36>) {
+  execute fetchAccount(row.rowAccountId) into row;
+  if sqlcode == 0 {
+    audit("FOUND", idempotencyKey);
+  } else {
+    audit("MISSING", idempotencyKey);
+  }
+}`;
+
+  it("surrounds the host variables", () => {
+    const cobol = compile(SQL_SOURCE).cobol ?? "";
+
+    expect(cobol).toContain("EXEC SQL BEGIN DECLARE SECTION END-EXEC.");
+    expect(cobol).toContain("EXEC SQL END DECLARE SECTION END-EXEC.");
+    expect(cobol.indexOf("BEGIN DECLARE SECTION")).toBeLessThan(
+      cobol.indexOf("END DECLARE SECTION"),
+    );
+  });
+
+  /** The SQLCA is not a host variable, and a declare section may not hold one. */
+  it("leaves the SQLCA outside it", () => {
+    const cobol = compile(SQL_SOURCE).cobol ?? "";
+
+    expect(cobol.indexOf("INCLUDE SQLCA")).toBeLessThan(
+      cobol.indexOf("BEGIN DECLARE SECTION"),
+    );
+  });
+
+  it("is removed by the precompiler rather than translated", () => {
+    const { cobol } = precompile(compile(SQL_SOURCE).cobol ?? "");
+
+    expect(cobol).not.toContain("BEGIN DECLARE SECTION END-EXEC");
+    expect(cobol).toContain("Declare section marker read by");
+  });
+});

@@ -90,10 +90,58 @@ const CICS_COMMAND_FIELD = "DFHEIV-COMMAND";
  * command's `RESP` option named. Declaring the block here is what lets a
  * generated program's error branch be reached at all.
  */
+/**
+ * The part of the EXEC interface block a generated program actually reads.
+ *
+ * Not the whole EIB — the real one carries around thirty fields — but the ones
+ * this compiler emits references to. `EIBCALEN` is here because a program must
+ * test it before touching `DFHCOMMAREA`: a commarea that was not passed is not
+ * an empty record but storage belonging to something else, and reading it is a
+ * storage violation.
+ *
+ * `EIBTRNID` and `EIBTASKN` come with it because they cost nothing and are what
+ * anyone reading a dump asks for first.
+ */
+/** Storage the translator supplies to stand in for the caller's commarea. */
+const CICS_COMMAREA_SIM = "DFHCOMMAREA-SIM";
+
 const CICS_EIB_LINES = [
   "       01  DFHEIBLK.",
+  "           05  EIBTIME       PIC S9(7) COMP-3.",
+  "           05  EIBDATE       PIC S9(7) COMP-3.",
+  "           05  EIBTRNID      PIC X(4).",
+  "           05  EIBTASKN      PIC S9(7) COMP-3.",
+  "           05  EIBTRMID      PIC X(4).",
+  "           05  FILLER        PIC S9(4) COMP.",
+  "           05  EIBCPOSN      PIC S9(4) COMP.",
+  // Preset, because this EIB is simulated: nothing local passes a commarea, so
+  // a zero here would make every generated CICS program abend on its own
+  // guard and no branch beyond it would ever be reached. The guard itself is
+  // asserted against the generated source instead. On z/OS, CICS sets this.
+  "           05  EIBCALEN      PIC S9(4) COMP VALUE 9999.",
+  "           05  EIBAID        PIC X(1).",
+  "           05  EIBFN         PIC X(2).",
+  "           05  EIBRCODE      PIC X(6).",
+  "           05  EIBDS         PIC X(8).",
+  "           05  EIBREQID      PIC X(8).",
+  "           05  EIBRSRCE      PIC X(8).",
+  "           05  EIBSYNC       PIC X(1).",
+  "           05  EIBFREE       PIC X(1).",
+  "           05  EIBRECV       PIC X(1).",
+  "           05  FILLER        PIC X(1).",
+  "           05  EIBATT        PIC X(1).",
+  "           05  EIBEOC        PIC X(1).",
+  "           05  EIBFMH        PIC X(1).",
+  "           05  EIBCOMPL      PIC X(1).",
+  "           05  EIBSIG        PIC X(1).",
+  "           05  EIBCONF       PIC X(1).",
+  "           05  EIBERR        PIC X(1).",
+  "           05  EIBERRCD      PIC X(4).",
+  "           05  EIBSYNRB      PIC X(1).",
+  "           05  EIBNODAT      PIC X(1).",
   "           05  EIBRESP       PIC S9(8) COMP.",
   "           05  EIBRESP2      PIC S9(8) COMP.",
+  "           05  EIBRLDBK      PIC X(1).",
   `       01  ${CICS_COMMAND_FIELD}   PIC X(20).`,
 ];
 
@@ -109,6 +157,12 @@ export function precompile(cobol: string): PrecompileResult {
 
   const usesSql = /^\s*EXEC\s+SQL\b/im.test(cobol);
   const usesCics = /^\s*EXEC\s+CICS\b/im.test(cobol);
+  // A commarea is storage the caller owns and CICS makes addressable before the
+  // program starts. Nothing does that locally, so an unaddressed LINKAGE item
+  // would be read as whatever the process happens to have there. The translator
+  // supplies an area and points the commarea at it, which is what CICS does.
+  const usesCommarea = usesCics && /^\s*01\s+DFHCOMMAREA\./im.test(cobol);
+  let awaitingParagraph = false;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -126,6 +180,12 @@ export function precompile(cobol: string): PrecompileResult {
         output.push("      *> EXEC interface block added by the translator.");
         output.push(...CICS_EIB_LINES);
       }
+      if (usesCommarea) {
+        output.push(
+          "      *> Commarea storage, which CICS itself would own.",
+          `       01  ${CICS_COMMAREA_SIM}  PIC X(9999).`,
+        );
+      }
       continue;
     }
 
@@ -133,6 +193,24 @@ export function precompile(cobol: string): PrecompileResult {
     if (/^EXEC\s+SQL\s+INCLUDE\s+SQLCA\s+END-EXEC\.?$/i.test(trimmed)) {
       output.push("      *> SQLCA expanded by the BankLang precompiler.");
       output.push(...SQLCA_LINES);
+      continue;
+    }
+
+    // Addressability, established where CICS would have established it. It has
+    // to go inside the first paragraph rather than straight after the division
+    // header: a statement before the first label is not COBOL.
+    if (usesCommarea && /^PROCEDURE\s+DIVISION\b.*\.$/i.test(trimmed)) {
+      awaitingParagraph = true;
+      output.push(line);
+      continue;
+    }
+    if (awaitingParagraph && /^[A-Z0-9][A-Z0-9-]*\.$/i.test(trimmed)) {
+      awaitingParagraph = false;
+      output.push(line);
+      output.push(
+        "      *> Commarea addressability, which CICS establishes on entry.",
+        `           SET ADDRESS OF DFHCOMMAREA TO ADDRESS OF ${CICS_COMMAREA_SIM}`,
+      );
       continue;
     }
 
@@ -160,7 +238,14 @@ export function precompile(cobol: string): PrecompileResult {
 
     if (kind === "SQL") {
       sqlBlocks += 1;
-      if (isCursorDeclaration(body)) {
+      // A declare-section marker is removed rather than translated, and it is
+      // not a statement, so it does not take a statement number — the numbers
+      // are what a test scripts an outcome against.
+      if (isDeclareSectionMarker(body)) {
+        output.push(
+          `${indent}*> Declare section marker read by the BankLang precompiler.`,
+        );
+      } else if (isCursorDeclaration(body)) {
         output.push(...translateCursorDeclaration(body, indent));
       } else {
         sqlStatements += 1;
@@ -203,6 +288,20 @@ function translateSql(
 /** True for `DECLARE <name> CURSOR FOR ...`, which declares rather than runs. */
 function isCursorDeclaration(body: string): boolean {
   return /^\s*DECLARE\b[\s\S]*\bCURSOR\b/i.test(body);
+}
+
+/**
+ * True for `BEGIN DECLARE SECTION` and `END DECLARE SECTION`.
+ *
+ * These mark the host variables for the precompiler and are not statements: Db2
+ * removes them, leaving the declarations they surround. Translating one into a
+ * call would put an executable statement in the DATA DIVISION, where none may
+ * appear — which is exactly what happened when the section was first emitted.
+ */
+function isDeclareSectionMarker(body: string): boolean {
+  return /^\s*(BEGIN|END)\s+DECLARE\s+SECTION\s*$/i.test(
+    body.replace(/END-EXEC\.?/i, "").trim(),
+  );
 }
 
 /**

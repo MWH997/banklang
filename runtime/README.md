@@ -75,6 +75,13 @@ closed correctly, but not what was in them.
 
 **These are not IBM products and imply no IBM behaviour.**
 
+- The EXEC interface block and the commarea are **simulated**. Nothing local
+  passes a commarea, so the translator supplies storage, points `DFHCOMMAREA` at
+  it where CICS would have established addressability, and presets `EIBCALEN` so
+  the program's own guard does not fire and stop every test at the first line.
+  The guard is asserted against the generated source instead. On z/OS, CICS owns
+  all three.
+
 - `CBLTDLI` is not IMS. It evaluates no database, holds no segments, honours no
   hierarchy, and maintains no position — a `getNext` after a `getUnique` returns
   whatever the script says and nothing about where the previous call left off.
