@@ -50,6 +50,7 @@ export interface IRProgram {
   files: IRFile[];
   reports: IRReport[];
   databases: IRDatabase[];
+  queues: IRQueue[];
   /** `USE AFTER ERROR` procedures, one per file that declares a handler. */
   fileErrorHandlers: IRFileErrorHandler[];
   enums: IREnum[];
@@ -64,7 +65,7 @@ export interface IRProgram {
 }
 
 export type BackendRequirement =
-  "db2-precompiler" | "cics-translator" | "report-writer-precompiler";
+  "db2-precompiler" | "cics-translator" | "report-writer-precompiler" | "mq";
 
 export interface IRSql {
   kind: "Sql";
@@ -285,6 +286,7 @@ export type IRStatement =
   | IRReportStatement
   | IRProgramCallStatement
   | IRDliStatement
+  | IRQueueStatement
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
@@ -420,6 +422,37 @@ export interface IRDatabase {
   statusName: string | null;
   /** Bytes of the key field, which is how wide the search argument's value is. */
   keyLength: number;
+}
+
+/** An IBM MQ queue: a manager to connect to, and the object to open on it. */
+export interface IRQueue {
+  kind: "Queue";
+  span: SourceSpan;
+  name: string;
+  managerName: string;
+  queueName: string;
+  direction: "input" | "output";
+  record: IRRecord;
+  statusName: string | null;
+}
+
+/**
+ * One MQI operation, which is one or two `CALL`s.
+ *
+ * `connect` is `MQCONN` then `MQOPEN`, and `disconnect` is `MQCLOSE` then
+ * `MQDISC`: neither half is useful alone, and a program that opens without
+ * connecting or closes without disconnecting leaves a handle behind.
+ */
+export interface IRQueueStatement {
+  kind: "QueueStatement";
+  span: SourceSpan;
+  operation: "connect" | "put" | "get" | "disconnect";
+  queueName: string;
+  recordName: string | null;
+  /** Taken when a `get` returned a message. */
+  body: IRBlock | null;
+  /** Taken when the queue was empty, which MQ reports rather than raises. */
+  notFound: IRBlock | null;
 }
 
 /** One `CALL "CBLTDLI"` with a function code. */
@@ -999,6 +1032,12 @@ export function lowerProgramToIR(
 
   fileTable.clear();
   databaseStatusTable.clear();
+  queueStatusTable.clear();
+  for (const queue of typechecked.queues) {
+    if (queue.statusName) {
+      queueStatusTable.set(queue.name, queue.statusName);
+    }
+  }
   for (const database of typechecked.databases) {
     if (database.statusName) {
       databaseStatusTable.set(database.name, database.statusName);
@@ -1118,6 +1157,16 @@ export function lowerProgramToIR(
         statusName: database.statusName,
         keyLength: 0,
       })),
+      queues: typechecked.queues.map((queue) => ({
+        kind: "Queue" as const,
+        span: queue.span,
+        name: queue.name,
+        managerName: queue.managerName,
+        queueName: queue.queueName,
+        direction: queue.direction,
+        record: lowerRecord(queue.record, recordTypeMap),
+        statusName: queue.statusName,
+      })),
       reports: typechecked.reports.map((report) => ({
         kind: "Report" as const,
         span: report.span,
@@ -1160,6 +1209,10 @@ export function lowerProgramToIR(
         ...(typechecked.reports.length > 0
           ? (["report-writer-precompiler"] as const)
           : []),
+        // MQ needs no precompiler — the MQI is plain CALLs. What it needs is
+        // the copybook library at compile time and the stub and run-time
+        // libraries at link and run time.
+        ...(typechecked.queues.length > 0 ? (["mq"] as const) : []),
         ...(typechecked.sql.length > 0 ? (["db2-precompiler"] as const) : []),
         ...(typechecked.transactions.some((entry) => entry.isCics)
           ? (["cics-translator"] as const)
@@ -1186,6 +1239,15 @@ const functionTable = new Map<string, IRType>();
 
 /** Declared database status field names, which are in scope like a file's. */
 const databaseStatusTable = new Map<string, string>();
+/**
+ * Each queue's status field.
+ *
+ * MQ reports in a reason code rather than a two-character status, so unlike a
+ * file's or a PCB's this one is a number — 2033 is an empty queue, 2085 is a
+ * queue that is not there. Typing it as text would let a program compare it
+ * with a string and never match.
+ */
+const queueStatusTable = new Map<string, string>();
 
 /**
  * The concrete function each generic call resolves to, from the typechecker.
@@ -1216,6 +1278,17 @@ function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
   for (const [, database] of databaseStatusTable) {
     if (!scopeTypes.has(database)) {
       scopeTypes.set(database, { kind: "string", length: 2 });
+    }
+  }
+
+  for (const [, queue] of queueStatusTable) {
+    if (!scopeTypes.has(queue)) {
+      scopeTypes.set(queue, {
+        kind: "decimal",
+        precision: 9,
+        scale: 0,
+        usage: "binary",
+      });
     }
   }
 
@@ -2071,6 +2144,18 @@ function lowerStatement(
         databaseName: statement.databaseName,
         recordName: statement.recordName,
         key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
+      };
+    case "QueueStatement":
+      return {
+        kind: "QueueStatement",
+        span: statement.span,
+        operation: statement.operation,
+        queueName: statement.queueName,
+        recordName: statement.recordName,
+        body: statement.body ? lowerBlock(statement.body, scopeTypes) : null,
+        notFound: statement.notFound
+          ? lowerBlock(statement.notFound, scopeTypes)
+          : null,
       };
     case "ProgramCallStatement":
       return {

@@ -41,6 +41,67 @@ export interface PrecompileResult {
   cicsBlocks: number;
 }
 
+/**
+ * Local stand-ins for the IBM MQ copybooks.
+ *
+ * On z/OS `COPY CMQV`, `COPY CMQODV`, `COPY CMQMDV`, `COPY CMQPMOV` and
+ * `COPY CMQGMOV` resolve from the MQ installation, and the artifact that ships
+ * keeps them. None of them exists locally, so the local build gets these
+ * instead: not IBM's copybooks and not copies of them, but the smallest
+ * declaration that makes the generated program compile and run — the fields the
+ * compiler actually sets, each at the size and value IBM's reference documents,
+ * and a filler standing for the rest of the structure.
+ *
+ * The constants carry the values from the reference's tables of constants, so
+ * the branches the generated program takes locally are the ones it would take
+ * on z/OS: 2033 really is an empty queue.
+ */
+const MQ_CONSTANT_LINES = [
+  "           05  MQCC-OK              PIC S9(9) BINARY VALUE 0.",
+  "           05  MQCC-WARNING         PIC S9(9) BINARY VALUE 1.",
+  "           05  MQCC-FAILED          PIC S9(9) BINARY VALUE 2.",
+  "           05  MQRC-NONE            PIC S9(9) BINARY VALUE 0.",
+  "           05  MQRC-NO-MSG-AVAILABLE PIC S9(9) BINARY VALUE 2033.",
+  "           05  MQOT-Q               PIC S9(9) BINARY VALUE 1.",
+  "           05  MQOO-INPUT-AS-Q-DEF  PIC S9(9) BINARY VALUE 1.",
+  "           05  MQOO-OUTPUT          PIC S9(9) BINARY VALUE 16.",
+  "           05  MQCO-NONE            PIC S9(9) BINARY VALUE 0.",
+  "           05  MQPMO-SYNCPOINT      PIC S9(9) BINARY VALUE 2.",
+  "           05  MQGMO-SYNCPOINT      PIC S9(9) BINARY VALUE 2.",
+  "           05  MQGMO-NO-WAIT        PIC S9(9) BINARY VALUE 0.",
+  "           05  MQGMO-WAIT           PIC S9(9) BINARY VALUE 1.",
+  // Both are 24 null bytes, which is what asks the queue manager to supply an
+  // identifier on a put and to match any message on a get.
+  "           05  MQMI-NONE            PIC X(24) VALUE LOW-VALUES.",
+  "           05  MQCI-NONE            PIC X(24) VALUE LOW-VALUES.",
+];
+
+/** The fields of each control block the emitter sets, by copybook name. */
+const MQ_STRUCTURE_LINES: Record<string, string[]> = {
+  CMQODV: [
+    "           05  MQOD.",
+    "               10  MQOD-OBJECTTYPE  PIC S9(9) BINARY VALUE 1.",
+    "               10  MQOD-OBJECTNAME  PIC X(48) VALUE SPACES.",
+    "               10  FILLER           PIC X(320) VALUE SPACES.",
+  ],
+  CMQMDV: [
+    "           05  MQMD.",
+    "               10  MQMD-MSGID       PIC X(24) VALUE LOW-VALUES.",
+    "               10  MQMD-CORRELID    PIC X(24) VALUE LOW-VALUES.",
+    "               10  FILLER           PIC X(316) VALUE SPACES.",
+  ],
+  CMQPMOV: [
+    "           05  MQPMO.",
+    "               10  MQPMO-OPTIONS    PIC S9(9) BINARY VALUE 0.",
+    "               10  FILLER           PIC X(148) VALUE SPACES.",
+  ],
+  CMQGMOV: [
+    "           05  MQGMO.",
+    "               10  MQGMO-OPTIONS    PIC S9(9) BINARY VALUE 0.",
+    "               10  FILLER           PIC X(108) VALUE SPACES.",
+  ],
+};
+
 /** The Db2 runtime entry point that `EXEC SQL` calls after precompilation. */
 const SQL_RUNTIME = "DSNHLI";
 
@@ -369,6 +430,25 @@ export function precompile(cobol: string): PrecompileResult {
         output.push(...XML_SHIM_LINES);
       }
       continue;
+    }
+
+    // The MQ copybooks resolve from the MQ installation on z/OS and from
+    // nowhere at all here. The artifact keeps the COPY; the local build gets a
+    // stand-in of the fields the compiler sets.
+    const mqCopy = /^COPY\s+(CMQ[A-Z]+)\b[^.]*\.$/i.exec(trimmed);
+    if (mqCopy) {
+      const name = mqCopy[1].toUpperCase();
+      if (name === "CMQV") {
+        output.push("      *> MQ constants supplied by the precompiler.");
+        output.push(...MQ_CONSTANT_LINES);
+        continue;
+      }
+      const structure = MQ_STRUCTURE_LINES[name];
+      if (structure) {
+        output.push("      *> MQ control block supplied by the precompiler.");
+        output.push(...structure);
+        continue;
+      }
     }
 
     if (usesJsonParse && /^JSON\s+PARSE\b/i.test(trimmed)) {

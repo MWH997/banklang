@@ -24,6 +24,8 @@ import {
   type ReportGroupNode,
   type ReportPageNode,
   type DatabaseDeclarationNode,
+  type QueueDeclarationNode,
+  type QueueStatementNode,
   type DliStatementNode,
   type ProgramCallStatementNode,
   type ReportStatementNode,
@@ -325,6 +327,17 @@ export interface ResolvedDatabase {
   statusName: string | null;
 }
 
+/** A `queue` declaration, resolved against the record its message holds. */
+export interface ResolvedQueue {
+  name: string;
+  span: SourceSpan;
+  managerName: string;
+  queueName: string;
+  direction: "input" | "output";
+  record: ResolvedRecord;
+  statusName: string | null;
+}
+
 export interface ResolvedReport {
   name: string;
   span: SourceSpan;
@@ -371,6 +384,7 @@ export interface TypeCheckResult {
   reports: ResolvedReport[];
   /** `database` declarations, which become PCBs and DL/I calls. */
   databases: ResolvedDatabase[];
+  queues: ResolvedQueue[];
   /** `on error <file>` handlers, which become DECLARATIVES. */
   fileErrorHandlers: ResolvedFileErrorHandler[];
   enums: ResolvedEnum[];
@@ -406,6 +420,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       files: [],
       reports: [],
       databases: [],
+      queues: [],
       fileErrorHandlers: [],
       enums: [],
       sql: [],
@@ -424,6 +439,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const files: ResolvedFile[] = [];
   const reports: ResolvedReport[] = [];
   const databases: ResolvedDatabase[] = [];
+  const queues: ResolvedQueue[] = [];
   const fileErrorHandlers: ResolvedFileErrorHandler[] = [];
   const enums: ResolvedEnum[] = [];
   const sqlStatements: ResolvedSql[] = [];
@@ -584,6 +600,18 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     }
   }
 
+  declaredQueues = new Map();
+  for (const declaration of program.declarations) {
+    if (declaration.kind !== "QueueDeclaration") {
+      continue;
+    }
+    const resolved = resolveQueue(declaration, recordMap, diagnostics);
+    if (resolved) {
+      queues.push(resolved);
+      declaredQueues.set(resolved.name, resolved);
+    }
+  }
+
   // Pass 2b: reports, which resolve against files and so come after them.
   declaredReports = new Map();
   for (const declaration of program.declarations) {
@@ -654,6 +682,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     files,
     reports,
     databases,
+    queues,
     fileErrorHandlers,
     enums,
     sql: sqlStatements,
@@ -1494,6 +1523,7 @@ function validateTransactionBody(
       case "ReportStatement":
       case "ProgramCallStatement":
       case "DliStatement":
+      case "QueueStatement":
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
@@ -1676,6 +1706,29 @@ function validateEffectStatement(
       return true;
     case "DliStatement":
       validateDliStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "QueueStatement":
+      validateQueueStatement(statement, scope, diagnostics);
+      if (statement.body) {
+        validateTransactionBody(
+          statement.body,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+      }
+      if (statement.notFound) {
+        validateTransactionBody(
+          statement.notFound,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+      }
       return true;
     case "ProgramCallStatement":
       validateProgramCallStatement(
@@ -5762,6 +5815,7 @@ function resolveTerminalStatementType(
     case "ReturnCodeStatement":
     case "SplitStatement":
     case "DliStatement":
+    case "QueueStatement":
     case "SerializeStatement":
     case "XmlParseStatement":
     case "ReportStatement":
@@ -6566,6 +6620,173 @@ function resolveDatabase(
   };
 }
 
+/** Declared queues, for resolving MQ statements. */
+let declaredQueues = new Map<string, ResolvedQueue>();
+
+/**
+ * Characters MQ carries in a queue manager name and in a queue name.
+ *
+ * `MQ_Q_MGR_NAME_LENGTH` and `MQ_Q_NAME_LENGTH` are both 48, and both are what
+ * `MQOD-OBJECTNAME` and the `MQCONN` name parameter are declared as. A longer
+ * one is truncated into a name the queue manager has never heard of.
+ */
+const MQ_NAME_LENGTH = 48;
+
+/**
+ * Resolves a `queue` declaration.
+ *
+ * The manager and queue names belong to MQ rather than to this program, so all
+ * the compiler can check is that they fit what the MQI carries.
+ */
+function resolveQueue(
+  declaration: QueueDeclarationNode,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedQueue | null {
+  const record = recordMap.get(declaration.recordTypeName);
+  if (!record) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Queue ${declaration.name} carries ${declaration.recordTypeName}, which is not a declared record.`,
+        span: declaration.span,
+        hint: "Declare the message's record before the queue that carries it.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  for (const [what, value] of [
+    ["queue manager", declaration.managerName],
+    ["queue", declaration.queueName],
+  ] as const) {
+    if (value.length === 0 || value.length > MQ_NAME_LENGTH) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-MQ-001",
+          severity: "error",
+          message: `The ${what} name "${value}" is ${value.length} characters; MQ carries ${MQ_NAME_LENGTH}.`,
+          span: declaration.span,
+          hint: "`MQ_Q_MGR_NAME_LENGTH` and `MQ_Q_NAME_LENGTH` are both 48. A longer name is truncated into one the queue manager does not have.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      return null;
+    }
+  }
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    managerName: declaration.managerName,
+    queueName: declaration.queueName,
+    direction: declaration.direction,
+    record,
+    statusName: declaration.statusName,
+  };
+}
+
+/**
+ * `connectQueue q;` `putMessage q from r;` `getMessage q into r { } else { }`
+ *
+ * The completion code and reason code the MQI leaves are the entire error
+ * model, so a queue with nowhere to read them from is a program that cannot
+ * tell a message it got from an empty queue — and an empty queue is the
+ * ordinary end of a drain loop, not a failure.
+ *
+ * The direction on the declaration decides which calls are allowed, because it
+ * is what the `MQOPEN` asked for: a queue opened `MQOO-OUTPUT` cannot be read,
+ * and MQ reports that at run time as reason 2037, `MQRC-NOT-OPEN-FOR-INPUT`.
+ */
+function validateQueueStatement(
+  statement: QueueStatementNode,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+): void {
+  const queue = declaredQueues.get(statement.queueName);
+  if (!queue) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-MQ-001",
+        severity: "error",
+        message: `${statement.queueName} is not a declared queue.`,
+        span: statement.queueSpan,
+        hint: 'Declare it with `queue <name> manager "MGR" name "Q.NAME" output record <Record> status <field>;`.',
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (!queue.statusName) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-MQ-001",
+        severity: "error",
+        message: `Queue ${queue.name} declares no status field.`,
+        span: statement.span,
+        hint: "MQ reports what happened in a completion code and a reason code. Without somewhere to read them, a `getMessage` that found an empty queue is indistinguishable from one that read a message.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.operation === "get" && queue.direction !== "input") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-MQ-002",
+        severity: "error",
+        message: `${queue.name} is an output queue, so it cannot be read.`,
+        span: statement.span,
+        hint: "An `output` queue is opened with `MQOO-OUTPUT`. Reading one fails at run time with reason 2037, MQRC-NOT-OPEN-FOR-INPUT.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.operation === "put" && queue.direction !== "output") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-MQ-002",
+        severity: "error",
+        message: `${queue.name} is an input queue, so nothing can be put on it.`,
+        span: statement.span,
+        hint: "An `input` queue is opened with `MQOO-INPUT-AS-Q-DEF`. Putting to one fails at run time with reason 2039, MQRC-NOT-OPEN-FOR-OUTPUT.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.recordName && statement.recordSpan) {
+    const record = scope.get(statement.recordName);
+    if (!record) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `${statement.recordName} is not declared.`,
+          span: statement.recordSpan,
+          hint: "Name a record variable the message is read into or built from.",
+          backendProfile: null,
+        }),
+      );
+    } else if (record.kind !== "record" || record.name !== queue.record.name) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-MQ-002",
+          severity: "error",
+          message: `${statement.recordName} holds ${describeType(record)}, but ${queue.name} carries ${queue.record.name}.`,
+          span: statement.recordSpan,
+          hint: "The message buffer is the shape the queue declares, so it has to be that record.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
 /**
  * `getUnique <db> into <record> key <value>;` and the rest.
  *
@@ -7236,6 +7457,19 @@ function declareFileStatusSymbols(scope: Map<string, ResolvedType>): void {
   for (const database of declaredDatabases.values()) {
     if (database.statusName && !scope.has(database.statusName)) {
       scope.set(database.statusName, { kind: "string", length: 2 });
+    }
+  }
+  // An MQ status is a reason code rather than a two-character status, so it is
+  // a number: 2033 is an empty queue, 2085 a queue that is not there. Typing it
+  // as text would let a program compare it with a string and never match.
+  for (const queue of declaredQueues.values()) {
+    if (queue.statusName && !scope.has(queue.statusName)) {
+      scope.set(queue.statusName, {
+        kind: "decimal",
+        precision: 9,
+        scale: 0,
+        usage: "binary",
+      });
     }
   }
   for (const file of declaredFiles.values()) {
@@ -8361,12 +8595,23 @@ function resolveTypeNode(
     case "EditedType":
       return resolveEdited(node, aliases, recordMap, diagnostics, span);
     case "CurrencyType":
-      return {
-        kind: "currency",
-        code: node.code,
-        precision: node.precision,
-        scale: node.scale,
-      };
+      // A currency is a decimal that also carries its unit, so it is held the
+      // same way and has to satisfy the same limits. It was reaching the
+      // emitter unchecked, which is how `currency<"BDT", 40, 2>` became a
+      // PICTURE of thirty-eight digit positions.
+      return validateNumericPrecision(
+        node.precision,
+        node.scale,
+        diagnostics,
+        span,
+      )
+        ? {
+            kind: "currency",
+            code: node.code,
+            precision: node.precision,
+            scale: node.scale,
+          }
+        : null;
     case "NullableType": {
       const inner = resolveTypeNode(
         node.inner,
@@ -8405,16 +8650,34 @@ function resolveTypeNode(
   }
 }
 
-function resolveDecimal(
-  node: DecimalTypeNode,
+/**
+ * Digit positions a numeric PICTURE may have.
+ *
+ * Enterprise COBOL's compiler limits: eighteen under the default
+ * `ARITH(COMPAT)`, thirty-one under `ARITH(EXTEND)`. The generated jobs do not
+ * pass `ARITH`, so the default is what the picture has to fit.
+ */
+const MAX_NUMERIC_DIGITS = 18;
+
+/**
+ * The precision and scale limits every numeric type shares.
+ *
+ * `decimal`, `zoned`, `binary`, `native`, and `currency` are all one numeric
+ * item with a different `USAGE`, so the picture rules are the same for each.
+ * They were checked in `resolveDecimal` alone, and `currency` does not go
+ * through it.
+ */
+function validateNumericPrecision(
+  precision: number,
+  scale: number,
   diagnostics: Diagnostic[],
   span: SourceSpan,
-): DecimalType | null {
+): boolean {
   if (
-    !Number.isInteger(node.precision) ||
-    !Number.isInteger(node.scale) ||
-    node.precision <= 0 ||
-    node.scale < 0
+    !Number.isInteger(precision) ||
+    !Number.isInteger(scale) ||
+    precision <= 0 ||
+    scale < 0
   ) {
     diagnostics.push(
       createDiagnostic({
@@ -8426,10 +8689,10 @@ function resolveDecimal(
         backendProfile: null,
       }),
     );
-    return null;
+    return false;
   }
 
-  if (node.scale > node.precision) {
+  if (scale > precision) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-002",
@@ -8440,22 +8703,40 @@ function resolveDecimal(
         backendProfile: null,
       }),
     );
-    return null;
+    return false;
   }
 
-  // IBM Enterprise COBOL holds a COMP item in a halfword, fullword, or
-  // doubleword, so eighteen digits is the most one can carry.
-  if (node.usage === "binary" && node.precision > 18) {
+  // Enterprise COBOL's compiler limits give "PICTURE clause, numeric item digit
+  // positions: with ARITH(COMPAT) 18, with ARITH(EXTEND) 31". COMPAT is the
+  // default and what the generated jobs compile under, so eighteen is the
+  // ceiling — and it is a limit on the picture, so it applies whatever the
+  // usage. A wider field emitted a PICTURE the compiler rejects outright: a
+  // build nobody can run, from a program this compiler said was fine.
+  if (precision > MAX_NUMERIC_DIGITS) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-TYPE-002",
         severity: "error",
-        message: `A binary field holds at most 18 digits, not ${node.precision}.`,
+        message: `A numeric field holds at most ${MAX_NUMERIC_DIGITS} digits, not ${precision}.`,
         span,
-        hint: "Use decimal<precision, scale> for a wider value; packed decimal has no such limit here.",
+        hint: "Enterprise COBOL's default ARITH(COMPAT) allows eighteen digit positions in a PICTURE, whatever the usage. Split the value, or hold it as text if it is an identifier rather than a quantity.",
         backendProfile: null,
       }),
     );
+    return false;
+  }
+
+  return true;
+}
+
+function resolveDecimal(
+  node: DecimalTypeNode,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+): DecimalType | null {
+  if (
+    !validateNumericPrecision(node.precision, node.scale, diagnostics, span)
+  ) {
     return null;
   }
 

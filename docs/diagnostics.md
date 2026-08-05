@@ -27,6 +27,8 @@ BANK-LED-*    ledger
 BANK-AUD-*    audit
 BANK-SQL-*    Db2/SQL
 BANK-CICS-*   CICS
+BANK-DLI-*    IMS DL/I
+BANK-MQ-*     IBM MQ
 BANK-FILE-*   VSAM/file IO
 BANK-COPY-*   copybook/layout
 BANK-GEN-*    code generation
@@ -449,6 +451,33 @@ A report's names have to resolve, or the generated COBOL means nothing:
   generate prints its headings and stops;
 - `generate` names a detail group, while `initiate` and `terminate` name the
   report itself.
+
+## 10b. IBM MQ diagnostics
+
+### `BANK-MQ-001` invalid queue access
+
+An MQ statement names a queue that is not declared, or reaches one with no
+status field, or the declaration names a queue manager or a queue longer than MQ
+carries. `MQ_Q_MGR_NAME_LENGTH` and `MQ_Q_NAME_LENGTH` are both 48, which is what
+`MQOD-OBJECTNAME` and `MQCONN`'s first parameter are declared as, so a longer
+name is truncated into one the queue manager does not have.
+
+The status field matters most. MQ reports what happened in a completion code and
+a reason code, and without somewhere to read the reason a `getMessage` that
+found an empty queue is indistinguishable from one that read a message — so the
+program goes on to process whatever the message area held last.
+
+### `BANK-MQ-002` queue used against its direction
+
+A queue is opened for input or for output, not both, because that is what the
+`MQOPEN` options say: an `output` queue is opened `MQOO-OUTPUT` and an `input`
+queue `MQOO-INPUT-AS-Q-DEF`. Reading a queue opened for output fails at run time
+with reason 2037, `MQRC-NOT-OPEN-FOR-INPUT`; putting to one opened for input
+fails with 2039, `MQRC-NOT-OPEN-FOR-OUTPUT`. Both are refused when the program is
+compiled instead.
+
+It also covers a message record of the wrong shape: the buffer is the record the
+queue declares, and MQ moves bytes without checking what they mean.
 
 ## 10a. IMS DL/I diagnostics
 

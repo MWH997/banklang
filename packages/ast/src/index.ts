@@ -758,6 +758,7 @@ export type StatementNode =
   | ReportStatementNode
   | ProgramCallStatementNode
   | DliStatementNode
+  | QueueStatementNode
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
@@ -1027,6 +1028,62 @@ export interface DliStatementNode extends NodeBase {
   recordSpan: SourceSpan | null;
   /** The key a `getUnique` looks for. */
   key: ExpressionNode | null;
+}
+
+/**
+ * `queue <name> manager <mgr> name <q> <input|output> record <R> status <s>;`
+ *
+ * An IBM MQ queue. Unlike a file, a queue is not opened by file control: the
+ * program connects to a queue manager, opens the queue as an *object* described
+ * by an MQOD, and every operation is a `CALL` on the MQI with a completion code
+ * and a reason code coming back.
+ *
+ * The manager and queue names live on the declaration for the same reason the
+ * DL/I segment name does — they are built into the object descriptor once, and
+ * each is 48 characters, which is what `MQOD-OBJECTNAME` and the `MQCONN`
+ * queue-manager name carry.
+ */
+export interface QueueDeclarationNode extends NodeBase {
+  kind: "QueueDeclaration";
+  name: string;
+  /** The queue manager to connect to, as it is defined to MQ. */
+  managerName: string;
+  /** The queue itself, as it is defined to the queue manager. */
+  queueName: string;
+  /** Which MQOO_* option the open asks for, and so which calls are allowed. */
+  direction: "input" | "output";
+  recordTypeName: string;
+  /**
+   * Where the reason code is read from.
+   *
+   * Required, and for the reason a file's status is: the completion code and
+   * reason code the MQI leaves are the entire error model, and a `get` that
+   * found no message is reported the same way as one that worked.
+   */
+  statusName: string | null;
+}
+
+/**
+ * `connect <q>;`, `put <q> from <r>;`, `get <q> into <r> { } else { }`,
+ * `disconnect <q>;`
+ *
+ * Each becomes one or more `CALL` on the MQI. `connect` is `MQCONN` followed by
+ * `MQOPEN`, and `disconnect` is `MQCLOSE` followed by `MQDISC`, because neither
+ * half is useful alone and forgetting the second is how a program leaves a
+ * queue open and a connection handle dangling at the end of a batch.
+ */
+export interface QueueStatementNode extends NodeBase {
+  kind: "QueueStatement";
+  operation: "connect" | "put" | "get" | "disconnect";
+  queueName: string;
+  queueSpan: SourceSpan;
+  /** The record a message is built from or read into. */
+  recordName: string | null;
+  recordSpan: SourceSpan | null;
+  /** Taken when a `get` returned a message. */
+  body: BlockNode | null;
+  /** Taken when the queue was empty, which is not a failure. */
+  notFound: BlockNode | null;
 }
 
 export interface TransactionDeclarationNode extends NodeBase {
@@ -1382,6 +1439,7 @@ export type DeclarationNode =
   | TransactionDeclarationNode
   | FileDeclarationNode
   | DatabaseDeclarationNode
+  | QueueDeclarationNode
   | ReportDeclarationNode
   | EnumDeclarationNode
   | FileErrorHandlerNode
