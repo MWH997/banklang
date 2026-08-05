@@ -4106,6 +4106,11 @@ function inferNumericCall(
     presentValue: 2,
     isNumeric: 1,
     toNumber: 1,
+    integerPart: 1,
+    fractionPart: 1,
+    sign: 1,
+    reverse: 1,
+    textLength: 1,
   };
   if (args.length !== arity[expression.operation]) {
     return reject(
@@ -4142,14 +4147,52 @@ function inferNumericCall(
       }
       return expression.operation === "isNumeric" ? { kind: "bool" } : rounded;
     }
-    case "abs": {
+    case "reverse": {
+      const text = args[0];
+      if (!text || text.kind !== "string" || text.national) {
+        return reject(
+          "reverse turns text back to front.",
+          "Pass a string<n>. A number has no order to reverse.",
+        );
+      }
+      // Same characters, same width, opposite order.
+      return { kind: "string", length: text.length };
+    }
+    case "textLength": {
+      const text = args[0];
+      if (!text || text.kind !== "string" || text.national) {
+        return reject(
+          "textLength measures text.",
+          "Pass a string<n>. A COBOL field's declared width is fixed; this is what it actually holds.",
+        );
+      }
+      // A count, whose width is the receiving field's business rather than
+      // this function's — the same reason `round` takes the target's scale.
+      return { ...rounded, scale: 0 };
+    }
+    case "abs":
+    case "integerPart":
+    case "fractionPart": {
       if (!numeric(args[0])) {
         return reject(
-          "abs takes a number.",
+          `${expression.operation} takes a number.`,
           "Pass a decimal, a binary, or a currency amount.",
         );
       }
-      return args[0];
+      // `integerPart` drops the fraction, so it comes back rounded and takes
+      // the target's scale — usually zero, which is the point of asking.
+      return expression.operation === "abs" ? args[0] : rounded;
+    }
+    case "sign": {
+      if (!numeric(args[0])) {
+        return reject(
+          "sign takes a number.",
+          "Pass a decimal, a binary, or a currency amount.",
+        );
+      }
+      // -1, 0, or 1: which way an amount moves, without comparing it twice.
+      // Held in whatever whole-number field it is put in.
+      return { ...rounded, scale: 0 };
     }
     case "mod":
     case "rem": {

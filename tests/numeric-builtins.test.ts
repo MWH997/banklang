@@ -79,6 +79,20 @@ describe("each becomes its COBOL intrinsic", () => {
     ],
     ["  feed.parsed = toNumber(feed.rawAmount);", "FUNCTION NUMVAL-C("],
     ["  feed.flag = isNumeric(feed.rawAmount);", "FUNCTION TEST-NUMVAL-C("],
+    [
+      "  mortgage.payment = integerPart(mortgage.principal);",
+      "FUNCTION INTEGER-PART(",
+    ],
+    [
+      "  mortgage.payment = fractionPart(mortgage.principal);",
+      "FUNCTION FRACTION-PART(",
+    ],
+    ["  feed.checkDigit = sign(mortgage.principal);", "FUNCTION SIGN("],
+    ["  feed.rawAmount = reverse(feed.rawAmount);", "FUNCTION REVERSE("],
+    [
+      "  feed.checkDigit = textLength(feed.rawAmount);",
+      "FUNCTION STORED-CHAR-LENGTH(",
+    ],
   ];
 
   for (const [source, expected] of cases) {
@@ -131,6 +145,16 @@ entry transaction quote(mortgage: Mortgage, pair: Pair) {
           '  mortgage.payment = round(annuity(mortgage.monthlyRate, mortgage.principal), "HALF_UP");',
         ),
       ),
+    ).toContain("BANK-TYPE-003");
+  });
+
+  /** A number has no order to reverse, and text has no magnitude. */
+  it("keeps the text ones on text and the number ones on numbers", () => {
+    expect(
+      ids(program("  feed.rawAmount = reverse(mortgage.principal);")),
+    ).toContain("BANK-TYPE-003");
+    expect(
+      ids(program("  mortgage.payment = integerPart(feed.rawAmount);")),
     ).toContain("BANK-TYPE-003");
   });
 
@@ -214,5 +238,50 @@ describe("executed", () => {
     expect(ran.stdout).toContain("0001234.56");
     // 123456789 mod 97, which is how an IBAN check digit is worked out.
     expect(ran.stdout).toContain("0039");
+  });
+
+  /**
+   * Splitting an amount into whole units and the remainder, which is what a
+   * cash-handling or a settlement program does, and measuring what a fixed
+   * field actually holds rather than how wide it was declared.
+   */
+  it.skipIf(!available)("splits an amount and measures a field", () => {
+    const result = program(`  mortgage.principal = 1234.56;
+  mortgage.payment = integerPart(mortgage.principal);
+  log "WHOLE ", mortgage.payment;
+  mortgage.payment = fractionPart(mortgage.principal);
+  log "PART ", mortgage.payment;
+  feed.rawAmount = "1234";
+  feed.checkDigit = textLength(feed.rawAmount);
+  log "USED ", feed.checkDigit;
+  feed.checkDigit = sign(mortgage.principal);
+  log "SIGN ", feed.checkDigit;`);
+    expect(result.diagnostics).toEqual([]);
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-numeric2-"));
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-free",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    const ran = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+    expect(ran.status, ran.stderr).toBe(0);
+
+    expect(ran.stdout).toContain("1234.00");
+    expect(ran.stdout).toContain("0000.56");
+    // The field is PIC X(12); four characters are in it.
+    expect(ran.stdout).toContain("0004");
+    expect(ran.stdout).toContain("0001");
   });
 });

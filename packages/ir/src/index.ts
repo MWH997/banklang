@@ -656,7 +656,12 @@ export interface IRNumericCallExpression {
     | "annuity"
     | "presentValue"
     | "isNumeric"
-    | "toNumber";
+    | "toNumber"
+    | "integerPart"
+    | "fractionPart"
+    | "sign"
+    | "reverse"
+    | "textLength";
   args: IRExpression[];
   resolvedType: IRType;
 }
@@ -1485,6 +1490,12 @@ function numericCallType(
   switch (expression.operation) {
     case "isNumeric":
       return { kind: "bool" };
+    case "sign":
+      return { kind: "decimal", precision: 1, scale: 0, usage: "packed" };
+    case "textLength":
+      return { kind: "decimal", precision: 9, scale: 0, usage: "packed" };
+    case "reverse":
+      return args[0]?.resolvedType ?? { kind: "string", length: 1 };
     case "abs":
     case "min":
     case "max":
@@ -1501,6 +1512,8 @@ function numericCallType(
     case "annuity":
     case "presentValue":
     case "toNumber":
+    case "integerPart":
+    case "fractionPart":
       return { kind: "decimal", precision: 18, scale: 2, usage: "packed" };
   }
 }

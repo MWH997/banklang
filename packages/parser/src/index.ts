@@ -273,6 +273,11 @@ const NUMERIC_BUILTINS = new Set([
   "presentValue",
   "isNumeric",
   "toNumber",
+  "integerPart",
+  "fractionPart",
+  "sign",
+  "reverse",
+  "textLength",
 ]);
 
 /** String builtins. Contextual names, not reserved words. */
