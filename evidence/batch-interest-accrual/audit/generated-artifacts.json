@@ -2,19 +2,19 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
-    "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/INTEREST-ACCOUNT.cpy",
-    "/workspace/Code/banklang/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl",
-    "/workspace/Code/banklang/dist/audit/diagnostics.json",
-    "/workspace/Code/banklang/dist/audit/source-map.json",
-    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
-    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/dist/audit/verification-report.md",
-    "/workspace/Code/banklang/dist/audit/verification-report.json",
-    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
-    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/maps/source-map.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/copybooks/INTEREST.cpy",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/jcl/BATCHINT.jcl",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/diagnostics.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/source-map.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/copybook-layout.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/verification-report.md",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/verification-report.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/validation-matrix.md",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/gnucobol-validation.md"
   ]
 }

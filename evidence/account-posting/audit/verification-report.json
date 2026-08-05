@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl"
+      "details": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
+      "details": "/workspace/Code/banklang/evidence/account-posting/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/jcl/ACCOUNT-POSTING.jcl"
+      "details": "/workspace/Code/banklang/evidence/account-posting/jcl/ACCOUNTP.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/audit"
+      "details": "/workspace/Code/banklang/evidence/account-posting/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,20 +61,20 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-    "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/TRANSFER-REQUEST.cpy",
-    "/workspace/Code/banklang/dist/jcl/ACCOUNT-POSTING.jcl",
-    "/workspace/Code/banklang/dist/audit/diagnostics.json",
-    "/workspace/Code/banklang/dist/audit/source-map.json",
-    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
-    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/dist/audit/verification-report.md",
-    "/workspace/Code/banklang/dist/audit/verification-report.json",
-    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
-    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+    "/workspace/Code/banklang/evidence/account-posting/maps/source-map.json",
+    "/workspace/Code/banklang/evidence/account-posting/copybooks/POSTTRAN.cpy",
+    "/workspace/Code/banklang/evidence/account-posting/jcl/ACCOUNTP.jcl",
+    "/workspace/Code/banklang/evidence/account-posting/audit/diagnostics.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/source-map.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/copybook-layout.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/verification-report.md",
+    "/workspace/Code/banklang/evidence/account-posting/audit/verification-report.json",
+    "/workspace/Code/banklang/evidence/account-posting/audit/validation-matrix.md",
+    "/workspace/Code/banklang/evidence/account-posting/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",
@@ -92,17 +92,20 @@
     "precompiledArtifact": null,
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/account-posting/src/main.bank.ts",
-    "sourceArtifactHash": "4923b5458c2d8286c458d300d10906fc158ca0410b4c4fd174d47c79665c0ae9",
-    "generatedArtifact": "dist/gnucobol/cobol/ACCOUNT-POSTING.cbl",
-    "generatedArtifactHash": "e3eb20ee670e5c7150fdec3788ae28d88ceba8b9db3cec87afce1a84ae6d8d35",
-    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "4e4491eba5b14ae8e278ff63936a36e9ab1bf970501946bd365369e305209128",
+    "sourceArtifactHash": "a3ca7e907f6ffac48fef7d94510932452133f0e32963fd9dd26f09bdc4ef10b4",
+    "generatedArtifact": "evidence/account-posting/gnucobol/cobol/ACCOUNTP.cbl",
+    "generatedArtifactHash": "7bfe9d3b0b0f0eefef73775b12c00b5271e3e96d8ed089d32625724d05c47f84",
+    "sourceMapArtifact": "evidence/account-posting/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "2a6b22d51769e6c3bc73c23170c4ee8c08cc60dbbd884099bd22bf18a6a9fdf1",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-POSTING.cbl -o dist/gnucobol/bin/account-posting",
+    "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-posting/gnucobol/copybooks evidence/account-posting/gnucobol/cobol/ACCOUNTP.cbl -o evidence/account-posting/gnucobol/bin/accountp",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
+    "defaultDialectStatus": "passed",
+    "defaultDialectOutput": null,
+    "dialectsDiverge": false,
     "validatedWithGnucobol": true,
     "knownBackendGaps": [
       "This local profile covers the account-transfer subset only.",

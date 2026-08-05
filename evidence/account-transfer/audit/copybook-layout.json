@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "artifact": "/workspace/Code/banklang/evidence/account-transfer/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "TransferRequest",

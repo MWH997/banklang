@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl"
+      "details": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
+      "details": "/workspace/Code/banklang/evidence/batch-interest-accrual/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl"
+      "details": "/workspace/Code/banklang/evidence/batch-interest-accrual/jcl/BATCHINT.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/audit"
+      "details": "/workspace/Code/banklang/evidence/batch-interest-accrual/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,20 +61,20 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl",
-    "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/INTEREST-ACCOUNT.cpy",
-    "/workspace/Code/banklang/dist/jcl/BATCH-INTEREST-ACCRUAL.jcl",
-    "/workspace/Code/banklang/dist/audit/diagnostics.json",
-    "/workspace/Code/banklang/dist/audit/source-map.json",
-    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
-    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/dist/audit/verification-report.md",
-    "/workspace/Code/banklang/dist/audit/verification-report.json",
-    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
-    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/maps/source-map.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/copybooks/INTEREST.cpy",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/jcl/BATCHINT.jcl",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/diagnostics.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/source-map.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/copybook-layout.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/verification-report.md",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/verification-report.json",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/validation-matrix.md",
+    "/workspace/Code/banklang/evidence/batch-interest-accrual/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",
@@ -93,16 +93,19 @@
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/batch-interest-accrual/src/main.bank.ts",
     "sourceArtifactHash": "e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa",
-    "generatedArtifact": "dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl",
-    "generatedArtifactHash": "b346f3233e8aa102acbba34fb9b8575fc0c981f8d745fa2f10649a58b099ff5a",
-    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "7503bfddd89a0af193419eed1171ab26da9a6b731c49717b2feee3bc126f4ecf",
+    "generatedArtifact": "evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl",
+    "generatedArtifactHash": "52baa4e701326c8c5083bf5b056bff6c96d27e8ef9bd8de6eed73c9913f66e72",
+    "sourceMapArtifact": "evidence/batch-interest-accrual/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "c820e2b29913f216240e55afee6a5c2e5d1e98db3678282b461451a867f2104c",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl -o dist/gnucobol/bin/batch-interest-accrual",
+    "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/batch-interest-accrual/gnucobol/copybooks evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl -o evidence/batch-interest-accrual/gnucobol/bin/batchint",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
+    "defaultDialectStatus": "passed",
+    "defaultDialectOutput": null,
+    "dialectsDiverge": false,
     "validatedWithGnucobol": true,
     "knownBackendGaps": [
       "This local profile covers the account-transfer subset only.",

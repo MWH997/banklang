@@ -363,7 +363,7 @@ describe("executed against the reference DL/I runtime", () => {
            05  PCB-SENSEG     PIC S9(5) COMP VALUE 1.
            05  PCB-KEY-FB     PIC X(64) VALUE SPACES.
        PROCEDURE DIVISION.
-           CALL "ACCOUNT-IMS" USING IO-PCB DB-PCB
+           CALL "ACCOUNTI" USING IO-PCB DB-PCB
            STOP RUN.
 `;
 

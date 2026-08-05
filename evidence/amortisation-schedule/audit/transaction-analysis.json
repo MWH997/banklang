@@ -4,7 +4,9 @@
   "transactions": [
     {
       "name": "buildSchedule",
-      "parameters": ["loan"],
+      "parameters": [
+        "loan"
+      ],
       "ledgerPostings": [],
       "auditEvents": [
         {

@@ -1,15 +1,15 @@
 # bankc Test Report
 
-Project: examples/batch-interest-accrual/
+Project: examples/batch-interest-accrual
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-| Step            | Status  | Details                                                              |
-| --------------- | ------- | -------------------------------------------------------------------- |
-| Check           | passed  | OK: examples/batch-interest-accrual/                                 |
-| Build           | passed  | Wrote /workspace/Code/banklang/dist/cobol/BATCH-INTEREST-ACCRUAL.cbl |
-| Verify          | passed  | Verified examples/batch-interest-accrual/                            |
-| GnuCOBOL report | emitted | /workspace/Code/banklang/dist/audit/gnucobol-validation.md           |
+| Step | Status | Details |
+| --- | --- | --- |
+| Check | passed | OK: examples/batch-interest-accrual |
+| Build | passed | Wrote evidence/batch-interest-accrual/cobol/BATCHINT.cbl |
+| Verify | passed | Verified examples/batch-interest-accrual |
+| GnuCOBOL report | emitted | evidence/batch-interest-accrual/audit/gnucobol-validation.md |
 
 ## Notes
 

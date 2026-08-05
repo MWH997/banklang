@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl"
+      "details": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
+      "details": "/workspace/Code/banklang/evidence/branch-accrual-cursor/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/jcl/BRANCH-ACCRUAL-CURSOR.jcl"
+      "details": "/workspace/Code/banklang/evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/audit"
+      "details": "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,22 +61,22 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
-    "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-REQUEST.cpy",
-    "/workspace/Code/banklang/dist/copybooks/ACCOUNT-ROW.cpy",
-    "/workspace/Code/banklang/dist/copybooks/ACCRUAL-SUMMARY.cpy",
-    "/workspace/Code/banklang/dist/jcl/BRANCH-ACCRUAL-CURSOR.jcl",
-    "/workspace/Code/banklang/dist/audit/diagnostics.json",
-    "/workspace/Code/banklang/dist/audit/source-map.json",
-    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
-    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/dist/audit/verification-report.md",
-    "/workspace/Code/banklang/dist/audit/verification-report.json",
-    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
-    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/maps/source-map.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/copybooks/ACCRUALR.cpy",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/copybooks/ACCOUNTB.cpy",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/copybooks/ACCRUALS.cpy",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/diagnostics.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/source-map.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/copybook-layout.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/verification-report.md",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/verification-report.json",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/validation-matrix.md",
+    "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",
@@ -89,22 +89,27 @@
     "diagnostics": []
   },
   "gnucobolValidation": {
-    "backendRequirements": ["db2-precompiler"],
+    "backendRequirements": [
+      "db2-precompiler"
+    ],
     "precompiled": true,
-    "precompiledArtifact": "dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl",
+    "precompiledArtifact": "evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl",
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/branch-accrual-cursor/src/main.bank.ts",
-    "sourceArtifactHash": "2bda6c970730d7b02bfe14fb7826d0c55a27c34d3a5eaf70887cadb5d0f0b811",
-    "generatedArtifact": "dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR.cbl",
-    "generatedArtifactHash": "0a7ee2861e56b4adc0c2341028d4e13ff1b5327c3d6cb45d32420550882c0d3c",
-    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "8620611aa73072bf320d25ec2dc1ff9409d514c5ddeb6ad6555490de7feb12cc",
+    "sourceArtifactHash": "2da557dc9a311acc9b5820327100ca0050a66992ddd30ec490c6bb8b9769f04c",
+    "generatedArtifact": "evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC.cbl",
+    "generatedArtifactHash": "38ff6a47433d83645f587cace6743abd3f196f31806c975118df21a7e99b0543",
+    "sourceMapArtifact": "evidence/branch-accrual-cursor/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "9df8eb073db2793ac87ec4f9241eaae47ee04ef95f9054c03d9dfbf8b2195446",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BRANCH-ACCRUAL-CURSOR-PRE.cbl -o dist/gnucobol/bin/branch-accrual-cursor",
+    "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/branch-accrual-cursor/gnucobol/copybooks evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl -o evidence/branch-accrual-cursor/gnucobol/bin/branchac",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
+    "defaultDialectStatus": "passed",
+    "defaultDialectOutput": null,
+    "dialectsDiverge": false,
     "validatedWithGnucobol": true,
     "knownBackendGaps": [
       "This program requires db2-precompiler. It was translated by the BankLang precompiler before compiling, which checks the surrounding COBOL and every host variable but does not validate SQL semantics, Db2 bind behaviour, or CICS runtime behaviour.",

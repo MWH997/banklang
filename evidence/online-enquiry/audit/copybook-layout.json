@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/dist/audit/copybook-layout.md",
+  "artifact": "/workspace/Code/banklang/evidence/online-enquiry/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "EnquiryRequest",
@@ -44,13 +44,13 @@
       ]
     },
     {
-      "recordName": "AccountRow",
-      "cobolName": "ACCOUNT-ROW",
+      "recordName": "AccountBalanceRow",
+      "cobolName": "ACCOUNT-BALANCE-ROW",
       "totalLength": 34,
       "entries": [
         {
           "order": 1,
-          "path": "ACCOUNT-ROW.ROW-ACCOUNT-ID",
+          "path": "ACCOUNT-BALANCE-ROW.ROW-ACCOUNT-ID",
           "type": "string<16>",
           "picture": "PIC X(16)",
           "usage": "DISPLAY",
@@ -61,7 +61,7 @@
         },
         {
           "order": 2,
-          "path": "ACCOUNT-ROW.ROW-BALANCE",
+          "path": "ACCOUNT-BALANCE-ROW.ROW-BALANCE",
           "type": "currency<\"BDT\",18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
@@ -72,7 +72,7 @@
         },
         {
           "order": 3,
-          "path": "ACCOUNT-ROW.ROW-STATUS",
+          "path": "ACCOUNT-BALANCE-ROW.ROW-STATUS",
           "type": "string<8>",
           "picture": "PIC X(8)",
           "usage": "DISPLAY",
@@ -84,13 +84,13 @@
       ]
     },
     {
-      "recordName": "EnquiryReply",
-      "cobolName": "ENQUIRY-REPLY",
+      "recordName": "BalanceReply",
+      "cobolName": "BALANCE-REPLY",
       "totalLength": 37,
       "entries": [
         {
           "order": 1,
-          "path": "ENQUIRY-REPLY.REPLY-ACCOUNT-ID",
+          "path": "BALANCE-REPLY.REPLY-ACCOUNT-ID",
           "type": "string<16>",
           "picture": "PIC X(16)",
           "usage": "DISPLAY",
@@ -101,7 +101,7 @@
         },
         {
           "order": 2,
-          "path": "ENQUIRY-REPLY.REPLY-BALANCE",
+          "path": "BALANCE-REPLY.REPLY-BALANCE",
           "type": "currency<\"BDT\",18,2>",
           "picture": "PIC S9(16)V99 COMP-3",
           "usage": "COMP-3",
@@ -112,7 +112,7 @@
         },
         {
           "order": 3,
-          "path": "ENQUIRY-REPLY.OUTCOME",
+          "path": "BALANCE-REPLY.OUTCOME",
           "type": "enum<EnquiryOutcome>",
           "picture": "PIC X(11)",
           "usage": "DISPLAY",

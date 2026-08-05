@@ -10,7 +10,7 @@ describe("compiler api", () => {
 
     expect(result.ok).toBe(true);
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("PROGRAM-ID. ACCOUNT-TRANSFER.");
+    expect(result.cobol).toContain("PROGRAM-ID. ACCOUNTT.");
     expect(result.copybooks).toEqual([
       expect.objectContaining({
         record: "TransferRequest",

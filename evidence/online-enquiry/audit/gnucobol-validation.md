@@ -1,20 +1,22 @@
 # GnuCOBOL Validation Report
 
-| Field                      | Value                                                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| validated-with-gnucobol    | yes                                                                                                                     |
-| backend-profile            | gnucobol-local                                                                                                          |
-| source-artifact            | examples/online-enquiry/src/main.bank.ts                                                                                |
-| source-artifact-sha256     | b063de9a71be722c8b71124fa6f15e42b5aaeee5f80d4e91c348b4805b1e3347                                                        |
-| generated-artifact         | dist/gnucobol/cobol/ONLINE-ENQUIRY.cbl                                                                                  |
-| generated-artifact-sha256  | 84e9ebb01199f72406484d6d4a39851b6b2049ee530d36c2aea8cb9f37e34076                                                        |
-| source-map-artifact        | dist/gnucobol/maps/source-map.json                                                                                      |
-| source-map-artifact-sha256 | 8fe89a14db121a59ebcf7238e6387ebd348285b0297508e793d1a8cefded6849                                                        |
-| compiler-executable        | cobc                                                                                                                    |
-| compiler-version           | cobc (GnuCOBOL) 3.2.0                                                                                                   |
-| compiler-command           | cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ONLINE-ENQUIRY-PRE.cbl -o dist/gnucobol/bin/online-enquiry |
-| compiler-exit-code         | 0                                                                                                                       |
-| compiler-status            | passed                                                                                                                  |
+| Field | Value |
+| --- | --- |
+| validated-with-gnucobol | yes |
+| backend-profile | gnucobol-local |
+| source-artifact | examples/online-enquiry/src/main.bank.ts |
+| source-artifact-sha256 | f52e153c533f7273537df1a1a5183adbd0b55cc1213f52552c3e3727290dcca5 |
+| generated-artifact | evidence/online-enquiry/gnucobol/cobol/ONLINEEN.cbl |
+| generated-artifact-sha256 | cbb7e2536bb0263212e9a2720752729e66624a1f2d9f6acd10ec5f6e188a1b02 |
+| source-map-artifact | evidence/online-enquiry/gnucobol/maps/source-map.json |
+| source-map-artifact-sha256 | 9504651da186133539cc053d472f36441ae1b14106a1a539c90abbe5be41a2bc |
+| compiler-executable | cobc |
+| compiler-version | cobc (GnuCOBOL) 3.2.0 |
+| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/online-enquiry/gnucobol/copybooks evidence/online-enquiry/gnucobol/cobol/ONLINEEN-PRE.cbl -o evidence/online-enquiry/gnucobol/bin/onlineen |
+| compiler-exit-code | 0 |
+| compiler-status | passed |
+| default-dialect-status | passed |
+| dialects-diverge | no |
 
 ## Compiler Output
 

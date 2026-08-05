@@ -28,12 +28,25 @@ all enforced, and `audit/diagnostics.json` is empty.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/ONLINE-ENQUIRY.cbl`
-- `copybooks/` for each record
-- `jcl/ONLINE-ENQUIRY.jcl`
+- `audit/bankc-test-report.md`
+- `audit/copybook-layout.json`
+- `audit/copybook-layout.md`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
+- `audit/gnucobol-validation.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/ONLINEEN.cbl`
+- `copybooks/ACCOUNTB.cpy`
+- `copybooks/BALANCER.cpy`
+- `copybooks/ENQUIRYR.cpy`
+- `jcl/ONLINEEN.jcl`
 - `maps/source-map.json`
-- the audit bundle under `audit/`
+- `source/main.bank.ts`
 
 ## What this bundle shows
 

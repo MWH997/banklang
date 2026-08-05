@@ -4,7 +4,9 @@
   "transactions": [
     {
       "name": "postTransfer",
-      "parameters": ["request"],
+      "parameters": [
+        "request"
+      ],
       "ledgerPostings": [
         {
           "operation": "debit",

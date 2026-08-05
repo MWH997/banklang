@@ -73,8 +73,27 @@ function rawCobolName(name: string): string {
     .toUpperCase();
 }
 
+/**
+ * The program-name, which is also the load module's member name.
+ *
+ * Eight characters and no hyphens, because that is what the name becomes
+ * whatever is written here. Under the default `PGMNAME(COMPAT)` the Programming
+ * Guide says an external program-name is "folded to uppercase ... truncated to
+ * eight characters ... hyphens are translated to zero (0)". So
+ * `PROGRAM-ID. ONLINE-ENQUIRY.` defines the entry point `ONLINE0E`, a name
+ * nothing else in the build ever writes: the job's `GOPGM=` said `ONLINEEN`,
+ * the `EXEC PGM=` said the same, and neither is what the compiler produced.
+ *
+ * The truncation is also where two modules become one. `ACCOUNT-TRANSFER-IN`
+ * and `ACCOUNT-TRANSFER-OUT` are one external name, so a library holding both
+ * resolves every call to whichever was bound last — which is why
+ * `BANK-NAME-001` refuses a program whose eight characters are already taken.
+ *
+ * One rule, used by whatever writes the PROGRAM-ID, whatever writes the member
+ * name, and whatever writes the `EXEC PGM=` that runs it.
+ */
 export function toCobolProgramId(moduleName: string): string {
-  return toCobolName(moduleName);
+  return toCobolName(moduleName).replace(/-/g, "").slice(0, 8);
 }
 
 export function toCobolParagraphName(functionName: string): string {

@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/dist/maps/source-map.json",
+  "artifact": "/workspace/Code/banklang/evidence/account-posting/maps/source-map.json",
   "entries": [
     {
       "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
@@ -14,7 +14,7 @@
         "line": 1,
         "column": 22
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
       "targetStartLine": 4,
       "targetEndLine": 5,
       "category": "module",
@@ -30,11 +30,11 @@
         "line": 10,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 9,
-      "targetEndLine": 13,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 11,
+      "targetEndLine": 15,
       "category": "record",
-      "symbol": "TransferRequest"
+      "symbol": "PostTransferRequest"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
@@ -46,9 +46,9 @@
         "line": 6,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 10,
-      "targetEndLine": 10,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 12,
+      "targetEndLine": 12,
       "category": "field",
       "symbol": "debitAccount"
     },
@@ -62,9 +62,9 @@
         "line": 7,
         "column": 29
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 11,
-      "targetEndLine": 11,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 13,
+      "targetEndLine": 13,
       "category": "field",
       "symbol": "creditAccount"
     },
@@ -78,9 +78,9 @@
         "line": 8,
         "column": 20
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 12,
-      "targetEndLine": 12,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 14,
+      "targetEndLine": 14,
       "category": "field",
       "symbol": "amount"
     },
@@ -94,9 +94,9 @@
         "line": 9,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 13,
-      "targetEndLine": 13,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 15,
+      "targetEndLine": 15,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -110,9 +110,9 @@
         "line": 16,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/dist/cobol/ACCOUNT-POSTING.cbl",
-      "targetStartLine": 26,
-      "targetEndLine": 38,
+      "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
+      "targetStartLine": 31,
+      "targetEndLine": 48,
       "category": "transaction",
       "symbol": "postTransfer"
     }

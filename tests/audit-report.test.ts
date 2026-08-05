@@ -29,9 +29,7 @@ describe("audit report", () => {
       expect(
         existsSync(join(outDir, "audit", "verification-report.json")),
       ).toBe(true);
-      expect(existsSync(join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl"))).toBe(
-        true,
-      );
+      expect(existsSync(join(outDir, "jcl", "ACCOUNTT.jcl"))).toBe(true);
       expect(existsSync(join(outDir, "audit", "verification-report.md"))).toBe(
         true,
       );

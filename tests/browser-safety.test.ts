@@ -22,6 +22,9 @@ const BROWSER_SAFE_PACKAGES = [
   "compiler",
   "formatter",
   "precompiler",
+  // The conformance linter reads artifacts as text and knows nothing about
+  // where they came from, so it runs wherever the compiler does.
+  "conformance-lint",
 ];
 
 /** Packages allowed to touch the file system and process. */

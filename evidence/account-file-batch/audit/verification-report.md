@@ -5,19 +5,19 @@ Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
 
-| Check                      | Status | Details                                                                         |
-| -------------------------- | ------ | ------------------------------------------------------------------------------- |
-| Parse                      | passed | 0 diagnostics                                                                   |
-| Typecheck                  | passed | 0 diagnostics                                                                   |
-| COBOL emit                 | passed | /workspace/Code/banklang/dist/cobol/ACCOUNT-FILE-BATCH.cbl                      |
-| Copybook emit              | passed | 1 copybook file(s)                                                              |
-| Source map emit            | passed | /workspace/Code/banklang/dist/maps/source-map.json                              |
-| JCL emit                   | passed | /workspace/Code/banklang/dist/jcl/ACCOUNT-FILE-BATCH.jcl                        |
-| Audit artifacts            | passed | /workspace/Code/banklang/dist/audit                                             |
+| Check | Status | Details |
+| --- | --- | --- |
+| Parse | passed | 0 diagnostics |
+| Typecheck | passed | 0 diagnostics |
+| COBOL emit | passed | /workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl |
+| Copybook emit | passed | 2 copybook file(s) |
+| Source map emit | passed | /workspace/Code/banklang/evidence/account-file-batch/maps/source-map.json |
+| JCL emit | passed | /workspace/Code/banklang/evidence/account-file-batch/jcl/ACCOUNTF.jcl |
+| Audit artifacts | passed | /workspace/Code/banklang/evidence/account-file-batch/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage        | passed | 5/5 traced symbols, all entries anchored in the generated COBOL.                |
-| GnuCOBOL validation        | passed | Local cobc validation passed.                                                   |
-| Audit schema               | passed | version 1, backend profile ibm-enterprise-cobol-zos                             |
+| Source map coverage | passed | 10/10 traced symbols, all entries anchored in the generated COBOL. |
+| GnuCOBOL validation | passed | Local cobc validation passed. |
+| Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
 ## Notes
 
@@ -27,13 +27,13 @@ Phase: verify
 
 ## Source Map Coverage
 
-- expected-symbols: 5
-- traced-symbols: 5
+- expected-symbols: 10
+- traced-symbols: 10
 - coverage-gaps: 0
 
 ## GnuCOBOL Validation
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl -o dist/gnucobol/bin/account-file-batch
+- compiler-command: cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl -o evidence/account-file-batch/gnucobol/bin/accountf
 - compiler-exit-code: 0

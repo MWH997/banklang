@@ -11,9 +11,12 @@
     "doctor": "pnpm bankc doctor",
     "emit:cobol": "pnpm bankc emit cobol examples/account-transfer",
     "emit:copybooks": "pnpm bankc emit copybooks examples/account-transfer",
+    "evidence:refresh": "tsx tools/refresh-evidence.ts",
+    "fixtures:refresh": "tsx tools/refresh-fixtures.ts",
     "fmt": "tsx tools/format-examples.ts",
     "fmt:check": "tsx tools/format-examples.ts --check",
     "lint": "prettier --check . --ignore-path .prettierignore",
+    "lint:conformance": "tsx tools/conformance-lint.ts",
     "lsp": "tsx packages/language-server/src/bin.ts",
     "playground:build": "pnpm --filter @banklang/playground build",
     "playground:dev": "pnpm --filter @banklang/playground dev",
@@ -21,8 +24,9 @@
     "test": "vitest run",
     "test:determinism": "vitest run tests/determinism.test.ts",
     "test:gnucobol": "tsx tools/gnucobol-validation.ts",
-    "zos:kit": "tsx tools/zos-kit.ts",
-    "typecheck": "tsc -p tsconfig.base.json --noEmit"
+    "typecheck": "tsc -p tsconfig.base.json --noEmit",
+    "words:extract": "tsx tools/extract-ibm-words.ts",
+    "zos:kit": "tsx tools/zos-kit.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

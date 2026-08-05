@@ -34,7 +34,7 @@ describe("source map", () => {
       return lines.slice(entry.targetStartLine - 1, entry.targetEndLine);
     };
 
-    expect(target(0).join("\n")).toContain("PROGRAM-ID. ACCOUNT-TRANSFER.");
+    expect(target(0).join("\n")).toContain("PROGRAM-ID. ACCOUNTT.");
     expect(target(1)[0]).toBe("       01  TRANSFER-REQUEST.");
     expect(target(2)[0]).toContain("DEBIT-ACCOUNT");
     expect(target(5)[0]).toBe("       VALIDATE-AMOUNT.");

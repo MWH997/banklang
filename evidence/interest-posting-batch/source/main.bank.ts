@@ -4,7 +4,7 @@ type MoneyBDT = decimal<18, 2>;
 
 type Rate = decimal<9, 4>;
 
-record InterestAccount {
+record AccrualFeedRow {
   accountId: string<16>;
   branchCode: string<8>;
   balance: MoneyBDT;
@@ -18,7 +18,7 @@ record PostingAdvice {
   idempotencyKey: string<36>;
 }
 
-file accountFeed sequential input record InterestAccount status accountFeedStatus;
+file accountFeed sequential input record AccrualFeedRow status accountFeedStatus;
 
 file adviceOutput sequential output record PostingAdvice status adviceOutputStatus;
 
@@ -51,7 +51,7 @@ function feeFor(balance: MoneyBDT, fee: MoneyBDT): MoneyBDT {
   }
 }
 
-transaction postInterest(account: InterestAccount, advice: PostingAdvice) {
+transaction postInterest(account: AccrualFeedRow, advice: PostingAdvice) {
   let minimumBalance: MoneyBDT = 100.00;
   let premiumThreshold: MoneyBDT = 500000.00;
   let maintenanceFee: MoneyBDT = 25.00;
@@ -82,14 +82,22 @@ transaction postInterest(account: InterestAccount, advice: PostingAdvice) {
   audit("INTEREST_POSTED", account.idempotencyKey);
 }
 
-entry transaction runBatch(account: InterestAccount, advice: PostingAdvice) {
+entry transaction runBatch(account: AccrualFeedRow, advice: PostingAdvice) {
   open accountFeed;
   open adviceOutput;
 
   // The limit is mandatory: an unbounded loop in a transaction is BANK-TXN-004.
+  //
+  // The status test after the read is what a read-ahead loop needs. The
+  // iteration that reaches end of file still runs its body — the `while`
+  // condition is not tested again until the body finishes — so a write that is
+  // not guarded appends one trailing record holding the previous one's values.
   while accountFeedStatus == "00" limit 100000 {
     read accountFeed into account;
-    write adviceOutput from advice;
+
+    if accountFeedStatus == "00" {
+      write adviceOutput from advice;
+    }
   }
 
   close accountFeed;

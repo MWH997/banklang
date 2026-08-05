@@ -5,23 +5,24 @@ which exercises sequential file declarations and the file-status diagnostic.
 
 ## Contents
 
-- `source/main.bank.ts`
-- `cobol/ACCOUNT-FILE-BATCH.cbl`
-- `copybooks/ACCOUNT-RECORD.cpy`
-- `jcl/ACCOUNT-FILE-BATCH.jcl`
-- `maps/source-map.json`
-- `audit/diagnostics.json`
-- `audit/source-map.json`
-- `audit/generated-artifacts.json`
-- `audit/decimal-analysis.json`
-- `audit/transaction-analysis.json`
+- `audit/bankc-test-report.md`
 - `audit/copybook-layout.json`
 - `audit/copybook-layout.md`
-- `audit/validation-matrix.md`
-- `audit/verification-report.md`
-- `audit/verification-report.json`
+- `audit/decimal-analysis.json`
+- `audit/diagnostics.json`
+- `audit/generated-artifacts.json`
 - `audit/gnucobol-validation.md`
-- `audit/bankc-test-report.md`
+- `audit/source-map.json`
+- `audit/transaction-analysis.json`
+- `audit/validation-matrix.md`
+- `audit/verification-report.json`
+- `audit/verification-report.md`
+- `cobol/ACCOUNTF.cbl`
+- `copybooks/ACCOUNTR.cpy`
+- `copybooks/POSTINGR.cpy`
+- `jcl/ACCOUNTF.jcl`
+- `maps/source-map.json`
+- `source/main.bank.ts`
 
 ## What this bundle shows
 

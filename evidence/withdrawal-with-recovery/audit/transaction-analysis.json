@@ -4,7 +4,10 @@
   "transactions": [
     {
       "name": "withdraw",
-      "parameters": ["account", "result"],
+      "parameters": [
+        "account",
+        "result"
+      ],
       "ledgerPostings": [
         {
           "operation": "debit",

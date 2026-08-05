@@ -4,7 +4,11 @@
   "transactions": [
     {
       "name": "accrueBranch",
-      "parameters": ["request", "row", "summary"],
+      "parameters": [
+        "request",
+        "row",
+        "summary"
+      ],
       "ledgerPostings": [],
       "auditEvents": [
         {

@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/cobol/ACCOUNT-TRANSFER.cbl"
+      "details": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/maps/source-map.json"
+      "details": "/workspace/Code/banklang/evidence/account-transfer/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/jcl/ACCOUNT-TRANSFER.jcl"
+      "details": "/workspace/Code/banklang/evidence/account-transfer/jcl/ACCOUNTT.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/dist/audit"
+      "details": "/workspace/Code/banklang/evidence/account-transfer/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,20 +61,20 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/dist/cobol/ACCOUNT-TRANSFER.cbl",
-    "/workspace/Code/banklang/dist/maps/source-map.json",
-    "/workspace/Code/banklang/dist/copybooks/TRANSFER-REQUEST.cpy",
-    "/workspace/Code/banklang/dist/jcl/ACCOUNT-TRANSFER.jcl",
-    "/workspace/Code/banklang/dist/audit/diagnostics.json",
-    "/workspace/Code/banklang/dist/audit/source-map.json",
-    "/workspace/Code/banklang/dist/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/dist/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/dist/audit/copybook-layout.json",
-    "/workspace/Code/banklang/dist/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/dist/audit/verification-report.md",
-    "/workspace/Code/banklang/dist/audit/verification-report.json",
-    "/workspace/Code/banklang/dist/audit/validation-matrix.md",
-    "/workspace/Code/banklang/dist/audit/gnucobol-validation.md"
+    "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
+    "/workspace/Code/banklang/evidence/account-transfer/maps/source-map.json",
+    "/workspace/Code/banklang/evidence/account-transfer/copybooks/TRANSFER.cpy",
+    "/workspace/Code/banklang/evidence/account-transfer/jcl/ACCOUNTT.jcl",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/diagnostics.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/source-map.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/decimal-analysis.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/transaction-analysis.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/copybook-layout.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/generated-artifacts.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/verification-report.md",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/verification-report.json",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/validation-matrix.md",
+    "/workspace/Code/banklang/evidence/account-transfer/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",
@@ -93,16 +93,19 @@
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/account-transfer/src/main.bank.ts",
     "sourceArtifactHash": "ce511a3e0e193fcb873d1c72af546e76aa49dac9665dab56e4f1e05428527a44",
-    "generatedArtifact": "dist/gnucobol/cobol/ACCOUNT-TRANSFER.cbl",
-    "generatedArtifactHash": "b3dc980875293b23f6afbbb4db029ee9aa00ef1ca2b5faaecc02a41b9bf2c23f",
-    "sourceMapArtifact": "dist/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "1511e46a23c9888005058064282278dc48bdcf5065e98f307c63f7b531627613",
+    "generatedArtifact": "evidence/account-transfer/gnucobol/cobol/ACCOUNTT.cbl",
+    "generatedArtifactHash": "effaee3fe94be6ba70151fe72618be69eb665fb7c5759de99ec99236abbc83a8",
+    "sourceMapArtifact": "evidence/account-transfer/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "d0197419f9fd1e5864da294d14156d504c2cce5dde6c96b83e5424017f48db6e",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-TRANSFER.cbl -o dist/gnucobol/bin/account-transfer",
+    "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-transfer/gnucobol/copybooks evidence/account-transfer/gnucobol/cobol/ACCOUNTT.cbl -o evidence/account-transfer/gnucobol/bin/accountt",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,
+    "defaultDialectStatus": "passed",
+    "defaultDialectOutput": null,
+    "dialectsDiverge": false,
     "validatedWithGnucobol": true,
     "knownBackendGaps": [
       "This local profile covers the account-transfer subset only.",

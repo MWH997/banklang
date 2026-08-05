@@ -6976,7 +6976,12 @@ function emitCursorDeclarations(
           .map((line) => `    ${line.trim()}`),
       ],
       addLine,
-      "       ",
+      // Area B. `EXEC SQL` is a statement wherever it stands, and Area A holds
+      // division, section and paragraph headers, FD and SD entries, and level
+      // 01 and 77 indicators — nothing else. This block used to open in column
+      // 8, alongside the `01` entries around it, which reads as though it were
+      // one of them.
+      "           ",
       true,
     );
   }
@@ -7853,16 +7858,14 @@ function defaultJclArtifactPath(moduleName: string): string {
   return `dist/jcl/${toCobolProgramId(moduleName)}.jcl`;
 }
 
+/**
+ * The job name, the step's `EXEC PGM=`, and the load module member.
+ *
+ * All three are the program-name, because `toCobolProgramId` already produces
+ * the eight hyphen-free characters a member name and a job name both are.
+ */
 function toJclJobName(moduleName: string): string {
-  return toCobolProgramId(moduleName).replace(/-/g, "").slice(0, 8);
-}
-
-function toJclDatasetName(cobolArtifactPath: string): string {
-  return cobolArtifactPath
-    .replace(/\.cbl$/i, "")
-    .replace(/\//g, ".")
-    .replace(/-/g, "")
-    .toUpperCase();
+  return toCobolProgramId(moduleName);
 }
 
 function formatCobolType(type: IRType): string {
