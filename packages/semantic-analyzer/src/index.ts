@@ -344,6 +344,13 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
         flattened.push(...flattenStatements(statement.body.statements));
         flattened.push(...flattenStatements(statement.notFound.statements));
         break;
+      case "FileStatement":
+        if (statement.atEndOfPage) {
+          flattened.push(
+            ...flattenStatements(statement.atEndOfPage.statements),
+          );
+        }
+        break;
       case "SortStatement":
         for (const procedure of [
           statement.inputProcedure,

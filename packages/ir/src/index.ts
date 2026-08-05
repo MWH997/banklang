@@ -100,6 +100,18 @@ export interface IRFile {
   keyFieldName: string | null;
   /** Alternate record keys, which allow duplicates. */
   alternateKeyNames: string[];
+  /**
+   * `LINAGE` — page depth, for a print file that paginates.
+   *
+   * COBOL counts the lines written and signals `AT END-OF-PAGE` at the footing
+   * line, which is where a report writes its totals and the next heading.
+   */
+  linage: {
+    lines: number;
+    footingAt: number | null;
+    linesAtTop: number | null;
+    linesAtBottom: number | null;
+  } | null;
 }
 
 export interface IRTransaction {
@@ -443,6 +455,10 @@ export interface IRFileStatement {
    * its bound, because COBOL cannot move an OCCURS item without a subscript.
    */
   recordFields: { name: string; arrayLength: number | null }[];
+  /** `AFTER ADVANCING`, on a write to a print file. */
+  advancing: number | "page" | null;
+  /** `AT END-OF-PAGE` — where a report writes its totals and next heading. */
+  atEndOfPage: IRBlock | null;
 }
 
 export interface IRLedgerStatement {
@@ -850,6 +866,7 @@ export function lowerProgramToIR(
     statusName: file.statusName,
     keyFieldName: file.keyField?.name ?? null,
     alternateKeyNames: file.alternateKeys.map((field) => field.name),
+    linage: file.linage,
   }));
 
   return {
@@ -1871,6 +1888,10 @@ function lowerStatement(
         keyFieldName: file.keyFieldName,
         key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
         recordFields: file.recordFields,
+        advancing: statement.advancing,
+        atEndOfPage: statement.atEndOfPage
+          ? lowerBlock(statement.atEndOfPage, scopeTypes)
+          : null,
       };
     }
   }

@@ -615,6 +615,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-007",
+    title: "Invalid page declaration",
+    explanation:
+      "A page depth describes a print file, so it belongs to a sequential output file, and its footing has to be a line the page has. `advancing` writes a report line, and `on page` is signalled from the page counter, so a file with no declared depth never reaches the end of one.",
+    remediation:
+      "Declare the report as `sequential output` with `page <lines>`, and put the footing on a line within the page.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:

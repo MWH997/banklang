@@ -252,6 +252,13 @@ export interface ResolvedFileErrorHandler {
   body: BlockNode;
 }
 
+export interface ResolvedFileLinage {
+  lines: number;
+  footingAt: number | null;
+  linesAtTop: number | null;
+  linesAtBottom: number | null;
+}
+
 export interface ResolvedFile {
   name: string;
   span: SourceSpan;
@@ -259,6 +266,8 @@ export interface ResolvedFile {
   keyField: ResolvedField | null;
   /** Alternate record keys, which allow duplicates. */
   alternateKeys: ResolvedField[];
+  /** `LINAGE` — page depth, for a print file that paginates. */
+  linage: ResolvedFileLinage | null;
   mode: "input" | "output" | "update";
   record: ResolvedRecord;
   statusName: string | null;
@@ -935,6 +944,56 @@ function resolveFile(
     alternateKeys.push(field);
   }
 
+  // A page depth is what makes a report paginate, so it belongs to a file the
+  // program writes sequentially. COBOL allows LINAGE only there.
+  const linage = declaration.linage;
+  if (linage) {
+    if (
+      declaration.organization !== "sequential" ||
+      declaration.mode !== "output"
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-007",
+          severity: "error",
+          message: `A page depth describes a print file, and ${declaration.name} is ${declaration.organization} ${declaration.mode}.`,
+          span: linage.span,
+          hint: "Declare the report as `sequential output`.",
+          backendProfile: null,
+        }),
+      );
+    }
+    if (linage.lines < 1) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-007",
+          severity: "error",
+          message: "A page has to have at least one line on it.",
+          span: linage.span,
+          hint: "Write `page 60`, the depth of the page body.",
+          backendProfile: null,
+        }),
+      );
+    }
+    // The footing is where END-OF-PAGE is signalled, so it has to be a line
+    // that exists — past the end it would never be reached.
+    if (
+      linage.footingAt !== null &&
+      (linage.footingAt < 1 || linage.footingAt > linage.lines)
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-007",
+          severity: "error",
+          message: `The footing is at line ${linage.footingAt} of a ${linage.lines}-line page.`,
+          span: linage.span,
+          hint: "Put the footing on a line the page has, so end of page is reached.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
   return {
     name: declaration.name,
     span: declaration.span,
@@ -944,6 +1003,14 @@ function resolveFile(
     mode: declaration.mode,
     record,
     statusName: declaration.statusName,
+    linage: linage
+      ? {
+          lines: linage.lines,
+          footingAt: linage.footingAt,
+          linesAtTop: linage.linesAtTop,
+          linesAtBottom: linage.linesAtBottom,
+        }
+      : null,
   };
 }
 
@@ -3129,6 +3196,35 @@ function validateFileStatement(
         message: `Reading indexed file ${file.name} requires a key.`,
         span: statement.span,
         hint: `Write \`read ${file.name} into <record> key <value>;\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // AFTER ADVANCING spaces a report line; a keyed file has no lines to space.
+  if (statement.advancing !== null && file.organization !== "sequential") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-007",
+        severity: "error",
+        message: `\`advancing\` writes a report line, and ${file.name} is ${file.organization}.`,
+        span: statement.span,
+        hint: "Declare the report as `sequential output`.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // COBOL signals AT END-OF-PAGE from the LINAGE counter, so without a declared
+  // page depth there is no page for the write to reach the end of.
+  if (statement.atEndOfPage && !file.linage) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-007",
+        severity: "error",
+        message: `${file.name} declares no page depth, so a write never reaches the end of one.`,
+        span: statement.span,
+        hint: `Declare it with \`page <lines>\`, and a footing if the totals go above the last line.`,
         backendProfile: null,
       }),
     );

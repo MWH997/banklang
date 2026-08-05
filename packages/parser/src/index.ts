@@ -34,6 +34,7 @@ import {
   type ConsoleStatementNode,
   type ReleaseStatementNode,
   type ResetStatementNode,
+  type FileLinageNode,
   type SortProcedureNode,
   type SortStatementNode,
   type SplitStatementNode,
@@ -890,6 +891,42 @@ class Parser {
       } while (this.matchPunctuation(","));
     }
 
+    // `page 60 footing 55 top 3 bottom 3` — the LINAGE clause of a print file.
+    // Matched contextually so `page`, `footing`, `top`, and `bottom` stay
+    // usable as ordinary names.
+    let linage: FileLinageNode | null = null;
+    if (this.current.kind === "identifier" && this.current.text === "page") {
+      const pageToken = this.advance();
+      const lines = this.expectNumber(
+        "Expected the number of lines on a page.",
+      );
+      if (!lines) {
+        return null;
+      }
+      const optional = (word: string): number | null => {
+        const next: Token = this.current;
+        if (next.kind !== "identifier" || next.text !== word) {
+          return null;
+        }
+        this.advance();
+        const count = this.expectNumber(
+          `Expected a line count after \`${word}\`.`,
+        );
+        return count ? Number(count.text) : null;
+      };
+      linage = {
+        lines: Number(lines.text),
+        footingAt: optional("footing"),
+        linesAtTop: optional("top"),
+        linesAtBottom: optional("bottom"),
+        span: {
+          sourceFile: pageToken.span.sourceFile,
+          start: pageToken.span.start,
+          end: this.previous?.span.end ?? pageToken.span.end,
+        },
+      };
+    }
+
     let statusName: string | null = null;
     if (
       this.current.kind === "identifier" &&
@@ -928,6 +965,7 @@ class Parser {
       statusName,
       keyField,
       alternateKeys,
+      linage,
       span: {
         sourceFile: fileToken.span.sourceFile,
         start: fileToken.span.start,
@@ -2329,6 +2367,43 @@ class Parser {
       }
     }
 
+    // `advancing 1` or `advancing page` on a write to a print file, and
+    // `on page { ... }` for the heading COBOL asks for at AT END-OF-PAGE.
+    let advancing: number | "page" | null = null;
+    let atEndOfPage: BlockNode | null = null;
+    if (operation === "write") {
+      const next: Token = this.current;
+      if (next.kind === "identifier" && next.text === "advancing") {
+        this.advance();
+        const following: Token = this.current;
+        if (following.kind === "identifier" && following.text === "page") {
+          this.advance();
+          advancing = "page";
+        } else {
+          const lines = this.expectNumber("Expected a line count or `page`.");
+          if (!lines) {
+            return null;
+          }
+          advancing = Number(lines.text);
+        }
+      }
+
+      const page: Token = this.current;
+      if (
+        page.kind === "keyword" &&
+        page.text === "on" &&
+        this.next.kind === "identifier" &&
+        this.next.text === "page"
+      ) {
+        this.advance();
+        this.advance();
+        atEndOfPage = this.parseBlock();
+        if (!atEndOfPage) {
+          return null;
+        }
+      }
+    }
+
     const semicolon = this.expectPunctuation(
       ";",
       "Expected `;` after file statement.",
@@ -2343,6 +2418,8 @@ class Parser {
       fileName: fileToken.text,
       recordName,
       key,
+      advancing,
+      atEndOfPage,
       span: {
         sourceFile: operationToken.span.sourceFile,
         start: operationToken.span.start,

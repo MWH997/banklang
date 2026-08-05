@@ -480,7 +480,31 @@ export function emitCobol(
       // The FD record carries the real field structure, with names prefixed by
       // the file so they cannot collide with the working-storage record. That
       // is what makes per-field access and a RECORD KEY possible.
-      addLine(`       FD  ${fileCobolName(file.name)}.`);
+      // LINAGE is what makes a report paginate: COBOL counts the lines written
+      // and signals AT END-OF-PAGE at the footing, which is where the totals
+      // and the next heading go.
+      if (file.linage) {
+        const clauses = [`           LINAGE IS ${file.linage.lines} LINES`];
+        if (file.linage.footingAt !== null) {
+          clauses.push(
+            `               WITH FOOTING AT ${file.linage.footingAt}`,
+          );
+        }
+        if (file.linage.linesAtTop !== null) {
+          clauses.push(`               LINES AT TOP ${file.linage.linesAtTop}`);
+        }
+        if (file.linage.linesAtBottom !== null) {
+          clauses.push(
+            `               LINES AT BOTTOM ${file.linage.linesAtBottom}`,
+          );
+        }
+        addLine(`       FD  ${fileCobolName(file.name)}`);
+        clauses.forEach((clause, index) =>
+          addLine(index === clauses.length - 1 ? `${clause}.` : clause),
+        );
+      } else {
+        addLine(`       FD  ${fileCobolName(file.name)}.`);
+      }
       addLine(`       01  ${fileRecordName(file)}.`);
       emitRecordFields(file.record.fields, 1, addLine);
     }
@@ -1545,7 +1569,7 @@ function emitStatement(
         emitExpressionStatement(statement, addLine, indent);
         break;
       case "FileStatement":
-        emitFileStatement(statement, addLine, indent);
+        emitFileStatement(statement, addLine, indentLevel, resultName, false);
         break;
       case "SwitchStatement":
         emitSwitchStatement(statement, addLine, indentLevel, resultName, false);
@@ -1716,7 +1740,7 @@ function emitTransactionBody(
         emitExpressionStatement(statement, addLine, indent);
         break;
       case "FileStatement":
-        emitFileStatement(statement, addLine, indent);
+        emitFileStatement(statement, addLine, indentLevel, "", true);
         break;
       case "SwitchStatement":
         emitSwitchStatement(statement, addLine, indentLevel, "", true);
@@ -2306,8 +2330,11 @@ function emitExpressionStatement(
 function emitFileStatement(
   statement: IRFileStatement,
   addLine: (line?: string) => void,
-  indent: string,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
 ): void {
+  const indent = " ".repeat(indentLevel);
   const file = fileCobolName(statement.fileName);
 
   const status = statement.statusName
@@ -2376,16 +2403,45 @@ function emitFileStatement(
       }
       addLine(`${indent}END-START`);
       return;
-    case "write":
+    case "write": {
       emitRecordFieldMapping(statement, addLine, indent, "write");
-      addLine(`${indent}WRITE ${fileRecordNameFor(statement.fileName)}`);
+      // AFTER ADVANCING spaces the report before the line rather than writing
+      // on top of the last one; ADVANCING PAGE is how a heading starts a page.
+      const advancing =
+        statement.advancing === null
+          ? ""
+          : statement.advancing === "page"
+            ? " AFTER ADVANCING PAGE"
+            : ` AFTER ADVANCING ${statement.advancing} LINES`;
+      addLine(
+        `${indent}WRITE ${fileRecordNameFor(statement.fileName)}${advancing}`,
+      );
       if (status && statement.fileOrganization === "indexed") {
         // A duplicate key is the failure a WRITE to a KSDS actually has, and
         // it is silent unless the status is captured.
         addLine(`${indent}    INVALID KEY MOVE "22" TO ${status}`);
+      }
+      if (statement.atEndOfPage) {
+        addLine(`${indent}    AT END-OF-PAGE`);
+        if (inTransaction) {
+          emitTransactionBody(statement.atEndOfPage, addLine, indentLevel + 8);
+        } else {
+          emitStatement(
+            statement.atEndOfPage,
+            addLine,
+            indentLevel + 8,
+            resultName,
+          );
+        }
+      }
+      if (
+        statement.atEndOfPage ||
+        (status && statement.fileOrganization === "indexed")
+      ) {
         addLine(`${indent}END-WRITE`);
       }
       return;
+    }
     case "rewrite":
       emitRecordFieldMapping(statement, addLine, indent, "write");
       addLine(`${indent}REWRITE ${fileRecordNameFor(statement.fileName)}`);
