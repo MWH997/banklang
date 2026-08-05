@@ -635,7 +635,7 @@ class Parser {
     while (!this.is("eof")) {
       const declaration = this.parseDeclaration();
       if (!declaration) {
-        this.synchronizeToDeclaration();
+        this.recover(() => this.synchronizeToDeclaration());
         continue;
       }
       declarations.push(declaration);
@@ -1529,7 +1529,7 @@ class Parser {
       ) {
         const entry = this.parseRenamesDeclaration();
         if (!entry) {
-          this.synchronizeToFieldOrRecordEnd();
+          this.recover(() => this.synchronizeToFieldOrRecordEnd());
           continue;
         }
         renames.push(entry);
@@ -1538,10 +1538,23 @@ class Parser {
 
       const field = this.parseFieldDeclaration();
       if (!field) {
-        this.synchronizeToFieldOrRecordEnd();
+        this.recover(() => this.synchronizeToFieldOrRecordEnd());
         continue;
       }
       fields.push(field);
+    }
+
+    // Running out of source is not the same as reaching the closing brace, and
+    // the loop above cannot tell them apart on its own: a record whose `}` was
+    // missing parsed clean and silently became a record with fewer fields than
+    // it was written with.
+    if (this.is("eof") && this.previous?.text !== "}") {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        `Record ${nameToken?.text ?? ""} reaches the end of the file with no closing \`}\`.`,
+        "A record that runs to the end of the source is missing a brace, and every field after the missing one belongs to nothing.",
+      );
+      return null;
     }
 
     const endToken = this.previous ?? openBrace ?? nameToken;
@@ -1751,7 +1764,7 @@ class Parser {
     while (!this.is("eof") && !this.isPunctuation(")")) {
       const parameter = this.parseParameter();
       if (!parameter) {
-        this.synchronizeToParameterOrEnd();
+        this.recover(() => this.synchronizeToParameterOrEnd());
         continue;
       }
       parameters.push(parameter);
@@ -2082,7 +2095,7 @@ class Parser {
     while (!this.is("eof") && !this.matchPunctuation("}")) {
       const statement = this.parseStatement();
       if (!statement) {
-        this.synchronizeToStatementOrBlockEnd();
+        this.recover(() => this.synchronizeToStatementOrBlockEnd());
         continue;
       }
       statements.push(statement);
@@ -4567,6 +4580,27 @@ class Parser {
         backendProfile: null,
       }),
     );
+  }
+
+  /**
+   * Recovers, and guarantees the parser moved.
+   *
+   * Every recovery routine below stops on the token it wants to resume at, and
+   * a parse that failed without consuming anything can leave that same token
+   * current — so the loop that called it would recover to exactly where it
+   * started, and do it again forever. The compiler ran out of memory rather
+   * than reporting a syntax error, which is the worst way to be told about one.
+   *
+   * The rule that makes it impossible: recovery either advances or the caller
+   * advances for it. Progress is then structural rather than a property each
+   * recovery routine has to be careful to preserve.
+   */
+  private recover(synchronize: () => void): void {
+    const before = this.current.offset;
+    synchronize();
+    if (this.current.offset === before && !this.is("eof")) {
+      this.advance();
+    }
   }
 
   private synchronizeToDeclaration(): void {
