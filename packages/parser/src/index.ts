@@ -3033,11 +3033,15 @@ class Parser {
       return null;
     }
 
-    if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
+    if (
+      target.kind !== "Identifier" &&
+      target.kind !== "MemberAccess" &&
+      target.kind !== "IndexAccess"
+    ) {
       this.errorAtCurrent(
         "BANK-SYN-002",
         "This is not an assignable target.",
-        "Assign to a local, a record field, or an array element field.",
+        "Assign to a local, a record field, or an element of a table.",
       );
       return null;
     }
@@ -3758,7 +3762,7 @@ class Parser {
   }
 
   private withIndexSuffix(
-    target: MemberAccessNode | IdentifierNode,
+    target: MemberAccessNode | IdentifierNode | IndexAccessNode,
   ): ExpressionNode | null {
     if (!this.isPunctuation("[")) {
       return target;
@@ -3784,6 +3788,13 @@ class Parser {
         end: close.span.end,
       },
     };
+
+    // `rates[i][j]` reaches a cell of a table of tables. The subscripts chain,
+    // and COBOL puts them all on the innermost name when the reference is
+    // rendered.
+    if (this.isPunctuation("[")) {
+      return this.withIndexSuffix(indexed);
+    }
 
     // `lines[i].amount` reaches a field of the indexed element.
     if (this.isPunctuation(".")) {
@@ -4237,31 +4248,44 @@ class Parser {
   }
 
   /** Applies a `[n]` suffix, producing a bounded array type. */
+  /**
+   * `T[3]`, and `T[3][4]` for a table of tables.
+   *
+   * The suffixes are collected before the type is built, because they read
+   * outermost-first: `rate[3][4]` is three rows of four, so the 3 has to become
+   * the outer `OCCURS` and the 4 the inner one. Wrapping as each bracket is
+   * consumed would nest them the other way round and silently transpose the
+   * table.
+   */
   private withArraySuffix(type: TypeNode): TypeNode | null {
-    if (!this.isPunctuation("[")) {
-      return type;
+    const lengths: { value: number; end: Token }[] = [];
+    while (this.isPunctuation("[")) {
+      this.advance();
+      const lengthToken = this.expectNumber("Expected an array length.");
+      const close = this.expectPunctuation(
+        "]",
+        "Expected `]` after array length.",
+      );
+      if (!lengthToken || !close) {
+        return null;
+      }
+      lengths.push({ value: Number(lengthToken.text), end: close });
     }
 
-    this.advance();
-    const lengthToken = this.expectNumber("Expected an array length.");
-    const close = this.expectPunctuation(
-      "]",
-      "Expected `]` after array length.",
-    );
-    if (!lengthToken || !close) {
-      return null;
+    let built: TypeNode = type;
+    for (let index = lengths.length - 1; index >= 0; index -= 1) {
+      built = {
+        kind: "ArrayType",
+        element: built,
+        length: lengths[index].value,
+        span: {
+          sourceFile: type.span.sourceFile,
+          start: type.span.start,
+          end: lengths[lengths.length - 1].end.span.end,
+        },
+      } satisfies ArrayTypeNode;
     }
-
-    return {
-      kind: "ArrayType",
-      element: type,
-      length: Number(lengthToken.text),
-      span: {
-        sourceFile: type.span.sourceFile,
-        start: type.span.start,
-        end: close.span.end,
-      },
-    } satisfies ArrayTypeNode;
+    return built;
   }
 
   private expectKeyword(keyword: string, message: string): Token | null {

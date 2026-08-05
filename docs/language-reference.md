@@ -477,6 +477,29 @@ record Statement {
 
 Arrays must be statically bounded unless mapped to a known COBOL `OCCURS DEPENDING ON` construct.
 
+### Tables of tables
+
+```ts
+record RateBook {
+  rates: decimal<9, 4>[3][4];
+}
+```
+
+Nested `OCCURS`, three rows of four. The bounds read outermost-first, so the 3
+becomes the outer table and the 4 the inner one — a rate matrix by term and
+band, which is how a bank holds one.
+
+```ts
+book.rates[1][1] = 0.05;
+```
+
+COBOL subscripts the **innermost** data name with every dimension at once, so
+that becomes `RATES-ITEM OF BOOK (1, 1)` rather than `RATES (1) (1)`. The inner
+dimension is named for you, since nothing in the source names it and COBOL needs
+something to subscript.
+
+Each dimension gets its own `INDEXED BY`.
+
 ## 7. Nullable values
 
 Nullable values are explicit:

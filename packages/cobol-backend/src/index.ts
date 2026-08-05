@@ -1520,6 +1520,24 @@ function emitField(
 
   // A bounded array becomes OCCURS. Arrays of records nest their fields.
   if (type.kind === "array") {
+    // A table of tables is nested OCCURS, and COBOL subscripts the innermost
+    // name with every dimension: `RATE-ITEM (I, J)`. The inner item therefore
+    // needs a name of its own, which the outer group's does not give it.
+    if (type.element.kind === "array") {
+      addLine(
+        `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}`,
+      );
+      addLine(`${indent}        INDEXED BY ${tableIndexName(name)}.`);
+      emitField(
+        innerTableName(name),
+        type.element,
+        level + 1,
+        indent,
+        addLine,
+        { initialValue: clauses.initialValue },
+      );
+      return;
+    }
     if (type.element.kind === "record") {
       addLine(
         `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}`,
@@ -1582,6 +1600,30 @@ function emitField(
  * other rather than being decided when the field was declared.
  */
 let suppressInitialValues = false;
+
+/**
+ * The name of the item inside a table of tables.
+ *
+ * COBOL puts every subscript on the innermost data name, so the inner
+ * dimension has to be named even though nothing in the source names it.
+ */
+function innerTableName(fieldName: string): string {
+  return `${fieldName}Item`;
+}
+
+/**
+ * The same name the declaration gave the inner item, in its COBOL spelling.
+ *
+ * A reference like `RATES OF BOOK` keeps its qualification: only the data name
+ * itself gains the suffix, so the group it belongs to still qualifies it.
+ */
+function withInnerTableName(base: string, depth: number): string {
+  const suffix = "-ITEM".repeat(depth);
+  const separator = base.indexOf(" OF ");
+  return separator < 0
+    ? `${base}${suffix}`
+    : `${base.slice(0, separator)}${suffix}${base.slice(separator)}`;
+}
 
 function nullIndicatorName(fieldName: string): string {
   return `${toCobolFieldName(fieldName)}-IND`;
@@ -2964,7 +3006,9 @@ function emitAssignStatement(
   const target =
     statement.target.kind === "Identifier"
       ? resolveIdentifier(statement.target.name)
-      : renderQualifiedFieldReference(statement.target);
+      : statement.target.kind === "IndexAccess"
+        ? renderExpression(statement.target)
+        : renderQualifiedFieldReference(statement.target);
 
   emitComputeInto(
     target,
@@ -4249,8 +4293,24 @@ function renderExpression(expression: IRExpression): string {
         : functionResultName(expression.callee);
     case "EnumMember":
       return `"${expression.member}"`;
-    case "IndexAccess":
-      return `${renderExpression(expression.target)} (${renderExpression(expression.index)})`;
+    case "IndexAccess": {
+      // COBOL subscripts the innermost name with every dimension at once —
+      // `RATE-ITEM (I, J)`, not `RATE (I) (J)` — so a chain of index accesses
+      // collapses into one reference.
+      const subscripts: string[] = [];
+      let target: IRExpression = expression;
+      let depth = 0;
+      while (target.kind === "IndexAccess") {
+        subscripts.unshift(renderExpression(target.index));
+        target = target.target;
+        depth += 1;
+      }
+      const base = renderExpression(target);
+      // Only the deepest name carries the subscripts, and a table of tables
+      // names its inner item separately.
+      const name = depth > 1 ? withInnerTableName(base, depth - 1) : base;
+      return `${name} (${subscripts.join(", ")})`;
+    }
     case "NullableCheck":
       return expression.operation === "isPresent"
         ? `${nullIndicatorFor(expression.operand)} = 0`
