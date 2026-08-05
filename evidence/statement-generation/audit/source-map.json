@@ -352,7 +352,7 @@
       },
       "artifact": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
       "targetStartLine": 141,
-      "targetEndLine": 308,
+      "targetEndLine": 316,
       "category": "transaction",
       "symbol": "generateStatement"
     }

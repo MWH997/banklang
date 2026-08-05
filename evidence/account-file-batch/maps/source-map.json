@@ -160,7 +160,7 @@
       },
       "artifact": "/workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl",
       "targetStartLine": 96,
-      "targetEndLine": 184,
+      "targetEndLine": 192,
       "category": "transaction",
       "symbol": "postAccounts"
     }

@@ -5,11 +5,11 @@
 | validated-with-gnucobol | yes |
 | backend-profile | gnucobol-local |
 | source-artifact | examples/online-enquiry/src/main.bank.ts |
-| source-artifact-sha256 | f52e153c533f7273537df1a1a5183adbd0b55cc1213f52552c3e3727290dcca5 |
+| source-artifact-sha256 | 5b1f8ecf61fcd8d1b5ea8fd15ae6fa9092343285d1ead18fae8d6fd703c21382 |
 | generated-artifact | evidence/online-enquiry/gnucobol/cobol/ONLINEEN.cbl |
-| generated-artifact-sha256 | cbb7e2536bb0263212e9a2720752729e66624a1f2d9f6acd10ec5f6e188a1b02 |
+| generated-artifact-sha256 | b1f262e8807e71009052c79d377e1245c7060014e4ed4894836f872a190eefa1 |
 | source-map-artifact | evidence/online-enquiry/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 9504651da186133539cc053d472f36441ae1b14106a1a539c90abbe5be41a2bc |
+| source-map-artifact-sha256 | 6ef6f166ab19f6f8a0b34d2fbdc6639ce0f5df3db2c6158d43e5b890a9b8c541 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/online-enquiry/gnucobol/copybooks evidence/online-enquiry/gnucobol/cobol/ONLINEEN-PRE.cbl -o evidence/online-enquiry/gnucobol/bin/onlineen |

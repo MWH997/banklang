@@ -536,7 +536,7 @@ export function precompile(cobol: string): PrecompileResult {
   // The handler section reads the XML registers, and it is emitted a long way
   // from the statement that drives it, so the substitution is made over the
   // whole program rather than inside the block.
-  const rewritten = usesXmlParse
+  const withXml = usesXmlParse
     ? output.map((line) =>
         XML_REGISTERS.reduce(
           (text, [pattern, replacement]) => text.replace(pattern, replacement),
@@ -544,6 +544,14 @@ export function precompile(cobol: string): PrecompileResult {
         ),
       )
     : output;
+
+  // `DFHRESP` is a translator built-in, not COBOL: the API Reference says a
+  // response is tested "by means of DFHRESP", and the translator substitutes
+  // the value. It appears in ordinary condition text rather than inside an
+  // `EXEC CICS` block, so it is substituted over the whole program.
+  const rewritten = usesCics
+    ? withXml.map((line) => line.replace(/\bDFHRESP\s*\(\s*NORMAL\s*\)/gi, "0"))
+    : withXml;
 
   // A translated block is longer than the `EXEC` it replaces — a call with its
   // whole host-variable list on one line — so the output has to be laid out

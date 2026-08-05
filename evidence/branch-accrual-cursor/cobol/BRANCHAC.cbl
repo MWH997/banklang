@@ -121,6 +121,12 @@
                        :ROW-BALANCE OF ACCOUNT-BALANCE-ROW, :ROW-STATUS
                        OF ACCOUNT-BALANCE-ROW
                END-EXEC
+               IF SQLCODE < 0
+                   DISPLAY "FETCH FAILED accountsInBranch SQLCODE "
+                       SQLCODE UPON SYSOUT
+                   MOVE 12 TO BANK-RETURN-CODE
+                   MOVE "SQL-FETCH-FAILED" TO BANK-FAILURE-CODE
+               END-IF
                IF SQLCODE NOT = 0
                    EXIT PERFORM
                END-IF
@@ -178,9 +184,18 @@
                    END-COMPUTE
                END-IF
            END-PERFORM
+           IF ACCOUNTS-IN-BRANCH-ROWS >= 5000 AND SQLCODE = 0
+               DISPLAY "CURSOR LIMIT 5000 REACHED, ROWS UNREAD" UPON
+                   SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "BANK-LOOP-EXHAUSTED" TO BANK-FAILURE-CODE
+           END-IF
            EXEC SQL
                CLOSE ACCOUNTS-IN-BRANCH
            END-EXEC
+           IF BANK-FAILURE-CODE NOT = SPACES
+               GO TO ACCRUE-BRANCH-EXIT
+           END-IF
            OPEN OUTPUT SUMMARY-OUTPUT-FILE
            IF SUMMARY-STATUS(1:1) NOT = "0"
                DISPLAY "OPEN FAILED summaryOutput STATUS "

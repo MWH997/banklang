@@ -86,7 +86,7 @@
     {
       "recordName": "BalanceReply",
       "cobolName": "BALANCE-REPLY",
-      "totalLength": 37,
+      "totalLength": 40,
       "entries": [
         {
           "order": 1,
@@ -114,11 +114,11 @@
           "order": 3,
           "path": "BALANCE-REPLY.OUTCOME",
           "type": "enum<EnquiryOutcome>",
-          "picture": "PIC X(11)",
+          "picture": "PIC X(14)",
           "usage": "DISPLAY",
           "offset": 26,
-          "length": 11,
-          "bytes": 11,
+          "length": 14,
+          "bytes": 14,
           "sensitive": false
         }
       ]

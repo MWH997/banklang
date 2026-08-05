@@ -595,6 +595,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-CICS-004",
+    title: "CICS response compared against an unnamed value",
+    explanation:
+      'A CICS response captured with `resp` is compared against a number other than zero. The API Reference names one value a program may write — a normal return is `DFHRESP(NORMAL)` — and says the rest are tested "by means of DFHRESP", the translator\'s own built-in function. The numbers behind the other conditions belong to the translator, not to the API, so a program comparing against one has hard-coded something CICS never promised.',
+    remediation:
+      "Test `<resp> == 0`, which generates `IF ... = DFHRESP(NORMAL)`. Branch on the specific condition in the region's own terms rather than on its number.",
+    specReference: "language-reference.md section 14a",
+    implemented: true,
+  },
+  {
+    id: "BANK-SQL-007",
+    title: "Db2 error collapsed into not-found",
+    explanation:
+      "A body tests SQLCODE but nothing in it separates a negative SQLCODE from `+100`. `+100` is the only not-found; negative is an error — `-911` a deadlock the thread lost, `-904` a resource that was not available, `-805` a package that was never bound. With only `sqlcode == 0` written, every one of those takes the else branch, so a balance enquiry answers that the account does not exist and a posting decision is made on a query that never ran.",
+    remediation:
+      "Add a branch on `sqlcode < 0` and give it its own outcome, or raise. Testing `sqlcode == 100` as well is not enough on its own: `!= 0` puts `+100` and `-911` on the same side.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
+  },
+  {
     id: "BANK-CICS-001",
     title: "CICS response code not captured",
     explanation:

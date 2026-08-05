@@ -272,7 +272,7 @@
       },
       "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
       "targetStartLine": 208,
-      "targetEndLine": 289,
+      "targetEndLine": 297,
       "category": "transaction",
       "symbol": "runBatch"
     }

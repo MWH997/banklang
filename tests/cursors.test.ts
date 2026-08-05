@@ -244,10 +244,14 @@ describe("cursors and statements are not interchangeable", () => {
 entry transaction accrue(request: Request, row: AccountRow) {
   execute accountsInBranch(request.branchId) into row;
 
-  if sqlcode == 0 {
-    audit("ROW", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("NONE", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("ROW", request.idempotencyKey);
+    } else {
+      audit("NONE", request.idempotencyKey);
+    }
   }
 }`);
 

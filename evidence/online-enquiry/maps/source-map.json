@@ -23,11 +23,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 11,
+        "line": 15,
         "column": 8
       },
       "sourceEnd": {
-        "line": 15,
+        "line": 19,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -39,11 +39,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 12,
+        "line": 16,
         "column": 3
       },
       "sourceEnd": {
-        "line": 12,
+        "line": 16,
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -55,11 +55,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 13,
+        "line": 17,
         "column": 3
       },
       "sourceEnd": {
-        "line": 13,
+        "line": 17,
         "column": 27
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -71,11 +71,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 14,
+        "line": 18,
         "column": 3
       },
       "sourceEnd": {
-        "line": 14,
+        "line": 18,
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -87,11 +87,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 17,
+        "line": 21,
         "column": 8
       },
       "sourceEnd": {
-        "line": 21,
+        "line": 25,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -103,11 +103,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 18,
+        "line": 22,
         "column": 3
       },
       "sourceEnd": {
-        "line": 18,
+        "line": 22,
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -119,11 +119,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 19,
+        "line": 23,
         "column": 3
       },
       "sourceEnd": {
-        "line": 19,
+        "line": 23,
         "column": 19
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -135,11 +135,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 20,
+        "line": 24,
         "column": 3
       },
       "sourceEnd": {
-        "line": 20,
+        "line": 24,
         "column": 24
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -151,27 +151,27 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 23,
+        "line": 27,
         "column": 8
       },
       "sourceEnd": {
-        "line": 27,
+        "line": 31,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
       "targetStartLine": 25,
-      "targetEndLine": 31,
+      "targetEndLine": 32,
       "category": "record",
       "symbol": "BalanceReply"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 24,
+        "line": 28,
         "column": 3
       },
       "sourceEnd": {
-        "line": 24,
+        "line": 28,
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -183,11 +183,11 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 25,
+        "line": 29,
         "column": 3
       },
       "sourceEnd": {
-        "line": 25,
+        "line": 29,
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
@@ -199,48 +199,48 @@
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 26,
+        "line": 30,
         "column": 3
       },
       "sourceEnd": {
-        "line": 26,
+        "line": 30,
         "column": 27
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
       "targetStartLine": 28,
-      "targetEndLine": 31,
+      "targetEndLine": 32,
       "category": "field",
       "symbol": "outcome"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 37,
+        "line": 41,
         "column": 10
       },
       "sourceEnd": {
-        "line": 39,
+        "line": 43,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 59,
-      "targetEndLine": 67,
+      "targetStartLine": 60,
+      "targetEndLine": 68,
       "category": "function",
       "symbol": "isAvailable"
     },
     {
       "sourceFile": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
       "sourceStart": {
-        "line": 43,
+        "line": 47,
         "column": 18
       },
       "sourceEnd": {
-        "line": 70,
+        "line": 87,
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 68,
-      "targetEndLine": 114,
+      "targetStartLine": 69,
+      "targetEndLine": 120,
       "category": "transaction",
       "symbol": "accountEnquiry"
     }

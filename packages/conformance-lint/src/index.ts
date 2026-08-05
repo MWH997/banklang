@@ -834,7 +834,11 @@ function vocabulary(content: string): string[] {
     .replace(/\bPIC(?:TURE)?\s+(?:IS\s+)?\S+/g, " ")
     // `COPY MEMBER.` names a library member, which is a text-name rather than
     // a word the compiler defines.
-    .replace(/\bCOPY\s+\S+/g, " COPY ");
+    .replace(/\bCOPY\s+\S+/g, " COPY ")
+    // `DFHRESP(NORMAL)` names a CICS condition, which the translator resolves.
+    // The name is CICS's vocabulary rather than COBOL's, and the API Reference
+    // is where it comes from.
+    .replace(/\bDFHRESP\s*\([^)]*\)/g, " DFHRESP ");
 
   return userDefinedWords(text)
     .map((word) => word.toUpperCase())

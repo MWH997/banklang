@@ -35,10 +35,14 @@ describe("SQL declarations", () => {
     const result = compile(`${PREAMBLE}\n${SELECT}
 transaction t(request: Request, row: Row) {
   execute fetchAccount(request.accountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -55,10 +59,14 @@ transaction t(request: Request, row: Row) {
     const result = compile(`${PREAMBLE}\n${SELECT}
 transaction t(request: Request, row: Row) {
   execute fetchAccount(request.accountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -83,10 +91,14 @@ sql dyn(keyId: string<16>): Row {
 
 transaction t(request: Request, row: Row) {
   execute dyn(request.accountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -101,10 +113,14 @@ sql bad(keyId: string<16>): Row {
 
 transaction t(request: Request, row: Row) {
   execute bad(request.accountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -119,10 +135,14 @@ sql ambiguous(rowId: string<16>): Row {
 
 transaction t(request: Request, row: Row) {
   execute ambiguous(request.accountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -134,10 +154,14 @@ transaction t(request: Request, row: Row) {
     const result = compile(`${PREAMBLE}\n${SELECT}
 transaction t(request: Request, row: Row) {
   execute fetchAccount(request.accountId);
-  if sqlcode == 0 {
-    audit("FOUND", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", request.idempotencyKey);
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
 }`);
 
@@ -267,10 +291,14 @@ describe("combined SQL and CICS", () => {
     const result = compile(`${PREAMBLE}\n${SELECT}
 cics transaction enquiry(request: Request, row: Row) {
   execute fetchAccount(request.accountId) into row;
-  if sqlcode == 0 {
-    link "AUDITLOG" commarea row resp linkResp;
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("MISSING", request.idempotencyKey);
+    if sqlcode == 0 {
+      link "AUDITLOG" commarea row resp linkResp;
+    } else {
+      audit("MISSING", request.idempotencyKey);
+    }
   }
   audit("DONE", request.idempotencyKey);
 }`);

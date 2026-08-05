@@ -174,10 +174,14 @@ sql fetchAccount(wanted: string<16>): Row {
 
 entry transaction enquire(row: Row, idempotencyKey: string<36>) {
   execute fetchAccount(row.rowAccountId) into row;
-  if sqlcode == 0 {
-    audit("FOUND", idempotencyKey);
+  if sqlcode < 0 {
+    audit("DB2_FAILED", idempotencyKey);
   } else {
-    audit("MISSING", idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", idempotencyKey);
+    } else {
+      audit("MISSING", idempotencyKey);
+    }
   }
 }`;
 

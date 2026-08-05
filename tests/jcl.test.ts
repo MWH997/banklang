@@ -95,10 +95,14 @@ sql fetchAccount(keyAccountId: string<16>): AccountRow {
 entry transaction settle(row: AccountRow, idempotencyKey: string<36>) {
   execute fetchAccount("ACC-1") into row;
 
-  if sqlcode == 0 {
-    audit("FOUND", idempotencyKey);
+  if sqlcode < 0 {
+    audit("DB2_FAILED", idempotencyKey);
   } else {
-    audit("MISSING", idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", idempotencyKey);
+    } else {
+      audit("MISSING", idempotencyKey);
+    }
   }
 }`;
 
@@ -543,10 +547,14 @@ sql fetchAccount(keyAccountId: string<16>): AccountRow {
 
 entry transaction settle(row: AccountRow, idempotencyKey: string<36>) {
   execute fetchAccount("ACC-1") into row;
-  if sqlcode == 0 {
-    audit("FOUND", idempotencyKey);
+  if sqlcode < 0 {
+    audit("DB2_FAILED", idempotencyKey);
   } else {
-    audit("MISSING", idempotencyKey);
+    if sqlcode == 0 {
+      audit("FOUND", idempotencyKey);
+    } else {
+      audit("MISSING", idempotencyKey);
+    }
   }
 }`;
 
