@@ -12,6 +12,7 @@ import type {
   IRIdentifierExpression,
   IRCursorLoopStatement,
   IRLetStatement,
+  IRMappedField,
   IRProgram,
   IRRecord,
   IRType,
@@ -178,6 +179,15 @@ let recursiveContext: {
 
 /** Functions of the program being emitted, for resolving call shape. */
 let currentFunctions = new Map<string, IRFunction>();
+
+/**
+ * Records of the program being emitted, keyed by name.
+ *
+ * A statement carries the name of the record it touches rather than the record,
+ * so this is how the emitter asks a question about the declaration — such as
+ * whether the field being assigned is the count some table's length depends on.
+ */
+let currentRecords = new Map<string, IRRecord>();
 
 /** Recursive functions become separate programs with their own names. */
 function recursiveProgramName(name: string): string {
@@ -446,6 +456,9 @@ export function emitCobol(
   currentLocalFields = planLocalFields(program);
   declaredDataNames = collectDataNames(program);
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
+  currentRecords = new Map(
+    program.records.map((record) => [record.name, record]),
+  );
 
   // Every line goes through reference format on the way in, so `lineNumber`
   // counts the lines the artifact will actually have and the source map points
@@ -545,21 +558,21 @@ export function emitCobol(
         addLine(
           `       FD  ${fileCobolName(file.name)} RECORD IS VARYING IN SIZE FROM ${file.recordVarying.min} TO ${file.recordVarying.max} CHARACTERS`,
         );
-        // Unqualified, which is right only while the depending item lives
-        // outside the record being described — then there is one of it and the
-        // name resolves. A length declared as a *member* of that record is both
-        // ambiguous, because the record is emitted in working storage and again
-        // inside this FD, and wrong, because it would be part of the data whose
-        // length it is giving. Both compilers reject the result.
+        // Unqualified, and there is nothing to qualify it with: the depending
+        // item lives outside the record being described, so there is one of it
+        // and the name resolves. A length declared as a *member* of that record
+        // would be both ambiguous, the record being emitted in working storage
+        // and again inside this FD, and wrong, being part of the data whose
+        // length it is giving. `BANK-FILE-009` rejects that before emission.
         //
-        // KNOWN GAP: nothing checks that yet, so such a program compiles here
-        // and fails at cobc with "'<name>' is ambiguous; needs qualification".
+        // A table's `OCCURS DEPENDING ON` is the opposite case and is qualified:
+        // there the count belongs in the same record, which is why it needs it.
         addLine(
           `               DEPENDING ON ${toCobolFieldName(file.recordVarying.lengthName)}.`,
         );
         addLine(`       01  ${fileRecordName(file)}.`);
         suppressInitialValues = true;
-        emitRecordFields(file.record.fields, 1, addLine);
+        emitRecordFields(file.record.fields, 1, addLine, fileRecordName(file));
         suppressInitialValues = false;
         emitAllRenames(
           file.record,
@@ -594,7 +607,7 @@ export function emitCobol(
       }
       addLine(`       01  ${fileRecordName(file)}.`);
       suppressInitialValues = true;
-      emitRecordFields(file.record.fields, 1, addLine);
+      emitRecordFields(file.record.fields, 1, addLine, fileRecordName(file));
       suppressInitialValues = false;
       emitAllRenames(
         file.record,
@@ -615,7 +628,12 @@ export function emitCobol(
       addLine(`       SD  ${sortWorkName(file.name)}.`);
       addLine(`       01  ${sortWorkRecordName(file.name)}.`);
       suppressInitialValues = true;
-      emitRecordFields(file.record.fields, 1, addLine);
+      emitRecordFields(
+        file.record.fields,
+        1,
+        addLine,
+        sortWorkRecordName(file.name),
+      );
       suppressInitialValues = false;
       emitAllRenames(
         file.record,
@@ -801,6 +819,7 @@ export function emitCobol(
     // declared: a renames carries no storage and is written as a level-66 after
     // the rest, so its line is not where its declaration sits among them.
     const emitted: { field: IRField; line: number }[] = [];
+    currentGroupName = layout.cobolName;
     for (const field of record.fields) {
       if (field.renames) {
         continue;
@@ -815,6 +834,7 @@ export function emitCobol(
         fieldClauses(field),
       );
     }
+    currentGroupName = null;
     for (const field of record.fields) {
       if (!field.renames) {
         continue;
@@ -1017,7 +1037,7 @@ export function emitCobol(
 
   for (const cell of recordParameterCells) {
     addLine(`       01  ${cell.name}.`);
-    emitRecordFields(cell.fields, 1, addLine);
+    emitRecordFields(cell.fields, 1, addLine, cell.name);
   }
 
   if (cicsTransactions.length > 0) {
@@ -1710,7 +1730,21 @@ function emitRecordFields(
   fields: IRRecord["fields"],
   level: number,
   addLine: (line?: string) => void,
+  /**
+   * The 01-level name these fields sit under, passed at the top of a record and
+   * left alone by the recursive calls inside it.
+   *
+   * It is what qualifies a `DEPENDING ON`. The same record is laid out in
+   * working storage and again inside every `FD` that holds it, so the count a
+   * table's length depends on is a name that exists twice, and an unqualified
+   * reference to it is one Enterprise COBOL and GnuCOBOL both reject.
+   */
+  groupName?: string,
 ): void {
+  const previousGroup = currentGroupName;
+  if (groupName !== undefined) {
+    currentGroupName = groupName;
+  }
   const indent = " ".repeat(7 + level * 4);
   for (const field of fields) {
     if (field.renames) {
@@ -1725,7 +1759,11 @@ function emitRecordFields(
       fieldClauses(field),
     );
   }
+  currentGroupName = previousGroup;
 }
+
+/** The 01-level group whose fields are being emitted, for qualifying a DEPENDING ON. */
+let currentGroupName: string | null = null;
 
 /** COBOL level numbers step 05, 10, 15 with nesting depth. */
 function levelNumber(level: number): string {
@@ -1823,8 +1861,18 @@ function emitField(
     : "";
   // DEPENDING ON says how much of the table this record uses. The fixed bound
   // stays as the maximum, because the storage still has to be reserved.
+  //
+  // The count is qualified by the group it belongs to. It is a field of the
+  // same record, which is where COBOL expects it — a header count followed by
+  // the table it counts — and that record is laid out in working storage and
+  // again inside every FD holding it, so the bare name exists twice and both
+  // compilers reject it as ambiguous. The Language Reference allows the
+  // qualification: "All data-names used in the OCCURS clause can be qualified;
+  // they cannot be subscripted or indexed."
   const depending = clauses.dependingOn
-    ? ` DEPENDING ON ${toCobolFieldName(clauses.dependingOn)}`
+    ? ` DEPENDING ON ${toCobolFieldName(clauses.dependingOn)}${
+        currentGroupName ? ` OF ${currentGroupName}` : ""
+      }`
     : "";
   // SYNC goes after the picture, and is what tells the compiler to insert the
   // slack bytes the layout report accounts for.
@@ -4118,6 +4166,28 @@ function emitAssignStatement(
     indent,
     statement.target.resolvedType,
   );
+
+  // Assigning the object of an OCCURS DEPENDING ON decides how long the record
+  // holding that table now is, so the value has to be one the table has.
+  const bound = assignedOccursBound(statement.target);
+  if (bound !== null) {
+    emitOccursCountGuard(target, bound, addLine, indent);
+  }
+}
+
+/**
+ * The declared bound of the table an assignment's target is the count for, or
+ * null when the target is an ordinary field.
+ */
+function assignedOccursBound(target: IRExpression): number | null {
+  if (target.kind !== "MemberAccess") {
+    return null;
+  }
+  const record = currentRecords.get(target.recordName);
+  const table = record?.fields.find(
+    (field) => field.dependingOn === target.member,
+  );
+  return table && table.type.kind === "array" ? table.type.length : null;
 }
 
 function emitExpressionStatement(
@@ -4339,6 +4409,7 @@ function emitRecordFieldMapping(
 
   const fileRecord = fileRecordNameFor(statement.fileName);
   const target = resolveIdentifier(statement.recordName);
+  const counts = occursCounts(statement.recordFields);
 
   for (const field of statement.recordFields) {
     const name = toCobolFieldName(field.name);
@@ -4348,8 +4419,14 @@ function emitRecordFieldMapping(
     // COBOL cannot move an OCCURS item without a subscript, so a table is
     // copied element by element.
     if (field.arrayLength !== null) {
+      // A table whose length depends on a count is only as long as the count
+      // says. Copying to the declared maximum reads occurrences the record
+      // does not have — past the end of the data the READ actually delivered.
+      const bound = field.dependingOn
+        ? `${toCobolFieldName(field.dependingOn)} OF ${destination}`
+        : `${field.arrayLength}`;
       addLine(
-        `${indent}PERFORM VARYING ${COPY_INDEX_FIELD} FROM 1 BY 1 UNTIL ${COPY_INDEX_FIELD} > ${field.arrayLength}`,
+        `${indent}PERFORM VARYING ${COPY_INDEX_FIELD} FROM 1 BY 1 UNTIL ${COPY_INDEX_FIELD} > ${bound}`,
       );
       addLine(
         `${indent}    MOVE ${name} OF ${source} (${COPY_INDEX_FIELD}) TO ${name} OF ${destination} (${COPY_INDEX_FIELD})`,
@@ -4359,7 +4436,69 @@ function emitRecordFieldMapping(
     }
 
     addLine(`${indent}MOVE ${name} OF ${source} TO ${name} OF ${destination}`);
+
+    // The count arrives from the file with the rest of the record, and nothing
+    // outside the program decides what it holds.
+    const occurs = counts.get(field.name);
+    if (occurs !== undefined) {
+      emitOccursCountGuard(
+        `${name} OF ${destination}`,
+        occurs,
+        addLine,
+        indent,
+      );
+    }
   }
+}
+
+/** Each field that is the object of an `OCCURS DEPENDING ON`, and that table's bound. */
+function occursCounts(fields: IRMappedField[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const field of fields) {
+    if (field.dependingOn && field.arrayLength !== null) {
+      counts.set(field.dependingOn, field.arrayLength);
+    }
+  }
+  return counts;
+}
+
+/**
+ * Range-check the object of an `OCCURS DEPENDING ON` before anything uses it.
+ *
+ * The Language Reference gives no latitude here: "The behavior is undefined if
+ * the value of the object is outside of the range integer-1 through integer-2."
+ * The object decides how long the group containing the table is, so a count of
+ * 30,000 on a table declared `OCCURS 1 TO 100` makes every group reference to
+ * that record — a move, a write, a copybook-shaped `CALL` — run off the end of
+ * the storage the record actually has.
+ *
+ * It matters most exactly where it is least controlled: the count usually
+ * arrives in the record read from the file, so its value is whatever was in the
+ * dataset rather than anything the program computed.
+ */
+function emitOccursCountGuard(
+  reference: string,
+  bound: number,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(`${indent}IF ${reference} < 1 OR ${reference} > ${bound}`);
+  addLine(
+    `${indent}    DISPLAY "OCCURS COUNT OUT OF RANGE ${reference} " ${reference} UPON SYSOUT`,
+  );
+  if (currentExitLabel) {
+    addLine(
+      `${indent}    MOVE "${BOUNDS_FAILURE_CODE}" TO ${FAILURE_CODE_FIELD}`,
+    );
+    addLine(`${indent}    GO TO ${currentExitLabel}`);
+  } else if (inSortProcedure) {
+    addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
+    addLine(`${indent}    MOVE ${bound} TO ${reference}`);
+  } else {
+    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
+    addLine(`${indent}    GOBACK`);
+  }
+  addLine(`${indent}END-IF`);
 }
 
 function recordTarget(statement: IRFileStatement): string {
@@ -6048,7 +6187,7 @@ export function renderCopybook(record: IRRecord): string {
   addLine("       *> Generated by bankc.");
   addLine("       *> Do not edit this file directly.");
   addLine(`       01  ${toCobolName(record.name)}.`);
-  emitRecordFields(record.fields, 1, addLine);
+  emitRecordFields(record.fields, 1, addLine, toCobolName(record.name));
   emitAllRenames(record, toCobolName(record.name), addLine, " ".repeat(11));
 
   return `${lines.join("\n")}\n`;
