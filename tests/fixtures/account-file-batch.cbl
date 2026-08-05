@@ -82,6 +82,13 @@
                READ ACCOUNT-INPUT-FILE
                    AT END MOVE "10" TO ACCOUNT-INPUT-STATUS
                END-READ
+               IF ACCOUNT-INPUT-STATUS(1:1) NOT = "0" AND
+                   ACCOUNT-INPUT-STATUS NOT = "10"
+                   DISPLAY "READ FAILED accountInput STATUS "
+                       ACCOUNT-INPUT-STATUS UPON SYSOUT
+                   MOVE 12 TO RETURN-CODE
+                   GOBACK
+               END-IF
                MOVE ACCOUNT-ID OF ACCOUNT-INPUT-RECORD TO ACCOUNT-ID OF
                    ACCOUNT-RECORD
                MOVE BALANCE OF ACCOUNT-INPUT-RECORD TO BALANCE OF
@@ -105,10 +112,28 @@
                    MOVE POSTING-FLAG OF POSTING-RECORD TO POSTING-FLAG
                        OF POSTING-OUTPUT-RECORD
                    WRITE POSTING-OUTPUT-RECORD
+                   IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
+                       DISPLAY "WRITE FAILED postingOutput STATUS "
+                           POSTING-OUTPUT-STATUS UPON SYSOUT
+                       MOVE 12 TO RETURN-CODE
+                       GOBACK
+                   END-IF
                END-IF
            END-PERFORM
            CLOSE POSTING-OUTPUT-FILE
+           IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
+               DISPLAY "CLOSE FAILED postingOutput STATUS "
+                   POSTING-OUTPUT-STATUS UPON SYSOUT
+               MOVE 12 TO RETURN-CODE
+               GOBACK
+           END-IF
            CLOSE ACCOUNT-INPUT-FILE
+           IF ACCOUNT-INPUT-STATUS(1:1) NOT = "0"
+               DISPLAY "CLOSE FAILED accountInput STATUS "
+                   ACCOUNT-INPUT-STATUS UPON SYSOUT
+               MOVE 12 TO RETURN-CODE
+               GOBACK
+           END-IF
            MOVE "ACCOUNTS_POSTED" TO BANK-AUDIT-EVENT
            MOVE POST-ACCOUNTS-P3 TO BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE

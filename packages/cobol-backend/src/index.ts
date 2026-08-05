@@ -2842,7 +2842,63 @@ function checkpointCounterName(fileName: string): string {
  * error, or an implementor code, and none of those is an OPEN that worked.
  */
 function openFailed(status: string): string {
-  return `${status}(1:1) NOT = "0"`;
+  return ioFailed(status, []);
+}
+
+/**
+ * The condition for any I/O statement that did not work.
+ *
+ * On the status key for the reason above. `expected` names the statuses this
+ * particular statement legitimately produces and the program is written to
+ * branch on: end of file on a read, a key that was not there on a keyed read or
+ * a browse, a duplicate key on a write to a KSDS. Those say the request found
+ * nothing, not that the file is broken, and the program handles them itself —
+ * treating them as failures would stop the job at the ordinary end of a batch
+ * loop.
+ */
+function ioFailed(status: string, expected: string[]): string {
+  return [
+    `${status}(1:1) NOT = "0"`,
+    ...expected.map((code) => `${status} NOT = "${code}"`),
+  ].join(" AND ");
+}
+
+/**
+ * Stop the job when an I/O statement failed, naming the file and the status.
+ *
+ * IBM's guidance is to test the file status key after each input or output
+ * request, and until this existed only `OPEN` was tested. A `WRITE` that filled
+ * the volume, a `CLOSE` that could not write its last buffer, a `DELETE` against
+ * a record that had already gone: each set the status, nothing read it, and the
+ * batch carried on to a return code of zero. A short output file that reports
+ * success is the failure nobody investigates until someone reconciles a month
+ * later and finds the postings were never written.
+ *
+ * Conventional codes: 12 says the step failed, which is what this is.
+ */
+function emitFileStatusCheck(
+  operation: string,
+  fileName: string,
+  status: string,
+  expected: string[],
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  addLine(`${indent}IF ${ioFailed(status, expected)}`);
+  addLine(
+    `${indent}    DISPLAY "${operation} FAILED ${fileName} STATUS " ${status} UPON SYSOUT`,
+  );
+  if (inSortProcedure) {
+    // Control may not leave a sort procedure while the sort is running, so the
+    // GOBACK is not available here. Setting SORT-RETURN to 16 is how a
+    // procedure tells the sort product to give up, and the test after the SORT
+    // statement is what then stops the job.
+    addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
+  } else {
+    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
+    addLine(`${indent}    GOBACK`);
+  }
+  addLine(`${indent}END-IF`);
 }
 
 /**
@@ -2948,6 +3004,21 @@ function emitSortProcedureSections(
   addLine: (line?: string) => void,
   inTransaction: boolean,
 ): void {
+  // Everything emitted from here to the end of the function runs while the sort
+  // is running, so an I/O failure inside it reports through SORT-RETURN.
+  inSortProcedure = true;
+  try {
+    emitSortProcedureBodies(statement, addLine, inTransaction);
+  } finally {
+    inSortProcedure = false;
+  }
+}
+
+function emitSortProcedureBodies(
+  statement: IRSortStatement,
+  addLine: (line?: string) => void,
+  inTransaction: boolean,
+): void {
   const input = statement.inputProcedure;
   if (input) {
     const flag = sortProcedureEndFlag(statement, "input");
@@ -2994,10 +3065,21 @@ function emitSortProcedureSections(
       );
       addLine(`${body}               END-READ`);
       addLine(`${body}           END-PERFORM`);
-      const end = last && !status ? "." : "";
-      addLine(`${body}           CLOSE ${fileCobolName(file)}${end}`);
+      addLine(`${body}           CLOSE ${fileCobolName(file)}`);
+      if (status) {
+        emitFileStatusCheck(
+          "CLOSE",
+          file,
+          status,
+          [],
+          addLine,
+          `${body}           `,
+        );
+      }
       if (status) {
         addLine(`           END-IF${last ? "." : ""}`);
+      } else if (last) {
+        addLine(`${body}           CONTINUE.`);
       }
     });
   }
@@ -3043,11 +3125,19 @@ function emitSortProcedureSections(
     );
     addLine(`${body}               END-RETURN`);
     addLine(`${body}           END-PERFORM`);
-    addLine(
-      `${body}           CLOSE ${fileCobolName(statement.output)}${status ? "" : "."}`,
-    );
+    addLine(`${body}           CLOSE ${fileCobolName(statement.output)}`);
     if (status) {
+      emitFileStatusCheck(
+        "CLOSE",
+        statement.output,
+        status,
+        [],
+        addLine,
+        `${body}           `,
+      );
       addLine(`           END-IF.`);
+    } else {
+      addLine(`${body}           CONTINUE.`);
     }
   }
 }
@@ -3296,12 +3386,21 @@ function reportFieldPicture(field: string): string {
 let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
 
 /**
- * The status field each file declares, for the check emitted after an OPEN.
+ * The status field each file declares, for the check emitted after each I/O.
  *
- * The statement carries the file's name, not its status field, and an OPEN has
- * to test the one that file declared rather than any other.
+ * The statement carries the file's name, not its status field, and the check
+ * has to test the one that file declared rather than any other.
  */
 let fileStatusNames = new Map<string, string>();
+
+/**
+ * True while a sort's input or output procedure is being emitted.
+ *
+ * Control may not leave a sort procedure while the sort is running, so an I/O
+ * failure inside one reports itself through `SORT-RETURN` rather than through
+ * the `GOBACK` used everywhere else.
+ */
+let inSortProcedure = false;
 
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
 let databaseTable = new Map<string, IRDatabase>();
@@ -3900,6 +3999,24 @@ function emitFileStatement(
   const status = statement.statusName
     ? toCobolFieldName(statement.statusName)
     : null;
+  // Every operation is checked, so the check is written once here. The
+  // statuses a given statement is allowed to produce are its own, though: an
+  // end of file is how a batch loop ends, and a key that was not there is a
+  // question answered rather than a file that failed.
+  const check = (operation: string, expected: string[] = []): void => {
+    const field = fileStatusNames.get(statement.fileName) ?? status;
+    if (field) {
+      emitFileStatusCheck(
+        operation,
+        statement.fileName,
+        field,
+        expected,
+        addLine,
+        indent,
+      );
+    }
+  };
+  const indexed = statement.fileOrganization === "indexed";
 
   switch (statement.operation) {
     case "open": {
@@ -3912,20 +4029,15 @@ function emitFileStatement(
       // afterwards fails too, and a batch that ignores it produces an empty
       // output file and a return code of zero, which looks exactly like a run
       // with nothing to do. The convention is to report it and stop.
-      const status = fileStatusNames.get(statement.fileName) ?? null;
-      if (status) {
-        addLine(`${indent}IF ${openFailed(status)}`);
-        addLine(
-          `${indent}    DISPLAY "OPEN FAILED ${statement.fileName} STATUS " ${status} UPON SYSOUT`,
-        );
-        addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-        addLine(`${indent}    GOBACK`);
-        addLine(`${indent}END-IF`);
-      }
+      check("OPEN");
       return;
     }
     case "close":
       addLine(`${indent}CLOSE ${file}`);
+      // A CLOSE fails on a file that was never opened, and on an output file
+      // whose last buffer could not be written — which is the one that matters,
+      // because the records the program thinks it wrote are the ones missing.
+      check("CLOSE");
       return;
     case "read":
       // A keyed read on an indexed file moves the key into the record key
@@ -3946,6 +4058,11 @@ function emitFileStatement(
         );
       }
       addLine(`${indent}END-READ`);
+      // End of file, or a key that was not there, is what the program's own
+      // test is for. Anything else — a data check, a dataset that is not the
+      // shape the FD describes — ends the loop just as quietly, halfway through
+      // the file, and the job reports success on the records it did read.
+      check("READ", [indexed ? "23" : "10"]);
       // Field by field rather than a group move, so the correspondence between
       // the file record and working storage is explicit in the generated COBOL
       // and does not depend on the two layouts being byte-identical.
@@ -3959,6 +4076,7 @@ function emitFileStatement(
         addLine(`${indent}    AT END MOVE "10" TO ${status}`);
       }
       addLine(`${indent}END-READ`);
+      check("READ NEXT", ["10"]);
       emitRecordFieldMapping(statement, addLine, indent, "read");
       return;
     case "start":
@@ -3977,6 +4095,11 @@ function emitFileStatement(
         addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
       }
       addLine(`${indent}END-START`);
+      // A key past the end of the file is the answer to a browse that found
+      // nothing, and the program tests for it. A file that is not open, or a
+      // sequence error, is not — and a browse that never positioned reads from
+      // wherever the file happened to be left.
+      check("START", ["23"]);
       return;
     case "write": {
       emitRecordFieldMapping(statement, addLine, indent, "write");
@@ -4015,6 +4138,11 @@ function emitFileStatement(
       ) {
         addLine(`${indent}END-WRITE`);
       }
+      // The failure this catches is the one a batch never notices: the volume
+      // filling, or a record outside the declared length range. The write does
+      // not happen, the loop carries on, and the output file is short by
+      // however many records were left — with a return code of zero on it.
+      check("WRITE", indexed ? ["22"] : []);
       return;
     }
     case "rewrite":
@@ -4024,6 +4152,10 @@ function emitFileStatement(
         addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
         addLine(`${indent}END-REWRITE`);
       }
+      // A rewrite that did not happen leaves the record as it was, so a
+      // balance the program has already computed is simply not stored, and
+      // nothing downstream can tell that from a balance that did not change.
+      check("REWRITE", indexed ? ["23"] : []);
       return;
     case "delete":
       if (statement.key && statement.keyFieldName) {
@@ -4036,6 +4168,7 @@ function emitFileStatement(
         addLine(`${indent}    INVALID KEY MOVE "23" TO ${status}`);
         addLine(`${indent}END-DELETE`);
       }
+      check("DELETE", ["23"]);
       return;
   }
 }
