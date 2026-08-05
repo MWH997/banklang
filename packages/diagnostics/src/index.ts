@@ -304,6 +304,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-028",
+    title: "Invalid sorted search",
+    explanation:
+      "`search sorted` becomes COBOL `SEARCH ALL`, a binary search. COBOL will bisect a table only if the declaration says it is ordered — `ascending <field>` — and only on equality against that key, because anything else has no ordering to cut in half. A `SEARCH ALL` on a table that is not actually sorted does not fall back to a scan: it returns the wrong row, or none.",
+    remediation:
+      "Add `ascending <field>` to the table's declaration and keep it sorted, and test that field for equality. Use a plain `search` to walk a table in any other way.",
+    specReference: "language-reference.md section 9",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:

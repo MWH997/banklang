@@ -1605,6 +1605,16 @@ class Parser {
       dependingOn = countToken?.text ?? null;
     }
 
+    // `ascending <field>` names the key the table is ordered by, which is what
+    // lets a search bisect it rather than walk it.
+    let ascendingKey: string | null = null;
+    if (this.matchContextual("ascending")) {
+      const keyToken = this.expectIdentifier(
+        "Expected the field the table is ordered by.",
+      );
+      ascendingKey = keyToken?.text ?? null;
+    }
+
     // `= <literal>` is a COBOL VALUE clause. It comes last, after the layout
     // clauses, because it says what is in the field rather than how it is laid
     // out.
@@ -1633,6 +1643,7 @@ class Parser {
       sensitive: modifierToken !== null,
       redefines,
       dependingOn,
+      ascendingKey,
       synchronized,
       justified,
       blankWhenZero,
@@ -2463,6 +2474,8 @@ class Parser {
 
     if (this.isKeyword("search")) {
       const keyword = this.advance();
+      // `search sorted` bisects; plain `search` walks.
+      const sorted = this.matchContextual("sorted");
       const elementToken = this.expectIdentifier(
         "Expected a name for the matching element.",
       );
@@ -2526,6 +2539,7 @@ class Parser {
         condition,
         body,
         notFound,
+        sorted,
         span: {
           sourceFile: keyword.span.sourceFile,
           start: keyword.span.start,

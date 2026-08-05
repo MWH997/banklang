@@ -191,6 +191,19 @@ the wrong number.
 Drop `nested`. An ordinary recursive function is emitted as a sibling program
 with `LOCAL-STORAGE`, which is what makes recursion safe.
 
+### `BANK-TYPE-028` invalid sorted search
+
+`search sorted` becomes COBOL `SEARCH ALL`, a binary search. COBOL will bisect a
+table only if the declaration says it is ordered — `ascending <field>` — and only
+on equality against that key, because anything else has no ordering to cut in
+half.
+
+This matters more than a type error usually does: a `SEARCH ALL` on a table that
+is not actually sorted does **not** fall back to scanning it. It returns the
+wrong row, or reports no match on a row that is there.
+
+Use a plain `search` to walk a table any other way.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden

@@ -1463,6 +1463,7 @@ function fieldClauses(field: IRField): {
   justified: boolean;
   blankWhenZero: boolean;
   initialValue: string | null;
+  ascendingKey: string | null;
 } {
   return {
     redefines: field.redefines,
@@ -1471,6 +1472,7 @@ function fieldClauses(field: IRField): {
     justified: field.justified,
     blankWhenZero: field.blankWhenZero,
     initialValue: field.initialValue,
+    ascendingKey: field.ascendingKey,
   };
 }
 
@@ -1488,6 +1490,7 @@ function emitField(
     justified?: boolean;
     blankWhenZero?: boolean;
     initialValue?: string | null;
+    ascendingKey?: string | null;
   } = {},
 ): void {
   const cobolName = toCobolFieldName(name);
@@ -1542,6 +1545,13 @@ function emitField(
       addLine(
         `${indent}${lvl}  ${cobolName}${redefines} OCCURS ${depending ? "1 TO " : ""}${type.length} TIMES${depending}`,
       );
+      // ASCENDING KEY is the promise that lets SEARCH ALL bisect. It comes
+      // before INDEXED BY, which is the order COBOL requires.
+      if (clauses.ascendingKey) {
+        addLine(
+          `${indent}        ASCENDING KEY IS ${toCobolFieldName(clauses.ascendingKey)}`,
+        );
+      }
       addLine(`${indent}        INDEXED BY ${tableIndexName(name)}.`);
       emitRecordFields(type.element.fields, level + 1, addLine);
       return;
@@ -2963,8 +2973,12 @@ function emitSearchStatement(
     reference: `${table} (${index})`,
   };
 
-  addLine(`${indent}SET ${index} TO 1`);
-  addLine(`${indent}SEARCH ${table}`);
+  // SEARCH ALL bisects, so it sets the index itself — a SET before it would be
+  // discarded, and writing one would suggest the starting point mattered.
+  if (!statement.sorted) {
+    addLine(`${indent}SET ${index} TO 1`);
+  }
+  addLine(`${indent}SEARCH ${statement.sorted ? "ALL " : ""}${table}`);
   addLine(`${indent}    AT END`);
   if (inTransaction) {
     emitTransactionBody(statement.notFound, addLine, indentLevel + 8);

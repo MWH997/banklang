@@ -184,6 +184,8 @@ export interface IRField {
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
+  /** `ASCENDING KEY` — the field the table is ordered by, for a binary search. */
+  ascendingKey: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
   /** `VALUE` — the literal the field starts as, already in COBOL's spelling. */
@@ -396,6 +398,8 @@ export interface IRSearchStatement {
   condition: IRExpression;
   body: IRBlock;
   notFound: IRBlock;
+  /** `SEARCH ALL` — a binary search over a table that declares its order. */
+  sorted: boolean;
 }
 
 /** `MOVE <n> TO RETURN-CODE` — the step's condition code. */
@@ -1729,6 +1733,7 @@ function lowerRecord(
       sensitive: field.sensitive,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
+      ascendingKey: field.ascendingKey,
       synchronized: field.synchronized,
       justified: field.justified,
       blankWhenZero: field.blankWhenZero,
@@ -1977,6 +1982,7 @@ function lowerStatement(
       return {
         kind: "SearchStatement",
         span: statement.span,
+        sorted: statement.sorted,
         elementName: statement.elementName,
         arrayRecordName:
           array.kind === "MemberAccess"
@@ -2722,6 +2728,7 @@ function lowerType(type: ResolvedType): IRType {
           sensitive: field.sensitive,
           redefines: field.redefines,
           dependingOn: field.dependingOn,
+          ascendingKey: field.ascendingKey,
           synchronized: field.synchronized,
           justified: field.justified,
           blankWhenZero: field.blankWhenZero,
