@@ -610,6 +610,24 @@ function avoidReserved(name: string): string {
   return isReservedCobolWord(name) ? `${name}-FLD` : name;
 }
 
+/**
+ * The PDS member name a record's copybook is held under.
+ *
+ * A member name is one to eight characters of letters, digits, and the national
+ * characters — no hyphens — and that is also all the compiler looks at: "when
+ * the compiler searches for COPY members in PDS or PDSE datasets ... only the
+ * first eight characters of text-name are used as the identifying name". So
+ * `COPY ACCOUNT-RECORD` on a PDS looks for a member called `ACCOUNT-`, which no
+ * library can hold, while the copybook itself shipped as `ACCOUNTR`. The two
+ * were derived by different rules and never met.
+ *
+ * One rule, used by whatever writes the member and by whatever writes the COPY
+ * that reads it.
+ */
+export function copybookMemberName(recordName: string): string {
+  return toCobolName(recordName).replace(/-/g, "").slice(0, 8);
+}
+
 export function toCobolFieldName(fieldName: string): string {
   return toCobolName(fieldName);
 }

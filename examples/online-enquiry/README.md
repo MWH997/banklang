@@ -5,16 +5,16 @@ program — the shape most real bank enquiry logic actually takes.
 
 ## What it demonstrates
 
-| Feature              | Where                                                 |
-| -------------------- | ----------------------------------------------------- |
-| Db2 declaration      | `sql fetchAccount(...): AccountRow { SELECT ... }`    |
-| Host variables       | `:keyAccountId` in, `:rowBalance` out                 |
-| SQLCODE handling     | `if sqlcode == 0 { ... }`, required by `BANK-SQL-001` |
-| CICS transaction     | `cics transaction accountEnquiry(...)`                |
-| COMMAREA             | `DFHCOMMAREA` in the `LINKAGE SECTION`                |
-| CICS LINK            | `link "AUDITLOG" commarea reply resp linkResp;`       |
-| Syncpoint / rollback | Committed only when the link succeeded                |
-| Currency and enums   | `BDT` amounts, `EnquiryOutcome` result                |
+| Feature              | Where                                                     |
+| -------------------- | --------------------------------------------------------- |
+| Db2 declaration      | `sql fetchAccount(...): AccountBalanceRow { SELECT ... }` |
+| Host variables       | `:keyAccountId` in, `:rowBalance` out                     |
+| SQLCODE handling     | `if sqlcode == 0 { ... }`, required by `BANK-SQL-001`     |
+| CICS transaction     | `cics transaction accountEnquiry(...)`                    |
+| COMMAREA             | `DFHCOMMAREA` in the `LINKAGE SECTION`                    |
+| CICS LINK            | `link "AUDITLOG" commarea reply resp linkResp;`           |
+| Syncpoint / rollback | Committed only when the link succeeded                    |
+| Currency and enums   | `BDT` amounts, `EnquiryOutcome` result                    |
 
 ## SQL is declared, not assembled
 

@@ -14,20 +14,20 @@ record EnquiryRequest {
   idempotencyKey: string<36>;
 }
 
-record AccountRow {
+record AccountBalanceRow {
   rowAccountId: string<16>;
   rowBalance: BDT;
   rowStatus: string<8>;
 }
 
-record EnquiryReply {
+record BalanceReply {
   replyAccountId: string<16>;
   replyBalance: BDT;
   outcome: EnquiryOutcome;
 }
 
 // Db2 access is declared, not assembled at run time. Dynamic SQL is rejected.
-sql fetchAccount(keyAccountId: string<16>): AccountRow {
+sql fetchAccount(keyAccountId: string<16>): AccountBalanceRow {
   SELECT ACCOUNT_ID, BALANCE, STATUS
   INTO :rowAccountId, :rowBalance, :rowStatus
   FROM ACCOUNT
@@ -40,7 +40,7 @@ function isAvailable(status: string<8>): bool {
 
 // An online transaction: input arrives through the COMMAREA and control
 // returns to CICS rather than to a caller.
-cics transaction accountEnquiry(request: EnquiryRequest, row: AccountRow, reply: EnquiryReply) {
+cics transaction accountEnquiry(request: EnquiryRequest, row: AccountBalanceRow, reply: BalanceReply) {
   execute fetchAccount(request.accountId) into row;
 
   if sqlcode == 0 {

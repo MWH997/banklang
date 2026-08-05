@@ -6,15 +6,15 @@ cursor is what most real mainframe batch actually does.
 
 ## What it demonstrates
 
-| Feature                | Where                                                |
-| ---------------------- | ---------------------------------------------------- |
-| Cursor declaration     | `cursor accountsInBranch(...): AccountRow { ... }`   |
-| Bounded cursor loop    | `for each row in accountsInBranch(...) limit 5000`   |
-| Generated OPEN / CLOSE | neither appears in the source                        |
-| Host variables         | `:keyBranch` in, `:rowBalance` out                   |
-| Explicit rounding      | `round(balance * rate, "HALF_EVEN")`                 |
-| Double-entry posting   | `credit` to the account, `debit` to interest expense |
-| Sequential output file | `write summaryOutput from summary`                   |
+| Feature                | Where                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| Cursor declaration     | `cursor accountsInBranch(...): AccountBalanceRow { ... }` |
+| Bounded cursor loop    | `for each row in accountsInBranch(...) limit 5000`        |
+| Generated OPEN / CLOSE | neither appears in the source                             |
+| Host variables         | `:keyBranch` in, `:rowBalance` out                        |
+| Explicit rounding      | `round(balance * rate, "HALF_EVEN")`                      |
+| Double-entry posting   | `credit` to the account, `debit` to interest expense      |
+| Sequential output file | `write summaryOutput from summary`                        |
 
 ## The loop is the whole point
 
@@ -61,7 +61,7 @@ one, which is exactly how a batch silently under-posts.
 The declaration is written with its `INTO` where the query reads best:
 
 ```ts
-cursor accountsInBranch(keyBranch: string<8>): AccountRow {
+cursor accountsInBranch(keyBranch: string<8>): AccountBalanceRow {
   SELECT ACCOUNT_ID, BALANCE, STATUS
   INTO :rowAccountId, :rowBalance, :rowStatus
   FROM ACCOUNT

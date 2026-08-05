@@ -247,11 +247,11 @@ describe("language server formatting and symbols", () => {
     expect(symbols.map((symbol) => symbol.name)).toEqual([
       "AccountPosting",
       "MoneyBDT",
-      "TransferRequest",
+      "PostTransferRequest",
       "postTransfer",
     ]);
     expect(
-      symbols.find((symbol) => symbol.name === "TransferRequest")?.children,
+      symbols.find((symbol) => symbol.name === "PostTransferRequest")?.children,
     ).toHaveLength(4);
   });
 });

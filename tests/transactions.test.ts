@@ -9,7 +9,7 @@ import { emitCobol } from "../packages/cobol-backend/src/index";
 import type { IRProgram } from "../packages/ir/src/index";
 import { checkSourceMapCoverage } from "../packages/verifier/src/index";
 
-import { compileExample, compileSource } from "./helpers";
+import { compileExample, compileSource, flowed } from "./helpers";
 
 const KEYED_RECORD = `module Postings;
 
@@ -167,8 +167,12 @@ describe("transaction COBOL emission", () => {
   it("qualifies record field references with the group item", () => {
     const { emit } = compileExample("examples/account-posting");
 
-    expect(emit.cobol).toContain(
-      "MOVE DEBIT-ACCOUNT OF TRANSFER-REQUEST TO BANK-LEDGER-ACCOUNT",
+    // Long enough to wrap at column 72, so the assertion is on the statement
+    // rather than on where the page happens to break it.
+    expect(flowed(emit.cobol)).toContain(
+      flowed(
+        "MOVE DEBIT-ACCOUNT OF POST-TRANSFER-REQUEST TO BANK-LEDGER-ACCOUNT",
+      ),
     );
   });
 

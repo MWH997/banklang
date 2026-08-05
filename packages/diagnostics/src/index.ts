@@ -591,7 +591,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "A CICS command does not capture RESP, so a failed command is indistinguishable from a successful one.",
     remediation:
       'Write `link "PROG" commarea <record> resp <status>;` and test the status.',
-    specReference: "language-reference.md section 14",
+    specReference: "language-reference.md section 14a",
     implemented: true,
   },
   {
@@ -796,6 +796,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       "Mark the target field `sensitive`, or derive an unrestricted value through a function first.",
     specReference: "language-reference.md section 11",
+    implemented: true,
+  },
+  {
+    id: "BANK-COPY-007",
+    title: "Two records share one copybook member",
+    explanation:
+      'A PDS member name is one to eight characters of letters, digits, and the national characters, with no hyphens — and that is also all the COBOL compiler looks at when it resolves a `COPY` from a PDS: "only the first eight characters of text-name are used as the identifying name". So `AccountRecord` and `AccountRow` are both the member `ACCOUNTR`. One copybook overwrites the other in the library, and every program that copies either gets whichever was written last: a record with the name it asked for and different fields at different offsets, which is the one thing a copybook exists to prevent.',
+    remediation:
+      "Rename one of the records so the two differ within the first eight characters once the hyphens are removed.",
+    specReference: "language-reference.md section 14",
     implemented: true,
   },
   {
