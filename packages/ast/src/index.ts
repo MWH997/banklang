@@ -471,7 +471,12 @@ export interface EnumMemberNode extends NodeBase {
 /** `statement.entries[index]` — element access on a bounded array. */
 export interface IndexAccessNode extends NodeBase {
   kind: "IndexAccess";
-  target: MemberAccessNode | IdentifierNode;
+  /**
+   * Another index access for a table of tables: `rates[i][j]`. COBOL puts every
+   * subscript on the innermost data name, so the chain collapses into one
+   * reference when it is written out.
+   */
+  target: MemberAccessNode | IdentifierNode | IndexAccessNode;
   index: ExpressionNode;
 }
 
@@ -632,7 +637,14 @@ export interface ForEachStatementNode extends NodeBase {
 /** Assignment to an existing local or record field. */
 export interface AssignStatementNode extends NodeBase {
   kind: "AssignStatement";
-  target: IdentifierNode | MemberAccessNode;
+  /**
+   * A name, a field, or an element of a table.
+   *
+   * An element has to be assignable or a table cannot be filled, which is not a
+   * table worth having: a rate matrix loaded from a file is written a cell at a
+   * time.
+   */
+  target: IdentifierNode | MemberAccessNode | IndexAccessNode;
   expression: ExpressionNode;
 }
 

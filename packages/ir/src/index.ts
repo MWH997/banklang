@@ -12,6 +12,7 @@ import {
   type ReportPageNode,
   type NumericCallNode,
   type SourceSpan,
+  type IndexAccessNode,
   type MemberAccessNode,
   type ComparisonOperator,
   type LogicalOperator,
@@ -501,7 +502,8 @@ export interface IRWhileStatement {
 export interface IRAssignStatement {
   kind: "AssignStatement";
   span: SourceSpan;
-  target: IRIdentifierExpression | IRMemberAccessExpression;
+  target:
+    IRIdentifierExpression | IRMemberAccessExpression | IRIndexAccessExpression;
   expression: IRExpression;
 }
 
@@ -670,7 +672,8 @@ export interface IREnumMemberExpression {
 export interface IRIndexAccessExpression {
   kind: "IndexAccess";
   span: SourceSpan;
-  target: IRIdentifierExpression | IRMemberAccessExpression;
+  target:
+    IRIdentifierExpression | IRMemberAccessExpression | IRIndexAccessExpression;
   index: IRExpression;
   /** Declared array bound, used to emit a runtime range check. */
   length: number;
@@ -1799,8 +1802,14 @@ function lowerStatement(
       };
     case "AssignStatement": {
       const target = lowerExpression(statement.target, scopeTypes);
-      if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
-        throw new Error("Assignment target must be an identifier or field.");
+      if (
+        target.kind !== "Identifier" &&
+        target.kind !== "MemberAccess" &&
+        target.kind !== "IndexAccess"
+      ) {
+        throw new Error(
+          "Assignment target must be an identifier, a field, or a table element.",
+        );
       }
       return {
         kind: "AssignStatement",
@@ -2289,8 +2298,16 @@ function lowerExpression(
     }
     case "IndexAccess": {
       const target = lowerExpression(expression.target, scopeTypes);
-      if (target.kind !== "Identifier" && target.kind !== "MemberAccess") {
-        throw new Error("Index target must be an identifier or field.");
+      // The target of a second subscript is the first one: `rates[i][j]`
+      // indexes into the row `rates[i]` names.
+      if (
+        target.kind !== "Identifier" &&
+        target.kind !== "MemberAccess" &&
+        target.kind !== "IndexAccess"
+      ) {
+        throw new Error(
+          "Index target must be an identifier, a field, or a table element.",
+        );
       }
       const element =
         target.resolvedType.kind === "array"
@@ -2389,7 +2406,13 @@ function lowerMemberAccessExpression(
   // subscript is carried so the backend can emit FIELD OF RECORD (INDEX).
   if (expression.target.kind === "IndexAccess") {
     const indexIsLiteral = indexIsProvenInRange(expression.target.index);
-    const arrayTarget = expression.target.target;
+    // A table of tables subscripts through more index accesses, so the name
+    // being indexed is whatever sits under all of them.
+    let arrayTarget: MemberAccessNode | IdentifierNode | IndexAccessNode =
+      expression.target.target;
+    while (arrayTarget.kind === "IndexAccess") {
+      arrayTarget = arrayTarget.target;
+    }
     const holderName =
       arrayTarget.kind === "Identifier" ? arrayTarget.name : arrayTarget.member;
     const holderType =
