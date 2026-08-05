@@ -193,8 +193,27 @@ export type IRStatement =
   | IRSplitStatement
   | IRSortStatement
   | IRCheckpointStatement
+  | IRConsoleStatement
+  | IRResetStatement
   | IRSearchStatement
   | IRRaiseStatement;
+
+/** `DISPLAY` to the job log, or `ACCEPT` from the job or the clock. */
+export interface IRConsoleStatement {
+  kind: "ConsoleStatement";
+  span: SourceSpan;
+  operation: "log" | "accept";
+  values: IRExpression[];
+  target: IRExpression | null;
+  source: "parameter" | "date" | "time" | null;
+}
+
+/** `INITIALIZE` — every field to its type's empty value. */
+export interface IRResetStatement {
+  kind: "ResetStatement";
+  span: SourceSpan;
+  recordName: string;
+}
 
 /** A restart point: the position written down, and the work committed to it. */
 export interface IRCheckpointStatement {
@@ -1547,6 +1566,25 @@ function lowerStatement(
         kind: "RaiseStatement",
         span: statement.span,
         code: statement.code,
+      };
+    case "ConsoleStatement":
+      return {
+        kind: "ConsoleStatement",
+        span: statement.span,
+        operation: statement.operation,
+        values: statement.values.map((value) =>
+          lowerExpression(value, scopeTypes),
+        ),
+        target: statement.target
+          ? lowerExpression(statement.target, scopeTypes)
+          : null,
+        source: statement.source,
+      };
+    case "ResetStatement":
+      return {
+        kind: "ResetStatement",
+        span: statement.span,
+        recordName: statement.recordName,
       };
     case "CheckpointStatement": {
       const file = fileTable.get(statement.fileName);

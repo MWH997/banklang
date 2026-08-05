@@ -30,6 +30,8 @@ import {
   type ReturnCodeStatementNode,
   type SearchStatementNode,
   type CheckpointStatementNode,
+  type ConsoleStatementNode,
+  type ResetStatementNode,
   type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -146,6 +148,9 @@ export const KEYWORDS = new Set([
   "descending",
   "checkpoint",
   "every",
+  "log",
+  "accept",
+  "reset",
   "currency",
   "nullable",
   "edited",
@@ -1207,6 +1212,136 @@ class Parser {
 
     if (this.matchKeyword("raise")) {
       return this.parseRaiseStatement();
+    }
+
+    if (this.isKeyword("log")) {
+      const keyword = this.advance();
+      const values: ExpressionNode[] = [];
+      do {
+        const value = this.parseExpression();
+        if (!value) {
+          return null;
+        }
+        values.push(value);
+      } while (this.matchPunctuation(","));
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the log statement.",
+      );
+      if (!semicolon) {
+        return null;
+      }
+      return {
+        kind: "ConsoleStatement",
+        operation: "log",
+        values,
+        target: null,
+        source: null,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ConsoleStatementNode;
+    }
+
+    if (this.isKeyword("accept")) {
+      const keyword = this.advance();
+      const sourceToken = this.current;
+      const sources = new Set(["parameter", "date", "time"]);
+      // `date` and `time` are type keywords; `parameter` is contextual.
+      if (
+        (sourceToken.kind !== "identifier" && sourceToken.kind !== "keyword") ||
+        !sources.has(sourceToken.text)
+      ) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `parameter`, `date`, or `time` after `accept`.",
+          "Write `accept parameter into runMode;`.",
+        );
+        return null;
+      }
+      this.advance();
+      const source = sourceToken.text as "parameter" | "date" | "time";
+
+      const intoToken = this.current;
+      if (intoToken.kind !== "identifier" || intoToken.text !== "into") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `into` before the target.",
+          "Write `accept parameter into runMode;`.",
+        );
+        return null;
+      }
+      this.advance();
+
+      const targetToken = this.expectIdentifier("Expected a target field.");
+      if (!targetToken) {
+        return null;
+      }
+      let target: MemberAccessNode | IdentifierNode = {
+        kind: "Identifier",
+        name: targetToken.text,
+        span: targetToken.span,
+      };
+      if (this.matchPunctuation(".")) {
+        const memberToken = this.expectIdentifier(
+          "Expected a field name after `.`.",
+        );
+        if (!memberToken) {
+          return null;
+        }
+        target = {
+          kind: "MemberAccess",
+          target: target as IdentifierNode,
+          member: memberToken.text,
+          span: {
+            sourceFile: targetToken.span.sourceFile,
+            start: targetToken.span.start,
+            end: memberToken.span.end,
+          },
+        };
+      }
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the accept statement.",
+      );
+      if (!semicolon) {
+        return null;
+      }
+      return {
+        kind: "ConsoleStatement",
+        operation: "accept",
+        values: [],
+        target,
+        source,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ConsoleStatementNode;
+    }
+
+    if (this.isKeyword("reset")) {
+      const keyword = this.advance();
+      const recordToken = this.expectIdentifier("Expected a record name.");
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the reset statement.",
+      );
+      if (!recordToken || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "ResetStatement",
+        recordName: recordToken.text,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ResetStatementNode;
     }
 
     if (this.isKeyword("checkpoint")) {

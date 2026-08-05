@@ -1118,6 +1118,30 @@ million. Conventionally 0 ran clean, 4 warned, 8 failed, 12 or more is fatal.
 
 It must be a whole number in 0–4095, which is what `RETURN-CODE` holds.
 
+### Talking to the job
+
+```ts
+accept parameter into run.mode;      // ACCEPT ... FROM SYSIN
+accept date into run.runDate;        // ACCEPT ... FROM DATE YYYYMMDD
+accept time into run.startedAt;      // ACCEPT ... FROM TIME
+log "STARTED ", run.mode;            // DISPLAY ... UPON SYSOUT
+reset summary;                       // INITIALIZE
+```
+
+The job log is the operator's only view of what happened between the return code
+and an abend, and a job parameter is how the same program runs a different
+cycle. `UPON SYSOUT` puts the message in the job's output rather than wherever
+the runtime defaults to, and `FROM DATE YYYYMMDD` gives the four-digit year the
+unqualified form does not.
+
+A restricted value may not be written to the log (`BANK-AUD-002`), for the same
+reason it may not reach an audit event: the log outlives the run and is read
+widely.
+
+`reset` clears a whole record — alphanumerics to spaces, numerics to zero.
+Clearing it field by field is the same thing written out, and drifts the moment
+the record gains a field.
+
 ### Ordering the input
 
 ```ts

@@ -14,6 +14,7 @@ import {
   type ReturnCodeStatementNode,
   type SearchStatementNode,
   type CheckpointStatementNode,
+  type ConsoleStatementNode,
   type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -1143,6 +1144,8 @@ function validateTransactionBody(
       case "SplitStatement":
       case "SortStatement":
       case "CheckpointStatement":
+      case "ConsoleStatement":
+      case "ResetStatement":
       case "SearchStatement":
         validateEffectStatement(
           statement,
@@ -1316,6 +1319,29 @@ function validateEffectStatement(
       return true;
     case "SortStatement":
       validateSortStatement(statement, diagnostics);
+      return true;
+    case "ConsoleStatement":
+      validateConsoleStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      return true;
+    case "ResetStatement":
+      if (scope.get(statement.recordName)?.kind !== "record") {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `reset clears a record, and ${statement.recordName} is not one.`,
+            span: statement.span,
+            hint: "Reset a record-typed parameter or local.",
+            backendProfile: null,
+          }),
+        );
+      }
       return true;
     case "CheckpointStatement":
       validateCheckpointStatement(statement, scope, diagnostics);
@@ -1891,6 +1917,64 @@ let checkpointSeen = false;
  * records: too small costs throughput, too large costs rework, and zero is
  * neither.
  */
+/**
+ * `log` and `accept`.
+ *
+ * A restricted value must not be written to the job log for the same reason it
+ * must not reach an audit event: the log outlives the run and is read widely.
+ */
+function validateConsoleStatement(
+  statement: ConsoleStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  for (const value of statement.values) {
+    checkNotSensitive(value, scope, "the job log", diagnostics);
+    inferExpressionType(value, scope, aliases, recordMap, diagnostics);
+  }
+
+  if (!statement.target) {
+    return;
+  }
+
+  const target = inferExpressionType(
+    statement.target,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+
+  // `accept date` and `accept time` deliver the clock; `accept parameter`
+  // delivers whatever the job passed, which is text.
+  const expected =
+    statement.source === "date"
+      ? "date"
+      : statement.source === "time"
+        ? "time"
+        : "string";
+  const actual =
+    target?.kind === "temporal" ? target.unit : (target?.kind ?? null);
+
+  if (actual && actual !== expected) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `accept ${statement.source} delivers ${expected}, but the target is ${describeType(target as ResolvedType)}.`,
+        span: statement.span,
+        hint:
+          statement.source === "parameter"
+            ? "A job parameter arrives as text; parse it afterwards."
+            : "Accept the clock into a date or a time.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
 function validateCheckpointStatement(
   statement: CheckpointStatementNode,
   scope: Map<string, ResolvedType>,
@@ -4003,6 +4087,8 @@ function resolveTerminalStatementType(
     case "SplitStatement":
     case "SortStatement":
     case "CheckpointStatement":
+    case "ConsoleStatement":
+    case "ResetStatement":
     case "SearchStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.

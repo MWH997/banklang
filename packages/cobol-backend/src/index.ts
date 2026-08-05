@@ -33,6 +33,7 @@ import type {
   IRRaiseStatement,
   IRSearchStatement,
   IRCheckpointStatement,
+  IRConsoleStatement,
   IRSortStatement,
   IRSplitStatement,
   IRStringCallExpression,
@@ -1454,6 +1455,14 @@ function emitStatement(
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
         break;
+      case "ConsoleStatement":
+        emitConsoleStatement(statement, addLine, indent);
+        break;
+      case "ResetStatement":
+        addLine(
+          `${indent}INITIALIZE ${resolveIdentifier(statement.recordName)}`,
+        );
+        break;
       case "SearchStatement":
         emitSearchStatement(statement, addLine, indentLevel, resultName, false);
         break;
@@ -1610,6 +1619,14 @@ function emitTransactionBody(
         break;
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
+        break;
+      case "ConsoleStatement":
+        emitConsoleStatement(statement, addLine, indent);
+        break;
+      case "ResetStatement":
+        addLine(
+          `${indent}INITIALIZE ${resolveIdentifier(statement.recordName)}`,
+        );
         break;
       case "SearchStatement":
         emitSearchStatement(statement, addLine, indentLevel, "", true);
@@ -1770,6 +1787,41 @@ function emitWhileStatement(
     emitStatement(statement.body, addLine, indentLevel + 4, resultName);
   }
   addLine(`${indent}END-PERFORM`);
+}
+
+/**
+ * `DISPLAY` to the job log, and `ACCEPT` from the job or the clock.
+ *
+ * `UPON SYSOUT` rather than a bare DISPLAY, so the message lands in the job's
+ * output where an operator reads it rather than wherever the runtime defaults
+ * to. `FROM DATE YYYYMMDD` gives the four-digit year, which the unqualified
+ * form does not.
+ */
+function emitConsoleStatement(
+  statement: IRConsoleStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (statement.operation === "log") {
+    addLine(
+      `${indent}DISPLAY ${statement.values.map((value) => renderExpression(value)).join(" ")} UPON SYSOUT`,
+    );
+    return;
+  }
+
+  const target = renderExpression(statement.target as IRExpression);
+  switch (statement.source) {
+    case "date":
+      addLine(`${indent}ACCEPT ${target} FROM DATE YYYYMMDD`);
+      return;
+    case "time":
+      addLine(`${indent}ACCEPT ${target} FROM TIME`);
+      return;
+    default:
+      // What the job passed on the EXEC statement's PARM.
+      addLine(`${indent}ACCEPT ${target} FROM SYSIN`);
+      return;
+  }
 }
 
 /**
