@@ -85,6 +85,29 @@ describe("the program the region enters", () => {
     );
   });
 
+  /**
+   * "The mask must contain the same fields, in the same order, as the I/O PCB."
+   *
+   * In DB batch only the status code is populated, so a mask that stopped at
+   * the userid read the status correctly and nothing noticed. But a PCB mask is
+   * a description of storage the region owns, not a list of the fields this
+   * program happens to read: a short one stops being true the moment anything
+   * is added to the end of it.
+   *
+   * The trailing group is the extended time stamp, whose time is twelve packed
+   * digits carrying no sign and whose UTC offset is four bits of attributes
+   * ahead of a packed value — neither is a COBOL numeric picture.
+   */
+  it("describes the whole I/O PCB, not the part it reads", () => {
+    const text = result.cobol ?? "";
+
+    expect(text).toContain("05  IO-PCB-GROUP-NAME        PIC X(8).");
+    expect(text).toContain("10  IO-PCB-TS-DATE       PIC S9(7) COMP-3.");
+    expect(text).toContain("10  IO-PCB-TS-TIME       PIC X(6).");
+    expect(text).toContain("10  IO-PCB-TS-UTC        PIC X(2).");
+    expect(text).toContain("05  IO-PCB-USER-IND          PIC X(1).");
+  });
+
   it("declares the function code it uses, and only that one", () => {
     expect(result.cobol).toContain(
       '01  DLI-GU               PIC X(4) VALUE "GU  ".',
