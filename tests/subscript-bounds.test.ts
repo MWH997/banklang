@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, parmDriver } from "./helpers";
 
 /**
  * Computed subscripts, and every place one can appear.
@@ -223,21 +223,22 @@ describe("executed", () => {
   log "TOTAL=", book.total;`);
     expect(result.diagnostics).toEqual([]);
 
-    // The transaction takes `at` from its caller, which here is the generated
-    // entry point, so the value is planted the way a driver would pass it.
-    const cobol = (result.cobol ?? "").replace(
-      "           PERFORM GO-FLD\n",
-      `           MOVE ${at} TO GO-FLD-P2\n           PERFORM GO-FLD\n`,
-    );
-    expect(cobol).toContain(`MOVE ${at} TO GO-FLD-P2`);
-
+    // `at` is an entry parameter, so it arrives in the job's PARM. The driver
+    // builds one the way the initiator would, which is also the only way to
+    // choose the subscript from outside the program.
     const dir = mkdtempSync(join(tmpdir(), "bankc-bounds-"));
-    writeFileSync(join(dir, "program.cbl"), cobol, "utf8");
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(
+      join(dir, "driver.cbl"),
+      parmDriver(result.program!, { at }),
+      "utf8",
+    );
     const built = spawnSync(
       "cobc",
       [
         "-x",
         "-fixed",
+        "driver.cbl",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

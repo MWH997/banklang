@@ -65,7 +65,18 @@ transaction post(request: Request) {
     );
   });
 
-  it("generates no failure plumbing for a transaction that cannot fail", () => {
+  /**
+   * The wrapper is what a declared failure buys: a body paragraph performed
+   * THRU its exit, and a handler run when the register is set. A transaction
+   * that raises nothing has no handler to run, so it has no wrapper.
+   *
+   * The register itself is not part of that. Every program declares one,
+   * because a subscript outside its table, an overflow or a failed OPEN is a
+   * failure the source never declared — and gating the declaration on a
+   * declared `raise` is how a generated guard came to write into a field its
+   * program had never described.
+   */
+  it("generates no failure wrapper for a transaction that cannot fail", () => {
     const result = compile(`${PREAMBLE}
 transaction post(request: Request) {
   debit(request.accountId, request.amount);
@@ -73,8 +84,9 @@ transaction post(request: Request) {
   audit("POSTED", request.idempotencyKey);
 }`);
 
-    expect(result.cobol).not.toContain("BANK-FAILURE-CODE");
     expect(result.cobol).not.toContain("POST-BODY");
+    expect(result.cobol).not.toContain("POST-FAILURE");
+    expect(result.cobol).toContain("01  BANK-FAILURE-CODE    PIC X(32)");
   });
 
   it("rejects an empty failure code", () => {
@@ -240,7 +252,15 @@ transaction post(request: Request) {
     ).toBe(true);
   });
 
-  it("leaves a function that cannot fail as a plain PERFORM", () => {
+  /**
+   * Every routine is performed THRU its exit, whether or not it was declared
+   * able to raise. A `GO TO` out of the middle of a plain `PERFORM` range
+   * leaves the flow of control undefined, and what puts one there is usually a
+   * generated guard rather than a `raise` anybody wrote — an overflow, a failed
+   * READ, a subscript outside its table. One shape for every call site, so the
+   * one that can jump is not the exception nobody remembered.
+   */
+  it("performs a function that cannot fail THRU its exit as well", () => {
     const result = compile(`${PREAMBLE}
 function twice(amount: BDT): BDT {
   return amount + amount;
@@ -251,8 +271,8 @@ transaction post(request: Request) {
   audit("POSTED", request.idempotencyKey);
 }`);
 
-    expect(result.cobol).toContain("PERFORM TWICE");
-    expect(result.cobol).not.toContain("PERFORM TWICE THRU");
+    expect(result.cobol).toContain("PERFORM TWICE THRU TWICE-EXIT");
+    expect(result.cobol).toContain("       TWICE-EXIT.\n           EXIT.");
   });
 });
 
@@ -377,8 +397,16 @@ entry transaction main(request: Request) {
 }`);
 
     expect(result.diagnostics).toEqual([]);
+    // The two registers are set first: both are EXTERNAL, so the run unit owns
+    // the storage and a VALUE clause on one is honoured by Enterprise COBOL and
+    // ignored by GnuCOBOL.
     expect(result.cobol).toContain(
-      "       BANK-MAIN.\n           PERFORM MAIN",
+      [
+        "       BANK-MAIN.",
+        "           MOVE 0 TO BANK-RETURN-CODE",
+        "           MOVE SPACES TO BANK-FAILURE-CODE",
+        "           PERFORM MAIN",
+      ].join("\n"),
     );
   });
 

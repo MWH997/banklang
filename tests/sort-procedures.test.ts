@@ -314,8 +314,11 @@ describe("the sort's own outcome", () => {
     const cobol = result.cobol ?? "";
     const check = cobol.indexOf("IF SORT-RETURN NOT = 0");
 
-    expect(cobol.slice(check)).toContain("MOVE 16 TO RETURN-CODE");
-    expect(cobol.slice(check)).toContain("GOBACK");
+    expect(cobol.slice(check)).toContain("MOVE 16 TO BANK-RETURN-CODE");
+    // Out through the enclosing routine's exit, not a `GOBACK` written at the
+    // point of failure: `BANK-MAIN` is the only paragraph that ends the
+    // program, so the transaction's own failure handling still runs.
+    expect(cobol.slice(check)).toMatch(/GO TO \S+-EXIT/);
   });
 
   /**

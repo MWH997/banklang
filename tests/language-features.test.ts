@@ -115,7 +115,10 @@ describe("arithmetic and rounding", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("ROUNDED MODE IS NEAREST-EVEN");
+    // Not a phrase: `ROUNDED MODE IS` is COBOL 2002, and Enterprise COBOL has
+    // no `MODE` sub-phrase at all. Banker's rounding is generated arithmetic.
+    expect(result.cobol).not.toContain("ROUNDED MODE IS");
+    expect(result.cobol).toContain("FUNCTION MOD (BANK-RND-1-UNITS, 2) = 1");
     expect(result.cobol).toContain("*");
   });
 
@@ -138,19 +141,33 @@ describe("arithmetic and rounding", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("ROUNDED MODE IS NEAREST-AWAY-FROM-ZERO");
+    // HALF_UP is what IBM's ROUNDED means, so it is the phrase and nothing is
+    // generated around it.
+    expect(result.cobol).toContain("ROUNDED");
+    expect(result.cobol).not.toContain("ROUNDED MODE IS");
+    expect(result.cobol).not.toContain("REMAINDER");
   });
 
-  for (const [mode, phrase] of [
-    ["HALF_EVEN", "NEAREST-EVEN"],
-    ["HALF_UP", "NEAREST-AWAY-FROM-ZERO"],
-    ["HALF_DOWN", "NEAREST-TOWARD-ZERO"],
-    ["UP", "AWAY-FROM-ZERO"],
-    ["DOWN", "TRUNCATION"],
-    ["CEILING", "TOWARD-GREATER"],
-    ["FLOOR", "TOWARD-LESSER"],
+  it("truncates for DOWN, which is what leaving ROUNDED off does", () => {
+    const result = compileBody(
+      `function f(a: MoneyBDT, b: MoneyBDT): MoneyBDT {
+  return divide(a, b, "DOWN");
+}`,
+    );
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).not.toContain("ROUNDED");
+    expect(result.cobol).not.toContain("REMAINDER");
+  });
+
+  for (const mode of [
+    "HALF_EVEN",
+    "HALF_DOWN",
+    "UP",
+    "CEILING",
+    "FLOOR",
   ] as const) {
-    it(`maps ${mode} to COBOL ${phrase}`, () => {
+    it(`generates ${mode}, which Enterprise COBOL has no phrase for`, () => {
       const result = compileBody(
         `function f(a: MoneyBDT, b: MoneyBDT): MoneyBDT {
   return divide(a, b, "${mode}");
@@ -158,9 +175,25 @@ describe("arithmetic and rounding", () => {
       );
 
       expect(result.diagnostics).toEqual([]);
-      expect(result.cobol).toContain(`ROUNDED MODE IS ${phrase}`);
+      expect(result.cobol).not.toContain("MODE IS");
+      // A division is rounded from DIVIDE's own remainder rather than from a
+      // quotient whose number of decimal places the compiler chose.
+      expect(result.cobol).toContain(
+        "GIVING BANK-RND-1-VALUE REMAINDER BANK-RND-1-REMAINDER",
+      );
+      expect(result.cobol).toContain("ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE");
     });
   }
+
+  it("refuses a rounding that is not the whole value being stored", () => {
+    const result = compileBody(
+      `function f(a: MoneyBDT, b: MoneyBDT): MoneyBDT {
+  return a + round(b, "HALF_EVEN");
+}`,
+    );
+
+    expect(ids(result)).toContain("BANK-DEC-006");
+  });
 
   it("rejects an unknown rounding mode", () => {
     const result = compileBody(

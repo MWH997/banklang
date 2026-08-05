@@ -8,10 +8,16 @@ import type {
   IRExpression,
   IRLedgerStatement,
   IRProgram,
+  IRRoundedExpression,
   IRStatement,
   IRTransaction,
+  IRType,
   IRFile,
 } from "../../ir/src/index";
+import {
+  divisionRemainderShape,
+  MAX_COMPAT_DIGITS,
+} from "../../cobol-ir/src/index";
 
 const IDEMPOTENCY_KEY_FIELD = "idempotencyKey";
 
@@ -66,6 +72,8 @@ export function analyzeProgramSemantics(
   for (const file of program.files) {
     diagnostics.push(...checkFileStatus(file));
   }
+
+  diagnostics.push(...checkRoundingIsGeneratable(program));
 
   return {
     diagnostics,
@@ -416,4 +424,162 @@ function diagnostic(
     hint,
     backendProfile: null,
   });
+}
+
+/**
+ * Every rounding the backend can actually generate, and only those.
+ *
+ * Enterprise COBOL has one rounding phrase — `ROUNDED`, which is half up away
+ * from zero — and truncation when it is left off. The other five BankTS modes
+ * are generated arithmetic, and generated arithmetic has two preconditions the
+ * compiler can check before it emits anything:
+ *
+ * 1. The rounded value has to be the whole value being stored. COBOL attaches
+ *    `ROUNDED` to the receiver, so there is no such thing as rounding a
+ *    subexpression; the backend used to render `a + round(b, "UP")` as `a + b`
+ *    and lose the rounding entirely, with nothing said.
+ * 2. A rounded division is generated from `DIVIDE ... REMAINDER`, and the
+ *    remainder has to fit a field. When it does not, the tie test would be run
+ *    against a truncated remainder — which is exactly the class of silently
+ *    wrong answer this compiler exists to refuse.
+ */
+function checkRoundingIsGeneratable(program: IRProgram): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  const check = (
+    expression: IRExpression,
+    receiver: IRType | null,
+    isWholeValue: boolean,
+  ): void => {
+    if (expression.kind === "Rounded") {
+      if (!isWholeValue) {
+        diagnostics.push(
+          diagnostic(
+            "BANK-DEC-006",
+            "A rounded value must be the whole value being stored.",
+            expression.span,
+            "COBOL attaches ROUNDED to the receiving field, so a rounding inside a larger expression has nowhere to attach. Bind it first: `let rounded: decimal<n, s> = round(...);`.",
+          ),
+        );
+      } else {
+        diagnostics.push(...checkRoundedDivision(expression, receiver));
+      }
+    }
+
+    for (const child of childExpressions(expression)) {
+      check(child, null, false);
+    }
+  };
+
+  const walk = (statements: IRStatement[], returnType: IRType | null): void => {
+    for (const statement of flattenStatements(statements)) {
+      switch (statement.kind) {
+        case "LetStatement":
+          check(statement.initializer, statement.declaredType, true);
+          break;
+        case "AssignStatement":
+          check(statement.expression, statement.target.resolvedType, true);
+          break;
+        case "ReturnStatement":
+          check(statement.expression, returnType, true);
+          break;
+        case "ExpressionStatement":
+          check(statement.expression, null, false);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  for (const fn of program.functions) {
+    walk(fn.body.statements, fn.returnType);
+  }
+  for (const transaction of program.transactions) {
+    walk(transaction.body.statements, null);
+    if (transaction.failureHandler) {
+      walk(transaction.failureHandler.statements, null);
+    }
+  }
+
+  return diagnostics;
+}
+
+/** The remainder field a generated rounded division needs, and whether it fits. */
+function checkRoundedDivision(
+  expression: IRRoundedExpression,
+  receiver: IRType | null,
+): Diagnostic[] {
+  if (expression.mode === "HALF_UP" || expression.mode === "DOWN") {
+    // Both are phrases COBOL performs itself, so nothing is generated and there
+    // is no remainder field to size.
+    return [];
+  }
+  const operand = expression.operand;
+  if (operand.kind !== "BinaryArithmetic" || operand.operator !== "/") {
+    return [];
+  }
+
+  const dividend = numericShape(operand.left.resolvedType);
+  const divisor = numericShape(operand.right.resolvedType);
+  const target =
+    numericShape(receiver) ?? numericShape(expression.resolvedType);
+  if (!dividend || !divisor || !target) {
+    return [];
+  }
+
+  const remainder = divisionRemainderShape(dividend, divisor, target.scale);
+  const digits = remainder.integer + remainder.scale;
+  if (digits <= MAX_COMPAT_DIGITS) {
+    return [];
+  }
+
+  return [
+    diagnostic(
+      "BANK-DEC-006",
+      `Rounding this division ${expression.mode} needs a ${digits}-digit remainder, and a numeric item holds ${MAX_COMPAT_DIGITS}.`,
+      expression.span,
+      `Reduce the divisor's precision or the result's scale. ${expression.mode} is generated from DIVIDE ... REMAINDER, and a remainder that does not fit makes the tie test read truncated digits.`,
+    ),
+  ];
+}
+
+function numericShape(
+  type: IRType | null,
+): { precision: number; scale: number } | null {
+  if (!type) {
+    return null;
+  }
+  if (type.kind === "decimal" || type.kind === "currency") {
+    return { precision: type.precision, scale: type.scale };
+  }
+  if (type.kind === "nullable") {
+    return numericShape(type.inner);
+  }
+  return null;
+}
+
+/** Sub-expressions of an expression, for a walk that has to reach all of them. */
+function childExpressions(expression: IRExpression): IRExpression[] {
+  switch (expression.kind) {
+    case "BinaryComparison":
+    case "BinaryArithmetic":
+    case "Logical":
+      return [expression.left, expression.right];
+    case "Not":
+    case "Rounded":
+    case "NullableCheck":
+      return [expression.operand];
+    case "TemporalCall":
+    case "NumericCall":
+    case "StringCall":
+    case "Call":
+      return expression.args;
+    case "IndexAccess":
+      return [expression.target, expression.index];
+    case "MemberAccess":
+      return [];
+    default:
+      return [];
+  }
 }

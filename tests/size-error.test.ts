@@ -56,7 +56,7 @@ describe("a computation that can overflow", () => {
     const text = flowed(result.cobol);
     expect(text).toContain("ON SIZE ERROR");
     expect(text).toContain('DISPLAY "ARITHMETIC OVERFLOW TOTAL OF ACCT"');
-    expect(text).toContain("MOVE 12 TO RETURN-CODE");
+    expect(text).toContain("MOVE 12 TO BANK-RETURN-CODE");
     expect(result.cobol).toContain("END-COMPUTE");
   });
 });
@@ -75,13 +75,19 @@ describe("a computation that cannot", () => {
 });
 
 /**
- * A contained program is where "fail the step" needs a different statement.
+ * A contained program is where a failure has furthest to travel.
  *
- * `GOBACK` in the outermost program returns to the operating system, so a guard
- * that sets a return code and goes back ends the job. In a contained program it
- * returns to the *container*, which carries straight on and then overwrites the
- * return code with its own on the way out — so an overflow inside a nested
- * function reported itself to the job log and the step still ended with zero.
+ * `GOBACK` in the outermost program returns to the operating system; in a
+ * contained program it returns to the *container*, which used to carry straight
+ * on and then overwrite the return code with its own on the way out — so an
+ * overflow inside a nested function reported itself to the job log and the step
+ * still ended with zero.
+ *
+ * What carries it now is the pair of EXTERNAL registers. A contained program
+ * cannot see the container's working storage, so a register held by the run
+ * unit is the only thing both can describe; the guard names the failure there
+ * and leaves through the program's own exit, and the container's call site
+ * tests the same register and leaves too.
  */
 describe("a computation inside a nested function", () => {
   const result = compile(`module Nest;
@@ -106,13 +112,34 @@ entry transaction go(book: Book) {
     expect(result.diagnostics).toEqual([]);
   });
 
-  it("ends the run unit rather than returning to the container", () => {
+  it("raises into a register the container can read", () => {
     const text = result.cobol ?? "";
+    const contained = text.slice(text.indexOf("PROGRAM-ID. ADDUP"));
+
     expect(text).toContain("ON SIZE ERROR");
-    expect(text).toContain("STOP RUN");
-    // The container's own paths are unchanged: only the guard inside the
-    // contained program needs the stronger statement.
+    // The contained program describes the same two registers the container
+    // does, and leaves through its own exit rather than jumping at a paragraph
+    // of the container's that it cannot see.
+    expect(contained).toContain("01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.");
+    expect(contained).toContain("MOVE 12 TO BANK-RETURN-CODE");
+    expect(contained).toContain(
+      'MOVE "ARITHMETIC-OVERFLOW" TO BANK-FAILURE-CODE',
+    );
+    expect(contained).toContain("GO TO ADD-UP-EXIT");
+    expect(contained).toContain("       ADD-UP-EXIT.\n           GOBACK.");
     expect(text).toContain("END PROGRAM ADDUP");
+  });
+
+  /**
+   * The other half: a container that calls and carries on regardless is how the
+   * return code got overwritten. Every call site tests the register.
+   */
+  it("stops the container at the call site", () => {
+    const text = result.cobol ?? "";
+    const container = text.slice(0, text.indexOf("PROGRAM-ID. ADDUP"));
+
+    expect(container).toContain('CALL "ADDUP"');
+    expect(container).toContain("IF BANK-FAILURE-CODE NOT = SPACES");
   });
 });
 

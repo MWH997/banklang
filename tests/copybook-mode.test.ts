@@ -59,8 +59,16 @@ describe("inline mode", () => {
     );
   });
 
-  it("needs no SYSLIB in the job", () => {
-    expect(emitJcl(program()).jcl).not.toContain("SYSLIB");
+  /**
+   * The binder's SYSLIB is always there — that is how a static `CALL` is
+   * resolved. What an inline program does not need is a copybook library on the
+   * compile step, because it has no COPY statement to resolve.
+   */
+  it("needs no copybook library on the compile step", () => {
+    const jcl = emitJcl(program()).jcl;
+
+    expect(jcl).not.toContain("COBOL.SYSLIB");
+    expect(jcl).not.toContain("BANKLANG.COPYLIB");
   });
 });
 
@@ -82,12 +90,27 @@ describe("copy mode", () => {
    * and the compile fails on undefined data names, so the job that omits it
    * describes a build that cannot succeed.
    */
-  it("adds a SYSLIB to the compile step", () => {
+  it("adds a copybook library to the compile step", () => {
     const jcl = emitJcl(program(), { usesCopybooks: true }).jcl;
+
+    // IGYWCL's parameter list documents SYSLIB as the caller's to supply, and
+    // qualifies it by procedure step: the compiler's SYSLIB is a copybook
+    // library, the binder's is where object modules are resolved from.
+    expect(jcl).toContain("//COBOL.SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB");
+    expect(jcl.indexOf("//COBOL.SYSLIB")).toBeGreaterThan(
+      jcl.indexOf("//COMPILE  EXEC IGYWCL"),
+    );
+  });
+
+  it("adds it to the expanded form too", () => {
+    const jcl = emitJcl(program(), {
+      usesCopybooks: true,
+      mode: "expanded",
+    }).jcl;
 
     expect(jcl).toContain("//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB");
     expect(jcl.indexOf("//SYSLIB")).toBeGreaterThan(
-      jcl.indexOf("//COMPILE  EXEC PGM=IGYCRCTL"),
+      jcl.indexOf("//COBOL    EXEC PGM=IGYCRCTL"),
     );
   });
 

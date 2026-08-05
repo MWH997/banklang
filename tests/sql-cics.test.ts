@@ -178,7 +178,13 @@ cics transaction enquiry(request: Request, row: Row) {
         'EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(ROW) RESP(LINK-RESP) END-EXEC',
       ),
     );
-    expect(result.cobol).toContain("EXEC CICS RETURN END-EXEC.");
+    // RETURN and then GOBACK, which is how the CICS Application Programming
+    // Guide's own sample ends: ending the task is something CICS does, not
+    // something COBOL does, so without the GOBACK the paragraph falls through
+    // into the next one.
+    expect(result.cobol).toContain(
+      "           EXEC CICS RETURN END-EXEC\n           GOBACK.",
+    );
   });
 
   it("reports the CICS translator as a backend requirement", () => {

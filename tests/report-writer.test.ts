@@ -191,9 +191,12 @@ describe("the job a report needs", () => {
     expect(jcl).toContain("//RWPRE    EXEC PGM=SPCRWCOB");
     // SYSIN in, RWWORK for working space, SYSINS out — and the compile step
     // reads what it wrote rather than the original source.
-    expect(jcl).toContain("//RWWORK   DD UNIT=SYSDA");
+    expect(jcl).toContain("//RWWORK   DD UNIT=SYSALLDA");
     expect(jcl).toContain("//SYSINS   DD DSN=&&RWOUT");
-    expect(jcl).toContain("//COMPILE  EXEC PGM=IGYCRCTL,COND=(4,LT)");
+    // A step ahead of the compiler is what forces the expanded form: a
+    // cataloged procedure has nowhere to put one.
+    expect(jcl).toContain("//COBOL    EXEC PGM=IGYCRCTL,REGION=0M,COND=(4,LT)");
+    expect(jcl).not.toContain("//COMPILE  EXEC IGYWCL");
     expect(jcl).toContain("//SYSIN    DD DSN=&&RWOUT,DISP=(OLD,DELETE)");
     expect(jcl.indexOf("PGM=SPCRWCOB")).toBeLessThan(
       jcl.indexOf("PGM=IGYCRCTL"),
@@ -209,7 +212,7 @@ describe("the job a report needs", () => {
     const jcl = result.jcl ?? "";
     const linkStep = jcl.slice(jcl.indexOf("//LKED"));
 
-    expect(linkStep).toContain("//SYSLIB   DD DISP=SHR,DSN=RW.SCXRRUN");
+    expect(linkStep).toContain("//         DD DISP=SHR,DSN=RW.SCXRRUN");
   });
 
   it("leaves a program with no report alone", () => {

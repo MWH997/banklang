@@ -28,9 +28,10 @@
            05  POSTING-BALANCE      PIC S9(16)V99 COMP-3.
            05  POSTING-FLAG         PIC X(1).
        WORKING-STORAGE SECTION.
-       01  ACCOUNT-INPUT-STATUS PIC XX.
-       01  POSTING-OUTPUT-STATUS PIC XX.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP VALUE 0.
+       01  ACCOUNT-INPUT-STATUS PIC X(2).
+       01  POSTING-OUTPUT-STATUS PIC X(2).
+       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
        01  ACCOUNT-RECORD.
            05  ACCOUNT-ID           PIC X(16).
            05  BALANCE              PIC S9(16)V99 COMP-3.
@@ -50,11 +51,39 @@
            05  BANK-AUDIT-EVENT         PIC X(32).
            05  BANK-AUDIT-CORRELATION   PIC X(64).
 
-       PROCEDURE DIVISION.
+       LINKAGE SECTION.
+       01  BANK-PARM.
+           05  BANK-PARM-LENGTH         PIC S9(4) COMP.
+           05  BANK-PARM-DATA.
+               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+
+       PROCEDURE DIVISION USING BANK-PARM.
        BANK-MAIN.
-           PERFORM POST-ACCOUNTS
+           MOVE 0 TO BANK-RETURN-CODE
+           MOVE SPACES TO BANK-FAILURE-CODE
+           PERFORM BANK-ACCEPT-PARM THRU BANK-ACCEPT-PARM-EXIT
+           IF BANK-RETURN-CODE = 0
+               PERFORM POST-ACCOUNTS THRU POST-ACCOUNTS-EXIT
+           END-IF
            MOVE BANK-RETURN-CODE TO RETURN-CODE
            GOBACK.
+       BANK-ACCEPT-PARM.
+      *> The job's PARM, positional. See the JCL for the layout.
+           IF ADDRESS OF BANK-PARM = NULL
+               DISPLAY "NO PARM PASSED, 36 BYTES REQUIRED" UPON SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               GO TO BANK-ACCEPT-PARM-EXIT
+           END-IF
+           IF BANK-PARM-LENGTH < 36
+               DISPLAY "PARM IS " BANK-PARM-LENGTH " BYTES, 36 REQUIRED"
+                   UPON SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               GO TO BANK-ACCEPT-PARM-EXIT
+           END-IF
+           MOVE BANK-PARM-IDEMPOTENCY-KEY TO POST-ACCOUNTS-P3
+           CONTINUE.
+       BANK-ACCEPT-PARM-EXIT.
+           EXIT.
        IS-OVERDRAWN.
            IF 0.00 > IS-OVERDRAWN-P1
                MOVE 'Y' TO IS-OVERDRAWN-RESULT
@@ -62,20 +91,24 @@
                MOVE 'N' TO IS-OVERDRAWN-RESULT
            END-IF
            CONTINUE.
+       IS-OVERDRAWN-EXIT.
+           EXIT.
        POST-ACCOUNTS.
            OPEN INPUT ACCOUNT-INPUT-FILE
            IF ACCOUNT-INPUT-STATUS(1:1) NOT = "0"
                DISPLAY "OPEN FAILED accountInput STATUS "
                    ACCOUNT-INPUT-STATUS UPON SYSOUT
-               MOVE 12 TO RETURN-CODE
-               GOBACK
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "OPEN-FAILED" TO BANK-FAILURE-CODE
+               GO TO POST-ACCOUNTS-EXIT
            END-IF
            OPEN OUTPUT POSTING-OUTPUT-FILE
            IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
                DISPLAY "OPEN FAILED postingOutput STATUS "
                    POSTING-OUTPUT-STATUS UPON SYSOUT
-               MOVE 12 TO RETURN-CODE
-               GOBACK
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "OPEN-FAILED" TO BANK-FAILURE-CODE
+               GO TO POST-ACCOUNTS-EXIT
            END-IF
            MOVE 0 TO WS-LOOP-34-3
            PERFORM UNTIL WS-LOOP-34-3 >= 1000000 OR NOT
@@ -88,8 +121,9 @@
                    ACCOUNT-INPUT-STATUS NOT = "10"
                    DISPLAY "READ FAILED accountInput STATUS "
                        ACCOUNT-INPUT-STATUS UPON SYSOUT
-                   MOVE 12 TO RETURN-CODE
-                   GOBACK
+                   MOVE 12 TO BANK-RETURN-CODE
+                   MOVE "READ-FAILED" TO BANK-FAILURE-CODE
+                   GO TO POST-ACCOUNTS-EXIT
                END-IF
                MOVE ACCOUNT-ID OF ACCOUNT-INPUT-RECORD TO ACCOUNT-ID OF
                    ACCOUNT-RECORD
@@ -101,7 +135,10 @@
                    COMPUTE POSTING-BALANCE OF POSTING-RECORD = BALANCE
                        OF ACCOUNT-RECORD
                    MOVE BALANCE OF ACCOUNT-RECORD TO IS-OVERDRAWN-P1
-                   PERFORM IS-OVERDRAWN
+                   PERFORM IS-OVERDRAWN THRU IS-OVERDRAWN-EXIT
+                   IF BANK-FAILURE-CODE NOT = SPACES
+                       GO TO POST-ACCOUNTS-EXIT
+                   END-IF
                    IF IS-OVERDRAWN-RESULT = 'Y'
                        MOVE "O" TO POSTING-FLAG OF POSTING-RECORD
                    ELSE
@@ -117,8 +154,9 @@
                    IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
                        DISPLAY "WRITE FAILED postingOutput STATUS "
                            POSTING-OUTPUT-STATUS UPON SYSOUT
-                       MOVE 12 TO RETURN-CODE
-                       GOBACK
+                       MOVE 12 TO BANK-RETURN-CODE
+                       MOVE "WRITE-FAILED" TO BANK-FAILURE-CODE
+                       GO TO POST-ACCOUNTS-EXIT
                    END-IF
                END-IF
            END-PERFORM
@@ -126,18 +164,21 @@
            IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
                DISPLAY "CLOSE FAILED postingOutput STATUS "
                    POSTING-OUTPUT-STATUS UPON SYSOUT
-               MOVE 12 TO RETURN-CODE
-               GOBACK
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "CLOSE-FAILED" TO BANK-FAILURE-CODE
+               GO TO POST-ACCOUNTS-EXIT
            END-IF
            CLOSE ACCOUNT-INPUT-FILE
            IF ACCOUNT-INPUT-STATUS(1:1) NOT = "0"
                DISPLAY "CLOSE FAILED accountInput STATUS "
                    ACCOUNT-INPUT-STATUS UPON SYSOUT
-               MOVE 12 TO RETURN-CODE
-               GOBACK
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "CLOSE-FAILED" TO BANK-FAILURE-CODE
+               GO TO POST-ACCOUNTS-EXIT
            END-IF
            MOVE "ACCOUNTS_POSTED" TO BANK-AUDIT-EVENT
            MOVE POST-ACCOUNTS-P3 TO BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE
-           MOVE BANK-RETURN-CODE TO RETURN-CODE
-           GOBACK.
+           CONTINUE.
+       POST-ACCOUNTS-EXIT.
+           EXIT.

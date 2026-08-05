@@ -156,6 +156,11 @@ function compound(balance: Amount, periods: Count): Amount {
    * WORKING-STORAGE is shared across invocations of a recursive program, so
    * locals held there would be overwritten by the nested call and the result
    * would be silently wrong. LOCAL-STORAGE gives each invocation its own copy.
+   *
+   * The two failure registers are the deliberate exception, and they go the
+   * other way for the same reason: they are the run unit's, not the
+   * invocation's, and the Language Reference forbids EXTERNAL in LOCAL-STORAGE
+   * anyway.
    */
   it("puts locals in LOCAL-STORAGE, not WORKING-STORAGE", () => {
     const result = compile(RECURSIVE);
@@ -163,10 +168,20 @@ function compound(balance: Amount, periods: Count): Amount {
     const recursiveProgram = program.slice(
       program.indexOf("PROGRAM-ID. COMPOUND RECURSIVE."),
     );
+    const working = recursiveProgram.slice(
+      recursiveProgram.indexOf("WORKING-STORAGE SECTION."),
+      recursiveProgram.indexOf("LOCAL-STORAGE SECTION."),
+    );
 
     expect(recursiveProgram).toContain("LOCAL-STORAGE SECTION.");
-    expect(recursiveProgram).toContain("01  GROWN");
-    expect(recursiveProgram).not.toContain("WORKING-STORAGE SECTION.");
+    expect(
+      recursiveProgram.slice(recursiveProgram.indexOf("LOCAL-STORAGE")),
+    ).toContain("01  GROWN");
+    expect(working.match(/^ {7}01 {2}/gm) ?? []).toHaveLength(2);
+    expect(working).toContain("01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.");
+    expect(working).toContain(
+      "01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.",
+    );
   });
 
   it("passes parameters and the result through LINKAGE", () => {

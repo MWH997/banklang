@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, parmDriver } from "./helpers";
 
 /**
  * The object of an `OCCURS DEPENDING ON`, and what it decides.
@@ -147,20 +147,22 @@ entry transaction run(batch: Batch, n: binary<4>) {
 }`);
     expect(result.diagnostics).toEqual([]);
 
-    const cobol = (result.cobol ?? "").replace(
-      "           PERFORM RUN-FLD\n",
-      `           MOVE ${count} TO RUN-FLD-P2\n           PERFORM RUN-FLD\n`,
-    );
-    expect(cobol).toContain(`MOVE ${count} TO RUN-FLD-P2`);
-
+    // `n` is an entry parameter, so it arrives in the job's PARM. The driver
+    // builds one the way the initiator would.
     const dir = mkdtempSync(join(tmpdir(), "bankc-odo-"));
-    writeFileSync(join(dir, "program.cbl"), cobol, "utf8");
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(
+      join(dir, "driver.cbl"),
+      parmDriver(result.program!, { n: count }),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",
       [
         "-x",
         "-fixed",
+        "driver.cbl",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

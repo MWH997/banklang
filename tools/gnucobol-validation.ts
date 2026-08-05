@@ -5,7 +5,11 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 import { formatDiagnostic, type Diagnostic } from "../packages/ast/src/index";
-import { emitCobol, renderCopybook } from "../packages/cobol-backend/src/index";
+import {
+  batchParmFields,
+  emitCobol,
+  renderCopybook,
+} from "../packages/cobol-backend/src/index";
 import { loadConfig } from "../packages/config/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
@@ -29,6 +33,18 @@ export interface GnucobolValidationSummary {
   compilerCommand: string;
   compilerExitCode: number | null;
   compilerStatus: "passed" | "failed" | "skipped";
+  /**
+   * The same source under GnuCOBOL's default dialect.
+   *
+   * Run for the difference, not for the pass. The default dialect accepts a
+   * 31-character word and COBOL 2002 rounding, so a program that compiles there
+   * and not under the IBM configuration is a program the target rejects — which
+   * is exactly the shape of every defect the 2026-08-05 audit found.
+   */
+  defaultDialectStatus: "passed" | "failed" | "skipped";
+  defaultDialectOutput: string | null;
+  /** True when the two dialects disagree, which always needs an explanation. */
+  dialectsDiverge: boolean;
   /** Preprocessing the generated program needs before a compiler accepts it. */
   backendRequirements: string[];
   /**
@@ -154,6 +170,9 @@ export function runGnucobolValidation(
   let compilerExitCode: number | null = null;
   let compilerStatus: GnucobolValidationSummary["compilerStatus"] = "skipped";
   let compilerOutput: string | null = null;
+  let defaultDialectStatus: GnucobolValidationSummary["compilerStatus"] =
+    "skipped";
+  let defaultDialectOutput: string | null = null;
 
   if (compilerExecutable) {
     compilerVersion =
@@ -162,8 +181,22 @@ export function runGnucobolValidation(
           encoding: "utf8",
         }),
       )?.split("\n")[0] ?? null;
+    // A batch program that takes entry parameters reads them from the job's
+    // PARM, so it has `PROCEDURE DIVISION USING` — and `cobc -x` refuses to
+    // build an executable out of one ("executable program requested but
+    // PROCEDURE/ENTRY has USING clause"), because a Unix process has no
+    // parameter list to pass. On z/OS the initiator builds one and the program
+    // is still a main program; GnuCOBOL has no way to say that, so it is built
+    // as a callable module instead. Nothing here runs the result: this lane
+    // compiles, and `tests/conformance.test.ts` is what executes.
+    const takesParm = batchParmFields(ir.program).length > 0;
     const compileArgs = [
-      "-x",
+      takesParm ? "-m" : "-x",
+      // The dialect the target actually is, rather than the superset of every
+      // dialect GnuCOBOL knows. See `tools/banklang-ibm.conf` for what each
+      // departure from GnuCOBOL's own ibm-strict is and which manual it comes
+      // from.
+      `-conf=${relative(cwd, resolve(cwd, "tools/banklang-ibm.conf"))}`,
       // Fixed reference format, which is the only one z/OS reads: columns 8-72,
       // with column 7 the indicator area. GnuCOBOL guesses the format from the
       // first line and will happily read the whole program as free format,
@@ -196,6 +229,17 @@ export function runGnucobolValidation(
         .filter(Boolean)
         .join("\n");
     }
+
+    // The same compile without the configuration, to see the two apart. A pass
+    // here and a failure above is the case worth reporting: it is the local
+    // gate having been green on something the target refuses.
+    const defaultResult = spawnSync(
+      compilerExecutable,
+      compileArgs.filter((argument) => !argument.startsWith("-conf=")),
+      { encoding: "utf8", cwd },
+    );
+    defaultDialectStatus = defaultResult.status === 0 ? "passed" : "failed";
+    defaultDialectOutput = joinProcessOutput(defaultResult) || null;
   }
 
   const summary: GnucobolValidationSummary = {
@@ -217,6 +261,10 @@ export function runGnucobolValidation(
     compilerExitCode,
     compilerStatus,
     compilerOutput,
+    defaultDialectStatus,
+    defaultDialectOutput,
+    dialectsDiverge:
+      compilerStatus !== "skipped" && compilerStatus !== defaultDialectStatus,
     validatedWithGnucobol: compilerStatus === "passed",
     knownBackendGaps: [
       ...(precompiled
@@ -258,6 +306,8 @@ export function buildGnucobolValidationReport(
     `| compiler-command | ${summary.compilerCommand} |`,
     `| compiler-exit-code | ${summary.compilerExitCode ?? "n/a"} |`,
     `| compiler-status | ${summary.compilerStatus} |`,
+    `| default-dialect-status | ${summary.defaultDialectStatus} |`,
+    `| dialects-diverge | ${summary.dialectsDiverge ? "yes" : "no"} |`,
     "",
     "## Compiler Output",
     "",
@@ -367,8 +417,21 @@ if (
   for (const path of projects) {
     const summary = runGnucobolValidation(process.cwd(), path);
     const status = summary.compilerStatus;
-    process.stdout.write(`${status.padEnd(8)} ${path}\n`);
+    process.stdout.write(
+      `${status.padEnd(8)} ${path}${summary.dialectsDiverge ? "  (dialects diverge)" : ""}\n`,
+    );
     if (status === "failed") {
+      process.stdout.write(`${summary.compilerOutput ?? ""}\n`);
+      process.exitCode = 1;
+    }
+    // A divergence is a finding either way round. The IBM configuration
+    // rejecting what the default accepts is the target rejecting our output;
+    // the default rejecting what the IBM configuration accepts means the
+    // configuration is relaxing something it should not.
+    if (summary.dialectsDiverge) {
+      process.stdout.write(
+        `         default dialect: ${summary.defaultDialectStatus}\n${summary.defaultDialectOutput ?? ""}\n`,
+      );
       process.exitCode = 1;
     }
   }

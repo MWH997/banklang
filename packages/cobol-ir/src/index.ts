@@ -1,7 +1,66 @@
 import type { IRRecord, IRType } from "../../ir/src/index";
 
+/**
+ * The longest user-defined word IBM Enterprise COBOL accepts.
+ *
+ * The Language Reference defines a user-defined word as "a character string of
+ * not more than 30 characters that forms a user-defined word", and the compiler
+ * enforces it. GnuCOBOL's default dialect does not, which is how
+ * `IS-ELIGIBLE-FOR-INTEREST-RESULT` — 31 characters — reached a shipped example
+ * and a checked-in golden fixture with every local gate green.
+ */
+export const MAX_COBOL_WORD_LENGTH = 30;
+
 export function toCobolName(name: string): string {
-  return avoidReserved(rawCobolName(name));
+  return fitCobolWord(avoidReserved(rawCobolName(name)));
+}
+
+/**
+ * Shortens a COBOL word to the 30 characters the target allows.
+ *
+ * The rule is the one a COBOL programmer uses by hand: abbreviate the longest
+ * word to its first four characters, and keep going until the name fits. That
+ * turns `IS-ELIGIBLE-FOR-INTEREST-RESULT` into `IS-ELIG-FOR-INTEREST-RESULT`
+ * rather than into a truncation that loses the part carrying the meaning
+ * (`...-INTEREST-RESUL`) or a hash suffix that reads as machine output.
+ *
+ * Deterministic and stateless, so the same source name always produces the same
+ * COBOL word regardless of what else the program contains or what order things
+ * were emitted in. Two distinct source names that abbreviate to one word are a
+ * real defect rather than something to paper over, and `BANK-NAME-001` reports
+ * them; see `collectCobolNameCollisions`.
+ */
+export function fitCobolWord(
+  word: string,
+  limit = MAX_COBOL_WORD_LENGTH,
+): string {
+  if (word.length <= limit) {
+    return word;
+  }
+
+  // Four characters is the shortest abbreviation that still reads as the word
+  // it came from: ACCT, INTR, ELIG. Below that the name stops being a name.
+  const floor = 4;
+  const segments = word.split("-");
+  while (segments.join("-").length > limit) {
+    let longest = -1;
+    for (let index = 0; index < segments.length; index += 1) {
+      if (
+        segments[index].length > floor &&
+        (longest === -1 || segments[index].length > segments[longest].length)
+      ) {
+        longest = index;
+      }
+    }
+    if (longest === -1) {
+      // Every segment is already at the floor. Nothing readable is left to give
+      // up, so the name is cut to length rather than emitted over it.
+      return segments.join("-").slice(0, limit).replace(/-+$/, "");
+    }
+    segments[longest] = segments[longest].slice(0, floor);
+  }
+
+  return segments.join("-");
 }
 
 function rawCobolName(name: string): string {
@@ -821,6 +880,39 @@ export function decimalPicture(
 
 export function packedDecimalByteLength(precision: number): number {
   return Math.ceil((precision + 1) / 2);
+}
+
+/** Digits a numeric item may carry under `ARITH(COMPAT)`, which is the default. */
+export const MAX_COMPAT_DIGITS = 18;
+
+/**
+ * The field `DIVIDE a BY b GIVING q REMAINDER r` needs for `r`.
+ *
+ * The Language Reference defines the remainder as "the result of subtracting the
+ * product of the quotient and the divisor from the dividend", so its scale is
+ * whichever of the dividend's own scale and the quotient's-times-the-divisor's
+ * is larger.
+ *
+ * Its magnitude is bounded: the quotient is truncated at the receiver's scale,
+ * so what is left over is below one unit in that last place times the divisor —
+ * `|r| < |b| * 10^-s`. That is the receiver's scale fewer integer digits than
+ * the divisor itself needs, which is what makes the field fit at all for two
+ * eighteen-digit money values.
+ *
+ * A rounding mode Enterprise COBOL does not have is generated from this
+ * remainder, so a remainder that does not fit is not a detail: it is the
+ * difference between a proved tie test and a truncated one. `BANK-DEC-006`
+ * refuses that program rather than emitting it.
+ */
+export function divisionRemainderShape(
+  dividend: { precision: number; scale: number },
+  divisor: { precision: number; scale: number },
+  receiverScale: number,
+): { integer: number; scale: number } {
+  return {
+    integer: Math.max(divisor.precision - divisor.scale - receiverScale, 1),
+    scale: Math.max(dividend.scale, receiverScale + divisor.scale),
+  };
 }
 
 /**
