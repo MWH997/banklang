@@ -1,8 +1,8 @@
+import { renderCopybook } from "../packages/cobol-backend/src/index";
 import { describe, expect, it } from "vitest";
 
 import {
   diffGeneratedCopybooks,
-  renderCopybook,
   renderCopybookDiff,
 } from "../packages/copybook/src/index";
 import { compileExample } from "./helpers";

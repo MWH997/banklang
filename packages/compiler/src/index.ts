@@ -2,12 +2,12 @@ import type { Diagnostic } from "../../ast/src/index";
 import {
   emitCobol,
   emitJcl,
+  renderCopybook,
   type SourceMapDocument,
 } from "../../cobol-backend/src/index";
 import { toCobolName } from "../../cobol-ir/src/index";
 import {
   buildCopybookLayoutDocument,
-  renderCopybook,
   type CopybookLayoutDocument,
 } from "../../copybook/src/index";
 import {

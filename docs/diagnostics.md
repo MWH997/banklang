@@ -324,6 +324,12 @@ what it redefines — a redefining field gets no storage of its own, so a longer
 one reads past the end. A `depending on` names something that is not a count
 declared before the table, which COBOL reads to decide the record's length.
 
+### `BANK-COPY-005` invalid field clause
+
+`justified` right-aligns an alphanumeric value, so a number cannot carry it — a
+number's alignment is decided by its picture. `blankWhenZero` prints spaces for
+a zero, so there has to be a number to be zero.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified

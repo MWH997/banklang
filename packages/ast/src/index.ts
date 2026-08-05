@@ -291,6 +291,23 @@ export interface FieldDeclarationNode extends NodeBase {
    * ignoring it disagree silently.
    */
   synchronized: boolean;
+  /**
+   * `justified` — right-align the value in the field.
+   *
+   * COBOL moves an alphanumeric value left-aligned and pads on the right.
+   * `JUSTIFIED RIGHT` reverses that, which is how a code or a reference is put
+   * into a fixed column without the program counting spaces itself. It is
+   * alphanumeric only: a number's alignment is decided by its picture.
+   */
+  justified: boolean;
+  /**
+   * `blankWhenZero` — print spaces rather than zeros for a zero value.
+   *
+   * A statement line with no movement should be blank, not `0.00`, and this is
+   * how a report says so without a conditional. Numeric and numeric-edited
+   * items only.
+   */
+  blankWhenZero: boolean;
 }
 
 export interface RecordDeclarationNode extends NodeBase {

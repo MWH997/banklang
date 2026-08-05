@@ -585,6 +585,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-COPY-005",
+    title: "Invalid field clause",
+    explanation:
+      "`justified` right-aligns an alphanumeric value, so a number cannot carry it — a number's alignment is decided by its picture. `blankWhenZero` prints spaces for a zero, so there has to be a number to be zero.",
+    remediation:
+      "Put `justified` on a string field, and `blankWhenZero` on a decimal, currency, or edited field.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-005",
     title: "File operation does not match the declaration",
     explanation:

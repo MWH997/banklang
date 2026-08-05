@@ -197,6 +197,10 @@ export interface ResolvedField {
   dependingOn: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
+  /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
+  justified: boolean;
+  /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
+  blankWhenZero: boolean;
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
 }
@@ -3753,6 +3757,8 @@ function resolveRecord(
       redefines: field.redefines,
       dependingOn: field.dependingOn,
       synchronized: field.synchronized,
+      justified: field.justified,
+      blankWhenZero: field.blankWhenZero,
     });
   }
 
@@ -3894,6 +3900,41 @@ function validateVariantFields(
           }),
         );
       }
+    }
+
+    // JUSTIFIED reverses the padding on an alphanumeric MOVE. A number's
+    // alignment is decided by its picture, so COBOL allows the clause only on
+    // an alphanumeric item and rejects the program otherwise.
+    if (field.justified && field.type.kind !== "string") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-COPY-005",
+          severity: "error",
+          message: `${field.name} holds ${describeType(field.type)}, which cannot be justified.`,
+          span: field.span,
+          hint: "`justified` right-aligns text. A number's alignment comes from its picture.",
+          backendProfile: null,
+        }),
+      );
+    }
+
+    // BLANK WHEN ZERO is a rendering of a number, so there has to be one.
+    if (
+      field.blankWhenZero &&
+      !isDecimalType(field.type) &&
+      field.type.kind !== "currency" &&
+      field.type.kind !== "edited"
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-COPY-005",
+          severity: "error",
+          message: `${field.name} holds ${describeType(field.type)}, which has no zero to blank.`,
+          span: field.span,
+          hint: "`blankWhenZero` applies to a number or an edited field.",
+          backendProfile: null,
+        }),
+      );
     }
   });
 }
