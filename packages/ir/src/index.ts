@@ -189,8 +189,34 @@ export type IRStatement =
   | IRUnitOfWorkStatement
   | IRReturnCodeStatement
   | IRSplitStatement
+  | IRSortStatement
+  | IRCheckpointStatement
   | IRSearchStatement
   | IRRaiseStatement;
+
+/** A restart point: the position written down, and the work committed to it. */
+export interface IRCheckpointStatement {
+  kind: "CheckpointStatement";
+  span: SourceSpan;
+  fileName: string;
+  recordName: string;
+  every: number;
+  /** True when the program has SQL, so the checkpoint also commits it. */
+  commitsSql: boolean;
+  recordFields: { name: string; arrayLength: number | null }[];
+}
+
+/** `SORT` or `MERGE` over declared files, through a generated sort file. */
+export interface IRSortStatement {
+  kind: "SortStatement";
+  span: SourceSpan;
+  operation: "sort" | "merge";
+  inputs: string[];
+  output: string;
+  keys: { name: string; descending: boolean }[];
+  /** The output record's field names, for the SD the sort runs through. */
+  recordFields: string[];
+}
 
 /** `UNSTRING source DELIMITED BY d INTO a b c`. */
 export interface IRSplitStatement {
@@ -1519,6 +1545,30 @@ function lowerStatement(
         span: statement.span,
         code: statement.code,
       };
+    case "CheckpointStatement": {
+      const file = fileTable.get(statement.fileName);
+      return {
+        kind: "CheckpointStatement",
+        span: statement.span,
+        fileName: statement.fileName,
+        recordName: statement.recordName,
+        every: statement.every,
+        commitsSql: sqlTable.size > 0,
+        recordFields: file?.recordFields ?? [],
+      };
+    }
+    case "SortStatement": {
+      const output = fileTable.get(statement.output);
+      return {
+        kind: "SortStatement",
+        span: statement.span,
+        operation: statement.operation,
+        inputs: statement.inputs,
+        output: statement.output,
+        keys: statement.keys,
+        recordFields: (output?.recordFields ?? []).map((field) => field.name),
+      };
+    }
     case "SplitStatement":
       return {
         kind: "SplitStatement",

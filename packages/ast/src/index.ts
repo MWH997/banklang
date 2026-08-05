@@ -598,6 +598,8 @@ export type StatementNode =
   | UnitOfWorkStatementNode
   | ReturnCodeStatementNode
   | SplitStatementNode
+  | SortStatementNode
+  | CheckpointStatementNode
   | SearchStatementNode
   | RaiseStatementNode;
 
@@ -731,6 +733,43 @@ export type CicsOperation =
  * writes several receivers at once. Parsing a composite key — a branch, an
  * account, and a suffix in one field — is what legacy input constantly asks for.
  */
+/**
+ * `sort accountInput into sortedAccounts on accountId, branchId;`
+ *
+ * A batch that needs its input ordered has three options: a SORT step in the
+ * JCL, an internal `SORT`, or reading the file in whatever order it arrives and
+ * hoping. This is the second, which is what a program does when the ordering is
+ * its own business rather than the job's.
+ *
+ * `merge` is the same shape over several already-sorted inputs.
+ */
+/**
+ * `checkpoint restartFile from restartRecord every 1000;`
+ *
+ * A batch that posts money and dies halfway is rerun. Without a record of where
+ * it got to, the rerun starts at the beginning and posts everything twice. A
+ * checkpoint writes that position and commits the work up to it, so a restart
+ * resumes rather than repeats.
+ */
+export interface CheckpointStatementNode extends NodeBase {
+  kind: "CheckpointStatement";
+  fileName: string;
+  recordName: string;
+  /** Records between checkpoints. Too small costs throughput, too large costs rework. */
+  every: number;
+  everySpan: SourceSpan;
+}
+
+export interface SortStatementNode extends NodeBase {
+  kind: "SortStatement";
+  operation: "sort" | "merge";
+  /** Inputs, in order. A sort takes one; a merge takes two or more. */
+  inputs: string[];
+  output: string;
+  /** Fields to order by, outermost first. */
+  keys: { name: string; descending: boolean }[];
+}
+
 export interface SplitStatementNode extends NodeBase {
   kind: "SplitStatement";
   source: ExpressionNode;

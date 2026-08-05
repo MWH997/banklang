@@ -1098,9 +1098,47 @@ million. Conventionally 0 ran clean, 4 warned, 8 failed, 12 or more is fatal.
 
 It must be a whole number in 0–4095, which is what `RETURN-CODE` holds.
 
-**Not yet available:** `SORT` and `MERGE`, and checkpoint/restart. A batch that
-needs its input ordered takes it from a `SORT` step in the JCL today.
-`BANK-FILE-003` stays reserved for restart.
+### Ordering the input
+
+```ts
+sort rawPostings into sortedPostings on branchId, descending accountId;
+merge morningFile, eveningFile into dayFile on accountId;
+```
+
+An internal `SORT` is what a program uses when the ordering is its own business
+rather than the job's. It runs through a sort-work file, described by `SD`
+rather than `FD` because the sort owns its blocking, and the generated job
+allocates `SORTWK01` for it. `USING` and `GIVING` let the sort open, read, write,
+and close the files itself — the form to use when there is nothing to do to the
+records on the way through. Input and output procedures, for when there is, are
+not in the subset.
+
+Every file a sort touches holds the same record, and every key is a field of it:
+a key that is not in the record sorts on nothing (`BANK-FILE-005`). A `merge`
+takes two or more already-sorted inputs.
+
+### Surviving a failure
+
+```ts
+checkpoint restartFile from restartPoint every 1000;
+```
+
+A job that dies halfway is rerun. Without a position written down, the rerun
+starts at the beginning and posts everything twice. A checkpoint writes that
+position and, in a program with SQL, commits the work up to it — position first,
+commit after, so a restart that finds a position can trust everything up to it
+is durable.
+
+Counting rather than checkpointing every record is the whole trade: a commit
+costs time, and rework after a failure costs the records since the last one.
+
+A transaction that posts to the ledger **inside a loop** with no checkpoint is
+`BANK-FILE-003`. It is a **warning**, not an error: the compiler can see the
+hazard but cannot tell whether the job is rerunnable another way — a consumed
+and recreated input, a small enough window, an operator procedure. It reports
+what it can see and leaves the judgement where the knowledge is. A single
+posting outside a loop is not flagged; rerunning that is the caller's problem,
+and the idempotency key covers it.
 
 ## 14a. Copybooks in the program
 

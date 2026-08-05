@@ -445,9 +445,12 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   {
     id: "BANK-FILE-003",
     title: "Unsafe restart behaviour",
-    explanation: "Batch file processing lacks a checkpoint or restart policy.",
-    remediation: "Reserved.",
-    implemented: false,
+    explanation:
+      "A transaction posts to the ledger inside a loop with no checkpoint. A job that dies halfway is rerun, and without a position written down the rerun starts at the beginning and posts everything twice. A single posting is different: rerunning it is the caller's problem, and the idempotency key covers it.",
+    remediation:
+      "Add `checkpoint <file> from <record> every <n>;` inside the loop, or confirm the job is rerunnable another way. Reported as a warning, because the compiler cannot tell whether it is.",
+    specReference: "language-reference.md section 13a",
+    implemented: true,
   },
   {
     id: "BANK-SQL-001",
