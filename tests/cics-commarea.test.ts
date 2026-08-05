@@ -191,3 +191,52 @@ entry transaction enquire(row: Row, idempotencyKey: string<36>) {
     expect(cobol).toContain("Declare section marker read by");
   });
 });
+
+/**
+ * An `OPEN` that failed is not recoverable by carrying on: every read
+ * afterwards fails too, and a batch that ignores it writes an empty output file
+ * and returns zero — which looks exactly like a run that had nothing to do.
+ *
+ * The language already requires a file to declare a status field
+ * (`BANK-FILE-001`) and then never tested it. Convention is to check after
+ * every I/O and, for an `OPEN`, to abort.
+ */
+describe("opening a file", () => {
+  const result = compile(`module Batch;
+
+record Row {
+  accountId: string<16>;
+}
+
+file feed sequential input record Row status feedStatus;
+
+entry transaction run(row: Row, idempotencyKey: string<36>) {
+  open feed;
+  close feed;
+  audit("RAN", idempotencyKey);
+}`);
+
+  it("compiles", () => {
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("tests the status the file declared", () => {
+    expect(result.cobol).toContain('IF FEED-STATUS NOT = "00"');
+  });
+
+  /** Named, because a job log saying only "open failed" starts an investigation. */
+  it("says which file and what the status was", () => {
+    expect(result.cobol).toContain(
+      'DISPLAY "OPEN FAILED feed STATUS " FEED-STATUS UPON SYSOUT',
+    );
+  });
+
+  /** A zero return code on a failed open is what makes it invisible to the job. */
+  it("stops with a non-zero return code", () => {
+    const text = result.cobol ?? "";
+    const check = text.indexOf('IF FEED-STATUS NOT = "00"');
+
+    expect(text.slice(check)).toContain("MOVE 12 TO RETURN-CODE");
+    expect(text.slice(check)).toContain("GOBACK");
+  });
+});

@@ -694,6 +694,11 @@ export function emitCobol(
   databaseTable = new Map(
     program.databases.map((database) => [database.name, database]),
   );
+  fileStatusNames = new Map(
+    program.files
+      .filter((file) => file.statusName)
+      .map((file) => [file.name, toCobolFieldName(file.statusName as string)]),
+  );
   const xmlParses = xmlParseStatements(program);
   xmlHandlerIndexes = new Map(
     xmlParses.map((owned, index) => [owned.statement, index]),
@@ -2928,6 +2933,14 @@ function reportFieldPicture(field: string): string {
  */
 let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
 
+/**
+ * The status field each file declares, for the check emitted after an OPEN.
+ *
+ * The statement carries the file's name, not its status field, and an OPEN has
+ * to test the one that file declared rather than any other.
+ */
+let fileStatusNames = new Map<string, string>();
+
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
 let databaseTable = new Map<string, IRDatabase>();
 
@@ -3483,13 +3496,28 @@ function emitFileStatement(
     : null;
 
   switch (statement.operation) {
-    case "open":
+    case "open": {
       // I-O is what a master file update needs: the same OPEN serves the READ
       // that finds a record and the REWRITE that puts it back.
       addLine(
         `${indent}OPEN ${statement.fileMode === "input" ? "INPUT" : statement.fileMode === "output" ? "OUTPUT" : "I-O"} ${file}`,
       );
+      // An OPEN that failed is not recoverable by carrying on: every read
+      // afterwards fails too, and a batch that ignores it produces an empty
+      // output file and a return code of zero, which looks exactly like a run
+      // with nothing to do. The convention is to report it and stop.
+      const status = fileStatusNames.get(statement.fileName) ?? null;
+      if (status) {
+        addLine(`${indent}IF ${status} NOT = "00"`);
+        addLine(
+          `${indent}    DISPLAY "OPEN FAILED ${statement.fileName} STATUS " ${status} UPON SYSOUT`,
+        );
+        addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
+        addLine(`${indent}    GOBACK`);
+        addLine(`${indent}END-IF`);
+      }
       return;
+    }
     case "close":
       addLine(`${indent}CLOSE ${file}`);
       return;
