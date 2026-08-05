@@ -57,10 +57,32 @@ describe("the program the region enters", () => {
   });
 
   /** The region passes the PCB; the program never allocates one. */
-  it("takes its PCB on the PROCEDURE DIVISION", () => {
-    expect(result.cobol).toContain("PROCEDURE DIVISION USING ACCOUNT-DB-PCB.");
+  it("takes its PCBs on the PROCEDURE DIVISION", () => {
+    expect(result.cobol).toContain(
+      "PROCEDURE DIVISION USING IO-PCB ACCOUNT-DB-PCB.",
+    );
     expect(result.cobol).toContain("01  ACCOUNT-DB-PCB.");
     expect(result.cobol).toContain("05  ACCOUNT-DB-PCB-STATUS    PIC XX.");
+  });
+
+  /**
+   * The I/O PCB comes first, always. A batch program needs it for system
+   * service calls, so `CMPAT=YES` is what IBM says to specify — and with it the
+   * region passes the I/O PCB ahead of every database PCB.
+   *
+   * Omitting it does not fail to compile. It shifts every database PCB by one,
+   * so the program reads the I/O PCB as its first database and works on
+   * whatever that storage holds. This test is here because that is exactly what
+   * the first version of this feature did.
+   */
+  it("puts the I/O PCB first", () => {
+    const text = result.cobol ?? "";
+
+    expect(text).toContain("01  IO-PCB.");
+    expect(text).toContain("05  IO-PCB-LTERM             PIC X(8).");
+    expect(text.indexOf("01  IO-PCB.")).toBeLessThan(
+      text.indexOf("01  ACCOUNT-DB-PCB."),
+    );
   });
 
   it("declares the function code it uses, and only that one", () => {
@@ -103,9 +125,19 @@ describe("each operation is its own function code", () => {
   const cases: [string, string][] = [
     ['  getUnique accountDb into segment key "1";', "DLI-GU"],
     ["  getNext accountDb into segment;", "DLI-GN"],
+    ['  getHoldUnique accountDb into segment key "1";', "DLI-GHU"],
+    ["  getHoldNext accountDb into segment;", "DLI-GHN"],
     ["  insertSegment accountDb from segment;", "DLI-ISRT"],
-    ["  replaceSegment accountDb from segment;", "DLI-REPL"],
-    ["  deleteSegment accountDb;", "DLI-DLET"],
+    [
+      `  getHoldNext accountDb into segment;
+  replaceSegment accountDb from segment;`,
+      "DLI-REPL",
+    ],
+    [
+      `  getHoldNext accountDb into segment;
+  deleteSegment accountDb;`,
+      "DLI-DLET",
+    ],
   ];
 
   for (const [source, code] of cases) {
@@ -118,15 +150,39 @@ describe("each operation is its own function code", () => {
   }
 
   /**
-   * A next read walks from wherever the last call left the position, which is
-   * the whole point of it, so it passes no search argument.
+   * A unique read is qualified — segment, field, value. A next read and an
+   * insert take an *unqualified* argument naming the segment: without one, `GN`
+   * returns the next segment of any type in hierarchical order, and `ISRT` has
+   * nothing telling DL/I what to insert. Only `REPL` and `DLET` take none,
+   * because they act on what the get-hold held.
    */
-  it("qualifies only the unique read", () => {
-    const next = program("  getNext accountDb into segment;");
-
-    expect(next.cobol).toContain(
-      'CALL "CBLTDLI" USING DLI-GN, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT\n',
+  it("passes the search argument each call actually needs", () => {
+    expect(
+      program('  getUnique accountDb into segment key "1";').cobol,
+    ).toContain("ACCOUNT-SEGMENT, ACCOUNT-DB-SSA\n");
+    expect(program("  getNext accountDb into segment;").cobol).toContain(
+      "ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U\n",
     );
+    expect(program("  insertSegment accountDb from segment;").cobol).toContain(
+      "ACCOUNT-SEGMENT, ACCOUNT-DB-SSA-U\n",
+    );
+    expect(
+      program(`  getHoldNext accountDb into segment;
+  deleteSegment accountDb;`).cobol,
+    ).toContain(
+      'CALL "CBLTDLI" USING DLI-DLET, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT\n',
+    );
+  });
+
+  /** Nine bytes: eight of segment name and a space. */
+  it("builds the unqualified argument to DL/I's layout", () => {
+    const text = program("  getNext accountDb into segment;").cobol ?? "";
+
+    expect(text).toContain("01  ACCOUNT-DB-SSA-U.");
+    expect(text).toContain(
+      '05  FILLER               PIC X(8) VALUE "ACCTSEG ".',
+    );
+    expect(text).toContain('05  FILLER               PIC X VALUE " ".');
   });
 });
 
@@ -180,6 +236,56 @@ entry transaction lookup(other: Other, idempotencyKey: string<36>) {
     expect(ids(result)).toContain("BANK-DLI-001");
   });
 
+  /**
+   * DL/I will not update a segment the program has not held: it answers `DJ`
+   * and the update does not happen, which the program only notices if it tests
+   * the status.
+   */
+  it("needs a get-hold before a replace", () => {
+    expect(ids(program("  replaceSegment accountDb from segment;"))).toContain(
+      "BANK-DLI-002",
+    );
+  });
+
+  it("needs a get-hold before a delete", () => {
+    expect(ids(program("  deleteSegment accountDb;"))).toContain(
+      "BANK-DLI-002",
+    );
+  });
+
+  it("accepts a hold earlier in the same block", () => {
+    expect(
+      ids(
+        program(`  getHoldUnique accountDb into segment key "1";
+  replaceSegment accountDb from segment;`),
+      ),
+    ).toEqual([]);
+  });
+
+  /** Every path through a branch has already passed a hold before it. */
+  it("accepts a hold in the enclosing block", () => {
+    expect(
+      ids(
+        program(`  getHoldUnique accountDb into segment key "1";
+  if dbStatus == "  " {
+    replaceSegment accountDb from segment;
+  }`),
+      ),
+    ).toEqual([]);
+  });
+
+  /** The path that skipped the branch reaches the update unheld. */
+  it("rejects a hold that only happens in a branch", () => {
+    expect(
+      ids(
+        program(`  if dbStatus == "  " {
+    getHoldUnique accountDb into segment key "1";
+  }
+  replaceSegment accountDb from segment;`),
+      ),
+    ).toContain("BANK-DLI-002");
+  });
+
   it("looks for a key that is text", () => {
     expect(ids(program("  getUnique accountDb into segment key 1;"))).toContain(
       "BANK-DLI-001",
@@ -206,6 +312,15 @@ describe("executed against the reference DL/I runtime", () => {
 PROGRAM-ID. DRIVER.
 DATA DIVISION.
 WORKING-STORAGE SECTION.
+01  IO-PCB.
+    05  IO-LTERM       PIC X(8)  VALUE "LTERM01".
+    05  FILLER         PIC XX    VALUE SPACES.
+    05  IO-STATUS      PIC XX    VALUE SPACES.
+    05  IO-DATE        PIC S9(7) COMP-3 VALUE 0.
+    05  IO-TIME        PIC S9(6)V9 COMP-3 VALUE 0.
+    05  IO-MSG-SEQ     PIC S9(7) COMP VALUE 0.
+    05  IO-MOD-NAME    PIC X(8)  VALUE SPACES.
+    05  IO-USER-ID     PIC X(8)  VALUE SPACES.
 01  DB-PCB.
     05  PCB-DBD-NAME   PIC X(8)  VALUE "ACCTDB".
     05  PCB-SEG-LEVEL  PIC XX    VALUE "01".
@@ -217,12 +332,13 @@ WORKING-STORAGE SECTION.
     05  PCB-SENSEG     PIC S9(5) COMP VALUE 1.
     05  PCB-KEY-FB     PIC X(64) VALUE SPACES.
 PROCEDURE DIVISION.
-    CALL "ACCOUNT-IMS" USING DB-PCB
+    CALL "ACCOUNT-IMS" USING IO-PCB DB-PCB
     STOP RUN.
 `;
 
   function run(script: string | null): string {
-    const result = program(`  getUnique accountDb into segment key "0000000001";
+    const result =
+      program(`  getHoldUnique accountDb into segment key "0000000001";
   if dbStatus == "  " {
     log "FOUND";
   } else {

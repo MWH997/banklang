@@ -176,6 +176,8 @@ export const KEYWORDS = new Set([
   "database",
   "getUnique",
   "getNext",
+  "getHoldUnique",
+  "getHoldNext",
   "insertSegment",
   "replaceSegment",
   "deleteSegment",
@@ -1277,7 +1279,11 @@ class Parser {
 
     let recordName: string | null = null;
     let recordSpan: SourceSpan | null = null;
-    const reads = operation === "getUnique" || operation === "getNext";
+    const reads =
+      operation === "getUnique" ||
+      operation === "getNext" ||
+      operation === "getHoldUnique" ||
+      operation === "getHoldNext";
     const writes =
       operation === "insertSegment" || operation === "replaceSegment";
     if (reads || writes) {
@@ -1301,7 +1307,7 @@ class Parser {
     // Only a unique read is qualified. A next read walks from wherever the
     // last one left the position, which is the whole point of it.
     let key: ExpressionNode | null = null;
-    if (operation === "getUnique") {
+    if (operation === "getUnique" || operation === "getHoldUnique") {
       if (!this.matchContextual("key")) {
         this.errorAtCurrent(
           "BANK-SYN-001",
@@ -2621,6 +2627,8 @@ class Parser {
     for (const operation of [
       "getUnique",
       "getNext",
+      "getHoldUnique",
+      "getHoldNext",
       "insertSegment",
       "replaceSegment",
       "deleteSegment",

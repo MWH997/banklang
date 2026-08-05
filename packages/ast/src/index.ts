@@ -1013,6 +1013,8 @@ export interface DliStatementNode extends NodeBase {
   operation:
     | "getUnique"
     | "getNext"
+    | "getHoldUnique"
+    | "getHoldNext"
     | "insertSegment"
     | "replaceSegment"
     | "deleteSegment";
