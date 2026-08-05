@@ -76,7 +76,9 @@ describe("cursor declarations", () => {
 
     expect(errors(result)).toEqual([]);
     const cobol = result.cobol ?? "";
-    const start = cobol.indexOf("DECLARE");
+    // Located by the cursor's own name: `BEGIN DECLARE SECTION` also contains
+    // the word, and the first `DECLARE` in the program is now that.
+    const start = cobol.indexOf("DECLARE ACCOUNTS-IN-BRANCH");
     const declaration = cobol.slice(start, cobol.indexOf("END-EXEC", start));
     expect(declaration).toContain("DECLARE ACCOUNTS-IN-BRANCH CURSOR FOR");
     expect(declaration).toContain("SELECT ACCOUNT_ID, BALANCE");

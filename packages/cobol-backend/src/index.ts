@@ -597,6 +597,11 @@ export function emitCobol(
   // The SQLCA carries SQLCODE, which the analyzer requires the program to test.
   if (program.sql.length > 0) {
     addLine(`           EXEC SQL INCLUDE SQLCA END-EXEC.`);
+    // Every host variable an SQL statement references has to be declared in a
+    // declare section. The SQLCA include stays outside it — it is not a host
+    // variable — and so does DECLARE CURSOR, which is a statement rather than a
+    // declaration and is emitted after the section closes.
+    addLine(`           EXEC SQL BEGIN DECLARE SECTION END-EXEC.`);
     for (const statement of program.sql) {
       statement.parameters.forEach((parameter, index) => {
         addLine(
@@ -611,7 +616,6 @@ export function emitCobol(
         );
       }
     }
-    emitCursorDeclarations(program.sql, addLine);
   }
 
   for (const file of program.files) {
@@ -872,6 +876,13 @@ export function emitCobol(
     (transaction) => transaction.isCics,
   );
 
+  if (program.sql.length > 0) {
+    addLine(`           EXEC SQL END DECLARE SECTION END-EXEC.`);
+    // A cursor declaration is a statement about a query, not a host variable,
+    // so it belongs outside the section it would otherwise sit in.
+    emitCursorDeclarations(program.sql, addLine);
+  }
+
   if (
     recordParameterCells.length > 0 ||
     cicsTransactions.length > 0 ||
@@ -1020,11 +1031,13 @@ export function emitCobol(
     const transactionStart = lineNumber();
     addLine(`       ${paragraphName(transaction.name)}.`);
     currentBindings = routineBindings(transaction.name, transaction.parameters);
+    emitCommareaEntry(transaction, addLine);
 
     if (transaction.canFail) {
       emitFailingTransaction(transaction, addLine);
     } else {
       emitTransactionBody(transaction.body, addLine, 11);
+      emitCommareaExit(transaction, addLine);
       // A CICS program returns control to CICS rather than to a caller.
       addLine(
         transaction.isCics
@@ -3987,6 +4000,66 @@ function resolveIdentifier(name: string): string {
     return "SQLCODE";
   }
   return currentBindings.get(name) ?? toCobolFieldName(name);
+}
+
+/**
+ * The commarea a CICS transaction was passed, and the check that it exists.
+ *
+ * `DFHCOMMAREA` is the caller's storage, and it is only addressable when the
+ * caller passed one — `EIBCALEN` is how a program knows. Reading it when
+ * `EIBCALEN` is zero addresses whatever happens to be there, which is a storage
+ * violation rather than an empty record, so IBM's guidance is to test first
+ * always.
+ *
+ * What follows the test was the real defect: the transaction's first record
+ * parameter is working storage, and nothing moved the commarea into it. The
+ * program read uninitialised bytes and every test passed, because the reference
+ * CICS runtime supplies no commarea and the assertions were about branches.
+ */
+function emitCommareaEntry(
+  transaction: IRTransaction,
+  addLine: (line?: string) => void,
+): void {
+  const commarea = commareaRecord(transaction);
+  if (!commarea) {
+    return;
+  }
+
+  // No commarea where one is required is a broken contract, not an empty
+  // request. Returning quietly would make it look like the transaction ran.
+  addLine(`           IF EIBCALEN = 0`);
+  addLine(`               EXEC CICS ABEND ABCODE("BKNC") END-EXEC`);
+  addLine(`           END-IF`);
+  addLine(`           MOVE DFHCOMMAREA TO ${toCobolName(commarea.name)}`);
+}
+
+/**
+ * The commarea on the way out.
+ *
+ * `DFHCOMMAREA` is the caller's own storage, so whatever the transaction
+ * changed in that record is what the caller expects to see when it gets control
+ * back. Without this the program can read its input and still return nothing.
+ */
+function emitCommareaExit(
+  transaction: IRTransaction,
+  addLine: (line?: string) => void,
+): void {
+  const commarea = commareaRecord(transaction);
+  if (!commarea || endsWithReturnTransid(transaction.body)) {
+    return;
+  }
+  addLine(`           MOVE ${toCobolName(commarea.name)} TO DFHCOMMAREA`);
+}
+
+/** The record a CICS transaction receives through its commarea: the first one. */
+function commareaRecord(transaction: IRTransaction): { name: string } | null {
+  if (!transaction.isCics) {
+    return null;
+  }
+  const parameter = transaction.parameters.find(
+    (entry) => entry.type.kind === "record",
+  );
+  return parameter && parameter.type.kind === "record" ? parameter.type : null;
 }
 
 /** `for each` index variables need storage, like any other local. */
