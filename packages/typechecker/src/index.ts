@@ -1355,20 +1355,41 @@ function validateCicsStatement(
     return;
   }
 
-  if (statement.operation === "link") {
-    if (!statement.respName) {
-      diagnostics.push(
-        createDiagnostic({
-          id: "BANK-CICS-001",
-          severity: "error",
-          message: `The response code of link "${statement.program}" is not captured.`,
-          span: statement.span,
-          hint: 'Write `link "PROG" commarea <record> resp <status>;` and test the status.',
-          backendProfile: null,
-        }),
-      );
-    }
+  // `returnTransid` ends the task, so there is no response to come back to.
+  // Every other command has one, and an outcome nobody looks at is the defect
+  // BANK-CICS-001 exists for.
+  if (statement.operation !== "returnTransid" && !statement.respName) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-CICS-001",
+        severity: "error",
+        message: `The response code of ${statement.operation}${statement.program ? ` "${statement.program}"` : ""} is not captured.`,
+        span: statement.span,
+        hint: "Add `resp <status>` and test the status.",
+        backendProfile: null,
+      }),
+    );
+  }
 
+  // A file command reaches a KSDS, which is addressed by key.
+  if (
+    (statement.operation === "readFile" ||
+      statement.operation === "writeFile") &&
+    !statement.key
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-CICS-002",
+        severity: "error",
+        message: `A ${statement.operation} command needs the record key it addresses.`,
+        span: statement.span,
+        hint: `Write \`${statement.operation} "FILE" into <record> key <value> resp <status>;\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  {
     if (statement.commarea && !scope.has(statement.commarea)) {
       diagnostics.push(
         createDiagnostic({
@@ -1383,8 +1404,13 @@ function validateCicsStatement(
     }
   }
 
-  // A syncpoint inside a loop commits partial work on each pass.
-  if (statement.operation !== "link" && inLoopBody) {
+  // A syncpoint inside a loop commits partial work on each pass. A file or
+  // queue command inside one is ordinary work, not a commit boundary.
+  if (
+    (statement.operation === "syncpoint" ||
+      statement.operation === "rollback") &&
+    inLoopBody
+  ) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-CICS-003",

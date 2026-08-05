@@ -668,7 +668,26 @@ export interface TransactionDeclarationNode extends NodeBase {
 }
 
 /** `link "PROGRAM" commarea record resp status;` and syncpoint operations. */
-export type CicsOperation = "link" | "syncpoint" | "rollback";
+/**
+ * The CICS commands the subset covers.
+ *
+ * `link` calls another program, `syncpoint` and `rollback` end the unit of
+ * work, `readFile` / `writeFile` / `rewriteFile` reach a VSAM dataset through
+ * CICS rather than through COBOL file control, `writeQueue` / `readQueue` use
+ * temporary storage — the scratchpad an online transaction passes state through
+ * — and `returnTransid` hands control back to CICS naming what runs next, which
+ * is how a pseudo-conversation continues.
+ */
+export type CicsOperation =
+  | "link"
+  | "syncpoint"
+  | "rollback"
+  | "readFile"
+  | "writeFile"
+  | "rewriteFile"
+  | "writeQueue"
+  | "readQueue"
+  | "returnTransid";
 
 /**
  * `returnCode = 4;` — the step's condition code.
@@ -698,12 +717,17 @@ export interface UnitOfWorkStatementNode extends NodeBase {
 export interface CicsStatementNode extends NodeBase {
   kind: "CicsStatement";
   operation: CicsOperation;
-  /** Target program name for `link`. */
+  /**
+   * The named resource: a program for `link`, a dataset for a file command, a
+   * queue for a queue command, a transaction identifier for `returnTransid`.
+   */
   program: string | null;
-  /** COMMAREA record for `link`. */
+  /** The record a command reads into or writes from, and the COMMAREA. */
   commarea: string | null;
-  /** Response-code variable, required for `link`. */
+  /** Response-code variable. Required for every command but `returnTransid`. */
   respName: string | null;
+  /** Record key for a file command, which reaches a KSDS by key. */
+  key: ExpressionNode | null;
 }
 
 export type DeclarationNode =
