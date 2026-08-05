@@ -943,6 +943,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         functions: [],
         transactions: [],
         files: [],
+        fileErrorHandlers: [],
         enums: [],
         sql: [],
         callTargets: new Map(),

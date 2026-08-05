@@ -30,6 +30,7 @@ import {
   type ReturnCodeStatementNode,
   type SearchStatementNode,
   type CheckpointStatementNode,
+  type FileErrorHandlerNode,
   type ConsoleStatementNode,
   type ResetStatementNode,
   type SortStatementNode,
@@ -164,6 +165,7 @@ export const KEYWORDS = new Set([
   "raise",
   "on",
   "failure",
+  "error",
 ]);
 
 /**
@@ -675,6 +677,36 @@ class Parser {
 
     if (this.matchKeyword("enum")) {
       return this.parseEnumDeclaration();
+    }
+
+    // `on error <file> { ... }` at the top level is a DECLARATIVES handler.
+    // `on failure` inside a transaction is the raise handler, which is parsed
+    // where a statement is expected rather than here.
+    if (this.isKeyword("on")) {
+      const keyword = this.advance();
+      if (!this.matchKeyword("error")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `error` after `on`.",
+          "Write `on error <file> { ... }` to handle a file's I/O errors.",
+        );
+        return null;
+      }
+      const fileToken = this.expectIdentifier("Expected a file name.");
+      const body = this.parseBlock();
+      if (!fileToken || !body) {
+        return null;
+      }
+      return {
+        kind: "FileErrorHandler",
+        fileName: fileToken.text,
+        body,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: body.span.end,
+        },
+      } satisfies FileErrorHandlerNode;
     }
 
     if (this.matchKeyword("sql")) {

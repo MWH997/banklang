@@ -1058,6 +1058,28 @@ layout, and the structured record is declared once in working storage. Emitting
 the record inside each `FD` as well would duplicate field names and make every
 unqualified reference ambiguous.
 
+### When an operation fails anyway
+
+```ts
+on error accountInput {
+  log "FILE ERROR ", inStatus;
+  returnCode = 12;
+}
+```
+
+A file status check covers the statement that thought to look. This covers the
+ones that did not: COBOL runs a `USE AFTER STANDARD ERROR` procedure when any
+operation on that file fails, wherever it was written. That is what makes
+`DECLARATIVES` the standard error path rather than a convenience.
+
+The handler is declared at the top level, not inside a transaction, because it
+is not reached from one — it runs when the failure happens. It sees the file
+statuses and nothing else: there is no record in scope and no ledger to post to.
+
+A file may have one handler (`BANK-FILE-005`), which is what COBOL allows. When
+any handler exists, the program's own paragraphs move into a `BANK-BODY SECTION`,
+because everything after `DECLARATIVES` has to be in a section.
+
 ### Browsing an indexed file
 
 ```ts

@@ -43,6 +43,8 @@ export interface IRProgram {
   functions: IRFunction[];
   transactions: IRTransaction[];
   files: IRFile[];
+  /** `USE AFTER ERROR` procedures, one per file that declares a handler. */
+  fileErrorHandlers: IRFileErrorHandler[];
   enums: IREnum[];
   sql: IRSql[];
   /**
@@ -76,6 +78,14 @@ export interface IREnum {
   name: string;
   span: SourceSpan;
   members: string[];
+}
+
+/** A DECLARATIVES section: the file it covers and what it does. */
+export interface IRFileErrorHandler {
+  kind: "FileErrorHandler";
+  fileName: string;
+  span: SourceSpan;
+  body: IRBlock;
 }
 
 export interface IRFile {
@@ -784,6 +794,19 @@ export function lowerProgramToIR(
         ),
       postsToLedger: blockPostsToLedger(transaction.body),
     }));
+  const handlerScope = (): Map<string, IRType> => {
+    const scope = new Map<string, IRType>();
+    addFileStatusSymbols(scope);
+    return scope;
+  };
+  const fileErrorHandlers = typechecked.fileErrorHandlers.map((handler) => ({
+    kind: "FileErrorHandler" as const,
+    fileName: handler.fileName,
+    span: handler.span,
+    // The handler sees the file statuses and nothing else, matching the scope
+    // the typechecker gave it.
+    body: lowerBlock(handler.body, handlerScope()),
+  }));
   const files = typechecked.files.map((file) => ({
     kind: "File" as const,
     name: file.name,
@@ -805,6 +828,7 @@ export function lowerProgramToIR(
       functions,
       transactions,
       files,
+      fileErrorHandlers,
       enums: typechecked.enums.map((entry) => ({
         kind: "Enum" as const,
         name: entry.name,
