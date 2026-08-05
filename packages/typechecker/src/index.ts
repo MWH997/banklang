@@ -1,8 +1,10 @@
+import { EDIT_STYLES, type EditStyle } from "../../cobol-ir/src/index";
 import {
   createDiagnostic,
   type BinaryExpressionNode,
   type BlockNode,
   type CursorLoopStatementNode,
+  type EditedTypeNode,
   type MemberAccessNode,
   type TemporalCallNode,
   type BooleanLiteralNode,
@@ -115,6 +117,7 @@ export interface ArrayType {
 }
 
 export type ResolvedType =
+  | EditedType
   | DecimalType
   | StringType
   | BoolType
@@ -133,6 +136,22 @@ export type ResolvedType =
  * The storage is the mainframe convention — `PIC 9(8)` as YYYYMMDD — precisely
  * so that comparison and sorting are the ordinary numeric ones.
  */
+/**
+ * `edited<T, "style">` — a rendering of a number, not a number.
+ *
+ * It carries the precision and scale of what it renders so the picture can be
+ * generated. Assignment from the inner type is the formatting step, which is
+ * what a COBOL `MOVE` into a numeric-edited item does.
+ */
+export interface EditedType {
+  kind: "edited";
+  style: EditStyle;
+  precision: number;
+  scale: number;
+  /** What it renders, for the message when something else is assigned. */
+  source: string;
+}
+
 export interface TemporalType {
   kind: "temporal";
   unit: "date" | "time" | "timestamp";
@@ -4374,6 +4393,10 @@ function typeToTypeNode(type: ResolvedType, span: SourceSpan): TypeNode | null {
       return { kind: "BoolType", span };
     case "temporal":
       return { kind: "TemporalType", unit: type.unit, span };
+    case "edited":
+      // An edited field renders a value; it is not itself a value a generic can
+      // be instantiated at, so it never needs rebuilding as a type argument.
+      return null;
     case "currency":
       return {
         kind: "CurrencyType",
@@ -4492,6 +4515,8 @@ function describeType(type: ResolvedType): string {
       return "bool";
     case "temporal":
       return type.unit;
+    case "edited":
+      return `edited<${type.source}, "${type.style}">`;
     case "record":
       return type.name;
     case "currency":
@@ -4806,6 +4831,103 @@ function inferBinaryExpressionType(
   return left;
 }
 
+/**
+ * `edited<T, "style">`.
+ *
+ * The inner type must be something with a precision and a scale, because that
+ * is what the picture is built from. A style the compiler does not know is
+ * rejected rather than passed through to COBOL: a picture nobody checked is a
+ * report column that silently loses digits.
+ */
+function resolveEdited(
+  node: EditedTypeNode,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+  span: SourceSpan,
+): ResolvedType | null {
+  const inner = resolveTypeNode(
+    node.inner,
+    aliases,
+    recordMap,
+    diagnostics,
+    span,
+  );
+  if (!inner) {
+    return null;
+  }
+
+  if (!EDIT_STYLES.includes(node.style as EditStyle)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-023",
+        severity: "error",
+        message: `Unknown edit style "${node.style}".`,
+        span: node.styleSpan,
+        hint: `Available styles: ${EDIT_STYLES.join(", ")}.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+  const style = node.style as EditStyle;
+
+  // A date renders through a slashed picture and nothing else; an amount
+  // renders through any of the numeric styles and not through the date one.
+  if (inner.kind === "temporal") {
+    if (inner.unit !== "date" || style !== "slashed") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-023",
+          severity: "error",
+          message: `A ${inner.unit} cannot be rendered with the "${style}" style.`,
+          span: node.styleSpan,
+          hint: 'A date renders with "slashed"; a time or timestamp has no edited form yet.',
+          backendProfile: null,
+        }),
+      );
+      return null;
+    }
+    return { kind: "edited", style, precision: 8, scale: 0, source: "date" };
+  }
+
+  if (inner.kind !== "decimal" && inner.kind !== "currency") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-023",
+        severity: "error",
+        message: `Cannot render ${describeType(inner)} as an edited field.`,
+        span: span,
+        hint: "Editing formats a number or a date for a human to read.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  if (style === "slashed") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-023",
+        severity: "error",
+        message: 'The "slashed" style renders a date, not an amount.',
+        span: node.styleSpan,
+        hint: `Available styles for an amount: ${EDIT_STYLES.filter((entry) => entry !== "slashed").join(", ")}.`,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  return {
+    kind: "edited",
+    style,
+    precision: inner.precision,
+    scale: inner.scale,
+    source: describeType(inner),
+  };
+}
+
 function resolveTypeNode(
   node: TypeNode,
   aliases: Record<string, ResolvedType>,
@@ -4822,6 +4944,8 @@ function resolveTypeNode(
       return { kind: "bool" };
     case "TemporalType":
       return { kind: "temporal", unit: node.unit };
+    case "EditedType":
+      return resolveEdited(node, aliases, recordMap, diagnostics, span);
     case "CurrencyType":
       return {
         kind: "currency",
@@ -5073,6 +5197,34 @@ function declareSymbol(
 }
 
 function typesCompatible(left: ResolvedType, right: ResolvedType): boolean {
+  // Assigning into an edited field is the formatting step: COBOL performs the
+  // editing on the MOVE. The value has to be the shape the picture was built
+  // for, so precision and scale must match what it renders.
+  if (left.kind === "edited") {
+    if (right.kind === "edited") {
+      return (
+        left.style === right.style &&
+        left.precision === right.precision &&
+        left.scale === right.scale
+      );
+    }
+    if (left.style === "slashed") {
+      return right.kind === "temporal" && right.unit === "date";
+    }
+    return (
+      (right.kind === "decimal" || right.kind === "currency") &&
+      right.scale === left.scale &&
+      right.precision <= left.precision
+    );
+  }
+
+  // The other direction is refused: an edited field is a rendering, not a
+  // number, and reading one back as a value is how a report column ends up
+  // being arithmetic input.
+  if (right.kind === "edited") {
+    return false;
+  }
+
   // A decimal literal has no currency of its own, so it fits a currency field
   // of the same scale. Checked before the kind comparison, which would
   // otherwise reject it outright.

@@ -244,6 +244,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-023",
+    title: "Invalid edited field",
+    explanation:
+      'An `edited<T, "style">` field names a style the compiler does not know, or asks to render something that has no edited form. A picture nobody checked is a report column that silently loses digits.',
+    remediation:
+      "Use one of the documented styles, and render a decimal, a currency amount, or a date.",
+    specReference: "language-reference.md section 3b",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:

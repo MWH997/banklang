@@ -20,6 +20,7 @@ import {
   type AssignStatementNode,
   type FileStatementNode,
 } from "../../ast/src/index";
+import type { EditStyle } from "../../cobol-ir/src/index";
 import type {
   DecimalType,
   ResolvedField,
@@ -480,6 +481,7 @@ export interface IRBinaryArithmeticExpression {
 }
 
 export type IRType =
+  | EditedIRType
   | DecimalIRType
   | StringIRType
   | BoolIRType
@@ -537,6 +539,19 @@ export interface BoolIRType {
  * is ordinary numeric comparison. A timestamp is `PIC X(26)`, the Db2 host
  * variable format, so it can be read from and written to a TIMESTAMP column.
  */
+/**
+ * A numeric-edited item: a rendering of a number for a human to read.
+ *
+ * It carries the precision and scale of the value it renders, because the
+ * picture is generated from them rather than written out by hand.
+ */
+export interface EditedIRType {
+  kind: "edited";
+  style: EditStyle;
+  precision: number;
+  scale: number;
+}
+
 export interface TemporalIRType {
   kind: "temporal";
   unit: "date" | "time" | "timestamp";
@@ -1959,6 +1974,13 @@ function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
 
 function lowerType(type: ResolvedType): IRType {
   switch (type.kind) {
+    case "edited":
+      return {
+        kind: "edited",
+        style: type.style,
+        precision: type.precision,
+        scale: type.scale,
+      };
     case "temporal":
       return { kind: "temporal", unit: type.unit };
     case "currency":

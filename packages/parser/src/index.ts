@@ -23,6 +23,7 @@ import {
   type SourcePosition,
   type SourceSpan,
   type StringTypeNode,
+  type EditedTypeNode,
   type TemporalCallNode,
   type TemporalTypeNode,
   type TypeAliasDeclarationNode,
@@ -121,6 +122,7 @@ export const KEYWORDS = new Set([
   "rollback",
   "currency",
   "nullable",
+  "edited",
   "transaction",
   "file",
   "extends",
@@ -2386,6 +2388,41 @@ class Parser {
           span: keyword.span,
         } satisfies TemporalTypeNode);
       }
+    }
+
+    if (this.matchKeyword("edited")) {
+      const keyword = this.previous;
+      this.expectPunctuation("<", "Expected `<` after `edited`.");
+      const inner = this.parseTypeNode();
+      this.expectPunctuation(",", "Expected `,` before the edit style.");
+      const styleToken = this.current;
+      if (styleToken.kind !== "string") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected an edit style.",
+          'Write `edited<MoneyBDT, "signed">`.',
+        );
+        return null;
+      }
+      this.advance();
+      const closeAngle = this.expectPunctuation(
+        ">",
+        "Expected `>` to close edited type.",
+      );
+      if (!keyword || !inner || !closeAngle) {
+        return null;
+      }
+      return this.withArraySuffix({
+        kind: "EditedType",
+        inner,
+        style: styleToken.text,
+        styleSpan: styleToken.span,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: closeAngle.span.end,
+        },
+      } satisfies EditedTypeNode);
     }
 
     if (this.matchKeyword("bool")) {

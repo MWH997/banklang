@@ -43,6 +43,7 @@ import {
   toCobolProgramId,
   enumWidth,
   temporalPicture,
+  editedPicture,
 } from "../../cobol-ir/src/index";
 import {
   describeRecordLayout,
@@ -1597,7 +1598,13 @@ function emitAssignStatement(
       ? resolveIdentifier(statement.target.name)
       : renderQualifiedFieldReference(statement.target);
 
-  emitComputeInto(target, statement.expression, addLine, indent);
+  emitComputeInto(
+    target,
+    statement.expression,
+    addLine,
+    indent,
+    statement.target.resolvedType,
+  );
 }
 
 function emitExpressionStatement(
@@ -1940,9 +1947,22 @@ function emitComputeInto(
   expression: IRExpression,
   addLine: (line?: string) => void,
   indent: string,
+  /**
+   * The receiving item's type, when it differs from the expression's.
+   *
+   * A numeric-edited item is the case that needs it: COBOL formats on a MOVE
+   * into one and rejects a COMPUTE, so the decision belongs to the target
+   * rather than to the value being rendered.
+   */
+  targetType?: IRType,
 ): void {
   emitCallsIn(expression, addLine, indent);
   emitBoundsChecks(expression, addLine, indent);
+
+  if (targetType?.kind === "edited") {
+    addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
+    return;
+  }
 
   if (expression.resolvedType.kind === "bool") {
     emitBooleanAssignment(indent, target, expression, addLine);
@@ -1959,7 +1979,8 @@ function emitComputeInto(
     // A date is numeric storage, but every value that reaches one comes from an
     // intrinsic function returning a whole number, so MOVE says what is meant
     // and avoids a COMPUTE that could silently round a calendar date.
-    expression.resolvedType.kind === "temporal"
+    expression.resolvedType.kind === "temporal" ||
+    expression.resolvedType.kind === "edited"
   ) {
     addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
     return;
@@ -2300,6 +2321,7 @@ function emitLetStatement(
     statement.initializer,
     addLine,
     indent,
+    statement.declaredType,
   );
 }
 
@@ -2660,6 +2682,8 @@ function toJclDatasetName(cobolArtifactPath: string): string {
 
 function formatCobolType(type: IRType): string {
   switch (type.kind) {
+    case "edited":
+      return editedPicture(type.style, type.precision, type.scale);
     case "temporal":
       return temporalPicture(type.unit);
     case "decimal":

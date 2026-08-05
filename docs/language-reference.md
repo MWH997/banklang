@@ -76,6 +76,46 @@ day is not a number of days (`BANK-TYPE-003`).
 from a Db2 column or a file record; there is no `now()` yet, because building
 the 26-character format needs `STRING`, which the subset does not have.
 
+### 3b. Edited fields
+
+An amount held as `COMP-3` cannot be printed. `edited<T, "style">` declares the
+rendering, and assignment into it is the formatting step — which is exactly what
+a COBOL `MOVE` into a numeric-edited item does:
+
+```ts
+record StatementRow {
+  amount: MoneyBDT;
+  printedAmount: edited<MoneyBDT, "signed">;
+}
+
+row.printedAmount = row.amount; // MOVE AMOUNT OF ... TO PRINTED-AMOUNT OF ...
+```
+
+The picture is generated from the value's own precision and scale, so nobody
+counts `Z`s:
+
+| Style         | Picture for `decimal<18,2>`  | Reads as      |
+| ------------- | ---------------------------- | ------------- |
+| `"plain"`     | `ZZZZZZZZZZZZZZZ9.99`        | `1234.50`     |
+| `"grouped"`   | `Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99`   | `1,234.50`    |
+| `"signed"`    | `Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99-`  | `1,234.50-`   |
+| `"credit"`    | `Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99CR` | `1,234.50CR`  |
+| `"protected"` | `*,***,***,***,***,**9.99`   | `***1,234.50` |
+| `"slashed"`   | `9999/99/99` (a `date` only) | `2026/08/05`  |
+
+Leading positions suppress and the last integer position stays `9`, so a zero
+amount prints as `0.00` rather than as nothing. Decimals never suppress: an
+amount is read to the penny, and a blank penny column is a defect. Asterisk fill
+is cheque protection — it leaves no room to write digits in. `CR` rather than a
+minus is the accounting convention for a credit balance.
+
+**An edited field is a rendering, not a number.** It may be assigned from a
+value of its inner type and written to a file or a report line. It may not be
+read back as a value, compared, or computed with — which is also what COBOL
+allows, and which stops a report column becoming arithmetic input and losing
+the digits the editing removed. A style the compiler does not know is
+`BANK-TYPE-023` rather than a picture passed through unchecked.
+
 ## 4. Currency types
 
 Currency types are nominal and cannot be mixed implicitly.

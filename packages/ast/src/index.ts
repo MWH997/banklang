@@ -128,6 +128,26 @@ export interface CurrencyTypeNode extends NodeBase {
   scale: number;
 }
 
+/**
+ * `edited<T, "style">` — a field formatted for a human to read.
+ *
+ * COBOL calls these numeric-edited items, and a `MOVE` into one performs the
+ * editing: zero suppression, thousands separators, and the sign convention the
+ * style names. The picture is generated from the source type's precision and
+ * scale rather than written out, so an 18,2 amount gets the right number of
+ * positions without anyone counting them.
+ *
+ * An edited field is a rendering, not a number. It can be assigned from a value
+ * of its inner type and written to a file or a report line; it cannot be
+ * compared or computed with, which is also exactly what COBOL allows.
+ */
+export interface EditedTypeNode extends NodeBase {
+  kind: "EditedType";
+  inner: TypeNode;
+  style: string;
+  styleSpan: SourceSpan;
+}
+
 /** `nullable<T>` — a value that must be checked before it can be used. */
 export interface NullableTypeNode extends NodeBase {
   kind: "NullableType";
@@ -146,6 +166,7 @@ export type TypeNode =
   | StringTypeNode
   | BoolTypeNode
   | TemporalTypeNode
+  | EditedTypeNode
   | TypeReferenceNode
   | CurrencyTypeNode
   | NullableTypeNode

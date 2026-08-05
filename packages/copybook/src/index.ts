@@ -6,6 +6,7 @@ import {
   toCobolName,
   toCobolPicture,
   temporalLength,
+  editedLength,
 } from "../../cobol-ir/src/index";
 
 export interface CopybookFieldLayout {
@@ -114,6 +115,8 @@ export const NULL_INDICATOR_BYTES = 2;
 
 export function fieldLength(type: IRType): number {
   switch (type.kind) {
+    case "edited":
+      return editedLength(type.style, type.precision, type.scale);
     case "temporal":
       return temporalLength(type.unit);
     case "currency":
@@ -476,6 +479,8 @@ function collectLayoutEntries(
 
 function formatLayoutType(type: IRType): string {
   switch (type.kind) {
+    case "edited":
+      return `edited<decimal<${type.precision},${type.scale}>,"${type.style}">`;
     case "temporal":
       return type.unit;
     case "decimal":
@@ -508,6 +513,8 @@ function formatLayoutPicture(type: IRType): string {
 
 function formatLayoutUsage(type: IRType): string {
   switch (type.kind) {
+    case "edited":
+      return "DISPLAY";
     case "temporal":
       return "DISPLAY";
     case "decimal":
