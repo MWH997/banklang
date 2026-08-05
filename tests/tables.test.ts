@@ -66,6 +66,43 @@ entry transaction load(book: Book) {
     expect(result.diagnostics).toEqual([]);
   });
 
+  /**
+   * Every shape a value can be written into, in one place.
+   *
+   * The scalar-element case was missing for as long as tables existed, and
+   * nothing noticed because the two neighbouring shapes — a local and a field
+   * of an element — both worked. A list is how that stays fixed.
+   */
+  it("accepts every place a value can go", () => {
+    const result = compile(`module Places;
+
+record Row {
+  rate: decimal<9, 4>;
+}
+
+record Book {
+  single: decimal<9, 4>;
+  flat: decimal<9, 4>[4];
+  grid: decimal<9, 4>[2][3];
+  rows: Row[4];
+  idempotencyKey: string<36>;
+}
+
+entry transaction load(book: Book) {
+  let local: decimal<9, 4> = 0.0000;
+  local = 0.0100;
+  book.single = 0.0200;
+  book.flat[1] = 0.0300;
+  book.grid[2][3] = 0.0400;
+  book.rows[2].rate = 0.0500;
+  audit("LOADED", book.idempotencyKey);
+}`);
+
+    expect(
+      result.diagnostics.map((entry) => `${entry.id}: ${entry.message}`),
+    ).toEqual([]);
+  });
+
   it("still refuses something that is not a place", () => {
     expect(
       program("  rates: decimal<9, 4>[4];", "  1 + 1 = 2;").diagnostics.map(
