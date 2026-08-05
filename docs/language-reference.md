@@ -1191,12 +1191,51 @@ rather than the job's. It runs through a sort-work file, described by `SD`
 rather than `FD` because the sort owns its blocking, and the generated job
 allocates `SORTWK01` for it. `USING` and `GIVING` let the sort open, read, write,
 and close the files itself — the form to use when there is nothing to do to the
-records on the way through. Input and output procedures, for when there is, are
-not in the subset.
+records on the way through.
 
 Every file a sort touches holds the same record, and every key is a field of it:
 a key that is not in the record sorts on nothing (`BANK-FILE-005`). A `merge`
 takes two or more already-sorted inputs.
+
+### Working on the records on the way through
+
+```ts
+sort rawPostings into sortedPostings on branchId, descending accountId
+  input posting {
+    if posting.amount > 0.00 {
+      release posting;
+    }
+  }
+  output posting {
+    write sortedPostings from posting;
+  };
+```
+
+A procedure replaces the clause it stands in for: `input` replaces `USING`,
+`output` replaces `GIVING`. They are alternatives, not additions — the sort
+either handles the file itself or leaves it to the program. Either may be given
+alone.
+
+The record named after `input` or `output` is an ordinary record variable, the
+same way `read <file> into <record>` names one, so the body reads and assigns
+fields exactly as the rest of the program does. Only the loop is generated: the
+`OPEN`, the `READ` or `RETURN`, the end-of-data test, and the `CLOSE`.
+Hand-writing those is where this shape is usually got wrong — a `RETURN` whose
+`AT END` is forgotten reads the last record forever.
+
+`release` is the statement an input procedure exists for. The records it does
+not release are the ones the procedure filters out. It only means anything while
+a sort is running, so writing it anywhere else is `BANK-FILE-006`, as is an
+input procedure that never reaches one: that sorts an empty file, and there is
+no reading of the program under which it is what was meant.
+
+A `merge` takes no input procedure (`BANK-FILE-006`). Its premise is that the
+inputs already arrive in order, and a procedure that could drop or reorder
+records would break it. An output procedure on a merge is fine.
+
+The procedures are emitted as `SECTION`s after the last `GOBACK`, because a
+section in the flow of control would be run again on the way past; an
+`INPUT PROCEDURE` is meant to be entered by `SORT` and by nothing else.
 
 ### Surviving a failure
 

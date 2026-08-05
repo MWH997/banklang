@@ -344,6 +344,16 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
         flattened.push(...flattenStatements(statement.body.statements));
         flattened.push(...flattenStatements(statement.notFound.statements));
         break;
+      case "SortStatement":
+        for (const procedure of [
+          statement.inputProcedure,
+          statement.outputProcedure,
+        ]) {
+          if (procedure) {
+            flattened.push(...flattenStatements(procedure.body.statements));
+          }
+        }
+        break;
       case "SwitchStatement":
         for (const branch of statement.cases) {
           flattened.push(...flattenStatements(branch.body.statements));

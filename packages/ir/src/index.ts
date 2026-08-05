@@ -20,6 +20,7 @@ import {
   type AssignStatementNode,
   type FileStatementNode,
   type StringCallNode,
+  type SortProcedureNode,
 } from "../../ast/src/index";
 import type { EditStyle, NumericUsage } from "../../cobol-ir/src/index";
 import type {
@@ -204,6 +205,7 @@ export type IRStatement =
   | IRReturnCodeStatement
   | IRSplitStatement
   | IRSortStatement
+  | IRReleaseStatement
   | IRCheckpointStatement
   | IRConsoleStatement
   | IRResetStatement
@@ -239,6 +241,20 @@ export interface IRCheckpointStatement {
   recordFields: { name: string; arrayLength: number | null }[];
 }
 
+/**
+ * An `INPUT PROCEDURE` or `OUTPUT PROCEDURE` body, run once per record.
+ *
+ * The loop, the end-of-data test, and the field mapping between the file record
+ * and `recordName` are all generated; the body is what the program does with
+ * each record in between.
+ */
+export interface IRSortProcedure {
+  recordName: string;
+  /** The record's fields, for mapping to and from the FD or SD record. */
+  recordFields: { name: string; arrayLength: number | null }[];
+  body: IRBlock;
+}
+
 /** `SORT` or `MERGE` over declared files, through a generated sort file. */
 export interface IRSortStatement {
   kind: "SortStatement";
@@ -249,6 +265,17 @@ export interface IRSortStatement {
   keys: { name: string; descending: boolean }[];
   /** The output record's field names, for the SD the sort runs through. */
   recordFields: string[];
+  /** Replaces `USING` when the records need work on the way in. */
+  inputProcedure: IRSortProcedure | null;
+  /** Replaces `GIVING` when they need work on the way out. */
+  outputProcedure: IRSortProcedure | null;
+}
+
+/** `RELEASE` — hands a record to a running sort from its input procedure. */
+export interface IRReleaseStatement {
+  kind: "ReleaseStatement";
+  span: SourceSpan;
+  recordName: string;
 }
 
 /** `UNSTRING source DELIMITED BY d INTO a b c`. */
@@ -1627,6 +1654,18 @@ function lowerStatement(
     }
     case "SortStatement": {
       const output = fileTable.get(statement.output);
+      const fields = output?.recordFields ?? [];
+      const lowerProcedure = (
+        procedure: SortProcedureNode | null,
+      ): IRSortProcedure | null =>
+        procedure
+          ? {
+              recordName: procedure.recordName,
+              recordFields: fields,
+              body: lowerBlock(procedure.body, scopeTypes),
+            }
+          : null;
+
       return {
         kind: "SortStatement",
         span: statement.span,
@@ -1634,9 +1673,17 @@ function lowerStatement(
         inputs: statement.inputs,
         output: statement.output,
         keys: statement.keys,
-        recordFields: (output?.recordFields ?? []).map((field) => field.name),
+        recordFields: fields.map((field) => field.name),
+        inputProcedure: lowerProcedure(statement.inputProcedure),
+        outputProcedure: lowerProcedure(statement.outputProcedure),
       };
     }
+    case "ReleaseStatement":
+      return {
+        kind: "ReleaseStatement",
+        span: statement.span,
+        recordName: statement.recordName,
+      };
     case "SplitStatement":
       return {
         kind: "SplitStatement",

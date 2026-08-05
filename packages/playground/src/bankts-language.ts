@@ -27,6 +27,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "search",
   "sort",
   "merge",
+  "release",
   "descending",
   "checkpoint",
   "every",
