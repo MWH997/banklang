@@ -1043,6 +1043,34 @@ function resolveTransaction(
     });
   }
 
+  // A transaction is a program entry point, so its record parameters live in
+  // working storage — one COBOL group per record *type*. Two parameters of the
+  // same type would therefore be two names for one piece of storage: writing
+  // through either would be visible through the other, silently. A function is
+  // different: its record parameters are LINKAGE cells the caller rebinds, so
+  // each one addresses its own argument.
+  const recordParameters = new Map<string, string>();
+  for (const parameter of parameters) {
+    if (parameter.type.kind !== "record") {
+      continue;
+    }
+    const earlier = recordParameters.get(parameter.type.name);
+    if (earlier) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-022",
+          severity: "error",
+          message: `${parameter.name} and ${earlier} both hold ${parameter.type.name}, so they would be one piece of storage.`,
+          span: parameter.span,
+          hint: "A transaction's records live in working storage, one group per record type. Declare a second record type, or pass one parameter and fill it twice.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    recordParameters.set(parameter.type.name, parameter.name);
+  }
+
   declareFileStatusSymbols(scope);
 
   // CICS response variables are compiler-owned storage, like file statuses.

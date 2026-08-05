@@ -119,6 +119,14 @@ A record argument is passed by reference: the caller points the callee's
 the caller can take without evaluating the subscript first, so it must be
 assigned into a record and passed by name.
 
+### `BANK-TYPE-022` two transaction parameters share one record
+
+A transaction is a program entry point, so its record parameters live in working
+storage — one COBOL group per record type. Two parameters of the same type would
+be two names for one piece of storage, and writing through either would be
+visible through the other. A function is unaffected: its record parameters are
+`LINKAGE` cells the caller rebinds.
+
 ### `BANK-TYPE-023` invalid edited field
 
 An `edited<T, "style">` field names a style the compiler does not know, or asks
