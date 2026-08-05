@@ -699,7 +699,11 @@ export function emitCobol(
       // A CICS program returns control to CICS rather than to a caller.
       addLine(
         transaction.isCics
-          ? `           EXEC CICS RETURN END-EXEC.`
+          ? endsWithReturnTransid(transaction.body)
+            ? // The body already returned, naming what runs next. A second
+              // RETURN would be unreachable and would read as a mistake.
+              `           GOBACK.`
+            : `           EXEC CICS RETURN END-EXEC.`
           : `           GOBACK.`,
       );
     }
@@ -1316,7 +1320,7 @@ function emitStatement(
         emitIfStatement(statement, addLine, indentLevel, resultName);
         break;
       case "WhileStatement":
-        emitWhileStatement(statement, addLine, indentLevel, resultName);
+        emitWhileStatement(statement, addLine, indentLevel, resultName, false);
         break;
       case "AssignStatement":
         emitAssignStatement(statement, addLine, indent);
@@ -1464,7 +1468,7 @@ function emitTransactionBody(
         emitTransactionBranch(statement, addLine, indentLevel);
         break;
       case "WhileStatement":
-        emitWhileStatement(statement, addLine, indentLevel, "");
+        emitWhileStatement(statement, addLine, indentLevel, "", true);
         break;
       case "AssignStatement":
         emitAssignStatement(statement, addLine, indent);
@@ -1644,6 +1648,13 @@ function emitWhileStatement(
   addLine: (line?: string) => void,
   indentLevel: number,
   resultName: string,
+  /**
+   * True inside a transaction, whose body may contain effects a function body
+   * may not. Without this a `debit`, an `audit`, or a CICS command inside a
+   * `while` reached the function-body emitter and threw — every other loop and
+   * branch already carried the flag, and this one did not.
+   */
+  inTransaction: boolean,
 ): void {
   const indent = " ".repeat(indentLevel);
   const counter = loopCounterName(statement);
@@ -1653,7 +1664,11 @@ function emitWhileStatement(
     `${indent}PERFORM UNTIL ${counter} >= ${statement.limit} OR NOT (${renderCondition(statement.condition)})`,
   );
   addLine(`${indent}    ADD 1 TO ${counter}`);
-  emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+  if (inTransaction) {
+    emitTransactionBody(statement.body, addLine, indentLevel + 4);
+  } else {
+    emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+  }
   addLine(`${indent}END-PERFORM`);
 }
 
@@ -2180,6 +2195,12 @@ function resolveIdentifier(name: string): string {
 }
 
 /** `for each` index variables need storage, like any other local. */
+/** True when a body's last statement hands control back to CICS itself. */
+function endsWithReturnTransid(block: IRBlock): boolean {
+  const last = block.statements[block.statements.length - 1];
+  return last?.kind === "CicsStatement" && last.operation === "returnTransid";
+}
+
 /** True when the program calls `now()`, so the clock field is needed. */
 function programUsesNow(program: IRProgram): boolean {
   return JSON.stringify([program.functions, program.transactions]).includes(
@@ -2268,11 +2289,13 @@ function emitCicsStatement(
     ? ` RESP(${toCobolFieldName(statement.respName)})`
     : "";
 
+  const record = statement.commarea
+    ? resolveIdentifier(statement.commarea)
+    : null;
+
   switch (statement.operation) {
     case "link": {
-      const commarea = statement.commarea
-        ? ` COMMAREA(${resolveIdentifier(statement.commarea)})`
-        : "";
+      const commarea = record ? ` COMMAREA(${record})` : "";
       addLine(
         `${indent}EXEC CICS LINK PROGRAM("${statement.program}")${commarea}${resp} END-EXEC`,
       );
@@ -2283,6 +2306,49 @@ function emitCicsStatement(
       return;
     case "rollback":
       addLine(`${indent}EXEC CICS SYNCPOINT ROLLBACK${resp} END-EXEC`);
+      return;
+
+    // A CICS file command reaches a VSAM dataset through CICS rather than
+    // through COBOL file control: there is no OPEN, no CLOSE, and no FD,
+    // because the region owns the dataset and the program only asks.
+    case "readFile":
+      addLine(
+        `${indent}EXEC CICS READ FILE("${statement.program}")${record ? ` INTO(${record})` : ""}${statement.key ? ` RIDFLD(${renderExpression(statement.key)})` : ""}${resp} END-EXEC`,
+      );
+      return;
+    case "writeFile":
+      addLine(
+        `${indent}EXEC CICS WRITE FILE("${statement.program}")${record ? ` FROM(${record})` : ""}${statement.key ? ` RIDFLD(${renderExpression(statement.key)})` : ""}${resp} END-EXEC`,
+      );
+      return;
+    case "rewriteFile":
+      // No RIDFLD: a rewrite updates the record the preceding read holds, so
+      // naming a key here would describe a different operation.
+      addLine(
+        `${indent}EXEC CICS REWRITE FILE("${statement.program}")${record ? ` FROM(${record})` : ""}${resp} END-EXEC`,
+      );
+      return;
+
+    // Temporary storage is the scratchpad an online transaction passes state
+    // through between the halves of a pseudo-conversation.
+    case "writeQueue":
+      addLine(
+        `${indent}EXEC CICS WRITEQ TS QUEUE("${statement.program}")${record ? ` FROM(${record})` : ""}${resp} END-EXEC`,
+      );
+      return;
+    case "readQueue":
+      addLine(
+        `${indent}EXEC CICS READQ TS QUEUE("${statement.program}")${record ? ` INTO(${record})` : ""}${resp} END-EXEC`,
+      );
+      return;
+
+    // Ends the task naming what runs next, which is how a pseudo-conversation
+    // continues: CICS frees the program between the halves and starts the named
+    // transaction when the terminal replies.
+    case "returnTransid":
+      addLine(
+        `${indent}EXEC CICS RETURN TRANSID("${statement.program}")${record ? ` COMMAREA(${record})` : ""} END-EXEC`,
+      );
       return;
   }
 }

@@ -124,6 +124,12 @@ export const KEYWORDS = new Set([
   "syncpoint",
   "rollback",
   "commit",
+  "readFile",
+  "writeFile",
+  "rewriteFile",
+  "writeQueue",
+  "readQueue",
+  "returnTransid",
   "returnCode",
   "currency",
   "nullable",
@@ -173,6 +179,19 @@ const COMPARISON_OPERATORS: ComparisonOperator[] = [
 const ROUNDING_BUILTINS = new Set(["round", "divide"]);
 
 /** Calendar-aware builtins. They are contextual names, not reserved words. */
+/** Keywords that begin a CICS command. */
+const CICS_COMMANDS = new Set([
+  "link",
+  "syncpoint",
+  "rollback",
+  "readFile",
+  "writeFile",
+  "rewriteFile",
+  "writeQueue",
+  "readQueue",
+  "returnTransid",
+]);
+
 const TEMPORAL_BUILTINS = new Set(["today", "addDays", "daysBetween"]);
 
 /** String builtins. Contextual names, not reserved words. */
@@ -1201,9 +1220,7 @@ class Parser {
 
     if (
       this.current.kind === "keyword" &&
-      (this.current.text === "link" ||
-        this.current.text === "syncpoint" ||
-        this.current.text === "rollback")
+      CICS_COMMANDS.has(this.current.text)
     ) {
       return this.parseCicsStatement();
     }
@@ -1451,27 +1468,50 @@ class Parser {
     let program: string | null = null;
     let commarea: string | null = null;
     let respName: string | null = null;
+    let key: ExpressionNode | null = null;
 
-    if (operation === "link") {
-      const programToken = this.current;
-      if (programToken.kind !== "string") {
+    // Every command but a syncpoint names the resource it acts on: a program, a
+    // dataset, a queue, or the transaction to run next.
+    const NAMED = new Set([
+      "link",
+      "readFile",
+      "writeFile",
+      "rewriteFile",
+      "writeQueue",
+      "readQueue",
+      "returnTransid",
+    ]);
+
+    if (NAMED.has(operation)) {
+      const nameToken = this.current;
+      if (nameToken.kind !== "string") {
         this.errorAtCurrent(
           "BANK-SYN-001",
-          "Expected a target program name.",
-          'Write `link "PROGNAME" commarea <record> resp <status>;`.',
+          `Expected a name after \`${operation}\`.`,
+          `Write \`${operation} "NAME" ...;\`.`,
         );
         return null;
       }
       this.advance();
-      program = programToken.text;
+      program = nameToken.text;
+    }
 
-      if (
-        this.current.kind === "identifier" &&
-        this.current.text === "commarea"
-      ) {
+    // `commarea` for a link, `into`/`from` for a file or queue command. All
+    // three name the record the command moves, so they share a field.
+    for (const clause of ["commarea", "into", "from"] as const) {
+      if (this.current.kind === "identifier" && this.current.text === clause) {
         this.advance();
         const recordToken = this.expectIdentifier("Expected a record name.");
         commarea = recordToken?.text ?? null;
+        break;
+      }
+    }
+
+    if (this.current.kind === "identifier" && this.current.text === "key") {
+      this.advance();
+      key = this.parseExpression();
+      if (!key) {
+        return null;
       }
     }
 
@@ -1497,6 +1537,7 @@ class Parser {
       program,
       commarea,
       respName,
+      key,
       span: {
         sourceFile: operationToken.span.sourceFile,
         start: operationToken.span.start,

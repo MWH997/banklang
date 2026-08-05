@@ -243,10 +243,23 @@ export interface IRForEachStatement {
 export interface IRCicsStatement {
   kind: "CicsStatement";
   span: SourceSpan;
-  operation: "link" | "syncpoint" | "rollback";
+  operation:
+    | "link"
+    | "syncpoint"
+    | "rollback"
+    | "readFile"
+    | "writeFile"
+    | "rewriteFile"
+    | "writeQueue"
+    | "readQueue"
+    | "returnTransid";
+  /** The named resource: a program, dataset, queue, or transaction identifier. */
   program: string | null;
+  /** The record the command moves. */
   commarea: string | null;
   respName: string | null;
+  /** Record key for a file command. */
+  key: IRExpression | null;
 }
 
 export interface IRSqlStatement {
@@ -1536,6 +1549,7 @@ function lowerStatement(
         program: statement.program,
         commarea: statement.commarea,
         respName: statement.respName,
+        key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
       };
     case "SqlStatement":
       return {
