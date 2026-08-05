@@ -269,7 +269,10 @@ sounding impressive:
 
 - **Validated with GnuCOBOL, not IBM.** Every example compiles with GnuCOBOL in
   CI. No IBM Enterprise COBOL validation has been performed, and none is
-  claimed.
+  claimed. [`zos/`](zos/README.md) makes that a bounded task rather than an open
+  question: `pnpm tsx tools/zos-kit.ts` writes every program, copybook, and job
+  in the member names the JCL expects, with a procedure and a results template.
+  Nothing there has been run either, and the README says so.
 - **Not production-ready.** It has never run against a real ledger, and no
   institution's money has moved through it.
 - **SQL and CICS are checked structurally, not semantically.** BankLang ships a

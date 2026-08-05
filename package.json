@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:determinism": "vitest run tests/determinism.test.ts",
     "test:gnucobol": "tsx tools/gnucobol-validation.ts",
+    "zos:kit": "tsx tools/zos-kit.ts",
     "typecheck": "tsc -p tsconfig.base.json --noEmit"
   },
   "devDependencies": {
