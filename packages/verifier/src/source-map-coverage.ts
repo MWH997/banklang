@@ -242,9 +242,18 @@ function cobolNameForEntry(
       if (!fn) {
         return null;
       }
-      // A recursive function is a separate program, so its anchor is the
-      // PROGRAM-ID rather than a paragraph name.
-      return fn.isRecursive
+      // A recursive function and a contained one are both separate programs,
+      // so the anchor is the PROGRAM-ID rather than a paragraph name — and a
+      // PROGRAM-ID is eight characters with the hyphens taken out, which a
+      // paragraph name is not.
+      //
+      // Only the recursive case was handled. A nested function was anchored to
+      // `ADD-UP` while the program it became was `ADDUP` and its paragraph
+      // `ADD-UP-BODY`, so nothing in its lines carried the bare name and every
+      // program with one reported `BANK-GEN-006`. The suite missed it because
+      // its one fixture is called `accrued`: a single word has no hyphens to
+      // take out, so the two spellings coincide and the entry anchors by luck.
+      return fn.isRecursive || fn.isNested
         ? toCobolName(entry.symbol).replace(/-/g, "").slice(0, 8).toUpperCase()
         : toCobolParagraphName(entry.symbol);
     }

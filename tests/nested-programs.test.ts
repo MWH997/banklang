@@ -48,6 +48,37 @@ ${body}
 }`;
 }
 
+/**
+ * A contained program is a program, so its source map entry has to anchor to
+ * the PROGRAM-ID and not to a paragraph name. Only the recursive case was
+ * handled: a nested function was anchored to `ADD-UP` while the program it
+ * became was `ADDUP` and its paragraph `ADD-UP-BODY`, so nothing in its lines
+ * carried the bare name and every program with one reported `BANK-GEN-006`.
+ *
+ * The fixture below is called `accrued` — a single word, with no hyphens to
+ * take out, so the two spellings coincide and the entry anchored by luck. Any
+ * name written the way the rest of the language writes names did not.
+ */
+describe("a contained program named the way the language names things", () => {
+  const result = compile(`${PREAMBLE}
+nested function addUpInterest(position: Position): decimal<9, 2> {
+  return round(position.balance * position.rate, "HALF_UP");
+}
+
+entry transaction post(position: Position) {
+  position.balance = addUpInterest(position);
+  audit("ACCRUED", position.idempotencyKey);
+}`);
+
+  it("compiles", () => {
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("anchors its source map entry to the PROGRAM-ID", () => {
+    expect(result.cobol).toContain("PROGRAM-ID. ADDUPINT COMMON.");
+  });
+});
+
 describe("the contained program", () => {
   const result = compile(
     program("  position.balance = position.balance + accrued(position);"),

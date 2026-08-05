@@ -2136,6 +2136,44 @@ function enumConditionAssignment(statement: IRAssignStatement): string | null {
 }
 
 /**
+ * Testing an enum field against one of its members, as the level-88 condition
+ * declared beside the field.
+ *
+ * The 88s are generated for every enum field and were used on assignment but
+ * not on the test, which still compared the field against the member's spelling
+ * as a literal. That is the construct the level-88 exists to replace: a
+ * condition name says which state is being asked about, where a string
+ * comparison repeats the spelling in the procedure division and has to be kept
+ * in step with the 88 that defines it by hand.
+ *
+ * `!=` becomes `NOT <condition>`, which is how COBOL negates a condition name;
+ * there is no other operator to map, because an enum has no order.
+ */
+function enumConditionTest(
+  expression: IRBinaryComparisonExpression,
+): string | null {
+  if (expression.operator !== "==" && expression.operator !== "!=") {
+    return null;
+  }
+
+  const sides = [
+    [expression.left, expression.right],
+    [expression.right, expression.left],
+  ] as const;
+  for (const [field, member] of sides) {
+    if (
+      field.kind === "MemberAccess" &&
+      field.resolvedType.kind === "enum" &&
+      member.kind === "EnumMember"
+    ) {
+      const condition = `${enumConditionName(field.member, member.member)} OF ${toCobolName(field.recordName)}`;
+      return expression.operator === "==" ? condition : `NOT ${condition}`;
+    }
+  }
+  return null;
+}
+
+/**
  * Return statements only assign the result field. The paragraph ends with a
  * single `GOBACK.`, because a period inside an `IF` branch would terminate the
  * COBOL sentence and leave the following `ELSE` and `END-IF` dangling.
@@ -2223,7 +2261,10 @@ function emitRecursiveProgram(
     subResult: "WS-SUB-RESULT",
   };
 
+  const previousContained = inContainedProgram;
+  inContainedProgram = true;
   emitStatement(fn.body, addLine, 11, resultName);
+  inContainedProgram = previousContained;
 
   currentBindings = previousBindings;
   recursiveContext = previousRecursive;
@@ -2313,7 +2354,10 @@ function emitNestedProgram(
     ),
   ]);
 
+  const previousContained = inContainedProgram;
+  inContainedProgram = true;
   emitStatement(fn.body, addLine, 11, resultName);
+  inContainedProgram = previousContained;
 
   currentBindings = previousBindings;
 
@@ -3142,7 +3186,7 @@ function emitFileStatusCheck(
     addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
   } else {
     addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    GOBACK`);
+    addLine(`${indent}    ${failStepStatement()}`);
   }
   addLine(`${indent}END-IF`);
 }
@@ -3203,7 +3247,7 @@ function emitSortStatement(
     `${indent}    DISPLAY "${operation} FAILED ${statement.output} SORT-RETURN " SORT-RETURN UPON SYSOUT`,
   );
   addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
-  addLine(`${indent}    GOBACK`);
+  addLine(`${indent}    ${failStepStatement()}`);
   addLine(`${indent}END-IF`);
 
   // SORT-RETURN is not the whole story for the files the sort opens itself.
@@ -3229,7 +3273,7 @@ function emitSortStatement(
       `${indent}    DISPLAY "${operation} FAILED ${file} STATUS " ${status} UPON SYSOUT`,
     );
     addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
-    addLine(`${indent}    GOBACK`);
+    addLine(`${indent}    ${failStepStatement()}`);
     addLine(`${indent}END-IF`);
   }
 }
@@ -3712,6 +3756,29 @@ let fileStatusNames = new Map<string, string>();
  */
 let inSortProcedure = false;
 
+/**
+ * True while a contained (`COMMON`) or recursive program's body is emitted.
+ *
+ * It changes what "fail the step" has to be. `GOBACK` in the outermost program
+ * returns to the operating system, so a guard that sets a return code and goes
+ * back ends the job; in a contained program it returns to the *container*,
+ * which carries straight on — and then overwrites the return code with its own
+ * on the way out. An overflow inside a nested function reported itself to the
+ * job log and the step still ended with return code zero.
+ */
+let inContainedProgram = false;
+
+/**
+ * End the run unit from a failure path, whichever program is being emitted.
+ *
+ * `STOP RUN` terminates the run unit from anywhere, which is what a contained
+ * program needs; the outermost program reaches the same place with `GOBACK`,
+ * and that is left alone so the ordinary path is unchanged.
+ */
+function failStepStatement(): string {
+  return inContainedProgram ? "STOP RUN" : "GOBACK";
+}
+
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
 let databaseTable = new Map<string, IRDatabase>();
 
@@ -4127,7 +4194,7 @@ function emitMqCheck(
     addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
   } else {
     addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    GOBACK`);
+    addLine(`${indent}    ${failStepStatement()}`);
   }
   addLine(`${indent}END-IF`);
 }
@@ -4292,7 +4359,7 @@ function emitQueueStatement(
         addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
       } else {
         addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
-        addLine(`${indent}        GOBACK`);
+        addLine(`${indent}        ${failStepStatement()}`);
       }
       addLine(`${indent}END-EVALUATE`);
       return;
@@ -4859,7 +4926,7 @@ function emitOccursCountGuard(
     addLine(`${indent}    MOVE ${bound} TO ${reference}`);
   } else {
     addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}    GOBACK`);
+    addLine(`${indent}    ${failStepStatement()}`);
   }
   addLine(`${indent}END-IF`);
 }
@@ -4923,7 +4990,7 @@ function emitBoundsChecks(
         addLine(`${indent}    MOVE ${check.length} TO ${check.index}`);
       } else {
         addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
-        addLine(`${indent}    GOBACK`);
+        addLine(`${indent}    ${failStepStatement()}`);
       }
     }
     addLine(`${indent}END-IF`);
@@ -5285,7 +5352,7 @@ function emitCompute(
     addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
   } else {
     addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
-    addLine(`${indent}        GOBACK`);
+    addLine(`${indent}        ${failStepStatement()}`);
   }
   addLine(`${indent}END-COMPUTE`);
 }
@@ -6179,8 +6246,13 @@ function renderExpression(expression: IRExpression): string {
       return `"${expression.value}"`;
     case "MemberAccess":
       return renderQualifiedFieldReference(expression);
-    case "BinaryComparison":
+    case "BinaryComparison": {
+      const condition = enumConditionTest(expression);
+      if (condition) {
+        return condition;
+      }
       return `${renderExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderExpression(expression.right)}`;
+    }
     case "BinaryArithmetic":
       return `${renderExpression(expression.left)} ${expression.operator} ${renderExpression(expression.right)}`;
     case "Logical":
@@ -6318,8 +6390,13 @@ function renderCondition(expression: IRExpression): string {
       return expression.operation === "isPresent"
         ? `${nullIndicatorFor(expression.operand)} = 0`
         : renderExpression(expression);
-    case "BinaryComparison":
+    case "BinaryComparison": {
+      const condition = enumConditionTest(expression);
+      if (condition) {
+        return condition;
+      }
       return `${renderDecimalExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderDecimalExpression(expression.right)}`;
+    }
     default:
       return renderExpression(expression);
   }
