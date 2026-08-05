@@ -32,7 +32,9 @@ import {
   type CheckpointStatementNode,
   type FileErrorHandlerNode,
   type ConsoleStatementNode,
+  type ReleaseStatementNode,
   type ResetStatementNode,
+  type SortProcedureNode,
   type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -146,6 +148,7 @@ export const KEYWORDS = new Set([
   "search",
   "sort",
   "merge",
+  "release",
   "descending",
   "checkpoint",
   "every",
@@ -1193,6 +1196,40 @@ class Parser {
     };
   }
 
+  /**
+   * `input <record> { ... }` or `output <record> { ... }` on a sort.
+   *
+   * The record variable is an existing one, the same way `read <file> into
+   * <record>` names one, so the body reads and assigns fields exactly as the
+   * rest of the program does.
+   */
+  private parseSortProcedure(
+    word: "input" | "output",
+  ): SortProcedureNode | null {
+    const keyword = this.advance();
+    const recordToken = this.expectIdentifier(
+      `Expected the record the ${word} procedure works through.`,
+    );
+    if (!recordToken) {
+      return null;
+    }
+    const body = this.parseBlock();
+    if (!body) {
+      return null;
+    }
+
+    return {
+      recordName: recordToken.text,
+      recordSpan: recordToken.span,
+      body,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: body.span.end,
+      },
+    };
+  }
+
   private parseBlock(handlerSink?: {
     handler: FailureHandlerNode | null;
   }): BlockNode | null {
@@ -1394,6 +1431,27 @@ class Parser {
       } satisfies ResetStatementNode;
     }
 
+    if (this.isKeyword("release")) {
+      const keyword = this.advance();
+      const recordToken = this.expectIdentifier("Expected a record name.");
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the release statement.",
+      );
+      if (!recordToken || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "ReleaseStatement",
+        recordName: recordToken.text,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies ReleaseStatementNode;
+    }
+
     if (this.isKeyword("checkpoint")) {
       const keyword = this.advance();
       const fileToken = this.expectIdentifier("Expected the restart file.");
@@ -1481,6 +1539,26 @@ class Parser {
         keys.push({ name: keyToken.text, descending });
       } while (this.matchPunctuation(","));
 
+      // `input` and `output` are matched contextually here, as they are in a
+      // file declaration, so both stay usable as ordinary names.
+      let inputProcedure: SortProcedureNode | null = null;
+      let outputProcedure: SortProcedureNode | null = null;
+      for (const word of ["input", "output"] as const) {
+        const next: Token = this.current;
+        if (next.kind !== "identifier" || next.text !== word) {
+          continue;
+        }
+        const procedure = this.parseSortProcedure(word);
+        if (!procedure) {
+          return null;
+        }
+        if (word === "input") {
+          inputProcedure = procedure;
+        } else {
+          outputProcedure = procedure;
+        }
+      }
+
       const semicolon = this.expectPunctuation(
         ";",
         `Expected \`;\` after the ${operation} statement.`,
@@ -1495,6 +1573,8 @@ class Parser {
         inputs,
         output: outputToken.text,
         keys,
+        inputProcedure,
+        outputProcedure,
         span: {
           sourceFile: keyword.span.sourceFile,
           start: keyword.span.start,

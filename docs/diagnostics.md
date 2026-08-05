@@ -277,6 +277,32 @@ dies halfway is rerun, and without a position written down the rerun starts at
 the beginning and posts everything twice. Reported as a warning because the
 compiler cannot tell whether the job is rerunnable another way.
 
+### `BANK-FILE-004` invalid key declaration
+
+An alternate record key names something that is not a field of the file's
+record, or the file has no index for one to live in. Only an indexed file has
+alternate keys.
+
+### `BANK-FILE-005` file operation does not match the declaration
+
+A `rewrite` or `delete` needs the file open for `update`, because updating a
+record in place means finding it first. A `start` or `readNext` browses an
+index, which a sequential file does not have.
+
+It also reports a file given more than one error handler, which is what COBOL
+allows.
+
+### `BANK-FILE-006` invalid sort procedure
+
+A sort procedure works through a record variable that does not hold the record
+being sorted, or `release` appears where no sort is running — it hands a record
+to a sort in progress, so it means nothing elsewhere.
+
+An input procedure that never reaches a `release` sorts an empty file, and a
+`merge` has no input procedure at all: its premise is that the inputs already
+arrive in order, and a procedure that could drop or reorder records would break
+it.
+
 ## 11. Copybook diagnostics
 
 ### `BANK-COPY-001` unsupported PIC clause
@@ -290,12 +316,6 @@ Copybook contains a PIC clause not supported by current parser.
 ### `BANK-COPY-003` incompatible layout change
 
 New copybook layout changes field offsets or byte lengths incompatibly.
-
-### `BANK-FILE-005` file operation does not match the declaration
-
-A `rewrite` or `delete` needs the file open for `update`, because updating a
-record in place means finding it first. A `start` or `readNext` browses an
-index, which a sequential file does not have.
 
 ### `BANK-COPY-004` invalid variant record clause
 

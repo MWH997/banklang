@@ -15,6 +15,8 @@ import {
   type SearchStatementNode,
   type CheckpointStatementNode,
   type ConsoleStatementNode,
+  type ReleaseStatementNode,
+  type SortProcedureNode,
   type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
@@ -1204,6 +1206,7 @@ function validateTransactionBody(
       case "ReturnCodeStatement":
       case "SplitStatement":
       case "SortStatement":
+      case "ReleaseStatement":
       case "CheckpointStatement":
       case "ConsoleStatement":
       case "ResetStatement":
@@ -1379,7 +1382,18 @@ function validateEffectStatement(
       validateSplitStatement(statement, scope, aliases, recordMap, diagnostics);
       return true;
     case "SortStatement":
-      validateSortStatement(statement, diagnostics);
+      validateSortStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
+      return true;
+    case "ReleaseStatement":
+      validateReleaseStatement(statement, diagnostics);
       return true;
     case "ConsoleStatement":
       validateConsoleStatement(
@@ -1971,6 +1985,28 @@ function validateForEachStatement(
 let checkpointSeen = false;
 
 /**
+ * The record a `release` may name, or null outside a sort input procedure.
+ *
+ * `RELEASE` hands a record to a sort that is running, so it means nothing
+ * anywhere else — COBOL rejects it outright.
+ */
+let sortInputRecord: string | null = null;
+
+/** Every block a statement encloses, for walks that do not care which is which. */
+function nestedBlocksOf(statement: StatementNode): BlockNode[] {
+  const candidates = [
+    (statement as { body?: BlockNode }).body,
+    (statement as { thenBranch?: BlockNode }).thenBranch,
+    (statement as { elseBranch?: BlockNode | null }).elseBranch,
+    (statement as { notFound?: BlockNode }).notFound,
+  ];
+  const cases = (statement as { cases?: { body: BlockNode }[] }).cases ?? [];
+  return [...candidates, ...cases.map((entry) => entry.body)].filter(
+    (block): block is BlockNode => Boolean(block),
+  );
+}
+
+/**
  * `checkpoint <file> from <record> every <n>;`
  *
  * The file has to be one the program can write, because that is where the
@@ -2159,7 +2195,12 @@ function validateCheckpointStatement(
 
 function validateSortStatement(
   statement: SortStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
   diagnostics: Diagnostic[],
+  inTransaction: boolean,
 ): void {
   const reject = (message: string, hint: string): void => {
     diagnostics.push(
@@ -2241,6 +2282,161 @@ function validateSortStatement(
       );
     }
   }
+
+  // COBOL gives MERGE no input procedure: a merge's whole premise is that its
+  // inputs already arrive in order, and a procedure that could drop or reorder
+  // records would break it.
+  if (statement.operation === "merge" && statement.inputProcedure) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-006",
+        severity: "error",
+        message: "A merge has no input procedure.",
+        span: statement.inputProcedure.span,
+        hint: "Sort the records instead, or filter them into a file the merge reads.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const procedure of [
+    statement.inputProcedure,
+    statement.outputProcedure,
+  ]) {
+    if (!procedure) {
+      continue;
+    }
+    validateSortProcedure(
+      procedure,
+      procedure === statement.inputProcedure,
+      output,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+      inTransaction,
+    );
+  }
+}
+
+/**
+ * The body of one procedure, and the record it works through.
+ *
+ * The record is an ordinary record variable, so the body reads and assigns its
+ * fields exactly as the rest of the program does; only the loop around it is
+ * generated.
+ */
+function validateSortProcedure(
+  procedure: SortProcedureNode,
+  isInput: boolean,
+  output: ResolvedFile,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const bound = scope.get(procedure.recordName);
+  const holdsTheRecord =
+    bound?.kind === "record" && bound.name === output.record.name;
+
+  if (!holdsTheRecord) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-006",
+        severity: "error",
+        message: bound
+          ? `${procedure.recordName} does not hold ${output.record.name}, which is the record the sort moves.`
+          : `Unresolved record: ${procedure.recordName}.`,
+        span: procedure.recordSpan,
+        hint: `Name a variable declared as ${output.record.name}.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const enclosing = sortInputRecord;
+  sortInputRecord = isInput ? procedure.recordName : null;
+  validateBranchBody(
+    procedure.body,
+    scope,
+    aliases,
+    recordMap,
+    locals,
+    diagnostics,
+    inTransaction,
+  );
+  sortInputRecord = enclosing;
+
+  // An input procedure that releases nothing sorts an empty file. There is no
+  // reading of that program under which it is what was meant.
+  if (isInput && !releasesSomething(procedure.body)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-006",
+        severity: "error",
+        message:
+          "This input procedure never releases a record, so it sorts nothing.",
+        span: procedure.span,
+        hint: `Write \`release ${procedure.recordName};\` for the records the sort should see.`,
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+/**
+ * `release <record>;`
+ *
+ * `RELEASE` hands a record to a sort that is running, so it means nothing
+ * outside an input procedure, and it can only hand over the record that
+ * procedure is working through.
+ */
+function validateReleaseStatement(
+  statement: ReleaseStatementNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (!sortInputRecord) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-006",
+        severity: "error",
+        message:
+          "release hands a record to a running sort, and none is running here.",
+        span: statement.span,
+        hint: "Write it inside a sort's `input` procedure.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (statement.recordName !== sortInputRecord) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-006",
+        severity: "error",
+        message: `The sort takes ${sortInputRecord}, not ${statement.recordName}.`,
+        span: statement.span,
+        hint: `Write \`release ${sortInputRecord};\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+/** True when any branch of the body hands a record to the sort. */
+function releasesSomething(block: BlockNode): boolean {
+  return block.statements.some((statement) => {
+    if (statement.kind === "ReleaseStatement") {
+      return true;
+    }
+    return nestedBlocksOf(statement).some((nested) =>
+      releasesSomething(nested),
+    );
+  });
 }
 
 function validateSplitStatement(
@@ -4210,6 +4406,7 @@ function resolveTerminalStatementType(
     case "ReturnCodeStatement":
     case "SplitStatement":
     case "SortStatement":
+    case "ReleaseStatement":
     case "CheckpointStatement":
     case "ConsoleStatement":
     case "ResetStatement":

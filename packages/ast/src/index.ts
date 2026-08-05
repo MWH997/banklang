@@ -611,6 +611,7 @@ export type StatementNode =
   | ResetStatementNode
   | SplitStatementNode
   | SortStatementNode
+  | ReleaseStatementNode
   | CheckpointStatementNode
   | SearchStatementNode
   | RaiseStatementNode;
@@ -796,6 +797,21 @@ export interface CheckpointStatementNode extends NodeBase {
   everySpan: SourceSpan;
 }
 
+/**
+ * The body of an `INPUT PROCEDURE` or `OUTPUT PROCEDURE`, run once per record.
+ *
+ * `recordName` is an existing record variable the record passes through, the
+ * same way `read <file> into <record>` uses one. The loop around the body is
+ * generated, because hand-writing the end-of-data test is where this shape is
+ * usually got wrong.
+ */
+export interface SortProcedureNode {
+  recordName: string;
+  recordSpan: SourceSpan;
+  body: BlockNode;
+  span: SourceSpan;
+}
+
 export interface SortStatementNode extends NodeBase {
   kind: "SortStatement";
   operation: "sort" | "merge";
@@ -804,6 +820,21 @@ export interface SortStatementNode extends NodeBase {
   output: string;
   /** Fields to order by, outermost first. */
   keys: { name: string; descending: boolean }[];
+  /** Present when the records need work on the way in, replacing `USING`. */
+  inputProcedure: SortProcedureNode | null;
+  /** Present when they need work on the way out, replacing `GIVING`. */
+  outputProcedure: SortProcedureNode | null;
+}
+
+/**
+ * `release <record>;` — hands a record to the sort from an input procedure.
+ *
+ * It is the statement an input procedure exists for: the records it does not
+ * release are the ones it filters out.
+ */
+export interface ReleaseStatementNode extends NodeBase {
+  kind: "ReleaseStatement";
+  recordName: string;
 }
 
 export interface SplitStatementNode extends NodeBase {

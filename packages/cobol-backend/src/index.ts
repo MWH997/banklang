@@ -34,7 +34,10 @@ import type {
   IRSearchStatement,
   IRCheckpointStatement,
   IRConsoleStatement,
+  IRParameter,
+  IRSortProcedure,
   IRSortStatement,
+  IRReleaseStatement,
   IRSplitStatement,
   IRStringCallExpression,
   IRTemporalCallExpression,
@@ -566,6 +569,20 @@ export function emitCobol(
     // a paragraph, raises into the same field the caller tests.
     addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
   }
+  // A sort procedure's loop stops on a flag of its own rather than on the
+  // file's status field, because a sort's input file need not declare one and
+  // a RETURN has no status field at all.
+  for (const { statement } of sortStatements(program)) {
+    for (const kind of ["input", "output"] as const) {
+      const procedure =
+        kind === "input" ? statement.inputProcedure : statement.outputProcedure;
+      if (procedure) {
+        addLine(
+          `       01  ${sortProcedureEndFlag(statement, kind).padEnd(20)} PIC X(1) VALUE "N".`,
+        );
+      }
+    }
+  }
 
   const copybookMode = options.copybookMode ?? "inline";
   const recordLayouts: CopybookRecordLayout[] = [];
@@ -827,6 +844,18 @@ export function emitCobol(
       category: "transaction",
       symbol: transaction.name,
     });
+  }
+
+  // Sort procedures come after the last GOBACK. A section placed in the flow of
+  // control would be run again on the way past, and an INPUT PROCEDURE is meant
+  // to be entered by SORT and by nothing else.
+  for (const owned of sortStatements(program)) {
+    if (!owned.statement.inputProcedure && !owned.statement.outputProcedure) {
+      continue;
+    }
+    currentBindings = routineBindings(owned.owner, owned.parameters);
+    emitSortProcedureSections(owned.statement, addLine, owned.inTransaction);
+    currentBindings = new Map();
   }
 
   entries.unshift({
@@ -1525,6 +1554,9 @@ function emitStatement(
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
+      case "ReleaseStatement":
+        emitReleaseStatement(statement, addLine, indent);
+        break;
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
         break;
@@ -1689,6 +1721,9 @@ function emitTransactionBody(
         break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
+        break;
+      case "ReleaseStatement":
+        emitReleaseStatement(statement, addLine, indent);
         break;
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
@@ -1961,10 +1996,168 @@ function emitSortStatement(
 
   addLine(`${indent}${statement.operation.toUpperCase()} ${work}`);
   addLine(`${indent}         ${keys}`);
-  addLine(
-    `${indent}    USING ${statement.inputs.map((input) => fileCobolName(input)).join(" ")}`,
+
+  // A procedure replaces the clause it stands in for: USING and an INPUT
+  // PROCEDURE are alternatives, because the sort either reads the files itself
+  // or receives records from the program, not both.
+  if (statement.inputProcedure) {
+    addLine(
+      `${indent}    INPUT PROCEDURE IS ${sortProcedureName(statement, "input")}`,
+    );
+  } else {
+    addLine(
+      `${indent}    USING ${statement.inputs.map((input) => fileCobolName(input)).join(" ")}`,
+    );
+  }
+
+  if (statement.outputProcedure) {
+    addLine(
+      `${indent}    OUTPUT PROCEDURE IS ${sortProcedureName(statement, "output")}`,
+    );
+  } else {
+    addLine(`${indent}    GIVING ${fileCobolName(statement.output)}`);
+  }
+}
+
+/**
+ * The sections a sort's procedures become.
+ *
+ * They are emitted at the end of the program, after the last GOBACK, because a
+ * section placed in the flow of control would be run again on the way past —
+ * an INPUT PROCEDURE is entered by SORT and by nothing else.
+ *
+ * The loop and the end-of-data test are generated. Hand-writing them is where
+ * this shape is usually got wrong: a RETURN whose AT END is forgotten reads the
+ * last record forever.
+ */
+function emitSortProcedureSections(
+  statement: IRSortStatement,
+  addLine: (line?: string) => void,
+  inTransaction: boolean,
+): void {
+  const input = statement.inputProcedure;
+  if (input) {
+    const flag = sortProcedureEndFlag(statement, "input");
+    addLine("");
+    addLine(`       ${sortProcedureName(statement, "input")} SECTION.`);
+    // Each input file in turn, which is what USING would have done.
+    statement.inputs.forEach((file, index) => {
+      const last = index === statement.inputs.length - 1;
+      addLine(`           OPEN INPUT ${fileCobolName(file)}`);
+      addLine(`           MOVE "N" TO ${flag}`);
+      addLine(`           PERFORM UNTIL ${flag} = "Y"`);
+      addLine(`               READ ${fileCobolName(file)}`);
+      addLine(`                   AT END MOVE "Y" TO ${flag}`);
+      addLine(`                   NOT AT END`);
+      emitSortRecordMapping(
+        fileRecordNameFor(file),
+        resolveIdentifier(input.recordName),
+        input.recordFields,
+        addLine,
+        " ".repeat(23),
+      );
+      emitSortProcedureBody(statement, input, addLine, 23, inTransaction);
+      addLine(`               END-READ`);
+      addLine(`           END-PERFORM`);
+      addLine(`           CLOSE ${fileCobolName(file)}${last ? "." : ""}`);
+    });
+  }
+
+  const output = statement.outputProcedure;
+  if (output) {
+    const flag = sortProcedureEndFlag(statement, "output");
+    addLine("");
+    addLine(`       ${sortProcedureName(statement, "output")} SECTION.`);
+    // GIVING would have opened and written the file; with an output procedure
+    // that is the program's job, so the generated loop does it.
+    addLine(`           OPEN OUTPUT ${fileCobolName(statement.output)}`);
+    addLine(`           MOVE "N" TO ${flag}`);
+    addLine(`           PERFORM UNTIL ${flag} = "Y"`);
+    addLine(`               RETURN ${sortWorkName(statement.output)}`);
+    addLine(`                   AT END MOVE "Y" TO ${flag}`);
+    addLine(`                   NOT AT END`);
+    emitSortRecordMapping(
+      sortWorkRecordName(statement.output),
+      resolveIdentifier(output.recordName),
+      output.recordFields,
+      addLine,
+      " ".repeat(23),
+    );
+    emitSortProcedureBody(statement, output, addLine, 23, inTransaction);
+    addLine(`               END-RETURN`);
+    addLine(`           END-PERFORM`);
+    addLine(`           CLOSE ${fileCobolName(statement.output)}.`);
+  }
+}
+
+/** Emits one procedure's body, with `release` bound to this sort. */
+function emitSortProcedureBody(
+  statement: IRSortStatement,
+  procedure: IRSortProcedure,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  inTransaction: boolean,
+): void {
+  const previous = currentSortRelease;
+  currentSortRelease = {
+    record: sortWorkRecordName(statement.output),
+    fields: procedure.recordFields,
+  };
+  if (inTransaction) {
+    emitTransactionBody(procedure.body, addLine, indentLevel);
+  } else {
+    emitStatement(procedure.body, addLine, indentLevel, "");
+  }
+  currentSortRelease = previous;
+}
+
+/**
+ * Moves every field between a file record and the procedure's record.
+ *
+ * Field by field for the same reason `read` and `write` are: it makes the
+ * correspondence visible in the generated COBOL and survives a layout that is
+ * compatible rather than byte-identical.
+ */
+function emitSortRecordMapping(
+  source: string,
+  target: string,
+  fields: { name: string; arrayLength: number | null }[],
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  for (const field of fields) {
+    const name = toCobolFieldName(field.name);
+    if (field.arrayLength !== null) {
+      addLine(
+        `${indent}PERFORM VARYING ${COPY_INDEX_FIELD} FROM 1 BY 1 UNTIL ${COPY_INDEX_FIELD} > ${field.arrayLength}`,
+      );
+      addLine(
+        `${indent}    MOVE ${name} OF ${source} (${COPY_INDEX_FIELD}) TO ${name} OF ${target} (${COPY_INDEX_FIELD})`,
+      );
+      addLine(`${indent}END-PERFORM`);
+      continue;
+    }
+    addLine(`${indent}MOVE ${name} OF ${source} TO ${name} OF ${target}`);
+  }
+}
+
+/** `RELEASE` — the statement an input procedure exists for. */
+function emitReleaseStatement(
+  statement: IRReleaseStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (!currentSortRelease) {
+    throw new Error("release outside a sort input procedure");
+  }
+  emitSortRecordMapping(
+    resolveIdentifier(statement.recordName),
+    currentSortRelease.record,
+    currentSortRelease.fields,
+    addLine,
+    indent,
   );
-  addLine(`${indent}    GIVING ${fileCobolName(statement.output)}`);
+  addLine(`${indent}RELEASE ${currentSortRelease.record}`);
 }
 
 /** `UNSTRING source DELIMITED BY d INTO a b c`. */
@@ -2030,6 +2223,16 @@ function emitSearchStatement(
  * for, while that search's condition and body are being emitted.
  */
 let currentSearchElement: { name: string; reference: string } | null = null;
+
+/**
+ * The sort record a `release` hands its record to, while an input procedure is
+ * being emitted. Null everywhere else, which is what makes a stray `release`
+ * a compiler bug rather than silently wrong COBOL.
+ */
+let currentSortRelease: {
+  record: string;
+  fields: { name: string; arrayLength: number | null }[];
+} | null = null;
 
 function emitAssignStatement(
   statement: IRAssignStatement,
@@ -2762,11 +2965,44 @@ function sortWorkRecordName(fileName: string): string {
 
 /** Output files a program sorts or merges into, each needing an SD. */
 function sortedFiles(program: IRProgram): string[] {
-  const found = new Set<string>();
+  return [
+    ...new Set(sortStatements(program).map((entry) => entry.statement.output)),
+  ];
+}
+
+/**
+ * Every SORT or MERGE in the program, wherever it is nested, with the routine
+ * that owns it.
+ *
+ * A procedure's body is emitted as a section of its own but still refers to the
+ * owning routine's parameters, so the owner has to travel with the statement.
+ */
+interface OwnedSort {
+  statement: IRSortStatement;
+  inTransaction: boolean;
+  owner: string;
+  parameters: IRParameter[];
+}
+
+function sortStatements(program: IRProgram): OwnedSort[] {
+  const found: OwnedSort[] = [];
+  let owner: Omit<OwnedSort, "statement"> = {
+    inTransaction: false,
+    owner: "",
+    parameters: [],
+  };
   const walk = (block: IRBlock): void => {
     for (const statement of block.statements) {
       if (statement.kind === "SortStatement") {
-        found.add(statement.output);
+        found.push({ statement, ...owner });
+        for (const procedure of [
+          statement.inputProcedure,
+          statement.outputProcedure,
+        ]) {
+          if (procedure) {
+            walk(procedure.body);
+          }
+        }
       }
       for (const nested of [
         (statement as { body?: IRBlock }).body,
@@ -2781,12 +3017,38 @@ function sortedFiles(program: IRProgram): string[] {
     }
   };
   for (const transaction of program.transactions) {
+    owner = {
+      inTransaction: true,
+      owner: transaction.name,
+      parameters: transaction.parameters,
+    };
     walk(transaction.body);
   }
   for (const fn of program.functions) {
+    owner = { inTransaction: false, owner: fn.name, parameters: fn.parameters };
     walk(fn.body);
   }
-  return [...found];
+  return found;
+}
+
+/**
+ * Names for the section a sort procedure becomes and the flag that stops its
+ * loop, derived from the statement's position so they are deterministic and
+ * unique without a counter.
+ */
+function sortProcedureName(
+  statement: IRSortStatement,
+  kind: "input" | "output",
+): string {
+  const { line, column } = statement.span.start;
+  return `BANK-SORT-${kind === "input" ? "IN" : "OUT"}-${line}-${column}`;
+}
+
+function sortProcedureEndFlag(
+  statement: IRSortStatement,
+  kind: "input" | "output",
+): string {
+  return `${sortProcedureName(statement, kind)}-END`;
 }
 
 /**

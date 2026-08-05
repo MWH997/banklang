@@ -595,6 +595,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-006",
+    title: "Invalid sort procedure",
+    explanation:
+      "A sort procedure works through a record variable that does not hold the record being sorted, or `release` appears where no sort is running. An input procedure that never reaches a `release` sorts an empty file, and a `merge` has no input procedure at all: its premise is that the inputs already arrive in order.",
+    remediation:
+      "Name a variable of the record the sort moves, write `release` inside the sort's `input` procedure, and reach it on at least one path.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:
