@@ -219,12 +219,21 @@ function runCheck(args: string[], cwd: string): CliResult {
   const compiled = compileProject(projectPath, cwd);
   const diagnostics = collectCompileDiagnostics(compiled);
 
+  // A warning is reported and does not fail the check. It used to, which made
+  // it an error wearing a softer word: a batch warned about its restart hazard
+  // could not pass `check` at all, and neither could a program using a
+  // construct that merely carries a caveat. The report still carries every
+  // diagnostic, so nothing is hidden by the exit code being 0.
+  const failed = diagnostics.filter(
+    (diagnostic) => diagnostic.severity === "error",
+  );
+
   // Machine-readable formats are always produced, including when empty, so a
   // CI step can upload the report unconditionally.
   if (format !== "text") {
     const report = renderDiagnosticsAs(diagnostics, format);
     const outputPath = readFlagValue(args, "--output");
-    const exitCode = diagnostics.length > 0 ? 1 : 0;
+    const exitCode = failed.length > 0 ? 1 : 0;
 
     if (outputPath) {
       const target = resolve(cwd, outputPath);
@@ -240,7 +249,7 @@ function runCheck(args: string[], cwd: string): CliResult {
     return { exitCode, stdout: report, stderr: "" };
   }
 
-  if (diagnostics.length > 0) {
+  if (failed.length > 0) {
     return {
       exitCode: 1,
       stdout: "",
@@ -251,7 +260,7 @@ function runCheck(args: string[], cwd: string): CliResult {
   return {
     exitCode: 0,
     stdout: `OK: ${projectPath}\n`,
-    stderr: "",
+    stderr: advisoryDiagnostics(compiled),
   };
 }
 
@@ -286,11 +295,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (collectCompileDiagnostics(compiled).length > 0) {
+    if (blockingDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+        stderr: renderDiagnostics(blockingDiagnostics(compiled)),
       };
     }
 
@@ -308,7 +317,7 @@ function runEmit(args: string[], cwd: string): CliResult {
     return {
       exitCode: 0,
       stdout: `Wrote ${emitResult.cobolArtifactPath}\nWrote ${emitResult.sourceMapArtifactPath}\n`,
-      stderr: "",
+      stderr: advisoryDiagnostics(compiled),
     };
   }
 
@@ -324,11 +333,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (collectCompileDiagnostics(compiled).length > 0) {
+    if (blockingDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+        stderr: renderDiagnostics(blockingDiagnostics(compiled)),
       };
     }
 
@@ -356,11 +365,11 @@ function runEmit(args: string[], cwd: string): CliResult {
 
     const outputRoot = resolveOutputRoot(cwd, rest);
     const compiled = compileProject(projectPath, cwd);
-    if (collectCompileDiagnostics(compiled).length > 0) {
+    if (blockingDiagnostics(compiled).length > 0) {
       return {
         exitCode: 1,
         stdout: "",
-        stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+        stderr: renderDiagnostics(blockingDiagnostics(compiled)),
       };
     }
 
@@ -399,11 +408,11 @@ function runBuild(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (collectCompileDiagnostics(compiled).length > 0) {
+  if (blockingDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+      stderr: renderDiagnostics(blockingDiagnostics(compiled)),
     };
   }
 
@@ -464,11 +473,11 @@ function runAuditReport(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (collectCompileDiagnostics(compiled).length > 0) {
+  if (blockingDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+      stderr: renderDiagnostics(blockingDiagnostics(compiled)),
     };
   }
 
@@ -526,11 +535,11 @@ function runVerify(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (collectCompileDiagnostics(compiled).length > 0) {
+  if (blockingDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+      stderr: renderDiagnostics(blockingDiagnostics(compiled)),
     };
   }
 
@@ -709,11 +718,11 @@ function runLayout(args: string[], cwd: string): CliResult {
 
   const outputRoot = resolveOutputRoot(cwd, args);
   const compiled = compileProject(projectPath, cwd);
-  if (collectCompileDiagnostics(compiled).length > 0) {
+  if (blockingDiagnostics(compiled).length > 0) {
     return {
       exitCode: 1,
       stdout: "",
-      stderr: renderDiagnostics(collectCompileDiagnostics(compiled)),
+      stderr: renderDiagnostics(blockingDiagnostics(compiled)),
     };
   }
 
@@ -840,6 +849,31 @@ function collectCompileDiagnostics(compiled: CompiledProject): Diagnostic[] {
     ...compiled.typechecked.diagnostics,
     ...compiled.semantics.diagnostics,
   ];
+}
+
+/**
+ * Diagnostics that stop a command, which is the errors and not the warnings.
+ *
+ * Every command used to stop on any diagnostic at all, so a warning was an
+ * error wearing a softer word: a batch warned about its restart hazard
+ * (`BANK-FILE-003`) could not be emitted, and neither could a program using a
+ * construct that carries a caveat. A warning exists to be read and weighed, not
+ * to refuse the work — so warnings are still printed, and the command carries
+ * on.
+ */
+function blockingDiagnostics(compiled: CompiledProject): Diagnostic[] {
+  const diagnostics = collectCompileDiagnostics(compiled);
+  return diagnostics.some((diagnostic) => diagnostic.severity === "error")
+    ? diagnostics
+    : [];
+}
+
+/** Warnings from a command that is going ahead anyway. */
+function advisoryDiagnostics(compiled: CompiledProject): string {
+  const warnings = collectCompileDiagnostics(compiled).filter(
+    (diagnostic) => diagnostic.severity !== "error",
+  );
+  return warnings.length > 0 ? renderDiagnostics(warnings) : "";
 }
 
 /**
