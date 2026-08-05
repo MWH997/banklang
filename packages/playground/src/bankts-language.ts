@@ -46,6 +46,7 @@ export const PLAYGROUND_TYPES = new Set([
   "date",
   "time",
   "timestamp",
+  "edited",
 ]);
 
 /** Ledger and audit operations are contextual in the grammar, not reserved. */

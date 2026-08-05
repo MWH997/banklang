@@ -119,6 +119,12 @@ A record argument is passed by reference: the caller points the callee's
 the caller can take without evaluating the subscript first, so it must be
 assigned into a record and passed by name.
 
+### `BANK-TYPE-023` invalid edited field
+
+An `edited<T, "style">` field names a style the compiler does not know, or asks
+to render something with no edited form. A picture nobody checked is a report
+column that silently loses digits.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden

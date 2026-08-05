@@ -457,6 +457,8 @@ function printType(type: TypeNode): string {
       return "bool";
     case "TemporalType":
       return type.unit;
+    case "EditedType":
+      return `edited<${printType(type.inner)}, "${type.style}">`;
     case "TypeReference":
       return type.typeArguments.length > 0
         ? `${type.name}<${type.typeArguments.map(printType).join(", ")}>`

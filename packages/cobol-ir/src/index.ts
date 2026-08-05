@@ -650,8 +650,75 @@ export function temporalLength(unit: "date" | "time" | "timestamp"): number {
   }
 }
 
+/** The edit styles a field may ask for, and what each one means. */
+export type EditStyle =
+  "plain" | "grouped" | "signed" | "credit" | "protected" | "slashed";
+
+export const EDIT_STYLES: readonly EditStyle[] = [
+  "plain",
+  "grouped",
+  "signed",
+  "credit",
+  "protected",
+  "slashed",
+];
+
+/**
+ * A numeric-edited picture, built from the value's own precision and scale.
+ *
+ * The leading digit positions suppress — `Z` blanks them, `*` fills them, which
+ * is cheque protection — and the last integer position stays `9` so a zero
+ * amount prints as `0.00` rather than as nothing. Decimals never suppress: an
+ * amount is read to the penny, and a blank penny column is a defect.
+ *
+ * The sign goes at the end, because that is where a banker reads it, and `CR`
+ * rather than a minus is the accounting convention for a credit balance.
+ */
+export function editedPicture(
+  style: EditStyle,
+  precision: number,
+  scale: number,
+): string {
+  if (style === "slashed") {
+    return "PIC 9999/99/99";
+  }
+
+  const integerDigits = Math.max(precision - scale, 1);
+  const suppression = style === "protected" ? "*" : "Z";
+  const grouped = style !== "plain";
+
+  let body = "";
+  for (let index = 0; index < integerDigits; index += 1) {
+    // Built right to left, so the rightmost integer position is the 9 that
+    // keeps a zero visible and the separators land every third digit.
+    body = (index === 0 ? "9" : suppression) + body;
+    if (grouped && index % 3 === 2 && index < integerDigits - 1) {
+      body = `,${body}`;
+    }
+  }
+
+  const decimals = scale > 0 ? `.${"9".repeat(scale)}` : "";
+  const sign = style === "signed" ? "-" : style === "credit" ? "CR" : "";
+
+  return `PIC ${body}${decimals}${sign}`;
+}
+
+/** Character positions an edited picture occupies. */
+export function editedLength(
+  style: EditStyle,
+  precision: number,
+  scale: number,
+): number {
+  const picture = editedPicture(style, precision, scale).slice("PIC ".length);
+  // Every character in an edited picture is one position, except the repeat
+  // notation this builder never emits.
+  return picture.length;
+}
+
 export function toCobolPicture(type: IRType): string {
   switch (type.kind) {
+    case "edited":
+      return editedPicture(type.style, type.precision, type.scale);
     case "temporal":
       return temporalPicture(type.unit);
     case "decimal":

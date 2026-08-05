@@ -54,6 +54,8 @@ export function describeTypeNode(node: TypeNode): string {
       return "bool";
     case "TemporalType":
       return node.unit;
+    case "EditedType":
+      return `edt${node.style}${describeTypeNode(node.inner)}`;
     case "CurrencyType":
       return `cur${node.code}${node.precision}_${node.scale}`;
     case "NullableType":
@@ -73,6 +75,7 @@ export function substituteType(
   substitution: Substitution,
 ): TypeNode {
   switch (node.kind) {
+    case "EditedType":
     case "TemporalType":
     case "DecimalType":
     case "StringType":
