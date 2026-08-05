@@ -1350,6 +1350,36 @@ record and the `rewrite` that puts it back.
 An indexed file is declared `ACCESS MODE IS DYNAMIC`, not `RANDOM`, because it
 is both read by key and browsed, and `RANDOM` allows only the first.
 
+### Records that vary in length
+
+```ts
+file feed sequential output record FeedLine
+  varying 10 to 80 length feedLength status feedStatus;
+```
+
+`RECORD IS VARYING IN SIZE`. A fixed-length file pads every record to the
+longest one it might hold; for a feed whose records differ by hundreds of bytes
+that is most of the dataset, and on tape it is most of the tape.
+
+`length` names the field that says how much of the record is in use — set it
+before a write, and a read fills it:
+
+```ts
+line.payload = "SHORTER ONE";
+feedLength = textLength(line.payload);
+write feed from line;
+```
+
+`textLength` pairs with it: it is what the field holds rather than how wide it
+was declared, which is exactly the number a varying write needs.
+
+A record written shorter than the declared minimum is not written — COBOL
+rejects it and the file status says so, which is what the `status` field is for.
+
+The bounds have to be a range, and the file has to be `sequential`: an indexed or
+relative dataset addresses a record by key or by position, which a varying length
+would move (`BANK-FILE-009`).
+
 ### File operations
 
 ```ts

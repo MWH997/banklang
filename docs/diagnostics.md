@@ -459,6 +459,15 @@ A `REDEFINES` field cannot carry one. It has no storage of its own, only a
 second reading of another field's bytes, so the value belongs on the field being
 redefined.
 
+### `BANK-FILE-009` invalid varying record
+
+`varying <min> to <max> length <field>` becomes `RECORD IS VARYING IN SIZE`. The
+bounds have to be a range of lengths — a shortest of at least one character, and
+no longer than the longest.
+
+The file has to be `sequential`: an indexed or relative dataset addresses a
+record by key or by position, which a varying length would move.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified

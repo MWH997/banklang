@@ -869,6 +869,16 @@ export interface FileDeclarationNode extends NodeBase {
   alternateKeys: string[];
   /** `page ...` — page depth, for a print file that paginates. */
   linage: FileLinageNode | null;
+  /**
+   * `varying <min> to <max> length <field>` — a variable-length record.
+   *
+   * A fixed-length file pads every record to the longest one it might hold,
+   * which for a feed whose records differ by hundreds of bytes is most of the
+   * dataset. `RECORD IS VARYING` writes only what the record uses, and the
+   * length field is how the program says how much that is — set before a write,
+   * read after a read.
+   */
+  recordVarying: { min: number; max: number; lengthName: string } | null;
 }
 
 /**

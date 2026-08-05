@@ -301,6 +301,8 @@ export interface ResolvedFile {
   mode: "input" | "output" | "update";
   record: ResolvedRecord;
   statusName: string | null;
+  /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
+  recordVarying: { min: number; max: number; lengthName: string } | null;
 }
 
 /**
@@ -1153,6 +1155,7 @@ function resolveFile(
     mode: declaration.mode,
     record,
     statusName: declaration.statusName,
+    recordVarying: validateRecordVarying(declaration, diagnostics),
     linage: linage
       ? {
           lines: linage.lines,
@@ -3069,6 +3072,53 @@ function validateXmlParseStatement(
  * body, the way a loop index is, so the condition can talk about the row it is
  * testing rather than about a subscript.
  */
+/**
+ * `varying <min> to <max> length <field>`.
+ *
+ * The bounds have to make sense as lengths, and a file that varies has to be
+ * sequential: an indexed or relative dataset addresses records by position or
+ * key, which a varying length would move.
+ */
+function validateRecordVarying(
+  declaration: FileDeclarationNode,
+  diagnostics: Diagnostic[],
+): { min: number; max: number; lengthName: string } | null {
+  const varying = declaration.recordVarying;
+  if (!varying) {
+    return null;
+  }
+
+  const reject = (message: string, hint: string): null => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-009",
+        severity: "error",
+        message,
+        span: declaration.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  };
+
+  if (varying.min <= 0 || varying.min > varying.max) {
+    return reject(
+      `${declaration.name} varies from ${varying.min} to ${varying.max}, which is not a range of lengths.`,
+      "The shortest record has to be at least one character and no longer than the longest.",
+    );
+  }
+
+  if (declaration.organization !== "sequential") {
+    return reject(
+      `${declaration.name} is ${declaration.organization}, so its records cannot vary in length.`,
+      "An indexed or relative dataset addresses a record by key or by position, which a varying length would move. A varying record belongs to a sequential file.",
+    );
+  }
+
+  return varying;
+}
+
 /** The `ascending` key the searched table declares, if it declares one. */
 function searchedTableKey(
   array: MemberAccessNode | IdentifierNode,
@@ -6547,6 +6597,16 @@ function declareCicsRespSymbols(
 
 function declareFileStatusSymbols(scope: Map<string, ResolvedType>): void {
   for (const file of declaredFiles.values()) {
+    if (file.recordVarying && !scope.has(file.recordVarying.lengthName)) {
+      // The used length is a number the program reads and writes, so it is in
+      // scope like the file status is.
+      scope.set(file.recordVarying.lengthName, {
+        kind: "decimal",
+        precision: 4,
+        scale: 0,
+        usage: "binary",
+      });
+    }
     if (file.statusName && !scope.has(file.statusName)) {
       scope.set(file.statusName, { kind: "string", length: 2 });
     }
