@@ -1,21 +1,34 @@
 /**
- * A precompiler for embedded SQL and CICS.
+ * A precompiler for the statements the local compiler cannot execute.
  *
  * IBM's Db2 precompiler and CICS translator replace `EXEC SQL` and `EXEC CICS`
  * blocks with calls into their runtimes before the COBOL compiler ever sees
  * them. This module does the same thing structurally, so the generated program
  * can be compiled and checked locally.
  *
+ * `JSON PARSE` and `XML PARSE` are here for the opposite reason. Enterprise
+ * COBOL needs no preprocessing for either; GnuCOBOL 3.2.0 compiles both, warns
+ * that it has not implemented them, and then does nothing at run time — the
+ * record is left untouched and no exception is raised, so a program reading a
+ * payload runs clean and processes an empty record. Rewriting them into calls
+ * on `BANKJSON` and `BANKXML` is what makes the local run mean anything.
+ *
  * What this proves and what it does not:
  *
  * - It proves the surrounding COBOL is valid, that every host variable and
  *   data name referenced by an embedded block resolves, and that SQLCA fields
  *   such as SQLCODE are declared and usable.
- * - It does not validate SQL semantics, Db2 bind behaviour, or CICS runtime
- *   behaviour. It is not IBM's precompiler and produces no bind artifacts.
+ * - For a parse it proves more, because the runtime does something: the record
+ *   is populated from the document, the handler of an `XML PARSE` is entered
+ *   once per event, and the status the compiler tests afterwards is one the
+ *   runtime set.
+ * - It does not validate SQL semantics, Db2 bind behaviour, CICS runtime
+ *   behaviour, or how IBM's parsers read a document. It is not IBM's
+ *   precompiler and produces no bind artifacts.
  *
  * The translated output exists for verification. It is never the shipped
- * artifact; the artifact keeps its `EXEC SQL` and `EXEC CICS` blocks.
+ * artifact; the artifact keeps its `EXEC SQL`, `EXEC CICS`, `JSON PARSE` and
+ * `XML PARSE` exactly as written.
  */
 
 import { toReferenceFormat } from "../../cobol-backend/src/reference-format";
@@ -107,6 +120,67 @@ const CICS_COMMAND_FIELD = "DFHEIV-COMMAND";
 /** Storage the translator supplies to stand in for the caller's commarea. */
 const CICS_COMMAREA_SIM = "DFHCOMMAREA-SIM";
 
+/** The runtime `JSON PARSE` is rewritten to call. */
+const JSON_RUNTIME = "BANKJSON";
+
+/** The runtime `XML PARSE` is rewritten to call. */
+const XML_RUNTIME = "BANKXML";
+
+/**
+ * Storage the JSON expansion works through.
+ *
+ * One name asked for, one value handed back, and whether it was there. The
+ * document's length travels with it because a called program cannot see how
+ * wide its caller's field is.
+ */
+const JSON_SHIM_LINES = [
+  "       01  BANK-JSON-DOC-LEN    PIC S9(9) COMP-5 VALUE 0.",
+  "       01  BANK-JSON-NAME       PIC X(30).",
+  "       01  BANK-JSON-VALUE      PIC X(256).",
+  "       01  BANK-JSON-FOUND      PIC X.",
+];
+
+/**
+ * Storage the XML expansion works through, standing in for the registers.
+ *
+ * GnuCOBOL 3.2 reserves `XML-EVENT`, `XML-TEXT` and `XML-INFORMATION` as
+ * special registers, but only a real `XML PARSE` sets them: `XML-TEXT` is a
+ * zero-length register and a `MOVE` to it ends the run with a segmentation
+ * fault. The generated handler is therefore pointed at these instead, which is
+ * the same substitution the SQL and CICS translations make. What ships to z/OS
+ * keeps the registers, because there they are the ones IBM fills in.
+ *
+ * `BANK-XML-TEXT-LEN` exists because the register it stands for is variable
+ * length and this one cannot be. Every reference to `XML-TEXT` becomes a
+ * reference modification by that length, so a `STRING ... DELIMITED BY SIZE`
+ * still appends the characters of the event rather than a padded field.
+ */
+const XML_SHIM_LINES = [
+  "       01  BANK-XML-DOC-LEN     PIC S9(9) COMP-5 VALUE 0.",
+  "       01  BANK-XML-POS         PIC S9(9) COMP-5 VALUE 1.",
+  "       01  BANK-XML-EVENT       PIC X(30).",
+  "       01  BANK-XML-TEXT        PIC X(1024).",
+  "       01  BANK-XML-TEXT-LEN    PIC S9(9) COMP-5 VALUE 1.",
+  "       01  BANK-XML-INFO        PIC S9(9) COMP-5 VALUE 0.",
+  "       01  BANK-XML-END         PIC X.",
+];
+
+/**
+ * The registers a generated `XML PARSE` handler reads, and what they become.
+ *
+ * Matched as whole COBOL words: `BANK-XML-TEXT-LEN` holds `XML-TEXT` as a
+ * substring, and rewriting that would leave the expansion referring to a field
+ * that does not exist.
+ */
+const XML_REGISTERS: [RegExp, string][] = [
+  [/(?<![A-Z0-9-])XML-EVENT(?![A-Z0-9-])/g, "BANK-XML-EVENT"],
+  [/(?<![A-Z0-9-])XML-INFORMATION(?![A-Z0-9-])/g, "BANK-XML-INFO"],
+  [
+    /(?<![A-Z0-9-])XML-TEXT(?![A-Z0-9-])/g,
+    "BANK-XML-TEXT(1:BANK-XML-TEXT-LEN)",
+  ],
+];
+
 const CICS_EIB_LINES = [
   "       01  DFHEIBLK.",
   "           05  EIBTIME       PIC S9(7) COMP-3.",
@@ -147,6 +221,93 @@ const CICS_EIB_LINES = [
   `       01  ${CICS_COMMAND_FIELD}   PIC X(20).`,
 ];
 
+/** An elementary item of a record, as the JSON expansion needs to name it. */
+interface RecordItem {
+  /** `AMOUNT OF ROW`, or `AMOUNT OF INNER OF ROW` inside a group. */
+  reference: string;
+  /** The name a JSON document would carry for it. */
+  name: string;
+  /** Whether the value has to be read as a number rather than moved. */
+  numeric: boolean;
+}
+
+/**
+ * The elementary items of every `01` record in working storage.
+ *
+ * `JSON PARSE` matches a document's names against the receiving record's own
+ * data names — the record is the schema — so the expansion has to know what
+ * that record contains. Read from the generated source rather than from the IR,
+ * because a precompiler reads COBOL: that is the whole point of it running
+ * where IBM's would.
+ */
+function collectRecordItems(lines: string[]): Map<string, RecordItem[]> {
+  const records = new Map<string, RecordItem[]>();
+  let stack: { level: number; name: string }[] = [];
+  let current: RecordItem[] | null = null;
+  let inFile = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^PROCEDURE\s+DIVISION\b/i.test(trimmed)) {
+      break;
+    }
+    // A record inside an FD is the same names over again, and a program never
+    // parses into one: the target is always the working-storage copy.
+    if (/^FILE\s+SECTION\.$/i.test(trimmed)) {
+      inFile = true;
+      continue;
+    }
+    if (
+      /^(WORKING-STORAGE|LOCAL-STORAGE|LINKAGE)\s+SECTION\.$/i.test(trimmed)
+    ) {
+      inFile = false;
+      continue;
+    }
+
+    const entry = /^(\d{2})\s+([A-Z0-9-]+)\b(.*)$/i.exec(trimmed);
+    if (!entry) {
+      continue;
+    }
+    const level = Number(entry[1]);
+    const name = entry[2];
+    const rest = entry[3];
+    // A condition name is not storage, and a renames names a run already there.
+    if (level === 88 || level === 66) {
+      continue;
+    }
+
+    if (level === 1) {
+      stack = [{ level, name }];
+      current = inFile ? null : [];
+      if (current) {
+        records.set(name, current);
+      }
+      continue;
+    }
+    while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+      stack.pop();
+    }
+    stack.push({ level, name });
+
+    if (current && /\bPIC\b/i.test(rest)) {
+      // Qualified innermost-first, which is how COBOL reads a reference.
+      const reference = [...stack]
+        .reverse()
+        .map((item) => item.name)
+        .join(" OF ");
+      current.push({
+        reference,
+        name,
+        // A picture with a 9 in it holds a number, and the characters of a JSON
+        // value have to be converted rather than moved into one.
+        numeric: /\b(?:PIC|PICTURE)\s+[^.]*9/i.test(rest),
+      });
+    }
+  }
+
+  return records;
+}
+
 export function precompile(cobol: string): PrecompileResult {
   const lines = cobol.split("\n");
   const output: string[] = [];
@@ -164,6 +325,17 @@ export function precompile(cobol: string): PrecompileResult {
   // would be read as whatever the process happens to have there. The translator
   // supplies an area and points the commarea at it, which is what CICS does.
   const usesCommarea = usesCics && /^\s*01\s+DFHCOMMAREA\./im.test(cobol);
+  // GnuCOBOL compiles JSON PARSE and XML PARSE, warns that it implements
+  // neither, and then does nothing at run time — the record is left untouched
+  // and no exception is raised, so a program reading a payload runs clean and
+  // processes an empty record. Both are expanded here for the same reason
+  // EXEC SQL and EXEC CICS are: what ships to z/OS keeps the statement, and
+  // the local build gets something it can execute.
+  const usesJsonParse = /^\s*JSON\s+PARSE\b/im.test(cobol);
+  const usesXmlParse = /^\s*XML\s+PARSE\b/im.test(cobol);
+  const recordItems = usesJsonParse
+    ? collectRecordItems(lines)
+    : new Map<string, RecordItem[]>();
   let awaitingParagraph = false;
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -188,6 +360,28 @@ export function precompile(cobol: string): PrecompileResult {
           `       01  ${CICS_COMMAREA_SIM}  PIC X(9999).`,
         );
       }
+      if (usesJsonParse) {
+        output.push("      *> JSON parse storage added by the precompiler.");
+        output.push(...JSON_SHIM_LINES);
+      }
+      if (usesXmlParse) {
+        output.push("      *> XML parse storage added by the precompiler.");
+        output.push(...XML_SHIM_LINES);
+      }
+      continue;
+    }
+
+    if (usesJsonParse && /^JSON\s+PARSE\b/i.test(trimmed)) {
+      const block = readBlock(lines, index, /^END-JSON\b/i);
+      index = block.last;
+      output.push(...translateJsonParse(block, recordItems));
+      continue;
+    }
+
+    if (usesXmlParse && /^XML\s+PARSE\b/i.test(trimmed)) {
+      const block = readBlock(lines, index, /^END-XML\b/i);
+      index = block.last;
+      output.push(...translateXmlParse(block));
       continue;
     }
 
@@ -259,14 +453,221 @@ export function precompile(cobol: string): PrecompileResult {
     }
   }
 
+  // The handler section reads the XML registers, and it is emitted a long way
+  // from the statement that drives it, so the substitution is made over the
+  // whole program rather than inside the block.
+  const rewritten = usesXmlParse
+    ? output.map((line) =>
+        XML_REGISTERS.reduce(
+          (text, [pattern, replacement]) => text.replace(pattern, replacement),
+          line,
+        ),
+      )
+    : output;
+
   // A translated block is longer than the `EXEC` it replaces — a call with its
   // whole host-variable list on one line — so the output has to be laid out
   // again. IBM's own precompiler writes reference format for the same reason.
   return {
-    cobol: output.flatMap((line) => toReferenceFormat(line)).join("\n"),
+    cobol: rewritten.flatMap((line) => toReferenceFormat(line)).join("\n"),
     sqlBlocks,
     cicsBlocks,
   };
+}
+
+/** A statement read whole, from its first line to its scope terminator. */
+interface ParseBlock {
+  /** The lines of the statement, trimmed, without the terminator. */
+  body: string[];
+  /** The statements of an `ON EXCEPTION` phrase, at their own indent. */
+  onException: string[];
+  /** Column the statement started in, so the expansion sits where it did. */
+  indent: string;
+  /** Index of the terminator line, so the caller can resume past it. */
+  last: number;
+  /** True when the terminator ended the COBOL sentence with a period. */
+  terminated: boolean;
+}
+
+/**
+ * Read a statement from its first line to `END-JSON` or `END-XML`.
+ *
+ * The `ON EXCEPTION` phrase is separated out, because the expansion has to run
+ * it from somewhere else: there is no statement left for it to hang off.
+ */
+function readBlock(
+  lines: string[],
+  start: number,
+  terminator: RegExp,
+): ParseBlock {
+  const indent = lines[start].slice(
+    0,
+    lines[start].length - lines[start].trimStart().length,
+  );
+  const body: string[] = [];
+  const onException: string[] = [];
+  let inException = false;
+  let index = start;
+
+  for (; index < lines.length; index += 1) {
+    const trimmed = lines[index].trim();
+    if (terminator.test(trimmed)) {
+      break;
+    }
+    if (/^ON\s+EXCEPTION\b/i.test(trimmed)) {
+      inException = true;
+      continue;
+    }
+    if (inException) {
+      onException.push(lines[index]);
+    } else {
+      body.push(trimmed);
+    }
+  }
+
+  return {
+    body,
+    onException,
+    indent,
+    last: index,
+    terminated: /\.\s*$/.test(lines[Math.min(index, lines.length - 1)]),
+  };
+}
+
+/**
+ * `JSON PARSE <text> INTO <record>` becomes one call per item of the record.
+ *
+ * COBOL matches a document's names against the receiving record's own data
+ * names, so asking the runtime for each item by name is the same question the
+ * statement asks — and the record ends up populated rather than untouched,
+ * which is the whole difference between this and what GnuCOBOL does with the
+ * statement it will not implement.
+ *
+ * `JSON-STATUS` and `JSON-CODE` are real registers under GnuCOBOL and are set
+ * here with the values IBM documents: status 1 for "one or more data items had
+ * no matching JSON name/value pair, and thus were not changed", and code 101
+ * for text that "was zero-length, or consisted only of whitespace". The test
+ * the compiler emits after the statement then reads a value it did not invent.
+ */
+function translateJsonParse(
+  block: ParseBlock,
+  records: Map<string, RecordItem[]>,
+): string[] {
+  const { indent } = block;
+  const statement = block.body.join(" ").replace(/\s+/g, " ");
+  const match = /^JSON\s+PARSE\s+(\S+)\s+INTO\s+(\S+?)\.?$/i.exec(statement);
+  if (!match) {
+    // Not a shape this understands. Leaving it alone is better than rewriting
+    // it into something that compiles and means something else.
+    return [
+      ...block.body.map((line) => `${indent}${line}`),
+      `${indent}END-JSON`,
+    ];
+  }
+
+  const [, document, record] = match;
+  const items = records.get(record.toUpperCase()) ?? [];
+  const inner = `${indent}    `;
+  const out = [
+    `${indent}*> JSON PARSE expanded by the BankLang precompiler.`,
+    `${indent}MOVE 0 TO JSON-STATUS`,
+    `${indent}MOVE 0 TO JSON-CODE`,
+    `${indent}MOVE LENGTH OF ${document} TO BANK-JSON-DOC-LEN`,
+    `${indent}IF FUNCTION TRIM(${document}) = SPACES`,
+    `${inner}MOVE 101 TO JSON-CODE`,
+  ];
+  // An empty document is the exception condition, so the handler the program
+  // wrote is what runs. Without one there is nothing to do but record the code.
+  out.push(
+    ...(block.onException.length > 0
+      ? block.onException
+      : [`${inner}CONTINUE`]),
+  );
+  out.push(`${indent}ELSE`);
+
+  for (const item of items) {
+    out.push(
+      `${inner}MOVE "${item.name}" TO BANK-JSON-NAME`,
+      `${inner}CALL "${JSON_RUNTIME}" USING ${document}, BANK-JSON-DOC-LEN, BANK-JSON-NAME, BANK-JSON-VALUE, BANK-JSON-FOUND`,
+      `${inner}IF BANK-JSON-FOUND = "Y"`,
+      item.numeric
+        ? `${inner}    COMPUTE ${item.reference} = FUNCTION NUMVAL(BANK-JSON-VALUE)`
+        : `${inner}    MOVE BANK-JSON-VALUE TO ${item.reference}`,
+      `${inner}ELSE`,
+      `${inner}    MOVE 1 TO JSON-STATUS`,
+      `${inner}END-IF`,
+    );
+  }
+  if (items.length === 0) {
+    out.push(`${inner}CONTINUE`);
+  }
+
+  out.push(`${indent}END-IF${block.terminated ? "." : ""}`);
+  return out;
+}
+
+/**
+ * `XML PARSE <text> PROCESSING PROCEDURE <section>` becomes the loop the
+ * statement is.
+ *
+ * `XML PARSE` calls the handler once per event. A subprogram cannot `PERFORM`
+ * a section in its caller, so the loop stays here and the runtime is one step
+ * of it: given a position it describes the next event and moves the position
+ * past it. That is the same control flow the statement has, which is what makes
+ * running it worth anything — the handler is entered, its `EVALUATE` picks a
+ * branch, and the record is filled from the document.
+ */
+function translateXmlParse(block: ParseBlock): string[] {
+  const { indent } = block;
+  const statement = block.body.join(" ").replace(/\s+/g, " ");
+  const match =
+    /^XML\s+PARSE\s+(\S+)\s+PROCESSING\s+PROCEDURE\s+(\S+?)\.?$/i.exec(
+      statement,
+    );
+  if (!match) {
+    return [
+      ...block.body.map((line) => `${indent}${line}`),
+      `${indent}END-XML`,
+    ];
+  }
+
+  const [, document, handler] = match;
+  const inner = `${indent}    `;
+  const loop = [
+    `${inner}PERFORM UNTIL BANK-XML-END = "Y"`,
+    `${inner}    CALL "${XML_RUNTIME}" USING ${document}, BANK-XML-DOC-LEN, BANK-XML-POS, BANK-XML-EVENT, BANK-XML-TEXT, BANK-XML-TEXT-LEN, BANK-XML-INFO, BANK-XML-END`,
+    `${inner}    IF BANK-XML-END NOT = "Y"`,
+    `${inner}        PERFORM ${handler}`,
+    `${inner}    END-IF`,
+    `${inner}END-PERFORM`,
+  ];
+
+  const out = [
+    `${indent}*> XML PARSE expanded by the BankLang precompiler.`,
+    `${indent}MOVE LENGTH OF ${document} TO BANK-XML-DOC-LEN`,
+    `${indent}MOVE 1 TO BANK-XML-POS`,
+    `${indent}MOVE "N" TO BANK-XML-END`,
+  ];
+
+  if (block.onException.length > 0) {
+    // A document with nothing in it is the exception condition. Anything else
+    // this scanner meets, it steps over rather than failing on, so the handler
+    // runs on the events there were.
+    out.push(
+      `${indent}IF FUNCTION TRIM(${document}) = SPACES`,
+      ...block.onException,
+      `${indent}ELSE`,
+      ...loop,
+      `${indent}END-IF${block.terminated ? "." : ""}`,
+    );
+    return out;
+  }
+
+  out.push(...loop.map((line) => line.slice(4)));
+  if (block.terminated) {
+    out[out.length - 1] = `${out[out.length - 1]}.`;
+  }
+  return out;
 }
 
 /**

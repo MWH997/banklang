@@ -17,9 +17,10 @@ import { precompile } from "../packages/precompiler/src/index";
  * tests happened to invoke `cobc` for. A `varying` whose length field sat inside
  * its own record emitted COBOL neither compiler accepts, and nothing noticed.
  *
- * Three constructs compile under GnuCOBOL and do not behave the same there.
- * They are listed by name below rather than skipped silently, so the list is
- * the inventory of where the two targets genuinely diverge.
+ * Constructs GnuCOBOL compiles but does not implement are named below rather
+ * than skipped silently. Two of them are translated by the precompiler so the
+ * local build can execute them; what is left is the inventory of where the two
+ * targets genuinely diverge, and it is one entry long.
  */
 
 const R = `record Row {
@@ -106,12 +107,29 @@ const cases: [string, string][] = [
 ];
 
 /**
- * GnuCOBOL 3.2.0 compiles these and warns that it does not implement them, so
- * the program runs and the statement does nothing. Enterprise COBOL implements
- * all three. This is the divergence list, and it is expected to be exactly
- * this: a construct joining it should be a deliberate decision.
+ * Statements GnuCOBOL 3.2.0 compiles, warns it has not implemented, and then
+ * does nothing about at run time — which the precompiler rewrites into calls
+ * so the local build can execute them, exactly as it does for `EXEC SQL` and
+ * `EXEC CICS`. What ships to z/OS keeps the statement.
  */
-const DIVERGENT = new Set(["national", "json-parse", "xml-parse"]);
+const TRANSLATED = new Set(["json-parse", "xml-parse"]);
+
+/**
+ * What is left that the local target genuinely does differently.
+ *
+ * `national` is not a missing statement and no shim reaches it: GnuCOBOL
+ * allocates four bytes per character inside a group where Enterprise COBOL
+ * allocates two, so every field after one sits somewhere else. An allocator is
+ * not something emitted COBOL can change, which is why this one is a warning on
+ * the program rather than a translation.
+ *
+ * This list is expected to be exactly this. A construct joining it should be a
+ * deliberate decision.
+ */
+const DIVERGENT = new Set(["national"]);
+
+/** Constructs whose COBOL has to go through the precompiler to be executed. */
+const NEEDS_PRECOMPILE = /EXEC\s+(?:CICS|SQL)\b|^\s*(?:JSON|XML)\s+PARSE\b/im;
 
 const available =
   spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
@@ -130,10 +148,9 @@ describe("every construct, under GnuCOBOL", () => {
     it.skipIf(!available)(`compiles ${name} with cobc`, () => {
       const result = compile(source);
       const cobol = result.cobol ?? "";
-      const text =
-        cobol.includes("EXEC CICS") || cobol.includes("EXEC SQL")
-          ? precompile(cobol).cobol
-          : cobol;
+      const text = NEEDS_PRECOMPILE.test(cobol)
+        ? precompile(cobol).cobol
+        : cobol;
       const file = join(dir, `${name}.cbl`);
       writeFileSync(file, text, "utf8");
 
@@ -144,15 +161,21 @@ describe("every construct, under GnuCOBOL", () => {
 
       expect(output, output).not.toMatch(/ error: /);
 
-      // A construct that GnuCOBOL merely warns about is one of the three known
-      // divergences, or it is new and wants deciding about.
+      // A construct that still warns once translated is a genuine divergence,
+      // or it is new and wants deciding about.
       if (!DIVERGENT.has(name)) {
         expect(output, output).not.toMatch(/warning:/);
       }
     });
   }
 
-  it.skipIf(!available)("diverges in exactly the places recorded", () => {
+  /**
+   * The artifact itself, untranslated, is what z/OS gets. Every construct that
+   * warns here is one the local compiler does not implement — and each has to
+   * be accounted for: either the precompiler rewrites it, or it is on the
+   * divergence list with a reason.
+   */
+  it.skipIf(!available)("warns in exactly the places accounted for", () => {
     const warned = new Set<string>();
     for (const [name, source] of cases) {
       const cobol = compile(source).cobol ?? "";
@@ -166,6 +189,6 @@ describe("every construct, under GnuCOBOL", () => {
       }
     }
 
-    expect([...warned].sort()).toEqual([...DIVERGENT].sort());
+    expect([...warned].sort()).toEqual([...DIVERGENT, ...TRANSLATED].sort());
   });
 });

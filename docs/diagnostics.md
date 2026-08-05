@@ -158,6 +158,13 @@ it is not implemented, and then does nothing at run time: the record is left
 untouched and **no exception is raised**, so a program reading a payload runs
 clean and processes an empty record.
 
+The local build no longer runs that. The precompiler rewrites the statement into
+calls on `BANKJSON`, a reference stub, so the record is populated from the
+document and the `JSON-STATUS` test below is reached with a value it did not
+invent — the same routing `EXEC SQL` and `EXEC CICS` already had. What ships to
+z/OS keeps its `JSON PARSE`. The warning stays because the stub is a scan and
+not IBM's parser: `runtime/README.md` lists what it does not attempt.
+
 On Enterprise COBOL the hazard is different but has the same shape. A parse can
 meet a _nonexception condition_, which does not terminate the statement and
 "might result in the receiver being partially modified" — so `on error` is never
@@ -175,6 +182,8 @@ one. `zos/README.md` records the divergence.
 
 `XML PARSE` is event-driven, so `xml <text> into <record>` has no COBOL to
 become: neither Enterprise COBOL nor GnuCOBOL has a form that fills a record.
+(For what the local build does with the form that exists, see `BANK-TYPE-025`
+above: the precompiler drives the generated handler from `BANKXML`.)
 The form that exists is
 
 ```ts

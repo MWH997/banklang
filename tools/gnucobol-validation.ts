@@ -121,12 +121,22 @@ export function runGnucobolValidation(
   // accept them, exactly as DSNHPC and the CICS translator do on z/OS. The
   // BankLang precompiler performs the equivalent translation so the program
   // can still be compiled and checked here.
+  //
+  // JSON PARSE and XML PARSE are the other way round: Enterprise COBOL needs no
+  // preprocessing for either, and GnuCOBOL compiles both, warns it has not
+  // implemented them, and does nothing at run time. They go through the same
+  // translation so the local build executes something rather than reporting
+  // success on a statement that did not run.
+  const generatedCobol = readFileSync(artifacts.cobolPath, "utf8");
   const backendRequirements = ir.program?.backendRequirements ?? [];
-  const precompiled = backendRequirements.length > 0;
+  const precompiled =
+    backendRequirements.some(
+      (requirement) => requirement !== "report-writer-precompiler",
+    ) || /^\s*(?:JSON|XML)\s+PARSE\b/im.test(generatedCobol);
   let precompiledArtifact: string | null = null;
 
   if (precompiled) {
-    const translated = precompile(readFileSync(artifacts.cobolPath, "utf8"));
+    const translated = precompile(generatedCobol);
     // `-PRE` rather than `.precompiled`, because GnuCOBOL caps a source file's
     // base name at 31 characters and a suffix this tool chose should not be
     // what makes a legitimate module name too long to validate.

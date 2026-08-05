@@ -58,7 +58,7 @@ the bytes would differ between the two compilers and neither `NATIONAL-OF` nor
 this repository to be wrong, and it is the cheapest to check: compile the
 fragment above and print the offsets.
 
-## Two GnuCOBOL quirks that are not defects here
+## GnuCOBOL quirks that are not defects here
 
 Neither affects the generated program on z/OS. Both will confuse anyone
 validating locally, so they are written down.
@@ -71,17 +71,23 @@ hand-written program with no BankLang involved. Compile with
 `-fassign-clause=external` (or `=ibm`) to bind it. On z/OS the DD comes from the
 JCL and the question does not arise.
 
-**`JSON PARSE` compiles and does nothing.** GnuCOBOL warns `-Wpending` that it
-is not implemented, then leaves the record untouched and raises no exception —
-so a program reading a payload runs clean and processes an empty record. This
-compiler offers `json <text> into <record>` and warns on every one
-(`BANK-TYPE-025`). **Check the record, not the failure path:** a parse that did
-nothing does not report one. `JSON GENERATE` and `XML GENERATE` are implemented
-here and are executed by the tests.
+**`JSON PARSE` and `XML PARSE` compile and do nothing.** GnuCOBOL warns
+`-Wpending` that neither is implemented, then leaves the record untouched and
+raises no exception — so a program reading a payload runs clean and processes an
+empty record. The local build works around it the way it already did for
+`EXEC SQL` and `EXEC CICS`: the precompiler rewrites both statements into calls
+on `BANKJSON` and `BANKXML`, reference stubs in `runtime/`, and the translated
+program is what `pnpm test:gnucobol` compiles and runs. **The artifact in
+`dist/zos/` is untranslated** and carries the statement Enterprise COBOL
+implements, which is the one to check on the mainframe.
 
-(`XML PARSE` is a different matter and not a divergence at all: neither
-Enterprise COBOL nor GnuCOBOL has a form that fills a record — both are
-event-driven — so the compiler has no `xml ... into ...` to offer.)
+Those stubs are scans, not parsers. `BANKJSON` reads a quoted name at the top
+level and the scalar after its colon; `BANKXML` reads the next tag and the
+characters between tags. Nesting, arrays, escape sequences, attributes,
+namespaces, entity references and CDATA are past what either attempts, so a
+document exercising any of them is one to try on z/OS first. Every parse carries
+`BANK-TYPE-025` for that reason. `JSON GENERATE` and `XML GENERATE` are
+implemented by GnuCOBOL and are executed by the tests directly.
 
 ## What to run
 
