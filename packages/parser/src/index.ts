@@ -1608,8 +1608,14 @@ class Parser {
   }
 
   private parseFieldDeclaration(): FieldDeclarationNode | null {
-    const modifierToken = this.isKeyword("sensitive") ? this.advance() : null;
-    const nameToken = this.expectIdentifier("Expected field name.");
+    // `sensitive` is a modifier unless it is the name being declared, which the
+    // `:` after it settles — a field really can be called `sensitive`.
+    const modifierToken =
+      this.isKeyword("sensitive") &&
+      !(this.next.kind === "punctuation" && this.next.text === ":")
+        ? this.advance()
+        : null;
+    const nameToken = this.expectDeclaredName("Expected field name.");
     this.expectPunctuation(":", "Expected `:` after field name.");
     const type = this.parseTypeNode();
 
@@ -1801,7 +1807,7 @@ class Parser {
       return reference;
     }
 
-    const memberToken = this.expectIdentifier(
+    const memberToken = this.expectDeclaredName(
       "Expected a field name after `.`.",
     );
     if (!memberToken) {
@@ -2202,7 +2208,7 @@ class Parser {
         span: targetToken.span,
       };
       if (this.matchPunctuation(".")) {
-        const memberToken = this.expectIdentifier(
+        const memberToken = this.expectDeclaredName(
           "Expected a field name after `.`.",
         );
         if (!memberToken) {
@@ -2528,7 +2534,7 @@ class Parser {
           span: targetToken.span,
         };
         if (this.matchPunctuation(".")) {
-          const memberToken = this.expectIdentifier(
+          const memberToken = this.expectDeclaredName(
             "Expected a field name after `.`.",
           );
           if (!memberToken) {
@@ -2585,7 +2591,7 @@ class Parser {
         span: arrayToken.span,
       };
       if (this.matchPunctuation(".")) {
-        const memberToken = this.expectIdentifier(
+        const memberToken = this.expectDeclaredName(
           "Expected a field name after `.`.",
         );
         if (!memberToken) {
@@ -2798,7 +2804,7 @@ class Parser {
     };
 
     if (this.matchPunctuation(".")) {
-      const memberToken = this.expectIdentifier(
+      const memberToken = this.expectDeclaredName(
         "Expected field name after `.`.",
       );
       if (!memberToken) {
@@ -3831,7 +3837,7 @@ class Parser {
 
       if (this.isPunctuation(".")) {
         this.advance();
-        const memberToken = this.expectIdentifier(
+        const memberToken = this.expectDeclaredName(
           "Expected field name after `.`.",
         );
         if (!memberToken) {
@@ -3913,7 +3919,7 @@ class Parser {
     // `lines[i].amount` reaches a field of the indexed element.
     if (this.isPunctuation(".")) {
       this.advance();
-      const memberToken = this.expectIdentifier(
+      const memberToken = this.expectDeclaredName(
         "Expected field name after `.`.",
       );
       if (!memberToken) {
@@ -4419,6 +4425,33 @@ class Parser {
       return this.advance();
     }
     this.errorAtCurrent("BANK-SYN-001", message, "Expected an identifier.");
+    return null;
+  }
+
+  /**
+   * A name being *declared* or *selected*, which may be a reserved word.
+   *
+   * Every keyword this language reserves is a word some copybook uses as a
+   * field name — `type`, `date`, `currency`, `error`, `record`, `file`,
+   * `transaction`. Reserving them for the whole source text would mean a real
+   * record could not be described at all, and the point of the language is to
+   * describe real records.
+   *
+   * In a name position there is nothing to be ambiguous with: a field name is
+   * followed by `:`, and a member name follows `.`. Nothing else can appear
+   * there, so a keyword read here is a name and only a name.
+   *
+   * Deliberately not used for a parameter or a local. Those are read as bare
+   * identifiers in expressions, where a keyword really is a keyword — `log` is
+   * a statement — so accepting one at the declaration would allow a name that
+   * could be declared and never read. A record field is always reached through
+   * `.`, which is why the copybook case is the one that works.
+   */
+  private expectDeclaredName(message: string): Token | null {
+    if (this.is("identifier") || this.is("keyword")) {
+      return this.advance();
+    }
+    this.errorAtCurrent("BANK-SYN-001", message, "Expected a name.");
     return null;
   }
 

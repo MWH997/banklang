@@ -14,6 +14,41 @@ module AccountTransfer;
 
 A file may define one module. Module names must be stable identifiers. Generated COBOL program names are derived from module names using a deterministic naming strategy.
 
+## 2a. Reserved words are still field names
+
+Every word this language reserves is a word some copybook uses as a field:
+`type`, `date`, `currency`, `error`, `record`, `file`, `transaction`, `log`,
+`commit`, `status`. So they stay usable where a name is being **declared** or
+**selected**:
+
+```ts
+record Movement {
+  type: string<4>;
+  date: date;
+  currency: string<3>;
+  error: string<2>;
+}
+
+movement.type = "DR";
+```
+
+There is nothing to be ambiguous with in those positions — a field name is
+followed by `:`, and a member name follows `.`, and nothing else can appear
+there.
+
+This does **not** extend to parameters and locals. Those are read as bare
+identifiers in expressions, where a keyword really is a keyword — `log` begins a
+statement — so a parameter called `type` could be declared and never read, which
+is worse than not allowing it.
+
+`sensitive` is the one word that has to be told apart from itself. It is a
+marking when a name follows it and a name when a colon does:
+
+```ts
+sensitive pan: string<16>;   // a marked field called pan
+sensitive: string<4>;        // an ordinary field called sensitive
+```
+
 ## 3. Primitive types
 
 Supported primitive types:
