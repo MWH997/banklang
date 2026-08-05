@@ -48,6 +48,8 @@ import {
   type ReportPageNode,
   type ReportSourceNode,
   type DatabaseDeclarationNode,
+  type QueueDeclarationNode,
+  type QueueStatementNode,
   type DliStatementNode,
   type ProgramCallStatementNode,
   type ReportStatementNode,
@@ -175,6 +177,11 @@ export const KEYWORDS = new Set([
   "merge",
   "report",
   "database",
+  "queue",
+  "connectQueue",
+  "putMessage",
+  "getMessage",
+  "disconnectQueue",
   "getUnique",
   "getNext",
   "getHoldUnique",
@@ -217,6 +224,9 @@ export const KEYWORDS = new Set([
  */
 const FILE_MODES = new Set(["input", "output", "update"]);
 const FILE_ORGANIZATIONS = new Set(["sequential", "indexed", "relative"]);
+
+/** Which MQOO_* option a queue is opened with, and so which calls it allows. */
+const QUEUE_DIRECTIONS = new Set(["input", "output"]);
 
 /**
  * Report group words, matched contextually so none is taken away as a field
@@ -775,6 +785,10 @@ class Parser {
       return this.parseDatabaseDeclaration();
     }
 
+    if (this.matchKeyword("queue")) {
+      return this.parseQueueDeclaration();
+    }
+
     if (this.matchKeyword("enum")) {
       return this.parseEnumDeclaration();
     }
@@ -1270,6 +1284,91 @@ class Parser {
    * `into` and `from` say which way the segment moves, which is the same shape
    * a file read and write already have.
    */
+  /**
+   * `connectQueue q;` `putMessage q from r;` `disconnectQueue q;`
+   * `getMessage q into r { ... } else { ... };`
+   *
+   * A `getMessage` carries both branches because an empty queue is not a
+   * failure — MQ reports it as `MQRC-NO-MSG-AVAILABLE`, which is the ordinary
+   * end of a drain loop. Making the branch mandatory is the same decision the
+   * keyed read on a file made, and for the same reason: without it the program
+   * carries on with whatever the message area held from the last message.
+   */
+  private parseQueueStatement(
+    operation: QueueStatementNode["operation"],
+  ): QueueStatementNode | null {
+    const keyword = this.advance();
+    const queueToken = this.expectIdentifier("Expected the queue name.");
+    if (!queueToken) {
+      return null;
+    }
+
+    let recordName: string | null = null;
+    let recordSpan: SourceSpan | null = null;
+    if (operation === "put" || operation === "get") {
+      const direction = operation === "get" ? "into" : "from";
+      if (!this.matchContextual(direction)) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`${direction}\` before the message record.`,
+          `Write \`${operation === "get" ? "getMessage" : "putMessage"} ${queueToken.text} ${direction} <record>\`.`,
+        );
+        return null;
+      }
+      const recordToken = this.expectIdentifier("Expected a message record.");
+      if (!recordToken) {
+        return null;
+      }
+      recordName = recordToken.text;
+      recordSpan = recordToken.span;
+    }
+
+    let body: BlockNode | null = null;
+    let notFound: BlockNode | null = null;
+    if (operation === "get") {
+      body = this.parseBlock();
+      if (!body) {
+        return null;
+      }
+      if (!this.matchKeyword("else")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `else` after the message branch.",
+          "An empty queue is reported rather than raised, so a `getMessage` says what to do when there was nothing to read.",
+        );
+        return null;
+      }
+      notFound = this.parseBlock();
+      if (!notFound) {
+        return null;
+      }
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      `Expected \`;\` after \`${operation}\`.`,
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "QueueStatement",
+      operation,
+      queueName: queueToken.text,
+      queueSpan: queueToken.span,
+      recordName,
+      recordSpan,
+      body,
+      notFound,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies QueueStatementNode;
+  }
+
   private parseDliStatement(
     operation: DliStatementNode["operation"],
   ): DliStatementNode | null {
@@ -1425,6 +1524,90 @@ class Parser {
         end: semicolon.span.end,
       },
     } satisfies DatabaseDeclarationNode;
+  }
+
+  /**
+   * `queue <name> manager "MGR" name "Q.NAME" <input|output>
+   *   record <R> status <field>;`
+   *
+   * The manager and queue names are literals for the same reason the DL/I
+   * segment name is: each names something defined to MQ rather than in this
+   * program, and each is what goes into the object descriptor once.
+   */
+  private parseQueueDeclaration(): QueueDeclarationNode | null {
+    const keyword = this.previous;
+    const nameToken = this.expectIdentifier("Expected queue name.");
+    if (!keyword || !nameToken) {
+      return null;
+    }
+
+    const readLiteral = (clause: string, what: string): string | null => {
+      if (!this.matchContextual(clause)) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`${clause}\` in the queue declaration.`,
+          `The ${what} is written as a literal, because it names something defined to the queue manager rather than in this program.`,
+        );
+        return null;
+      }
+      if (!this.is("string")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected the ${what} as a literal.`,
+          "It has to match what MQ was told, character for character.",
+        );
+        return null;
+      }
+      return this.advance().text;
+    };
+
+    const managerName = readLiteral("manager", "queue manager name");
+    if (managerName === null) {
+      return null;
+    }
+    const queueName = readLiteral("name", "queue name");
+    if (queueName === null) {
+      return null;
+    }
+
+    const directionToken = this.expectContextualWord(
+      QUEUE_DIRECTIONS,
+      "Expected `input` or `output` after the queue name.",
+    );
+
+    this.expectKeyword("record", "Expected `record` before the message type.");
+    const recordTypeToken = this.expectIdentifier(
+      "Expected the message record type.",
+    );
+
+    let statusName: string | null = null;
+    if (this.matchContextual("status")) {
+      statusName =
+        this.expectIdentifier("Expected a status field name.")?.text ?? null;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after the queue declaration.",
+    );
+    if (!directionToken || !recordTypeToken || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "QueueDeclaration",
+      name: nameToken.text,
+      managerName,
+      queueName,
+      direction: directionToken.text as "input" | "output",
+      recordTypeName: recordTypeToken.text,
+      statusName,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies QueueDeclarationNode;
   }
 
   private parseFileDeclaration(): FileDeclarationNode | null {
@@ -2673,6 +2856,18 @@ class Parser {
     ] as const) {
       if (this.isKeyword(operation)) {
         return this.parseDliStatement(operation);
+      }
+    }
+
+    // IBM MQ: each becomes one or more `CALL` on the MQI.
+    for (const [keyword, operation] of [
+      ["connectQueue", "connect"],
+      ["putMessage", "put"],
+      ["getMessage", "get"],
+      ["disconnectQueue", "disconnect"],
+    ] as const) {
+      if (this.isKeyword(keyword)) {
+        return this.parseQueueStatement(operation);
       }
     }
 

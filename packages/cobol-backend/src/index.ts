@@ -14,6 +14,8 @@ import type {
   IRLetStatement,
   IRMappedField,
   IRProgram,
+  IRQueue,
+  IRQueueStatement,
   IRRecord,
   IRType,
   IRStatement,
@@ -734,6 +736,70 @@ export function emitCobol(
     addLine(`       01  ${FAILURE_CODE_FIELD.padEnd(20)} PIC X(32) EXTERNAL.`);
   }
   addLine(`       01  ${RETURN_CODE_FIELD.padEnd(20)} PIC S9(4) COMP VALUE 0.`);
+
+  // IBM MQ. The constants come once, from `CMQV`; the control blocks come once
+  // per queue, because each carries the state of its own open object and the
+  // reason code of its own last call.
+  //
+  // `SUPPRESS` stops the copybook listing every constant it defines, which is
+  // several thousand lines of compiler output per program.
+  if (program.queues.length > 0) {
+    addLine(`       01  BANK-MQ-CONSTANTS.`);
+    addLine(`           COPY CMQV SUPPRESS.`);
+  }
+  for (const queue of program.queues) {
+    // Handles start at zero so a `disconnect` that runs before a `connect` asks
+    // MQ about a handle it never gave out, rather than about whatever storage
+    // happened to be there.
+    addLine(
+      `       01  ${mqName(queue.name, "HCONN").padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
+    );
+    addLine(
+      `       01  ${mqName(queue.name, "HOBJ").padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
+    );
+    addLine(
+      `       01  ${mqName(queue.name, "OPTIONS").padEnd(20)} PIC S9(9) BINARY.`,
+    );
+    addLine(
+      `       01  ${mqName(queue.name, "COMPCODE").padEnd(20)} PIC S9(9) BINARY.`,
+    );
+    addLine(
+      `       01  ${mqName(queue.name, "REASON").padEnd(20)} PIC S9(9) BINARY.`,
+    );
+    addLine(
+      `       01  ${mqName(queue.name, "BUFFLEN").padEnd(20)} PIC S9(9) BINARY.`,
+    );
+    // MQ_Q_MGR_NAME_LENGTH is 48, which is what MQCONN's first parameter is.
+    addLine(
+      `       01  ${mqName(queue.name, "MGRNAME").padEnd(20)} PIC X(48).`,
+    );
+    if (queue.direction === "input") {
+      addLine(
+        `       01  ${mqName(queue.name, "DATALEN").padEnd(20)} PIC S9(9) BINARY.`,
+      );
+    }
+    // The control blocks themselves. Each copybook declares its structure at
+    // level 10, so it is copied under an 01 of this queue's own — which is also
+    // what makes `MQOD OF <queue>-MQOD` resolve in a program with two queues.
+    addLine(`       01  ${mqName(queue.name, "MQOD")}.`);
+    addLine(`           COPY CMQODV.`);
+    addLine(`       01  ${mqName(queue.name, "MQMD")}.`);
+    addLine(`           COPY CMQMDV.`);
+    if (queue.direction === "output") {
+      addLine(`       01  ${mqName(queue.name, "MQPMO")}.`);
+      addLine(`           COPY CMQPMOV.`);
+    } else {
+      addLine(`       01  ${mqName(queue.name, "MQGMO")}.`);
+      addLine(`           COPY CMQGMOV.`);
+    }
+  }
+  for (const queue of program.queues) {
+    if (queue.statusName) {
+      addLine(
+        `       01  ${toCobolFieldName(queue.statusName).padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
+      );
+    }
+  }
   // A sort procedure's loop stops on a flag of its own rather than on the
   // file's status field, because a sort's input file need not declare one and
   // a RETURN has no status field at all.
@@ -751,6 +817,7 @@ export function emitCobol(
 
   // Each handler needs a name, and the statement and its section are emitted in
   // different places, so the names are assigned once up front.
+  queueTable = new Map(program.queues.map((queue) => [queue.name, queue]));
   databaseTable = new Map(
     program.databases.map((database) => [database.name, database]),
   );
@@ -1292,6 +1359,11 @@ export function emitJcl(
   const needsReportWriter = program.backendRequirements.includes(
     "report-writer-precompiler",
   );
+  // MQ needs no precompiler: the MQI is plain CALLs. What it needs is the
+  // copybook library on SYSLIB so `COPY CMQV` resolves, the batch stub on
+  // SYSLIB at link time so MQCONN and the rest resolve to something, and the
+  // run-time libraries on STEPLIB so they resolve to MQ at execution.
+  const needsMq = program.backendRequirements.includes("mq");
   // A load module name and a PDS member name are eight characters with no
   // hyphens, which the COBOL PROGRAM-ID need not be. They are the same
   // transform the job name uses, so every name in this job agrees.
@@ -1383,8 +1455,13 @@ export function emitJcl(
     "//SYSPRINT DD SYSOUT=*",
     // A COPY resolves against SYSLIB. Without it the copy statements find
     // nothing and the compile fails on undefined data names.
-    ...(options.usesCopybooks
-      ? ["//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB"]
+    ...(options.usesCopybooks || needsMq
+      ? [
+          "//SYSLIB   DD DISP=SHR,DSN=BANKLANG.COPYLIB",
+          // CMQV, CMQODV, CMQMDV, CMQPMOV and CMQGMOV live in the MQ
+          // installation's COBOL copybook library, not in this repository.
+          ...(needsMq ? ["//         DD DISP=SHR,DSN=MQM.SCSQCOBC"] : []),
+        ]
       : []),
     source,
     "//SYSLIN   DD DSN=&&OBJ,DISP=(NEW,PASS),UNIT=SYSDA,",
@@ -1398,6 +1475,15 @@ export function emitJcl(
     // library, so the link-edit has to resolve them. Without it the load module
     // is short of every routine the expansion calls.
     ...(needsReportWriter ? ["//SYSLIB   DD DISP=SHR,DSN=RW.SCXRRUN"] : []),
+    // CSQBSTUB is the batch stub: it turns each MQI CALL into an entry the
+    // queue manager resolves at run time. Without it the link-edit leaves
+    // MQCONN and the rest unresolved.
+    ...(needsMq
+      ? [
+          "//SYSLIB   DD DISP=SHR,DSN=MQM.SCSQLOAD",
+          "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
+        ]
+      : []),
     `//SYSLMOD  DD DISP=SHR,DSN=BANKLANG.LOADLIB(${moduleName})`,
   );
 
@@ -1454,6 +1540,15 @@ export function emitJcl(
       );
     } else {
       lines.push(`//RUN      EXEC PGM=${moduleName}${cond}`);
+    }
+    // The MQ run-time libraries. The stub linked into the load module resolves
+    // each MQI call through them, so without these the program abends on its
+    // first MQCONN rather than reporting a reason code.
+    if (needsMq) {
+      lines.push(
+        "//STEPLIB  DD DISP=SHR,DSN=MQM.SCSQANLE",
+        "//         DD DISP=SHR,DSN=MQM.SCSQLOAD",
+      );
     }
     lines.push(
       "//SYSOUT   DD SYSOUT=*",
@@ -2383,6 +2478,16 @@ function emitStatement(
           indent,
         );
         break;
+      case "QueueStatement":
+        emitQueueStatement(
+          statement,
+          requireQueue(statement.queueName),
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
@@ -2600,6 +2705,16 @@ function emitTransactionBody(
           requireDatabase(statement.databaseName),
           addLine,
           indent,
+        );
+        break;
+      case "QueueStatement":
+        emitQueueStatement(
+          statement,
+          requireQueue(statement.queueName),
+          addLine,
+          indentLevel,
+          "",
+          true,
         );
         break;
       case "SortStatement":
@@ -3600,6 +3715,17 @@ let inSortProcedure = false;
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
 let databaseTable = new Map<string, IRDatabase>();
 
+/** Declared queues of the program being emitted, for resolving MQ statements. */
+let queueTable = new Map<string, IRQueue>();
+
+function requireQueue(name: string): IRQueue {
+  const queue = queueTable.get(name);
+  if (!queue) {
+    throw new Error(`Unknown queue during emission: ${name}`);
+  }
+  return queue;
+}
+
 function requireDatabase(name: string): IRDatabase {
   const database = databaseTable.get(name);
   if (!database) {
@@ -3945,6 +4071,243 @@ function emitDliStatement(
     addLine(
       `${indent}MOVE ${pcb}-STATUS TO ${toCobolFieldName(database.statusName)}`,
     );
+  }
+}
+
+/** Working-storage names for one queue's MQI control blocks and handles. */
+function mqName(queue: string, part: string): string {
+  return `${toCobolName(queue)}-${part}`;
+}
+
+/**
+ * A reference into one of the copybook structures, qualified by the group it
+ * was copied into.
+ *
+ * `CMQODV` declares `10 MQOD.` with `15 MQOD-...` beneath it, so a program with
+ * two queues has two of every one of those names. IBM's own samples copy each
+ * structure once and reference it bare, which is why the ambiguity does not
+ * show up there; a program that talks to an input queue and an output queue has
+ * to qualify or it will not compile.
+ */
+function mqField(queue: string, structure: string, field?: string): string {
+  const group = mqName(queue, structure);
+  return field ? `${field} OF ${group}` : `${structure} OF ${group}`;
+}
+
+/**
+ * The test after every MQI call.
+ *
+ * IBM's samples test `CompCode NOT = MQCC-OK` and report the completion code
+ * with the reason code, which is the pair that identifies what happened: the
+ * completion code says whether it worked, and the reason says why it did not.
+ * Reporting only one of them leaves an operator with either "it failed" or a
+ * number with no context.
+ *
+ * `MQCC-WARNING` is treated as a failure here, as it is in IBM's samples. It
+ * means the call did something other than what was asked — a truncated message,
+ * a converted one — and a banking program that carries on with a message it
+ * only partly received is the defect this whole check exists to prevent.
+ */
+function emitMqCheck(
+  operation: string,
+  queue: IRQueue,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const compCode = mqName(queue.name, "COMPCODE");
+  const reason = mqName(queue.name, "REASON");
+  if (queue.statusName) {
+    addLine(`${indent}MOVE ${reason} TO ${toCobolFieldName(queue.statusName)}`);
+  }
+  addLine(`${indent}IF ${compCode} NOT = MQCC-OK`);
+  addLine(
+    `${indent}    DISPLAY "${operation} FAILED ${queue.name} COMPCODE " ${compCode} " REASON " ${reason} UPON SYSOUT`,
+  );
+  if (inSortProcedure) {
+    addLine(`${indent}    MOVE 16 TO SORT-RETURN`);
+  } else {
+    addLine(`${indent}    MOVE 12 TO RETURN-CODE`);
+    addLine(`${indent}    GOBACK`);
+  }
+  addLine(`${indent}END-IF`);
+}
+
+/**
+ * One MQI operation.
+ *
+ * The call signatures are IBM's, from the Application Programming Reference:
+ *
+ *     MQCONN  (QMgrName, Hconn, CompCode, Reason)
+ *     MQOPEN  (Hconn, ObjDesc, Options, Hobj, CompCode, Reason)
+ *     MQPUT   (Hconn, Hobj, MsgDesc, PutMsgOpts, BufferLength, Buffer,
+ *              CompCode, Reason)
+ *     MQGET   (Hconn, Hobj, MsgDesc, GetMsgOpts, BufferLength, Buffer,
+ *              DataLength, CompCode, Reason)
+ *     MQCLOSE (Hconn, Hobj, Options, CompCode, Reason)
+ *     MQDISC  (Hconn, CompCode, Reason)
+ *
+ * `connect` is `MQCONN` then `MQOPEN`, and `disconnect` is `MQCLOSE` then
+ * `MQDISC`, because a connection with nothing open does no work and an open
+ * object with no connection cannot exist. Splitting them into four statements
+ * would only create the two orders that are wrong.
+ */
+function emitQueueStatement(
+  statement: IRQueueStatement,
+  queue: IRQueue,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const hconn = mqName(queue.name, "HCONN");
+  const hobj = mqName(queue.name, "HOBJ");
+  const options = mqName(queue.name, "OPTIONS");
+  const compCode = mqName(queue.name, "COMPCODE");
+  const reason = mqName(queue.name, "REASON");
+  const buffLen = mqName(queue.name, "BUFFLEN");
+
+  switch (statement.operation) {
+    case "connect": {
+      addLine(
+        `${indent}MOVE "${queue.managerName}" TO ${mqName(queue.name, "MGRNAME")}`,
+      );
+      addLine(
+        `${indent}CALL "MQCONN" USING ${mqName(queue.name, "MGRNAME")}, ${hconn}, ${compCode}, ${reason}`,
+      );
+      emitMqCheck("MQCONN", queue, addLine, indent);
+
+      // The object descriptor says what is being opened. Only the type and the
+      // name are set: the copybook initialises everything else, which is what
+      // makes MQOD-VERSION and MQOD-STRUCID right without saying so.
+      addLine(
+        `${indent}MOVE MQOT-Q TO ${mqField(queue.name, "MQOD", "MQOD-OBJECTTYPE")}`,
+      );
+      addLine(
+        `${indent}MOVE "${queue.queueName}" TO ${mqField(queue.name, "MQOD", "MQOD-OBJECTNAME")}`,
+      );
+      addLine(
+        `${indent}MOVE ${queue.direction === "input" ? "MQOO-INPUT-AS-Q-DEF" : "MQOO-OUTPUT"} TO ${options}`,
+      );
+      addLine(
+        `${indent}CALL "MQOPEN" USING ${hconn}, ${mqField(queue.name, "MQOD")}, ${options}, ${hobj}, ${compCode}, ${reason}`,
+      );
+      emitMqCheck("MQOPEN", queue, addLine, indent);
+      return;
+    }
+
+    case "put": {
+      const record = resolveIdentifier(statement.recordName as string);
+      // A message with no identifier of its own gets one from the queue
+      // manager. MQMI-NONE and MQCI-NONE are what ask for that; leaving the
+      // previous message's identifiers in place would put the new message out
+      // under the old one's, and a duplicate-detecting consumer would drop it.
+      addLine(
+        `${indent}MOVE MQMI-NONE TO ${mqField(queue.name, "MQMD", "MQMD-MSGID")}`,
+      );
+      addLine(
+        `${indent}MOVE MQCI-NONE TO ${mqField(queue.name, "MQMD", "MQMD-CORRELID")}`,
+      );
+      // Under syncpoint, so the message is not visible to a consumer until the
+      // unit of work commits. A payment released before its ledger posting is
+      // committed is one the downstream system acts on and the bank has not
+      // recorded.
+      addLine(
+        `${indent}MOVE MQPMO-SYNCPOINT TO ${mqField(queue.name, "MQPMO", "MQPMO-OPTIONS")}`,
+      );
+      addLine(`${indent}MOVE LENGTH OF ${record} TO ${buffLen}`);
+      addLine(
+        `${indent}CALL "MQPUT" USING ${hconn}, ${hobj}, ${mqField(queue.name, "MQMD")}, ${mqField(queue.name, "MQPMO")}, ${buffLen}, ${record}, ${compCode}, ${reason}`,
+      );
+      emitMqCheck("MQPUT", queue, addLine, indent);
+      return;
+    }
+
+    case "get": {
+      const record = resolveIdentifier(statement.recordName as string);
+      const dataLen = mqName(queue.name, "DATALEN");
+      addLine(
+        `${indent}COMPUTE ${mqField(queue.name, "MQGMO", "MQGMO-OPTIONS")} = MQGMO-SYNCPOINT + MQGMO-NO-WAIT`,
+      );
+      // Nulls in both identifiers mean "any message will do", which is what a
+      // drain loop wants. Leaving the previous message's identifiers there
+      // would ask for that same message again and find nothing.
+      addLine(
+        `${indent}MOVE MQMI-NONE TO ${mqField(queue.name, "MQMD", "MQMD-MSGID")}`,
+      );
+      addLine(
+        `${indent}MOVE MQCI-NONE TO ${mqField(queue.name, "MQMD", "MQMD-CORRELID")}`,
+      );
+      addLine(`${indent}MOVE LENGTH OF ${record} TO ${buffLen}`);
+      addLine(
+        `${indent}CALL "MQGET" USING ${hconn}, ${hobj}, ${mqField(queue.name, "MQMD")}, ${mqField(queue.name, "MQGMO")}, ${buffLen}, ${record}, ${dataLen}, ${compCode}, ${reason}`,
+      );
+      if (queue.statusName) {
+        addLine(
+          `${indent}MOVE ${reason} TO ${toCobolFieldName(queue.statusName)}`,
+        );
+      }
+
+      // Three outcomes, not two. A message, an empty queue — which is the
+      // ordinary end of a drain and not a failure — and everything else, which
+      // is. Folding the empty queue in with the failures stops a batch every
+      // time it finishes its work; folding it in with success processes the
+      // message area again, holding the last message read.
+      addLine(`${indent}EVALUATE TRUE`);
+      addLine(`${indent}    WHEN ${compCode} = MQCC-OK`);
+      if (inTransaction) {
+        emitTransactionBody(
+          statement.body as IRBlock,
+          addLine,
+          indentLevel + 8,
+        );
+      } else {
+        emitStatement(
+          statement.body as IRBlock,
+          addLine,
+          indentLevel + 8,
+          resultName,
+        );
+      }
+      addLine(`${indent}    WHEN ${reason} = MQRC-NO-MSG-AVAILABLE`);
+      if (inTransaction) {
+        emitTransactionBody(
+          statement.notFound as IRBlock,
+          addLine,
+          indentLevel + 8,
+        );
+      } else {
+        emitStatement(
+          statement.notFound as IRBlock,
+          addLine,
+          indentLevel + 8,
+          resultName,
+        );
+      }
+      addLine(`${indent}    WHEN OTHER`);
+      addLine(
+        `${indent}        DISPLAY "MQGET FAILED ${queue.name} COMPCODE " ${compCode} " REASON " ${reason} UPON SYSOUT`,
+      );
+      if (inSortProcedure) {
+        addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
+      } else {
+        addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
+        addLine(`${indent}        GOBACK`);
+      }
+      addLine(`${indent}END-EVALUATE`);
+      return;
+    }
+
+    case "disconnect": {
+      addLine(`${indent}MOVE MQCO-NONE TO ${options}`);
+      addLine(
+        `${indent}CALL "MQCLOSE" USING ${hconn}, ${hobj}, ${options}, ${compCode}, ${reason}`,
+      );
+      emitMqCheck("MQCLOSE", queue, addLine, indent);
+      addLine(`${indent}CALL "MQDISC" USING ${hconn}, ${compCode}, ${reason}`);
+      emitMqCheck("MQDISC", queue, addLine, indent);
+      return;
+    }
   }
 }
 

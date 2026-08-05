@@ -20,6 +20,7 @@ export type DiagnosticNamespace =
   | "SQL"
   | "CICS"
   | "DLI"
+  | "MQ"
   | "FILE"
   | "COPY"
   | "GEN"
@@ -48,6 +49,7 @@ export const NAMESPACE_TITLES: Record<DiagnosticNamespace, string> = {
   SQL: "Db2 and SQL",
   CICS: "CICS",
   DLI: "IMS DL/I",
+  MQ: "IBM MQ",
   FILE: "File I/O",
   COPY: "Copybook and layout",
   GEN: "Code generation",
@@ -754,6 +756,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       'Declare the database with `database <name> pcb segment "SEG" key "KEY" record <Record> status <field>;`, read into the record it declares, and test the status after every call.',
     specReference: "language-reference.md section 12a",
+    implemented: true,
+  },
+  {
+    id: "BANK-MQ-001",
+    title: "Invalid queue access",
+    explanation:
+      "An MQ statement names a queue that is not declared, or reaches one with no status field, or the declaration names a queue manager or a queue longer than MQ carries. `MQ_Q_MGR_NAME_LENGTH` and `MQ_Q_NAME_LENGTH` are both 48, which is what `MQOD-OBJECTNAME` and the `MQCONN` name parameter are declared as, so a longer name is truncated into one the queue manager does not have. The status field matters most: MQ reports what happened in a completion code and a reason code, and without somewhere to read the reason a `getMessage` that found an empty queue is indistinguishable from one that read a message — so the program processes whatever the message area held last.",
+    remediation:
+      'Declare the queue with `queue <name> manager "MGR" name "Q.NAME" output record <Record> status <field>;` and test the reason after a get.',
+    specReference: "language-reference.md section 12b",
+    implemented: true,
+  },
+  {
+    id: "BANK-MQ-002",
+    title: "Queue used against its direction",
+    explanation:
+      "A queue is opened for input or for output, not both, because that is what the `MQOPEN` options say: an `output` queue is opened `MQOO-OUTPUT` and an `input` queue `MQOO-INPUT-AS-Q-DEF`. Reading a queue opened for output fails at run time with reason 2037, `MQRC-NOT-OPEN-FOR-INPUT`, and putting to one opened for input fails with 2039, `MQRC-NOT-OPEN-FOR-OUTPUT`. This also covers a message record of the wrong shape: the buffer is the record the queue declares, and MQ moves bytes without checking what they mean.",
+    remediation:
+      "Declare a second queue for the other direction, or correct the statement to match the direction the queue was declared with.",
+    specReference: "language-reference.md section 12b",
     implemented: true,
   },
   {
