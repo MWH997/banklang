@@ -106,7 +106,7 @@ describe("the failure path", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("ON EXCEPTION");
-    expect(result.cobol).toContain("MOVE 12 TO RETURN-CODE");
+    expect(result.cobol).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 
   it("is optional", () => {
@@ -308,7 +308,7 @@ ${body}
 
     expect(errors(result)).toEqual([]);
     expect(result.cobol).toContain("ON EXCEPTION");
-    expect(result.cobol).toContain("MOVE 12 TO RETURN-CODE");
+    expect(result.cobol).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 
   /** A count is what was generated. Reading is told the length by the document. */

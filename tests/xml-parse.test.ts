@@ -84,7 +84,7 @@ describe("the statement", () => {
 
     expect(errors(handled)).toEqual([]);
     expect(handled.cobol).toContain("ON EXCEPTION");
-    expect(handled.cobol).toContain("MOVE 12 TO RETURN-CODE");
+    expect(handled.cobol).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 
   /** The handler is ordinary code, so the banking checks have to see into it. */

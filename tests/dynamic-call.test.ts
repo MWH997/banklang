@@ -74,7 +74,7 @@ describe("calling a module named by a value", () => {
 
   it("carries the failure path", () => {
     expect(result.cobol).toContain("ON EXCEPTION");
-    expect(result.cobol).toContain("MOVE 12 TO RETURN-CODE");
+    expect(result.cobol).toContain("MOVE 12 TO BANK-RETURN-CODE");
   });
 
   it("takes a literal name too", () => {
