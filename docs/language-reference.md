@@ -411,6 +411,16 @@ the maximum — the storage still has to be reserved — so the emitted clause i
 number declared before the table, because COBOL reads it to decide the record's
 length and cannot read a field it has not reached.
 
+**The varying table has to be the last field that takes storage.** A field
+declared after it is _variably located_: it sits at the start of the table plus
+the count times the entry, so it moves every time the count does, and no
+copybook can give it an offset. IBM calls this complex `ODO` and permits it;
+this compiler is stricter and says why (`BANK-COPY-004`). The layout report
+would otherwise state the offset the field has when the table is full, which is
+an offset no other record has — and a copybook that names a byte position
+nothing is at is worse than no copybook at all. GnuCOBOL refuses the shape
+outright, so such a program could not be executed locally either.
+
 ### 5a. Inheritance
 
 A record may extend another. The base fields are laid out first, so the derived

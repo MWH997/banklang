@@ -26,8 +26,8 @@ function ids(result: { diagnostics: { id: string }[] }): string[] {
 function withRecord(body: string): ReturnType<typeof compile> {
   return compile(`${PREAMBLE}
 record LegacyRecord {
-${body}
   idempotencyKey: string<36>;
+${body}
 }
 
 entry transaction load1(legacy: LegacyRecord) {
@@ -35,6 +35,8 @@ entry transaction load1(legacy: LegacyRecord) {
 }`);
 }
 
+// The idempotency key comes first because a table whose length depends on a
+// count has to be last in its record: everything after it is variably located.
 const VARIANT = `  recordType: string<2>;
   personalName: string<40>;
   companyName: string<40> redefines personalName;
@@ -63,9 +65,9 @@ describe("redefines", () => {
     const offsetOf = (path: string) =>
       layout?.entries.find((entry) => entry.path === path)?.offset;
 
-    expect(offsetOf("LEGACY-RECORD.PERSONAL-NAME")).toBe(2);
-    expect(offsetOf("LEGACY-RECORD.COMPANY-NAME")).toBe(2);
-    expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(42);
+    expect(offsetOf("LEGACY-RECORD.PERSONAL-NAME")).toBe(38);
+    expect(offsetOf("LEGACY-RECORD.COMPANY-NAME")).toBe(38);
+    expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(78);
   });
 
   /**
@@ -83,10 +85,10 @@ describe("redefines", () => {
       layout?.entries.find((entry) => entry.path === path)?.offset;
 
     expect(result.diagnostics).toEqual([]);
-    expect(offsetOf("LEGACY-RECORD.COMPANY-NAME")).toBe(2);
+    expect(offsetOf("LEGACY-RECORD.COMPANY-NAME")).toBe(38);
     // Ten bytes past the forty personalName occupies, so the count that used to
-    // sit at 42 sits at 52 and every field after it moves with it.
-    expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(52);
+    // sit at 78 sits at 88 and every field after it moves with it.
+    expect(offsetOf("LEGACY-RECORD.LINE-COUNT")).toBe(88);
   });
 
   it("rejects redefining a field declared later", () => {
@@ -125,7 +127,7 @@ describe("redefines", () => {
       layout?.entries.find((entry) => entry.path === path)?.offset;
 
     expect(result.diagnostics).toEqual([]);
-    expect(offsetOf("LEGACY-RECORD.TRADING-NAME")).toBe(0);
+    expect(offsetOf("LEGACY-RECORD.TRADING-NAME")).toBe(36);
   });
 
   /**
@@ -195,6 +197,38 @@ describe("occurs depending on", () => {
     );
 
     expect(ids(result)).toContain("BANK-COPY-004");
+  });
+
+  /**
+   * A field after a varying table is *variably located*: its position is the
+   * start of the table plus the count times the entry, so it moves every time
+   * the count does. The copybook can only state the offset it has when the
+   * table is full — an offset no other record has — and the layout report said
+   * exactly that, with nothing to say it was one value of many.
+   *
+   * IBM calls this complex ODO and permits it. GnuCOBOL refuses it outright, so
+   * a program built this way could not be executed locally either.
+   */
+  it("rejects a field declared after the varying table", () => {
+    const result = compile(`${PREAMBLE}
+record LegacyRecord {
+  lineCount: binary<4>;
+  lines: Entry[100] depending on lineCount;
+  idempotencyKey: string<36>;
+}
+
+entry transaction load1(legacy: LegacyRecord) {
+  audit("LOADED", legacy.idempotencyKey);
+}`);
+
+    expect(ids(result)).toContain("BANK-COPY-004");
+  });
+
+  /** A redefinition of the table's own storage takes no new position. */
+  it("accepts the varying table being the last field that takes storage", () => {
+    const result = withRecord(VARIANT);
+
+    expect(result.diagnostics).toEqual([]);
   });
 });
 

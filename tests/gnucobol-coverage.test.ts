@@ -61,6 +61,12 @@ const cases: [string, string][] = [
     "sync",
     `module M;\nrecord S { a: string<1>; b: binary<9> sync; idempotencyKey: string<36>; }\nentry transaction t(s: S) { audit("A", s.idempotencyKey); }`,
   ],
+  // The table has to be last, and nothing here compiled it until a record with
+  // a field after the table turned out to be COBOL neither compiler accepts.
+  [
+    "occurs-depending",
+    `module M;\nrecord E { kind: string<6>; }\nrecord D { idempotencyKey: string<36>; n: binary<4>; rows: E[8] depending on n; }\nentry transaction t(d: D) { d.n = 3; audit("A", d.idempotencyKey); }`,
+  ],
   [
     "table",
     `module M;\nrecord B { u: decimal<9,0>; r: decimal<9,4>; }\nrecord T { bands: B[4] ascending u; found: decimal<9,4>; idempotencyKey: string<36>; }\nentry transaction t(t1: T) { search sorted band in t1.bands where band.u == 10 { t1.found = band.r; } else { t1.found = 0.0000; } audit("A", t1.idempotencyKey); }`,

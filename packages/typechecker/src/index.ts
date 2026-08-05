@@ -5171,6 +5171,33 @@ function validateVariantFields(
           }),
         );
       }
+
+      // Anything after the table is *variably located*: its position is the
+      // start of the table plus the count times the entry, so it moves every
+      // time the count does. The copybook and the layout report can only state
+      // the offset it has when the table is full, which is an offset the
+      // dataset does not have on any other record — and a copybook that names a
+      // byte position nothing is at is worse than no copybook.
+      //
+      // IBM calls this complex ODO and permits it. GnuCOBOL refuses it outright
+      // ("cannot have OCCURS DEPENDING because of ..."), so a program built
+      // this way could not be executed locally either. The convention it stands
+      // against is ordinary: a variable-length record ends with its table.
+      const following = fields
+        .slice(index + 1)
+        .filter((entry) => !entry.renames && !entry.redefines);
+      if (following.length > 0) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${following[0].name} follows ${field.name}, whose length depends on ${field.dependingOn}.`,
+            span: following[0].span,
+            hint: "A field after a table whose length varies moves with the count, so no copybook can give it an offset. Put the varying table last in the record.",
+            backendProfile: null,
+          }),
+        );
+      }
     }
 
     // JUSTIFIED reverses the padding on an alphanumeric MOVE. A number's
