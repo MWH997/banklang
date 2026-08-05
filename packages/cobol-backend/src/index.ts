@@ -476,8 +476,10 @@ export function emitCobol(
       emitFileControlEntry(file, addLine, restartFiles.has(file.name));
     }
 
-    // A sort-work file is selected like any other; the SD rather than an FD is
-    // what says the sort owns its blocking and record handling.
+    // A sort-work file needs a SELECT, but not a dataset: the SD rather than an
+    // FD is what says the sort owns its blocking and record handling, and the
+    // assign name on one is treated as documentation. Two of them may carry the
+    // same name for that reason, which is why nothing here is made unique.
     for (const sorted of sortedFiles(program)) {
       addLine(
         `           SELECT ${sortWorkName(sorted)} ASSIGN TO ${sortWorkDdName(sorted)}.`,
@@ -4569,13 +4571,19 @@ let currentDecimalPoint: "point" | "comma" = "point";
 let cursorNames = new Set<string>();
 
 /**
- * The DD a sort-work file is assigned to.
+ * The assign name on a sort-work file's SELECT.
  *
- * `SORTWK01` is the name the sort product expects for its first work dataset,
- * which is why the generated JCL allocates exactly that.
+ * `ASSIGN TO` is required on the SELECT and the name is then **treated as
+ * documentation** — IBM's own example assigns two SD files to the same name.
+ * Nothing is allocated for it and no DD statement answers to it.
+ *
+ * So it deliberately is not `SORTWK01`. That is the DD the sort product reads
+ * for its first *work dataset*, which is a different thing that the job does
+ * allocate; putting it here would read as though the SD were bound to it, and
+ * anyone who changed one to match the other would find that neither mattered.
  */
 function sortWorkDdName(_fileName: string): string {
-  return "SORTWK01";
+  return "SORTWORK";
 }
 
 /** The sort-work file a SORT or MERGE runs through. */

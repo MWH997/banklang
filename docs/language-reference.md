@@ -1974,10 +1974,20 @@ merge morningFile, eveningFile into dayFile on accountId;
 
 An internal `SORT` is what a program uses when the ordering is its own business
 rather than the job's. It runs through a sort-work file, described by `SD`
-rather than `FD` because the sort owns its blocking, and the generated job
-allocates `SORTWK01` for it. `USING` and `GIVING` let the sort open, read, write,
-and close the files itself — the form to use when there is nothing to do to the
-records on the way through.
+rather than `FD` because the sort owns its blocking. `USING` and `GIVING` let the
+sort open, read, write, and close the files itself — the form to use when there
+is nothing to do to the records on the way through.
+
+The `SD` gets a `SELECT ... ASSIGN TO SORTWORK`, and that name is
+**documentation**: COBOL requires the clause and then ignores the name, which is
+why IBM's own example assigns two `SD` files to the same one. Nothing is
+allocated for it and no DD answers to it. It is deliberately not `SORTWK01` —
+that is the DD the sort product reads for its first _work dataset_, which the
+generated job does allocate, along with `SORTWK02` and `SORTWK03`. Naming the
+`SD` after it would read as though the two were connected.
+
+A `MERGE` gets no work datasets. Its inputs already arrive in order, so there is
+nothing to spill to disk.
 
 Every file a sort touches holds the same record, and every key is a field of it:
 a key that is not in the record sorts on nothing (`BANK-FILE-005`). A `merge`

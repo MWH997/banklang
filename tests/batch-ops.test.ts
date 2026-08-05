@@ -77,8 +77,53 @@ describe("sort and merge", () => {
 
     expect(result.cobol).toContain("SD  SORTED-POSTINGS-SORT-FILE.");
     expect(result.cobol).toContain(
-      "SELECT SORTED-POSTINGS-SORT-FILE ASSIGN TO SORTWK01.",
+      "SELECT SORTED-POSTINGS-SORT-FILE ASSIGN TO SORTWORK.",
     );
+  });
+
+  /**
+   * The SELECT is required and its assign name is treated as documentation:
+   * nothing is allocated for it and no DD answers to it. IBM's own example
+   * assigns two SD files to the same name.
+   *
+   * It is deliberately not `SORTWK01`, which is the DD the sort product reads
+   * for its first work dataset — a different thing that the job does allocate.
+   * Naming it that would read as though the SD were bound to it, and anyone who
+   * changed one to match the other would find that neither mattered.
+   */
+  it("does not name the sort work file after the sort product's DD", () => {
+    const result = txn("  sort rawPostings into sortedPostings on branchId;");
+
+    expect(result.cobol).not.toContain("ASSIGN TO SORTWK01");
+  });
+
+  /** Nothing is allocated for the name, so two sorts may carry the same one. */
+  it("lets two sort work files share it", () => {
+    const result = compile(`module Batch;
+
+record Posting {
+  branchId: string<8>;
+  idempotencyKey: string<36>;
+}
+
+record Advice {
+  adviceId: string<16>;
+}
+
+file rawPostings sequential input record Posting status rawStatus;
+file sortedPostings sequential output record Posting status sortedStatus;
+file rawAdvice sequential input record Advice status rawAdviceStatus;
+file sortedAdvice sequential output record Advice status sortedAdviceStatus;
+
+entry transaction order(posting: Posting) {
+  sort rawPostings into sortedPostings on branchId;
+  sort rawAdvice into sortedAdvice on adviceId;
+  audit("ORDERED", posting.idempotencyKey);
+}`);
+    const assigns = (result.cobol ?? "").match(/ASSIGN TO SORTWORK\./g) ?? [];
+
+    expect(errors(result)).toEqual([]);
+    expect(assigns).toHaveLength(2);
   });
 
   it("merges several already-sorted inputs", () => {
