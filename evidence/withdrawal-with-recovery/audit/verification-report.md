@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/WITHDRAWAL-WITH-RECOVERY.cbl -o dist/gnucobol/bin/withdrawal-with-recovery
 - compiler-exit-code: 0

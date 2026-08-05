@@ -100,7 +100,7 @@
     "sourceMapArtifactHash": "aae43515b492108b677040aab23b0431bd799dcd2e62cfc6bf16d59985e75a86",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
-    "compilerCommand": "cobc -x -free dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule",
+    "compilerCommand": "cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule",
     "compilerExitCode": 0,
     "compilerStatus": "passed",
     "compilerOutput": null,

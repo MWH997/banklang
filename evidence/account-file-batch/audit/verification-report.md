@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl -o dist/gnucobol/bin/account-file-batch
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/ACCOUNT-FILE-BATCH.cbl -o dist/gnucobol/bin/account-file-batch
 - compiler-exit-code: 0

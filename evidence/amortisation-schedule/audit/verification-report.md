@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/AMORTISATION-SCHEDULE.cbl -o dist/gnucobol/bin/amortisation-schedule
 - compiler-exit-code: 0

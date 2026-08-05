@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl -o dist/gnucobol/bin/batch-interest-accrual
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/BATCH-INTEREST-ACCRUAL.cbl -o dist/gnucobol/bin/batch-interest-accrual
 - compiler-exit-code: 0

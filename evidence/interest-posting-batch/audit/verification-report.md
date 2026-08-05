@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -free dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl -o dist/gnucobol/bin/interest-posting-batch
+- compiler-command: cobc -x -free -I dist/gnucobol/copybooks dist/gnucobol/cobol/INTEREST-POSTING-BATCH.cbl -o dist/gnucobol/bin/interest-posting-batch
 - compiler-exit-code: 0
