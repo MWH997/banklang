@@ -149,6 +149,41 @@ GnuCOBOL every field after a national sits at a different offset. The warning is
 there so the local evidence cannot be mistaken for a check that happened.
 `zos/README.md` records the divergence as something to verify first.
 
+### `BANK-TYPE-025` parsed document cannot be checked locally
+
+A warning, on every `json <text> into <record>`.
+
+Enterprise COBOL implements `JSON PARSE`. GnuCOBOL 3.2.0 compiles it, warns that
+it is not implemented, and then does nothing at run time: the record is left
+untouched and **no exception is raised**, so a program reading a payload runs
+clean and processes an empty record.
+
+Verify the program on z/OS before relying on what it reads, and check the record
+rather than trusting the failure path — a parse that did nothing does not report
+one. `zos/README.md` records the divergence.
+
+### `BANK-TYPE-026` xml cannot parse into a record
+
+`JSON PARSE` fills a record from a document, and `json <text> into <record>`
+becomes exactly that. `XML PARSE` has no such form — in Enterprise COBOL as in
+GnuCOBOL it is event-driven, `XML PARSE <text> PROCESSING PROCEDURE <para>`, and
+the handler walks the `XML-EVENT` and `XML-TEXT` special registers moving what it
+recognises. There is no COBOL for an `xml ... into ...` to become.
+
+Use `json <text> into <record>`, or take the document apart with `split` and
+`substring`.
+
+### `BANK-TYPE-027` nested function is recursive
+
+COBOL forbids `LOCAL-STORAGE` in a contained program, so a `nested function`'s
+locals sit in `WORKING-STORAGE` — one copy shared by every invocation. A
+recursive one would overwrite its own locals on the way down and read the
+innermost call's values on the way back out: it compiles, it runs, and it returns
+the wrong number.
+
+Drop `nested`. An ordinary recursive function is emitted as a sibling program
+with `LOCAL-STORAGE`, which is what makes recursion safe.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden

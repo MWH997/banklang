@@ -483,6 +483,45 @@ detected through the call graph.
 
 Functions may take type parameters; see section 5b.
 
+### Nested functions
+
+```ts
+nested function accrued(position: Position): decimal<9, 2> {
+  let raw: decimal<9, 2> = round(position.balance * position.rate, "HALF_UP");
+  return divide(raw, 100.0, "HALF_UP");
+}
+```
+
+An ordinary function is a paragraph the program `PERFORM`s, sharing all its
+storage. A `nested function` is a COBOL **contained program**: `PROGRAM-ID
+... COMMON.`, written inside the container before its `END PROGRAM`, with its
+own working storage and a real `CALL` boundary.
+
+What it buys is what a sibling program cannot do — **it reads the module's
+records directly**, because the container declares them `GLOBAL`:
+
+```cobol
+       01  POSITION-FLD GLOBAL.
+...
+       PROGRAM-ID. ACCRUED COMMON.
+       PROCEDURE DIVISION USING LK-RESULT.
+           COMPUTE RAW ... = (BALANCE OF POSITION-FLD * RATE OF POSITION-FLD)
+```
+
+So a record parameter is not passed at all: the callee can already see the
+record, and handing it over as well would be a second name for the same storage.
+Scalars still travel through `LINKAGE`, because a value has to be handed over.
+
+**A nested function cannot recurse** (`BANK-TYPE-027`). COBOL forbids
+`LOCAL-STORAGE` in a contained program, so its locals are one copy shared by
+every invocation: a recursive call would overwrite them on the way down and read
+the innermost call's values on the way back out — it compiles, it runs, and it
+returns the wrong number. Drop `nested` and an ordinary recursive function is
+emitted as a sibling with `LOCAL-STORAGE`, which is what makes recursion safe.
+
+`nested` is contextual, and only in front of `function`, so it stays usable as a
+field and parameter name.
+
 ### Locals
 
 COBOL has no block scope. Every `let` becomes an `01` item in
@@ -1244,28 +1283,6 @@ BankTS rejects:
 - ambient runtime mutation
 - time-zone-dependent operations without explicit calendar/time-zone policy
 
-### `JSON PARSE` and `XML PARSE`
-
-Not offered, and this one is a measurement rather than a matter of taste.
-
-GnuCOBOL 3.2.0 compiles both, warns `-Wpending` that they are not implemented,
-and then **does nothing at run time**: the target fields are left untouched and
-no exception is raised. A program reading a payload would run clean and process
-empty records, which is a worse failure than not compiling.
-
-```cobol
-JSON PARSE IN-TEXT INTO ACCT
-END-JSON
-*> ACCT-ID is blank and BAL is zero afterwards. No exception.
-```
-
-Generating is different — `JSON GENERATE` and `XML GENERATE` are implemented,
-and the [tests execute them](../tests/serialize.test.ts) and read the document
-back. Parsing is the half nothing here can check, so it is not offered rather
-than shipped on the strength of Enterprise COBOL's documentation. Take a payload
-apart with `split` and `substring`, whose behaviour this compiler can and does
-verify.
-
 ## 13a. Batch operations
 
 ```ts
@@ -1341,8 +1358,34 @@ escape the rule already covers for an audit event and a log line. Copy the
 fields that may leave into a record without them; a masked value derived through
 a function is the declassification point.
 
-`JSON PARSE` and `XML PARSE` are not included, and
-[section 14](#14-banned-features) says why.
+#### Reading one back
+
+```ts
+json message.body into account on error {
+  returnCode = 12;
+};
+```
+
+`JSON PARSE`. The same statement with the direction reversed: `from` writes the
+document out of a record, `into` reads one back in. There is no `count`, because
+the document says where it ends.
+
+A record carrying a `sensitive` field is fine here, unlike when generating.
+Restricted data arriving from outside and landing in a field marked for it is
+the marking working, not an escape.
+
+**It carries a warning** (`BANK-TYPE-025`). Enterprise COBOL implements
+`JSON PARSE`; GnuCOBOL 3.2.0 compiles it, warns that it is not implemented, and
+then does nothing at run time — the record is left untouched and no exception is
+raised. A program reading a payload therefore runs clean and processes an empty
+record. Verify on z/OS before relying on what it reads, and check the record
+rather than trusting the failure path.
+
+There is no `xml ... into ...` (`BANK-TYPE-026`). `XML PARSE` has no form that
+fills a record, in Enterprise COBOL or in GnuCOBOL: it is event-driven —
+`XML PARSE <text> PROCESSING PROCEDURE <para>` — and the handler walks the
+`XML-EVENT` and `XML-TEXT` special registers, moving what it recognises itself.
+There is nothing for `xml payload into account` to become.
 
 ### 13b. Reports
 

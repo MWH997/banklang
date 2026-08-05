@@ -245,6 +245,8 @@ export interface ResolvedFunction {
   locals: ResolvedLocal[];
   returnType: ResolvedType;
   body: BlockNode;
+  /** `nested function` — a COBOL contained program rather than a paragraph. */
+  isNested: boolean;
 }
 
 export interface ResolvedLocal {
@@ -597,6 +599,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   drainInstantiations(aliases, recordMap, functions, diagnostics);
 
   reportUnusedGenerics(program, diagnostics);
+  reportRecursiveNestedFunctions(program, diagnostics);
   validateFileErrorHandlers(fileErrorHandlers, aliases, recordMap, diagnostics);
 
   checkSingleEntryPoint(transactions, diagnostics);
@@ -700,6 +703,89 @@ function checkSingleEntryPoint(
  * Monomorphisation means an uninstantiated generic contributes no COBOL at all.
  * Staying silent would let a template with a type error ship unnoticed.
  */
+/**
+ * Reports a `nested function` that can reach itself.
+ *
+ * COBOL forbids `LOCAL-STORAGE` in a contained program, so a nested function's
+ * locals sit in `WORKING-STORAGE` — one copy, shared by every invocation. A
+ * recursive one would therefore overwrite its own locals on the way down and
+ * read the innermost call's values on the way back out: it compiles, it runs,
+ * and it returns the wrong number. An ordinary recursive function is emitted as
+ * a sibling program with `LOCAL-STORAGE`, which is what makes recursion safe.
+ */
+function reportRecursiveNestedFunctions(
+  program: ProgramNode,
+  diagnostics: Diagnostic[],
+): void {
+  const declarations = program.declarations.filter(
+    (declaration): declaration is FunctionDeclarationNode =>
+      declaration.kind === "FunctionDeclaration",
+  );
+  const callees = new Map<string, Set<string>>(
+    declarations.map((declaration) => [
+      declaration.name,
+      collectCalledNames(declaration.body),
+    ]),
+  );
+
+  for (const declaration of declarations) {
+    if (!declaration.isNested) {
+      continue;
+    }
+    const seen = new Set<string>();
+    const stack = [...(callees.get(declaration.name) ?? [])];
+    while (stack.length > 0) {
+      const next = stack.pop() as string;
+      if (next === declaration.name) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-027",
+            severity: "error",
+            message: `Nested function ${declaration.name} can reach itself.`,
+            span: declaration.span,
+            hint: "A contained COBOL program cannot have LOCAL-STORAGE, so its locals are one copy shared by every invocation and a recursive call would overwrite them. Drop `nested`: an ordinary recursive function is emitted as a sibling program, which is what makes recursion safe.",
+            backendProfile: "ibm-enterprise-cobol-zos",
+          }),
+        );
+        break;
+      }
+      if (seen.has(next)) {
+        continue;
+      }
+      seen.add(next);
+      stack.push(...(callees.get(next) ?? []));
+    }
+  }
+}
+
+/** Every function name a block calls, however deeply nested. */
+function collectCalledNames(block: BlockNode): Set<string> {
+  const called = new Set<string>();
+
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+      return;
+    }
+    if (!value || typeof value !== "object") {
+      return;
+    }
+    const node = value as { kind?: string; callee?: string };
+    if (node.kind === "CallExpression" && typeof node.callee === "string") {
+      called.add(node.callee);
+    }
+    for (const [key, child] of Object.entries(value)) {
+      // A span is position data, not structure, and walking it finds nothing.
+      if (key !== "span") {
+        walk(child);
+      }
+    }
+  };
+
+  walk(block.statements);
+  return called;
+}
+
 function reportUnusedGenerics(
   program: ProgramNode,
   diagnostics: Diagnostic[],
@@ -2683,17 +2769,17 @@ function validateSplitStatement(
 }
 
 /**
- * `json <target> from <record> count <length> on error { ... };`
+ * `json <text> from <record> ...;` and `json <text> into <record> ...;`
  *
- * The target is a fixed COBOL field, so the three things worth checking are
- * that it is text, that the source is a record, and that the length has
- * somewhere whole-numbered to go.
+ * Either way the text side has to be text and the record side a record, and a
+ * generated length has somewhere whole-numbered to go.
  *
- * The fourth is the one that matters most. Serialised text is data on its way
- * out of the program — to a queue, a gateway, a file something else reads — so
- * a record carrying a `sensitive` field is a card number about to be written
- * into a payload in clear. That is the same escape `BANK-AUD-002` covers for an
- * audit event, and it is caught here for the same reason.
+ * The rule that matters most is about restricted data, and it points in only
+ * one direction. Generating puts a record into text that leaves the program, so
+ * a `sensitive` field would be a card number written into a payload in clear —
+ * the same escape `BANK-AUD-002` covers for an audit event. Parsing is the
+ * reverse: text arriving from outside is written into the record, and a field
+ * marked `sensitive` is exactly where restricted data belongs.
  */
 function validateSerializeStatement(
   statement: SerializeStatementNode,
@@ -2702,6 +2788,7 @@ function validateSerializeStatement(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): void {
+  const verb = `${statement.format} ${statement.direction === "generate" ? "from" : "into"}`;
   const target = inferExpressionType(
     statement.target,
     scope,
@@ -2714,9 +2801,12 @@ function validateSerializeStatement(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `${statement.format} generates into ${describeType(target)}; it generates text.`,
+        message: `${verb} works through ${describeType(target)}; it works through text.`,
         span: statement.target.span,
-        hint: `Generate into a string<n> wide enough for the ${statement.format}, and read the length from the \`count\` field.`,
+        hint:
+          statement.direction === "generate"
+            ? `Generate into a string<n> wide enough for the ${statement.format}, and read the length from the \`count\` field.`
+            : `Parse from a string<n> holding the ${statement.format} document.`,
         backendProfile: null,
       }),
     );
@@ -2734,9 +2824,9 @@ function validateSerializeStatement(
       createDiagnostic({
         id: "BANK-TYPE-003",
         severity: "error",
-        message: `${statement.format} generates from ${describeType(source)}; it generates from a record.`,
+        message: `${verb} ${describeType(source)}, which is not a record.`,
         span: statement.source.span,
-        hint: "COBOL builds the document from the group's own field names, so there has to be a group.",
+        hint: "COBOL matches the document against the group's own field names, so there has to be a group.",
         backendProfile: null,
       }),
     );
@@ -2764,7 +2854,7 @@ function validateSerializeStatement(
     }
   }
 
-  if (source?.kind === "record") {
+  if (statement.direction === "generate" && source?.kind === "record") {
     const restricted = source.fields.filter((field) => field.sensitive);
     if (restricted.length > 0) {
       diagnostics.push(
@@ -2778,6 +2868,42 @@ function validateSerializeStatement(
         }),
       );
     }
+  }
+
+  // `XML PARSE` has no form that fills a record. In Enterprise COBOL, as in
+  // GnuCOBOL, it is event-driven — `XML PARSE <text> PROCESSING PROCEDURE
+  // <para>` — and the handler walks XML-EVENT and XML-TEXT itself, moving what
+  // it recognises. There is no COBOL for `xml payload into account` to become,
+  // so the compiler says what does exist rather than emitting something no
+  // compiler accepts.
+  if (statement.direction === "parse" && statement.format === "xml") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-026",
+        severity: "error",
+        message: "xml has no form that parses into a record.",
+        span: statement.span,
+        hint: "`JSON PARSE` fills a record from a document; `XML PARSE` does not — it is event-driven, and the handler moves what it recognises itself. Use `json <text> into <record>`, or take the document apart with `split` and `substring`.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return;
+  }
+
+  // Parsing is the one construct here whose COBOL the local validator accepts
+  // and then does not run, so the compiler says so rather than letting the
+  // evidence imply a check that did not happen.
+  if (statement.direction === "parse") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-025",
+        severity: "warning",
+        message: `${statement.format} parse cannot be checked locally.`,
+        span: statement.span,
+        hint: `GnuCOBOL 3.2.0 compiles \`${statement.format.toUpperCase()} PARSE\`, warns that it is not implemented, and then does nothing at run time — the record is left untouched and no exception is raised. Enterprise COBOL implements it. Verify the program on z/OS before relying on what it reads, and check the record rather than trusting the failure path — see zos/README.md.`,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
   }
 }
 
@@ -4584,6 +4710,7 @@ function resolveFunction(
     parameters,
     locals,
     returnType,
+    isNested: declaration.isNested,
     body: declaration.body,
   };
 }

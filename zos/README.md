@@ -71,11 +71,17 @@ hand-written program with no BankLang involved. Compile with
 `-fassign-clause=external` (or `=ibm`) to bind it. On z/OS the DD comes from the
 JCL and the question does not arise.
 
-**`JSON PARSE` and `XML PARSE` compile and do nothing.** GnuCOBOL warns
-`-Wpending` that they are not implemented, then leaves the target untouched and
-raises no exception. This compiler does not offer either, for that reason;
-`JSON GENERATE` and `XML GENERATE` are implemented and are executed by the
-tests.
+**`JSON PARSE` compiles and does nothing.** GnuCOBOL warns `-Wpending` that it
+is not implemented, then leaves the record untouched and raises no exception —
+so a program reading a payload runs clean and processes an empty record. This
+compiler offers `json <text> into <record>` and warns on every one
+(`BANK-TYPE-025`). **Check the record, not the failure path:** a parse that did
+nothing does not report one. `JSON GENERATE` and `XML GENERATE` are implemented
+here and are executed by the tests.
+
+(`XML PARSE` is a different matter and not a divergence at all: neither
+Enterprise COBOL nor GnuCOBOL has a form that fills a record — both are
+event-driven — so the compiler has no `xml ... into ...` to offer.)
 
 ## What to run
 

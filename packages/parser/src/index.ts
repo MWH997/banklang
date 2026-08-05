@@ -679,6 +679,20 @@ class Parser {
       return this.parseFunctionDeclaration();
     }
 
+    // `nested function` is a contained COBOL program rather than a paragraph.
+    // `nested` is matched contextually, and only in front of `function`, so it
+    // stays usable as a field and parameter name everywhere else.
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "nested" &&
+      this.next.kind === "keyword" &&
+      this.next.text === "function"
+    ) {
+      this.advance();
+      this.advance();
+      return this.parseFunctionDeclaration(true);
+    }
+
     if (this.matchKeyword("entry")) {
       const cics = this.matchKeyword("cics");
       if (!this.matchKeyword("transaction")) {
@@ -1592,7 +1606,9 @@ class Parser {
     };
   }
 
-  private parseFunctionDeclaration(): FunctionDeclarationNode | null {
+  private parseFunctionDeclaration(
+    isNested = false,
+  ): FunctionDeclarationNode | null {
     const nameToken = this.expectIdentifier("Expected function name.");
     const typeParameters = this.parseTypeParameters();
     const openParen = this.expectPunctuation(
@@ -1619,6 +1635,7 @@ class Parser {
       parameters,
       returnType,
       body,
+      isNested,
       span: {
         sourceFile: nameToken.span.sourceFile,
         start: nameToken.span.start,
@@ -1711,40 +1728,56 @@ class Parser {
   }
 
   /**
-   * `json <target> from <record> count <length> on error { ... };`
+   * `json <text> from <record> count <length> on error { ... };` and
+   * `json <text> into <record> on error { ... };`
    *
-   * `count` and `on error` are optional, and `from` and `count` are matched
-   * contextually so neither is taken away as a field name.
+   * The same statement with the direction reversed: `from` writes the document
+   * out of a record, `into` reads one back in. `count`, which is the generated
+   * length, belongs only to the writing direction.
+   *
+   * `from`, `into`, and `count` are matched contextually so none is taken away
+   * as a field name.
    */
   private parseSerializeStatement(
     format: "json" | "xml",
   ): SerializeStatementNode | null {
     const keyword = this.advance();
     const target = this.parseFieldReference(
-      `Expected the field the ${format} text is generated into.`,
+      `Expected the field holding the ${format} text.`,
     );
     if (!target) {
       return null;
     }
 
-    if (!this.matchContextual("from")) {
+    let direction: "generate" | "parse";
+    if (this.matchContextual("from")) {
+      direction = "generate";
+    } else if (this.matchContextual("into")) {
+      direction = "parse";
+    } else {
       this.errorAtCurrent(
         "BANK-SYN-001",
-        "Expected `from` before the record.",
-        `Write \`${format} payload from account;\`.`,
+        "Expected `from` or `into` before the record.",
+        `Write \`${format} payload from account;\` to write one, or \`${format} payload into account;\` to read one.`,
       );
       return null;
     }
+
     const source = this.parseFieldReference(
-      `Expected the record the ${format} text is generated from.`,
+      direction === "generate"
+        ? `Expected the record the ${format} text is generated from.`
+        : `Expected the record the ${format} text is parsed into.`,
     );
     if (!source) {
       return null;
     }
 
-    const count = this.matchContextual("count")
-      ? this.parseFieldReference("Expected the field the length is put in.")
-      : null;
+    // A count is the length that was generated, so it belongs only to the
+    // writing direction. Reading is told the length by the document itself.
+    const count =
+      direction === "generate" && this.matchContextual("count")
+        ? this.parseFieldReference("Expected the field the length is put in.")
+        : null;
 
     let onError: BlockNode | null = null;
     if (
@@ -1771,6 +1804,7 @@ class Parser {
     return {
       kind: "SerializeStatement",
       format,
+      direction,
       target,
       source,
       count,

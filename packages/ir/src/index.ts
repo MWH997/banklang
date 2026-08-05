@@ -211,6 +211,12 @@ export interface IRFunction {
    */
   isRecursive: boolean;
   /**
+   * `nested function` — emitted as a COBOL contained program: its own storage
+   * and a real `CALL` boundary, reading the module's records directly because
+   * they are `GLOBAL` in the container.
+   */
+  isNested: boolean;
+  /**
    * True when the function raises, guards a computed subscript, or calls a
    * function that does. A caller has to test the failure code after performing
    * one of these, because COBOL has no unwinding of its own.
@@ -342,11 +348,12 @@ export interface IRReportStatement {
   target: string;
 }
 
-/** `JSON GENERATE t FROM r COUNT IN n` and its `XML GENERATE` twin. */
+/** `JSON GENERATE t FROM r COUNT IN n`, `JSON PARSE t INTO r`, and the XML twins. */
 export interface IRSerializeStatement {
   kind: "SerializeStatement";
   span: SourceSpan;
   format: "json" | "xml";
+  direction: "generate" | "parse";
   target: IRExpression;
   source: IRExpression;
   count: IRExpression | null;
@@ -1648,6 +1655,7 @@ function lowerFunction(fn: ResolvedFunction): IRFunction {
     returnType: lowerType(fn.returnType),
     body: lowerBlock(fn.body, scopeTypes),
     isRecursive: false,
+    isNested: fn.isNested,
     canFail: false,
   };
 }
@@ -1808,6 +1816,7 @@ function lowerStatement(
         kind: "SerializeStatement",
         span: statement.span,
         format: statement.format,
+        direction: statement.direction,
         target: lowerExpression(statement.target, scopeTypes),
         source: lowerExpression(statement.source, scopeTypes),
         count: statement.count

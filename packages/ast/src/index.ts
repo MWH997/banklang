@@ -744,6 +744,21 @@ export interface FunctionDeclarationNode extends NodeBase {
   parameters: ParameterNode[];
   returnType: TypeNode;
   body: BlockNode;
+  /**
+   * `nested function` — a COBOL contained program rather than a paragraph.
+   *
+   * An ordinary function is a paragraph the program `PERFORM`s, sharing all its
+   * storage. A nested one is a program inside the program: it has its own
+   * storage and a real `CALL` boundary, and it reads the module's records
+   * directly because they are emitted `GLOBAL` in the container. That is what
+   * it buys — a unit with its own working storage that still sees the shared
+   * record, without the parameter plumbing a separate module would need.
+   *
+   * It cannot recurse. COBOL forbids `LOCAL-STORAGE` in a contained program,
+   * and per-invocation locals are what make recursion safe, so a recursive
+   * function stays a sibling program instead.
+   */
+  isNested: boolean;
 }
 
 /**
@@ -1046,6 +1061,14 @@ export interface ReportStatementNode extends NodeBase {
 export interface SerializeStatementNode extends NodeBase {
   kind: "SerializeStatement";
   format: "json" | "xml";
+  /**
+   * `generate` writes the document, `parse` reads it back.
+   *
+   * The two are the same statement with the direction reversed, which is why
+   * they share a node: `from` names the record the text comes out of, `into`
+   * names the record the text goes into.
+   */
+  direction: "generate" | "parse";
   target: MemberAccessNode | IdentifierNode;
   source: MemberAccessNode | IdentifierNode;
   count: MemberAccessNode | IdentifierNode | null;
