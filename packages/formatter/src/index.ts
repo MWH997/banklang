@@ -503,6 +503,8 @@ function printExpression(expression: ExpressionNode): string {
       return `${expression.enumName}.${expression.member}`;
     case "IndexAccess":
       return `${printExpression(expression.target)}[${printExpression(expression.index)}]`;
+    case "StringCall":
+      return `${expression.operation}(${expression.args.map(printExpression).join(", ")})`;
     case "TemporalCall":
       return `${expression.operation}(${expression.args.map(printExpression).join(", ")})`;
     case "NullableCheck":

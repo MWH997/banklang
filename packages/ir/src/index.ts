@@ -19,6 +19,7 @@ import {
   type WhileStatementNode,
   type AssignStatementNode,
   type FileStatementNode,
+  type StringCallNode,
 } from "../../ast/src/index";
 import type { EditStyle, NumericUsage } from "../../cobol-ir/src/index";
 import type {
@@ -341,7 +342,20 @@ export type IRExpression =
   | IREnumMemberExpression
   | IRIndexAccessExpression
   | IRNullableCheckExpression
-  | IRTemporalCallExpression;
+  | IRTemporalCallExpression
+  | IRStringCallExpression;
+
+/**
+ * A string builtin, lowered to `STRING`, reference modification, or an
+ * intrinsic function.
+ */
+export interface IRStringCallExpression {
+  kind: "StringCall";
+  span: SourceSpan;
+  operation: "trim" | "upper" | "lower" | "substring" | "concat" | "now";
+  args: IRExpression[];
+  resolvedType: IRType;
+}
 
 /**
  * A calendar-aware builtin, lowered to a COBOL intrinsic function.
@@ -1106,6 +1120,7 @@ function expressionNeedsBoundsCheck(expression: IRExpression): boolean {
     case "NullableCheck":
       return expressionNeedsBoundsCheck(expression.operand);
     case "TemporalCall":
+    case "StringCall":
       return expression.args.some(expressionNeedsBoundsCheck);
     case "Call":
       return expression.args.some(expressionNeedsBoundsCheck);
@@ -1205,6 +1220,7 @@ function collectCalls(block: IRBlock): Set<string> {
         walkExpression(expression.operand);
         return;
       case "TemporalCall":
+      case "StringCall":
         expression.args.forEach(walkExpression);
         return;
       case "IndexAccess":
@@ -1582,6 +1598,44 @@ function lowerIfStatement(
   };
 }
 
+/**
+ * The type a string builtin produces, recomputed for the IR.
+ *
+ * Every length is decided at compile time, because a COBOL field has a fixed
+ * one: `substring` takes literal bounds and `concat` sums its arguments.
+ */
+function stringCallType(
+  expression: StringCallNode,
+  scopeTypes: Map<string, IRType>,
+): IRType {
+  const lengthOf = (node: ExpressionNode): number => {
+    const lowered = lowerExpression(node, scopeTypes);
+    return lowered.resolvedType.kind === "string"
+      ? lowered.resolvedType.length
+      : 0;
+  };
+
+  switch (expression.operation) {
+    case "now":
+      return { kind: "temporal", unit: "timestamp" };
+    case "substring":
+      return {
+        kind: "string",
+        length: Number((expression.args[2] as { text?: string }).text ?? "0"),
+      };
+    case "concat":
+      return {
+        kind: "string",
+        length: expression.args.reduce(
+          (total, argument) => total + lengthOf(argument),
+          0,
+        ),
+      };
+    default:
+      return { kind: "string", length: lengthOf(expression.args[0]) };
+  }
+}
+
 function lowerExpression(
   expression: ExpressionNode,
   scopeTypes: Map<string, IRType>,
@@ -1599,6 +1653,16 @@ function lowerExpression(
         span: expression.span,
         value: expression.value,
         resolvedType: { kind: "string", length: expression.value.length },
+      };
+    case "StringCall":
+      return {
+        kind: "StringCall",
+        span: expression.span,
+        operation: expression.operation,
+        args: expression.args.map((argument) =>
+          lowerExpression(argument, scopeTypes),
+        ),
+        resolvedType: stringCallType(expression, scopeTypes),
       };
     case "TemporalCall":
       return {
