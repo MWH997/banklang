@@ -11,6 +11,7 @@ import {
   type EditedTypeNode,
   type MemberAccessNode,
   type TemporalCallNode,
+  type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
   type DeclarationNode,
   type DecimalLiteralNode,
@@ -1124,6 +1125,7 @@ function validateTransactionBody(
       case "CicsStatement":
       case "ForEachStatement":
       case "CursorLoopStatement":
+      case "UnitOfWorkStatement":
         validateEffectStatement(
           statement,
           scope,
@@ -1287,6 +1289,9 @@ function validateEffectStatement(
         diagnostics,
         inTransaction,
       );
+      return true;
+    case "UnitOfWorkStatement":
+      validateUnitOfWorkStatement(statement, diagnostics);
       return true;
     case "CursorLoopStatement":
       validateCursorLoopStatement(
@@ -1773,6 +1778,37 @@ function validateForEachStatement(
  * so a cursor loop does not put the body under `BANK-SQL-001`. An `execute` in
  * the body still does: that outcome is the author's to interpret.
  */
+/**
+ * `commit;` and `rollback;`.
+ *
+ * Inside a CICS transaction, CICS owns the syncpoint and commits Db2's work
+ * along with everything else, so an `EXEC SQL COMMIT` is not merely redundant —
+ * Db2 rejects it at run time. That is exactly the ambiguity `BANK-SQL-004` was
+ * reserved for.
+ */
+function validateUnitOfWorkStatement(
+  statement: UnitOfWorkStatementNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (!currentTransactionIsCics) {
+    return;
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-SQL-004",
+      severity: "error",
+      message: `\`${statement.operation}\` has no meaning inside a CICS transaction, where CICS owns the unit of work.`,
+      span: statement.span,
+      hint:
+        statement.operation === "commit"
+          ? "Write `syncpoint resp <status>;`, which commits Db2's work with everything else."
+          : "Write `rollback resp <status>;`, the CICS command, which backs out Db2's work too.",
+      backendProfile: null,
+    }),
+  );
+}
+
 function validateCursorLoopStatement(
   statement: CursorLoopStatementNode,
   scope: Map<string, ResolvedType>,
@@ -3340,6 +3376,7 @@ function resolveTerminalStatementType(
     case "CicsStatement":
     case "ForEachStatement":
     case "CursorLoopStatement":
+    case "UnitOfWorkStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.
       return null;

@@ -28,6 +28,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "link",
   "syncpoint",
   "rollback",
+  "commit",
   "extends",
   "entry",
   "raise",

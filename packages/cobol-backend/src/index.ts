@@ -371,6 +371,11 @@ export function emitCobol(
   currentSql = new Map(program.sql.map((entry) => [entry.name, entry]));
   // Names locals before anything reads them: whether a local is qualified
   // depends on the whole program, not on the routine that declares it.
+  cursorNames = new Set(
+    program.sql
+      .filter((entry) => entry.form === "cursor")
+      .map((entry) => entry.name),
+  );
   currentLocalFields = planLocalFields(program);
   declaredDataNames = collectDataNames(program);
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
@@ -1352,6 +1357,9 @@ function emitStatement(
           false,
         );
         break;
+      case "UnitOfWorkStatement":
+        emitExecSql([statement.operation.toUpperCase()], addLine, indent);
+        break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
         break;
@@ -1488,6 +1496,9 @@ function emitTransactionBody(
           "",
           true,
         );
+        break;
+      case "UnitOfWorkStatement":
+        emitExecSql([statement.operation.toUpperCase()], addLine, indent);
         break;
       case "RaiseStatement":
         emitRaiseStatement(statement, addLine, indent);
@@ -2270,6 +2281,9 @@ function sqlParameterName(statementName: string, index: number): string {
   return `${toCobolName(statementName)}-H${index + 1}`;
 }
 
+/** Cursors the program declares, for rewriting `WHERE CURRENT OF`. */
+let cursorNames = new Set<string>();
+
 /** Counts the rows a cursor loop has taken, so the declared bound can stop it. */
 function cursorRowCounter(cursorName: string): string {
   return `${toCobolName(cursorName)}-ROWS`;
@@ -2285,18 +2299,32 @@ function rewriteHostVariables(
   declaration: IRSql,
   intoRecord: string | null,
 ): string {
-  return text.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name: string) => {
-    const parameterIndex = declaration.parameters.findIndex(
-      (parameter) => parameter.name === name,
-    );
-    if (parameterIndex >= 0) {
-      return `:${sqlParameterName(declaration.name, parameterIndex)}`;
-    }
-    if (intoRecord) {
-      return `:${toCobolFieldName(name)} OF ${intoRecord}`;
-    }
-    return match;
-  });
+  // `WHERE CURRENT OF <cursor>` names a cursor, not a host variable, and the
+  // cursor the program declared has a COBOL name of its own. Without this the
+  // positioned update refers to a cursor Db2 has never heard of.
+  const positioned = text.replace(
+    /\bCURRENT\s+OF\s+([A-Za-z_][A-Za-z0-9_]*)/gi,
+    (match, cursorName: string) =>
+      cursorNames.has(cursorName)
+        ? `CURRENT OF ${toCobolName(cursorName)}`
+        : match,
+  );
+
+  return positioned.replace(
+    /:([A-Za-z_][A-Za-z0-9_]*)/g,
+    (match, name: string) => {
+      const parameterIndex = declaration.parameters.findIndex(
+        (parameter) => parameter.name === name,
+      );
+      if (parameterIndex >= 0) {
+        return `:${sqlParameterName(declaration.name, parameterIndex)}`;
+      }
+      if (intoRecord) {
+        return `:${toCobolFieldName(name)} OF ${intoRecord}`;
+      }
+      return match;
+    },
+  );
 }
 
 function emitExecSql(
