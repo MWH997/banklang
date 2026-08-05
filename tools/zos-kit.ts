@@ -3,7 +3,10 @@ import { dirname, join } from "node:path";
 
 import { compile } from "../packages/compiler/src/index";
 import { renderCopybook } from "../packages/cobol-backend/src/index";
-import { toCobolName, toCobolProgramId } from "../packages/cobol-ir/src/index";
+import {
+  copybookMemberName,
+  toCobolProgramId,
+} from "../packages/cobol-ir/src/index";
 
 /**
  * Builds an upload bundle for someone with z/OS access.
@@ -24,6 +27,8 @@ import { toCobolName, toCobolProgramId } from "../packages/cobol-ir/src/index";
 interface Member {
   name: string;
   content: string;
+  /** The record a copybook holds, so a name clash can say which two clashed. */
+  record?: string;
 }
 
 const EXAMPLES = readdirSync("examples", { withFileTypes: true })
@@ -68,23 +73,59 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
     }
     for (const copybook of result.copybooks) {
       copybooks.push({
-        name: toCobolName(copybook.record).replace(/-/g, "").slice(0, 8),
+        name: copybookMemberName(copybook.record),
         content: copybook.content,
+        record: copybook.record,
       });
     }
   }
 
+  // Every folder goes to one PDS, so a name written twice is a member
+  // overwritten. The same record shared by two programs is written twice with
+  // the same bytes and is nothing to report; two *different* records sharing a
+  // name means the library ships one of them under the other's name, and every
+  // program that copies it then reads fields at offsets its dataset does not
+  // have.
+  const collisions: string[] = [];
   const write = (folder: string, members: Member[]): void => {
+    const written = new Map<string, Member>();
     for (const member of members) {
+      const earlier = written.get(member.name);
+      if (earlier) {
+        if (earlier.content !== member.content) {
+          collisions.push(
+            `${folder}/${member.name}: ${earlier.record ?? earlier.name} and ${member.record ?? member.name}`,
+          );
+        }
+        continue;
+      }
+      written.set(member.name, member);
       const path = join(outputRoot, folder, `${member.name}.txt`);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, member.content, "utf8");
     }
+    // The manifest lists what shipped, not what was offered. It counted every
+    // copybook the programs produced, so a library six members short still
+    // looked complete.
+    members.length = 0;
+    members.push(...written.values());
   };
 
   write("cobol", cobol);
   write("copybooks", copybooks);
   write("jcl", jcl);
+
+  if (collisions.length > 0) {
+    throw new Error(
+      [
+        "Two different members would be written under one name, so the library",
+        "would ship one of them under the other's name:",
+        ...collisions.map((entry) => `  ${entry}`),
+        "A PDS member name is eight characters with the hyphens removed, and",
+        "that is also all a COPY resolves on. Rename so they differ within it.",
+      ].join("\n"),
+    );
+  }
 
   const manifestPath = join(outputRoot, "MANIFEST.txt");
   mkdirSync(dirname(manifestPath), { recursive: true });
@@ -116,9 +157,16 @@ function renderManifest(
     "  copybooks/  -> <HLQ>.BANKLANG.COPYLIB  (LRECL 80, RECFM FB)",
     "  jcl/        -> <HLQ>.BANKLANG.JCL      (LRECL 80, RECFM FB)",
     "",
-    "The generated JCL is free-format COBOL. IBM Enterprise COBOL 6.1 and later",
-    "accept that with the SOURCE format option; earlier releases need fixed",
-    "format, which this compiler does not emit.",
+    "The COBOL is fixed reference format: sequence area 1-6 blank, the",
+    "indicator in 7, Area A from 8, and nothing past column 72. Compile it",
+    "with the default SOURCE format. Do not set the free-format option — it",
+    "reads columns 1-7 as code, and every line here begins with six blanks.",
+    "",
+    "A copybook member is named for its record, with the hyphens removed and",
+    "cut to eight characters, which is what a COPY on a PDS resolves on. Two",
+    "records that agree within those eight characters cannot share a library,",
+    "so the bundle refuses to build rather than ship one under the other's",
+    "name.",
     "",
     "Members",
     "-------",

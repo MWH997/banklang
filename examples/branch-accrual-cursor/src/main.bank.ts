@@ -8,7 +8,7 @@ record AccrualRequest {
   idempotencyKey: string<36>;
 }
 
-record AccountRow {
+record AccountBalanceRow {
   rowAccountId: string<16>;
   rowBalance: BDT;
   rowStatus: string<8>;
@@ -25,7 +25,7 @@ record AccrualSummary {
 // A cursor returns a stream of rows rather than one. The INTO clause names
 // where a row lands; the compiler moves it onto the generated FETCH, which is
 // the statement Db2 delivers a row to.
-cursor accountsInBranch(keyBranch: string<8>): AccountRow {
+cursor accountsInBranch(keyBranch: string<8>): AccountBalanceRow {
   SELECT ACCOUNT_ID, BALANCE, STATUS
   INTO :rowAccountId, :rowBalance, :rowStatus
   FROM ACCOUNT
@@ -39,7 +39,7 @@ function interestOn(balance: BDT, rate: decimal<5, 4>): BDT {
   return round(balance * rate, "HALF_EVEN");
 }
 
-entry transaction accrueBranch(request: AccrualRequest, row: AccountRow, summary: AccrualSummary) {
+entry transaction accrueBranch(request: AccrualRequest, row: AccountBalanceRow, summary: AccrualSummary) {
   summary.summaryBranchId = request.branchId;
   summary.idempotencyKey = request.idempotencyKey;
 

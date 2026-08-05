@@ -54,6 +54,7 @@ import type {
   IRTemporalCallExpression,
 } from "../../ir/src/index";
 import {
+  copybookMemberName,
   decimalPicture,
   packedDecimalByteLength,
   toCobolFieldName,
@@ -864,7 +865,10 @@ export function emitCobol(
     // source-map entry for the record, and no per-field entries: the fields are
     // in the copybook, which has a layout report of its own.
     if (copybookMode === "copy") {
-      addLine(`           COPY ${layout.cobolName}.`);
+      // The member name, not the record's COBOL name: a COPY on a PDS
+      // resolves on the first eight characters, and a hyphen is not one a
+      // member name may contain.
+      addLine(`           COPY ${copybookMemberName(record.name)}.`);
       entries.push({
         sourceFile: program.sourceFile,
         sourceStart: record.span.start,

@@ -571,6 +571,23 @@ A `REDEFINES` field cannot carry one. It has no storage of its own, only a
 second reading of another field's bytes, so the value belongs on the field being
 redefined.
 
+### `BANK-COPY-007` two records share one copybook member
+
+A PDS member name is one to eight characters of letters, digits, and the
+national characters, with no hyphens — and that is also all the COBOL compiler
+looks at when it resolves a `COPY` from a PDS: "only the first eight characters
+of text-name are used as the identifying name".
+
+So `AccountRecord` and `AccountRow` are both the member `ACCOUNTR`. One copybook
+overwrites the other in the library, and every program that copies either gets
+whichever was written last: a record with the name it asked for and different
+fields at different offsets, which is the one thing a copybook exists to
+prevent. Rename one so the two differ within those eight characters.
+
+The same rule applies across a whole copybook library, not just within one
+program, so `pnpm zos:kit` refuses to build a bundle whose members would
+overwrite each other rather than shipping one under the other's name.
+
 ### `BANK-FILE-009` invalid varying record
 
 `varying <min> to <max> length <field>` becomes `RECORD IS VARYING IN SIZE`. The

@@ -4,7 +4,7 @@ type MoneyBDT = decimal<18, 2>;
 
 type Rate = decimal<9, 4>;
 
-record InterestAccount {
+record AccrualFeedRow {
   accountId: string<16>;
   branchCode: string<8>;
   balance: MoneyBDT;
@@ -18,7 +18,7 @@ record PostingAdvice {
   idempotencyKey: string<36>;
 }
 
-file accountFeed sequential input record InterestAccount status accountFeedStatus;
+file accountFeed sequential input record AccrualFeedRow status accountFeedStatus;
 
 file adviceOutput sequential output record PostingAdvice status adviceOutputStatus;
 
@@ -51,7 +51,7 @@ function feeFor(balance: MoneyBDT, fee: MoneyBDT): MoneyBDT {
   }
 }
 
-transaction postInterest(account: InterestAccount, advice: PostingAdvice) {
+transaction postInterest(account: AccrualFeedRow, advice: PostingAdvice) {
   let minimumBalance: MoneyBDT = 100.00;
   let premiumThreshold: MoneyBDT = 500000.00;
   let maintenanceFee: MoneyBDT = 25.00;
@@ -82,7 +82,7 @@ transaction postInterest(account: InterestAccount, advice: PostingAdvice) {
   audit("INTEREST_POSTED", account.idempotencyKey);
 }
 
-entry transaction runBatch(account: InterestAccount, advice: PostingAdvice) {
+entry transaction runBatch(account: AccrualFeedRow, advice: PostingAdvice) {
   open accountFeed;
   open adviceOutput;
 

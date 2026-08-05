@@ -17,7 +17,7 @@ The input program lives in `src/main.bank.ts` and uses:
 
 The transaction satisfies every banking safety rule the analyzer enforces:
 
-- `BANK-TXN-001` is satisfied because `TransferRequest` declares
+- `BANK-TXN-001` is satisfied because `PostTransferRequest` declares
   `idempotencyKey`
 - `BANK-AUD-001` is satisfied because the body emits an audit event
 - `BANK-AUD-003` is satisfied because the event name is a string literal

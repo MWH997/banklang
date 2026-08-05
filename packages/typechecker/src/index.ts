@@ -1,4 +1,5 @@
 import {
+  copybookMemberName,
   EDIT_STYLES,
   type EditStyle,
   type NumericUsage,
@@ -671,6 +672,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   validateFileErrorHandlers(fileErrorHandlers, aliases, recordMap, diagnostics);
 
   checkSingleEntryPoint(transactions, diagnostics);
+  checkCopybookMemberNames(records, diagnostics);
 
   return {
     program,
@@ -7447,6 +7449,49 @@ function declareCicsRespSymbols(
       if (statement.otherwise) {
         declareCicsRespSymbols(statement.otherwise, scope);
       }
+    }
+  }
+}
+
+/**
+ * Two records whose copybooks would land in the same PDS member.
+ *
+ * A member name is eight characters with the hyphens taken out, and it is also
+ * all the COBOL compiler looks at when it resolves a `COPY` from a PDS. So
+ * `AccountRecord` and `AccountRow` are both `ACCOUNTR`: one copybook overwrites
+ * the other in the library, and every program that copies either gets whichever
+ * was written last — a record with the same name and different fields at
+ * different offsets, which is the one kind of layout error a copybook exists to
+ * prevent.
+ *
+ * Nothing reported it. The bundle's manifest listed both members, so the count
+ * looked right and the library was short.
+ */
+function checkCopybookMemberNames(
+  records: ResolvedRecord[],
+  diagnostics: Diagnostic[],
+): void {
+  const byMember = new Map<string, ResolvedRecord[]>();
+  for (const record of records) {
+    const member = copybookMemberName(record.name);
+    byMember.set(member, [...(byMember.get(member) ?? []), record]);
+  }
+
+  for (const [member, sharing] of byMember) {
+    if (sharing.length < 2) {
+      continue;
+    }
+    for (const record of sharing.slice(1)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-COPY-007",
+          severity: "error",
+          message: `${record.name} and ${sharing[0].name} are both copybook member ${member}.`,
+          span: record.span,
+          hint: "A PDS member name is eight characters with the hyphens removed, and that is what a COPY resolves on. Rename one of the records so the two differ within those eight characters.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
     }
   }
 }

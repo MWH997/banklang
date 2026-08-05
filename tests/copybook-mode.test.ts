@@ -50,7 +50,7 @@ describe("inline mode", () => {
 
     expect(cobol).toContain("01  TRANSFER-REQUEST.");
     expect(cobol).toContain("05  DEBIT-ACCOUNT        PIC X(16).");
-    expect(cobol).not.toContain("COPY TRANSFER-REQUEST.");
+    expect(cobol).not.toContain("COPY TRANSFER.");
   });
 
   it("is the default", () => {
@@ -68,7 +68,12 @@ describe("copy mode", () => {
   it("copies the record instead of writing it out", () => {
     const cobol = emitCobol(program(), { copybookMode: "copy" }).cobol;
 
-    expect(cobol).toContain("COPY TRANSFER-REQUEST.");
+    // The member name, not the record's COBOL name. A PDS member is eight
+    // characters with no hyphens, and that is all a COPY resolves on: "only
+    // the first eight characters of text-name are used as the identifying
+    // name". `COPY TRANSFER-REQUEST` would have the compiler look for a member
+    // called `TRANSFER-`, which no library can hold.
+    expect(cobol).toContain("COPY TRANSFER.");
     expect(cobol).not.toContain("05  DEBIT-ACCOUNT        PIC X(16).");
   });
 

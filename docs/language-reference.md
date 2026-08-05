@@ -2356,7 +2356,7 @@ writes those layouts out or copies them in is a project setting:
 | Mode     | Generated program               | For                                         |
 | -------- | ------------------------------- | ------------------------------------------- |
 | `inline` | `01 TRANSFER-REQUEST.` + fields | a self-contained artifact, reviewable alone |
-| `copy`   | `COPY TRANSFER-REQUEST.`        | a shop with a shared copybook library       |
+| `copy`   | `COPY TRANSFER.`                | a shop with a shared copybook library       |
 
 `inline` is the default: it is what the playground shows and what a reviewer
 reads on its own.
@@ -2371,6 +2371,21 @@ so the mode that ships is the mode that is checked.
 The record stays traceable in `copy` mode: the source map carries one entry for
 the record and none for its fields, because the fields are in the copybook and
 have a layout report of their own.
+
+**A copybook is named for its member, not for its record.** A PDS member name is
+one to eight characters of letters, digits, and the national characters, with no
+hyphens — and that is also all the compiler looks at: "only the first eight
+characters of text-name are used as the identifying name" when it searches a PDS
+or PDSE. So `TransferRequest` is the member `TRANSFER`, and the `COPY` names
+that. `COPY TRANSFER-REQUEST` would have the compiler look for a member called
+`TRANSFER-`, which no library can hold.
+
+The consequence is that two records agreeing within those eight characters
+cannot share a copybook library: one overwrites the other, and every program
+that copies either gets a record with the name it asked for and different fields
+at different offsets. `BANK-COPY-007` reports that within a program, and
+`pnpm zos:kit` refuses to build a bundle whose members would overwrite each
+other rather than shipping one under the other's name.
 
 ## 14b. Locale conventions
 
