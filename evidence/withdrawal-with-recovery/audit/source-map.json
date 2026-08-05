@@ -304,7 +304,7 @@
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
       "targetStartLine": 105,
-      "targetEndLine": 241,
+      "targetEndLine": 242,
       "category": "transaction",
       "symbol": "withdraw"
     }

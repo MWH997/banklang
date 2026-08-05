@@ -116,6 +116,11 @@
                ADD 1 TO WS-LOOP-34-3
                READ ACCOUNT-INPUT-FILE
                    AT END MOVE "10" TO ACCOUNT-INPUT-STATUS
+                   NOT AT END
+                       MOVE ACCOUNT-ID OF ACCOUNT-INPUT-RECORD TO
+                           ACCOUNT-ID OF ACCOUNT-RECORD
+                       MOVE BALANCE OF ACCOUNT-INPUT-RECORD TO BALANCE
+                           OF ACCOUNT-RECORD
                END-READ
                IF ACCOUNT-INPUT-STATUS(1:1) NOT = "0" AND
                    ACCOUNT-INPUT-STATUS NOT = "10"
@@ -125,10 +130,6 @@
                    MOVE "READ-FAILED" TO BANK-FAILURE-CODE
                    GO TO POST-ACCOUNTS-EXIT
                END-IF
-               MOVE ACCOUNT-ID OF ACCOUNT-INPUT-RECORD TO ACCOUNT-ID OF
-                   ACCOUNT-RECORD
-               MOVE BALANCE OF ACCOUNT-INPUT-RECORD TO BALANCE OF
-                   ACCOUNT-RECORD
                IF ACCOUNT-INPUT-STATUS = "00"
                    MOVE ACCOUNT-ID OF ACCOUNT-RECORD TO
                        POSTING-ACCOUNT-ID OF POSTING-RECORD
@@ -160,6 +161,13 @@
                    END-IF
                END-IF
            END-PERFORM
+           IF WS-LOOP-34-3 >= 1000000 AND (ACCOUNT-INPUT-STATUS = "00")
+               DISPLAY "LOOP LIMIT 1000000 REACHED, WORK UNFINISHED"
+                   UPON SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "BANK-LOOP-EXHAUSTED" TO BANK-FAILURE-CODE
+               GO TO POST-ACCOUNTS-EXIT
+           END-IF
            CLOSE POSTING-OUTPUT-FILE
            IF POSTING-OUTPUT-STATUS(1:1) NOT = "0"
                DISPLAY "CLOSE FAILED postingOutput STATUS "

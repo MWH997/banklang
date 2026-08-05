@@ -1296,6 +1296,7 @@ function resolveTransaction(
 
   sqlExecuted = false;
   sqlCodeTested = false;
+  sqlCodeFailureTested = false;
   sensitiveLocals = new Set();
   checkpointSeen = false;
   validateTransactionBody(
@@ -5512,6 +5513,7 @@ function resolveFunction(
 
   sqlExecuted = false;
   sqlCodeTested = false;
+  sqlCodeFailureTested = false;
   sensitiveLocals = new Set();
   checkpointSeen = false;
   validateFunctionBody(
@@ -7403,6 +7405,97 @@ let recordSink: ResolvedRecord[] = [];
 let sqlExecuted = false;
 let sqlCodeTested = false;
 
+/**
+ * Whether any test in the body can tell a Db2 error from a row that was absent.
+ *
+ * `+100` is the only "not found". Negative is an error: `-911` is a deadlock the
+ * thread lost, `-904` a resource that was not available, `-805` a package that
+ * was never bound. A body whose only test is `sqlcode == 0` turns every one of
+ * those into the else branch — and in an enquiry that else branch says the
+ * account does not exist, which is a customer-facing lie, and behind a posting
+ * decision it is an incident.
+ *
+ * A test separates them when it orders `sqlcode` against a value — `< 0`,
+ * `> 0`, `>= 0` — or compares it for equality against a negative literal.
+ * `sqlcode != 0` does not: it puts `+100` and `-911` on the same side.
+ */
+let sqlCodeFailureTested = false;
+
+/**
+ * Refuses a CICS response compared against a number CICS never named.
+ *
+ * The API Reference gives one value a name a program may write: a normal return
+ * is `DFHRESP(NORMAL)`, and `DFHRESP` is a translator built-in that resolves
+ * the rest. The numbers behind the other conditions are the translator's, not
+ * the API's — nothing in the manual promises them — so a program comparing a
+ * response against `27` has hard-coded something it was never given, and it
+ * reads to a CICS reviewer as somebody who has not seen `DFHRESP` before.
+ *
+ * Zero is allowed and generates `DFHRESP(NORMAL)`. Anything else is refused
+ * rather than guessed at.
+ */
+function checkCicsResponseComparison(
+  expression: BinaryExpressionNode,
+  diagnostics: Diagnostic[],
+): void {
+  if (expression.operator !== "==" && expression.operator !== "!=") {
+    return;
+  }
+  const sides = [expression.left, expression.right];
+  const names = sides.map((side) =>
+    side.kind === "Identifier" ? side.name : null,
+  );
+  const index = names.findIndex(
+    (name) => name !== null && cicsRespCaptured.has(name),
+  );
+  if (index === -1) {
+    return;
+  }
+  const other = sides[index === 0 ? 1 : 0];
+  if (other.kind !== "DecimalLiteral" || Number(other.text) === 0) {
+    return;
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-CICS-004",
+      severity: "error",
+      message: `A CICS response is compared against ${other.text}, which is not a value CICS gives a name to.`,
+      span: expression.span,
+      hint: "Test `== 0`, which generates `DFHRESP(NORMAL)`. The numbers behind the other conditions belong to the translator rather than to the API, so a program that writes one has hard-coded something CICS never promised.",
+      backendProfile: null,
+    }),
+  );
+}
+
+/** Records what a comparison involving `sqlcode` is able to distinguish. */
+function noteSqlCodeComparison(expression: BinaryExpressionNode): void {
+  const sides = [expression.left, expression.right];
+  const names = sides.map((side) =>
+    side.kind === "Identifier" ? side.name : null,
+  );
+  if (!names.includes("sqlcode")) {
+    return;
+  }
+
+  if (["<", "<=", ">", ">="].includes(expression.operator)) {
+    sqlCodeFailureTested = true;
+    return;
+  }
+  if (expression.operator !== "==" && expression.operator !== "!=") {
+    return;
+  }
+  // An equality against a negative literal names one error, which is a
+  // deliberate decision about that error rather than a collapse of all of them.
+  const other = sides[names[0] === "sqlcode" ? 1 : 0];
+  if (
+    other.kind === "DecimalLiteral" &&
+    other.text.trimStart().startsWith("-")
+  ) {
+    sqlCodeFailureTested = true;
+  }
+}
+
 /** Whether the transaction being checked is a CICS transaction. */
 let currentTransactionIsCics = false;
 
@@ -7557,6 +7650,21 @@ function checkSqlCodeHandled(
         message: "SQL runs here but SQLCODE is never checked.",
         span,
         hint: "Test `sqlcode` after the execute; a row that was not found otherwise looks identical to one that was.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (sqlExecuted && !sqlCodeFailureTested) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-007",
+        severity: "error",
+        message:
+          "SQLCODE is tested, but nothing here tells a Db2 error from a row that was not found.",
+        span,
+        hint: "`+100` is the only not-found. Add a branch on `sqlcode < 0` — a deadlock (-911), a resource that was not available (-904), or a package that was never bound (-805) must not become the same answer as an account that does not exist.",
         backendProfile: null,
       }),
     );
@@ -8249,6 +8357,8 @@ function inferBinaryExpressionType(
   }
 
   const operator = expression.operator;
+  noteSqlCodeComparison(expression);
+  checkCicsResponseComparison(expression, diagnostics);
 
   // Logical operators combine bools.
   if (operator === "&&" || operator === "||") {

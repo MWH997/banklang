@@ -228,6 +228,17 @@
                ADD 1 TO WS-LOOP-95-3
                READ ACCOUNT-FEED-FILE
                    AT END MOVE "10" TO ACCOUNT-FEED-STATUS
+                   NOT AT END
+                       MOVE ACCOUNT-ID OF ACCOUNT-FEED-RECORD TO
+                           ACCOUNT-ID OF ACCRUAL-FEED-ROW
+                       MOVE BRANCH-CODE OF ACCOUNT-FEED-RECORD TO
+                           BRANCH-CODE OF ACCRUAL-FEED-ROW
+                       MOVE BALANCE OF ACCOUNT-FEED-RECORD TO BALANCE OF
+                           ACCRUAL-FEED-ROW
+                       MOVE ACCRUED-INTEREST OF ACCOUNT-FEED-RECORD TO
+                           ACCRUED-INTEREST OF ACCRUAL-FEED-ROW
+                       MOVE IDEMPOTENCY-KEY OF ACCOUNT-FEED-RECORD TO
+                           IDEMPOTENCY-KEY OF ACCRUAL-FEED-ROW
                END-READ
                IF ACCOUNT-FEED-STATUS(1:1) NOT = "0" AND
                    ACCOUNT-FEED-STATUS NOT = "10"
@@ -237,16 +248,6 @@
                    MOVE "READ-FAILED" TO BANK-FAILURE-CODE
                    GO TO RUN-BATCH-EXIT
                END-IF
-               MOVE ACCOUNT-ID OF ACCOUNT-FEED-RECORD TO ACCOUNT-ID OF
-                   ACCRUAL-FEED-ROW
-               MOVE BRANCH-CODE OF ACCOUNT-FEED-RECORD TO BRANCH-CODE OF
-                   ACCRUAL-FEED-ROW
-               MOVE BALANCE OF ACCOUNT-FEED-RECORD TO BALANCE OF
-                   ACCRUAL-FEED-ROW
-               MOVE ACCRUED-INTEREST OF ACCOUNT-FEED-RECORD TO
-                   ACCRUED-INTEREST OF ACCRUAL-FEED-ROW
-               MOVE IDEMPOTENCY-KEY OF ACCOUNT-FEED-RECORD TO
-                   IDEMPOTENCY-KEY OF ACCRUAL-FEED-ROW
                IF ACCOUNT-FEED-STATUS = "00"
                    MOVE ACCOUNT-ID OF POSTING-ADVICE TO ACCOUNT-ID OF
                        ADVICE-OUTPUT-RECORD
@@ -264,6 +265,13 @@
                    END-IF
                END-IF
            END-PERFORM
+           IF WS-LOOP-95-3 >= 100000 AND (ACCOUNT-FEED-STATUS = "00")
+               DISPLAY "LOOP LIMIT 100000 REACHED, WORK UNFINISHED" UPON
+                   SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "BANK-LOOP-EXHAUSTED" TO BANK-FAILURE-CODE
+               GO TO RUN-BATCH-EXIT
+           END-IF
            CLOSE ACCOUNT-FEED-FILE
            IF ACCOUNT-FEED-STATUS(1:1) NOT = "0"
                DISPLAY "CLOSE FAILED accountFeed STATUS "

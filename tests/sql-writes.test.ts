@@ -74,10 +74,14 @@ sql insertPosting(keyAccount: string<16>, keyAmount: BDT) {
 entry transaction post1(posting: Posting) {
   execute insertPosting(posting.accountId, posting.amount);
 
-  if sqlcode == 0 {
-    audit("POSTED", posting.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("REJECTED", posting.idempotencyKey);
+    if sqlcode == 0 {
+      audit("POSTED", posting.idempotencyKey);
+    } else {
+      audit("REJECTED", posting.idempotencyKey);
+    }
   }
 }`);
 
@@ -132,10 +136,14 @@ describe("positioned update", () => {
       txn(`  for each row in accountsInBranch(request.branchId) limit 1000 {
     execute zeroCurrentRow();
 
-    if sqlcode == 0 {
-      audit("ZEROED", request.idempotencyKey);
+    if sqlcode < 0 {
+      raise "DB2_FAILED";
     } else {
-      audit("SKIPPED", request.idempotencyKey);
+      if sqlcode == 0 {
+        audit("ZEROED", request.idempotencyKey);
+      } else {
+        audit("SKIPPED", request.idempotencyKey);
+      }
     }
   }`);
 
@@ -151,10 +159,14 @@ describe("positioned update", () => {
 entry transaction sweep(request: Request, row: AccountRow) {
   execute zeroCurrentRow();
 
-  if sqlcode == 0 {
-    audit("ZEROED", request.idempotencyKey);
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    audit("SKIPPED", request.idempotencyKey);
+    if sqlcode == 0 {
+      audit("ZEROED", request.idempotencyKey);
+    } else {
+      audit("SKIPPED", request.idempotencyKey);
+    }
   }
 }`,
     );

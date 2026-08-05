@@ -27,10 +27,10 @@ Total length: 34
 
 ## BALANCE-REPLY
 
-Total length: 37
+Total length: 40
 
 | Order | Path | Type | PIC | Usage | Offset | Length | Bytes | Sensitive |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | BALANCE-REPLY.REPLY-ACCOUNT-ID | string<16> | PIC X(16) | DISPLAY | 0 | 16 | 16 | no |
 | 2 | BALANCE-REPLY.REPLY-BALANCE | currency<"BDT",18,2> | PIC S9(16)V99 COMP-3 | COMP-3 | 16 | 10 | 10 | no |
-| 3 | BALANCE-REPLY.OUTCOME | enum<EnquiryOutcome> | PIC X(11) | DISPLAY | 26 | 11 | 11 | no |
+| 3 | BALANCE-REPLY.OUTCOME | enum<EnquiryOutcome> | PIC X(14) | DISPLAY | 26 | 14 | 14 | no |

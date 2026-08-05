@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 const PREAMBLE = `module Features;
 
@@ -445,11 +446,14 @@ transaction t(account: Account) {
     expect(result.cobol).toContain("READ FEED-FILE");
     expect(result.cobol).toContain("WRITE SINK-RECORD");
     expect(result.cobol).toContain("CLOSE FEED-FILE");
-    // Fields are mapped one by one rather than moved as a group.
-    expect(result.cobol).toContain(
-      "MOVE ACCOUNT-ID OF FEED-RECORD TO ACCOUNT-ID OF ACCOUNT",
+    // Fields are mapped one by one rather than moved as a group, and the ones
+    // coming out of the record area sit in the READ's success phrase: after AT
+    // END the record area is undefined, so a move out of it reads whatever is
+    // there.
+    expect(flowed(result.cobol)).toContain(
+      "NOT AT END MOVE ACCOUNT-ID OF FEED-RECORD TO ACCOUNT-ID OF ACCOUNT",
     );
-    expect(result.cobol).toContain(
+    expect(flowed(result.cobol)).toContain(
       "MOVE BALANCE OF ACCOUNT TO BALANCE OF SINK-RECORD",
     );
   });

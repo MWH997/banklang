@@ -133,10 +133,14 @@ file resultOutput sequential output record EnquiryResult status resultStatus;
 entry transaction enquire(row: AccountRow, result: EnquiryResult) {
   execute fetchAccount("ACC-0000000001") into row;
 
-  if sqlcode == 0 {
-    result.outcome = "FOUND";
+  if sqlcode < 0 {
+    raise "DB2_FAILED";
   } else {
-    result.outcome = "NOT_FOUND";
+    if sqlcode == 0 {
+      result.outcome = "FOUND";
+    } else {
+      result.outcome = "NOT_FOUND";
+    }
   }
 
   result.resultAccountId = row.rowAccountId;

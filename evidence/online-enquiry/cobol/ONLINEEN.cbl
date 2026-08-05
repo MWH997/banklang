@@ -25,10 +25,11 @@
        01  BALANCE-REPLY.
            05  REPLY-ACCOUNT-ID     PIC X(16).
            05  REPLY-BALANCE        PIC S9(16)V99 COMP-3.
-           05  OUTCOME              PIC X(11).
+           05  OUTCOME              PIC X(14).
                88  OUTCOME-FOUND                VALUE "FOUND".
                88  OUTCOME-NOT-FOUND            VALUE "NOT_FOUND".
                88  OUTCOME-UNAVAILABLE          VALUE "UNAVAILABLE".
+               88  OUTCOME-UNAVAILABLE-DB       VALUE "UNAVAILABLE_DB".
        01  IS-AVAILABLE-RESULT PIC X VALUE 'N'.
        01  IS-AVAILABLE-P1      PIC X(8).
        01  BANK-LEDGER-INTERFACE.
@@ -79,27 +80,32 @@
                FROM ACCOUNT
                WHERE ACCOUNT_ID = :FETCH-ACCOUNT-H1
            END-EXEC
-           IF SQLCODE = 0
-               MOVE ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW TO
-                   REPLY-ACCOUNT-ID OF BALANCE-REPLY
-               COMPUTE REPLY-BALANCE OF BALANCE-REPLY = ROW-BALANCE OF
-                   ACCOUNT-BALANCE-ROW
-               MOVE ROW-STATUS OF ACCOUNT-BALANCE-ROW TO IS-AVAILABLE-P1
-               PERFORM IS-AVAILABLE THRU IS-AVAILABLE-EXIT
-               IF BANK-FAILURE-CODE NOT = SPACES
-                   GO TO ACCOUNT-ENQUIRY-EXIT
-               END-IF
-               IF IS-AVAILABLE-RESULT = 'Y'
-                   SET OUTCOME-FOUND OF BALANCE-REPLY TO TRUE
-               ELSE
-                   SET OUTCOME-UNAVAILABLE OF BALANCE-REPLY TO TRUE
-               END-IF
+           IF SQLCODE < 0
+               SET OUTCOME-UNAVAILABLE-DB OF BALANCE-REPLY TO TRUE
            ELSE
-               SET OUTCOME-NOT-FOUND OF BALANCE-REPLY TO TRUE
+               IF SQLCODE = 0
+                   MOVE ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW TO
+                       REPLY-ACCOUNT-ID OF BALANCE-REPLY
+                   COMPUTE REPLY-BALANCE OF BALANCE-REPLY = ROW-BALANCE
+                       OF ACCOUNT-BALANCE-ROW
+                   MOVE ROW-STATUS OF ACCOUNT-BALANCE-ROW TO
+                       IS-AVAILABLE-P1
+                   PERFORM IS-AVAILABLE THRU IS-AVAILABLE-EXIT
+                   IF BANK-FAILURE-CODE NOT = SPACES
+                       GO TO ACCOUNT-ENQUIRY-EXIT
+                   END-IF
+                   IF IS-AVAILABLE-RESULT = 'Y'
+                       SET OUTCOME-FOUND OF BALANCE-REPLY TO TRUE
+                   ELSE
+                       SET OUTCOME-UNAVAILABLE OF BALANCE-REPLY TO TRUE
+                   END-IF
+               ELSE
+                   SET OUTCOME-NOT-FOUND OF BALANCE-REPLY TO TRUE
+               END-IF
            END-IF
            EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(BALANCE-REPLY)
                RESP(LINK-RESP) END-EXEC
-           IF LINK-RESP = 0
+           IF (LINK-RESP = DFHRESP(NORMAL)) AND (SQLCODE >= 0)
                EXEC CICS SYNCPOINT RESP(COMMIT-RESP) END-EXEC
            ELSE
                EXEC CICS SYNCPOINT ROLLBACK RESP(ROLLBACK-RESP) END-EXEC

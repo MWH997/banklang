@@ -272,7 +272,7 @@
       },
       "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
       "targetStartLine": 107,
-      "targetEndLine": 224,
+      "targetEndLine": 239,
       "category": "transaction",
       "symbol": "accrueBranch"
     }

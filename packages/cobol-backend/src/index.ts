@@ -152,6 +152,9 @@ const RETURN_CODE_FIELD = "BANK-RETURN-CODE";
 /** Failure code raised when a computed subscript falls outside its table. */
 const BOUNDS_FAILURE_CODE = "BANK-BOUNDS-VIOLATION";
 
+/** Failure code raised when a loop's declared limit is what stopped it. */
+const LOOP_EXHAUSTED_FAILURE_CODE = "BANK-LOOP-EXHAUSTED";
+
 /**
  * Exit paragraph the current body jumps to when it raises.
  *
@@ -765,6 +768,11 @@ export function emitCobol(
     ]),
   ]);
   declaredDataNames = collectDataNames(program);
+  currentCicsRespNames = new Set(
+    program.transactions.flatMap((transaction) =>
+      collectCicsRespNames(transaction.body),
+    ),
+  );
   currentFunctions = new Map(program.functions.map((fn) => [fn.name, fn]));
   currentRecords = new Map(
     program.records.map((record) => [record.name, record]),
@@ -2351,6 +2359,14 @@ function relativeKeyName(file: IRFile): string {
  * symbols, so the backend has to declare them or the generated program
  * references undefined data names.
  */
+/**
+ * BankTS names of the fields CICS writes a response code into.
+ *
+ * Held for the length of one program, so a comparison against one can be
+ * rendered as `DFHRESP(NORMAL)` rather than as the number the source wrote.
+ */
+let currentCicsRespNames = new Set<string>();
+
 function emitCicsRespFields(
   transactions: IRTransaction[],
   addLine: (line?: string) => void,
@@ -3610,11 +3626,23 @@ function emitTransactionBranch(
 }
 
 /**
- * `PERFORM UNTIL` with a guard counter.
+ * `PERFORM UNTIL` with a guard counter, and a branch for the counter winning.
  *
  * The declared limit is emitted as a real counter rather than trusted, so a
  * loop whose condition never goes false still terminates. BANK-TXN-004 makes
  * the limit mandatory; this makes it enforced at run time.
+ *
+ * Terminating is only half of it. The loop used to end on the bound exactly as
+ * it ended on the condition, so a five-million-record master processed the
+ * first million, closed its files, wrote its audit event and ended RC=0 —
+ * indistinguishable from a clean night. The example carrying that loop said in
+ * its own comment that the bound "is what stops a corrupt file spinning the job
+ * until the operator cancels it", and then gave the safe case and the
+ * catastrophic case the same ending.
+ *
+ * So the two ways out are told apart. Falling out because the condition went
+ * false is the ordinary end; falling out with the counter at the limit is a run
+ * that did not finish its work, and it fails the step.
  */
 function emitWhileStatement(
   statement: IRWhileStatement,
@@ -3652,6 +3680,22 @@ function emitWhileStatement(
     " ".repeat(indentLevel + 4),
   );
   addLine(`${indent}END-PERFORM`);
+
+  // The condition is re-evaluated rather than assumed, so the two exits are
+  // told apart exactly: the counter is at the limit *and* the loop's own
+  // condition is still true, which is the bound stopping work that had not
+  // finished. A loop that ended because its condition went false on the same
+  // iteration is the ordinary case and says nothing. Re-evaluating costs
+  // nothing here — a `while` condition is an expression, and one holding a call
+  // could not have been written into the `PERFORM UNTIL` above either.
+  addLine(
+    `${indent}IF ${counter} >= ${statement.limit} AND (${renderCondition(statement.condition)})`,
+  );
+  addLine(
+    `${indent}    DISPLAY "LOOP LIMIT ${statement.limit} REACHED, WORK UNFINISHED" UPON SYSOUT`,
+  );
+  emitStepFailure(addLine, `${indent}    `, 12, LOOP_EXHAUSTED_FAILURE_CODE);
+  addLine(`${indent}END-IF`);
 }
 
 /**
@@ -4514,12 +4558,25 @@ function emitStepFailure(
 ): void {
   addLine(`${indent}MOVE ${returnCode} TO ${RETURN_CODE_FIELD}`);
   addLine(`${indent}MOVE "${failureCode}" TO ${FAILURE_CODE_FIELD}`);
+  addLine(`${indent}GO TO ${failureExit()}`);
+}
+
+/**
+ * The paragraph a failure leaves through.
+ *
+ * The enclosing routine's exit when there is one, so the caller's `PERFORM
+ * ... THRU` still ends where it expects to and a declared `on failure` handler
+ * runs. Where there is no enclosing routine — a file error declarative, an XML
+ * handler section, both entered by the run time rather than performed — there
+ * is nothing to return to, and `BANK-ABEND` is the paragraph that ends the
+ * program. Asking for it is what causes it to be emitted.
+ */
+function failureExit(): string {
   if (currentExitLabel) {
-    addLine(`${indent}GO TO ${currentExitLabel}`);
-    return;
+    return currentExitLabel;
   }
   abendParagraphUsed = true;
-  addLine(`${indent}GO TO ${ABEND_PARAGRAPH}`);
+  return ABEND_PARAGRAPH;
 }
 
 /** Declared databases, for resolving a DL/I statement to its PCB and segment. */
@@ -5441,36 +5498,28 @@ function emitFileStatement(
         );
       }
       addLine(`${indent}READ ${file}`);
-      if (statement.statusName) {
+      emitReadOutcome(
+        statement,
+        addLine,
+        indent,
         // An indexed read reports a missing key rather than end of file.
-        const notFound = statement.fileOrganization === "indexed" ? "23" : "10";
-        const clause =
-          statement.fileOrganization === "indexed" ? "INVALID KEY" : "AT END";
-        addLine(
-          `${indent}    ${clause} MOVE "${notFound}" TO ${toCobolFieldName(statement.statusName)}`,
-        );
-      }
+        indexed ? "INVALID KEY" : "AT END",
+        indexed ? "23" : "10",
+      );
       addLine(`${indent}END-READ`);
       // End of file, or a key that was not there, is what the program's own
       // test is for. Anything else — a data check, a dataset that is not the
       // shape the FD describes — ends the loop just as quietly, halfway through
       // the file, and the job reports success on the records it did read.
       check("READ", [indexed ? "23" : "10"]);
-      // Field by field rather than a group move, so the correspondence between
-      // the file record and working storage is explicit in the generated COBOL
-      // and does not depend on the two layouts being byte-identical.
-      emitRecordFieldMapping(statement, addLine, indent, "read");
       return;
     case "readNext":
       // A browse walks from wherever START left the file, so the read is
       // sequential even on an indexed dataset and reports end of data.
       addLine(`${indent}READ ${file} NEXT RECORD`);
-      if (status) {
-        addLine(`${indent}    AT END MOVE "10" TO ${status}`);
-      }
+      emitReadOutcome(statement, addLine, indent, "AT END", "10");
       addLine(`${indent}END-READ`);
       check("READ NEXT", ["10"]);
-      emitRecordFieldMapping(statement, addLine, indent, "read");
       return;
     case "start":
       // Positions the browse. `KEY IS NOT LESS THAN` starts at the first record
@@ -5573,6 +5622,44 @@ function emitFileStatement(
  * fields explicitly makes the correspondence visible in the generated COBOL and
  * survives a layout that is merely compatible rather than identical.
  */
+/**
+ * The two phrases of a READ: what a miss sets, and what a hit copies.
+ *
+ * The copy out of the record area belongs in the success phrase. After AT END
+ * the Language Reference leaves the record area undefined — "the contents of the
+ * record area are undefined and the file position indicator is set to indicate
+ * that no valid next record has been established" — so moves out of it after a
+ * read that found nothing read whatever is there. GnuCOBOL leaves the last
+ * record sitting in the buffer, so locally they read the previous record and
+ * every test passes; on the target they read undefined storage, and under
+ * `RECORD IS VARYING` or after a short final record they read past the data the
+ * READ delivered.
+ *
+ * The values were discarded afterwards, so nothing was wrong yet. That is the
+ * only reason this was a latent defect rather than a live one.
+ */
+function emitReadOutcome(
+  statement: IRFileStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+  missClause: "AT END" | "INVALID KEY",
+  missStatus: string,
+): void {
+  if (statement.statusName) {
+    addLine(
+      `${indent}    ${missClause} MOVE "${missStatus}" TO ${toCobolFieldName(statement.statusName)}`,
+    );
+  }
+  if (!statement.recordName) {
+    return;
+  }
+  addLine(`${indent}    NOT ${missClause}`);
+  // Field by field rather than a group move, so the correspondence between the
+  // file record and working storage is explicit in the generated COBOL and does
+  // not depend on the two layouts being byte-identical.
+  emitRecordFieldMapping(statement, addLine, `${indent}        `, "read");
+}
+
 function emitRecordFieldMapping(
   statement: IRFileStatement,
   addLine: (line?: string) => void,
@@ -7026,6 +7113,29 @@ function emitCursorLoopStatement(
     addLine,
     `${indent}    `,
   );
+  // A negative SQLCODE is an error, not an end. `+100` is the only "no more
+  // rows"; `-911` is a deadlock the thread lost, `-904` a resource that was not
+  // available, `-805` a package that was never bound. Leaving the loop on one
+  // of those and carrying on processes a partial result set as though it were
+  // the whole one — which for a settlement run is a day half posted, reported
+  // as a day posted.
+  // A negative SQLCODE is an error, not an end. `+100` is the only "no more
+  // rows"; `-911` is a deadlock the thread lost, `-904` a resource that was not
+  // available, `-805` a package that was never bound. Leaving the loop on one
+  // of those and carrying on processes a partial result set as though it were
+  // the whole one — which for a settlement run is a day half posted, reported
+  // as a day posted.
+  //
+  // The failure is recorded here and acted on after the CLOSE rather than
+  // jumped out of: a cursor left open holds locks, and the one thing worth
+  // doing between finding the error and ending the step is closing it.
+  addLine(`${indent}    IF SQLCODE < 0`);
+  addLine(
+    `${indent}        DISPLAY "FETCH FAILED ${declaration.name} SQLCODE " SQLCODE UPON SYSOUT`,
+  );
+  addLine(`${indent}        MOVE 12 TO ${RETURN_CODE_FIELD}`);
+  addLine(`${indent}        MOVE "SQL-FETCH-FAILED" TO ${FAILURE_CODE_FIELD}`);
+  addLine(`${indent}    END-IF`);
   addLine(`${indent}    IF SQLCODE NOT = 0`);
   addLine(`${indent}        EXIT PERFORM`);
   addLine(`${indent}    END-IF`);
@@ -7036,7 +7146,23 @@ function emitCursorLoopStatement(
     emitStatement(statement.body, addLine, indentLevel + 4, resultName);
   }
   addLine(`${indent}END-PERFORM`);
+  // The bound stopping the loop is a result set the program did not finish
+  // reading. `SQLCODE = 0` is what says so: had the rows run out, the loop
+  // would have left on the `+100`. Tested here rather than after the CLOSE,
+  // because by then SQLCODE is the CLOSE's answer and not the FETCH's.
+  addLine(`${indent}IF ${counter} >= ${statement.limit} AND SQLCODE = 0`);
+  addLine(
+    `${indent}    DISPLAY "CURSOR LIMIT ${statement.limit} REACHED, ROWS UNREAD" UPON SYSOUT`,
+  );
+  addLine(`${indent}    MOVE 12 TO ${RETURN_CODE_FIELD}`);
+  addLine(
+    `${indent}    MOVE "${LOOP_EXHAUSTED_FAILURE_CODE}" TO ${FAILURE_CODE_FIELD}`,
+  );
+  addLine(`${indent}END-IF`);
   emitExecSql([`CLOSE ${cursor}`], addLine, indent);
+  addLine(`${indent}IF ${FAILURE_CODE_FIELD} NOT = SPACES`);
+  addLine(`${indent}    GO TO ${failureExit()}`);
+  addLine(`${indent}END-IF`);
 }
 
 /**
@@ -7483,11 +7609,52 @@ function renderCondition(expression: IRExpression): string {
       if (condition) {
         return condition;
       }
+      const response = cicsResponseTest(expression);
+      if (response) {
+        return response;
+      }
       return `${renderDecimalExpression(expression.left)} ${COBOL_COMPARISONS[expression.operator]} ${renderDecimalExpression(expression.right)}`;
     }
     default:
       return renderExpression(expression);
   }
+}
+
+/**
+ * A CICS response compared against `DFHRESP(NORMAL)` rather than against zero.
+ *
+ * The API Reference describes `RESP(xxx)` as leaving "a value that corresponds
+ * to the condition that might be raised, or to a normal return, that is,
+ * `xxx=DFHRESP(NORMAL)`. You can test this value by means of DFHRESP." The
+ * numeric value is the translator's, not the API's — `DFHRESP` is a built-in
+ * function it resolves — so a program that writes the number has hard-coded
+ * something CICS never promised, and a reviewer reads `IF LINK-RESP = 0` as
+ * somebody who has not written CICS before.
+ *
+ * Only the normal return is named here, because it is the only value this
+ * manual states. A comparison against any other number is refused by
+ * `BANK-CICS-004` rather than guessed at: inventing a table of condition values
+ * would be exactly the kind of rule nobody can trace back to IBM.
+ */
+function cicsResponseTest(
+  expression: IRBinaryComparisonExpression,
+): string | null {
+  if (expression.operator !== "==" && expression.operator !== "!=") {
+    return null;
+  }
+  const sides = [expression.left, expression.right];
+  const field = sides.find(
+    (side) => side.kind === "Identifier" && currentCicsRespNames.has(side.name),
+  );
+  const literal = sides.find((side) => side.kind === "DecimalLiteral");
+  if (!field || !literal || literal.kind !== "DecimalLiteral") {
+    return null;
+  }
+  if (Number(literal.text) !== 0) {
+    return null;
+  }
+
+  return `${renderDecimalExpression(field)} ${COBOL_COMPARISONS[expression.operator]} DFHRESP(NORMAL)`;
 }
 
 function emitBooleanAssignment(
