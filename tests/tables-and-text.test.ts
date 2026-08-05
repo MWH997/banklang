@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `INSPECT`, `UNSTRING`, and `SEARCH` — the three the string and table work
@@ -47,8 +48,10 @@ describe("INSPECT", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("MOVE 0 TO COMMAS OF STATEMENT1");
-    expect(result.cobol).toContain(
-      'INSPECT NARRATIVE OF STATEMENT1 TALLYING COMMAS OF STATEMENT1 FOR ALL ","',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'INSPECT NARRATIVE OF STATEMENT1 TALLYING COMMAS OF STATEMENT1 FOR ALL ","',
+      ),
     );
   });
 
@@ -128,8 +131,10 @@ describe("SEARCH", () => {
     st.found = "NONE";
   }`);
 
-    expect(result.cobol).toContain(
-      'WHEN ENTRY-KIND OF LINES-FLD OF STATEMENT1 (LINES-FLD-IDX) = "DEBIT"',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'WHEN ENTRY-KIND OF LINES-FLD OF STATEMENT1 (LINES-FLD-IDX) = "DEBIT"',
+      ),
     );
   });
 

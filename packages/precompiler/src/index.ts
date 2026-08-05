@@ -18,6 +18,8 @@
  * artifact; the artifact keeps its `EXEC SQL` and `EXEC CICS` blocks.
  */
 
+import { toReferenceFormat } from "../../cobol-backend/src/reference-format";
+
 export interface PrecompileResult {
   cobol: string;
   /** Number of `EXEC SQL` blocks translated. */
@@ -257,7 +259,14 @@ export function precompile(cobol: string): PrecompileResult {
     }
   }
 
-  return { cobol: output.join("\n"), sqlBlocks, cicsBlocks };
+  // A translated block is longer than the `EXEC` it replaces — a call with its
+  // whole host-variable list on one line — so the output has to be laid out
+  // again. IBM's own precompiler writes reference format for the same reason.
+  return {
+    cobol: output.flatMap((line) => toReferenceFormat(line)).join("\n"),
+    sqlBlocks,
+    cicsBlocks,
+  };
 }
 
 /**

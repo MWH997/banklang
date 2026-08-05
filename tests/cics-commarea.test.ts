@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * The commarea a CICS transaction is passed, and the check that it is there.
@@ -233,8 +234,8 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
 
   /** Named, because a job log saying only "open failed" starts an investigation. */
   it("says which file and what the status was", () => {
-    expect(result.cobol).toContain(
-      'DISPLAY "OPEN FAILED feed STATUS " FEED-STATUS UPON SYSOUT',
+    expect(flowed(result.cobol)).toContain(
+      flowed('DISPLAY "OPEN FAILED feed STATUS " FEED-STATUS UPON SYSOUT'),
     );
   });
 

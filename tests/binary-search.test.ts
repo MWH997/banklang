@@ -193,7 +193,7 @@ ${SEARCH}
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         "-o",

@@ -50,7 +50,7 @@ function expectCobcAccepts(cobol: string): void {
     "program.cbl",
   );
   writeFileSync(file, cobol, "utf8");
-  const result = spawnSync("cobc", ["-fsyntax-only", "-free", file], {
+  const result = spawnSync("cobc", ["-fsyntax-only", "-fixed", file], {
     encoding: "utf8",
   });
   expect(result.stderr, "cobc rejected the generated program").not.toContain(

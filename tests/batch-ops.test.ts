@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `sort`, `merge`, and `checkpoint` — ordering a batch's input and surviving its
@@ -66,7 +67,7 @@ describe("sort and merge", () => {
     expect(errors(result)).toEqual([]);
     expect(result.cobol).toContain("SORT SORTED-POSTINGS-SORT-FILE");
     expect(result.cobol).toContain("ASCENDING KEY BRANCH-ID");
-    expect(result.cobol).toContain("DESCENDING KEY ACCOUNT-ID");
+    expect(flowed(result.cobol)).toContain(flowed("DESCENDING KEY ACCOUNT-ID"));
     expect(result.cobol).toContain("USING RAW-POSTINGS-FILE");
     expect(result.cobol).toContain("GIVING SORTED-POSTINGS-FILE");
   });
@@ -283,8 +284,10 @@ describe("restart", () => {
   it("reads the position under the key the record carries", () => {
     const cobol = result.cobol ?? "";
 
-    expect(cobol).toContain(
-      "MOVE JOB-NAME OF RESTART-POINT TO JOB-NAME OF RESTART-FILE-RECORD",
+    expect(flowed(cobol)).toContain(
+      flowed(
+        "MOVE JOB-NAME OF RESTART-POINT TO JOB-NAME OF RESTART-FILE-RECORD",
+      ),
     );
     expect(cobol).toContain("READ RESTART-FILE-FILE");
   });
@@ -305,8 +308,10 @@ describe("restart", () => {
   });
 
   it("fills the record from the position it found", () => {
-    expect(result.cobol).toContain(
-      "MOVE LAST-ACCOUNT-ID OF RESTART-FILE-RECORD TO LAST-ACCOUNT-ID OF RESTART-POINT",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "MOVE LAST-ACCOUNT-ID OF RESTART-FILE-RECORD TO LAST-ACCOUNT-ID OF RESTART-POINT",
+      ),
     );
   });
 
@@ -441,7 +446,7 @@ entry transaction post(posting: Posting, point: RestartPoint) {
       "cobc",
       [
         "-x",
-        "-free",
+        "-fixed",
         "program.cbl",
         join(process.cwd(), "runtime/BANKAUDT.cbl"),
         join(process.cwd(), "runtime/BANKLEDG.cbl"),

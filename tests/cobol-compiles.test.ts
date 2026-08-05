@@ -55,7 +55,7 @@ describe("generated COBOL compiles", () => {
       const file = join(dir, "program.cbl");
       writeFileSync(file, emit.cobol, "utf8");
 
-      const result = spawnSync("cobc", ["-fsyntax-only", "-free", file], {
+      const result = spawnSync("cobc", ["-fsyntax-only", "-fixed", file], {
         encoding: "utf8",
       });
 

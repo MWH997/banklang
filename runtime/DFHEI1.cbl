@@ -1,32 +1,35 @@
       *> Stand-in for the CICS command-level interface stub.
       *>
-      *> The translator in packages/precompiler rewrites each EXEC CICS block
-      *> into `CALL "DFHEI1" USING DFHEIBLK, DFHEIV-COMMAND, <data operands>`
-      *> followed by the `MOVE EIBRESP TO ...` that a command's RESP option asks
-      *> for. That is the shape the CICS translator produces: a command does not
-      *> return its response in an operand, it leaves it in the EXEC interface
-      *> block, and which command it is arrives in a generated work field rather
-      *> than being inferable from the operands.
+      *> The translator in packages/precompiler rewrites each EXEC CICS
+      *> block into `CALL "DFHEI1" USING DFHEIBLK, DFHEIV-COMMAND,
+      *> <data operands>` followed by the `MOVE EIBRESP TO ...` that a
+      *> command's RESP option asks for. That is the shape the CICS
+      *> translator produces: a command does not return its response in
+      *> an operand, it leaves it in the EXEC interface block, and which
+      *> command it is arrives in a generated work field rather than
+      *> being inferable from the operands.
       *>
       *> Responses are scripted, not produced by CICS. A test writes
-      *> cics-outcomes.txt, one line per command it wants to control, numbered in
-      *> the order the program issues them:
+      *> cics-outcomes.txt, one line per command it wants to control,
+      *> numbered in the order the program issues them:
       *>
       *>     0001 +000 +000     command 1 succeeds (NORMAL)
       *>     0002 +027 +000     command 2 fails with PGMIDERR
       *>
-      *> A command the file does not mention returns NORMAL. With no file at all,
-      *> every command returns NORMAL, which is how this program behaved before
-      *> it could be scripted at all.
+      *> A command the file does not mention returns NORMAL. With no
+      *> file at all, every command returns NORMAL, which is how this
+      *> program behaved before it could be scripted at all.
       *>
-      *> What running against this proves: the program links, reaches its CICS
-      *> call sites in order, and takes the branch its RESP test selects — so an
-      *> error path is executed rather than assumed.
+      *> What running against this proves: the program links, reaches
+      *> its CICS call sites in order, and takes the branch its RESP
+      *> test selects — so an error path is executed rather than
+      *> assumed.
       *>
-      *> What it does NOT prove: any CICS behaviour. There is no task, no program
-      *> to LINK to, no COMMAREA handed anywhere, no syncpoint and no recovery. A
-      *> scripted PGMIDERR shows the generated COBOL handles a failed LINK; it
-      *> does not show that CICS would fail that LINK.
+      *> What it does NOT prove: any CICS behaviour. There is no task,
+      *> no program to LINK to, no COMMAREA handed anywhere, no
+      *> syncpoint and no recovery. A scripted PGMIDERR shows the
+      *> generated COBOL handles a failed LINK; it does not show that
+      *> CICS would fail that LINK.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. DFHEI1.
 
@@ -72,10 +75,11 @@
            05  WS-PARSED-RESP2      PIC S9(3) SIGN IS LEADING SEPARATE.
 
        LINKAGE SECTION.
-      *> The EIB the translator builds, field for field. This is a LINKAGE
-      *> description of storage the caller owns, so it has to match that layout
-      *> exactly: writing EIBRESP at the wrong offset writes into some other
-      *> field and the caller reads a response it was never given.
+      *> The EIB the translator builds, field for field. This is a
+      *> LINKAGE description of storage the caller owns, so it has to
+      *> match that layout exactly: writing EIBRESP at the wrong offset
+      *> writes into some other field and the caller reads a response it
+      *> was never given.
        01  DFHEIBLK.
            05  EIBTIME              PIC S9(7) COMP-3.
            05  EIBDATE              PIC S9(7) COMP-3.
@@ -121,7 +125,8 @@
 
            ADD 1 TO WS-CALL-COUNT
 
-      *> NORMAL unless the test scripted something else for this command.
+      *> NORMAL unless the test scripted something else for this
+      *> command.
            MOVE 0 TO EIBRESP
            MOVE 0 TO EIBRESP2
            PERFORM APPLY-OUTCOME
@@ -152,8 +157,9 @@
                END-IF
            END-PERFORM.
 
-      *> No file means no script, which is the ordinary case: every command
-      *> returns NORMAL. A missing file is therefore not an error.
+      *> No file means no script, which is the ordinary case: every
+      *> command returns NORMAL. A missing file is therefore not an
+      *> error.
        LOAD-OUTCOMES.
            OPEN INPUT OUTCOME-FILE
            IF OUTCOME-STATUS NOT = "00"

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 const PREAMBLE = `module Online;
 
@@ -172,8 +173,10 @@ cics transaction enquiry(request: Request, row: Row) {
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("LINKAGE SECTION.");
     expect(result.cobol).toContain("01  DFHCOMMAREA.");
-    expect(result.cobol).toContain(
-      'EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(ROW) RESP(LINK-RESP) END-EXEC',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(ROW) RESP(LINK-RESP) END-EXEC',
+      ),
     );
     expect(result.cobol).toContain("EXEC CICS RETURN END-EXEC.");
   });

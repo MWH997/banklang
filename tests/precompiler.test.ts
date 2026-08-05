@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { precompile } from "../packages/precompiler/src/index";
+import { flowed } from "./helpers";
 
 describe("precompiler", () => {
   it("expands INCLUDE SQLCA into the SQLCA structure", () => {
@@ -23,8 +24,10 @@ describe("precompiler", () => {
 `);
 
     expect(result.sqlBlocks).toBe(1);
-    expect(result.cobol).toContain(
-      'CALL "DSNHLI" USING SQLCA, SQL-STMT-NUMBER, ROW-BAL OF ROW-REC, H1',
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        'CALL "DSNHLI" USING SQLCA, SQL-STMT-NUMBER, ROW-BAL OF ROW-REC, H1',
+      ),
     );
     // The original statement stays visible for review.
     expect(result.cobol).toContain("*>   SELECT BALANCE");

@@ -179,7 +179,7 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
 
   const compileResult = spawnSync(
     "cobc",
-    ["-x", "-free", "program.cbl", "-o", "program"],
+    ["-x", "-fixed", "program.cbl", "-o", "program"],
     { cwd: workDir, encoding: "utf8" },
   );
   if (compileResult.status !== 0) {
@@ -241,7 +241,7 @@ function compileRuntime(workDir: string): void {
     const source = join(process.cwd(), "runtime", `${program}.cbl`);
     const compiled = spawnSync(
       "cobc",
-      ["-m", "-free", source, "-o", `${program}.${MODULE_EXTENSION}`],
+      ["-m", "-fixed", source, "-o", `${program}.${MODULE_EXTENSION}`],
       { cwd: workDir, encoding: "utf8" },
     );
     if (compiled.status !== 0) {

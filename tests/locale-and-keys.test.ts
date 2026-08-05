@@ -10,6 +10,7 @@ import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * Alternate record keys, and the two `SPECIAL-NAMES` conventions.
@@ -60,11 +61,11 @@ describe("alternate record keys", () => {
   it("declares each alternate", () => {
     const cobol = emit();
 
-    expect(cobol).toContain(
-      "ALTERNATE RECORD KEY IS CUSTOMER-ID OF ACCOUNT-MASTER-RECORD",
+    expect(flowed(cobol)).toContain(
+      flowed("ALTERNATE RECORD KEY IS CUSTOMER-ID OF ACCOUNT-MASTER-RECORD"),
     );
-    expect(cobol).toContain(
-      "ALTERNATE RECORD KEY IS BRANCH-ID OF ACCOUNT-MASTER-RECORD",
+    expect(flowed(cobol)).toContain(
+      flowed("ALTERNATE RECORD KEY IS BRANCH-ID OF ACCOUNT-MASTER-RECORD"),
     );
   });
 

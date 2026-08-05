@@ -1,8 +1,10 @@
-      *> Reference implementation of the BankLang audit interface (ADR-0003).
+      *> Reference implementation of the BankLang audit interface
+      *> (ADR-0003).
       *>
-      *> Appends each audit event and its correlation key to a log file, so a
-      *> test can assert which events a generated program actually emitted and
-      *> in what order. An institution supplies its own BANKAUDT.
+      *> Appends each audit event and its correlation key to a log file,
+      *> so a test can assert which events a generated program actually
+      *> emitted and in what order. An institution supplies its own
+      *> BANKAUDT.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. BANKAUDT.
 
@@ -39,7 +41,8 @@
            MOVE SPACES TO WS-LINE
            STRING FUNCTION TRIM(BANK-AUDIT-EVENT) DELIMITED BY SIZE
                   " " DELIMITED BY SIZE
-                  FUNCTION TRIM(BANK-AUDIT-CORRELATION) DELIMITED BY SIZE
+                  FUNCTION TRIM(BANK-AUDIT-CORRELATION)
+                      DELIMITED BY SIZE
                   INTO WS-LINE
 
            OPEN EXTEND AUDIT-FILE

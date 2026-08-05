@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `date`, `time`, and `timestamp`, and the calendar arithmetic that goes with
@@ -129,8 +130,10 @@ describe("calendar arithmetic", () => {
     const result = txn("  let grace: date = addDays(loan.maturesOn, 5);");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "FUNCTION DATE-OF-INTEGER(FUNCTION INTEGER-OF-DATE(MATURES-ON OF LOAN) + 5)",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "FUNCTION DATE-OF-INTEGER(FUNCTION INTEGER-OF-DATE(MATURES-ON OF LOAN) + 5)",
+      ),
     );
   });
 
@@ -140,8 +143,10 @@ describe("calendar arithmetic", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "(FUNCTION INTEGER-OF-DATE(MATURES-ON OF LOAN) - FUNCTION INTEGER-OF-DATE(OPENED-ON OF LOAN))",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "(FUNCTION INTEGER-OF-DATE(MATURES-ON OF LOAN) - FUNCTION INTEGER-OF-DATE(OPENED-ON OF LOAN))",
+      ),
     );
   });
 

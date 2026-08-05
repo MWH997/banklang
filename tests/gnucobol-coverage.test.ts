@@ -131,7 +131,7 @@ describe("every construct, under GnuCOBOL", () => {
       const file = join(dir, `${name}.cbl`);
       writeFileSync(file, text, "utf8");
 
-      const built = spawnSync("cobc", ["-x", "-free", "-fsyntax-only", file], {
+      const built = spawnSync("cobc", ["-x", "-fixed", "-fsyntax-only", file], {
         encoding: "utf8",
       });
       const output = `${built.stdout}${built.stderr}`;
@@ -152,7 +152,7 @@ describe("every construct, under GnuCOBOL", () => {
       const cobol = compile(source).cobol ?? "";
       const file = join(dir, `check-${name}.cbl`);
       writeFileSync(file, cobol, "utf8");
-      const built = spawnSync("cobc", ["-x", "-free", "-fsyntax-only", file], {
+      const built = spawnSync("cobc", ["-x", "-fixed", "-fsyntax-only", file], {
         encoding: "utf8",
       });
       if (/warning:/.test(`${built.stdout}${built.stderr}`)) {

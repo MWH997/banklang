@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `xml <text> processing { element "ID" into account.id; }` — `XML PARSE`.
@@ -146,8 +147,8 @@ describe("the generated handler", () => {
    * place. `NUMVAL` reads them as a number.
    */
   it("converts text into a number", () => {
-    expect(result.cobol).toContain(
-      "COMPUTE BALANCE OF ACCOUNT = FUNCTION NUMVAL(BANK-XML-1-BUF)",
+    expect(flowed(result.cobol)).toContain(
+      flowed("COMPUTE BALANCE OF ACCOUNT = FUNCTION NUMVAL(BANK-XML-1-BUF)"),
     );
   });
 
@@ -254,10 +255,14 @@ describe("it cannot be checked locally", () => {
     const dir = mkdtempSync(join(tmpdir(), "bankc-xmlparse-"));
     writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
 
-    const built = spawnSync("cobc", ["-fsyntax-only", "-free", "program.cbl"], {
-      cwd: dir,
-      encoding: "utf8",
-    });
+    const built = spawnSync(
+      "cobc",
+      ["-fsyntax-only", "-fixed", "program.cbl"],
+      {
+        cwd: dir,
+        encoding: "utf8",
+      },
+    );
 
     expect(built.status, built.stderr).toBe(0);
     expect(built.stderr).not.toContain("error:");

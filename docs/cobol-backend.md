@@ -16,7 +16,40 @@ gnucobol-local
 
 The IBM target is the source of truth for generated enterprise COBOL style. The GnuCOBOL target exists for local testing and CI.
 
-## 2. Generated COBOL style
+## 2. Reference format
+
+Generated COBOL is written in **fixed reference format**, which is the only one
+Enterprise COBOL on z/OS reads. A source line is 72 characters: columns 1-6 are
+the sequence number area, column 7 is the indicator area, columns 8-11 are Area
+A and columns 12-72 are Area B. Columns 73-80 are the identification area and
+are not part of the program. `SOURCEFORMAT(EXTEND)` is an AIX option; there is
+nothing on z/OS that widens the line.
+
+Nothing warns about crossing the margin. The compiler does not see the text past
+column 72, so a name is silently shortened and the compile fails somewhere else
+on a name the source appears to define. Every generated line therefore goes
+through `packages/cobol-backend/src/reference-format.ts` on its way out:
+
+- a statement too wide for the line is broken at a space and continued in Area B;
+- an alphanumeric literal too wide for the line is filled to column 72 exactly
+  and reopened on a continuation line carrying a hyphen in column 7, because
+  every column of a continued line through 72 is part of the literal;
+- a comment continues as a comment;
+- a copybook is source too, so it is written in the same format — the 01 sits in
+  Area A like any other level indicator.
+
+JCL follows its own version of the same rule: fields end at column 71, and a
+parameter field continues by breaking after a complete parameter _including its
+comma_, then resuming between columns 4 and 16 of a card beginning `//` and a
+blank.
+
+Every `cobc` invocation in this repository passes `-fixed`. GnuCOBOL guesses the
+format from the first line and will read a whole program as free format, where
+none of these rules exist — which is a validation that proves nothing about the
+target. `tests/reference-format.test.ts` checks the margins and the areas over
+every generated artifact.
+
+## 3. Generated COBOL style
 
 Generated COBOL must be readable by a COBOL engineer.
 
@@ -33,7 +66,7 @@ Required style:
 - clear error paragraphs
 - clear audit paragraphs
 
-## 3. Program structure
+## 4. Program structure
 
 Generated programs should use standard divisions:
 
@@ -59,7 +92,7 @@ Generated sections depend on program profile:
 - copybook-only
 - test harness
 
-## 4. Data mapping
+## 5. Data mapping
 
 ### Decimal
 
@@ -113,7 +146,7 @@ Format:
 YYYYMMDD
 ```
 
-## 5. Copybook generation
+## 6. Copybook generation
 
 Generated copybooks must:
 
@@ -125,7 +158,7 @@ Generated copybooks must:
 - support bounded arrays
 - support condition names where needed
 
-## 6. Paragraph generation
+## 7. Paragraph generation
 
 Function:
 
@@ -146,7 +179,7 @@ Rules:
 - no generated paragraph can be unreachable without a warning
 - error paragraphs use stable names
 
-## 7. Decimal operations
+## 8. Decimal operations
 
 Decimal operations must preserve:
 
@@ -160,7 +193,7 @@ Generated COBOL must not silently truncate precision.
 
 If a target COBOL operation may truncate, the compiler must emit either safe generated code or a compile-time diagnostic.
 
-## 8. Db2 generation
+## 9. Db2 generation
 
 Generated Db2 code must use:
 
@@ -179,7 +212,7 @@ Requirements:
 - audit report listing SQL statements
 - build report listing precompile/bind needs
 
-## 9. CICS generation
+## 10. CICS generation
 
 Generated CICS code must use:
 
@@ -197,7 +230,7 @@ Requirements:
 - generated error paragraphs
 - COMMAREA/channel/container strategy documented per profile
 
-## 10. VSAM/file generation
+## 11. VSAM/file generation
 
 Generated file programs must contain:
 
@@ -211,7 +244,7 @@ Generated file programs must contain:
 - open/read/write/close paragraphs
 - file status checks
 
-## 11. Source maps
+## 12. Source maps
 
 Every emitted artifact must be traceable.
 
@@ -230,7 +263,7 @@ Source map fields:
 }
 ```
 
-## 12. Generated-code banner
+## 13. Generated-code banner
 
 Every generated source file should contain:
 
@@ -242,7 +275,7 @@ Source maps are available in dist/maps.
 
 No timestamp in banner by default because output must be deterministic.
 
-## 13. Unsupported target features
+## 14. Unsupported target features
 
 Unsupported COBOL features must fail with clear diagnostics, not partial output.
 

@@ -151,7 +151,16 @@ export function runGnucobolValidation(
       )?.split("\n")[0] ?? null;
     const compileArgs = [
       "-x",
-      "-free",
+      // Fixed reference format, which is the only one z/OS reads: columns 8-72,
+      // with column 7 the indicator area. GnuCOBOL guesses the format from the
+      // first line and will happily read the whole program as free format,
+      // where no column matters — which is what it used to do here, so a
+      // program whose every other line ran past column 72 passed local
+      // validation and could not have compiled on the target at all.
+      "-fixed",
+      // Say so when a line runs past the margin, rather than quietly dropping
+      // the tail and failing later on a name the source appears to define.
+      "-Wcolumn-overflow",
       // A program that COPYs its record layouts needs the copybook directory
       // on the search path, the local equivalent of SYSLIB. Without it the
       // copy statements resolve to nothing and every data name is undefined.

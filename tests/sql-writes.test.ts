@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * The Db2 profile writing rather than only reading.
@@ -76,8 +77,10 @@ entry transaction post1(posting: Posting) {
 }`);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "INSERT INTO POSTING (ACCOUNT_ID, AMOUNT) VALUES (:INSERT-POSTING-H1, :INSERT-POSTING-H2)",
+    expect(flowed(result.cobol)).toContain(
+      flowed(
+        "INSERT INTO POSTING (ACCOUNT_ID, AMOUNT) VALUES (:INSERT-POSTING-H1, :INSERT-POSTING-H2)",
+      ),
     );
   });
 });
@@ -132,7 +135,9 @@ describe("positioned update", () => {
   }`);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("WHERE CURRENT OF ACCOUNTS-IN-BRANCH");
+    expect(flowed(result.cobol)).toContain(
+      flowed("WHERE CURRENT OF ACCOUNTS-IN-BRANCH"),
+    );
   });
 
   it("leaves a name that is not a declared cursor alone", () => {
@@ -149,7 +154,9 @@ entry transaction sweep(request: Request, row: AccountRow) {
 }`,
     );
 
-    expect(result.cobol).toContain("WHERE CURRENT OF someOtherCursor");
+    expect(flowed(result.cobol)).toContain(
+      flowed("WHERE CURRENT OF someOtherCursor"),
+    );
   });
 });
 

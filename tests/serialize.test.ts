@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
 
 /**
  * `json` and `xml` — COBOL `JSON GENERATE` and `XML GENERATE`.
@@ -85,7 +86,9 @@ describe("generating", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("COUNT IN LENGTH-FLD OF MESSAGE-FLD");
+    expect(flowed(result.cobol)).toContain(
+      flowed("COUNT IN LENGTH-FLD OF MESSAGE-FLD"),
+    );
   });
 
   it("leaves the count out when none was asked for", () => {
@@ -233,7 +236,7 @@ ${body}
     // The audit event calls out to the reference runtime, so it is linked in.
     const built = spawnSync(
       "cobc",
-      ["-x", "-free", source, "runtime/BANKAUDT.cbl", "-o", binary],
+      ["-x", "-fixed", source, "runtime/BANKAUDT.cbl", "-o", binary],
       { encoding: "utf8" },
     );
     expect(built.status, built.stderr).toBe(0);
@@ -432,8 +435,10 @@ entry transaction load(account: Account, payload: string<200>) {
     const cobol = compile(PARSE).cobol ?? "";
 
     expect(cobol).toContain("IF JSON-STATUS NOT = 0");
-    expect(cobol).toContain(
-      'DISPLAY "JSON PARSE INCOMPLETE JSON-STATUS " JSON-STATUS UPON SYSOUT',
+    expect(flowed(cobol)).toContain(
+      flowed(
+        'DISPLAY "JSON PARSE INCOMPLETE JSON-STATUS " JSON-STATUS UPON SYSOUT',
+      ),
     );
     expect(cobol.indexOf("END-JSON")).toBeLessThan(
       cobol.indexOf("IF JSON-STATUS NOT = 0"),
