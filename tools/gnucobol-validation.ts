@@ -10,7 +10,10 @@ import { loadConfig } from "../packages/config/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
-import { toCobolName, toCobolProgramId } from "../packages/cobol-ir/src/index";
+import {
+  copybookMemberName,
+  toCobolProgramId,
+} from "../packages/cobol-ir/src/index";
 import { precompile } from "../packages/precompiler/src/index";
 
 export interface GnucobolValidationSummary {
@@ -104,7 +107,7 @@ export function runGnucobolValidation(
   mkdirSync(artifacts.copybookDir, { recursive: true });
   for (const record of ir.program.records) {
     writeFileSync(
-      join(artifacts.copybookDir, `${toCobolName(record.name)}.cpy`),
+      join(artifacts.copybookDir, `${copybookMemberName(record.name)}.cpy`),
       renderCopybook(record),
       "utf8",
     );

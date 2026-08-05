@@ -39,7 +39,11 @@ import {
 } from "../../ir/src/index";
 import { parseBankTs } from "../../parser/src/index";
 import { typecheckProgram } from "../../typechecker/src/index";
-import { decimalPicture, toCobolName } from "../../cobol-ir/src/index";
+import {
+  copybookMemberName,
+  decimalPicture,
+  toCobolName,
+} from "../../cobol-ir/src/index";
 import {
   DIAGNOSTICS,
   NAMESPACE_TITLES,
@@ -1428,7 +1432,10 @@ function writeCopybookOutputs(
   const written: string[] = [];
 
   for (const record of program.records) {
-    const outputPath = join(copybookDir, `${toCobolName(record.name)}.cpy`);
+    const outputPath = join(
+      copybookDir,
+      `${copybookMemberName(record.name)}.cpy`,
+    );
     writeFileSync(outputPath, renderCopybook(record), "utf8");
     written.push(outputPath);
   }
@@ -1446,7 +1453,7 @@ function writeAuditOutputs(
   mkdirSync(auditRoot, { recursive: true });
   const copybookPaths = (compiled.ir.program as IRProgram).records.map(
     (record) =>
-      join(outputRoot, "copybooks", `${toCobolName(record.name)}.cpy`),
+      join(outputRoot, "copybooks", `${copybookMemberName(record.name)}.cpy`),
   );
   const layoutOutputs = writeLayoutOutputs(
     compiled.ir.program as IRProgram,
@@ -1565,7 +1572,7 @@ function buildVerificationReportDocument(
   const program = compiled.ir.program as IRProgram;
   const auditRoot = join(outputRoot, "audit");
   const copybookPaths = program.records.map((record) =>
-    join(outputRoot, "copybooks", `${toCobolName(record.name)}.cpy`),
+    join(outputRoot, "copybooks", `${copybookMemberName(record.name)}.cpy`),
   );
   const copybookContents = copybookPaths.map((path) =>
     readFileSync(path, "utf8"),

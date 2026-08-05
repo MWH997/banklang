@@ -23,7 +23,7 @@ describe("copybook json tools", () => {
         "copybook",
         "inspect",
         "--json",
-        join(outDir, "copybooks", "TRANSFER-REQUEST.cpy"),
+        join(outDir, "copybooks", "TRANSFER.cpy"),
       ]);
 
       expect(inspectResult.exitCode).toBe(0);
@@ -48,7 +48,7 @@ describe("copybook json tools", () => {
       ]);
       expect(buildResult.exitCode).toBe(0);
 
-      const left = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const left = join(outDir, "copybooks", "TRANSFER.cpy");
       const diffResult = runBankc(["copybook", "diff", "--json", left, left]);
 
       expect(diffResult.exitCode).toBe(0);

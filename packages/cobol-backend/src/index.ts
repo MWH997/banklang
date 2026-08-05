@@ -1349,7 +1349,7 @@ export function emitJcl(
   const jobName = toJclJobName(program.moduleName);
   const cobolArtifactPath = defaultCobolArtifactPath(program.moduleName);
   const copybookArtifactPaths = program.records.map(
-    (record) => `dist/copybooks/${toCobolName(record.name)}.cpy`,
+    (record) => `dist/copybooks/${copybookMemberName(record.name)}.cpy`,
   );
 
   const needsDb2 = program.backendRequirements.includes("db2-precompiler");

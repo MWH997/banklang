@@ -14,7 +14,7 @@ describe("compiler api", () => {
     expect(result.copybooks).toEqual([
       expect.objectContaining({
         record: "TransferRequest",
-        fileName: "TRANSFER-REQUEST.cpy",
+        fileName: "TRANSFER.cpy",
       }),
     ]);
     expect(result.sourceMap?.entries.length).toBeGreaterThan(0);

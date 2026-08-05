@@ -50,9 +50,7 @@ describe("bankc cli", () => {
       expect(existsSync(join(outDir, "cobol", "ACCOUNT-TRANSFER.cbl"))).toBe(
         true,
       );
-      expect(
-        existsSync(join(outDir, "copybooks", "TRANSFER-REQUEST.cpy")),
-      ).toBe(true);
+      expect(existsSync(join(outDir, "copybooks", "TRANSFER.cpy"))).toBe(true);
       expect(existsSync(join(outDir, "jcl", "ACCOUNT-TRANSFER.jcl"))).toBe(
         true,
       );
@@ -144,7 +142,7 @@ describe("bankc cli", () => {
       const inspectResult = runBankc([
         "copybook",
         "inspect",
-        join(outDir, "copybooks", "TRANSFER-REQUEST.cpy"),
+        join(outDir, "copybooks", "TRANSFER.cpy"),
       ]);
 
       expect(inspectResult.exitCode).toBe(0);
@@ -172,7 +170,7 @@ describe("bankc cli", () => {
       const typesResult = runBankc([
         "copybook",
         "types",
-        join(outDir, "copybooks", "TRANSFER-REQUEST.cpy"),
+        join(outDir, "copybooks", "TRANSFER.cpy"),
       ]);
 
       expect(typesResult.exitCode).toBe(0);
@@ -196,7 +194,7 @@ describe("bankc cli", () => {
       ]);
       expect(buildResult.exitCode).toBe(0);
 
-      const copybookPath = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const copybookPath = join(outDir, "copybooks", "TRANSFER.cpy");
       const inspectResult = runBankc([
         "copybook",
         "inspect",
@@ -248,8 +246,8 @@ describe("bankc cli", () => {
       ]);
       expect(buildResult.exitCode).toBe(0);
 
-      const left = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
-      const right = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const left = join(outDir, "copybooks", "TRANSFER.cpy");
+      const right = join(outDir, "copybooks", "TRANSFER.cpy");
       const diffResult = runBankc(["copybook", "diff", left, right]);
 
       expect(diffResult.exitCode).toBe(0);
@@ -272,7 +270,7 @@ describe("bankc cli", () => {
       ]);
       expect(buildResult.exitCode).toBe(0);
 
-      const left = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const left = join(outDir, "copybooks", "TRANSFER.cpy");
       const right = join(outDir, "copybooks", "TRANSFER-REQUEST-ALT.cpy");
       const leftText = readFileSync(left, "utf8");
       const rightText = leftText.replace("PIC X(16).", "PIC X(18).");

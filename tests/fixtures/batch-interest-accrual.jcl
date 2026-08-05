@@ -4,7 +4,7 @@
 //             NOTIFY=&SYSUID
 //* Batch job example for the generated COBOL artifact.
 //* COBOL source: dist/cobol/BATCH-INTEREST-ACCRUAL.cbl
-//* COPYBOOK source: dist/copybooks/INTEREST-ACCOUNT.cpy
+//* COPYBOOK source: dist/copybooks/INTEREST.cpy
 //COMPILE  EXEC PGM=IGYCRCTL
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD DISP=SHR,DSN=DIST.COBOL.BATCHINTERESTACCRUAL
