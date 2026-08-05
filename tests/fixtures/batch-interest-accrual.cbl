@@ -18,6 +18,12 @@
        IS-ELIGIBLE-FOR-INTEREST.
            COMPUTE PROJECTED-BALANCE = (IS-ELIGIBLE-FOR-INTEREST-P1 +
                25.00)
+               ON SIZE ERROR
+                   DISPLAY "ARITHMETIC OVERFLOW PROJECTED-BALANCE" UPON
+                       SYSOUT
+                   MOVE 12 TO RETURN-CODE
+                   GOBACK
+           END-COMPUTE
            IF PROJECTED-BALANCE > 1000.00
                MOVE 'Y' TO IS-ELIGIBLE-FOR-INTEREST-RESULT
            ELSE

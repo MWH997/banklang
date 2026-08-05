@@ -4640,15 +4640,96 @@ function emitComputeInto(
   }
 
   if (expression.kind === "Rounded") {
-    addLine(
+    emitCompute(
       `${indent}COMPUTE ${target} ROUNDED MODE IS ${COBOL_ROUNDING_MODES[expression.mode]} = ${renderDecimalExpression(expression.operand)}`,
+      target,
+      expression,
+      addLine,
+      indent,
     );
     return;
   }
 
-  addLine(
+  emitCompute(
     `${indent}COMPUTE ${target} = ${renderDecimalExpression(expression)}`,
+    target,
+    expression,
+    addLine,
+    indent,
   );
+}
+
+/**
+ * A `COMPUTE`, guarded against a result too large for the field receiving it.
+ *
+ * Without `ON SIZE ERROR` the Language Reference is explicit about what COBOL
+ * does: "If the ON SIZE ERROR phrase is not specified and a size error condition
+ * occurs, truncation rules apply and the value of the affected resultant
+ * identifier is computed." Truncation here is of the *high-order* digits, so a
+ * balance of `decimal<9, 2>` receiving 9,999,999.99 + 9,999,999.99 was left
+ * holding 9,999,999.98 — ten million short, with nothing said and a return code
+ * of zero. Two amounts a field can each hold do not add up to one it can.
+ *
+ * Division by zero raises the same condition, so the guard covers that too: the
+ * alternative is a program that ends abnormally in the middle of a batch with
+ * no indication of which computation did it.
+ *
+ * With the phrase, COBOL leaves the receiving field alone rather than storing
+ * the wrong answer, which is what makes stopping here safe: the value never
+ * reaches the ledger. The field is named because a job log saying only that some
+ * arithmetic overflowed is not something anyone can act on at three in the
+ * morning.
+ */
+function emitCompute(
+  statement: string,
+  target: string,
+  expression: IRExpression,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (!canSizeError(expression)) {
+    addLine(statement);
+    return;
+  }
+
+  addLine(statement);
+  addLine(`${indent}    ON SIZE ERROR`);
+  addLine(
+    `${indent}        DISPLAY "ARITHMETIC OVERFLOW ${target}" UPON SYSOUT`,
+  );
+  if (inSortProcedure) {
+    // Control may not leave a sort procedure while the sort is running, the
+    // same reason the file status check sets SORT-RETURN rather than returning.
+    addLine(`${indent}        MOVE 16 TO SORT-RETURN`);
+  } else {
+    addLine(`${indent}        MOVE 12 TO RETURN-CODE`);
+    addLine(`${indent}        GOBACK`);
+  }
+  addLine(`${indent}END-COMPUTE`);
+}
+
+/**
+ * Whether a computation can produce a value the receiving field cannot hold.
+ *
+ * Naming a value cannot: an identifier, a field, or a literal already fits the
+ * type it was declared with, and moving one into a field of the same type is
+ * exact. Combining values can, and so can rounding — 9.99 rounded to one place
+ * carries into a digit that may not be there.
+ *
+ * The test is deliberately on the shape of the expression rather than on a
+ * per-function analysis of how large each intrinsic's result can get. Guarding
+ * a computation that turns out not to need it costs four lines that never run;
+ * missing one costs a wrong number that nothing reports.
+ */
+function canSizeError(expression: IRExpression): boolean {
+  switch (expression.kind) {
+    case "BinaryArithmetic":
+    case "Rounded":
+    case "NumericCall":
+      return true;
+    default:
+      return false;
+  }
 }
 
 /**
