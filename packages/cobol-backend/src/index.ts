@@ -1982,7 +1982,7 @@ function emitField(
   // carries its initial values in working storage and drops them here.
   const initialValue =
     clauses.initialValue && !suppressInitialValues
-      ? ` VALUE ${clauses.initialValue}`
+      ? ` VALUE ${renderNumericLiteral(clauses.initialValue)}`
       : "";
 
   // A bounded array becomes OCCURS. Arrays of records nest their fields.
@@ -6228,6 +6228,27 @@ function emitStringAssignment(
   addLine(`${indent}       INTO ${target}`);
 }
 
+/**
+ * A numeric literal, in the program's own decimal-point convention.
+ *
+ * `DECIMAL-POINT IS COMMA` "exchanges the functions of the period and the comma
+ * in PICTURE character-strings **and in numeric literals**". The pictures were
+ * swapped and the literals were not, so under the comma convention a period
+ * reached the source where COBOL reads a sentence terminator: `COMPUTE BALANCE
+ * = 1234.50` parsed as a COMPUTE of 1234 followed by a statement called `50`.
+ * Every program that set the convention and used a decimal literal failed to
+ * compile — loudly, but only for whoever tried to build it.
+ */
+function renderNumericLiteral(text: string): string {
+  // Only a bare number. The same clause carries string literals and enum
+  // member spellings, and a point inside one of those is a character of the
+  // value rather than a decimal point.
+  if (currentDecimalPoint !== "comma" || !/^[+-]?\d+\.\d+$/.test(text)) {
+    return text;
+  }
+  return text.replace(".", ",");
+}
+
 function renderExpression(expression: IRExpression): string {
   switch (expression.kind) {
     case "StringCall":
@@ -6239,7 +6260,7 @@ function renderExpression(expression: IRExpression): string {
     case "Identifier":
       return resolveIdentifier(expression.name);
     case "DecimalLiteral":
-      return expression.text;
+      return renderNumericLiteral(expression.text);
     case "BooleanLiteral":
       return expression.value ? "TRUE" : "FALSE";
     case "StringLiteral":
@@ -6348,7 +6369,7 @@ function renderDecimalExpression(expression: IRExpression): string {
     case "Identifier":
       return resolveIdentifier(expression.name);
     case "DecimalLiteral":
-      return expression.text;
+      return renderNumericLiteral(expression.text);
     case "MemberAccess":
       return renderQualifiedFieldReference(expression);
     case "BinaryArithmetic":

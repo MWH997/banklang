@@ -125,6 +125,60 @@ describe("special names", () => {
   });
 });
 
+/**
+ * The clause "exchanges the functions of the period and the comma in PICTURE
+ * character-strings **and in numeric literals**". The pictures were swapped and
+ * the literals were not, so under the comma convention a period reached the
+ * source where COBOL reads a sentence terminator: `COMPUTE BALANCE = 1234.50`
+ * parsed as a COMPUTE of 1234 followed by a statement called `50`, and cobc
+ * said so — `unknown statement '50'`. Every program that set the convention and
+ * used a decimal literal failed to compile.
+ */
+describe("numeric literals follow the convention too", () => {
+  const LITERALS = `module Loc;
+record Acct { balance: decimal<9, 2>; idempotencyKey: string<36>; }
+entry transaction go(acct: Acct) {
+  acct.balance = 1234.50;
+  audit("DONE", acct.idempotencyKey);
+}`;
+
+  function emitSource(
+    source: string,
+    options: Parameters<typeof emitCobol>[1] = {},
+  ): string {
+    const ir = lowerProgramToIR(
+      typecheckProgram(parseBankTs(source, "m.ts").program),
+    );
+    if (!ir.program) {
+      throw new Error("Expected the source to compile.");
+    }
+    return emitCobol(ir.program, options).cobol;
+  }
+
+  it("writes a comma in a literal under the comma convention", () => {
+    expect(emitSource(LITERALS, { decimalPoint: "comma" })).toContain(
+      "= 1234,50",
+    );
+  });
+
+  it("leaves the literal alone under the default convention", () => {
+    expect(emitSource(LITERALS)).toContain("= 1234.50");
+  });
+
+  /**
+   * The same clause carries string literals and enum member spellings, where a
+   * point is a character of the value rather than a decimal point.
+   */
+  it("does not touch a point inside a string initial value", () => {
+    const withText = `module Loc;
+record Acct { code1: string<8> = "A.B"; idempotencyKey: string<36>; }
+entry transaction go(acct: Acct) {
+  audit("DONE", acct.idempotencyKey);
+}`;
+    expect(emitSource(withText, { decimalPoint: "comma" })).toContain('"A.B"');
+  });
+});
+
 describe("the currency sign is checked", () => {
   function problemsFor(currencySign: string): string[] {
     const directory = mkdtempSync(join(tmpdir(), "banklang-config-"));
