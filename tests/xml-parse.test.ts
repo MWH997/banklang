@@ -223,11 +223,15 @@ entry transaction ingest(account: Account, message: Message, flags: Flags) {
 });
 
 /**
- * The strongest caveat in the compiler. GnuCOBOL compiles `XML PARSE` and its
- * special registers, warns that it is not implemented, and then does nothing —
- * no field is filled, and **neither** the exception nor the not-exception
- * branch is taken, so a document that failed looks exactly like one that
- * worked.
+ * GnuCOBOL compiles `XML PARSE` and its special registers, warns that it is not
+ * implemented, and then does nothing — no field is filled, and neither the
+ * exception nor the not-exception branch is taken, so a document that failed
+ * looks exactly like one that worked.
+ *
+ * The precompiler now rewrites the statement into a loop over `BANKXML`, so the
+ * local build enters the handler and fills the fields
+ * (`tests/parse-shims.test.ts` runs one). The warning stays, because that stub
+ * is a scan and IBM's parser is not.
  */
 describe("it cannot be checked locally", () => {
   it("warns on every statement", () => {
@@ -236,7 +240,11 @@ describe("it cannot be checked locally", () => {
     );
 
     expect(warning?.severity).toBe("warning");
-    expect(warning?.hint).toContain("neither the exception");
+    // The precompiler drives the handler from BANKXML, so the local build does
+    // enter it. What the warning is about is the distance between that scan and
+    // what IBM's parser reports.
+    expect(warning?.hint).toContain("BANKXML");
+    expect(warning?.hint).toContain("not IBM's parser");
   });
 
   /**

@@ -3104,7 +3104,7 @@ function validateSerializeStatement(
         severity: "warning",
         message: `${statement.format} parse cannot be checked locally.`,
         span: statement.span,
-        hint: `GnuCOBOL 3.2.0 compiles \`${statement.format.toUpperCase()} PARSE\`, warns that it is not implemented, and then does nothing at run time — the record is left untouched and no exception is raised. Enterprise COBOL implements it. Verify the program on z/OS before relying on what it reads, and check the record rather than trusting the failure path — see zos/README.md.`,
+        hint: `Enterprise COBOL implements \`${statement.format.toUpperCase()} PARSE\`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler into BANKJSON — a scan, not IBM's parser. The record is populated and JSON-STATUS is set, but nesting, arrays and escape sequences are past what the stub attempts. Verify the program on z/OS before relying on what it reads — see runtime/README.md and zos/README.md.`,
         backendProfile: "ibm-enterprise-cobol-zos",
       }),
     );
@@ -3213,7 +3213,7 @@ function validateXmlParseStatement(
       severity: "warning",
       message: "xml parse cannot be checked locally.",
       span: statement.span,
-      hint: "GnuCOBOL 3.2.0 compiles `XML PARSE` and its special registers, warns that it is not implemented, and then does nothing at run time — no field is filled and neither the exception nor the not-exception branch is taken. Enterprise COBOL implements it. Verify the program on z/OS, and test the fields rather than the failure path — see zos/README.md.",
+      hint: "Enterprise COBOL implements `XML PARSE`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler, which drives the generated handler from BANKXML — a scan, not IBM's parser. The handler is entered and the fields are filled, but attributes, namespaces, entity references and CDATA are past what the stub attempts. Verify the program on z/OS — see runtime/README.md and zos/README.md.",
       backendProfile: "ibm-enterprise-cobol-zos",
     }),
   );

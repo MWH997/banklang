@@ -344,13 +344,17 @@ entry transaction ingest(card: Card, message: Message) {
     expect(errors(result)).toEqual([]);
   });
 
-  it("warns that the local validator does not run it", () => {
+  it("warns that the local run is a stub rather than IBM's parser", () => {
     const warning = ingest(
       "  json message.body into account;",
     ).diagnostics.find((entry) => entry.id === "BANK-TYPE-025");
 
     expect(warning?.severity).toBe("warning");
-    expect(warning?.hint).toContain("does nothing at run time");
+    // The precompiler now routes the statement into BANKJSON so the local
+    // build executes one, which is why the warning is about what the stub does
+    // not attempt rather than about a statement that did nothing at all.
+    expect(warning?.hint).toContain("BANKJSON");
+    expect(warning?.hint).toContain("not IBM's parser");
   });
 
   it("says nothing about a program that only generates", () => {

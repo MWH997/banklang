@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -210,6 +210,30 @@ describe("JCL card images", () => {
       expect(line.length).toBeLessThanOrEqual(JCL_LAST_COLUMN);
     }
   });
+});
+
+/**
+ * The reference stubs are hand-written, and they are compiled by the same
+ * `-fixed` invocations as everything else. Two of them were added past the
+ * margin and only the compiler noticed, which is the whole argument for
+ * checking it here rather than by eye.
+ */
+describe("the reference runtime", () => {
+  for (const file of readdirSync("runtime").filter((name) =>
+    name.endsWith(".cbl"),
+  )) {
+    it(`writes runtime/${file} within the reference format`, () => {
+      const text = readFileSync(join("runtime", file), "utf8");
+
+      expect(offenders(text, COBOL_LAST_COLUMN)).toEqual([]);
+      for (const line of text.split("\n")) {
+        if (line.length >= 7) {
+          expect([" ", "*", "/", "-", "D"]).toContain(line[6]);
+        }
+        expect(line.slice(0, 6).trim()).toBe("");
+      }
+    });
+  }
 });
 
 describe("every generated artifact", () => {

@@ -1795,9 +1795,18 @@ the marking working, not an escape.
 **It carries a warning** (`BANK-TYPE-025`). Enterprise COBOL implements
 `JSON PARSE`; GnuCOBOL 3.2.0 compiles it, warns that it is not implemented, and
 then does nothing at run time — the record is left untouched and no exception is
-raised. A program reading a payload therefore runs clean and processes an empty
-record. Verify on z/OS before relying on what it reads, and check the record
-rather than trusting the failure path.
+raised, so a program reading a payload runs clean and processes an empty record.
+
+The local build no longer runs that. The precompiler rewrites the statement into
+one call on `BANKJSON` per item of the record — the same routing `EXEC SQL` and
+`EXEC CICS` have — so the record is populated from the document and the
+`JSON-STATUS` test reports a document that did not fill it, with IBM's own reason
+code 1. What ships to z/OS keeps its `JSON PARSE`.
+
+The warning stays because `BANKJSON` is a scan and not IBM's parser: it reads a
+quoted name at the top level and the scalar after its colon, and nesting, arrays
+and escape sequences are past what a stub should pretend to. Verify on z/OS
+before relying on what a real document reads as.
 
 #### Reading XML
 
@@ -1858,14 +1867,22 @@ the flow of control would be run again on the way past.
 Bindings must name at least one element, must not bind one twice, and must read
 into a `string<n>` or a number — COBOL hands the content over as characters.
 
-**The same warning applies, and harder** (`BANK-TYPE-025`). GnuCOBOL compiles all
-of this, including the special registers, warns that `XML PARSE` is not
-implemented, and then does nothing: no field is filled, and **neither the
-exception nor the not-exception branch is taken**, so a document that failed
-looks exactly like one that worked. What the local build does establish is that
-the COBOL is accepted — the handler is a section in the right place, the
-registers are the ones COBOL defines, and the conversions are legal. The rest
-waits for z/OS.
+**The same warning applies** (`BANK-TYPE-025`). GnuCOBOL compiles all of this,
+including the special registers, warns that `XML PARSE` is not implemented, and
+then does nothing: no field is filled, and neither the exception nor the
+not-exception branch is taken, so a document that failed looks exactly like one
+that worked.
+
+The precompiler rewrites the statement into the loop it is — `BANKXML` returns
+one event per call and the generated handler is `PERFORM`ed for each — so the
+local build enters the handler, takes the branch the document asks for, and
+fills the fields. The registers cannot come along: GnuCOBOL reserves `XML-TEXT`
+but only a real `XML PARSE` sets it, and a `MOVE` to it ends the run with a
+segmentation fault, so the handler is pointed at fields of the translator's own.
+The artifact keeps the registers, because on z/OS they are the ones IBM fills in.
+
+`BANKXML` is not an XML parser: attributes, namespaces, entity references and
+CDATA are past what a stub should pretend to. The rest waits for z/OS.
 
 ### 13b. Reports
 

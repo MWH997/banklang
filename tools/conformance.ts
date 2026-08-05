@@ -26,6 +26,8 @@ export const RUNTIME_PROGRAMS = [
   "BANKAUDT",
   "DSNHLI",
   "DFHEI1",
+  "BANKJSON",
+  "BANKXML",
 ] as const;
 
 export interface ConformanceRun {

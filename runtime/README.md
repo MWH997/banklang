@@ -1,7 +1,7 @@
 # Reference runtime
 
-Four small COBOL programs that satisfy the interfaces generated code calls out
-to, so a generated program can be **executed** rather than only compiled.
+Small COBOL programs that satisfy the interfaces generated code calls out to, so
+a generated program can be **executed** rather than only compiled.
 
 | Program    | Stands in for                     | Called by                                                                        |
 | ---------- | --------------------------------- | -------------------------------------------------------------------------------- |
@@ -10,6 +10,17 @@ to, so a generated program can be **executed** rather than only compiled.
 | `DSNHLI`   | The Db2 language interface module | Precompiled `EXEC SQL` blocks                                                    |
 | `DFHEI1`   | The CICS command-level stub       | Precompiled `EXEC CICS` blocks                                                   |
 | `CBLTDLI`  | The IMS DL/I language interface   | Every `getUnique`, `getNext`, `insertSegment`, `replaceSegment`, `deleteSegment` |
+| `BANKJSON` | A statement, not a product        | A translated `JSON PARSE`                                                        |
+| `BANKXML`  | A statement, not a product        | A translated `XML PARSE`                                                         |
+
+The last two are a different kind of stand-in. The others replace software an
+installation owns; these replace a **statement Enterprise COBOL implements and
+GnuCOBOL does not**. `JSON PARSE` and `XML PARSE` compile locally, warn that
+they are unimplemented, and then do nothing at run time — leaving the record
+untouched with no exception raised, so a program reading a payload runs clean
+and processes an empty record. The precompiler rewrites both into calls on
+these, exactly as it rewrites `EXEC SQL` and `EXEC CICS`. What ships to z/OS
+keeps the statement it was written with.
 
 `tests/conformance.test.ts` compiles a BankTS program, links it against these,
 runs it, and asserts on the balances, the journal, the audit log, and the output
@@ -36,6 +47,9 @@ Both are invisible until the program runs. That is what these programs are for.
   before the handler runs
 - the branch guarded by `sqlcode == 0` or by a `resp` test is taken, because the
   outcome that selects it can be scripted
+- a record read from a JSON or XML document is **populated from that document**,
+  and the `JSON-STATUS` test the compiler emits after a parse is reached with a
+  value it did not invent
 
 ## Scripted outcomes
 
@@ -95,6 +109,15 @@ closed correctly, but not what was in them.
   calling convention has no commit operation, so it treats everything posted
   since the last rollback as the open unit of work — its own choice, not a
   BankLang guarantee.
+- `BANKJSON` is not a JSON parser and `BANKXML` is not an XML parser. Each
+  scans for what it was asked about: a quoted name at the top level of a
+  document and the scalar after its colon, or the next tag and the characters
+  between tags. Nesting, arrays, escape sequences, attributes, namespaces,
+  entity references and CDATA are past what a stub should pretend to. Name
+  matching follows Enterprise COBOL's rule closely enough to be worth executing
+  — case-insensitive, with a hyphen matching a hyphen or an underscore — but it
+  is a scan, not IBM's parser, and a document that exercises anything above will
+  behave differently on z/OS. `BANK-TYPE-025` says so on every parse.
 - `DSNHLI` parses no SQL, reads no table, and binds no plan. Every `SQLCODE` it
   reports was either the default or written down by a test; none was produced by
   a database deciding anything. Correct SQL behaviour needs a real Db2 and a
@@ -111,10 +134,20 @@ closed correctly, but not what was in them.
 The conformance suite compiles these automatically. To use them by hand:
 
 ```sh
-cobc -m -free runtime/BANKLEDG.cbl -o BANKLEDG.dylib   # .so on Linux
-cobc -x -free dist/cobol/YOUR-PROGRAM.cbl -o program
+cobc -m -fixed runtime/BANKLEDG.cbl -o BANKLEDG.dylib   # .so on Linux
+cobc -x -fixed dist/cobol/YOUR-PROGRAM.cbl -o program
 COB_LIBRARY_PATH=. ./program
 ```
+
+`-fixed` because the generated COBOL is in fixed reference format, which is the
+only one z/OS reads. GnuCOBOL guesses the format from the first line and will
+read a whole program as free format, where no column means anything — so a
+program that could not compile on the target passes here without it.
+
+A program containing `JSON PARSE` or `XML PARSE` has to go through the
+precompiler first, the same as one containing `EXEC SQL` or `EXEC CICS`:
+`pnpm test:gnucobol` does that and writes the translated source next to the
+artifact as `*-PRE.cbl`.
 
 GnuCOBOL resolves a dynamic `CALL` using the platform's own module extension, so
 a module built as `.so` on macOS is never found and the program dies at the
