@@ -1244,6 +1244,28 @@ BankTS rejects:
 - ambient runtime mutation
 - time-zone-dependent operations without explicit calendar/time-zone policy
 
+### `JSON PARSE` and `XML PARSE`
+
+Not offered, and this one is a measurement rather than a matter of taste.
+
+GnuCOBOL 3.2.0 compiles both, warns `-Wpending` that they are not implemented,
+and then **does nothing at run time**: the target fields are left untouched and
+no exception is raised. A program reading a payload would run clean and process
+empty records, which is a worse failure than not compiling.
+
+```cobol
+JSON PARSE IN-TEXT INTO ACCT
+END-JSON
+*> ACCT-ID is blank and BAL is zero afterwards. No exception.
+```
+
+Generating is different — `JSON GENERATE` and `XML GENERATE` are implemented,
+and the [tests execute them](../tests/serialize.test.ts) and read the document
+back. Parsing is the half nothing here can check, so it is not offered rather
+than shipped on the strength of Enterprise COBOL's documentation. Take a payload
+apart with `split` and `substring`, whose behaviour this compiler can and does
+verify.
+
 ## 13a. Batch operations
 
 ```ts
@@ -1280,6 +1302,47 @@ widely.
 `reset` clears a whole record — alphanumerics to spaces, numerics to zero.
 Clearing it field by field is the same thing written out, and drifts the moment
 the record gains a field.
+
+### Handing a record to something outside
+
+```ts
+json message.body from account count message.length on error {
+  returnCode = 12;
+};
+
+xml message.body from account count message.length;
+```
+
+`JSON GENERATE` and `XML GENERATE`. A batch that has to hand a record to a
+queue, a gateway, or a file a distributed system reads otherwise builds the text
+by hand with `STRING`, which is where the quoting and the escaping go wrong.
+
+COBOL builds the document from the group's own field names, so nothing here
+describes the shape — **the record is the schema**:
+
+```
+{"ACCOUNT":{"ACCOUNT-ID":"12345678","BALANCE":1234.56}}
+<ACCOUNT><ACCOUNT-ID>12345678</ACCOUNT-ID><BALANCE>1234.56</BALANCE></ACCOUNT>
+```
+
+The target is a fixed COBOL field and the compiler space-fills whatever the
+document does not reach, which is why `count` matters: it is the only way the
+caller can tell the text from the padding when it comes to write it out. Both
+`count` and `on error` are optional, and `from` and `count` stay usable as field
+names.
+
+The target must be `string<n>` — not `national<n>`, whose two bytes to a
+character is not what `JSON GENERATE` writes — the source must be a record, and
+the count must be a whole number.
+
+**A record carrying a `sensitive` field cannot be generated** (`BANK-AUD-002`).
+Serialised text is data on its way out of the program, so this is the same
+escape the rule already covers for an audit event and a log line. Copy the
+fields that may leave into a record without them; a masked value derived through
+a function is the declassification point.
+
+`JSON PARSE` and `XML PARSE` are not included, and
+[section 14](#14-banned-features) says why.
 
 ### Paginating a report
 

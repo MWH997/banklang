@@ -38,6 +38,7 @@ import {
   type FileLinageNode,
   type SortProcedureNode,
   type SortStatementNode,
+  type SerializeStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
@@ -151,6 +152,8 @@ export const KEYWORDS = new Set([
   "returnTransid",
   "returnCode",
   "split",
+  "json",
+  "xml",
   "by",
   "search",
   "sort",
@@ -1321,6 +1324,120 @@ class Parser {
   }
 
   /**
+   * A name, or a record field: `payload` or `message.body`.
+   *
+   * Several statements take a place to put something rather than a value to
+   * read, and a place is one of those two forms — not an arbitrary expression,
+   * because COBOL has to be given a field it can name.
+   */
+  private parseFieldReference(
+    message: string,
+  ): MemberAccessNode | IdentifierNode | null {
+    const nameToken = this.expectIdentifier(message);
+    if (!nameToken) {
+      return null;
+    }
+    const reference: IdentifierNode = {
+      kind: "Identifier",
+      name: nameToken.text,
+      span: nameToken.span,
+    };
+    if (!this.matchPunctuation(".")) {
+      return reference;
+    }
+
+    const memberToken = this.expectIdentifier(
+      "Expected a field name after `.`.",
+    );
+    if (!memberToken) {
+      return null;
+    }
+    return {
+      kind: "MemberAccess",
+      target: reference,
+      member: memberToken.text,
+      span: {
+        sourceFile: nameToken.span.sourceFile,
+        start: nameToken.span.start,
+        end: memberToken.span.end,
+      },
+    };
+  }
+
+  /**
+   * `json <target> from <record> count <length> on error { ... };`
+   *
+   * `count` and `on error` are optional, and `from` and `count` are matched
+   * contextually so neither is taken away as a field name.
+   */
+  private parseSerializeStatement(
+    format: "json" | "xml",
+  ): SerializeStatementNode | null {
+    const keyword = this.advance();
+    const target = this.parseFieldReference(
+      `Expected the field the ${format} text is generated into.`,
+    );
+    if (!target) {
+      return null;
+    }
+
+    if (!this.matchContextual("from")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `from` before the record.",
+        `Write \`${format} payload from account;\`.`,
+      );
+      return null;
+    }
+    const source = this.parseFieldReference(
+      `Expected the record the ${format} text is generated from.`,
+    );
+    if (!source) {
+      return null;
+    }
+
+    const count = this.matchContextual("count")
+      ? this.parseFieldReference("Expected the field the length is put in.")
+      : null;
+
+    let onError: BlockNode | null = null;
+    if (
+      this.isKeyword("on") &&
+      this.next.kind === "keyword" &&
+      this.next.text === "error"
+    ) {
+      this.advance();
+      this.advance();
+      onError = this.parseBlock();
+      if (!onError) {
+        return null;
+      }
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      `Expected \`;\` after the ${format} statement.`,
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "SerializeStatement",
+      format,
+      target,
+      source,
+      count,
+      onError,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies SerializeStatementNode;
+  }
+
+  /**
    * `input <record> { ... }` or `output <record> { ... }` on a sort.
    *
    * The record variable is an existing one, the same way `read <file> into
@@ -1705,6 +1822,12 @@ class Parser {
           end: semicolon.span.end,
         },
       } satisfies SortStatementNode;
+    }
+
+    for (const format of ["json", "xml"] as const) {
+      if (this.isKeyword(format)) {
+        return this.parseSerializeStatement(format);
+      }
     }
 
     if (this.isKeyword("split")) {
@@ -3600,6 +3723,21 @@ class Parser {
 
   private isKeyword(keyword: string): boolean {
     return this.current.kind === "keyword" && this.current.text === keyword;
+  }
+
+  /**
+   * Consumes a clause word that is not reserved.
+   *
+   * `from` and `count` read as keywords in the statement that uses them and as
+   * ordinary field names everywhere else, which is how the file and sort
+   * statements already treat their clause words.
+   */
+  private matchContextual(word: string): boolean {
+    if (this.current.kind === "identifier" && this.current.text === word) {
+      this.advance();
+      return true;
+    }
+    return false;
   }
 
   private is(kind: TokenKind): boolean {

@@ -18,6 +18,7 @@ import {
   type ReleaseStatementNode,
   type SortProcedureNode,
   type SortStatementNode,
+  type SerializeStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
@@ -1320,6 +1321,7 @@ function validateTransactionBody(
       case "UnitOfWorkStatement":
       case "ReturnCodeStatement":
       case "SplitStatement":
+      case "SerializeStatement":
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
@@ -1495,6 +1497,27 @@ function validateEffectStatement(
       return true;
     case "SplitStatement":
       validateSplitStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "SerializeStatement":
+      validateSerializeStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (statement.onError) {
+        // The handler is ordinary code, so the banking checks have to see into
+        // it the same way they see into an end-of-page body.
+        validateTransactionBody(
+          statement.onError,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+      }
       return true;
     case "SortStatement":
       validateSortStatement(
@@ -2608,6 +2631,105 @@ function validateSplitStatement(
           message: `A split target is ${describeType(type)}; a split writes strings.`,
           span: target.span,
           hint: "Split into string<n> fields and convert afterwards.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
+/**
+ * `json <target> from <record> count <length> on error { ... };`
+ *
+ * The target is a fixed COBOL field, so the three things worth checking are
+ * that it is text, that the source is a record, and that the length has
+ * somewhere whole-numbered to go.
+ *
+ * The fourth is the one that matters most. Serialised text is data on its way
+ * out of the program — to a queue, a gateway, a file something else reads — so
+ * a record carrying a `sensitive` field is a card number about to be written
+ * into a payload in clear. That is the same escape `BANK-AUD-002` covers for an
+ * audit event, and it is caught here for the same reason.
+ */
+function validateSerializeStatement(
+  statement: SerializeStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const target = inferExpressionType(
+    statement.target,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (target && (target.kind !== "string" || target.national)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${statement.format} generates into ${describeType(target)}; it generates text.`,
+        span: statement.target.span,
+        hint: `Generate into a string<n> wide enough for the ${statement.format}, and read the length from the \`count\` field.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const source = inferExpressionType(
+    statement.source,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (source && source.kind !== "record") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `${statement.format} generates from ${describeType(source)}; it generates from a record.`,
+        span: statement.source.span,
+        hint: "COBOL builds the document from the group's own field names, so there has to be a group.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.count) {
+    const count = inferExpressionType(
+      statement.count,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (count && (!isDecimalType(count) || count.scale !== 0)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `The count field holds ${describeType(count)}, which is not a length.`,
+          span: statement.count.span,
+          hint: "Declare it as binary<n> or decimal<n, 0>.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  if (source?.kind === "record") {
+    const restricted = source.fields.filter((field) => field.sensitive);
+    if (restricted.length > 0) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-AUD-002",
+          severity: "error",
+          message: `${source.name} carries restricted data in ${restricted.map((field) => field.name).join(", ")}, so it cannot be generated as ${statement.format}.`,
+          span: statement.source.span,
+          hint: "Serialised text leaves the program. Copy the fields that may leave into a record without them — a masked value derived through a function is the declassification point.",
           backendProfile: null,
         }),
       );
@@ -4701,6 +4823,7 @@ function resolveTerminalStatementType(
     case "UnitOfWorkStatement":
     case "ReturnCodeStatement":
     case "SplitStatement":
+    case "SerializeStatement":
     case "SortStatement":
     case "ReleaseStatement":
     case "CheckpointStatement":
