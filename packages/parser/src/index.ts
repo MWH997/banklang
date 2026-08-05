@@ -123,6 +123,8 @@ export const KEYWORDS = new Set([
   "currency",
   "nullable",
   "edited",
+  "binary",
+  "zoned",
   "transaction",
   "file",
   "extends",
@@ -2387,6 +2389,45 @@ class Parser {
           unit,
           span: keyword.span,
         } satisfies TemporalTypeNode);
+      }
+    }
+
+    for (const usage of ["binary", "zoned"] as const) {
+      if (this.matchKeyword(usage)) {
+        const keyword = this.previous;
+        this.expectPunctuation("<", `Expected \`<\` after \`${usage}\`.`);
+        const precisionToken = this.expectNumber("Expected digit count.");
+        // A binary field is a whole number: a counter, a subscript, or a code.
+        // Zoned decimal is a general number and carries a scale like any other.
+        let scaleToken = null;
+        if (usage === "zoned") {
+          this.expectPunctuation(
+            ",",
+            "Expected `,` between precision and scale.",
+          );
+          scaleToken = this.expectNumber("Expected decimal scale.");
+        }
+        const closeAngle = this.expectPunctuation(
+          ">",
+          `Expected \`>\` to close \`${usage}\` type.`,
+        );
+        if (!keyword || !precisionToken || !closeAngle) {
+          return null;
+        }
+        if (usage === "zoned" && !scaleToken) {
+          return null;
+        }
+        return this.withArraySuffix({
+          kind: "DecimalType",
+          precision: Number(precisionToken.text),
+          scale: scaleToken ? Number(scaleToken.text) : 0,
+          usage: usage === "binary" ? "binary" : "display",
+          span: {
+            sourceFile: keyword.span.sourceFile,
+            start: keyword.span.start,
+            end: closeAngle.span.end,
+          },
+        } satisfies DecimalTypeNode);
       }
     }
 

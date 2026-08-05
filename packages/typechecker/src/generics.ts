@@ -47,7 +47,9 @@ export function mangleInstantiation(
 export function describeTypeNode(node: TypeNode): string {
   switch (node.kind) {
     case "DecimalType":
-      return `dec${node.precision}_${node.scale}`;
+      // Usage is part of the instantiation: two fields with the same digits but
+      // different storage generate different COBOL.
+      return `${node.usage === "binary" ? "bin" : node.usage === "display" ? "zon" : "dec"}${node.precision}_${node.scale}`;
     case "StringType":
       return `str${node.length}`;
     case "BoolType":

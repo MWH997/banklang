@@ -20,7 +20,7 @@ import {
   type AssignStatementNode,
   type FileStatementNode,
 } from "../../ast/src/index";
-import type { EditStyle } from "../../cobol-ir/src/index";
+import type { EditStyle, NumericUsage } from "../../cobol-ir/src/index";
 import type {
   DecimalType,
   ResolvedField,
@@ -520,6 +520,8 @@ export interface DecimalIRType {
   kind: "decimal";
   precision: number;
   scale: number;
+  /** Packed, binary, or zoned decimal. Representation, not meaning. */
+  usage: NumericUsage;
 }
 
 export interface StringIRType {
@@ -749,7 +751,12 @@ function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
   }
 
   if (sqlTable.size > 0 && !scopeTypes.has("sqlcode")) {
-    scopeTypes.set("sqlcode", { kind: "decimal", precision: 9, scale: 0 });
+    scopeTypes.set("sqlcode", {
+      kind: "decimal",
+      precision: 9,
+      scale: 0,
+      usage: "packed",
+    });
   }
 }
 
@@ -764,6 +771,7 @@ function addCicsRespSymbols(
         kind: "decimal",
         precision: 9,
         scale: 0,
+        usage: "packed",
       });
     }
     if (statement.kind === "IfStatement") {
@@ -909,6 +917,7 @@ function instantiationKey(fn: IRFunction): string {
           kind: "decimal",
           precision: value.precision,
           scale: value.scale,
+          usage: "packed",
         };
       }
       if (isIRTypeOfKind(value, "record")) {
@@ -1437,6 +1446,7 @@ function lowerStatement(
         kind: "decimal",
         precision: Math.max(String(arrayType.length).length, 4),
         scale: 0,
+        usage: "packed",
       });
 
       // PERFORM VARYING already bounds this index, so a runtime range check
@@ -1600,7 +1610,12 @@ function lowerExpression(
         ),
         resolvedType:
           expression.operation === "daysBetween"
-            ? { kind: "decimal", precision: 9, scale: 0 }
+            ? {
+                kind: "decimal",
+                precision: 9,
+                scale: 0,
+                usage: "packed",
+              }
             : { kind: "temporal", unit: "date" },
       };
     case "MemberAccess":
@@ -1625,6 +1640,7 @@ function lowerExpression(
           kind: "decimal",
           precision: 18,
           scale: 2,
+          usage: "packed",
         },
       };
     }
@@ -1861,7 +1877,7 @@ function lowerDecimalLiteralExpression(
     kind: "DecimalLiteral",
     span: expression.span,
     text: expression.text,
-    resolvedType: { kind: "decimal", precision, scale },
+    resolvedType: { kind: "decimal", precision, scale, usage: "packed" },
   };
 }
 
@@ -1936,6 +1952,7 @@ function arithmeticResultType(
       kind: "decimal",
       precision: Math.max(leftType.precision, rightType.precision),
       scale: leftType.scale + rightType.scale,
+      usage: "packed",
     };
   }
 
@@ -1948,7 +1965,15 @@ function decimalExpressionType(
 ): DecimalIRType {
   const leftType = expressionDecimalType(left);
   const rightType = expressionDecimalType(right);
-  return leftType ?? rightType ?? { kind: "decimal", precision: 18, scale: 2 };
+  return (
+    leftType ??
+    rightType ?? {
+      kind: "decimal",
+      precision: 18,
+      scale: 2,
+      usage: "packed",
+    }
+  );
 }
 
 function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
@@ -2026,5 +2051,6 @@ function lowerDecimalType(type: DecimalType): DecimalIRType {
     kind: "decimal",
     precision: type.precision,
     scale: type.scale,
+    usage: type.usage ?? "packed",
   };
 }

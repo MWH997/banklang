@@ -1,4 +1,8 @@
-import { EDIT_STYLES, type EditStyle } from "../../cobol-ir/src/index";
+import {
+  EDIT_STYLES,
+  type EditStyle,
+  type NumericUsage,
+} from "../../cobol-ir/src/index";
 import {
   createDiagnostic,
   type BinaryExpressionNode,
@@ -68,6 +72,16 @@ export interface DecimalType {
    * attaches to the receiving field rather than to the expression.
    */
   rounded?: boolean;
+  /**
+   * How the value is held in storage: packed decimal by default, binary for a
+   * counter or subscript, zoned decimal for the unpacked numbers a great deal
+   * of legacy input arrives as.
+   *
+   * Usage is representation, not meaning. Two numbers with the same precision
+   * and scale are the same value whatever bytes hold them, so usage takes no
+   * part in type compatibility — only in the picture and the byte count.
+   */
+  usage?: NumericUsage;
 }
 
 export interface StringType {
@@ -4385,6 +4399,7 @@ function typeToTypeNode(type: ResolvedType, span: SourceSpan): TypeNode | null {
         kind: "DecimalType",
         precision: type.precision,
         scale: type.scale,
+        usage: type.usage,
         span,
       };
     case "string":
@@ -4508,7 +4523,11 @@ let inRoundedContext = false;
 function describeType(type: ResolvedType): string {
   switch (type.kind) {
     case "decimal":
-      return `decimal<${type.precision}, ${type.scale}>`;
+      return type.usage === "binary"
+        ? `binary<${type.precision}>`
+        : type.usage === "display"
+          ? `zoned<${type.precision}, ${type.scale}>`
+          : `decimal<${type.precision}, ${type.scale}>`;
     case "string":
       return `string<${type.length}>`;
     case "bool":
@@ -5029,7 +5048,28 @@ function resolveDecimal(
     return null;
   }
 
-  return { kind: "decimal", precision: node.precision, scale: node.scale };
+  // IBM Enterprise COBOL holds a COMP item in a halfword, fullword, or
+  // doubleword, so eighteen digits is the most one can carry.
+  if (node.usage === "binary" && node.precision > 18) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-002",
+        severity: "error",
+        message: `A binary field holds at most 18 digits, not ${node.precision}.`,
+        span,
+        hint: "Use decimal<precision, scale> for a wider value; packed decimal has no such limit here.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  return {
+    kind: "decimal",
+    precision: node.precision,
+    scale: node.scale,
+    usage: node.usage ?? "packed",
+  };
 }
 
 function resolveString(

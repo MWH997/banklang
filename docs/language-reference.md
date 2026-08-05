@@ -76,6 +76,32 @@ day is not a number of days (`BANK-TYPE-003`).
 from a Db2 column or a file record; there is no `now()` yet, because building
 the 26-character format needs `STRING`, which the subset does not have.
 
+### 3c. How a number is stored
+
+`decimal<p, s>` is packed decimal, `COMP-3`, which is what a ledger amount is
+held in. Two other usages exist because a real estate's copybooks are full of
+them, and a compiler that only knows `COMP-3` cannot read those files at all:
+
+| Declaration    | Picture                                      | Bytes           | Used for                             |
+| -------------- | -------------------------------------------- | --------------- | ------------------------------------ |
+| `decimal<p,s>` | `PIC S9(p-s)V9(s) COMP-3`                    | `ceil((p+1)/2)` | money, and anything computed with it |
+| `binary<n>`    | `PIC S9(n) COMP`                             | 2, 4, or 8      | counters, sequence numbers, codes    |
+| `zoned<p,s>`   | `PIC S9(p-s)V9(s) SIGN IS TRAILING SEPARATE` | `p + 1`         | unpacked numbers in legacy input     |
+
+A `binary` field is held in the halfword, fullword, or doubleword that fits its
+declared digit count, which is how IBM Enterprise COBOL allocates `COMP`: 1–4
+digits take two bytes, 5–9 take four, 10–18 take eight. More than eighteen is
+`BANK-TYPE-002` — a doubleword holds no more.
+
+Zoned decimal is one byte per digit with the sign kept separate, so the field
+reads as plain text, which is what a file another system or a person reads
+needs.
+
+**Usage is representation, not meaning.** A count is a count whichever bytes
+hold it, so usage takes no part in type compatibility — only in the picture and
+the byte count. Currency stays nominally typed regardless: a BDT amount is still
+not an unqualified number that happens to have two decimals.
+
 ### 3b. Edited fields
 
 An amount held as `COMP-3` cannot be printed. `edited<T, "style">` declares the

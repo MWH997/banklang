@@ -450,7 +450,11 @@ function printStatement(
 function printType(type: TypeNode): string {
   switch (type.kind) {
     case "DecimalType":
-      return `decimal<${type.precision}, ${type.scale}>`;
+      return type.usage === "binary"
+        ? `binary<${type.precision}>`
+        : type.usage === "display"
+          ? `zoned<${type.precision}, ${type.scale}>`
+          : `decimal<${type.precision}, ${type.scale}>`;
     case "StringType":
       return `string<${type.length}>`;
     case "BoolType":

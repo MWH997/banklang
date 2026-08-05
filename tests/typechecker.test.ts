@@ -14,11 +14,13 @@ describe("typechecker", () => {
       kind: "decimal",
       precision: 18,
       scale: 2,
+      usage: "packed",
     });
     expect(checked.records[0]?.fields[2]?.type).toEqual({
       kind: "decimal",
       precision: 18,
       scale: 2,
+      usage: "packed",
     });
     expect(checked.functions[0]?.returnType).toEqual({ kind: "bool" });
   });
@@ -91,6 +93,7 @@ describe("typechecker", () => {
           kind: "decimal",
           precision: 18,
           scale: 2,
+          usage: "packed",
         },
       },
     ]);

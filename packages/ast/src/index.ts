@@ -75,6 +75,15 @@ export interface DecimalTypeNode extends NodeBase {
   kind: "DecimalType";
   precision: number;
   scale: number;
+  /**
+   * How the value is held: packed decimal by default, `binary` for a counter or
+   * subscript, `display` for the zoned decimal much legacy input arrives as.
+   *
+   * Written as `binary<9>` or `zoned<7, 2>` rather than as an option on
+   * `decimal`, because the choice is about the bytes and belongs next to the
+   * digit count that decides how many of them there are.
+   */
+  usage?: "packed" | "binary" | "display";
 }
 
 export interface StringTypeNode extends NodeBase {

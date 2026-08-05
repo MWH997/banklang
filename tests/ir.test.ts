@@ -16,6 +16,7 @@ describe("ir", () => {
       kind: "decimal",
       precision: 18,
       scale: 2,
+      usage: "packed",
     });
     expect(ir.program?.functions[0]?.body.statements[0]).toMatchObject({
       kind: "ReturnStatement",
@@ -28,6 +29,7 @@ describe("ir", () => {
             kind: "decimal",
             precision: 18,
             scale: 2,
+            usage: "packed",
           },
         },
         right: {
@@ -36,6 +38,7 @@ describe("ir", () => {
             kind: "decimal",
             precision: 3,
             scale: 2,
+            usage: "packed",
           },
         },
       },
@@ -57,6 +60,7 @@ describe("ir", () => {
         kind: "decimal",
         precision: 18,
         scale: 2,
+        usage: "packed",
       },
       initializer: {
         kind: "BinaryArithmetic",
@@ -65,6 +69,7 @@ describe("ir", () => {
           kind: "decimal",
           precision: 18,
           scale: 2,
+          usage: "packed",
         },
       },
     });
