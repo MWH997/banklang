@@ -815,16 +815,22 @@ export function packedDecimalByteLength(precision: number): number {
 /**
  * The boundary a `SYNCHRONIZED` item starts on.
  *
- * Binary items align to their own width; everything else is byte-aligned and
- * needs no slack. Getting this wrong is how a copybook read against a real
- * dataset lands every later field at the wrong offset.
+ * Not the item's own width. IBM's slack-byte algorithm divides by 2 for a
+ * binary item of four digits or fewer and by 4 for one of **five digits or
+ * more** — there is no eight for binary, which is reserved for
+ * `COMPUTATIONAL-2`. So a doubleword binary occupies eight bytes and still
+ * aligns on a fullword.
+ *
+ * Aligning it to eight inserts slack Enterprise COBOL does not, and every field
+ * after it in the record then sits four bytes further along than the dataset
+ * has it. Everything non-binary is byte-aligned and needs no slack.
  */
 export function alignmentOf(type: IRType): number {
   if (
     type.kind === "decimal" &&
     (type.usage === "binary" || type.usage === "native")
   ) {
-    return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
+    return type.precision <= 4 ? 2 : 4;
   }
   return 1;
 }
