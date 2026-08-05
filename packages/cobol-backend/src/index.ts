@@ -507,6 +507,12 @@ export function emitCobol(
       }
       addLine(`       01  ${fileRecordName(file)}.`);
       emitRecordFields(file.record.fields, 1, addLine);
+      emitAllRenames(
+        file.record,
+        fileRecordName(file),
+        addLine,
+        " ".repeat(11),
+      );
     }
 
     // An internal SORT runs through a sort-work file, described by SD rather
@@ -520,6 +526,12 @@ export function emitCobol(
       addLine(`       SD  ${sortWorkName(file.name)}.`);
       addLine(`       01  ${sortWorkRecordName(file.name)}.`);
       emitRecordFields(file.record.fields, 1, addLine);
+      emitAllRenames(
+        file.record,
+        sortWorkRecordName(file.name),
+        addLine,
+        " ".repeat(11),
+      );
     }
   }
 
@@ -637,9 +649,15 @@ export function emitCobol(
     // Field start lines are recorded as they are emitted, because a field can
     // span several lines: an enum adds level-88 entries, a nullable adds an
     // indicator, and an array of records nests its own fields.
-    const fieldLines: number[] = [];
+    // Fields are recorded in the order they are emitted, not the order they are
+    // declared: a renames carries no storage and is written as a level-66 after
+    // the rest, so its line is not where its declaration sits among them.
+    const emitted: { field: IRField; line: number }[] = [];
     for (const field of record.fields) {
-      fieldLines.push(lineNumber());
+      if (field.renames) {
+        continue;
+      }
+      emitted.push({ field, line: lineNumber() });
       emitField(
         field.name,
         field.type,
@@ -649,6 +667,14 @@ export function emitCobol(
         fieldClauses(field),
       );
     }
+    for (const field of record.fields) {
+      if (!field.renames) {
+        continue;
+      }
+      emitted.push({ field, line: lineNumber() });
+      emitRenames(field, layout.cobolName, addLine, " ".repeat(11));
+    }
+
     const recordEnd = lineNumber() - 1;
     entries.push({
       sourceFile: program.sourceFile,
@@ -661,21 +687,19 @@ export function emitCobol(
       symbol: record.name,
     });
 
-    for (let index = 0; index < record.fields.length; index += 1) {
-      const field = record.fields[index];
-      const start = fieldLines[index];
-      const end = (fieldLines[index + 1] ?? recordEnd + 1) - 1;
+    emitted.forEach(({ field, line }, index) => {
+      const end = (emitted[index + 1]?.line ?? recordEnd + 1) - 1;
       entries.push({
         sourceFile: program.sourceFile,
         sourceStart: field.span.start,
         sourceEnd: field.span.end,
         artifact: cobolArtifactPath,
-        targetStartLine: start,
-        targetEndLine: Math.max(start, end),
+        targetStartLine: line,
+        targetEndLine: Math.max(line, end),
         category: "field",
         symbol: field.name,
       });
-    }
+    });
   }
 
   const localsByOwner = new Map(
@@ -1267,6 +1291,9 @@ function emitRecordFields(
 ): void {
   const indent = " ".repeat(7 + level * 4);
   for (const field of fields) {
+    if (field.renames) {
+      continue;
+    }
     emitField(
       field.name,
       field.type,
@@ -1291,6 +1318,43 @@ function levelNumber(level: number): string {
  * `copybookMode: "copy"` that was the difference between the layout the
  * compiler reported and the layout the program got.
  */
+/**
+ * Level-66 regroupings, after the record's own fields.
+ *
+ * A `RENAMES` names a run of fields that is already there and gets no storage
+ * of its own, which is what distinguishes it from a `REDEFINES`. COBOL requires
+ * it to follow every entry it names, so it is emitted last.
+ */
+function emitRenames(
+  field: IRField,
+  group: string,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  if (!field.renames) {
+    return;
+  }
+  // Both ends are qualified by the group. The same record is emitted in working
+  // storage and again inside every FD that holds it, so an unqualified field
+  // name is ambiguous across them.
+  addLine(
+    `${indent}66  ${toCobolFieldName(field.name)} RENAMES ${toCobolFieldName(field.renames.from)} OF ${group}` +
+      ` THRU ${toCobolFieldName(field.renames.to)} OF ${group}.`,
+  );
+}
+
+/** Every level-66 in a record, after its own fields. */
+function emitAllRenames(
+  record: IRRecord,
+  group: string,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  for (const field of record.fields) {
+    emitRenames(field, group, addLine, indent);
+  }
+}
+
 function fieldClauses(field: IRField): {
   redefines: string | null;
   dependingOn: string | null;
@@ -3866,9 +3930,11 @@ export function renderCopybook(record: IRRecord): string {
   ];
   // The emitter indents from column 8 for a PROCEDURE DIVISION; a copybook
   // stands alone, so its fields start four columns in.
-  emitRecordFields(record.fields, 1, (line) =>
-    lines.push(line === undefined ? "" : line.replace(/^ {7}/, "")),
-  );
+  const shift = (line?: string): void => {
+    lines.push(line === undefined ? "" : line.replace(/^ {7}/, ""));
+  };
+  emitRecordFields(record.fields, 1, shift);
+  emitAllRenames(record, toCobolName(record.name), shift, " ".repeat(11));
 
   return `${lines.join("\n")}\n`;
 }

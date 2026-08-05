@@ -201,6 +201,14 @@ export interface ResolvedField {
   justified: boolean;
   /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
   blankWhenZero: boolean;
+  /**
+   * `RENAMES` — the run of fields this one is a second name for.
+   *
+   * It is a field so that `legacy.wholeDate` resolves like any other, and it
+   * carries no storage: the emitters skip it in the record's own entries and
+   * write it as a level-66 after them.
+   */
+  renames: { from: string; to: string } | null;
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
 }
@@ -3883,16 +3891,155 @@ function resolveRecord(
       synchronized: field.synchronized,
       justified: field.justified,
       blankWhenZero: field.blankWhenZero,
+      renames: null,
     });
   }
 
   validateVariantFields(declaration, fields, diagnostics);
+  fields.push(...resolveRenames(declaration, fields, diagnostics));
 
   return {
     name: declaration.name,
     span: declaration.span,
     fields,
   };
+}
+
+/**
+ * `wholeDate renames yearPart through dayPart;`
+ *
+ * A `RENAMES` names a run of fields that is already there, so both ends have to
+ * be fields of this record and the first has to come before the last. It gets
+ * no storage: the group it names is exactly the bytes those fields occupy,
+ * which is why it is typed as the alphanumeric span a group move would treat it
+ * as.
+ */
+function resolveRenames(
+  declaration: RecordDeclarationNode,
+  fields: ResolvedField[],
+  diagnostics: Diagnostic[],
+): ResolvedField[] {
+  const resolved: ResolvedField[] = [];
+
+  for (const entry of declaration.renames) {
+    const reject = (message: string, hint: string): void => {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-COPY-004",
+          severity: "error",
+          message,
+          span: entry.span,
+          hint,
+          backendProfile: null,
+        }),
+      );
+    };
+
+    const from = fields.findIndex((field) => field.name === entry.from);
+    const to = fields.findIndex((field) => field.name === entry.to);
+
+    if (from === -1 || to === -1) {
+      reject(
+        `${entry.name} renames ${from === -1 ? entry.from : entry.to}, which is not a field of ${declaration.name}.`,
+        "A renames names a run of fields that is already there.",
+      );
+      continue;
+    }
+    if (from > to) {
+      reject(
+        `${entry.name} renames ${entry.from} through ${entry.to}, which are the wrong way round.`,
+        "The first field has to be declared before the last.",
+      );
+      continue;
+    }
+    // COBOL forbids renaming across a variable-occurrence item: the run's
+    // length would depend on a count, and a 66-level has no length of its own.
+    const variable = fields
+      .slice(from, to + 1)
+      .find((field) => field.dependingOn);
+    if (variable) {
+      reject(
+        `${entry.name} renames a run containing ${variable.name}, whose length depends on a count.`,
+        "A renames has no length of its own, so the run it names must be fixed.",
+      );
+      continue;
+    }
+
+    // A group move treats the run as alphanumeric, whatever the pictures
+    // inside it are, so that is the type the name carries.
+    const bytes = fields
+      .slice(from, to + 1)
+      .reduce(
+        (total, field) =>
+          field.redefines || field.renames
+            ? total
+            : total + declaredByteLength(field.type),
+        0,
+      );
+
+    resolved.push({
+      name: entry.name,
+      span: entry.span,
+      type: { kind: "string", length: bytes },
+      sensitive: fields.slice(from, to + 1).some((field) => field.sensitive),
+      redefines: null,
+      dependingOn: null,
+      synchronized: false,
+      justified: false,
+      blankWhenZero: false,
+      renames: { from: entry.from, to: entry.to },
+    });
+  }
+
+  return resolved;
+}
+
+/**
+ * Bytes a field occupies.
+ *
+ * Mirrors the emitter's layout rules rather than importing them: the
+ * typechecker runs before lowering, and the checks that need this only compare
+ * declared fields rather than describing a whole record.
+ */
+function declaredByteLength(type: ResolvedType): number {
+  switch (type.kind) {
+    case "string":
+      return type.length;
+    case "bool":
+      return 1;
+    case "temporal":
+      return type.unit === "date" ? 8 : type.unit === "time" ? 6 : 26;
+    case "decimal":
+    case "currency": {
+      const usage =
+        type.kind === "decimal" ? (type.usage ?? "packed") : "packed";
+      if (usage === "binary") {
+        return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
+      }
+      return usage === "display"
+        ? type.precision + 1
+        : Math.ceil((type.precision + 1) / 2);
+    }
+    case "enum":
+      return Math.max(...type.members.map((member) => member.length), 1);
+    case "nullable":
+      return declaredByteLength(type.inner) + 2;
+    case "array":
+      return declaredByteLength(type.element) * type.length;
+    case "record":
+      return type.fields.reduce(
+        (total, entry) =>
+          // A redefining field adds nothing, because it re-reads storage,
+          // and a renames adds nothing, because it names a run of fields
+          // already counted.
+          entry.redefines || entry.renames
+            ? total
+            : total + declaredByteLength(entry.type),
+        0,
+      );
+    case "edited":
+      return 0;
+  }
 }
 
 /**
@@ -3912,49 +4059,7 @@ function validateVariantFields(
   fields: ResolvedField[],
   diagnostics: Diagnostic[],
 ): void {
-  /**
-   * Bytes a field occupies, for the redefines length check.
-   *
-   * Mirrors the emitter's layout rules rather than importing them: the
-   * typechecker runs before lowering, and the check only needs to compare two
-   * declared fields, not describe a whole record.
-   */
-  const byteLength = (type: ResolvedType): number => {
-    switch (type.kind) {
-      case "string":
-        return type.length;
-      case "bool":
-        return 1;
-      case "temporal":
-        return type.unit === "date" ? 8 : type.unit === "time" ? 6 : 26;
-      case "decimal":
-      case "currency": {
-        const usage =
-          type.kind === "decimal" ? (type.usage ?? "packed") : "packed";
-        if (usage === "binary") {
-          return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
-        }
-        return usage === "display"
-          ? type.precision + 1
-          : Math.ceil((type.precision + 1) / 2);
-      }
-      case "enum":
-        return Math.max(...type.members.map((member) => member.length), 1);
-      case "nullable":
-        return byteLength(type.inner) + 2;
-      case "array":
-        return byteLength(type.element) * type.length;
-      case "record":
-        return type.fields.reduce(
-          (total, entry) =>
-            // A redefining field adds nothing, because it re-reads storage.
-            entry.redefines ? total : total + byteLength(entry.type),
-          0,
-        );
-      case "edited":
-        return 0;
-    }
-  };
+  const byteLength = declaredByteLength;
 
   fields.forEach((field, index) => {
     const earlier = fields.slice(0, index);

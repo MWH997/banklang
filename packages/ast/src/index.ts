@@ -328,6 +328,22 @@ export interface FileLinageNode {
   span: SourceSpan;
 }
 
+/**
+ * `wholeDate renames yearPart through dayPart;` — a level-66 regrouping.
+ *
+ * A legacy copybook splits a date into year, month, and day and then wants to
+ * move all three at once. `RENAMES` gives that run of fields a second name
+ * without a second copy of the storage, which is what distinguishes it from
+ * `redefines`: it names a span that is already there rather than a new reading
+ * of it.
+ */
+export interface RenamesDeclarationNode extends NodeBase {
+  kind: "RenamesDeclaration";
+  name: string;
+  from: string;
+  to: string;
+}
+
 export interface RecordDeclarationNode extends NodeBase {
   kind: "RecordDeclaration";
   name: string;
@@ -339,6 +355,8 @@ export interface RecordDeclarationNode extends NodeBase {
    */
   baseType: TypeReferenceNode | null;
   fields: FieldDeclarationNode[];
+  /** Level-66 regroupings, emitted after the record's own fields. */
+  renames: RenamesDeclarationNode[];
 }
 
 export interface ParameterNode extends NodeBase {
