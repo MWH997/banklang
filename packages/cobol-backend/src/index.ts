@@ -197,6 +197,23 @@ function collectRecordParameterCells(
 const MAIN_PARAGRAPH = "BANK-MAIN";
 
 /**
+ * The section the program's own paragraphs live in.
+ *
+ * Only needed when DECLARATIVES exist: everything after them has to be in a
+ * section, and a paragraph outside one would not compile.
+ */
+const MAIN_SECTION = "BANK-BODY";
+
+/** The DECLARATIVES section and paragraph handling one file's I/O errors. */
+function errorSectionName(fileName: string): string {
+  return `${toCobolName(fileName)}-ERROR-SECTION`;
+}
+
+function errorParagraphName(fileName: string): string {
+  return `${toCobolName(fileName)}-ERROR`;
+}
+
+/**
  * The transaction the program starts at.
  *
  * `entry transaction` names it explicitly. Falling back to the first declared
@@ -699,6 +716,26 @@ export function emitCobol(
 
   addLine("");
   addLine(`       PROCEDURE DIVISION.`);
+
+  // DECLARATIVES come first and are the only thing allowed to precede the
+  // program's own paragraphs. A USE procedure runs when an operation on its
+  // file fails, whatever the operation and wherever it was written — which is
+  // what covers the statements that did not think to check the status.
+  if (program.fileErrorHandlers.length > 0) {
+    addLine(`       DECLARATIVES.`);
+    for (const handler of program.fileErrorHandlers) {
+      addLine(`       ${errorSectionName(handler.fileName)} SECTION.`);
+      addLine(
+        `           USE AFTER STANDARD ERROR PROCEDURE ON ${fileCobolName(handler.fileName)}.`,
+      );
+      addLine(`       ${errorParagraphName(handler.fileName)}.`);
+      emitStatement(handler.body, addLine, 11, "");
+      addLine(`           CONTINUE.`);
+    }
+    addLine(`       END DECLARATIVES.`);
+    // Everything after DECLARATIVES has to be in a section of its own.
+    addLine(`       ${MAIN_SECTION} SECTION.`);
+  }
 
   // COBOL enters a program at the first statement of the PROCEDURE DIVISION.
   // Without this paragraph the starting point would be whichever function

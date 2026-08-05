@@ -286,7 +286,12 @@ export class LanguageServer {
     for (const declaration of parsed.program.declarations) {
       const range = toRange(declaration.span);
       const base = {
-        name: declaration.name,
+        // A file error handler is named after the file it covers rather than
+        // carrying a name of its own.
+        name:
+          declaration.kind === "FileErrorHandler"
+            ? `on error ${declaration.fileName}`
+            : declaration.name,
         range,
         selectionRange: range,
       };

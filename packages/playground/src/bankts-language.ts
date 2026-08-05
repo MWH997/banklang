@@ -55,6 +55,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "raise",
   "on",
   "failure",
+  "error",
   "true",
   "false",
 ]);

@@ -239,6 +239,13 @@ export interface ResolvedTransaction {
   isCics: boolean;
 }
 
+/** A DECLARATIVES handler, resolved against the file it covers. */
+export interface ResolvedFileErrorHandler {
+  fileName: string;
+  span: SourceSpan;
+  body: BlockNode;
+}
+
 export interface ResolvedFile {
   name: string;
   span: SourceSpan;
@@ -280,6 +287,8 @@ export interface TypeCheckResult {
   functions: ResolvedFunction[];
   transactions: ResolvedTransaction[];
   files: ResolvedFile[];
+  /** `on error <file>` handlers, which become DECLARATIVES. */
+  fileErrorHandlers: ResolvedFileErrorHandler[];
   enums: ResolvedEnum[];
   sql: ResolvedSql[];
   /**
@@ -311,6 +320,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       functions: [],
       transactions: [],
       files: [],
+      fileErrorHandlers: [],
       enums: [],
       sql: [],
       callTargets: new Map(),
@@ -326,6 +336,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const functions: ResolvedFunction[] = [];
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
+  const fileErrorHandlers: ResolvedFileErrorHandler[] = [];
   const enums: ResolvedEnum[] = [];
   const sqlStatements: ResolvedSql[] = [];
 
@@ -441,6 +452,15 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       continue;
     }
 
+    if (declaration.kind === "FileErrorHandler") {
+      fileErrorHandlers.push({
+        fileName: declaration.fileName,
+        span: declaration.span,
+        body: declaration.body,
+      });
+      continue;
+    }
+
     if (declaration.kind === "SqlDeclaration") {
       const resolvedSql = resolveSql(
         declaration,
@@ -504,6 +524,8 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   drainInstantiations(aliases, recordMap, functions, diagnostics);
 
   reportUnusedGenerics(program, diagnostics);
+  validateFileErrorHandlers(fileErrorHandlers, aliases, recordMap, diagnostics);
+
   checkSingleEntryPoint(transactions, diagnostics);
 
   return {
@@ -514,6 +536,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     functions,
     transactions,
     files,
+    fileErrorHandlers,
     enums,
     sql: sqlStatements,
     callTargets,
@@ -1923,6 +1946,69 @@ let checkpointSeen = false;
  * A restricted value must not be written to the job log for the same reason it
  * must not reach an audit event: the log outlives the run and is read widely.
  */
+/**
+ * `on error <file> { ... }`
+ *
+ * The handler runs when an I/O operation on that file fails, whatever the
+ * operation and wherever it was written, so it needs a file that exists and at
+ * most one handler for it — COBOL allows a file in only one `USE` procedure.
+ */
+function validateFileErrorHandlers(
+  handlers: ResolvedFileErrorHandler[],
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const seen = new Set<string>();
+
+  for (const handler of handlers) {
+    const file = declaredFiles.get(handler.fileName);
+    if (!file) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved file: ${handler.fileName}.`,
+          span: handler.span,
+          hint: "Declare the file before handling its errors.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+
+    if (seen.has(handler.fileName)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-005",
+          severity: "error",
+          message: `${handler.fileName} already has an error handler.`,
+          span: handler.span,
+          hint: "COBOL allows a file in one USE procedure, so put every case in the one handler.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    seen.add(handler.fileName);
+
+    // The handler runs outside any transaction, so it sees the file's status
+    // and nothing else: there is no record in scope and no ledger to post to.
+    const scope = new Map<string, ResolvedType>();
+    declareFileStatusSymbols(scope);
+    const locals: ResolvedLocal[] = [];
+    validateBranchBody(
+      handler.body,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+      false,
+    );
+  }
+}
+
 function validateConsoleStatement(
   statement: ConsoleStatementNode,
   scope: Map<string, ResolvedType>,

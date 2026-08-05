@@ -672,6 +672,21 @@ export interface FunctionDeclarationNode extends NodeBase {
  * The `status` clause is optional at parse time so the analyzer can report a
  * missing file status as BANK-FILE-001 rather than a syntax error.
  */
+/**
+ * `on error <file> { ... }` — a DECLARATIVES handler for a file.
+ *
+ * COBOL runs a `USE AFTER ERROR` procedure when an I/O operation on the file
+ * fails, whatever the operation and wherever it was written. A file status
+ * check covers the statement that thought to look; this covers the ones that
+ * did not, which is what makes it the standard error path rather than a
+ * convenience.
+ */
+export interface FileErrorHandlerNode extends NodeBase {
+  kind: "FileErrorHandler";
+  fileName: string;
+  body: BlockNode;
+}
+
 export interface FileDeclarationNode extends NodeBase {
   kind: "FileDeclaration";
   name: string;
@@ -878,6 +893,7 @@ export type DeclarationNode =
   | TransactionDeclarationNode
   | FileDeclarationNode
   | EnumDeclarationNode
+  | FileErrorHandlerNode
   | SqlDeclarationNode;
 
 export interface ProgramNode extends NodeBase {
