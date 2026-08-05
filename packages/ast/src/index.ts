@@ -688,6 +688,7 @@ export type StatementNode =
   | ResetStatementNode
   | SplitStatementNode
   | SerializeStatementNode
+  | XmlParseStatementNode
   | ReportStatementNode
   | SortStatementNode
   | ReleaseStatementNode
@@ -1031,6 +1032,34 @@ export interface SplitStatementNode extends NodeBase {
   source: ExpressionNode;
   delimiter: ExpressionNode;
   targets: (MemberAccessNode | IdentifierNode)[];
+}
+
+/**
+ * `xml <text> processing { element "ID" into account.id; } on error { ... };`
+ *
+ * `XML PARSE` is event-driven: COBOL calls a procedure once per token of the
+ * document — a start tag, its content, an end tag — and the procedure decides
+ * what to keep by reading the `XML-EVENT` and `XML-TEXT` special registers.
+ *
+ * Writing that state machine by hand is where an XML reader goes wrong, so the
+ * bindings are declared and the compiler generates it: it tracks the element it
+ * is inside and moves the content of the ones that were named. What a program
+ * actually wants from a document is which elements go in which fields, and that
+ * is exactly what this says.
+ */
+export interface XmlParseStatementNode extends NodeBase {
+  kind: "XmlParseStatement";
+  source: MemberAccessNode | IdentifierNode;
+  bindings: XmlBindingNode[];
+  onError: BlockNode | null;
+}
+
+/** `element "BALANCE" into account.balance;` — one element, one field. */
+export interface XmlBindingNode extends NodeBase {
+  kind: "XmlBinding";
+  element: string;
+  elementSpan: SourceSpan;
+  target: MemberAccessNode | IdentifierNode;
 }
 
 /**

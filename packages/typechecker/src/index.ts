@@ -23,6 +23,7 @@ import {
   type ReportPageNode,
   type ReportStatementNode,
   type SerializeStatementNode,
+  type XmlParseStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
@@ -1448,6 +1449,7 @@ function validateTransactionBody(
       case "ReturnCodeStatement":
       case "SplitStatement":
       case "SerializeStatement":
+      case "XmlParseStatement":
       case "ReportStatement":
       case "SortStatement":
       case "ReleaseStatement":
@@ -1627,6 +1629,25 @@ function validateEffectStatement(
       return true;
     case "ReportStatement":
       validateReportStatement(statement, diagnostics);
+      return true;
+    case "XmlParseStatement":
+      validateXmlParseStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (statement.onError) {
+        validateTransactionBody(
+          statement.onError,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+      }
       return true;
     case "SerializeStatement":
       validateSerializeStatement(
@@ -2905,6 +2926,114 @@ function validateSerializeStatement(
       }),
     );
   }
+}
+
+/**
+ * `xml <text> processing { element "ID" into account.id; } ...`
+ *
+ * The document is text and each binding names a field to put an element in.
+ * COBOL hands the content over as characters, so a field it can be moved into
+ * is text or a number — anything else has no defined conversion and would be a
+ * silent misread of the document.
+ */
+function validateXmlParseStatement(
+  statement: XmlParseStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const source = inferExpressionType(
+    statement.source,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (source && (source.kind !== "string" || source.national)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message: `xml parses ${describeType(source)}; it parses text.`,
+        span: statement.source.span,
+        hint: "Parse from a string<n> holding the document.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.bindings.length === 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-026",
+        severity: "error",
+        message: "This xml statement binds no elements, so it reads nothing.",
+        span: statement.span,
+        hint: 'Name the elements to keep: `element "BALANCE" into account.balance;`.',
+        backendProfile: null,
+      }),
+    );
+  }
+
+  const seen = new Set<string>();
+  for (const binding of statement.bindings) {
+    if (seen.has(binding.element)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-026",
+          severity: "error",
+          message: `Element ${binding.element} is bound twice, so the second binding would never be reached.`,
+          span: binding.elementSpan,
+          hint: "One element goes to one field. Bind it once.",
+          backendProfile: null,
+        }),
+      );
+    }
+    seen.add(binding.element);
+
+    const target = inferExpressionType(
+      binding.target,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (!target) {
+      continue;
+    }
+    const readable =
+      (target.kind === "string" && !target.national) ||
+      isDecimalType(target) ||
+      target.kind === "currency";
+    if (!readable) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-026",
+          severity: "error",
+          message: `Element ${binding.element} is read into ${describeType(target)}, which text cannot be moved into.`,
+          span: binding.target.span,
+          hint: "COBOL hands the content over as characters. Read it into a string<n> or a number, and convert afterwards.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  // The whole statement is unrunnable locally, which is a stronger caveat than
+  // the one JSON PARSE carries: GnuCOBOL does not even take the exception
+  // branch, so a document that failed to parse looks exactly like one that
+  // worked.
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-TYPE-025",
+      severity: "warning",
+      message: "xml parse cannot be checked locally.",
+      span: statement.span,
+      hint: "GnuCOBOL 3.2.0 compiles `XML PARSE` and its special registers, warns that it is not implemented, and then does nothing at run time — no field is filled and neither the exception nor the not-exception branch is taken. Enterprise COBOL implements it. Verify the program on z/OS, and test the fields rather than the failure path — see zos/README.md.",
+      backendProfile: "ibm-enterprise-cobol-zos",
+    }),
+  );
 }
 
 /**
@@ -4995,6 +5124,7 @@ function resolveTerminalStatementType(
     case "ReturnCodeStatement":
     case "SplitStatement":
     case "SerializeStatement":
+    case "XmlParseStatement":
     case "ReportStatement":
     case "SortStatement":
     case "ReleaseStatement":

@@ -285,11 +285,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   },
   {
     id: "BANK-TYPE-026",
-    title: "xml cannot parse into a record",
+    title: "invalid xml read",
     explanation:
-      "`JSON PARSE` fills a record from a document, and `json <text> into <record>` becomes exactly that. `XML PARSE` has no such form in Enterprise COBOL or in GnuCOBOL: it is event-driven — `XML PARSE <text> PROCESSING PROCEDURE <para>` — and the handler walks the XML-EVENT and XML-TEXT special registers, moving what it recognises. There is no COBOL for an `xml ... into ...` to become.",
+      '`XML PARSE` is event-driven, so `xml <text> into <record>` has no COBOL to become: neither Enterprise COBOL nor GnuCOBOL has a form that fills a record. The form that exists is `xml <text> processing { element "NAME" into <field>; }`, and its bindings have to make sense — at least one element, each element bound once, and each read into something characters can be moved into.',
     remediation:
-      "Use `json <text> into <record>`, or take the document apart with `split` and `substring`.",
+      "Use the `processing` form, bind each element once, and read into a string<n> or a number. `json <text> into <record>` fills a record directly if the document is JSON.",
     specReference: "language-reference.md section 13a",
     implemented: true,
   },
