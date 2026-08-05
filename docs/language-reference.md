@@ -921,6 +921,28 @@ without `round(...)` is `BANK-DEC-002`.
 `round(...)` takes the scale of whatever it is assigned to, mirroring COBOL,
 where `ROUNDED` attaches to the receiving field rather than to the expression.
 
+### A result too large for its field stops the step
+
+Every computation is emitted with `ON SIZE ERROR`, which names the field in the
+job log, sets a return code of 12, and returns. Without the phrase the Language
+Reference is explicit that "truncation rules apply and the value of the affected
+resultant identifier is computed" — and the digits truncated are the high-order
+ones, so an overflow does not produce a number large enough to notice. It
+produces a plausible small one. Two amounts a `decimal<9, 2>` can each hold add
+up to one it cannot: 9,999,999.99 twice stored 9,999,999.98 and returned zero.
+
+With the phrase COBOL leaves the receiving field unchanged rather than storing
+the truncated answer, which is why stopping is safe — the wrong value never
+reaches the ledger. Division by zero raises the same condition and takes the
+same path. Naming a value rather than computing one cannot overflow, so a plain
+assignment is emitted unguarded.
+
+The type system does not prevent this and is not trying to: `a + b` on two
+`decimal<9, 2>` values has the type `decimal<9, 2>`, because requiring every sum
+to be declared a digit wider than its operands would push the widening through
+every record in the program. The check is at run time, where the actual values
+are.
+
 ### Decimal literals
 
 A literal widens to any decimal with the same scale and enough precision, so

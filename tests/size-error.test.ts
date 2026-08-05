@@ -1,0 +1,122 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+import { compile } from "../packages/compiler/src/index";
+import { flowed } from "./helpers";
+
+/**
+ * `ON SIZE ERROR` — what COBOL does when a result does not fit.
+ *
+ * The Language Reference leaves no room: "If the ON SIZE ERROR phrase is not
+ * specified and a size error condition occurs, truncation rules apply and the
+ * value of the affected resultant identifier is computed." The digits truncated
+ * are the high-order ones, so an overflowing addition does not produce a large
+ * wrong number that stands out — it produces a plausible small one.
+ *
+ * Two amounts a field can each hold do not add up to one it can, and a bank's
+ * arithmetic is nearly all additions of amounts of the same declared width. So
+ * this is the ordinary case, not an exotic one.
+ */
+
+const PREAMBLE = `module Money;
+
+record Acct {
+  a: decimal<9, 2>;
+  b: decimal<9, 2>;
+  total: decimal<9, 2>;
+  idempotencyKey: string<36>;
+}
+`;
+
+function program(body: string): string {
+  return `${PREAMBLE}
+entry transaction post(acct: Acct) {
+${body}
+  audit("POSTED", acct.idempotencyKey);
+}`;
+}
+
+describe("a computation that can overflow", () => {
+  const result = compile(program(`  acct.total = acct.a + acct.b;`));
+
+  it("compiles", () => {
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  /**
+   * COBOL leaves the receiving field alone when the phrase is present rather
+   * than storing the truncated answer, which is what makes stopping safe: the
+   * wrong value never reaches the ledger.
+   */
+  it("names the field, sets a return code, and stops", () => {
+    const text = flowed(result.cobol);
+    expect(text).toContain("ON SIZE ERROR");
+    expect(text).toContain('DISPLAY "ARITHMETIC OVERFLOW TOTAL OF ACCT"');
+    expect(text).toContain("MOVE 12 TO RETURN-CODE");
+    expect(result.cobol).toContain("END-COMPUTE");
+  });
+});
+
+/**
+ * Naming a value cannot overflow the field it is named for: it already fits the
+ * type it was declared with. Guarding those would be four lines of COBOL that
+ * can never run, on the most common statement in any program.
+ */
+describe("a computation that cannot", () => {
+  it("leaves a plain assignment unguarded", () => {
+    const result = compile(program(`  acct.total = acct.a;`));
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).not.toContain("ON SIZE ERROR");
+  });
+});
+
+/**
+ * The point of the whole thing, run rather than read.
+ *
+ * Before the phrase was emitted this printed 9,999,999.98 and exited zero: the
+ * true total, 19,999,999.98, lost its leading digit on the way into a field
+ * that could not hold it, and every signal the job produced said it had worked.
+ */
+describe("executed", () => {
+  const available =
+    spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
+
+  it.skipIf(!available)("stops rather than storing a truncated total", () => {
+    const result = compile(
+      program(`  acct.a = 9999999.99;
+  acct.b = 9999999.99;
+  acct.total = acct.a + acct.b;
+  log "TOTAL=", acct.total;`),
+    );
+    expect(result.diagnostics).toEqual([]);
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-size-"));
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-fixed",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    const ran = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+
+    // The overflow is named in the job log, the step fails, and the wrong
+    // total is never printed because it was never stored.
+    expect(ran.stdout).toContain("ARITHMETIC OVERFLOW TOTAL OF ACCT");
+    expect(ran.status).toBe(12);
+    expect(ran.stdout).not.toContain("TOTAL=+9999999.98");
+  });
+});
