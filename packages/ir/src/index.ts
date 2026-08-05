@@ -49,6 +49,7 @@ export interface IRProgram {
   transactions: IRTransaction[];
   files: IRFile[];
   reports: IRReport[];
+  databases: IRDatabase[];
   /** `USE AFTER ERROR` procedures, one per file that declares a handler. */
   fileErrorHandlers: IRFileErrorHandler[];
   enums: IREnum[];
@@ -267,6 +268,7 @@ export type IRStatement =
   | IRXmlParseStatement
   | IRReportStatement
   | IRProgramCallStatement
+  | IRDliStatement
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
@@ -368,6 +370,34 @@ export interface IRXmlParseStatement {
     numeric: boolean;
   }[];
   onError: IRBlock | null;
+}
+
+/** An IMS database: a PCB the region passes in, and the segment it holds. */
+export interface IRDatabase {
+  kind: "Database";
+  span: SourceSpan;
+  name: string;
+  segmentName: string;
+  keyName: string;
+  record: IRRecord;
+  statusName: string | null;
+  /** Bytes of the key field, which is how wide the search argument's value is. */
+  keyLength: number;
+}
+
+/** One `CALL "CBLTDLI"` with a function code. */
+export interface IRDliStatement {
+  kind: "DliStatement";
+  span: SourceSpan;
+  operation:
+    | "getUnique"
+    | "getNext"
+    | "insertSegment"
+    | "replaceSegment"
+    | "deleteSegment";
+  databaseName: string;
+  recordName: string | null;
+  key: IRExpression | null;
 }
 
 /** `CALL <name> USING <record>` and `CANCEL <name>`, both naming the module by value. */
@@ -929,6 +959,12 @@ export function lowerProgramToIR(
   });
 
   fileTable.clear();
+  databaseStatusTable.clear();
+  for (const database of typechecked.databases) {
+    if (database.statusName) {
+      databaseStatusTable.set(database.name, database.statusName);
+    }
+  }
   for (const file of typechecked.files) {
     fileTable.set(file.name, {
       mode: file.mode,
@@ -1032,6 +1068,16 @@ export function lowerProgramToIR(
       functions,
       transactions,
       files,
+      databases: typechecked.databases.map((database) => ({
+        kind: "Database" as const,
+        span: database.span,
+        name: database.name,
+        segmentName: database.segmentName,
+        keyName: database.keyName,
+        record: lowerRecord(database.record, recordTypeMap),
+        statusName: database.statusName,
+        keyLength: 0,
+      })),
       reports: typechecked.reports.map((report) => ({
         kind: "Report" as const,
         span: report.span,
@@ -1091,6 +1137,9 @@ const fileTable = new Map<
 >();
 const functionTable = new Map<string, IRType>();
 
+/** Declared database status field names, which are in scope like a file's. */
+const databaseStatusTable = new Map<string, string>();
+
 /**
  * The concrete function each generic call resolves to, from the typechecker.
  *
@@ -1117,6 +1166,12 @@ const sqlTable = new Map<string, ResolvedSql>();
 
 /** File status fields are readable in any body, so they must be in IR scope. */
 function addFileStatusSymbols(scopeTypes: Map<string, IRType>): void {
+  for (const [, database] of databaseStatusTable) {
+    if (!scopeTypes.has(database)) {
+      scopeTypes.set(database, { kind: "string", length: 2 });
+    }
+  }
+
   for (const [, file] of fileTable) {
     if (file.statusName && !scopeTypes.has(file.statusName)) {
       scopeTypes.set(file.statusName, { kind: "string", length: 2 });
@@ -1946,6 +2001,15 @@ function lowerStatement(
         targets: statement.targets.map((target) =>
           lowerExpression(target, scopeTypes),
         ),
+      };
+    case "DliStatement":
+      return {
+        kind: "DliStatement",
+        span: statement.span,
+        operation: statement.operation,
+        databaseName: statement.databaseName,
+        recordName: statement.recordName,
+        key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
       };
     case "ProgramCallStatement":
       return {

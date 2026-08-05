@@ -1279,6 +1279,68 @@ bind the select list to the record's fields positionally instead.
 A cursor and a `sql` statement are not interchangeable (`BANK-SQL-005`). One
 lowers to a single `EXEC SQL`, the other to four.
 
+## 12a. IMS DL/I
+
+```ts
+record AccountSegment {
+  acctId: string<10>;
+  balance: decimal<9, 2>;
+}
+
+database accountDb pcb segment "ACCTSEG" key "ACCTID"
+  record AccountSegment status dbStatus;
+
+getUnique accountDb into segment key "0000000001";
+getNext accountDb into segment;
+insertSegment accountDb from segment;
+replaceSegment accountDb from segment;
+deleteSegment accountDb;
+```
+
+An IMS program does not open a database or read it with file control. The region
+hands it a **PCB**, and every operation is `CALL "CBLTDLI"` with a function code,
+that PCB, a segment area, and — for a qualified read — a search argument:
+
+```cobol
+       PROCEDURE DIVISION USING ACCOUNT-DB-PCB.
+           MOVE "0000000001" TO ACCOUNT-DB-SSA-VALUE
+           CALL "CBLTDLI" USING DLI-GU, ACCOUNT-DB-PCB, ACCOUNT-SEGMENT,
+               ACCOUNT-DB-SSA
+           MOVE ACCOUNT-DB-PCB-STATUS TO DB-STATUS
+```
+
+The segment and key names live on the declaration, because the search argument
+is built from them once and each is eight bytes — what DL/I carries, and a
+longer one is truncated into a name matching nothing in the DBD
+(`BANK-DLI-001`).
+
+`getNext` passes no search argument. It walks from wherever the last call left
+the position, which is the whole point of it.
+
+**The status field is required.** The two characters DL/I leaves in the PCB are
+the entire error model — spaces worked, `GE` found nothing, `GB` reached the end
+— so without somewhere to read them a `getUnique` that found nothing is
+indistinguishable from one that worked, and the program uses whatever the
+segment area held last. It reads like a file status:
+
+```ts
+getUnique accountDb into segment key accountId;
+if dbStatus == "  " {
+  ...
+}
+```
+
+### What the local run establishes
+
+The tests execute against [`runtime/CBLTDLI.cbl`](../runtime/CBLTDLI.cbl), which
+is **not IMS**: it evaluates no database, holds no segments, and maintains no
+position. It puts a scripted status in the PCB so the branches can be reached.
+
+That proves the program issues its calls in order with the right function codes,
+and takes the branch its status test selects. It proves nothing about what IMS
+would return. Same grade of evidence as Db2 and CICS already have here — see
+[`runtime/README.md`](../runtime/README.md).
+
 ## 14. CICS
 
 An online transaction is declared with `cics`:

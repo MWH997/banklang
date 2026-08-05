@@ -756,6 +756,7 @@ export type StatementNode =
   | XmlParseStatementNode
   | ReportStatementNode
   | ProgramCallStatementNode
+  | DliStatementNode
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
@@ -973,6 +974,56 @@ export type ReportSourceNode =
   | { kind: "ReportField"; field: string; span: SourceSpan }
   | { kind: "ReportSum"; field: string; span: SourceSpan }
   | { kind: "ReportPageNumber"; span: SourceSpan };
+
+/**
+ * `database accountDb pcb segment "ACCTSEG" key "ACCTID" record Seg status s;`
+ *
+ * An IMS database, reached through DL/I. The program does not open it or read
+ * it with COBOL file control: the region hands it a PCB, and every operation is
+ * `CALL "CBLTDLI"` with a function code, that PCB, a segment area, and a search
+ * argument.
+ *
+ * The segment and key names live on the declaration because the search argument
+ * is built from them and does not change per call — which is also what stops
+ * every statement having to repeat an eight-character name that must match the
+ * DBD exactly.
+ */
+export interface DatabaseDeclarationNode extends NodeBase {
+  kind: "DatabaseDeclaration";
+  name: string;
+  /** The segment this program is sensitive to, as the DBD spells it. */
+  segmentName: string;
+  /** The key field within that segment, as the DBD spells it. */
+  keyName: string;
+  recordTypeName: string;
+  /** Where the PCB's two-character status code is read from. */
+  statusName: string | null;
+}
+
+/**
+ * `getUnique <db> into <record> key <value>;` and the rest of DL/I.
+ *
+ * Each becomes one `CALL "CBLTDLI"`. The status the call leaves in the PCB is
+ * the whole error model — spaces mean it worked, `GE` means not found, `GB`
+ * means the end of the database — which is why a database, like a file, has to
+ * declare somewhere to read it from.
+ */
+export interface DliStatementNode extends NodeBase {
+  kind: "DliStatement";
+  operation:
+    | "getUnique"
+    | "getNext"
+    | "insertSegment"
+    | "replaceSegment"
+    | "deleteSegment";
+  databaseName: string;
+  databaseSpan: SourceSpan;
+  /** The record the segment is read into or written from. */
+  recordName: string | null;
+  recordSpan: SourceSpan | null;
+  /** The key a `getUnique` looks for. */
+  key: ExpressionNode | null;
+}
 
 export interface TransactionDeclarationNode extends NodeBase {
   kind: "TransactionDeclaration";
@@ -1304,6 +1355,7 @@ export type DeclarationNode =
   | FunctionDeclarationNode
   | TransactionDeclarationNode
   | FileDeclarationNode
+  | DatabaseDeclarationNode
   | ReportDeclarationNode
   | EnumDeclarationNode
   | FileErrorHandlerNode

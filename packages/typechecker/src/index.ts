@@ -22,6 +22,8 @@ import {
   type ReportDeclarationNode,
   type ReportGroupNode,
   type ReportPageNode,
+  type DatabaseDeclarationNode,
+  type DliStatementNode,
   type ProgramCallStatementNode,
   type ReportStatementNode,
   type SerializeStatementNode,
@@ -312,6 +314,16 @@ export interface ResolvedFile {
  * names has to be one of its fields, because that record is what the program
  * fills before it generates a detail.
  */
+/** A `database` declaration, resolved against the record its segment holds. */
+export interface ResolvedDatabase {
+  name: string;
+  span: SourceSpan;
+  segmentName: string;
+  keyName: string;
+  record: ResolvedRecord;
+  statusName: string | null;
+}
+
 export interface ResolvedReport {
   name: string;
   span: SourceSpan;
@@ -356,6 +368,8 @@ export interface TypeCheckResult {
   files: ResolvedFile[];
   /** `report` declarations, which become the REPORT SECTION. */
   reports: ResolvedReport[];
+  /** `database` declarations, which become PCBs and DL/I calls. */
+  databases: ResolvedDatabase[];
   /** `on error <file>` handlers, which become DECLARATIVES. */
   fileErrorHandlers: ResolvedFileErrorHandler[];
   enums: ResolvedEnum[];
@@ -390,6 +404,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       transactions: [],
       files: [],
       reports: [],
+      databases: [],
       fileErrorHandlers: [],
       enums: [],
       sql: [],
@@ -407,6 +422,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   const transactions: ResolvedTransaction[] = [];
   const files: ResolvedFile[] = [];
   const reports: ResolvedReport[] = [];
+  const databases: ResolvedDatabase[] = [];
   const fileErrorHandlers: ResolvedFileErrorHandler[] = [];
   const enums: ResolvedEnum[] = [];
   const sqlStatements: ResolvedSql[] = [];
@@ -555,6 +571,18 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     }
   }
 
+  declaredDatabases = new Map();
+  for (const declaration of program.declarations) {
+    if (declaration.kind !== "DatabaseDeclaration") {
+      continue;
+    }
+    const resolved = resolveDatabase(declaration, recordMap, diagnostics);
+    if (resolved) {
+      databases.push(resolved);
+      declaredDatabases.set(resolved.name, resolved);
+    }
+  }
+
   // Pass 2b: reports, which resolve against files and so come after them.
   declaredReports = new Map();
   for (const declaration of program.declarations) {
@@ -622,6 +650,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     transactions,
     files,
     reports,
+    databases,
     fileErrorHandlers,
     enums,
     sql: sqlStatements,
@@ -1461,6 +1490,7 @@ function validateTransactionBody(
       case "XmlParseStatement":
       case "ReportStatement":
       case "ProgramCallStatement":
+      case "DliStatement":
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
@@ -1639,6 +1669,9 @@ function validateEffectStatement(
       return true;
     case "ReportStatement":
       validateReportStatement(statement, diagnostics);
+      return true;
+    case "DliStatement":
+      validateDliStatement(statement, scope, aliases, recordMap, diagnostics);
       return true;
     case "ProgramCallStatement":
       validateProgramCallStatement(
@@ -5462,6 +5495,7 @@ function resolveTerminalStatementType(
     case "UnitOfWorkStatement":
     case "ReturnCodeStatement":
     case "SplitStatement":
+    case "DliStatement":
     case "SerializeStatement":
     case "XmlParseStatement":
     case "ReportStatement":
@@ -6061,6 +6095,162 @@ let declaredFiles = new Map<string, ResolvedFile>();
 /** Declared reports, for resolving initiate, generate, and terminate. */
 let declaredReports = new Map<string, ResolvedReport>();
 
+/** Declared databases, for resolving DL/I statements. */
+let declaredDatabases = new Map<string, ResolvedDatabase>();
+
+/**
+ * Resolves a `database` declaration.
+ *
+ * The names of the segment and its key belong to the DBD rather than to this
+ * program, so all the compiler can check is that they are the length DL/I
+ * allows: a search argument carries eight bytes of name, and a longer one is
+ * truncated into a name that matches nothing.
+ */
+function resolveDatabase(
+  declaration: DatabaseDeclarationNode,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedDatabase | null {
+  const record = recordMap.get(declaration.recordTypeName);
+  if (!record) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Database ${declaration.name} holds ${declaration.recordTypeName}, which is not a declared record.`,
+        span: declaration.span,
+        hint: "Declare the segment's record before the database that holds it.",
+        backendProfile: null,
+      }),
+    );
+    return null;
+  }
+
+  for (const [what, value] of [
+    ["segment", declaration.segmentName],
+    ["key", declaration.keyName],
+  ] as const) {
+    if (value.length === 0 || value.length > 8) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DLI-001",
+          severity: "error",
+          message: `The ${what} name "${value}" is ${value.length} characters; DL/I allows eight.`,
+          span: declaration.span,
+          hint: "A search argument carries eight bytes of name. A longer one is truncated into a name that matches nothing in the DBD.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      return null;
+    }
+  }
+
+  return {
+    name: declaration.name,
+    span: declaration.span,
+    segmentName: declaration.segmentName,
+    keyName: declaration.keyName,
+    record,
+    statusName: declaration.statusName,
+  };
+}
+
+/**
+ * `getUnique <db> into <record> key <value>;` and the rest.
+ *
+ * The status DL/I leaves in the PCB is the entire error model, so a database
+ * with nowhere to read it from is a program that cannot tell a segment it found
+ * from one it did not — which, for a `getUnique` that missed, means working on
+ * whatever the segment area held last.
+ */
+function validateDliStatement(
+  statement: DliStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const database = declaredDatabases.get(statement.databaseName);
+  if (!database) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-DLI-001",
+        severity: "error",
+        message: `${statement.databaseName} is not a declared database.`,
+        span: statement.databaseSpan,
+        hint: 'Declare it with `database <name> pcb segment "SEG" key "KEY" record <Record> status <field>;`.',
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (!database.statusName) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-DLI-001",
+        severity: "error",
+        message: `Database ${database.name} declares no status field.`,
+        span: statement.span,
+        hint: "DL/I reports what happened in the PCB status: spaces worked, `GE` found nothing, `GB` reached the end. Without somewhere to read it, a read that found nothing is indistinguishable from one that worked.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (statement.recordName && statement.recordSpan) {
+    const record = scope.get(statement.recordName);
+    if (!record) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `${statement.recordName} is not declared.`,
+          span: statement.recordSpan,
+          hint: "Name a record variable the segment is read into or written from.",
+          backendProfile: null,
+        }),
+      );
+    } else if (
+      record.kind !== "record" ||
+      record.name !== database.record.name
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DLI-001",
+          severity: "error",
+          message: `${statement.recordName} holds ${describeType(record)}, but ${database.name} holds ${database.record.name}.`,
+          span: statement.recordSpan,
+          hint: "The segment area is the shape the DBD describes, so it has to be the record the database declares.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  if (statement.key) {
+    const key = inferExpressionType(
+      statement.key,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (key && key.kind !== "string") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-DLI-001",
+          severity: "error",
+          message: `A DL/I key is text; this one is ${describeType(key)}.`,
+          span: statement.key.span,
+          hint: "A search argument compares bytes, so the key is moved into the argument as characters. Convert a number first.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
 /**
  * Resolves a `report` declaration against the file it writes to.
  *
@@ -6596,6 +6786,13 @@ function declareCicsRespSymbols(
 }
 
 function declareFileStatusSymbols(scope: Map<string, ResolvedType>): void {
+  // A DL/I status is read exactly like a file status: two characters saying
+  // what the last call did.
+  for (const database of declaredDatabases.values()) {
+    if (database.statusName && !scope.has(database.statusName)) {
+      scope.set(database.statusName, { kind: "string", length: 2 });
+    }
+  }
   for (const file of declaredFiles.values()) {
     if (file.recordVarying && !scope.has(file.recordVarying.lengthName)) {
       // The used length is a number the program reads and writes, so it is in

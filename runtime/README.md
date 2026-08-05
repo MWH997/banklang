@@ -3,12 +3,13 @@
 Four small COBOL programs that satisfy the interfaces generated code calls out
 to, so a generated program can be **executed** rather than only compiled.
 
-| Program    | Stands in for                     | Called by                                |
-| ---------- | --------------------------------- | ---------------------------------------- |
-| `BANKLEDG` | The institution's ledger          | `debit`, `credit`, and the rollback path |
-| `BANKAUDT` | The institution's audit log       | `audit`                                  |
-| `DSNHLI`   | The Db2 language interface module | Precompiled `EXEC SQL` blocks            |
-| `DFHEI1`   | The CICS command-level stub       | Precompiled `EXEC CICS` blocks           |
+| Program    | Stands in for                     | Called by                                                                        |
+| ---------- | --------------------------------- | -------------------------------------------------------------------------------- |
+| `BANKLEDG` | The institution's ledger          | `debit`, `credit`, and the rollback path                                         |
+| `BANKAUDT` | The institution's audit log       | `audit`                                                                          |
+| `DSNHLI`   | The Db2 language interface module | Precompiled `EXEC SQL` blocks                                                    |
+| `DFHEI1`   | The CICS command-level stub       | Precompiled `EXEC CICS` blocks                                                   |
+| `CBLTDLI`  | The IMS DL/I language interface   | Every `getUnique`, `getNext`, `insertSegment`, `replaceSegment`, `deleteSegment` |
 
 `tests/conformance.test.ts` compiles a BankTS program, links it against these,
 runs it, and asserts on the balances, the journal, the audit log, and the output
@@ -42,11 +43,12 @@ Both are invisible until the program runs. That is what these programs are for.
 and every command returns `NORMAL` — which leaves half of every generated
 program unreachable. A test can therefore script what they report:
 
-| File                | Line format            | Meaning                          |
-| ------------------- | ---------------------- | -------------------------------- |
-| `sql-outcomes.txt`  | `0002 +100 02000 0000` | statement 2 reports no row found |
-| `sql-outcomes.txt`  | `0002 +000 00000 0003` | statement 2 succeeds three times |
-| `cics-outcomes.txt` | `0001 +027 +000`       | command 1 fails with `PGMIDERR`  |
+| File                | Line format            | Meaning                               |
+| ------------------- | ---------------------- | ------------------------------------- |
+| `sql-outcomes.txt`  | `0002 +100 02000 0000` | statement 2 reports no row found      |
+| `sql-outcomes.txt`  | `0002 +000 00000 0003` | statement 2 succeeds three times      |
+| `cics-outcomes.txt` | `0001 +027 +000`       | command 1 fails with `PGMIDERR`       |
+| `dli-outcomes.txt`  | `0001 GE`              | DL/I call 1 reports segment not found |
 
 Statements are numbered as the precompiler numbers them, counting only executable
 blocks — a cursor's `DECLARE` is read at precompile time and takes no number.
@@ -72,6 +74,14 @@ closed correctly, but not what was in them.
 ## What it does not establish
 
 **These are not IBM products and imply no IBM behaviour.**
+
+- `CBLTDLI` is not IMS. It evaluates no database, holds no segments, honours no
+  hierarchy, and maintains no position — a `getNext` after a `getUnique` returns
+  whatever the script says and nothing about where the previous call left off.
+  It puts a status in the PCB so the program's branches can be reached. An IMS
+  program is entered by the region with its PCBs rather than started, so the
+  test supplies a driver that allocates one and calls the program; that is the
+  shape, not the region.
 
 - `BANKLEDG` is not a bank ledger. It has no accounting model, no double-entry
   enforcement, no value dating, no concurrency, and no durability. The BankLang

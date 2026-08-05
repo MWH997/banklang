@@ -990,6 +990,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         transactions: [],
         files: [],
         reports: [],
+        databases: [],
         fileErrorHandlers: [],
         enums: [],
         sql: [],

@@ -19,6 +19,7 @@ export type DiagnosticNamespace =
   | "AUD"
   | "SQL"
   | "CICS"
+  | "DLI"
   | "FILE"
   | "COPY"
   | "GEN"
@@ -46,6 +47,7 @@ export const NAMESPACE_TITLES: Record<DiagnosticNamespace, string> = {
   AUD: "Audit",
   SQL: "Db2 and SQL",
   CICS: "CICS",
+  DLI: "IMS DL/I",
   FILE: "File I/O",
   COPY: "Copybook and layout",
   GEN: "Code generation",
@@ -722,6 +724,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       "Give the shortest and longest lengths in that order, and declare the file `sequential`.",
     specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
+    id: "BANK-DLI-001",
+    title: "Invalid DL/I access",
+    explanation:
+      "A DL/I statement names a database that is not declared, moves a segment into a record of the wrong shape, looks for a key that is not text, or reaches a database with no status field. The segment and key names are eight bytes each, because that is what a search argument carries — a longer one is truncated into a name matching nothing in the DBD. The status field matters most: the two characters DL/I leaves in the PCB are the entire error model, so without somewhere to read them a `getUnique` that found nothing is indistinguishable from one that worked, and the program goes on to use whatever the segment area held last.",
+    remediation:
+      'Declare the database with `database <name> pcb segment "SEG" key "KEY" record <Record> status <field>;`, read into the record it declares, and test the status after every call.',
+    specReference: "language-reference.md section 12a",
     implemented: true,
   },
   {

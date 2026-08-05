@@ -46,6 +46,8 @@ import {
   type ReportLineNode,
   type ReportPageNode,
   type ReportSourceNode,
+  type DatabaseDeclarationNode,
+  type DliStatementNode,
   type ProgramCallStatementNode,
   type ReportStatementNode,
   type SerializeStatementNode,
@@ -171,6 +173,12 @@ export const KEYWORDS = new Set([
   "sort",
   "merge",
   "report",
+  "database",
+  "getUnique",
+  "getNext",
+  "insertSegment",
+  "replaceSegment",
+  "deleteSegment",
   "call",
   "cancel",
   "initiate",
@@ -759,6 +767,10 @@ class Parser {
       return this.parseReportDeclaration();
     }
 
+    if (this.matchKeyword("database")) {
+      return this.parseDatabaseDeclaration();
+    }
+
     if (this.matchKeyword("enum")) {
       return this.parseEnumDeclaration();
     }
@@ -1238,6 +1250,173 @@ class Parser {
       field: field.text,
       span: field.span,
     };
+  }
+
+  /**
+   * `database accountDb pcb segment "ACCTSEG" key "ACCTID" record Seg status s;`
+   *
+   * The segment and key names are literals because they name things in the DBD
+   * rather than in this program, and they have to match it character for
+   * character — a DL/I search argument is eight bytes of name, not a reference
+   * the compiler can resolve.
+   */
+  /**
+   * `getUnique <db> into <record> key <value>;` and the rest.
+   *
+   * `into` and `from` say which way the segment moves, which is the same shape
+   * a file read and write already have.
+   */
+  private parseDliStatement(
+    operation: DliStatementNode["operation"],
+  ): DliStatementNode | null {
+    const keyword = this.advance();
+    const databaseToken = this.expectIdentifier("Expected the database name.");
+    if (!databaseToken) {
+      return null;
+    }
+
+    let recordName: string | null = null;
+    let recordSpan: SourceSpan | null = null;
+    const reads = operation === "getUnique" || operation === "getNext";
+    const writes =
+      operation === "insertSegment" || operation === "replaceSegment";
+    if (reads || writes) {
+      const direction = reads ? "into" : "from";
+      if (!this.matchContextual(direction)) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`${direction}\` before the segment record.`,
+          `Write \`${operation} ${databaseToken.text} ${direction} <record>\`.`,
+        );
+        return null;
+      }
+      const recordToken = this.expectIdentifier("Expected a segment record.");
+      if (!recordToken) {
+        return null;
+      }
+      recordName = recordToken.text;
+      recordSpan = recordToken.span;
+    }
+
+    // Only a unique read is qualified. A next read walks from wherever the
+    // last one left the position, which is the whole point of it.
+    let key: ExpressionNode | null = null;
+    if (operation === "getUnique") {
+      if (!this.matchContextual("key")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `key` before the value to look for.",
+          "A unique read is qualified by a key. Use `getNext` to walk from the current position.",
+        );
+        return null;
+      }
+      key = this.parseExpression();
+      if (!key) {
+        return null;
+      }
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      `Expected \`;\` after \`${operation}\`.`,
+    );
+    if (!semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "DliStatement",
+      operation,
+      databaseName: databaseToken.text,
+      databaseSpan: databaseToken.span,
+      recordName,
+      recordSpan,
+      key,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies DliStatementNode;
+  }
+
+  private parseDatabaseDeclaration(): DatabaseDeclarationNode | null {
+    const keyword = this.previous;
+    const nameToken = this.expectIdentifier("Expected database name.");
+    if (!keyword || !nameToken) {
+      return null;
+    }
+
+    if (!this.matchContextual("pcb")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `pcb` after the database name.",
+        'A DL/I database is reached through a PCB the region passes in. Write `database accountDb pcb segment "ACCTSEG" key "ACCTID" record Seg status dbStatus;`.',
+      );
+      return null;
+    }
+
+    const readLiteral = (clause: string, what: string): string | null => {
+      if (!this.matchContextual(clause)) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`${clause}\` in the database declaration.`,
+          `The ${what} is written as a literal, because it names something in the DBD rather than in this program.`,
+        );
+        return null;
+      }
+      if (!this.is("string")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected the ${what} as a literal.`,
+          "It has to match the DBD character for character.",
+        );
+        return null;
+      }
+      return this.advance().text;
+    };
+
+    const segmentName = readLiteral("segment", "segment name");
+    if (segmentName === null) {
+      return null;
+    }
+    const keyName = readLiteral("key", "key field name");
+    if (keyName === null) {
+      return null;
+    }
+
+    this.expectKeyword("record", "Expected `record` before the segment type.");
+    const recordTypeToken = this.expectIdentifier(
+      "Expected the segment record type.",
+    );
+
+    let statusName: string | null = null;
+    if (this.matchContextual("status")) {
+      statusName =
+        this.expectIdentifier("Expected a status field name.")?.text ?? null;
+    }
+
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after the database declaration.",
+    );
+    if (!recordTypeToken || !semicolon) {
+      return null;
+    }
+
+    return {
+      kind: "DatabaseDeclaration",
+      name: nameToken.text,
+      segmentName,
+      keyName,
+      recordTypeName: recordTypeToken.text,
+      statusName,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: semicolon.span.end,
+      },
+    } satisfies DatabaseDeclarationNode;
   }
 
   private parseFileDeclaration(): FileDeclarationNode | null {
@@ -2435,6 +2614,19 @@ class Parser {
     for (const format of ["json", "xml"] as const) {
       if (this.isKeyword(format)) {
         return this.parseSerializeStatement(format);
+      }
+    }
+
+    // DL/I: each becomes one `CALL "CBLTDLI"` with a function code.
+    for (const operation of [
+      "getUnique",
+      "getNext",
+      "insertSegment",
+      "replaceSegment",
+      "deleteSegment",
+    ] as const) {
+      if (this.isKeyword(operation)) {
+        return this.parseDliStatement(operation);
       }
     }
 
