@@ -4386,9 +4386,16 @@ function emitCommareaEntry(
     return;
   }
 
-  // No commarea where one is required is a broken contract, not an empty
-  // request. Returning quietly would make it look like the transaction ran.
-  addLine(`           IF EIBCALEN = 0`);
+  // Not merely "was one passed": IBM's rule is that the program verifies
+  // EIBCALEN matches what it expects, because a discrepancy risks a storage
+  // violation. A caller that passes ten bytes to a program whose record is
+  // seventy-two leaves the MOVE below reading sixty-two bytes of whatever
+  // follows the commarea — which is somebody else's storage, and reads clean.
+  //
+  // Zero is the same test: no commarea where one is required is a broken
+  // contract rather than an empty request, and returning quietly would make it
+  // look like the transaction ran.
+  addLine(`           IF EIBCALEN < LENGTH OF DFHCOMMAREA`);
   addLine(`               EXEC CICS ABEND ABCODE("BKNC") END-EXEC`);
   addLine(`           END-IF`);
   addLine(`           MOVE DFHCOMMAREA TO ${toCobolName(commarea.name)}`);

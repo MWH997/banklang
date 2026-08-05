@@ -40,12 +40,19 @@ describe("a CICS transaction", () => {
   /**
    * IBM's guidance is to test `EIBCALEN` first, always. A commarea that was not
    * passed is not an empty record: `DFHCOMMAREA` addresses whatever is there.
+   *
+   * And the rule is not "was one passed" but that the program verifies the
+   * length "matches what the program expects", because a discrepancy risks a
+   * storage violation. A caller passing ten bytes to a program whose record is
+   * seventy-two leaves the MOVE reading sixty-two bytes of whatever follows the
+   * commarea — somebody else's storage, read clean. Testing against the length
+   * of the record covers the short commarea and the absent one together.
    */
   it("tests EIBCALEN before touching the commarea", () => {
     const text = result.cobol ?? "";
 
-    expect(text).toContain("IF EIBCALEN = 0");
-    expect(text.indexOf("IF EIBCALEN = 0")).toBeLessThan(
+    expect(text).toContain("IF EIBCALEN < LENGTH OF DFHCOMMAREA");
+    expect(text.indexOf("IF EIBCALEN < LENGTH OF DFHCOMMAREA")).toBeLessThan(
       text.indexOf("MOVE DFHCOMMAREA TO"),
     );
   });
@@ -238,5 +245,35 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
 
     expect(text.slice(check)).toContain("MOVE 12 TO RETURN-CODE");
     expect(text.slice(check)).toContain("GOBACK");
+  });
+});
+
+/**
+ * The short commarea, which is the case the first version of this guard missed.
+ *
+ * `EIBCALEN = 0` catches a caller that passed nothing. It does not catch one
+ * that passed less than the program expects, and that is the case IBM warns
+ * produces a storage violation: the MOVE reads the whole record's length out of
+ * an area that is shorter, and what it finds past the end belongs to something
+ * else. Testing against the length of the record covers both.
+ */
+describe("a commarea shorter than the record", () => {
+  it("is refused by the same guard that refuses an absent one", () => {
+    const cobol =
+      compile(`module Enquiry;
+
+record Request {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+cics transaction enquire(request: Request) {
+  audit("ENQUIRED", request.idempotencyKey);
+}`).cobol ?? "";
+
+    // Against the record's own length rather than a number written here: the
+    // record is what says how much storage the MOVE is going to read.
+    expect(cobol).toContain("IF EIBCALEN < LENGTH OF DFHCOMMAREA");
+    expect(cobol).not.toContain("IF EIBCALEN = 0");
   });
 });
