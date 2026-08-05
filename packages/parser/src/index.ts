@@ -1600,6 +1600,17 @@ class Parser {
       dependingOn = countToken?.text ?? null;
     }
 
+    // `= <literal>` is a COBOL VALUE clause. It comes last, after the layout
+    // clauses, because it says what is in the field rather than how it is laid
+    // out.
+    let initialValue: ExpressionNode | null = null;
+    if (this.matchPunctuation("=")) {
+      initialValue = this.parseExpression();
+      if (!initialValue) {
+        return null;
+      }
+    }
+
     const semicolon = this.expectPunctuation(
       ";",
       "Expected `;` after field declaration.",
@@ -1613,6 +1624,7 @@ class Parser {
       kind: "FieldDeclaration",
       name: nameToken.text,
       type,
+      initialValue,
       sensitive: modifierToken !== null,
       redefines,
       dependingOn,

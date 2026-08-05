@@ -685,6 +685,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-COPY-006",
+    title: "Invalid initial value",
+    explanation:
+      "A field's initial value becomes a COBOL `VALUE` clause, which the compiler evaluates when it compiles. It therefore has to be something the compiler can see: a written number, string, boolean, or enum member of the field's own type, short enough to fit. A `REDEFINES` field cannot carry one at all — it has no storage of its own, only a second reading of another field's bytes.",
+    remediation:
+      "Give the field a literal of its own type that fits, or move the initialisation into the program where it can be computed. Put a redefining field's value on the field being redefined.",
+    specReference: "language-reference.md section 3",
+    implemented: true,
+  },
+  {
     id: "BANK-SEC-001",
     title: "Restricted data reclassified",
     explanation:

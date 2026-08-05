@@ -102,6 +102,33 @@ needs.
 rather than truncating to the picture's decimal digits. That is what an
 interface to something outside COBOL needs, and it is why the SQLCA uses it.
 
+### What a field starts as
+
+```ts
+record Counters {
+  processed: binary<9> = 0;
+  marker: string<1> = "N";
+  rate: decimal<5, 2> = 1.50;
+  state: Status = Status.OPEN;
+}
+```
+
+A COBOL `VALUE` clause. Working storage starts as whatever the region left there
+unless a field says otherwise, so a counter with no initial value starts at an
+unpredictable number — and writing it in the record rather than in an opening
+paragraph keeps the fact next to the field, where it cannot drift out of step
+when the record gains one.
+
+COBOL evaluates `VALUE` when it compiles, so the value has to be a written
+number, string, boolean, or enum member of the field's own type, short enough to
+fit (`BANK-COPY-006`). Anything that needs computing belongs in the program. A
+`redefines` field cannot carry one at all: it has no storage of its own, only a
+second reading of another field's bytes.
+
+The clause is dropped when the same record is written into an `FD`, where COBOL
+does not allow it — a file record describes a buffer the file fills, so there is
+nothing there to initialise.
+
 ### Alignment
 
 ```ts
