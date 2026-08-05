@@ -354,6 +354,7 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
         break;
       case "SerializeStatement":
       case "XmlParseStatement":
+      case "ProgramCallStatement":
         if (statement.onError) {
           flattened.push(...flattenStatements(statement.onError.statements));
         }

@@ -22,6 +22,7 @@ import {
   type ReportDeclarationNode,
   type ReportGroupNode,
   type ReportPageNode,
+  type ProgramCallStatementNode,
   type ReportStatementNode,
   type SerializeStatementNode,
   type XmlParseStatementNode,
@@ -1456,6 +1457,7 @@ function validateTransactionBody(
       case "SerializeStatement":
       case "XmlParseStatement":
       case "ReportStatement":
+      case "ProgramCallStatement":
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
@@ -1634,6 +1636,25 @@ function validateEffectStatement(
       return true;
     case "ReportStatement":
       validateReportStatement(statement, diagnostics);
+      return true;
+    case "ProgramCallStatement":
+      validateProgramCallStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
+      if (statement.onError) {
+        validateTransactionBody(
+          statement.onError,
+          scope,
+          aliases,
+          recordMap,
+          locals,
+          diagnostics,
+        );
+      }
       return true;
     case "XmlParseStatement":
       validateXmlParseStatement(
@@ -5394,6 +5415,7 @@ function resolveTerminalStatementType(
     case "SerializeStatement":
     case "XmlParseStatement":
     case "ReportStatement":
+    case "ProgramCallStatement":
     case "SortStatement":
     case "ReleaseStatement":
     case "CheckpointStatement":
@@ -6291,6 +6313,95 @@ function validateReportSums(
         }),
       );
     }
+  }
+}
+
+/**
+ * `call <name> using <record> on error { ... };` and `cancel <name>;`
+ *
+ * The program name is a value, so the only thing the compiler can check is that
+ * it is text short enough to be one: a COBOL load module name is eight
+ * characters, and a longer field would be truncated to something that does not
+ * exist. What it cannot check is whether the module is there — that is the
+ * whole nature of a dynamic call, and the reason `on error` matters.
+ */
+function validateProgramCallStatement(
+  statement: ProgramCallStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): void {
+  const program = inferExpressionType(
+    statement.program,
+    scope,
+    aliases,
+    recordMap,
+    diagnostics,
+  );
+  if (program && (program.kind !== "string" || program.national)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-029",
+        severity: "error",
+        message: `${statement.operation} names a program with ${describeType(program)}; a program is named by text.`,
+        span: statement.program.span,
+        hint: "Pass a string<n> field holding the load module name, or write the name as a literal.",
+        backendProfile: null,
+      }),
+    );
+  } else if (
+    program?.kind === "string" &&
+    !program.literal &&
+    program.length > 8
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-029",
+        severity: "error",
+        message: `A load module name is eight characters; this field holds ${program.length}.`,
+        span: statement.program.span,
+        hint: "Declare the field as string<8>. A longer one is truncated to a name that does not exist, and the failure arrives as a missing module rather than as a length.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+  }
+
+  if (statement.using) {
+    const record = inferExpressionType(
+      statement.using,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    if (record && record.kind !== "record") {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-029",
+          severity: "error",
+          message: `call hands over ${describeType(record)}; it hands over a record.`,
+          span: statement.using.span,
+          hint: "The callee reads it through its own LINKAGE SECTION, which describes a group.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  // A dynamic call that cannot find its module abends. A static one fails at
+  // link time where somebody sees it; this one fails in the middle of a batch.
+  if (statement.operation === "call" && !statement.onError) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-029",
+        severity: "warning",
+        message: "This call has no failure path.",
+        span: statement.span,
+        hint: "A dynamic call names its module at run time, so a missing one is found in the middle of the batch rather than at link time. Add `on error { ... }` to turn an abend into a rejected record.",
+        backendProfile: null,
+      }),
+    );
   }
 }
 

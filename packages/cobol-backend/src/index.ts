@@ -44,6 +44,7 @@ import type {
   IRSplitStatement,
   IRStringCallExpression,
   IRNumericCallExpression,
+  IRProgramCallStatement,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
 import {
@@ -1968,6 +1969,15 @@ function emitStatement(
           `${indent}${statement.operation.toUpperCase()} ${toCobolName(statement.target)}`,
         );
         break;
+      case "ProgramCallStatement":
+        emitProgramCallStatement(
+          statement,
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
@@ -2153,6 +2163,9 @@ function emitTransactionBody(
         addLine(
           `${indent}${statement.operation.toUpperCase()} ${toCobolName(statement.target)}`,
         );
+        break;
+      case "ProgramCallStatement":
+        emitProgramCallStatement(statement, addLine, indentLevel, "", true);
         break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
@@ -2878,6 +2891,49 @@ function xmlParseStatements(program: IRProgram): {
 /** The section name a handler is reached by, and the element register it uses. */
 function xmlHandlerName(index: number): string {
   return `BANK-XML-${index + 1}`;
+}
+
+/**
+ * `CALL <name> USING <record>` and `CANCEL <name>`.
+ *
+ * The name is a value rather than a literal in the source, which is what makes
+ * the call dynamic: a product code selects the module that prices it, and a new
+ * product ships as a new load module without relinking its callers.
+ *
+ * `ON EXCEPTION` is the whole safety story. A static call that cannot be
+ * resolved fails at link time where somebody sees it; this one fails in the
+ * middle of a batch.
+ */
+function emitProgramCallStatement(
+  statement: IRProgramCallStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const program = renderExpression(statement.program);
+
+  if (statement.operation === "cancel") {
+    // CANCEL drops the loaded module, so the next call gets it with its working
+    // storage as the compiler left it rather than as the last call left it.
+    addLine(`${indent}CANCEL ${program}`);
+    return;
+  }
+
+  const using = statement.using
+    ? ` USING ${renderExpression(statement.using)}`
+    : "";
+  addLine(`${indent}CALL ${program}${using}`);
+  if (statement.onError) {
+    addLine(`${indent}    ON EXCEPTION`);
+    if (inTransaction) {
+      emitTransactionBody(statement.onError, addLine, indentLevel + 8);
+    } else {
+      emitStatement(statement.onError, addLine, indentLevel + 8, resultName);
+    }
+  }
+  addLine(`${indent}END-CALL`);
 }
 
 /**
