@@ -32,6 +32,8 @@ import type {
   IRForEachStatement,
   IRRaiseStatement,
   IRSearchStatement,
+  IRCheckpointStatement,
+  IRSortStatement,
   IRSplitStatement,
   IRStringCallExpression,
   IRTemporalCallExpression,
@@ -350,6 +352,14 @@ export interface JclEmitResult {
 
 export interface JclEmitOptions {
   /**
+   * True when the program runs an internal SORT or MERGE.
+   *
+   * The sort product needs a work dataset, and it looks for it under a DD name
+   * it chooses. A job without one fails at the sort rather than at the compile,
+   * which is a much later and much more confusing place to find out.
+   */
+  usesSort?: boolean;
+  /**
    * True when the program `COPY`s its record layouts.
    *
    * The compile step then needs a SYSLIB pointing at the copybook library, or
@@ -403,6 +413,14 @@ export function emitCobol(
     for (const file of program.files) {
       emitFileControlEntry(file, addLine);
     }
+
+    // A sort-work file is selected like any other; the SD rather than an FD is
+    // what says the sort owns its blocking and record handling.
+    for (const sorted of sortedFiles(program)) {
+      addLine(
+        `           SELECT ${sortWorkName(sorted)} ASSIGN TO ${sortWorkDdName(sorted)}.`,
+      );
+    }
     addLine("");
   }
 
@@ -416,6 +434,19 @@ export function emitCobol(
       // is what makes per-field access and a RECORD KEY possible.
       addLine(`       FD  ${fileCobolName(file.name)}.`);
       addLine(`       01  ${fileRecordName(file)}.`);
+      emitRecordFields(file.record.fields, 1, addLine);
+    }
+
+    // An internal SORT runs through a sort-work file, described by SD rather
+    // than FD because the sort owns its blocking and record handling.
+    for (const sorted of sortedFiles(program)) {
+      const file = program.files.find((entry) => entry.name === sorted);
+      if (!file) {
+        continue;
+      }
+      addLine("");
+      addLine(`       SD  ${sortWorkName(file.name)}.`);
+      addLine(`       01  ${sortWorkRecordName(file.name)}.`);
       emitRecordFields(file.record.fields, 1, addLine);
     }
   }
@@ -471,6 +502,11 @@ export function emitCobol(
   }
   // `now()` reads the clock into a field before taking it apart, so the field
   // only exists in a program that asks for the time.
+  for (const file of checkpointedFiles(program)) {
+    addLine(
+      `       01  ${checkpointCounterName(file).padEnd(20)} PIC 9(9) COMP.`,
+    );
+  }
   if (programUsesNow(program)) {
     addLine(`       01  ${CURRENT_DATE_FIELD.padEnd(20)} PIC X(21).`);
   }
@@ -889,6 +925,9 @@ export function emitJcl(
       lines.push("//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD");
     }
     lines.push("//SYSOUT   DD SYSOUT=*");
+    if (options.usesSort) {
+      lines.push("//SORTWK01 DD UNIT=SYSDA,SPACE=(CYL,(5,5))");
+    }
     for (const file of program.files) {
       lines.push(
         file.mode === "input"
@@ -1400,6 +1439,12 @@ function emitStatement(
       case "SplitStatement":
         emitSplitStatement(statement, addLine, indent);
         break;
+      case "SortStatement":
+        emitSortStatement(statement, addLine, indent);
+        break;
+      case "CheckpointStatement":
+        emitCheckpointStatement(statement, addLine, indent);
+        break;
       case "SearchStatement":
         emitSearchStatement(statement, addLine, indentLevel, resultName, false);
         break;
@@ -1550,6 +1595,12 @@ function emitTransactionBody(
         break;
       case "SplitStatement":
         emitSplitStatement(statement, addLine, indent);
+        break;
+      case "SortStatement":
+        emitSortStatement(statement, addLine, indent);
+        break;
+      case "CheckpointStatement":
+        emitCheckpointStatement(statement, addLine, indent);
         break;
       case "SearchStatement":
         emitSearchStatement(statement, addLine, indentLevel, "", true);
@@ -1710,6 +1761,76 @@ function emitWhileStatement(
     emitStatement(statement.body, addLine, indentLevel + 4, resultName);
   }
   addLine(`${indent}END-PERFORM`);
+}
+
+/**
+ * A restart point.
+ *
+ * Counting rather than checkpointing every record is the whole trade: a commit
+ * costs time, and rework after a failure costs the records since the last one.
+ * The position is written first and the work committed after, so a restart that
+ * finds a position can trust that everything up to it is durable.
+ */
+function emitCheckpointStatement(
+  statement: IRCheckpointStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const counter = checkpointCounterName(statement.fileName);
+  const fileRecord = fileRecordNameFor(statement.fileName);
+  const source = resolveIdentifier(statement.recordName);
+
+  addLine(`${indent}ADD 1 TO ${counter}`);
+  addLine(`${indent}IF ${counter} >= ${statement.every}`);
+  addLine(`${indent}    MOVE 0 TO ${counter}`);
+  for (const field of statement.recordFields) {
+    const name = toCobolFieldName(field.name);
+    if (field.arrayLength !== null) {
+      continue;
+    }
+    addLine(
+      `${indent}    MOVE ${name} OF ${source} TO ${name} OF ${fileRecord}`,
+    );
+  }
+  addLine(`${indent}    WRITE ${fileRecord}`);
+  if (statement.commitsSql) {
+    addLine(`${indent}    EXEC SQL COMMIT END-EXEC`);
+  }
+  addLine(`${indent}END-IF`);
+}
+
+/** Records taken since the last restart point was written. */
+function checkpointCounterName(fileName: string): string {
+  return `${toCobolName(fileName)}-CP-COUNT`;
+}
+
+/**
+ * `SORT` or `MERGE`, through the sort-work file COBOL requires.
+ *
+ * `USING` and `GIVING` let the sort open, read, write, and close the files
+ * itself, which is the form a program wants when it has nothing to do to the
+ * records on the way through. The alternative — input and output procedures —
+ * exists for when it does, and is not in the subset.
+ */
+function emitSortStatement(
+  statement: IRSortStatement,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const work = sortWorkName(statement.output);
+  const keys = statement.keys
+    .map(
+      (key) =>
+        `${key.descending ? "DESCENDING" : "ASCENDING"} KEY ${toCobolFieldName(key.name)} OF ${sortWorkRecordName(statement.output)}`,
+    )
+    .join(`\n${indent}         `);
+
+  addLine(`${indent}${statement.operation.toUpperCase()} ${work}`);
+  addLine(`${indent}         ${keys}`);
+  addLine(
+    `${indent}    USING ${statement.inputs.map((input) => fileCobolName(input)).join(" ")}`,
+  );
+  addLine(`${indent}    GIVING ${fileCobolName(statement.output)}`);
 }
 
 /** `UNSTRING source DELIMITED BY d INTO a b c`. */
@@ -2308,6 +2429,17 @@ function endsWithReturnTransid(block: IRBlock): boolean {
   return last?.kind === "CicsStatement" && last.operation === "returnTransid";
 }
 
+/** Files a program checkpoints to, each needing a counter. */
+function checkpointedFiles(program: IRProgram): string[] {
+  const found = new Set<string>();
+  for (const match of JSON.stringify(program.transactions).matchAll(
+    /"kind":"CheckpointStatement","span":\{[^}]*\},"fileName":"([^"]+)"/g,
+  )) {
+    found.add(match[1]);
+  }
+  return [...found];
+}
+
 /** True when the program calls `now()`, so the clock field is needed. */
 function programUsesNow(program: IRProgram): boolean {
   return JSON.stringify([program.functions, program.transactions]).includes(
@@ -2466,6 +2598,54 @@ function sqlParameterName(statementName: string, index: number): string {
 
 /** Cursors the program declares, for rewriting `WHERE CURRENT OF`. */
 let cursorNames = new Set<string>();
+
+/**
+ * The DD a sort-work file is assigned to.
+ *
+ * `SORTWK01` is the name the sort product expects for its first work dataset,
+ * which is why the generated JCL allocates exactly that.
+ */
+function sortWorkDdName(_fileName: string): string {
+  return "SORTWK01";
+}
+
+/** The sort-work file a SORT or MERGE runs through. */
+function sortWorkName(fileName: string): string {
+  return `${toCobolName(fileName)}-SORT-FILE`;
+}
+
+function sortWorkRecordName(fileName: string): string {
+  return `${toCobolName(fileName)}-SORT-RECORD`;
+}
+
+/** Output files a program sorts or merges into, each needing an SD. */
+function sortedFiles(program: IRProgram): string[] {
+  const found = new Set<string>();
+  const walk = (block: IRBlock): void => {
+    for (const statement of block.statements) {
+      if (statement.kind === "SortStatement") {
+        found.add(statement.output);
+      }
+      for (const nested of [
+        (statement as { body?: IRBlock }).body,
+        (statement as { notFound?: IRBlock }).notFound,
+        (statement as { thenBranch?: IRBlock }).thenBranch,
+        (statement as { elseBranch?: IRBlock | null }).elseBranch,
+      ]) {
+        if (nested) {
+          walk(nested);
+        }
+      }
+    }
+  };
+  for (const transaction of program.transactions) {
+    walk(transaction.body);
+  }
+  for (const fn of program.functions) {
+    walk(fn.body);
+  }
+  return [...found];
+}
 
 /**
  * The index register a table is searched through.

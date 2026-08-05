@@ -29,6 +29,8 @@ import {
   type TemporalTypeNode,
   type ReturnCodeStatementNode,
   type SearchStatementNode,
+  type CheckpointStatementNode,
+  type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type TypeAliasDeclarationNode,
@@ -138,6 +140,11 @@ export const KEYWORDS = new Set([
   "split",
   "by",
   "search",
+  "sort",
+  "merge",
+  "descending",
+  "checkpoint",
+  "every",
   "currency",
   "nullable",
   "edited",
@@ -1195,6 +1202,115 @@ class Parser {
 
     if (this.matchKeyword("raise")) {
       return this.parseRaiseStatement();
+    }
+
+    if (this.isKeyword("checkpoint")) {
+      const keyword = this.advance();
+      const fileToken = this.expectIdentifier("Expected the restart file.");
+      const fromToken = this.current;
+      if (fromToken.kind !== "identifier" || fromToken.text !== "from") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `from` before the restart record.",
+          "Write `checkpoint restartFile from restartRecord every 1000;`.",
+        );
+        return null;
+      }
+      this.advance();
+      const recordToken = this.expectIdentifier("Expected the restart record.");
+      if (!this.matchKeyword("every")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `every` before the checkpoint interval.",
+          "Write `checkpoint restartFile from restartRecord every 1000;`.",
+        );
+        return null;
+      }
+      const everyToken = this.expectNumber("Expected the checkpoint interval.");
+      const semicolon = this.expectPunctuation(
+        ";",
+        "Expected `;` after the checkpoint statement.",
+      );
+      if (!fileToken || !recordToken || !everyToken || !semicolon) {
+        return null;
+      }
+      return {
+        kind: "CheckpointStatement",
+        fileName: fileToken.text,
+        recordName: recordToken.text,
+        every: Number(everyToken.text),
+        everySpan: everyToken.span,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies CheckpointStatementNode;
+    }
+
+    if (this.isKeyword("sort") || this.isKeyword("merge")) {
+      const keyword = this.advance();
+      const operation = keyword.text as "sort" | "merge";
+      const inputs: string[] = [];
+      do {
+        const input = this.expectIdentifier("Expected an input file.");
+        if (!input) {
+          return null;
+        }
+        inputs.push(input.text);
+      } while (this.matchPunctuation(","));
+
+      if (this.current.kind !== "identifier" || this.current.text !== "into") {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          `Expected \`into\` after the ${operation} inputs.`,
+          `Write \`${operation} <input> into <output> on <field>;\`.`,
+        );
+        return null;
+      }
+      this.advance();
+      const outputToken = this.expectIdentifier("Expected an output file.");
+
+      // `on` is already a keyword, from `on failure`.
+      if (!this.matchKeyword("on")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `on` before the sort keys.",
+          `Write \`${operation} <input> into <output> on <field>;\`.`,
+        );
+        return null;
+      }
+
+      const keys: { name: string; descending: boolean }[] = [];
+      do {
+        const descending = this.matchKeyword("descending");
+        const keyToken = this.expectIdentifier("Expected a sort key field.");
+        if (!keyToken) {
+          return null;
+        }
+        keys.push({ name: keyToken.text, descending });
+      } while (this.matchPunctuation(","));
+
+      const semicolon = this.expectPunctuation(
+        ";",
+        `Expected \`;\` after the ${operation} statement.`,
+      );
+      if (!outputToken || !semicolon) {
+        return null;
+      }
+
+      return {
+        kind: "SortStatement",
+        operation,
+        inputs,
+        output: outputToken.text,
+        keys,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: semicolon.span.end,
+        },
+      } satisfies SortStatementNode;
     }
 
     if (this.isKeyword("split")) {

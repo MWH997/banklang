@@ -60,6 +60,7 @@ export function analyzeProgramSemantics(
     diagnostics.push(...checkIdempotencyKey(transaction));
     diagnostics.push(...checkAuditEvents(transaction, auditStatements));
     diagnostics.push(...checkLedgerBalance(transaction, ledgerStatements));
+    diagnostics.push(...checkRestartable(transaction));
   }
 
   for (const file of program.files) {
@@ -77,6 +78,64 @@ export function analyzeProgramSemantics(
       fileCount: program.files.length,
     },
   };
+}
+
+/**
+ * A batch that posts money inside a loop must record where it got to.
+ *
+ * The rerun is the point. A job that dies halfway is restarted, and without a
+ * position written down it starts at the beginning and posts everything twice.
+ * A single posting is a different case: rerunning it is the caller's problem,
+ * and the idempotency key is what covers it. A loop is not, because the amount
+ * of work already done is not something the caller knows.
+ */
+function checkRestartable(transaction: IRTransaction): Diagnostic[] {
+  const statements = flattenStatements(transaction.body.statements);
+  const postsInsideLoop = transaction.body.statements.some((statement) =>
+    loopPosts(statement),
+  );
+  const checkpointed = statements.some(
+    (statement) => statement.kind === "CheckpointStatement",
+  );
+
+  if (!postsInsideLoop || checkpointed) {
+    return [];
+  }
+
+  // A warning rather than an error: the compiler cannot tell whether the job is
+  // rerunnable by other means — a consumed-and-recreated input, a small enough
+  // window, an operator procedure. It reports the hazard it can see and leaves
+  // the judgement where the knowledge is.
+  return [
+    createDiagnostic({
+      id: "BANK-FILE-003",
+      severity: "warning",
+      message: `Transaction ${transaction.name} posts to the ledger inside a loop with no checkpoint.`,
+      span: transaction.span,
+      hint: "A rerun after a mid-stream failure starts again from the beginning. Add `checkpoint <file> from <record> every <n>;` inside the loop, or confirm the job is rerunnable another way.",
+      backendProfile: null,
+    }),
+  ];
+}
+
+/** True when a statement is a loop whose body posts to the ledger. */
+function loopPosts(statement: IRStatement): boolean {
+  switch (statement.kind) {
+    case "WhileStatement":
+    case "ForEachStatement":
+    case "CursorLoopStatement":
+      return flattenStatements(statement.body.statements).some(
+        (inner) => inner.kind === "LedgerStatement",
+      );
+    // A loop inside a branch counts too: the money still moves repeatedly.
+    case "IfStatement":
+      return (
+        statement.thenBranch.statements.some(loopPosts) ||
+        (statement.elseBranch?.statements.some(loopPosts) ?? false)
+      );
+    default:
+      return false;
+  }
 }
 
 /**

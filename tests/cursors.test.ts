@@ -35,6 +35,19 @@ cursor accountsInBranch(keyBranch: string<8>): AccountRow {
 }
 `;
 
+/**
+ * Errors only.
+ *
+ * `BANK-FILE-003` warns that a posting loop has no checkpoint, which is true of
+ * these programs and is the point of the warning. It does not stop them
+ * compiling, so a test about cursors asserts on what would.
+ */
+function errors(result: {
+  diagnostics: { id: string; severity: string }[];
+}): { id: string }[] {
+  return result.diagnostics.filter((entry) => entry.severity === "error");
+}
+
 function ids(result: { diagnostics: { id: string }[] }): string[] {
   return result.diagnostics.map((entry) => entry.id);
 }
@@ -61,7 +74,7 @@ describe("cursor declarations", () => {
     const result = txn(`    debit(row.rowAccountId, row.rowBalance);
     credit("SUSPENSE", row.rowBalance);`);
 
-    expect(result.diagnostics).toEqual([]);
+    expect(errors(result)).toEqual([]);
     const cobol = result.cobol ?? "";
     const start = cobol.indexOf("DECLARE");
     const declaration = cobol.slice(start, cobol.indexOf("END-EXEC", start));
@@ -298,6 +311,6 @@ entry transaction drain(account: Account) {
     const result = txn(`    debit(row.rowAccountId, row.rowBalance);
     credit("SUSPENSE", row.rowBalance);`);
 
-    expect(result.diagnostics).toEqual([]);
+    expect(errors(result)).toEqual([]);
   });
 });

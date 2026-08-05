@@ -270,9 +270,12 @@ File operation result is ignored.
 
 File record layout differs from declared copybook.
 
-### `BANK-FILE-003` unsafe restart behaviour
+### `BANK-FILE-003` unsafe restart behaviour (warning)
 
-Batch file processing lacks checkpoint/restart policy.
+A transaction posts to the ledger inside a loop with no checkpoint. A job that
+dies halfway is rerun, and without a position written down the rerun starts at
+the beginning and posts everything twice. Reported as a warning because the
+compiler cannot tell whether the job is rerunnable another way.
 
 ## 11. Copybook diagnostics
 

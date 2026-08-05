@@ -13,6 +13,8 @@ import {
   type TemporalCallNode,
   type ReturnCodeStatementNode,
   type SearchStatementNode,
+  type CheckpointStatementNode,
+  type SortStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
@@ -914,6 +916,7 @@ function resolveTransaction(
   sqlExecuted = false;
   sqlCodeTested = false;
   sensitiveLocals = new Set();
+  checkpointSeen = false;
   validateTransactionBody(
     declaration.body,
     scope,
@@ -1136,6 +1139,8 @@ function validateTransactionBody(
       case "UnitOfWorkStatement":
       case "ReturnCodeStatement":
       case "SplitStatement":
+      case "SortStatement":
+      case "CheckpointStatement":
       case "SearchStatement":
         validateEffectStatement(
           statement,
@@ -1306,6 +1311,13 @@ function validateEffectStatement(
       return true;
     case "SplitStatement":
       validateSplitStatement(statement, scope, aliases, recordMap, diagnostics);
+      return true;
+    case "SortStatement":
+      validateSortStatement(statement, diagnostics);
+      return true;
+    case "CheckpointStatement":
+      validateCheckpointStatement(statement, scope, diagnostics);
+      checkpointSeen = true;
       return true;
     case "SearchStatement":
       validateSearchStatement(
@@ -1859,6 +1871,168 @@ function validateForEachStatement(
  * Every receiver has to be a string the compiler can name a length for, because
  * `UNSTRING` writes into fixed fields.
  */
+/**
+ * `sort <inputs> into <output> on <keys>;`
+ *
+ * Every file named has to exist and be usable in the direction the statement
+ * needs it, and every key has to be a field of the record being sorted — a key
+ * that is not in the record sorts on nothing.
+ */
+/** True when the body being checked writes a restart point. */
+let checkpointSeen = false;
+
+/**
+ * `checkpoint <file> from <record> every <n>;`
+ *
+ * The file has to be one the program can write, because that is where the
+ * position is recorded, and the interval has to be a positive whole number of
+ * records: too small costs throughput, too large costs rework, and zero is
+ * neither.
+ */
+function validateCheckpointStatement(
+  statement: CheckpointStatementNode,
+  scope: Map<string, ResolvedType>,
+  diagnostics: Diagnostic[],
+): void {
+  const file = declaredFiles.get(statement.fileName);
+  if (!file) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved file: ${statement.fileName}.`,
+        span: statement.span,
+        hint: "Declare the file the restart position is written to.",
+        backendProfile: null,
+      }),
+    );
+  } else if (file.mode === "input") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-003",
+        severity: "error",
+        message: `Cannot write a restart position to ${file.name}, which is declared as input.`,
+        span: statement.span,
+        hint: "Declare the restart file as output or update.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (!scope.has(statement.recordName)) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved record: ${statement.recordName}.`,
+        span: statement.span,
+        hint: "Pass a record-typed parameter holding the restart position.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  if (!Number.isInteger(statement.every) || statement.every <= 0) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-003",
+        severity: "error",
+        message:
+          "A checkpoint interval must be a positive whole number of records.",
+        span: statement.everySpan,
+        hint: "Write `every 1000`.",
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+function validateSortStatement(
+  statement: SortStatementNode,
+  diagnostics: Diagnostic[],
+): void {
+  const reject = (message: string, hint: string): void => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-005",
+        severity: "error",
+        message,
+        span: statement.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+  };
+
+  if (statement.operation === "merge" && statement.inputs.length < 2) {
+    reject(
+      "A merge combines two or more already-sorted inputs.",
+      "Use `sort` for a single input, or name the other files.",
+    );
+  }
+
+  const output = declaredFiles.get(statement.output);
+  if (!output) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved file: ${statement.output}.`,
+        span: statement.span,
+        hint: "Declare the output file before sorting into it.",
+        backendProfile: null,
+      }),
+    );
+    return;
+  }
+
+  if (output.mode === "input") {
+    reject(
+      `Cannot sort into ${output.name}, which is declared as input.`,
+      "Declare the destination as output.",
+    );
+  }
+
+  for (const name of statement.inputs) {
+    const input = declaredFiles.get(name);
+    if (!input) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved file: ${name}.`,
+          span: statement.span,
+          hint: "Declare every file the sort reads.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    if (input.mode === "output") {
+      reject(
+        `Cannot sort from ${input.name}, which is declared as output.`,
+        "Declare the source as input.",
+      );
+    }
+    // The sort moves whole records, so every file has to hold the same one.
+    if (input.record.name !== output.record.name) {
+      reject(
+        `${input.name} holds ${input.record.name} but ${output.name} holds ${output.record.name}.`,
+        "A sort moves whole records, so every file it touches holds the same record.",
+      );
+    }
+  }
+
+  for (const key of statement.keys) {
+    if (!output.record.fields.some((field) => field.name === key.name)) {
+      reject(
+        `${key.name} is not a field of ${output.record.name}, so it sorts on nothing.`,
+        `Available fields: ${output.record.fields.map((field) => field.name).join(", ")}.`,
+      );
+    }
+  }
+}
+
 function validateSplitStatement(
   statement: SplitStatementNode,
   scope: Map<string, ResolvedType>,
@@ -3522,6 +3696,7 @@ function resolveFunction(
   sqlExecuted = false;
   sqlCodeTested = false;
   sensitiveLocals = new Set();
+  checkpointSeen = false;
   validateFunctionBody(
     declaration.body,
     returnType,
@@ -3823,6 +3998,8 @@ function resolveTerminalStatementType(
     case "UnitOfWorkStatement":
     case "ReturnCodeStatement":
     case "SplitStatement":
+    case "SortStatement":
+    case "CheckpointStatement":
     case "SearchStatement":
       // Effect statements are validated by validateBlock before the terminal
       // statement is resolved, so nothing further is needed here.

@@ -74,6 +74,18 @@ export interface CompileResult {
   backendRequirements: BackendRequirement[];
 }
 
+/**
+ * True when any diagnostic would stop the compiler.
+ *
+ * A warning reports a hazard the compiler cannot rule out — an uninstantiated
+ * generic, a posting loop with no checkpoint — and a program carrying one is
+ * still a program. Treating every diagnostic as fatal meant a warning silently
+ * produced no COBOL, which is a worse outcome than the thing being warned about.
+ */
+function hasErrors(diagnostics: Diagnostic[]): boolean {
+  return diagnostics.some((diagnostic) => diagnostic.severity === "error");
+}
+
 const EMPTY: Omit<CompileResult, "ok" | "diagnostics"> = {
   program: null,
   cobol: null,
@@ -104,23 +116,23 @@ export function compile(
   const sourceFile = options.sourceFile ?? "main.bank.ts";
 
   const parsed = parseBankTs(source, sourceFile);
-  if (parsed.diagnostics.length > 0 || !parsed.program) {
+  if (hasErrors(parsed.diagnostics) || !parsed.program) {
     return { ok: false, diagnostics: parsed.diagnostics, ...EMPTY };
   }
 
   const typechecked = typecheckProgram(parsed.program);
-  if (typechecked.diagnostics.length > 0) {
+  if (hasErrors(typechecked.diagnostics)) {
     return { ok: false, diagnostics: typechecked.diagnostics, ...EMPTY };
   }
 
   const lowered = lowerProgramToIR(typechecked);
-  if (lowered.diagnostics.length > 0 || !lowered.program) {
+  if (hasErrors(lowered.diagnostics) || !lowered.program) {
     return { ok: false, diagnostics: lowered.diagnostics, ...EMPTY };
   }
 
   const program = lowered.program;
   const semantics = analyzeProgramSemantics(program);
-  if (semantics.diagnostics.length > 0) {
+  if (hasErrors(semantics.diagnostics)) {
     return {
       ok: false,
       diagnostics: semantics.diagnostics,
@@ -138,9 +150,20 @@ export function compile(
     emitted.cobol,
   );
 
+  // Warnings from the earlier phases travel with the result. Dropping them on
+  // the way to a successful compile would make a hazard the compiler found
+  // invisible to everyone downstream of it.
+  const diagnostics = [
+    ...parsed.diagnostics,
+    ...typechecked.diagnostics,
+    ...lowered.diagnostics,
+    ...semantics.diagnostics,
+    ...coverage.diagnostics,
+  ];
+
   return {
-    ok: coverage.diagnostics.length === 0,
-    diagnostics: coverage.diagnostics,
+    ok: !hasErrors(diagnostics),
+    diagnostics,
     program,
     cobol: emitted.cobol,
     copybooks: program.records.map((record) => ({
