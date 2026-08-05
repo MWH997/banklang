@@ -420,6 +420,24 @@ A report's names have to resolve, or the generated COBOL means nothing:
 - `generate` names a detail group, while `initiate` and `terminate` name the
   report itself.
 
+## 10a. IMS DL/I diagnostics
+
+### `BANK-DLI-001` invalid DL/I access
+
+A DL/I statement names a database that is not declared, moves a segment into a
+record of the wrong shape, looks for a key that is not text, or reaches a
+database with no status field.
+
+The segment and key names are eight bytes each, because that is what a search
+argument carries — a longer one is truncated into a name matching nothing in the
+DBD.
+
+The status field is the one that matters most. The two characters DL/I leaves in
+the PCB are the **entire** error model: spaces worked, `GE` found nothing, `GB`
+reached the end of the database. Without somewhere to read them, a `getUnique`
+that found nothing is indistinguishable from one that worked, and the program
+goes on to use whatever the segment area held last.
+
 ## 11. Copybook diagnostics
 
 ### `BANK-COPY-001` unsupported PIC clause

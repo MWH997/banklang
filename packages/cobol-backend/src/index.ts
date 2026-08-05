@@ -44,6 +44,8 @@ import type {
   IRSplitStatement,
   IRStringCallExpression,
   IRNumericCallExpression,
+  IRDatabase,
+  IRDliStatement,
   IRProgramCallStatement,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
@@ -626,6 +628,7 @@ export function emitCobol(
       );
     }
   }
+  emitDliWorkingStorage(program, addLine);
   emitRelativeKeys(program.files, addLine);
   emitCicsRespFields(program.transactions, addLine);
   // A recursive or nested function is called, not performed, so the caller
@@ -684,6 +687,9 @@ export function emitCobol(
 
   // Each handler needs a name, and the statement and its section are emitted in
   // different places, so the names are assigned once up front.
+  databaseTable = new Map(
+    program.databases.map((database) => [database.name, database]),
+  );
   const xmlParses = xmlParseStatements(program);
   xmlHandlerIndexes = new Map(
     xmlParses.map((owned, index) => [owned.statement, index]),
@@ -866,9 +872,33 @@ export function emitCobol(
     (transaction) => transaction.isCics,
   );
 
-  if (recordParameterCells.length > 0 || cicsTransactions.length > 0) {
+  if (
+    recordParameterCells.length > 0 ||
+    cicsTransactions.length > 0 ||
+    program.databases.length > 0
+  ) {
     addLine("");
     addLine(`       LINKAGE SECTION.`);
+  }
+
+  // The region passes a PCB per database, in the order the PSB lists them, and
+  // the program never allocates one. The mask is the standard DB PCB: the name
+  // of the DBD, the level and status of the last call, the processing options,
+  // the segment reached, and the key feedback area.
+  for (const database of program.databases) {
+    const pcb = pcbName(database.name);
+    addLine(`       01  ${pcb}.`);
+    addLine(`           05  ${`${pcb}-DBD-NAME`.padEnd(24)} PIC X(8).`);
+    addLine(`           05  ${`${pcb}-SEG-LEVEL`.padEnd(24)} PIC XX.`);
+    addLine(`           05  ${`${pcb}-STATUS`.padEnd(24)} PIC XX.`);
+    addLine(`           05  ${`${pcb}-PROC-OPTS`.padEnd(24)} PIC X(4).`);
+    addLine(`           05  FILLER                   PIC S9(5) COMP.`);
+    addLine(`           05  ${`${pcb}-SEG-NAME`.padEnd(24)} PIC X(8).`);
+    addLine(`           05  ${`${pcb}-KEY-LENGTH`.padEnd(24)} PIC S9(5) COMP.`);
+    addLine(
+      `           05  ${`${pcb}-SENSEG-COUNT`.padEnd(24)} PIC S9(5) COMP.`,
+    );
+    addLine(`           05  ${`${pcb}-KEY-FEEDBACK`.padEnd(24)} PIC X(64).`);
   }
 
   for (const cell of recordParameterCells) {
@@ -904,7 +934,15 @@ export function emitCobol(
   }
 
   addLine("");
-  addLine(`       PROCEDURE DIVISION.`);
+  // An IMS program is entered by the region with its PCBs, so it takes them on
+  // the PROCEDURE DIVISION rather than being started like a batch program.
+  addLine(
+    program.databases.length > 0
+      ? `       PROCEDURE DIVISION USING ${program.databases
+          .map((database) => pcbName(database.name))
+          .join(" ")}.`
+      : `       PROCEDURE DIVISION.`,
+  );
 
   // DECLARATIVES come first and are the only thing allowed to precede the
   // program's own paragraphs. A USE procedure runs when an operation on its
@@ -2036,6 +2074,14 @@ function emitStatement(
           false,
         );
         break;
+      case "DliStatement":
+        emitDliStatement(
+          statement,
+          requireDatabase(statement.databaseName),
+          addLine,
+          indent,
+        );
+        break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
         break;
@@ -2224,6 +2270,14 @@ function emitTransactionBody(
         break;
       case "ProgramCallStatement":
         emitProgramCallStatement(statement, addLine, indentLevel, "", true);
+        break;
+      case "DliStatement":
+        emitDliStatement(
+          statement,
+          requireDatabase(statement.databaseName),
+          addLine,
+          indent,
+        );
         break;
       case "SortStatement":
         emitSortStatement(statement, addLine, indent);
@@ -2839,6 +2893,17 @@ function reportFieldPicture(field: string): string {
  */
 let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
 
+/** Declared databases, for resolving a DL/I statement to its PCB and segment. */
+let databaseTable = new Map<string, IRDatabase>();
+
+function requireDatabase(name: string): IRDatabase {
+  const database = databaseTable.get(name);
+  if (!database) {
+    throw new Error(`Unknown database during emission: ${name}`);
+  }
+  return database;
+}
+
 /** The record a report's columns read from, while that report is emitted. */
 let currentReportRecord: IRRecord | null = null;
 
@@ -2949,6 +3014,153 @@ function xmlParseStatements(program: IRProgram): {
 /** The section name a handler is reached by, and the element register it uses. */
 function xmlHandlerName(index: number): string {
   return `BANK-XML-${index + 1}`;
+}
+
+/**
+ * The function codes, the search arguments, and the status fields.
+ *
+ * A search argument is a fixed byte layout, not a string the program builds:
+ * eight bytes of segment name, `(`, eight bytes of field name, the operator,
+ * the value, and `)`. Writing it as a group with the value as its own field is
+ * what lets the program move a key in without rebuilding the rest.
+ */
+function emitDliWorkingStorage(
+  program: IRProgram,
+  addLine: (line?: string) => void,
+): void {
+  if (program.databases.length === 0) {
+    return;
+  }
+
+  const used = new Set<IRDliStatement["operation"]>();
+  for (const owned of dliStatements(program)) {
+    used.add(owned.operation);
+  }
+  for (const operation of [...used].sort()) {
+    addLine(
+      `       01  ${dliFunctionName(operation).padEnd(20)} PIC X(4) VALUE "${DLI_FUNCTIONS[operation]}".`,
+    );
+  }
+
+  for (const database of program.databases) {
+    if (database.statusName) {
+      addLine(
+        `       01  ${toCobolFieldName(database.statusName).padEnd(20)} PIC XX.`,
+      );
+    }
+    const key = database.record.fields.find(
+      (field) => field.type.kind === "string",
+    );
+    const width =
+      key && key.type.kind === "string" ? key.type.length : database.keyLength;
+    addLine(`       01  ${ssaName(database.name)}.`);
+    addLine(
+      `           05  FILLER               PIC X(8) VALUE "${database.segmentName.padEnd(8)}".`,
+    );
+    addLine(`           05  FILLER               PIC X VALUE "(".`);
+    addLine(
+      `           05  FILLER               PIC X(8) VALUE "${database.keyName.padEnd(8)}".`,
+    );
+    addLine(`           05  FILLER               PIC XX VALUE " =".`);
+    addLine(
+      `           05  ${`${ssaName(database.name)}-VALUE`.padEnd(20)} PIC X(${Math.max(width, 1)}).`,
+    );
+    addLine(`           05  FILLER               PIC X VALUE ")".`);
+  }
+}
+
+/** Every DL/I statement in the program, however deeply nested. */
+function dliStatements(program: IRProgram): IRDliStatement[] {
+  const found: IRDliStatement[] = [];
+  const walk = (block: IRBlock): void => {
+    for (const statement of block.statements) {
+      if (statement.kind === "DliStatement") {
+        found.push(statement);
+      }
+      for (const nested of [
+        (statement as { body?: IRBlock }).body,
+        (statement as { notFound?: IRBlock }).notFound,
+        (statement as { thenBranch?: IRBlock }).thenBranch,
+        (statement as { elseBranch?: IRBlock | null }).elseBranch,
+        (statement as { onError?: IRBlock | null }).onError,
+      ]) {
+        if (nested) {
+          walk(nested);
+        }
+      }
+    }
+  };
+  for (const transaction of program.transactions) {
+    walk(transaction.body);
+  }
+  for (const fn of program.functions) {
+    walk(fn.body);
+  }
+  return found;
+}
+
+/** The DL/I function code each operation calls with, padded as DL/I wants it. */
+const DLI_FUNCTIONS: Record<IRDliStatement["operation"], string> = {
+  getUnique: "GU  ",
+  getNext: "GN  ",
+  insertSegment: "ISRT",
+  replaceSegment: "REPL",
+  deleteSegment: "DLET",
+};
+
+function dliFunctionName(operation: IRDliStatement["operation"]): string {
+  return `DLI-${DLI_FUNCTIONS[operation].trim()}`;
+}
+
+function pcbName(database: string): string {
+  return `${toCobolName(database)}-PCB`;
+}
+
+function ssaName(database: string): string {
+  return `${toCobolName(database)}-SSA`;
+}
+
+/**
+ * One `CALL "CBLTDLI"`.
+ *
+ * DL/I takes a function code, the PCB the region passed in, the segment area,
+ * and — for a qualified read — a search argument. A `getNext` deliberately
+ * passes no argument: it walks from wherever the last call left the position,
+ * which is what makes it the next one.
+ *
+ * The status the call leaves in the PCB is copied into the declared status
+ * field afterwards, so the program reads it the same way it reads a file
+ * status rather than reaching into the PCB itself.
+ */
+function emitDliStatement(
+  statement: IRDliStatement,
+  database: IRDatabase,
+  addLine: (line?: string) => void,
+  indent: string,
+): void {
+  const pcb = pcbName(statement.databaseName);
+  const operands = [dliFunctionName(statement.operation), pcb];
+
+  if (statement.recordName) {
+    operands.push(resolveIdentifier(statement.recordName));
+  } else {
+    // DLET replaces the segment it was held for, so the area is still passed.
+    operands.push(toCobolName(database.record.name));
+  }
+
+  if (statement.operation === "getUnique") {
+    addLine(
+      `${indent}MOVE ${renderExpression(statement.key as IRExpression)} TO ${ssaName(statement.databaseName)}-VALUE`,
+    );
+    operands.push(ssaName(statement.databaseName));
+  }
+
+  addLine(`${indent}CALL "CBLTDLI" USING ${operands.join(", ")}`);
+  if (database.statusName) {
+    addLine(
+      `${indent}MOVE ${pcb}-STATUS TO ${toCobolFieldName(database.statusName)}`,
+    );
+  }
 }
 
 /**
