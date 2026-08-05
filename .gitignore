@@ -10,3 +10,8 @@ coverage/
 !.env.example
 tmp/
 .playwright-mcp/
+
+# Reference manuals, fetched locally to check the generated COBOL and JCL
+# against the conventions rather than against assumptions. Read, never copied
+# from, and never committed: they are IBM's to distribute, not this repo's.
+vendor-docs/
