@@ -170,9 +170,15 @@ nothing there to initialise.
 counter: binary < 9 > sync;
 ```
 
-`sync` aligns a field on its natural boundary — a halfword, fullword, or
-doubleword, by width — and the compiler inserts slack bytes before it to get
-there.
+`sync` aligns a binary field on a halfword or a fullword, and the compiler
+inserts slack bytes before it to get there.
+
+The boundary is **not** the field's own width. IBM's slack-byte algorithm
+divides the bytes so far by 2 for a binary item of four digits or fewer and by 4
+for one of five digits or more; there is no boundary of 8 for a binary item,
+which belongs to `COMPUTATIONAL-2`. So a `binary<18>` occupies eight bytes and
+still aligns on a fullword. Nothing else is aligned: a packed, zoned, or
+character field needs no slack.
 
 It is the one layout clause that moves every later field without appearing in
 any field's own length, so a copybook that uses it and a reader that ignores it
