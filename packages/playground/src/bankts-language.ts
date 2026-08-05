@@ -43,6 +43,9 @@ export const PLAYGROUND_TYPES = new Set([
   "bool",
   "currency",
   "nullable",
+  "date",
+  "time",
+  "timestamp",
 ]);
 
 /** Ledger and audit operations are contextual in the grammar, not reserved. */

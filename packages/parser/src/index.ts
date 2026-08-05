@@ -23,6 +23,8 @@ import {
   type SourcePosition,
   type SourceSpan,
   type StringTypeNode,
+  type TemporalCallNode,
+  type TemporalTypeNode,
   type TypeAliasDeclarationNode,
   type TypeNode,
   type TypeReferenceNode,
@@ -96,6 +98,9 @@ export const KEYWORDS = new Set([
   "decimal",
   "string",
   "bool",
+  "date",
+  "time",
+  "timestamp",
   "let",
   "if",
   "else",
@@ -157,6 +162,9 @@ const COMPARISON_OPERATORS: ComparisonOperator[] = [
 
 /** Built-in expression forms that take an explicit rounding mode. */
 const ROUNDING_BUILTINS = new Set(["round", "divide"]);
+
+/** Calendar-aware builtins. They are contextual names, not reserved words. */
+const TEMPORAL_BUILTINS = new Set(["today", "addDays", "daysBetween"]);
 
 const ROUNDING_MODES = new Set([
   "HALF_EVEN",
@@ -2049,6 +2057,42 @@ class Parser {
       }
 
       if (
+        TEMPORAL_BUILTINS.has(this.current.text) &&
+        this.next.kind === "punctuation" &&
+        this.next.text === "("
+      ) {
+        const nameToken = this.advance();
+        this.expectPunctuation("(", "Expected `(` after the builtin name.");
+        const args: ExpressionNode[] = [];
+        if (!this.isPunctuation(")")) {
+          do {
+            const argument = this.parseExpression();
+            if (!argument) {
+              return null;
+            }
+            args.push(argument);
+          } while (this.matchPunctuation(","));
+        }
+        const close = this.expectPunctuation(
+          ")",
+          "Expected `)` after the builtin arguments.",
+        );
+        if (!close) {
+          return null;
+        }
+        return {
+          kind: "TemporalCall",
+          operation: nameToken.text as TemporalCallNode["operation"],
+          args,
+          span: {
+            sourceFile: nameToken.span.sourceFile,
+            start: nameToken.span.start,
+            end: close.span.end,
+          },
+        } satisfies TemporalCallNode;
+      }
+
+      if (
         ROUNDING_BUILTINS.has(this.current.text) &&
         this.next.kind === "punctuation" &&
         this.next.text === "("
@@ -2328,6 +2372,20 @@ class Parser {
           end: closeAngle.span.end,
         },
       } satisfies StringTypeNode);
+    }
+
+    for (const unit of ["date", "time", "timestamp"] as const) {
+      if (this.matchKeyword(unit)) {
+        const keyword = this.previous;
+        if (!keyword) {
+          return null;
+        }
+        return this.withArraySuffix({
+          kind: "TemporalType",
+          unit,
+          span: keyword.span,
+        } satisfies TemporalTypeNode);
+      }
     }
 
     if (this.matchKeyword("bool")) {

@@ -225,6 +225,8 @@ function describeAmounts(amounts: string[]): string {
  */
 function canonicalExpression(expression: IRExpression): string {
   switch (expression.kind) {
+    case "TemporalCall":
+      return `${expression.operation}(${expression.args.map(canonicalExpression).join(", ")})`;
     case "Identifier":
       return expression.name;
     case "DecimalLiteral":

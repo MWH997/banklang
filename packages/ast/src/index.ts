@@ -86,6 +86,19 @@ export interface BoolTypeNode extends NodeBase {
   kind: "BoolType";
 }
 
+/**
+ * `date`, `time`, and `timestamp`.
+ *
+ * Banking is dates: a value date is not a posting date, an accrual runs between
+ * two of them, and a maturity is compared against today. They are separate
+ * types rather than aliases for a number so that a date cannot be compared with
+ * an amount, or with a plain integer that happens to have eight digits.
+ */
+export interface TemporalTypeNode extends NodeBase {
+  kind: "TemporalType";
+  unit: "date" | "time" | "timestamp";
+}
+
 export interface TypeReferenceNode extends NodeBase {
   kind: "TypeReference";
   name: string;
@@ -132,6 +145,7 @@ export type TypeNode =
   | DecimalTypeNode
   | StringTypeNode
   | BoolTypeNode
+  | TemporalTypeNode
   | TypeReferenceNode
   | CurrencyTypeNode
   | NullableTypeNode
@@ -340,6 +354,21 @@ export interface NullableCheckNode extends NodeBase {
   operand: ExpressionNode;
 }
 
+/**
+ * `today()`, `addDays(when, n)`, and `daysBetween(from, to)`.
+ *
+ * Date arithmetic is not ordinary arithmetic: adding one to 20260131 does not
+ * give the first of February. These lower to the COBOL intrinsic functions that
+ * know the calendar — `INTEGER-OF-DATE`, `DATE-OF-INTEGER`, `CURRENT-DATE` —
+ * rather than to `+` on the stored digits, which is why the language offers
+ * them instead of letting a date be added to.
+ */
+export interface TemporalCallNode extends NodeBase {
+  kind: "TemporalCall";
+  operation: "today" | "addDays" | "daysBetween";
+  args: ExpressionNode[];
+}
+
 /** A call to a user-declared function. */
 export interface CallExpressionNode extends NodeBase {
   kind: "CallExpression";
@@ -366,7 +395,8 @@ export type ExpressionNode =
   | CallExpressionNode
   | EnumMemberNode
   | IndexAccessNode
-  | NullableCheckNode;
+  | NullableCheckNode
+  | TemporalCallNode;
 
 /**
  * A ledger posting operation inside a transaction body.

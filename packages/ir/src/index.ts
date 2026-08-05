@@ -339,7 +339,23 @@ export type IRExpression =
   | IRCallExpression
   | IREnumMemberExpression
   | IRIndexAccessExpression
-  | IRNullableCheckExpression;
+  | IRNullableCheckExpression
+  | IRTemporalCallExpression;
+
+/**
+ * A calendar-aware builtin, lowered to a COBOL intrinsic function.
+ *
+ * `INTEGER-OF-DATE` and `DATE-OF-INTEGER` convert between YYYYMMDD and a day
+ * number, which is where the calendar actually lives: adding thirty days is
+ * addition on the day number, not on the digits of the date.
+ */
+export interface IRTemporalCallExpression {
+  kind: "TemporalCall";
+  span: SourceSpan;
+  operation: "today" | "addDays" | "daysBetween";
+  args: IRExpression[];
+  resolvedType: IRType;
+}
 
 export interface IREnumMemberExpression {
   kind: "EnumMember";
@@ -467,6 +483,7 @@ export type IRType =
   | DecimalIRType
   | StringIRType
   | BoolIRType
+  | TemporalIRType
   | RecordIRType
   | CurrencyIRType
   | EnumIRType
@@ -510,6 +527,19 @@ export interface StringIRType {
 
 export interface BoolIRType {
   kind: "bool";
+}
+
+/**
+ * A date, time, or timestamp.
+ *
+ * Stored as the mainframe convention rather than as an opaque handle: a date is
+ * `PIC 9(8)` holding YYYYMMDD, which is exactly why comparing and sorting dates
+ * is ordinary numeric comparison. A timestamp is `PIC X(26)`, the Db2 host
+ * variable format, so it can be read from and written to a TIMESTAMP column.
+ */
+export interface TemporalIRType {
+  kind: "temporal";
+  unit: "date" | "time" | "timestamp";
 }
 
 export interface RecordIRType {
@@ -1051,6 +1081,8 @@ function expressionNeedsBoundsCheck(expression: IRExpression): boolean {
     case "Rounded":
     case "NullableCheck":
       return expressionNeedsBoundsCheck(expression.operand);
+    case "TemporalCall":
+      return expression.args.some(expressionNeedsBoundsCheck);
     case "Call":
       return expression.args.some(expressionNeedsBoundsCheck);
     default:
@@ -1147,6 +1179,9 @@ function collectCalls(block: IRBlock): Set<string> {
         return;
       case "NullableCheck":
         walkExpression(expression.operand);
+        return;
+      case "TemporalCall":
+        expression.args.forEach(walkExpression);
         return;
       case "IndexAccess":
         walkExpression(expression.index);
@@ -1540,6 +1575,19 @@ function lowerExpression(
         value: expression.value,
         resolvedType: { kind: "string", length: expression.value.length },
       };
+    case "TemporalCall":
+      return {
+        kind: "TemporalCall",
+        span: expression.span,
+        operation: expression.operation,
+        args: expression.args.map((argument) =>
+          lowerExpression(argument, scopeTypes),
+        ),
+        resolvedType:
+          expression.operation === "daysBetween"
+            ? { kind: "decimal", precision: 9, scale: 0 }
+            : { kind: "temporal", unit: "date" },
+      };
     case "MemberAccess":
       return lowerMemberAccessExpression(expression, scopeTypes);
     case "BinaryExpression":
@@ -1911,6 +1959,8 @@ function expressionDecimalType(expression: IRExpression): DecimalIRType | null {
 
 function lowerType(type: ResolvedType): IRType {
   switch (type.kind) {
+    case "temporal":
+      return { kind: "temporal", unit: type.unit };
     case "currency":
       return {
         kind: "currency",

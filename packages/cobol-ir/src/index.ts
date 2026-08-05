@@ -619,8 +619,41 @@ export function enumWidth(members: string[]): number {
   return members.reduce((widest, member) => Math.max(widest, member.length), 1);
 }
 
+/**
+ * Storage for a date, a time, or a timestamp.
+ *
+ * `PIC 9(8)` holding YYYYMMDD is the mainframe convention, and it is chosen for
+ * a reason that matters: in that layout the ordinary numeric comparison is also
+ * the chronological one, and an ordinary sort is a chronological sort. A
+ * timestamp is `PIC X(26)`, which is the Db2 host variable format, so it can be
+ * read from and written to a TIMESTAMP column without conversion.
+ */
+export function temporalPicture(unit: "date" | "time" | "timestamp"): string {
+  switch (unit) {
+    case "date":
+      return "PIC 9(8)";
+    case "time":
+      return "PIC 9(6)";
+    case "timestamp":
+      return "PIC X(26)";
+  }
+}
+
+export function temporalLength(unit: "date" | "time" | "timestamp"): number {
+  switch (unit) {
+    case "date":
+      return 8;
+    case "time":
+      return 6;
+    case "timestamp":
+      return 26;
+  }
+}
+
 export function toCobolPicture(type: IRType): string {
   switch (type.kind) {
+    case "temporal":
+      return temporalPicture(type.unit);
     case "decimal":
       return decimalPicture(type.precision, type.scale);
     case "currency":
