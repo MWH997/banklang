@@ -87,9 +87,17 @@ entry transaction runBatch(account: InterestAccount, advice: PostingAdvice) {
   open adviceOutput;
 
   // The limit is mandatory: an unbounded loop in a transaction is BANK-TXN-004.
+  //
+  // The status test after the read is what a read-ahead loop needs. The
+  // iteration that reaches end of file still runs its body — the `while`
+  // condition is not tested again until the body finishes — so a write that is
+  // not guarded appends one trailing record holding the previous one's values.
   while accountFeedStatus == "00" limit 100000 {
     read accountFeed into account;
-    write adviceOutput from advice;
+
+    if accountFeedStatus == "00" {
+      write adviceOutput from advice;
+    }
   }
 
   close accountFeed;

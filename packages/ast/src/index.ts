@@ -760,6 +760,7 @@ export type StatementNode =
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
+  | RestartStatementNode
   | SearchStatementNode
   | RaiseStatementNode;
 
@@ -1114,6 +1115,28 @@ export interface CheckpointStatementNode extends NodeBase {
   /** Records between checkpoints. Too small costs throughput, too large costs rework. */
   every: number;
   everySpan: SourceSpan;
+}
+
+/**
+ * `restart restartFile into restartRecord { ... } else { ... }`
+ *
+ * The other half of a checkpoint, and the half that makes it worth anything: a
+ * position written down and never read back is a rerun that still starts at the
+ * beginning. This reads the position the last run committed and gives the
+ * program somewhere to resume from — and, when there is none, somewhere to
+ * start fresh.
+ *
+ * The key field of `recordName` has to hold the key of the position being
+ * looked for before the statement runs, the same way a keyed `read` works.
+ */
+export interface RestartStatementNode extends NodeBase {
+  kind: "RestartStatement";
+  fileName: string;
+  recordName: string;
+  /** Run when a position was found; `recordName` holds it. */
+  resumed: BlockNode;
+  /** Run when there was none. Absent means a fresh start needs nothing done. */
+  fresh: BlockNode | null;
 }
 
 /**

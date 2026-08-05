@@ -48,6 +48,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "release",
   "descending",
   "checkpoint",
+  "restart",
   "every",
   "log",
   "accept",

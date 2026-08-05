@@ -157,7 +157,7 @@ describe("a batch job with files", () => {
 
     expect(jcl).toContain("//ACCOUNTI DD DISP=SHR,DSN=BANKLANG.ACCOUNTI");
     expect(jcl).toContain(
-      "//POSTINGO DD DSN=BANKLANG.POSTINGO,DISP=(NEW,CATLG),",
+      "//POSTINGO DD DSN=BANKLANG.POSTINGO,DISP=(NEW,CATLG,DELETE),",
     );
   });
 
@@ -166,7 +166,123 @@ describe("a batch job with files", () => {
 
     // An input dataset already exists; an output dataset is created.
     expect(jcl).toMatch(/\/\/ACCOUNTI DD DISP=SHR/);
-    expect(jcl).toMatch(/\/\/POSTINGO DD DSN=[^,]+,DISP=\(NEW,CATLG\)/);
+    expect(jcl).toMatch(/\/\/POSTINGO DD DSN=[^,]+,DISP=\(NEW,CATLG,DELETE\)/);
+  });
+
+  /**
+   * The abnormal disposition is the one that matters. A step that dies halfway
+   * through writing has produced a partial dataset, and cataloguing it invites
+   * the next job in the chain to read it as though it were a complete day.
+   */
+  it("deletes a half-written output dataset rather than cataloguing it", () => {
+    expect(jclFor(WITH_FILES)).not.toMatch(/DISP=\(NEW,CATLG\)/);
+  });
+
+  /**
+   * An updated file is read and rewritten in place, so it exists already: NEW
+   * would allocate an empty one and the program would find nothing in it.
+   */
+  it("gives an updated file the dataset it is meant to update", () => {
+    const jcl = jclFor(`module UpdateBatch;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record Account {
+  accountId: string<16>;
+  balance: BDT;
+  idempotencyKey: string<36>;
+}
+
+file master indexed update record Account key accountId status masterStatus;
+
+entry transaction settle(account: Account) {
+  audit("SETTLED", account.idempotencyKey);
+}`);
+
+    expect(jcl).toContain("//MASTER   DD DISP=OLD,DSN=BANKLANG.MASTER");
+  });
+});
+
+/**
+ * A step that runs after a step that failed is the way a broken build reaches
+ * production: the compile fails, the link-edit is bypassed, and the run step
+ * executes whatever load module the library already held — the previous
+ * version — under a return code that says the job worked.
+ */
+describe("what happens after a step fails", () => {
+  it("bypasses the run step", () => {
+    expect(jclFor(PLAIN)).toContain("//RUN      EXEC PGM=PLAINBAT,COND=(4,LT)");
+  });
+
+  it("bypasses every step after the first", () => {
+    const steps = jclFor(WITH_SQL)
+      .split("\n")
+      .filter((line) => /^\/\/\w+\s+EXEC PGM=/.test(line));
+
+    expect(steps.length).toBeGreaterThan(1);
+    for (const step of steps.slice(1)) {
+      expect(step).toContain("COND=(4,LT)");
+    }
+  });
+});
+
+/**
+ * An abend with no dump leaves the return code as the only evidence. Both DDs
+ * are conventional on a batch run step for that reason.
+ */
+describe("diagnosing a run that died", () => {
+  it("gives the run step somewhere to write a dump", () => {
+    const run = jclFor(PLAIN).slice(jclFor(PLAIN).indexOf("//RUN "));
+
+    expect(run).toContain("//CEEDUMP  DD SYSOUT=*");
+    expect(run).toContain("//SYSUDUMP DD SYSOUT=*");
+  });
+});
+
+/**
+ * The sort product spills to work datasets, and three is the customary
+ * allocation. A merge needs none — its inputs already arrive in order — so this
+ * is keyed on a real SORT rather than on "the program sorts or merges".
+ */
+describe("a job whose program sorts", () => {
+  const SORTING = `module SortBatch;
+
+record Posting {
+  branchId: string<8>;
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file rawPostings sequential input record Posting status rawStatus;
+file otherPostings sequential input record Posting status otherStatus;
+file sortedPostings sequential output record Posting status sortedStatus;
+
+entry transaction order(posting: Posting) {
+  OPERATION
+  audit("ORDERED", posting.idempotencyKey);
+}`;
+
+  it("allocates sort work datasets", () => {
+    const jcl = jclFor(
+      SORTING.replace(
+        "OPERATION",
+        "sort rawPostings into sortedPostings on branchId;",
+      ),
+    );
+
+    expect(jcl).toContain("//SORTWK01 DD UNIT=SYSDA");
+    expect(jcl).toContain("//SORTWK03 DD UNIT=SYSDA");
+  });
+
+  it("allocates none for a merge", () => {
+    const jcl = jclFor(
+      SORTING.replace(
+        "OPERATION",
+        "merge rawPostings, otherPostings into sortedPostings on branchId;",
+      ),
+    );
+
+    expect(jcl).not.toContain("SORTWK");
   });
 });
 
@@ -181,6 +297,43 @@ describe("a Db2 job", () => {
     expect(jcl.indexOf("PGM=DSNHPC")).toBeLessThan(jcl.indexOf("PGM=IGYCRCTL"));
     expect(jcl.indexOf("PGM=IEWL")).toBeLessThan(jcl.indexOf("PGM=IKJEFT01"));
     expect(jcl).toContain("BIND PACKAGE(BANKLANG) MEMBER(SQLBATCH)");
+  });
+
+  /**
+   * A package cannot be run. RUN names a plan, and a plan is what the package
+   * has to be listed in — binding only the package leaves the program with
+   * nothing to run under, which shows up at execution rather than at bind.
+   */
+  it("binds a plan as well as the package", () => {
+    expect(jclFor(WITH_SQL)).toContain(
+      "BIND PLAN(SQLBATCH) PKLIST(BANKLANG.*)",
+    );
+  });
+
+  /**
+   * A program with embedded SQL cannot be started by EXEC PGM=. It needs a
+   * thread to Db2, and what establishes one is the DSN command processor: the
+   * step runs TSO in batch and DSN RUN attaches the program to the subsystem
+   * under its plan. Started directly it has no thread and fails on its first
+   * SQL statement — which reads, from the job log, as a database problem.
+   */
+  it("runs the program under the DSN command processor", () => {
+    const jcl = jclFor(WITH_SQL);
+    const run = jcl.slice(jcl.indexOf("//RUN "));
+
+    expect(run).toContain("//RUN      EXEC PGM=IKJEFT01");
+    expect(run).not.toContain("//RUN      EXEC PGM=SQLBATCH");
+    expect(run).toContain("  DSN SYSTEM(DSN)");
+    expect(run).toContain("  RUN PROGRAM(SQLBATCH) PLAN(SQLBATCH) -");
+    expect(run).toContain("      LIB('BANKLANG.LOADLIB')");
+  });
+
+  /** DD * runs to its delimiter, so anything after it is command input. */
+  it("puts the command input last in the step", () => {
+    const jcl = jclFor(WITH_SQL);
+    const run = jcl.slice(jcl.indexOf("//RUN "));
+
+    expect(run.indexOf("//SYSOUT")).toBeLessThan(run.indexOf("//SYSTSIN"));
   });
 
   it("feeds the precompiler's output to the compiler", () => {

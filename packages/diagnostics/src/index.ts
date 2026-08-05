@@ -518,9 +518,9 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-FILE-003",
     title: "Unsafe restart behaviour",
     explanation:
-      "A transaction posts to the ledger inside a loop with no checkpoint. A job that dies halfway is rerun, and without a position written down the rerun starts at the beginning and posts everything twice. A single posting is different: rerunning it is the caller's problem, and the idempotency key covers it.",
+      "A transaction posts to the ledger inside a loop without both halves of checkpoint/restart. A job that dies halfway is rerun, and without a position written down the rerun starts at the beginning and posts everything twice — and a position written down but never read back leaves the rerun starting at the beginning just the same. A single posting is different: rerunning it is the caller's problem, and the idempotency key covers it. The same id covers a restart file that is not `indexed update`: a sequential output file is rewritten from the start by the next OPEN, so a rerun that dies before its own first checkpoint destroys the position it was resuming from.",
     remediation:
-      "Add `checkpoint <file> from <record> every <n>;` inside the loop, or confirm the job is rerunnable another way. Reported as a warning, because the compiler cannot tell whether it is.",
+      "Add `checkpoint <file> from <record> every <n>;` inside the loop and `restart <file> into <record> { ... }` before it, or confirm the job is rerunnable another way. Reported as a warning, because the compiler cannot tell whether it is.",
     specReference: "language-reference.md section 13a",
     implemented: true,
   },

@@ -17,6 +17,7 @@ import {
   type CheckpointStatementNode,
   type ConsoleStatementNode,
   type ReleaseStatementNode,
+  type RestartStatementNode,
   type SortProcedureNode,
   type SortStatementNode,
   type ReportDeclarationNode,
@@ -1495,6 +1496,7 @@ function validateTransactionBody(
       case "SortStatement":
       case "ReleaseStatement":
       case "CheckpointStatement":
+      case "RestartStatement":
       case "ConsoleStatement":
       case "ResetStatement":
       case "SearchStatement":
@@ -1773,6 +1775,17 @@ function validateEffectStatement(
     case "CheckpointStatement":
       validateCheckpointStatement(statement, scope, diagnostics);
       checkpointSeen = true;
+      return true;
+    case "RestartStatement":
+      validateRestartStatement(
+        statement,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
       return true;
     case "SearchStatement":
       validateSearchStatement(
@@ -2351,6 +2364,8 @@ function nestedBlocksOf(statement: StatementNode): BlockNode[] {
     (statement as { thenBranch?: BlockNode }).thenBranch,
     (statement as { elseBranch?: BlockNode | null }).elseBranch,
     (statement as { notFound?: BlockNode }).notFound,
+    (statement as { resumed?: BlockNode }).resumed,
+    (statement as { fresh?: BlockNode | null }).fresh,
   ];
   const cases = (statement as { cases?: { body: BlockNode }[] }).cases ?? [];
   return [...candidates, ...cases.map((entry) => entry.body)].filter(
@@ -2504,17 +2519,8 @@ function validateCheckpointStatement(
         backendProfile: null,
       }),
     );
-  } else if (file.mode === "input") {
-    diagnostics.push(
-      createDiagnostic({
-        id: "BANK-FILE-003",
-        severity: "error",
-        message: `Cannot write a restart position to ${file.name}, which is declared as input.`,
-        span: statement.span,
-        hint: "Declare the restart file as output or update.",
-        backendProfile: null,
-      }),
-    );
+  } else {
+    validateRestartFile(file, statement.span, "write", diagnostics);
   }
 
   if (!scope.has(statement.recordName)) {
@@ -2542,6 +2548,119 @@ function validateCheckpointStatement(
         backendProfile: null,
       }),
     );
+  }
+}
+
+/**
+ * The shape a restart file has to have, for both halves of checkpoint/restart.
+ *
+ * Keyed and opened for update, because the position has to survive being read
+ * back. A sequential output file is rewritten from the start by the next OPEN,
+ * so a rerun that dies before its own first checkpoint destroys the position it
+ * was resuming from and the run after that starts from the beginning — which is
+ * the failure the whole mechanism exists to prevent. A single keyed record,
+ * rewritten in place, has no such window.
+ */
+function validateRestartFile(
+  file: ResolvedFile,
+  span: SourceSpan,
+  direction: "read" | "write",
+  diagnostics: Diagnostic[],
+): void {
+  const wrong =
+    file.organization !== "indexed"
+      ? `${file.name} is ${file.organization}, and a restart position has to be keyed.`
+      : file.mode !== "update"
+        ? `${file.name} is declared as ${file.mode}, and a restart position has to be readable and writable in the same run.`
+        : null;
+
+  if (wrong) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-003",
+        severity: "error",
+        message:
+          direction === "write"
+            ? `Cannot write a restart position to ${file.name}. ${wrong}`
+            : `Cannot read a restart position from ${file.name}. ${wrong}`,
+        span,
+        hint: `Declare it \`file ${file.name} indexed update record <Record> key <field> status <field>;\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+}
+
+/**
+ * `restart <file> into <record> { ... } else { ... }`
+ *
+ * A checkpoint that nothing reads back is a rerun that still starts at the
+ * beginning, so this is the statement that makes the other one mean something.
+ * The record has to be the one the file holds, because the position read out of
+ * the file is moved into it field by field.
+ */
+function validateRestartStatement(
+  statement: RestartStatementNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  locals: ResolvedLocal[],
+  diagnostics: Diagnostic[],
+  inTransaction: boolean,
+): void {
+  const file = declaredFiles.get(statement.fileName);
+  if (!file) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved file: ${statement.fileName}.`,
+        span: statement.span,
+        hint: "Declare the file the restart position was written to.",
+        backendProfile: null,
+      }),
+    );
+  } else {
+    validateRestartFile(file, statement.span, "read", diagnostics);
+  }
+
+  const bound = scope.get(statement.recordName);
+  if (bound?.kind !== "record") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-001",
+        severity: "error",
+        message: `Unresolved record: ${statement.recordName}.`,
+        span: statement.span,
+        hint: "Name a record-typed parameter or local to read the position into.",
+        backendProfile: null,
+      }),
+    );
+  } else if (file && bound.name !== file.record.name) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-003",
+        severity: "error",
+        message: `${statement.recordName} holds ${bound.name}, and ${file.name} holds ${file.record.name}.`,
+        span: statement.span,
+        hint: `Read the position into a variable declared as ${file.record.name}.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const block of [statement.resumed, statement.fresh]) {
+    if (block) {
+      validateBranchBody(
+        block,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+        inTransaction,
+      );
+    }
   }
 }
 
@@ -3575,6 +3694,23 @@ function validateWhileStatement(
     }
     if (inTransaction && inner.kind === "AuditStatement") {
       validateAuditStatement(inner, scope, aliases, recordMap, diagnostics);
+      continue;
+    }
+    // A branch, on the same terms a `for each` body has always allowed one.
+    // Rejecting it here was an oversight rather than a rule: `switch` was
+    // permitted and `if` was not, and the read-ahead a file loop needs — read,
+    // then act only if the read found something — could not be written at all.
+    // What the diagnostic is actually for is keeping `return` out of a loop,
+    // and `inLoopBody` still does that inside the branch.
+    if (inTransaction && inner.kind === "IfStatement") {
+      validateTransactionBranch(
+        inner,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
       continue;
     }
     diagnostics.push(
@@ -5504,6 +5640,7 @@ function resolveTerminalStatementType(
     case "SortStatement":
     case "ReleaseStatement":
     case "CheckpointStatement":
+    case "RestartStatement":
     case "ConsoleStatement":
     case "ResetStatement":
     case "SearchStatement":
@@ -6147,6 +6284,8 @@ function reportUnheldDliUpdates(
         (statement as { thenBranch?: BlockNode }).thenBranch,
         (statement as { elseBranch?: BlockNode | null }).elseBranch,
         (statement as { onError?: BlockNode | null }).onError,
+        (statement as { resumed?: BlockNode }).resumed,
+        (statement as { fresh?: BlockNode | null }).fresh,
       ]) {
         if (nested) {
           walk(nested, held);

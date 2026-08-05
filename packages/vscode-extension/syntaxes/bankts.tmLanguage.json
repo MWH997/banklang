@@ -58,7 +58,7 @@
       "patterns": [
         {
           "name": "keyword.control.bankts",
-          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else|while|for|each|in|switch|case|enum|sensitive|redefines|renames|through|depending|sync|justified|blankWhenZero|split|json|xml|by|search|sort|merge|report|database|getUnique|getNext|getHoldUnique|getHoldNext|insertSegment|replaceSegment|deleteSegment|call|cancel|initiate|generate|terminate|release|descending|checkpoint|every|log|accept|reset|sql|cursor|execute|cics|link|syncpoint|rollback|commit|returnCode|readFile|writeFile|rewriteFile|writeQueue|readQueue|returnTransid|extends|entry|raise|on|failure|error)\\b"
+          "match": "\\b(module|type|record|function|transaction|file|return|let|if|else|while|for|each|in|switch|case|enum|sensitive|redefines|renames|through|depending|sync|justified|blankWhenZero|split|json|xml|by|search|sort|merge|report|database|getUnique|getNext|getHoldUnique|getHoldNext|insertSegment|replaceSegment|deleteSegment|call|cancel|initiate|generate|terminate|release|descending|checkpoint|restart|every|log|accept|reset|sql|cursor|execute|cics|link|syncpoint|rollback|commit|returnCode|readFile|writeFile|rewriteFile|writeQueue|readQueue|returnTransid|extends|entry|raise|on|failure|error)\\b"
         },
         {
           "name": "constant.language.bankts",

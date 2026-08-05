@@ -1,3 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
@@ -19,13 +24,14 @@ record Posting {
 }
 
 record RestartPoint {
+  jobName: string<8>;
   lastAccountId: string<16>;
 }
 
 file rawPostings sequential input record Posting status rawStatus;
 file morePostings sequential input record Posting status moreStatus;
 file sortedPostings sequential output record Posting status sortedStatus;
-file restartFile sequential output record RestartPoint status restartStatus;
+file restartFile indexed update record RestartPoint key jobName status restartStatus;
 `;
 
 function ids(result: { diagnostics: { id: string }[] }): string[] {
@@ -111,6 +117,13 @@ describe("checkpoint and restart", () => {
   open rawPostings;
   open restartFile;
 
+  point.jobName = "POSTBAT";
+  restart restartFile into point {
+    log "RESUMING AFTER ", point.lastAccountId;
+  } else {
+    log "STARTING FRESH";
+  }
+
   while seen < 1000 limit 1000 {
     read rawPostings into posting;
     debit(posting.accountId, posting.amount);
@@ -190,5 +203,217 @@ CHECKPOINT
     );
 
     expect(ids(result)).toContain("BANK-FILE-003");
+  });
+});
+
+/**
+ * `restart <file> into <record> { ... } else { ... }` — the half of
+ * checkpoint/restart that makes the other half worth writing.
+ *
+ * A position written down and never read back leaves the rerun starting at the
+ * beginning, which is the thing a checkpoint exists to prevent. The compiler
+ * used to emit the write and nothing else, and `BANK-FILE-003` told programmers
+ * that adding the checkpoint made the job safe to rerun. It did not.
+ */
+describe("restart", () => {
+  const RESTARTING = `entry transaction post(posting: Posting, point: RestartPoint) {
+  open restartFile;
+  point.jobName = "POSTBAT";
+  restart restartFile into point {
+    log "RESUMING AFTER ", point.lastAccountId;
+  } else {
+    log "NOTHING TO RESUME";
+  }
+  close restartFile;
+  audit("POSTED", posting.idempotencyKey);
+}`;
+
+  const result = compile(`${PREAMBLE}\n${RESTARTING}`);
+
+  it("compiles", () => {
+    expect(errors(result)).toEqual([]);
+  });
+
+  /** The record's key says which position is being asked for, as a keyed read does. */
+  it("reads the position under the key the record carries", () => {
+    const cobol = result.cobol ?? "";
+
+    expect(cobol).toContain(
+      "MOVE JOB-NAME OF RESTART-POINT TO JOB-NAME OF RESTART-FILE-RECORD",
+    );
+    expect(cobol).toContain("READ RESTART-FILE-FILE");
+  });
+
+  /**
+   * On its own flag rather than on the file status: no position written yet is
+   * the ordinary first run, not an I/O failure to report.
+   */
+  it("branches on whether one was found", () => {
+    const cobol = result.cobol ?? "";
+
+    expect(cobol).toContain("INVALID KEY CONTINUE");
+    expect(cobol).toContain(
+      'NOT INVALID KEY MOVE "Y" TO RESTART-FILE-RS-FOUND',
+    );
+    expect(cobol).toContain('IF RESTART-FILE-RS-FOUND = "Y"');
+    expect(cobol).toContain('01  RESTART-FILE-RS-FOUND PIC X(1) VALUE "N".');
+  });
+
+  it("fills the record from the position it found", () => {
+    expect(result.cobol).toContain(
+      "MOVE LAST-ACCOUNT-ID OF RESTART-FILE-RECORD TO LAST-ACCOUNT-ID OF RESTART-POINT",
+    );
+  });
+
+  /**
+   * The first run of a batch has never written a position, so the dataset does
+   * not exist. OPTIONAL is what COBOL has for a file that may legitimately be
+   * absent; without it the OPEN fails and the job dies on the very run that had
+   * nothing to resume from.
+   */
+  it("lets the restart file be missing on the first run", () => {
+    expect(result.cobol).toContain("SELECT OPTIONAL RESTART-FILE-FILE");
+  });
+
+  it("leaves every other file required", () => {
+    expect(result.cobol).not.toContain("SELECT OPTIONAL RAW-POSTINGS-FILE");
+  });
+
+  /** `else` is optional: a fresh start often needs nothing done. */
+  it("can be written without a fresh-start branch", () => {
+    const without = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  open restartFile;
+  point.jobName = "POSTBAT";
+  restart restartFile into point {
+    log "RESUMING";
+  }
+  close restartFile;
+  audit("POSTED", posting.idempotencyKey);
+}`);
+
+    expect(errors(without)).toEqual([]);
+    expect(without.cobol).not.toContain("ELSE");
+  });
+
+  /**
+   * A sequential output file is rewritten from the start by the next OPEN, so a
+   * rerun that dies before its own first checkpoint destroys the position it was
+   * resuming from. One keyed record, rewritten in place, has no such window.
+   */
+  it("rejects a restart file that is not keyed and updatable", () => {
+    const sequential = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  restart sortedPostings into point {
+    log "RESUMING";
+  }
+  audit("POSTED", posting.idempotencyKey);
+}`);
+
+    expect(ids(sequential)).toContain("BANK-FILE-003");
+  });
+
+  it("rejects a record the file does not hold", () => {
+    const mismatched = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  restart restartFile into posting {
+    log "RESUMING";
+  }
+  audit("POSTED", posting.idempotencyKey);
+}`);
+
+    expect(ids(mismatched)).toContain("BANK-FILE-003");
+  });
+});
+
+/**
+ * The write, which is now a keyed replacement rather than an append.
+ *
+ * Each checkpoint replaces the last, so a restart reads one record and knows it
+ * is the furthest point that was committed — rather than reading a growing
+ * stream of them and having to work out which is newest.
+ */
+describe("what a checkpoint writes", () => {
+  const result = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  open restartFile;
+  point.jobName = "POSTBAT";
+  restart restartFile into point { log "RESUMING"; }
+  point.lastAccountId = posting.accountId;
+  checkpoint restartFile from point every 500;
+  close restartFile;
+  audit("POSTED", posting.idempotencyKey);
+}`);
+
+  it("replaces the position rather than adding another", () => {
+    const cobol = result.cobol ?? "";
+
+    expect(cobol).toContain("WRITE RESTART-FILE-RECORD");
+    expect(cobol).toContain("INVALID KEY REWRITE RESTART-FILE-RECORD");
+    expect(cobol).toContain("END-WRITE");
+  });
+
+  it("rejects a restart file that cannot be read back", () => {
+    const sequential = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  checkpoint sortedPostings from point every 500;
+  audit("POSTED", posting.idempotencyKey);
+}`);
+
+    expect(ids(sequential)).toContain("BANK-FILE-003");
+  });
+});
+
+/**
+ * Run, twice, because the claim is about what the second run does. Nothing
+ * about a program that writes a position proves the next run reads it.
+ */
+describe("executed", () => {
+  const available =
+    spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
+
+  it.skipIf(!available)("resumes the run after it from where it got to", () => {
+    const result = compile(`${PREAMBLE}
+entry transaction post(posting: Posting, point: RestartPoint) {
+  open restartFile;
+  point.jobName = "POSTBAT";
+  restart restartFile into point {
+    log "RESUMING AFTER ", point.lastAccountId;
+  } else {
+    log "NOTHING TO RESUME";
+  }
+  point.lastAccountId = "ACC-000000000042";
+  checkpoint restartFile from point every 1;
+  close restartFile;
+  audit("POSTED", posting.idempotencyKey);
+}`);
+    expect(errors(result)).toEqual([]);
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-restart-"));
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-free",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        join(process.cwd(), "runtime/BANKLEDG.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    // Nothing written yet, so the restart file does not exist at all.
+    const first = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+    expect(first.status, first.stderr).toBe(0);
+    expect(first.stdout).toContain("NOTHING TO RESUME");
+
+    const second = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+    expect(second.status, second.stderr).toBe(0);
+    expect(second.stdout).toContain("RESUMING AFTER ACC-000000000042");
   });
 });
