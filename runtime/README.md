@@ -3,15 +3,16 @@
 Small COBOL programs that satisfy the interfaces generated code calls out to, so
 a generated program can be **executed** rather than only compiled.
 
-| Program    | Stands in for                     | Called by                                                                        |
-| ---------- | --------------------------------- | -------------------------------------------------------------------------------- |
-| `BANKLEDG` | The institution's ledger          | `debit`, `credit`, and the rollback path                                         |
-| `BANKAUDT` | The institution's audit log       | `audit`                                                                          |
-| `DSNHLI`   | The Db2 language interface module | Precompiled `EXEC SQL` blocks                                                    |
-| `DFHEI1`   | The CICS command-level stub       | Precompiled `EXEC CICS` blocks                                                   |
-| `CBLTDLI`  | The IMS DL/I language interface   | Every `getUnique`, `getNext`, `insertSegment`, `replaceSegment`, `deleteSegment` |
-| `BANKJSON` | A statement, not a product        | A translated `JSON PARSE`                                                        |
-| `BANKXML`  | A statement, not a product        | A translated `XML PARSE`                                                         |
+| Program    | Stands in for                      | Called by                                                                        |
+| ---------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| `BANKLEDG` | The institution's ledger           | `debit`, `credit`, and the rollback path                                         |
+| `BANKAUDT` | The institution's audit log        | `audit`                                                                          |
+| `DSNHLI`   | The Db2 language interface module  | Precompiled `EXEC SQL` blocks                                                    |
+| `DFHEI1`   | The CICS command-level stub        | Precompiled `EXEC CICS` blocks                                                   |
+| `CBLTDLI`  | The IMS DL/I language interface    | Every `getUnique`, `getNext`, `insertSegment`, `replaceSegment`, `deleteSegment` |
+| `BANKMQ`   | The IBM MQ message queue interface | Every `connectQueue`, `putMessage`, `getMessage`, `disconnectQueue`              |
+| `BANKJSON` | A statement, not a product         | A translated `JSON PARSE`                                                        |
+| `BANKXML`  | A statement, not a product         | A translated `XML PARSE`                                                         |
 
 The last two are a different kind of stand-in. The others replace software an
 installation owns; these replace a **statement Enterprise COBOL implements and
@@ -103,6 +104,18 @@ closed correctly, but not what was in them.
   program is entered by the region with its PCBs rather than started, so the
   test supplies a driver that allocates one and calls the program; that is the
   shape, not the region.
+
+- `BANKMQ` is not IBM MQ. It holds no queue, keeps no message beyond the one
+  between a put and the get that follows it, honours no syncpoint, and knows
+  nothing of channels, persistence or a queue manager. It contains the six
+  programs the MQI names — `MQCONN`, `MQOPEN`, `MQPUT`, `MQGET`, `MQCLOSE`,
+  `MQDISC` — because nothing outside z/OS supplies them and a generated program
+  that talks to a queue otherwise fails at bind with an unresolved external,
+  which is loud and proves nothing. The completion and reason codes are the ones
+  IBM's reference documents, so the branch a program takes locally is the branch
+  it would take on z/OS: an empty queue really does arrive as 2033. That is what
+  makes the three-way outcome of a `getMessage` worth executing, and it is all
+  it establishes.
 
 - `BANKLEDG` is not a bank ledger. It has no accounting model, no double-entry
   enforcement, no value dating, no concurrency, and no durability. The BankLang
