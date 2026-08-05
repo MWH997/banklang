@@ -36,6 +36,8 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "reset",
   "depending",
   "sync",
+  "justified",
+  "blankWhenZero",
   "sql",
   "cursor",
   "execute",

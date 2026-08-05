@@ -17,12 +17,12 @@ import {
   emitJcl,
   type CobolEmitResult,
   type JclEmitResult,
+  renderCopybook,
 } from "../../cobol-backend/src/index";
 import {
   buildCopybookLayoutDocument,
   diffGeneratedCopybooks,
   inspectGeneratedCopybook,
-  renderCopybook,
   renderCopybookLayoutDocument,
   renderCopybookDiff,
   renderCopybookInspection,

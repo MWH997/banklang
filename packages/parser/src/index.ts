@@ -128,6 +128,8 @@ export const KEYWORDS = new Set([
   "redefines",
   "depending",
   "sync",
+  "justified",
+  "blankWhenZero",
   "sql",
   "cursor",
   "execute",
@@ -1083,7 +1085,23 @@ class Parser {
       redefines = targetToken?.text ?? null;
     }
 
-    const synchronized = this.matchKeyword("sync");
+    // The flag clauses are matched in a loop so their order does not matter:
+    // `binary<9> sync justified` and `binary<9> justified sync` say the same
+    // thing, and a language that accepted only one of them would be a trap.
+    let synchronized = false;
+    let justified = false;
+    let blankWhenZero = false;
+    for (let matching = true; matching;) {
+      if (this.matchKeyword("sync")) {
+        synchronized = true;
+      } else if (this.matchKeyword("justified")) {
+        justified = true;
+      } else if (this.matchKeyword("blankWhenZero")) {
+        blankWhenZero = true;
+      } else {
+        matching = false;
+      }
+    }
 
     let dependingOn: string | null = null;
     if (this.matchKeyword("depending")) {
@@ -1111,6 +1129,8 @@ class Parser {
       redefines,
       dependingOn,
       synchronized,
+      justified,
+      blankWhenZero,
       span: {
         sourceFile: (modifierToken ?? nameToken).span.sourceFile,
         start: (modifierToken ?? nameToken).span.start,

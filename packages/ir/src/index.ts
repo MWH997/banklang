@@ -150,6 +150,10 @@ export interface IRField {
   dependingOn: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
+  /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
+  justified: boolean;
+  /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
+  blankWhenZero: boolean;
 }
 
 export interface IRFunction {
@@ -1519,6 +1523,8 @@ function lowerRecord(
       redefines: field.redefines,
       dependingOn: field.dependingOn,
       synchronized: field.synchronized,
+      justified: field.justified,
+      blankWhenZero: field.blankWhenZero,
     })),
   };
 }
@@ -2428,6 +2434,8 @@ function lowerType(type: ResolvedType): IRType {
           redefines: field.redefines,
           dependingOn: field.dependingOn,
           synchronized: field.synchronized,
+          justified: field.justified,
+          blankWhenZero: field.blankWhenZero,
         })),
       };
   }

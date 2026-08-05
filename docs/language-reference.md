@@ -122,6 +122,25 @@ hold it, so usage takes no part in type compatibility — only in the picture an
 the byte count. Currency stays nominally typed regardless: a BDT amount is still
 not an unqualified number that happens to have two decimals.
 
+### How a field is presented
+
+```ts
+reference: string < 12 > justified;
+movement: (edited < GBP, "grouped" > blankWhenZero);
+```
+
+`justified` emits `JUSTIFIED RIGHT`. COBOL moves an alphanumeric value
+left-aligned and pads on the right; this reverses it, which is how a code lands
+in the right of a fixed column without the program counting spaces. Alphanumeric
+only — a number's alignment comes from its picture (`BANK-COPY-005`).
+
+`blankWhenZero` emits `BLANK WHEN ZERO`: a statement line with no movement
+prints blank rather than `0.00`, and says so in the record rather than in a
+conditional. Numbers and edited fields only, since there has to be a zero to
+blank.
+
+`sync`, `justified`, and `blankWhenZero` may be written in any order.
+
 ### 3b. Edited fields
 
 An amount held as `COMP-3` cannot be printed. `edited<T, "style">` declares the
@@ -1178,6 +1197,20 @@ widely.
 `reset` clears a whole record — alphanumerics to spaces, numerics to zero.
 Clearing it field by field is the same thing written out, and drifts the moment
 the record gains a field.
+
+### What the copybook contains
+
+A generated copybook is the record's own COBOL declaration, not a summary of it:
+every clause the program's inline record carries, the copybook carries too —
+`REDEFINES`, `OCCURS` with its index, `SYNCHRONIZED`, `JUSTIFIED`, `BLANK WHEN
+ZERO`, the nested groups, and the 88-levels of an enum.
+
+That matters under `copybookMode: "copy"`, where the program's storage **is** the
+copybook. A clause the copybook omitted was a clause the program did not have: a
+redefining field took storage of its own and pushed every later field along, a
+table collapsed to a single element, and an aligned field lost the slack bytes.
+`bankc copybook inspect` reads the same structure, so its offsets and the layout
+report's agree.
 
 ### Ordering the input
 
