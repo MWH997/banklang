@@ -146,24 +146,29 @@ export function runGnucobolValidation(
   // implemented them, and does nothing at run time. They go through the same
   // translation so the local build executes something rather than reporting
   // success on a statement that did not run.
+  //
+  // Every artifact goes through it now, whether or not it embeds anything: the
+  // program opens with a `CBL` statement naming the compiler options its
+  // behaviour depends on, which IBM's compiler reads and GnuCOBOL cannot — it
+  // sees `CBL` in column 1 and reports an invalid indicator in column 7. What
+  // `precompiled` records is whether a real preprocessor was needed, because
+  // that is the claim a reader cares about; removing one line is not the same
+  // as translating embedded SQL.
   const generatedCobol = readFileSync(artifacts.cobolPath, "utf8");
   const backendRequirements = ir.program?.backendRequirements ?? [];
   const precompiled =
     backendRequirements.some(
       (requirement) => requirement !== "report-writer-precompiler",
     ) || /^\s*(?:JSON|XML)\s+PARSE\b/im.test(generatedCobol);
-  let precompiledArtifact: string | null = null;
 
-  if (precompiled) {
-    const translated = precompile(generatedCobol);
-    // `-PRE` rather than `.precompiled`, because GnuCOBOL caps a source file's
-    // base name at 31 characters and a suffix this tool chose should not be
-    // what makes a legitimate module name too long to validate.
-    precompiledArtifact = artifacts.cobolPath.replace(/\.cbl$/, "-PRE.cbl");
-    writeFileSync(precompiledArtifact, translated.cobol, "utf8");
-  }
+  const translated = precompile(generatedCobol);
+  // `-PRE` rather than `.precompiled`, because GnuCOBOL caps a source file's
+  // base name at 31 characters and a suffix this tool chose should not be what
+  // makes a legitimate module name too long to validate.
+  const precompiledArtifact = artifacts.cobolPath.replace(/\.cbl$/, "-PRE.cbl");
+  writeFileSync(precompiledArtifact, translated.cobol, "utf8");
 
-  const compileTarget = precompiledArtifact ?? artifacts.cobolPath;
+  const compileTarget = precompiledArtifact;
   const compilerExecutable = resolveCobcExecutable(cwd);
   let compilerVersion: string | null = null;
   let compilerCommand = "cobc not found";
@@ -245,9 +250,7 @@ export function runGnucobolValidation(
   const summary: GnucobolValidationSummary = {
     backendRequirements,
     precompiled,
-    precompiledArtifact: precompiledArtifact
-      ? relative(cwd, precompiledArtifact)
-      : null,
+    precompiledArtifact: relative(cwd, precompiledArtifact),
     backendProfile: "gnucobol-local",
     sourceArtifact: relative(cwd, artifacts.sourceFile),
     sourceArtifactHash,

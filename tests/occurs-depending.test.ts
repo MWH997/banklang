@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, parmDriver } from "./helpers";
+import { flowed, localCobol, parmDriver } from "./helpers";
 
 /**
  * The object of an `OCCURS DEPENDING ON`, and what it decides.
@@ -150,7 +150,7 @@ entry transaction run(batch: Batch, n: binary<4>) {
     // `n` is an entry parameter, so it arrives in the job's PARM. The driver
     // builds one the way the initiator would.
     const dir = mkdtempSync(join(tmpdir(), "bankc-odo-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
     writeFileSync(
       join(dir, "driver.cbl"),
       parmDriver(result.program!, { n: count }),

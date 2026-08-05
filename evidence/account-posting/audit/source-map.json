@@ -15,8 +15,8 @@
         "column": 22
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 4,
-      "targetEndLine": 5,
+      "targetStartLine": 6,
+      "targetEndLine": 7,
       "category": "module",
       "symbol": "AccountPosting"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 11,
-      "targetEndLine": 15,
+      "targetStartLine": 13,
+      "targetEndLine": 17,
       "category": "record",
       "symbol": "PostTransferRequest"
     },
@@ -47,8 +47,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 12,
-      "targetEndLine": 12,
+      "targetStartLine": 14,
+      "targetEndLine": 14,
       "category": "field",
       "symbol": "debitAccount"
     },
@@ -63,8 +63,8 @@
         "column": 29
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 13,
-      "targetEndLine": 13,
+      "targetStartLine": 15,
+      "targetEndLine": 15,
       "category": "field",
       "symbol": "creditAccount"
     },
@@ -79,8 +79,8 @@
         "column": 20
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 14,
-      "targetEndLine": 14,
+      "targetStartLine": 16,
+      "targetEndLine": 16,
       "category": "field",
       "symbol": "amount"
     },
@@ -95,8 +95,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 15,
-      "targetEndLine": 15,
+      "targetStartLine": 17,
+      "targetEndLine": 17,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -111,8 +111,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-      "targetStartLine": 31,
-      "targetEndLine": 48,
+      "targetStartLine": 33,
+      "targetEndLine": 50,
       "category": "transaction",
       "symbol": "postTransfer"
     }

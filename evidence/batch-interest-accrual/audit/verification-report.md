@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/batch-interest-accrual/gnucobol/copybooks evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl -o evidence/batch-interest-accrual/gnucobol/bin/batchint
+- compiler-command: cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/batch-interest-accrual/gnucobol/copybooks evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT-PRE.cbl -o evidence/batch-interest-accrual/gnucobol/bin/batchint
 - compiler-exit-code: 0

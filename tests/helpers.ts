@@ -8,6 +8,7 @@ import {
 } from "../packages/cobol-backend/src/index";
 import { toCobolName } from "../packages/cobol-ir/src/index";
 import { lowerProgramToIR, type IRProgram } from "../packages/ir/src/index";
+import { precompile } from "../packages/precompiler/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
 
@@ -26,6 +27,22 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
  */
 export function flowed(cobol: string | null | undefined): string {
   return (cobol ?? "").replace(/\s+/g, " ");
+}
+
+/**
+ * The generated program as the local compiler can read it.
+ *
+ * The artifact opens with a `CBL` statement naming the compiler options its
+ * behaviour depends on. IBM's compiler reads it; GnuCOBOL sees `CBL` in column
+ * 1 and reports an invalid indicator in column 7, because to it those columns
+ * are the sequence number area. The precompiler takes it out, along with the
+ * `EXEC SQL`, `EXEC CICS`, `JSON PARSE` and `XML PARSE` the local compiler
+ * cannot execute — so this is the same path `tools/gnucobol-validation.ts`
+ * takes, and a test that skipped it would be compiling something the compiler
+ * does not emit.
+ */
+export function localCobol(cobol: string | null | undefined): string {
+  return precompile(cobol ?? "").cobol;
 }
 
 export function exampleSourceFile(

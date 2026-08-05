@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, localCobol } from "./helpers";
 
 /**
  * The file status key, tested after every I/O statement rather than after
@@ -219,7 +219,7 @@ entry transaction emit1(line: FeedLine, note: Note) {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-filestatus-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
 
     const built = spawnSync(
       "cobc",

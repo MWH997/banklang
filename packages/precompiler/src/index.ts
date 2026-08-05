@@ -33,12 +33,47 @@
 
 import { toReferenceFormat } from "../../cobol-backend/src/reference-format";
 
+/**
+ * True for a `CBL` or `PROCESS` statement.
+ *
+ * It states the compiler options the program's behaviour depends on, and IBM's
+ * compiler is the only thing that reads it: GnuCOBOL sees `CBL` in column 1 and
+ * reports an invalid indicator in column 7, because to it those columns are the
+ * sequence number area.
+ */
+export function isCompilerOptionStatement(line: string): boolean {
+  return /^(?:CBL|PROCESS)\s/i.test(line);
+}
+
+/**
+ * The program with its compiler-option statements taken out and nothing else.
+ *
+ * For a caller that wants to compile the artifact as it ships, minus the one
+ * line the local compiler cannot read — `tests/gnucobol-coverage.test.ts` does,
+ * because what it is measuring is which constructs GnuCOBOL warns about, and
+ * translating them away would answer a different question.
+ */
+export function withoutCompilerOptions(cobol: string): string {
+  return cobol
+    .split("\n")
+    .filter((line) => !isCompilerOptionStatement(line))
+    .join("\n");
+}
+
 export interface PrecompileResult {
   cobol: string;
   /** Number of `EXEC SQL` blocks translated. */
   sqlBlocks: number;
   /** Number of `EXEC CICS` blocks translated. */
   cicsBlocks: number;
+  /**
+   * Number of `CBL`/`PROCESS` statements removed.
+   *
+   * They state the compiler options the program depends on and are read by
+   * IBM's compiler alone, so the local build has to have them taken out before
+   * it can read the program at all.
+   */
+  optionStatements: number;
 }
 
 /**
@@ -374,6 +409,7 @@ export function precompile(cobol: string): PrecompileResult {
   const output: string[] = [];
   let sqlBlocks = 0;
   let cicsBlocks = 0;
+  let optionStatements = 0;
   // Numbered separately from the block count, because a DECLARE CURSOR is read
   // at precompile time and never executed. Giving it a number would shift every
   // statement after it and make a scripted outcome name the wrong one.
@@ -402,6 +438,22 @@ export function precompile(cobol: string): PrecompileResult {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     const trimmed = line.trim();
+
+    // A `CBL` statement states the compiler options the program's behaviour
+    // depends on. It is read by IBM's compiler and by nothing else: GnuCOBOL
+    // sees `CBL` in column 1 and reports an invalid indicator in column 7,
+    // because to it those columns are the sequence number area.
+    //
+    // Removed rather than translated, because there is nothing to translate
+    // into — `cobc` takes its dialect from `tools/banklang-ibm.conf` and its
+    // own flags, which is where the local build says the same thing.
+    if (isCompilerOptionStatement(line)) {
+      optionStatements += 1;
+      output.push(
+        `      *> ${trimmed} — removed by the BankLang precompiler.`,
+      );
+      continue;
+    }
 
     // Translator-owned storage goes in immediately, the way IBM's translators
     // inject their own control blocks rather than asking for them.
@@ -560,6 +612,7 @@ export function precompile(cobol: string): PrecompileResult {
     cobol: rewritten.flatMap((line) => toReferenceFormat(line)).join("\n"),
     sqlBlocks,
     cicsBlocks,
+    optionStatements,
   };
 }
 

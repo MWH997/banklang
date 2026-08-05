@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
 
-import { compileExample, loadExampleSource } from "./helpers";
+import { compileExample, loadExampleSource, localCobol } from "./helpers";
 
 /**
  * Every checked-in example must produce COBOL that a real compiler accepts.
@@ -53,7 +53,7 @@ describe("generated COBOL compiles", () => {
       const { emit } = compileExample(example);
       const dir = mkdtempSync(join(tmpdir(), "bankc-cobc-"));
       const file = join(dir, "program.cbl");
-      writeFileSync(file, emit.cobol, "utf8");
+      writeFileSync(file, localCobol(emit.cobol), "utf8");
 
       const result = spawnSync("cobc", ["-fsyntax-only", "-fixed", file], {
         encoding: "utf8",

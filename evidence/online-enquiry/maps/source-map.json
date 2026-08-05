@@ -15,8 +15,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 4,
-      "targetEndLine": 5,
+      "targetStartLine": 6,
+      "targetEndLine": 7,
       "category": "module",
       "symbol": "OnlineEnquiry"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 17,
-      "targetEndLine": 20,
+      "targetStartLine": 19,
+      "targetEndLine": 22,
       "category": "record",
       "symbol": "EnquiryRequest"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 18,
-      "targetEndLine": 18,
+      "targetStartLine": 20,
+      "targetEndLine": 20,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 27
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 19,
-      "targetEndLine": 19,
+      "targetStartLine": 21,
+      "targetEndLine": 21,
       "category": "field",
       "symbol": "requestedBy"
     },
@@ -79,8 +79,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 20,
-      "targetEndLine": 20,
+      "targetStartLine": 22,
+      "targetEndLine": 22,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 21,
-      "targetEndLine": 24,
+      "targetStartLine": 23,
+      "targetEndLine": 26,
       "category": "record",
       "symbol": "AccountBalanceRow"
     },
@@ -111,8 +111,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 22,
-      "targetEndLine": 22,
+      "targetStartLine": 24,
+      "targetEndLine": 24,
       "category": "field",
       "symbol": "rowAccountId"
     },
@@ -127,8 +127,8 @@
         "column": 19
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 23,
-      "targetEndLine": 23,
+      "targetStartLine": 25,
+      "targetEndLine": 25,
       "category": "field",
       "symbol": "rowBalance"
     },
@@ -143,8 +143,8 @@
         "column": 24
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 24,
-      "targetEndLine": 24,
+      "targetStartLine": 26,
+      "targetEndLine": 26,
       "category": "field",
       "symbol": "rowStatus"
     },
@@ -159,8 +159,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 25,
-      "targetEndLine": 32,
+      "targetStartLine": 27,
+      "targetEndLine": 34,
       "category": "record",
       "symbol": "BalanceReply"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 26,
-      "targetEndLine": 26,
+      "targetStartLine": 28,
+      "targetEndLine": 28,
       "category": "field",
       "symbol": "replyAccountId"
     },
@@ -191,8 +191,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 27,
-      "targetEndLine": 27,
+      "targetStartLine": 29,
+      "targetEndLine": 29,
       "category": "field",
       "symbol": "replyBalance"
     },
@@ -207,8 +207,8 @@
         "column": 27
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 28,
-      "targetEndLine": 32,
+      "targetStartLine": 30,
+      "targetEndLine": 34,
       "category": "field",
       "symbol": "outcome"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 60,
-      "targetEndLine": 68,
+      "targetStartLine": 62,
+      "targetEndLine": 70,
       "category": "function",
       "symbol": "isAvailable"
     },
@@ -239,8 +239,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-      "targetStartLine": 69,
-      "targetEndLine": 120,
+      "targetStartLine": 71,
+      "targetEndLine": 122,
       "category": "transaction",
       "symbol": "accountEnquiry"
     }

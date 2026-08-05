@@ -7,9 +7,9 @@
 | source-artifact | examples/branch-accrual-cursor/src/main.bank.ts |
 | source-artifact-sha256 | 2da557dc9a311acc9b5820327100ca0050a66992ddd30ec490c6bb8b9769f04c |
 | generated-artifact | evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC.cbl |
-| generated-artifact-sha256 | e3a1f890dc4d501d22691cc21aaa27dafaa4f2dc4101fd5c0f8f43e3de4c956e |
+| generated-artifact-sha256 | 2f6a508378d2a93834a915540122febbe80f77a321a06cd00c2f9ea493daff5e |
 | source-map-artifact | evidence/branch-accrual-cursor/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | f78548c2b74a7067722a059580f865202c8369da306cfcd6cd2262e775fd57c4 |
+| source-map-artifact-sha256 | 08ff3091ea57709a6b2288e27da57db27a735ff36b9f50a2532980b682d34d37 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/branch-accrual-cursor/gnucobol/copybooks evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl -o evidence/branch-accrual-cursor/gnucobol/bin/branchac |

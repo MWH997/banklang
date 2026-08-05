@@ -149,6 +149,45 @@ const FAILURE_CODE_FIELD = "BANK-FAILURE-CODE";
  */
 const RETURN_CODE_FIELD = "BANK-RETURN-CODE";
 
+/**
+ * The compiler options the generated program's behaviour depends on.
+ *
+ * A `CBL` statement, which the Programming Guide says goes "before the
+ * IDENTIFICATION DIVISION header and before any comment lines", may "start in
+ * column 1 or after" when there is no sequence field, and must end at or before
+ * column 72.
+ *
+ * Every option below is IBM's own default. Stating them is the point: an
+ * installation's default options module can change any of them, and several
+ * change what the program *computes* rather than how it is compiled. A
+ * deterministic compiler that does not say what its output was built to depend
+ * on is reproducible only on the machine it was written on.
+ *
+ * - `ARITH(COMPAT)` bounds an arithmetic operand at 18 digits, which is the
+ *   number `BANK-DEC-006` refuses a rounding for and the number every generated
+ *   picture is sized against. Under `ARITH(EXTEND)` the same program has 31 and
+ *   the refusals stop matching the arithmetic.
+ * - `TRUNC(STD)` truncates a binary receiver to the digits in its PICTURE.
+ *   `TRUNC(OPT)` does not truncate at all, so the same program produces
+ *   different numbers.
+ * - `NUMPROC(NOPFD)` does not assume a preferred sign, so a value read from a
+ *   file whose sign nibble is not the preferred one still compares correctly.
+ * - `NOSSRANGE` because the program checks its own subscripts and fails the
+ *   step with a named failure; `SSRANGE` would check them a second time and
+ *   abend instead, which is a worse answer and a slower one.
+ * - `RENT`, which CICS requires and which V6 generates anyway.
+ * - `NODYNAM`, so every `CALL "BANKLEDG"` is static and the binder resolves it
+ *   from the object library the generated job puts on SYSLIB.
+ * - `QUOTE` makes `"` the figurative-constant delimiter, which is the one this
+ *   emitter writes for every literal.
+ * - `PGMNAME(COMPAT)` is what makes the program-name eight characters, which is
+ *   the rule `toCobolProgramId` follows and the member name the job expects.
+ */
+const COMPILER_OPTION_STATEMENTS = [
+  "CBL ARITH(COMPAT),TRUNC(STD),NUMPROC(NOPFD),NOSSRANGE",
+  "CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)",
+];
+
 /** Failure code raised when a computed subscript falls outside its table. */
 const BOUNDS_FAILURE_CODE = "BANK-BOUNDS-VIOLATION";
 
@@ -787,6 +826,10 @@ export function emitCobol(
   };
 
   const lineNumber = () => lines.length + 1;
+
+  for (const line of COMPILER_OPTION_STATEMENTS) {
+    addLine(line);
+  }
 
   // Column 7 is the indicator area, so a comment starting in column 1 puts its
   // fourth character there and the line is rejected. Indented to Area A, `*>`

@@ -257,7 +257,16 @@ describe("every generated artifact", () => {
       // Column 7 is the indicator area: blank, `*` or `/` for a comment, `-`
       // for a continued literal, `D` for a debugging line. Anything else is
       // rejected, which is what a comment starting in column 1 produced.
+      //
+      // A `CBL` statement is the exception, and the Programming Guide makes it
+      // one: it is a compiler-directing statement rather than a source line,
+      // and with no sequence field it "can start in column 1 or after". It has
+      // no indicator area, so it has no rule about column 7 to break.
       for (const line of emit.cobol.split("\n")) {
+        if (/^(?:CBL|PROCESS)\s/.test(line)) {
+          expect(line.length).toBeLessThanOrEqual(COBOL_LAST_COLUMN);
+          continue;
+        }
         if (line.length >= 7) {
           expect([" ", "*", "/", "-", "D"]).toContain(line[6]);
         }

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, localCobol } from "./helpers";
 
 /**
  * `xml <text> processing { element "ID" into account.id; }` — `XML PARSE`.
@@ -261,7 +261,7 @@ describe("it cannot be checked locally", () => {
 
     const result = program(BINDINGS);
     const dir = mkdtempSync(join(tmpdir(), "bankc-xmlparse-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
 
     const built = spawnSync(
       "cobc",

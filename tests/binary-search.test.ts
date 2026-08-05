@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { localCobol } from "./helpers";
 
 /**
  * `search sorted` — COBOL `SEARCH ALL`, a binary search.
@@ -187,7 +188,7 @@ ${SEARCH}
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-bsearch-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
 
     const built = spawnSync(
       "cobc",

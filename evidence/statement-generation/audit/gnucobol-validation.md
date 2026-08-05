@@ -7,12 +7,12 @@
 | source-artifact | examples/statement-generation/src/main.bank.ts |
 | source-artifact-sha256 | 6c8de1f6aa35b7a864feee37005986d4f8a3021a97d4825c3d2f38021ba0f43c |
 | generated-artifact | evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl |
-| generated-artifact-sha256 | fbf728844b63e64638a75027f719fe9fa6e48daf0a01c3da09fef6491d8e3fbb |
+| generated-artifact-sha256 | 5b016f818e3966df75d26c5fd7e30c29f51f03978aed3a8273bf06434c127c91 |
 | source-map-artifact | evidence/statement-generation/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 2b3304582a47ef491266dc31e42bb359b4fc5e674042573d1f507ec2125e9e73 |
+| source-map-artifact-sha256 | 5c0e668d655a9b5a0746219f5d5de80380771d7591e8e314a51461428a7164f3 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
-| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/statement-generation/gnucobol/copybooks evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl -o evidence/statement-generation/gnucobol/bin/statemen |
+| compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/statement-generation/gnucobol/copybooks evidence/statement-generation/gnucobol/cobol/STATEMEN-PRE.cbl -o evidence/statement-generation/gnucobol/bin/statemen |
 | compiler-exit-code | 0 |
 | compiler-status | passed |
 | default-dialect-status | passed |

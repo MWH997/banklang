@@ -35,5 +35,5 @@ Phase: verify
 
 - validated-with-gnucobol: yes
 - compiler-status: passed
-- compiler-command: cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl -o evidence/account-file-batch/gnucobol/bin/accountf
+- compiler-command: cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF-PRE.cbl -o evidence/account-file-batch/gnucobol/bin/accountf
 - compiler-exit-code: 0

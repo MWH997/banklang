@@ -337,6 +337,16 @@ export function lintCobol(
       );
     }
 
+    // A `CBL` or `PROCESS` statement is compiler-directing rather than source.
+    // The Programming Guide puts it "before the IDENTIFICATION DIVISION header
+    // and before any comment lines", says it "can start in column 1 or after"
+    // when there is no sequence field, and requires it to end at or before
+    // column 72 — which the line-length rule above has already checked. It has
+    // no indicator area and no Area A, so the rest of this does not apply.
+    if (/^(?:CBL|PROCESS)\s/.test(line)) {
+      return;
+    }
+
     const indicator = line[INDICATOR_INDEX] ?? " ";
     if (line.trim() !== "" && !" -*/D".includes(indicator)) {
       report(

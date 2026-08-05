@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, localCobol } from "./helpers";
 
 /**
  * `json` and `xml` — COBOL `JSON GENERATE` and `XML GENERATE`.
@@ -231,7 +231,7 @@ ${body}
     const dir = mkdtempSync(join(tmpdir(), "bankc-serialize-"));
     const source = join(dir, "program.cbl");
     const binary = join(dir, "program");
-    writeFileSync(source, result.cobol ?? "", "utf8");
+    writeFileSync(source, localCobol(result.cobol), "utf8");
 
     // The audit event calls out to the reference runtime, so it is linked in.
     const built = spawnSync(

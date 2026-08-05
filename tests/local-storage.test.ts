@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { localCobol } from "./helpers";
 
 /**
  * Where a `let` ends up in the generated program.
@@ -49,7 +50,7 @@ function expectCobcAccepts(cobol: string): void {
     mkdtempSync(join(tmpdir(), "bankc-locals-")),
     "program.cbl",
   );
-  writeFileSync(file, cobol, "utf8");
+  writeFileSync(file, localCobol(cobol), "utf8");
   const result = spawnSync("cobc", ["-fsyntax-only", "-fixed", file], {
     encoding: "utf8",
   });

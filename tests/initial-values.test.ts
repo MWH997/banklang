@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { localCobol } from "./helpers";
 
 /**
  * `processed: binary<9> = 0;` — a COBOL `VALUE` clause.
@@ -198,7 +199,7 @@ entry transaction run(counters: Counters) {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-initial-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
 
     const built = spawnSync(
       "cobc",

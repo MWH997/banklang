@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { parmDriver } from "./helpers";
+import { localCobol, parmDriver } from "./helpers";
 
 /**
  * `varying <min> to <max> length <field>` — `RECORD IS VARYING IN SIZE`.
@@ -163,7 +163,7 @@ describe("executed", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-varying-"));
-    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
     // The record length is an entry parameter, so it arrives in the job's PARM
     // and the program takes `PROCEDURE DIVISION USING`. The driver supplies the
     // parameter list the initiator would.
