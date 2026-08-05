@@ -455,6 +455,8 @@ function printType(type: TypeNode): string {
       return `string<${type.length}>`;
     case "BoolType":
       return "bool";
+    case "TemporalType":
+      return type.unit;
     case "TypeReference":
       return type.typeArguments.length > 0
         ? `${type.name}<${type.typeArguments.map(printType).join(", ")}>`
@@ -495,6 +497,8 @@ function printExpression(expression: ExpressionNode): string {
       return `${expression.enumName}.${expression.member}`;
     case "IndexAccess":
       return `${printExpression(expression.target)}[${printExpression(expression.index)}]`;
+    case "TemporalCall":
+      return `${expression.operation}(${expression.args.map(printExpression).join(", ")})`;
     case "NullableCheck":
       return `${expression.operation}(${printExpression(expression.operand)})`;
   }

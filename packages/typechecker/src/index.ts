@@ -4,6 +4,7 @@ import {
   type BlockNode,
   type CursorLoopStatementNode,
   type MemberAccessNode,
+  type TemporalCallNode,
   type BooleanLiteralNode,
   type DeclarationNode,
   type DecimalLiteralNode,
@@ -117,11 +118,25 @@ export type ResolvedType =
   | DecimalType
   | StringType
   | BoolType
+  | TemporalType
   | RecordType
   | CurrencyType
   | EnumType
   | NullableType
   | ArrayType;
+
+/**
+ * `date`, `time`, or `timestamp`.
+ *
+ * A date is nominally typed: it may be compared with another date but not with
+ * an amount, and not with a plain integer that happens to have eight digits.
+ * The storage is the mainframe convention — `PIC 9(8)` as YYYYMMDD — precisely
+ * so that comparison and sorting are the ordinary numeric ones.
+ */
+export interface TemporalType {
+  kind: "temporal";
+  unit: "date" | "time" | "timestamp";
+}
 
 export interface ResolvedEnum {
   name: string;
@@ -2352,6 +2367,80 @@ function isSensitiveExpression(
   }
 }
 
+/** A whole number of days, the type `daysBetween` returns and `addDays` takes. */
+const DAY_COUNT: ResolvedType = {
+  kind: "decimal",
+  precision: 9,
+  scale: 0,
+};
+
+/**
+ * `today()`, `addDays(when, days)`, and `daysBetween(from, to)`.
+ *
+ * Adding a day to 20260131 is not adding one to the digits, so the arguments
+ * are checked as calendar values rather than as numbers that happen to fit.
+ */
+function inferTemporalCall(
+  expression: TemporalCallNode,
+  scope: Map<string, ResolvedType>,
+  aliases: Record<string, ResolvedType>,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedType | null {
+  const args = expression.args.map((argument) =>
+    inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
+  );
+
+  const reject = (message: string, hint: string): null => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TYPE-003",
+        severity: "error",
+        message,
+        span: expression.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  };
+
+  const isDate = (type: ResolvedType | null): boolean =>
+    type?.kind === "temporal" && type.unit === "date";
+
+  switch (expression.operation) {
+    case "today":
+      if (args.length !== 0) {
+        return reject("today() takes no arguments.", "Write `today()`.");
+      }
+      return { kind: "temporal", unit: "date" };
+
+    case "addDays":
+      if (args.length !== 2 || !isDate(args[0])) {
+        return reject(
+          "addDays expects a date and a whole number of days.",
+          "Write `addDays(valueDate, 30)`.",
+        );
+      }
+      if (args[1] && !typesCompatible(DAY_COUNT, args[1])) {
+        return reject(
+          `addDays expects a whole number of days but received ${describeType(args[1])}.`,
+          "A day count is decimal<9, 0>; a fraction of a day is not a date.",
+        );
+      }
+      return { kind: "temporal", unit: "date" };
+
+    case "daysBetween":
+      if (args.length !== 2 || !isDate(args[0]) || !isDate(args[1])) {
+        return reject(
+          "daysBetween expects two dates.",
+          "Write `daysBetween(openedOn, today())`.",
+        );
+      }
+      return DAY_COUNT;
+  }
+}
+
 /** The declared field a member access reads, when it resolves to one. */
 function sensitiveFieldOf(
   expression: MemberAccessNode,
@@ -3557,6 +3646,14 @@ function inferExpressionType(
 
       return target.element;
     }
+    case "TemporalCall":
+      return inferTemporalCall(
+        expression,
+        scope,
+        aliases,
+        recordMap,
+        diagnostics,
+      );
     case "NullableCheck": {
       const operand = inferExpressionType(
         expression.operand,
@@ -4275,6 +4372,8 @@ function typeToTypeNode(type: ResolvedType, span: SourceSpan): TypeNode | null {
       return { kind: "StringType", length: type.length, span };
     case "bool":
       return { kind: "BoolType", span };
+    case "temporal":
+      return { kind: "TemporalType", unit: type.unit, span };
     case "currency":
       return {
         kind: "CurrencyType",
@@ -4391,6 +4490,8 @@ function describeType(type: ResolvedType): string {
       return `string<${type.length}>`;
     case "bool":
       return "bool";
+    case "temporal":
+      return type.unit;
     case "record":
       return type.name;
     case "currency":
@@ -4489,6 +4590,30 @@ function inferBinaryExpressionType(
             message: `Cannot compare ${describeType(left)} with ${describeType(right)}.`,
             span: expression.span,
             hint: "Compare amounts in the same currency.",
+            backendProfile: null,
+          }),
+        );
+        return null;
+      }
+      return { kind: "bool" };
+    }
+
+    // Dates and times order chronologically, which is the whole reason they are
+    // stored as YYYYMMDD. Ordering is allowed; mixing a date with a time, or
+    // with an amount, is not.
+    if (left.kind === "temporal" || right.kind === "temporal") {
+      if (
+        left.kind !== "temporal" ||
+        right.kind !== "temporal" ||
+        left.unit !== right.unit
+      ) {
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-TYPE-003",
+            severity: "error",
+            message: `Cannot compare ${describeType(left)} with ${describeType(right)}.`,
+            span: expression.span,
+            hint: "Compare a date with a date, a time with a time, and a timestamp with a timestamp.",
             backendProfile: null,
           }),
         );
@@ -4695,6 +4820,8 @@ function resolveTypeNode(
       return resolveString(node, diagnostics, span);
     case "BoolType":
       return { kind: "bool" };
+    case "TemporalType":
+      return { kind: "temporal", unit: node.unit };
     case "CurrencyType":
       return {
         kind: "currency",

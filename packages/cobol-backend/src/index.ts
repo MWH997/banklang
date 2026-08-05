@@ -31,6 +31,7 @@ import type {
   IRTransaction,
   IRForEachStatement,
   IRRaiseStatement,
+  IRTemporalCallExpression,
 } from "../../ir/src/index";
 import {
   decimalPicture,
@@ -41,6 +42,7 @@ import {
   toCobolPicture,
   toCobolProgramId,
   enumWidth,
+  temporalPicture,
 } from "../../cobol-ir/src/index";
 import {
   describeRecordLayout,
@@ -1953,7 +1955,11 @@ function emitComputeInto(
     expression.resolvedType.kind === "enum" ||
     expression.resolvedType.kind === "record" ||
     expression.resolvedType.kind === "array" ||
-    expression.resolvedType.kind === "nullable"
+    expression.resolvedType.kind === "nullable" ||
+    // A date is numeric storage, but every value that reaches one comes from an
+    // intrinsic function returning a whole number, so MOVE says what is meant
+    // and avoids a COMPUTE that could silently round a calendar date.
+    expression.resolvedType.kind === "temporal"
   ) {
     addLine(`${indent}MOVE ${renderExpression(expression)} TO ${target}`);
     return;
@@ -2322,8 +2328,34 @@ function emitReturnStatement(
   emitComputeInto(resultName, statement.expression, addLine, indent);
 }
 
+/**
+ * A calendar builtin, as the COBOL intrinsic functions that know the calendar.
+ *
+ * `INTEGER-OF-DATE` converts YYYYMMDD to a day number and `DATE-OF-INTEGER`
+ * converts back, so adding thirty days is addition on the day number rather
+ * than on the digits — which is the difference between the 2nd of March and the
+ * 61st of January.
+ */
+function renderTemporalCall(expression: IRTemporalCallExpression): string {
+  const [first, second] = expression.args;
+
+  switch (expression.operation) {
+    case "today":
+      // CURRENT-DATE returns an alphanumeric YYYYMMDDHHMMSS...; the first eight
+      // characters are the date, and NUMVAL makes them a number the receiving
+      // PIC 9(8) accepts without relying on an alphanumeric-to-numeric MOVE.
+      return "FUNCTION NUMVAL(FUNCTION CURRENT-DATE(1:8))";
+    case "addDays":
+      return `FUNCTION DATE-OF-INTEGER(FUNCTION INTEGER-OF-DATE(${renderExpression(first)}) + ${renderExpression(second)})`;
+    case "daysBetween":
+      return `(FUNCTION INTEGER-OF-DATE(${renderExpression(second)}) - FUNCTION INTEGER-OF-DATE(${renderExpression(first)}))`;
+  }
+}
+
 function renderExpression(expression: IRExpression): string {
   switch (expression.kind) {
+    case "TemporalCall":
+      return renderTemporalCall(expression);
     case "Identifier":
       return resolveIdentifier(expression.name);
     case "DecimalLiteral":
@@ -2628,6 +2660,8 @@ function toJclDatasetName(cobolArtifactPath: string): string {
 
 function formatCobolType(type: IRType): string {
   switch (type.kind) {
+    case "temporal":
+      return temporalPicture(type.unit);
     case "decimal":
       return decimalPicture(type.precision, type.scale);
     case "string":

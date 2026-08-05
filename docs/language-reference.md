@@ -20,8 +20,6 @@ Supported primitive types:
 
 ```ts
 bool;
-int<digits>;
-uint<digits>;
 decimal<precision, scale>;
 string<length>;
 date;
@@ -36,6 +34,47 @@ type AccountId = string<16>;
 type CustomerId = string<20>;
 type Amount = decimal<18, 2>;
 ```
+
+### 3a. Dates and times
+
+Banking is dates: a value date is not a posting date, an accrual runs between
+two of them, and a maturity is compared against today. They are separate types
+rather than aliases for a number, so a date cannot be compared with an amount,
+or with a plain integer that happens to have eight digits.
+
+| Type        | Storage     | Holds                        |
+| ----------- | ----------- | ---------------------------- |
+| `date`      | `PIC 9(8)`  | `YYYYMMDD`                   |
+| `time`      | `PIC 9(6)`  | `HHMMSS`                     |
+| `timestamp` | `PIC X(26)` | the Db2 host variable format |
+
+`PIC 9(8)` as `YYYYMMDD` is the mainframe convention, and it is chosen for a
+reason that matters: in that layout, ordinary numeric comparison is also
+chronological comparison, and an ordinary sort is a chronological sort. A
+timestamp is stored in Db2's own host variable format so it can be read from and
+written to a `TIMESTAMP` column without conversion.
+
+Dates order with `<`, `<=`, `>`, `>=`, `==`, and `!=`, but only against the same
+kind: comparing a `date` with a `time`, or with an amount, is `BANK-TYPE-003`.
+
+Three builtins do the arithmetic:
+
+```ts
+let runDate: date = today();
+let term: decimal<9, 0> = daysBetween(loan.openedOn, loan.maturesOn);
+let grace: date = addDays(loan.maturesOn, 5);
+```
+
+These lower to the COBOL intrinsics that know the calendar — `CURRENT-DATE`,
+`INTEGER-OF-DATE`, and `DATE-OF-INTEGER` — rather than to `+` on the stored
+digits. That is the whole reason they exist: thirty days after the 31st of
+January is the 2nd of March, which arithmetic on `20260131` would never produce.
+A date is therefore not something you can add to directly, and a fraction of a
+day is not a number of days (`BANK-TYPE-003`).
+
+**Not yet available:** constructing a `timestamp` in the program. One is read
+from a Db2 column or a file record; there is no `now()` yet, because building
+the 26-character format needs `STRING`, which the subset does not have.
 
 ## 4. Currency types
 
