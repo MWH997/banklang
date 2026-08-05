@@ -529,7 +529,12 @@ export interface NumericCallNode extends NodeBase {
     | "annuity"
     | "presentValue"
     | "isNumeric"
-    | "toNumber";
+    | "toNumber"
+    | "integerPart"
+    | "fractionPart"
+    | "sign"
+    | "reverse"
+    | "textLength";
   args: ExpressionNode[];
 }
 

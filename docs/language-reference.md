@@ -735,15 +735,20 @@ scale 6. That result usually needs rounding before it can be stored as money.
 
 ### Numbers COBOL already knows how to work out
 
-| Written                    | COBOL                    | Gives                                    |
-| -------------------------- | ------------------------ | ---------------------------------------- |
-| `abs(x)`                   | `FUNCTION ABS`           | the magnitude, keeping `x`'s type        |
-| `min(a, b)` / `max(a, b)`  | `FUNCTION MIN` / `MAX`   | one of the two, which must be like-typed |
-| `mod(a, b)` / `rem(a, b)`  | `FUNCTION MOD` / `REM`   | whole-number remainder                   |
-| `annuity(rate, periods)`   | `FUNCTION ANNUITY`       | the repayment factor of a loan           |
-| `presentValue(rate, cash)` | `FUNCTION PRESENT-VALUE` | a cash flow discounted one period        |
-| `isNumeric(text)`          | `FUNCTION TEST-NUMVAL-C` | whether the characters will convert      |
-| `toNumber(text)`           | `FUNCTION NUMVAL-C`      | the number those characters spell        |
+| Written                    | COBOL                         | Gives                                    |
+| -------------------------- | ----------------------------- | ---------------------------------------- |
+| `abs(x)`                   | `FUNCTION ABS`                | the magnitude, keeping `x`'s type        |
+| `min(a, b)` / `max(a, b)`  | `FUNCTION MIN` / `MAX`        | one of the two, which must be like-typed |
+| `mod(a, b)` / `rem(a, b)`  | `FUNCTION MOD` / `REM`        | whole-number remainder                   |
+| `annuity(rate, periods)`   | `FUNCTION ANNUITY`            | the repayment factor of a loan           |
+| `presentValue(rate, cash)` | `FUNCTION PRESENT-VALUE`      | a cash flow discounted one period        |
+| `isNumeric(text)`          | `FUNCTION TEST-NUMVAL-C`      | whether the characters will convert      |
+| `toNumber(text)`           | `FUNCTION NUMVAL-C`           | the number those characters spell        |
+| `integerPart(x)`           | `FUNCTION INTEGER-PART`       | the whole units                          |
+| `fractionPart(x)`          | `FUNCTION FRACTION-PART`      | what is left of them                     |
+| `sign(x)`                  | `FUNCTION SIGN`               | −1, 0, or 1                              |
+| `reverse(text)`            | `FUNCTION REVERSE`            | the same characters, back to front       |
+| `textLength(text)`         | `FUNCTION STORED-CHAR-LENGTH` | what the field holds, not its width      |
 
 Two of these are in COBOL because COBOL was written for this industry.
 `annuity` is the repayment factor of a loan, so a mortgage quote is one line:
@@ -787,7 +792,21 @@ if isNumeric(feed.rawAmount) {
 Both read grouping and a currency symbol as well as plain digits, because
 `NUMVAL-C` does.
 
-These are contextual names, so `min`, `max`, and `abs` remain usable as fields.
+`integerPart` and `fractionPart` split an amount into whole units and what is
+left of them, which is what a cash-handling or a settlement program does.
+`sign` says which way an amount moves without comparing it twice.
+
+`textLength` is the length the field actually holds, trailing spaces excluded —
+not the width it was declared as, which the compiler already knows. That is the
+length a variable-length record needs to write, and what `reverse` pairs with
+for the check-digit algorithms that read a number backwards.
+
+`annuity`, `presentValue`, `toNumber`, `integerPart`, `fractionPart`, `sign`,
+and `textLength` take their precision from whatever they are assigned to, the
+way `round` does: none of them has a natural width of its own.
+
+These are contextual names, so `min`, `max`, `abs`, and `sign` remain usable as
+fields.
 
 ### Rounding is explicit
 

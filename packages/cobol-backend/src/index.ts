@@ -4132,6 +4132,19 @@ function renderNumericCall(expression: IRNumericCallExpression): string {
       // the position of the one that stopped it. Asking first is the
       // difference between rejecting a record and abending on it.
       return `(FUNCTION TEST-NUMVAL-C(${first}) = 0)`;
+    case "integerPart":
+      return `FUNCTION INTEGER-PART(${first})`;
+    case "fractionPart":
+      return `FUNCTION FRACTION-PART(${first})`;
+    case "sign":
+      return `FUNCTION SIGN(${first})`;
+    case "reverse":
+      return `FUNCTION REVERSE(${first})`;
+    case "textLength":
+      // The declared width of a COBOL field is fixed, so LENGTH would answer a
+      // question nobody asked. This is what the field actually holds, trailing
+      // spaces excluded — the length a variable-length feed needs to write.
+      return `FUNCTION STORED-CHAR-LENGTH(${first})`;
   }
 }
 
