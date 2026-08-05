@@ -1,6 +1,11 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { emitCobol } from "../packages/cobol-backend/src/index";
+import { emitCobol, renderCopybook } from "../packages/cobol-backend/src/index";
 import { compile } from "../packages/compiler/src/index";
 import { copybookMemberName } from "../packages/cobol-ir/src/index";
 import { compileSource } from "./helpers";
@@ -100,5 +105,56 @@ entry transaction go(a: AccountRecord, b: BalanceRow) {
   audit("DONE", a.idempotencyKey);
 }`);
     expect(result.diagnostics).toEqual([]);
+  });
+});
+
+/**
+ * The two names have to agree, run rather than argued.
+ *
+ * `copy` mode had never been compiled anywhere: no example sets it, so the
+ * GnuCOBOL gate never reached it, and the `COPY` the program emitted and the
+ * file the compiler wrote were free to drift apart — which they had. With the
+ * copybook written under any other name, `cobc` says
+ * `TRANSFER: No such file or directory`.
+ */
+describe("executed in copy mode", () => {
+  const available =
+    spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
+
+  it.skipIf(!available)("resolves the COPY against the file written", () => {
+    const { ir } = compileSource(`${PREAMBLE}
+entry transaction post(request: TransferRequest) {
+  request.debitAccount = "ACC0000000000001";
+  audit("POSTED", request.idempotencyKey);
+}`);
+    const cobol = emitCobol(ir.program!, { copybookMode: "copy" }).cobol;
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-copy-"));
+    mkdirSync(join(dir, "cpy"), { recursive: true });
+    writeFileSync(join(dir, "program.cbl"), cobol, "utf8");
+    for (const record of ir.program!.records) {
+      writeFileSync(
+        join(dir, "cpy", `${copybookMemberName(record.name)}.cpy`),
+        renderCopybook(record),
+        "utf8",
+      );
+    }
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-fixed",
+        "-I",
+        "cpy",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+    expect(spawnSync("./program", [], { cwd: dir }).status).toBe(0);
   });
 });

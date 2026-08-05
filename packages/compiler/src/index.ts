@@ -5,7 +5,7 @@ import {
   renderCopybook,
   type SourceMapDocument,
 } from "../../cobol-backend/src/index";
-import { toCobolName } from "../../cobol-ir/src/index";
+import { copybookMemberName, toCobolName } from "../../cobol-ir/src/index";
 import {
   buildCopybookLayoutDocument,
   type CopybookLayoutDocument,
@@ -36,7 +36,13 @@ export type {
 export interface GeneratedCopybook {
   /** Record name as written in BankTS. */
   record: string;
-  /** Generated copybook file name, such as `TRANSFER-REQUEST.cpy`. */
+  /**
+   * Generated copybook file name, such as `TRANSFER.cpy`.
+   *
+   * Named for the PDS member, not the record: that is what the `COPY` the
+   * program emits resolves on, so a file named any other way is one the
+   * compiler cannot find.
+   */
   fileName: string;
   content: string;
 }
@@ -171,7 +177,7 @@ export function compile(
     cobol: emitted.cobol,
     copybooks: program.records.map((record) => ({
       record: record.name,
-      fileName: `${toCobolName(record.name)}.cpy`,
+      fileName: `${copybookMemberName(record.name)}.cpy`,
       content: renderCopybook(record),
     })),
     sourceMap: emitted.sourceMap,

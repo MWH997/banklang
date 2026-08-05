@@ -24,7 +24,7 @@ describe("copybook emitter", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
-      const outputPath = join(outDir, "copybooks", "TRANSFER-REQUEST.cpy");
+      const outputPath = join(outDir, "copybooks", "TRANSFER.cpy");
       expect(readFileSync(outputPath, "utf8")).toBe(expected);
     } finally {
       rmSync(outDir, { recursive: true, force: true });
