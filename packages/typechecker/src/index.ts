@@ -4938,15 +4938,7 @@ function resolveRenames(
 
     // A group move treats the run as alphanumeric, whatever the pictures
     // inside it are, so that is the type the name carries.
-    const bytes = fields
-      .slice(from, to + 1)
-      .reduce(
-        (total, field) =>
-          field.redefines || field.renames
-            ? total
-            : total + declaredByteLength(field.type),
-        0,
-      );
+    const bytes = declaredRunLength(fields.slice(from, to + 1));
 
     resolved.push({
       name: entry.name,
@@ -5004,28 +4996,49 @@ function declaredByteLength(type: ResolvedType): number {
     case "array":
       return declaredByteLength(type.element) * type.length;
     case "record":
-      return type.fields.reduce(
-        (total, entry) =>
-          // A redefining field adds nothing, because it re-reads storage,
-          // and a renames adds nothing, because it names a run of fields
-          // already counted.
-          entry.redefines || entry.renames
-            ? total
-            : total + declaredByteLength(entry.type),
-        0,
-      );
+      return declaredRunLength(type.fields);
     case "edited":
       return 0;
   }
 }
 
 /**
+ * Bytes a run of declared fields occupies.
+ *
+ * A renames adds nothing: it is a second name for fields already counted. A
+ * redefines usually adds nothing either, because it re-reads storage that is
+ * already there — but COBOL permits a redefinition longer than what it
+ * redefines and then extends the storage area, so the run has to grow by the
+ * overhang. Counting nothing for it makes the record shorter here than the one
+ * the emitter lays out, and a `renames` over such a run would name fewer bytes
+ * than a group move actually touches.
+ */
+function declaredRunLength(fields: readonly ResolvedField[]): number {
+  let offset = 0;
+  /** Where the field currently being redefined starts. */
+  let anchor = 0;
+
+  for (const field of fields) {
+    if (field.renames) {
+      continue;
+    }
+    if (field.redefines) {
+      offset = Math.max(offset, anchor + declaredByteLength(field.type));
+      continue;
+    }
+    anchor = offset;
+    offset += declaredByteLength(field.type);
+  }
+
+  return offset;
+}
+
+/**
  * `redefines` and `depending on`.
  *
  * A redefining field is a second reading of storage another field already
- * occupies, so it must name a field declared before it and must be no longer
- * than what it redefines — COBOL gives it no storage of its own, and a longer
- * one would read past the end into whatever follows.
+ * occupies, so it must name the area immediately before it. It may be longer:
+ * COBOL then extends the storage area rather than overrunning it.
  *
  * `depending on` names the field holding how much of a table this record uses,
  * which must be a whole number declared before the table: COBOL reads it to
@@ -5036,7 +5049,16 @@ function validateVariantFields(
   fields: ResolvedField[],
   diagnostics: Diagnostic[],
 ): void {
-  const byteLength = declaredByteLength;
+  /**
+   * The area a `redefines` may name: the last field that took new storage,
+   * plus every redefinition of it written since.
+   *
+   * COBOL requires the redefinitions of an area to follow its description with
+   * nothing in between that defines new character positions, and allows each to
+   * name either the original or the redefinition before it. Anything else names
+   * an area that is no longer the one being described.
+   */
+  const redefinable = new Set<string>();
 
   fields.forEach((field, index) => {
     const earlier = fields.slice(0, index);
@@ -5054,18 +5076,61 @@ function validateVariantFields(
             backendProfile: null,
           }),
         );
-      } else if (byteLength(field.type) > byteLength(target.type)) {
+      } else if (!redefinable.has(field.redefines)) {
+        // Enterprise COBOL and GnuCOBOL both reject this outright — "REDEFINES
+        // must follow the original definition". Left to itself the layout
+        // reports the redefinition at the last field's offset instead of the
+        // one it names, so the copybook describes the alternate reading at a
+        // position the dataset does not have, and the compile fails anyway.
         diagnostics.push(
           createDiagnostic({
             id: "BANK-COPY-004",
             severity: "error",
-            message: `${field.name} is ${byteLength(field.type)} bytes but redefines ${target.name}, which is ${byteLength(target.type)}.`,
+            message: `${field.name} redefines ${field.redefines}, which is not the field immediately before it in ${declaration.name}.`,
             span: field.span,
-            hint: "A redefining field gets no storage of its own, so a longer one reads past the end into whatever follows.",
+            hint: "COBOL requires the redefinitions of an area to follow it with no field in between that takes storage of its own. Move the redefining field up to sit under what it redefines.",
+            backendProfile: null,
+          }),
+        );
+      } else if (target.type.kind === "array") {
+        // A redefined item cannot carry OCCURS: the redefinition names one area
+        // and a table is a repetition of one, so there is no single area to
+        // alias. Redefine the group holding the table instead.
+        diagnostics.push(
+          createDiagnostic({
+            id: "BANK-COPY-004",
+            severity: "error",
+            message: `${field.name} redefines ${target.name}, which is a table.`,
+            span: field.span,
+            hint: "COBOL forbids OCCURS on a redefined item. Redefine a field that is not a table, or wrap the table in a record and redefine that.",
             backendProfile: null,
           }),
         );
       }
+
+      // A further redefinition may name this one, and every earlier reading of
+      // the same area stays namable; a field that takes storage ends the run.
+      redefinable.add(field.name);
+    } else if (!field.renames) {
+      redefinable.clear();
+      redefinable.add(field.name);
+    }
+
+    // COBOL allows neither end of a redefinition to be variable length: the
+    // area's size has to be known to lay out what follows it. GnuCOBOL rejects
+    // it as "cannot be variable length"; the compiler used to emit
+    // `REDEFINES ... OCCURS 1 TO n DEPENDING ON`, which no COBOL accepts.
+    if (field.redefines && field.dependingOn) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-COPY-004",
+          severity: "error",
+          message: `${field.name} both redefines ${field.redefines} and depends on ${field.dependingOn}.`,
+          span: field.span,
+          hint: "A redefinition names a fixed area, so neither it nor what it redefines can vary in length.",
+          backendProfile: null,
+        }),
+      );
     }
 
     if (field.dependingOn) {

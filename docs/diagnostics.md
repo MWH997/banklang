@@ -469,21 +469,33 @@ New copybook layout changes field offsets or byte lengths incompatibly.
 
 ### `BANK-COPY-004` invalid variant record clause
 
-A `redefines` names a field that is not declared before it, or is longer than
-what it redefines. A `depending on` names something that is not a count declared
-before the table, which COBOL reads to decide the record's length.
+A `redefines` names something COBOL will not let it redefine. A `depending on`
+names something that is not a count declared before the table, which COBOL reads
+to decide the record's length.
 
-On the length, this compiler is **stricter than COBOL and says so**. Enterprise
-COBOL permits a longer redefining item except where the redefined item is an
-external data record; the redefinition extends the storage area rather than
-overrunning it, and the Language Reference gives `05 A PIC X(6).` redefined by
-`05 B REDEFINES A PIC N(4).` — eight bytes over six — as a legal example.
+A redefinition **may** be longer than what it redefines. Enterprise COBOL then
+extends the storage area rather than overrunning it — the Language Reference
+gives `05 A PIC X(6).` redefined by `05 B REDEFINES A PIC N(4).`, eight bytes
+over six, as a legal example — and the record runs to the end of the longest
+reading of the area, so every field after it moves by the overhang. The layout
+report shows this. The one case COBOL forbids is a redefined item declared as an
+external data record, which this language cannot declare.
 
-The narrowing is deliberate. A redefinition that changes the record's length
-moves every field after it, and a copybook whose length depends on which of
-several readings happens to be longest is the kind that gets read wrong by the
-program on the other side of the interface. If a layout genuinely needs the
-longer reading, declare the longer field first and redefine it with the shorter.
+What it rejects:
+
+- **A field that is not declared before it.** A redefinition re-reads storage
+  that already exists.
+- **A field that is not the one immediately before it.** COBOL requires the
+  redefinitions of an area to follow its description with nothing in between
+  that takes storage of its own; a further redefinition may name either the
+  original or the redefinition before it. `A; X; B redefines A` is rejected by
+  Enterprise COBOL and by GnuCOBOL ("REDEFINES must follow the original
+  definition").
+- **A table.** A table is a repetition of an area rather than one area, so there
+  is no single run of bytes to alias, and COBOL forbids `OCCURS` on a redefined
+  item. Wrap the table in a record and redefine that.
+- **A `depending on` on the redefining field.** Neither end of a redefinition
+  may vary in length: the area's size has to be known to lay out what follows.
 
 ### `BANK-COPY-005` invalid field clause
 
