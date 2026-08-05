@@ -321,8 +321,9 @@ describe("a Db2 job", () => {
     const jcl = jclFor(WITH_SQL);
     const run = jcl.slice(jcl.indexOf("//RUN "));
 
-    expect(run).toContain("//RUN      EXEC PGM=IKJEFT01");
+    expect(run).toContain("//RUN      EXEC PGM=IKJEFT1B");
     expect(run).not.toContain("//RUN      EXEC PGM=SQLBATCH");
+    expect(run).not.toContain("//RUN      EXEC PGM=IKJEFT01");
     expect(run).toContain("  DSN SYSTEM(DSN)");
     expect(run).toContain("  RUN PROGRAM(SQLBATCH) PLAN(SQLBATCH) -");
     expect(run).toContain("      LIB('BANKLANG.LOADLIB')");
@@ -371,5 +372,59 @@ describe("a CICS job", () => {
 
     expect(jcl).not.toContain("//RUN      EXEC");
     expect(jcl).toContain("//* No run step: a CICS program is started by");
+  });
+});
+
+/**
+ * Which TSO entry point runs the program, which is not a cosmetic choice.
+ *
+ * Both return the program's code — DSN puts the highest value from the RUN
+ * subcommand in register 15, and terminates if the program gives a non-zero one
+ * — but they differ on an abend. Under IKJEFT01 an abending program does not
+ * abend the step: TSO catches it and the step ends *normally* with condition
+ * code 12. A step that ended normally takes the normal disposition, so the
+ * DELETE on the output datasets is never honoured and the half-written dataset
+ * is catalogued after all. IKJEFT1B terminates the step with X'04C', which is
+ * what makes a conditional disposition mean anything.
+ *
+ * The bind step keeps IKJEFT01 for the opposite reason: a BIND that only warns
+ * returns 4, and IKJEFT1B stops the moment anything returns non-zero, so the
+ * plan would go unbound because the package warned.
+ */
+describe("the TSO entry point", () => {
+  const SQL_WITH_FILE = `module SqlFileBatch;
+
+record AccountRow {
+  rowAccountId: string<16>;
+}
+
+file postingOutput sequential output record AccountRow status postingStatus;
+
+sql fetchAccount(keyAccountId: string<16>): AccountRow {
+  SELECT ACCOUNT_ID INTO :rowAccountId FROM ACCOUNT WHERE ACCOUNT_ID = :keyAccountId
+}
+
+entry transaction settle(row: AccountRow, idempotencyKey: string<36>) {
+  execute fetchAccount("ACC-1") into row;
+  if sqlcode == 0 {
+    audit("FOUND", idempotencyKey);
+  } else {
+    audit("MISSING", idempotencyKey);
+  }
+}`;
+
+  it("runs the program under the entry point that abends the step", () => {
+    const jcl = jclFor(SQL_WITH_FILE);
+    const run = jcl.slice(jcl.indexOf("//RUN "));
+
+    expect(run).toContain("PGM=IKJEFT1B");
+    expect(run).toContain("DISP=(NEW,CATLG,DELETE)");
+  });
+
+  it("binds under the one that tolerates a warning", () => {
+    const jcl = jclFor(SQL_WITH_FILE);
+    const bind = jcl.slice(jcl.indexOf("//BIND "), jcl.indexOf("//RUN "));
+
+    expect(bind).toContain("PGM=IKJEFT01");
   });
 });

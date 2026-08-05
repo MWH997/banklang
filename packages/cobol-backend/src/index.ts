@@ -908,6 +908,12 @@ export function emitCobol(
   // region passes the I/O PCB ahead of every database PCB. Omitting it does not
   // fail to compile: it shifts every DB PCB by one, so the program reads the
   // I/O PCB as its first database and works on whatever that memory holds.
+  //
+  // Every field, in IMS's order, because that is what a PCB mask is: a
+  // description of storage the region owns. In DB batch only the status code is
+  // populated, but the mask is not a list of the fields this program happens to
+  // read — a short one is a description that stops being true the moment
+  // anything is added to the end of it.
   if (program.databases.length > 0) {
     addLine(`       01  ${IO_PCB_NAME}.`);
     addLine(`           05  ${`${IO_PCB_NAME}-LTERM`.padEnd(24)} PIC X(8).`);
@@ -924,6 +930,25 @@ export function emitCobol(
     );
     addLine(`           05  ${`${IO_PCB_NAME}-MOD-NAME`.padEnd(24)} PIC X(8).`);
     addLine(`           05  ${`${IO_PCB_NAME}-USER-ID`.padEnd(24)} PIC X(8).`);
+    addLine(
+      `           05  ${`${IO_PCB_NAME}-GROUP-NAME`.padEnd(24)} PIC X(8).`,
+    );
+    // The extended time stamp. Its time is twelve packed digits carrying no
+    // sign, and its UTC offset is four bits of attributes ahead of a packed
+    // value, so neither is a COBOL numeric picture — X is what describes the
+    // bytes without claiming they are something COBOL can compute on.
+    addLine(`           05  ${IO_PCB_NAME}-TIMESTAMP.`);
+    addLine(
+      `               10  ${`${IO_PCB_NAME}-TS-DATE`.padEnd(20)} PIC S9(7) COMP-3.`,
+    );
+    addLine(
+      `               10  ${`${IO_PCB_NAME}-TS-TIME`.padEnd(20)} PIC X(6).`,
+    );
+    addLine(
+      `               10  ${`${IO_PCB_NAME}-TS-UTC`.padEnd(20)} PIC X(2).`,
+    );
+    addLine(`           05  ${`${IO_PCB_NAME}-USER-IND`.padEnd(24)} PIC X(1).`);
+    addLine(`           05  FILLER                   PIC X(3).`);
   }
 
   // Then a PCB per database, in the order the PSB lists them. The program never
@@ -1271,6 +1296,10 @@ export function emitJcl(
 
   if (needsDb2) {
     lines.push(
+      // IKJEFT01 here, unlike the run step: a BIND that only warns returns 4,
+      // and IKJEFT1B stops the moment anything returns non-zero — so the plan
+      // below would not be bound because the package warned. The step
+      // allocates no datasets, so nothing turns on its abend behaviour.
       "//BIND     EXEC PGM=IKJEFT01,COND=(4,LT)",
       "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
       "//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB",
@@ -1300,10 +1329,19 @@ export function emitJcl(
       // the step runs TSO in batch, and DSN RUN attaches the program to the
       // subsystem under a plan. Started directly it gets no thread at all and
       // fails on its first SQL statement.
+      // IKJEFT1B rather than IKJEFT01, for the abend. Both return the program's
+      // code — DSN puts the highest value from the RUN subcommand in register
+      // 15 — but under IKJEFT01 a program that abends does not abend the step:
+      // TSO catches it and the step ends *normally* with condition code 12.
+      // A step that ended normally takes the normal disposition, so the DELETE
+      // on the output datasets below would not be honoured and a half-written
+      // dataset would be catalogued after all. IKJEFT1B terminates the step
+      // with X'04C', which is what makes a conditional disposition mean
+      // something.
       lines.push(
         "//* A Db2 program is run by the DSN command processor under TSO in",
         "//* batch, not by EXEC PGM=. Starting it directly gives it no thread.",
-        `//RUN      EXEC PGM=IKJEFT01,DYNAMNBR=20${cond}`,
+        `//RUN      EXEC PGM=IKJEFT1B,DYNAMNBR=20${cond}`,
         "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
         "//SYSTSPRT DD SYSOUT=*",
       );
