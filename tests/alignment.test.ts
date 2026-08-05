@@ -155,3 +155,90 @@ entry transaction touch1(master: Master) {
     expect(boundary(18)).toBe(4);
   });
 });
+
+/**
+ * A `sync`ed binary inside a table, which forces slack twice over.
+ *
+ * Once before the item, as anywhere else. And once at the end of every
+ * occurrence: IBM divides the group's size by the largest boundary anything
+ * inside it demanded and pads the difference, so that occurrence two starts on
+ * the same boundary as occurrence one. Without that the table is ragged and
+ * every element after the first has its fields somewhere else.
+ *
+ * The fixture is IBM's own worked example from the Language Reference, so the
+ * expected numbers are theirs rather than this compiler's:
+ *
+ *     01 WORK-RECORD.
+ *        05 WORK-CODE  PIC X.
+ *        05 COMP-TABLE OCCURS 10 TIMES.
+ *            10 COMP-TYPE  PIC X.
+ *           [10 SLACK      PIC XX   inserted by compiler]
+ *            10 COMP-PAY   PIC S9(4)V99 COMP SYNC.
+ *            10 COMP-HOURS PIC S9(3) COMP SYNC.
+ *            10 COMP-NAME  PIC X(5).
+ *
+ * Fourteen bytes of content, largest boundary four, so each occurrence is
+ * sixteen and the record is 1 + 160.
+ */
+describe("a table holding a synchronized item", () => {
+  const report = compile(`module Work;
+
+record CompEntry {
+  compType: string<1>;
+  compPay: binary<6> sync;
+  compHours: binary<3> sync;
+  compName: string<5>;
+}
+
+record WorkRecord {
+  workCode: string<1>;
+  compTable: CompEntry[10];
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(work: WorkRecord) {
+  audit("TOUCHED", work.idempotencyKey);
+}`).layout?.reports.find((entry) => entry.recordName === "WorkRecord");
+
+  const entry = (path: string) =>
+    report?.entries.find((item) => item.path === path);
+
+  it("pads each occurrence to the boundary the group demands", () => {
+    expect(entry("WORK-RECORD.COMP-TABLE")?.bytes).toBe(160);
+  });
+
+  it("puts the field after the table where IBM puts it", () => {
+    expect(entry("WORK-RECORD.IDEMPOTENCY-KEY")?.offset).toBe(161);
+  });
+
+  /**
+   * The slack inside the group is measured from the start of the record, not
+   * the group, so the same group is a different length in a different place.
+   * Here one byte precedes the table, so two bytes of slack reach the fullword.
+   */
+  it("counts the slack inside the occurrence", () => {
+    const packed = compile(`module Work;
+
+record Band {
+  code: string<1>;
+  pay: binary<6> sync;
+  name: string<5>;
+}
+
+record Book {
+  lead: string<1>;
+  bands: Band[10];
+  idempotencyKey: string<36>;
+}
+
+entry transaction touch1(book: Book) {
+  audit("TOUCHED", book.idempotencyKey);
+}`).layout?.reports.find((item) => item.recordName === "Book");
+
+    // 1 code + 2 slack + 4 pay + 5 name = 12, already a multiple of 4.
+    expect(
+      packed?.entries.find((item) => item.path === "BOOK.BANDS")?.bytes,
+    ).toBe(120);
+    expect(packed?.totalLength).toBe(157);
+  });
+});

@@ -99,10 +99,10 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
     if (field.renames) {
       continue;
     }
-    const length = fieldLength(field.type);
     if (field.synchronized) {
       offset += slackBefore(offset, alignmentOf(field.type));
     }
+    const length = fieldLength(field.type, offset);
     fields.push({
       name: field.name,
       cobolName: toCobolName(field.name),
@@ -127,7 +127,15 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
 /** Db2-style null indicator: a two-byte signed halfword beside the value. */
 export const NULL_INDICATOR_BYTES = 2;
 
-export function fieldLength(type: IRType): number {
+/**
+ * Bytes a field occupies at a given offset in its record.
+ *
+ * The offset matters only for a group or a table holding a `SYNCHRONIZED`
+ * binary: IBM measures the slack before one from the start of the record, so
+ * the same group is a different length in a different place. Everything else
+ * ignores it.
+ */
+export function fieldLength(type: IRType, base = 0): number {
   switch (type.kind) {
     case "edited":
       return editedLength(type.style, type.precision, type.scale);
@@ -140,8 +148,17 @@ export function fieldLength(type: IRType): number {
     case "nullable":
       // The value plus a two-byte null indicator, following the Db2 convention.
       return fieldLength(type.inner) + NULL_INDICATOR_BYTES;
-    case "array":
-      return fieldLength(type.element) * type.length;
+    case "array": {
+      // Each occurrence is padded to the largest boundary anything inside it
+      // demanded, so that every occurrence has the same internal layout. Without
+      // it the second one starts on a different boundary from the first and its
+      // fields sit somewhere else — which is why COBOL adds the bytes rather
+      // than leaving the table ragged.
+      const element = fieldLength(type.element, base);
+      const boundary = innerAlignmentOf(type.element, base);
+      const padded = element + slackBefore(element, boundary);
+      return padded * type.length;
+    }
     case "decimal":
       return numericByteLength(type.precision, type.usage);
     case "string":
@@ -150,11 +167,58 @@ export function fieldLength(type: IRType): number {
     case "bool":
       return 1;
     case "record":
-      return type.fields.reduce(
-        (total, field) => total + fieldLength(field.type),
-        0,
-      );
+      return groupLength(type.fields, base).length;
   }
+}
+
+/**
+ * A group's length, counting the slack a `SYNCHRONIZED` item inside it forces.
+ *
+ * Slack is measured from the start of the *record*, not the group: IBM's
+ * algorithm counts "all elementary data items that precede the binary item",
+ * which is why the group's own offset has to be passed in. A group holding a
+ * `sync`ed binary is a different length at offset 1 than at offset 4.
+ *
+ * `alignment` is the largest boundary any item inside demanded, which is what
+ * an enclosing `OCCURS` pads each occurrence up to.
+ */
+function groupLength(
+  fields: IRRecord["fields"],
+  base: number,
+): { length: number; alignment: number } {
+  let offset = base;
+  let alignment = 1;
+
+  for (const field of fields) {
+    // A renames is a second name for a run already laid out, and a redefines
+    // shares storage rather than adding any.
+    if (field.renames) {
+      continue;
+    }
+    if (field.synchronized) {
+      const boundary = alignmentOf(field.type);
+      offset += slackBefore(offset, boundary);
+      alignment = Math.max(alignment, boundary);
+    }
+    const inner = innerAlignmentOf(field.type, offset);
+    alignment = Math.max(alignment, inner);
+    if (!field.redefines) {
+      offset += fieldLength(field.type, offset);
+    }
+  }
+
+  return { length: offset - base, alignment };
+}
+
+/** The largest boundary demanded from inside a group or a table's element. */
+function innerAlignmentOf(type: IRType, base: number): number {
+  if (type.kind === "record") {
+    return groupLength(type.fields, base).alignment;
+  }
+  if (type.kind === "array") {
+    return innerAlignmentOf(type.element, base);
+  }
+  return 1;
 }
 
 /**
@@ -606,7 +670,13 @@ function collectLayoutEntries(
   entries: CopybookLayoutEntry[],
   nextOrder: () => number,
 ): number {
-  const length = fieldLength(field.type);
+  // The slack a SYNCHRONIZED item forces comes before it, so the offset it is
+  // reported at is past those bytes. Without this the report names an offset
+  // the dataset does not have, which is the one number anyone reads it for.
+  if (field.synchronized) {
+    offset += slackBefore(offset, alignmentOf(field.type));
+  }
+  const length = fieldLength(field.type, offset);
   const order = nextOrder();
   // A redefining field is a second reading of storage that already exists, so
   // it reports the same offset as what it redefines and adds nothing to the
