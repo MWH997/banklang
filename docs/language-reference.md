@@ -1577,6 +1577,25 @@ while accountFeedStatus == "00" limit 100000 {
 }
 ```
 
+### What the compiler checks for you
+
+Every I/O statement is followed by a generated test of the file status **key** —
+the first character, since class 0 is successful completion and includes `02`,
+`04`, `05` and `07`, not only `00`. A status outside class 0 names the operation,
+the file and the status in the job log, sets a return code of 12, and stops.
+
+The statuses a statement is written to produce are left to the program: end of
+file on a read, a key that was not there on a keyed read or a browse, a
+duplicate key on a write to a KSDS. Those say the request found nothing, not
+that the file failed, so the loop above still ends the way it always did.
+
+This matters most where nothing else would notice. A `write` that cannot happen
+— the volume full, a `varying` record outside its declared length — leaves the
+loop running and the output file short, and the job ends with a return code of
+zero. Inside a sort's input or output procedure the same failure sets
+`SORT-RETURN` to 16 instead, because control may not leave a sort procedure
+while the sort is running.
+
 Read and write map the record **field by field** rather than moving it as a
 group, so the correspondence between the file record and working storage is
 explicit in the generated COBOL and does not depend on the two layouts being
