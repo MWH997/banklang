@@ -6,14 +6,17 @@ outline, and hover that tells you which COBOL a line produces.
 ## Features
 
 - **Diagnostics** from the real compiler, including `BANK-TXN-001`,
-  `BANK-AUD-001`, `BANK-AUD-003`, `BANK-LED-001`, and `BANK-FILE-001`.
+  `BANK-AUD-001`, `BANK-AUD-002`, `BANK-LED-001`, `BANK-SEC-001`, and
+  `BANK-FILE-001`.
 - **Hover.** On a diagnostic, the catalogue explanation and the fix. On a clean
   line, the COBOL line range that line generates.
 - **Format on save**, via the compiler's own formatter.
 - **Outline** with record fields nested under their record.
 - **Syntax highlighting** through a TextMate grammar that mirrors the lexer's
   token classes, including the contextual `debit`, `credit`, and `audit`
-  operations.
+  operations. `tests/editor-surfaces.test.ts` compares the grammar against the
+  lexer's own keyword list, so a keyword the compiler accepts cannot go on
+  looking like an undefined name here.
 
 ## Building
 

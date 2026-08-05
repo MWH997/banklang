@@ -77,7 +77,15 @@ interface Token {
   offset: number;
 }
 
-const KEYWORDS = new Set([
+/**
+ * Every word the lexer treats as a keyword.
+ *
+ * Exported because the playground's highlighter and the VS Code grammar have to
+ * cover the same set. Highlighting that lags the lexer is how a supported
+ * keyword ends up looking like an undefined name, and
+ * `tests/editor-surfaces.test.ts` is what stops the three drifting apart.
+ */
+export const KEYWORDS = new Set([
   "module",
   "type",
   "record",

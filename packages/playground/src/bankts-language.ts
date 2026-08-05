@@ -2,7 +2,7 @@ import { StreamLanguage, type StringStream } from "@codemirror/language";
 
 // Mirrors KEYWORDS in packages/parser/src/index.ts. Highlighting that lags the
 // lexer is how a supported keyword ends up looking like an undefined name.
-const KEYWORDS = new Set([
+export const PLAYGROUND_KEYWORDS = new Set([
   "module",
   "type",
   "record",
@@ -20,7 +20,9 @@ const KEYWORDS = new Set([
   "switch",
   "case",
   "enum",
+  "sensitive",
   "sql",
+  "cursor",
   "execute",
   "cics",
   "link",
@@ -35,7 +37,13 @@ const KEYWORDS = new Set([
   "false",
 ]);
 
-const TYPES = new Set(["decimal", "string", "bool", "currency", "nullable"]);
+export const PLAYGROUND_TYPES = new Set([
+  "decimal",
+  "string",
+  "bool",
+  "currency",
+  "nullable",
+]);
 
 /** Ledger and audit operations are contextual in the grammar, not reserved. */
 const OPERATIONS = new Set(["debit", "credit", "audit"]);
@@ -70,10 +78,10 @@ export const bankts = StreamLanguage.define({
 
     if (stream.match(/^[A-Za-z_][A-Za-z0-9_]*/)) {
       const word = stream.current();
-      if (KEYWORDS.has(word)) {
+      if (PLAYGROUND_KEYWORDS.has(word)) {
         return "keyword";
       }
-      if (TYPES.has(word)) {
+      if (PLAYGROUND_TYPES.has(word)) {
         return "typeName";
       }
       if (OPERATIONS.has(word)) {
