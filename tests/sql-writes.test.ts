@@ -152,3 +152,26 @@ entry transaction sweep(request: Request, row: AccountRow) {
     expect(result.cobol).toContain("WHERE CURRENT OF someOtherCursor");
   });
 });
+
+describe("the step's condition code", () => {
+  /**
+   * How a batch job tells the next step's `COND=` what happened. Without it
+   * every step reports success, and a job that found no records looks exactly
+   * like one that processed a million.
+   */
+  it("moves the value into RETURN-CODE", () => {
+    const result = txn("  returnCode = 4;");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("MOVE 4 TO RETURN-CODE");
+  });
+
+  it("rejects a fraction, which is not a condition code", () => {
+    expect(ids(txn("  returnCode = 4.5;"))).toContain("BANK-TYPE-003");
+  });
+
+  /** RETURN-CODE is a halfword; 0 to 4095 is what a COND= can test. */
+  it("rejects a value outside the range RETURN-CODE holds", () => {
+    expect(ids(txn("  returnCode = 9999;"))).toContain("BANK-TYPE-003");
+  });
+});

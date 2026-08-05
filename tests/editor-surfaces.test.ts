@@ -36,7 +36,7 @@ function grammarKeywords(): Set<string> {
   );
   const found = new Set<string>();
 
-  for (const match of grammar.matchAll(/\\\\b\(([a-z|]+)\)\\\\b/g)) {
+  for (const match of grammar.matchAll(/\\\\b\(([A-Za-z|]+)\)\\\\b/g)) {
     for (const word of match[1].split("|")) {
       found.add(word);
     }

@@ -570,6 +570,7 @@ export type StatementNode =
   | ForEachStatementNode
   | CursorLoopStatementNode
   | UnitOfWorkStatementNode
+  | ReturnCodeStatementNode
   | RaiseStatementNode;
 
 export interface ReturnStatementNode extends NodeBase {
@@ -668,6 +669,18 @@ export interface TransactionDeclarationNode extends NodeBase {
 
 /** `link "PROGRAM" commarea record resp status;` and syncpoint operations. */
 export type CicsOperation = "link" | "syncpoint" | "rollback";
+
+/**
+ * `returnCode = 4;` — the step's condition code.
+ *
+ * How a batch job tells the next step's `COND=` what happened: 0 ran clean, 4
+ * found nothing or warned, 8 failed. Without it every step reports success and
+ * a job that found no records looks exactly like one that processed a million.
+ */
+export interface ReturnCodeStatementNode extends NodeBase {
+  kind: "ReturnCodeStatement";
+  value: ExpressionNode;
+}
 
 /**
  * `commit;` and `rollback;` — the unit of work, in a batch Db2 program.
