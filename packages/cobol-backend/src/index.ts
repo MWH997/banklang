@@ -3412,11 +3412,56 @@ function reportColumnClause(
   }
 
   const reference = reportFieldReference(source.field, report);
-  const picture = reportFieldPicture(source.field);
   return source.kind === "ReportSum"
-    ? `${picture} SUM ${reference}`
-    : `${picture} SOURCE ${reference}`;
+    ? `${reportTotalPicture(source.field)} SUM ${reference}`
+    : `${reportFieldPicture(source.field)} SOURCE ${reference}`;
 }
+
+/**
+ * The picture a `sum` column prints its total with — wider than the field it
+ * totals, because a total is bigger than a row.
+ *
+ * Report Writer takes the internal total field's precision from the *picture of
+ * the SUM entry* whenever the item being totalled lives outside the REPORT
+ * SECTION, which is always the case here: the values come from the record in
+ * working storage. Printing a total with the row's own picture therefore sizes
+ * the accumulator for one row. A branch of two postings of 9,999,999.99 then
+ * totals 9,999,999.98 instead of 19,999,999.98 — the high-order digit is gone,
+ * the columns still line up, the step ends with return code zero, and the only
+ * way to notice is to add the report up by hand.
+ *
+ * So the total is given every digit the target's arithmetic has: the operand's
+ * own scale, and the rest integers. There is no honest way to derive a narrower
+ * one, because how large a total gets depends on how many rows arrive, which is
+ * not known until the job runs.
+ */
+function reportTotalPicture(field: string): string {
+  const declared = currentReportRecord?.fields.find(
+    (entry) => entry.name === field,
+  );
+  const type = declared?.type;
+  if (type?.kind !== "decimal" && type?.kind !== "currency") {
+    // Not a field COBOL can total. `BANK-FILE-011` rejects that before
+    // emission, so reaching here is a compiler bug rather than a program one.
+    return reportFieldPicture(field);
+  }
+
+  return editedPicture(
+    type.scale > 0 ? "grouped" : "plain",
+    MAX_TOTAL_DIGITS,
+    type.scale,
+    currentDecimalPoint,
+  );
+}
+
+/**
+ * Digits a report total is given.
+ *
+ * Enterprise COBOL's default `ARITH(COMPAT)` carries eighteen, which is also
+ * the widest packed or display item the record can hold, so a total this wide
+ * cannot be overflowed by any number of rows the program could read.
+ */
+const MAX_TOTAL_DIGITS = 18;
 
 /**
  * The COBOL name a report column reads, qualified by the record it belongs to.

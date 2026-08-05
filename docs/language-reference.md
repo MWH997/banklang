@@ -1943,15 +1943,23 @@ BRANCH SUMMARY                         PAGE     1
 
 LONDON          42.50
 LONDON          42.50
-SUBTOTAL:       85.00
+SUBTOTAL:                   85.00
 LEEDS           42.50
-SUBTOTAL:       42.50
-TOTAL:         127.50
+SUBTOTAL:                   42.50
+TOTAL:                     127.50
 ```
 
 **Nothing in the source adds anything up.** That is the reason to have it: a
 hand-written subtotal reset in the wrong place is a report that is wrong and
 still balances, which is the kind of defect that survives review.
+
+A total is printed wider than the rows above it, which is why the figures do not
+line up under the detail column. Report Writer sizes the accumulator from the
+picture on the `sum` entry rather than from the field being totalled, so a total
+given the row's own picture is an accumulator sized for one row: two postings of
+9,999,999.99 would subtotal 9,999,999.98. The compiler gives every total all
+eighteen digits `ARITH(COMPAT)` carries, since how large a total gets depends on
+how many rows arrive and that is not known until the job runs.
 
 A column prints a literal, a field, `sum` of a field, or `pageNumber`. A field is
 named bare and resolved against the record the report's file holds — a report is
@@ -1967,8 +1975,9 @@ which means `FINAL` — the total over everything. Lines are placed with
 
 The checks are `BANK-FILE-008`: a control field has to be in the record, a
 control heading or footing has to name a control the report breaks on, a `sum`
-has to sit where something has been counted, and there has to be a detail group
-for `generate` to name. A report's file is `sequential output` and may not also
+has to total a numeric field and has to sit in a footing, and there has to be a
+detail group for `generate` to name. Confining `sum` to a footing is stricter
+than COBOL, which allows one in any group; the reason is in `docs/diagnostics.md`. A report's file is `sequential output` and may not also
 carry a `page ...` clause, since both decide where the page ends
 (`BANK-FILE-007`).
 

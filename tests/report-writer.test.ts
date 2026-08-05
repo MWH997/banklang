@@ -141,6 +141,21 @@ describe("the report description", () => {
     expect(result.cobol).toContain("PIC Z,ZZZ,ZZ9.99 SOURCE AMOUNT");
   });
 
+  /**
+   * Report Writer sizes the accumulator from the picture on the SUM entry, not
+   * from the field being totalled, whenever that field lives outside the REPORT
+   * SECTION — which here it always does. Giving a total the row's own picture
+   * therefore sizes it for a single row, and the high-order digit of every
+   * subtotal is dropped without a diagnostic, a return code, or a line that
+   * fails to balance.
+   */
+  it("gives a total more digits than the row it totals", () => {
+    expect(result.cobol).toContain("PIC Z,ZZZ,ZZ9.99 SOURCE AMOUNT");
+    expect(flowed(result.cobol)).toContain(
+      flowed("PIC Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99 SUM AMOUNT OF STATEMENT-LINE"),
+    );
+  });
+
   it("emits the three statements", () => {
     expect(result.cobol).toContain("INITIATE BRANCH-SUMMARY");
     expect(result.cobol).toContain("GENERATE LINE-DETAIL");
@@ -352,18 +367,9 @@ describe("executed", () => {
   const available =
     spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
 
-  it.skipIf(!available)("paginates, breaks, and adds up", () => {
-    const result = compile(
-      program(
-        REPORT,
-        `  line.branch = "LONDON";
-  line.amount = 42.50;
-  generate lineDetail;
-  generate lineDetail;
-  line.branch = "LEEDS";
-  generate lineDetail;`,
-      ),
-    );
+  /** Compile a report program, run it, and return the lines it printed. */
+  function render(source: string): string[] {
+    const result = compile(source);
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-report-"));
@@ -391,21 +397,102 @@ describe("executed", () => {
     });
     expect(ran.status, ran.stderr).toBe(0);
 
-    const printed = readFileSync(join(dir, "STATEMEN"), "utf8")
+    return readFileSync(join(dir, "STATEMEN"), "utf8")
       .split("\n")
       .map((line) => line.trimEnd())
       .filter((line) => line.length > 0);
+  }
+
+  it.skipIf(!available)("paginates and breaks on a change of control", () => {
+    const printed = render(
+      program(
+        REPORT,
+        `  line.branch = "LONDON";
+  line.amount = 42.50;
+  generate lineDetail;
+  generate lineDetail;
+  line.branch = "LEEDS";
+  generate lineDetail;`,
+      ),
+    );
 
     // The heading is printed once, by the compiler, at the top of the page.
     expect(printed[0]).toContain("BRANCH SUMMARY");
     expect(printed[0]).toMatch(/PAGE\s+1$/);
 
-    // A subtotal at each change of branch, and a final total over all of them.
-    // Nothing in the source adds anything up: 42.50 twice, then once.
+    // A footing at each change of branch and one more at the end, in order,
+    // with nothing in the source deciding where any of them goes.
     expect(printed).toContain("LONDON          42.50");
-    expect(printed).toContain("SUBTOTAL:       85.00");
     expect(printed).toContain("LEEDS           42.50");
-    expect(printed).toContain("SUBTOTAL:       42.50");
-    expect(printed).toContain("TOTAL:         127.50");
+    expect(printed.filter((line) => line.startsWith("SUBTOTAL:"))).toHaveLength(
+      2,
+    );
+    expect(printed[printed.length - 1]).toMatch(/^TOTAL:/);
+  });
+
+  /**
+   * The totals themselves, over a `zoned` amount.
+   *
+   * The amounts are chosen so that the branch subtotal needs one more digit
+   * than any single row: 9,999,999.99 twice is 19,999,999.98, which a total
+   * sized from the row's own picture cannot hold. Before the total field was
+   * widened this printed 9,999,999.98 — a report that is wrong, still adds up
+   * down the page, and returns zero.
+   *
+   * It is `zoned` rather than the packed `decimal` a real amount would be
+   * because GnuCOBOL cannot total a packed field at all; see the test below.
+   */
+  it.skipIf(!available)("carries a total wider than any one row", () => {
+    const printed = render(
+      program(
+        REPORT,
+        `  line.branch = "LONDON";
+  line.amount = 9999999.99;
+  generate lineDetail;
+  generate lineDetail;
+  line.branch = "LEEDS";
+  generate lineDetail;`,
+      ).replace("amount: decimal<9, 2>;", "amount: zoned<9, 2>;"),
+    );
+
+    expect(printed).toContain("LONDON   9,999,999.99");
+    expect(printed.join("\n")).toContain("19,999,999.98");
+    expect(printed.join("\n")).toContain("29,999,999.97");
+  });
+
+  /**
+   * A divergence, pinned so it cannot be mistaken for working.
+   *
+   * GnuCOBOL 3.2.0's Report Writer reads a `COMP-3` operand of a SUM clause
+   * from the wrong place — it picks up only the low-order digits, so an amount
+   * of 1,000,000.00 totals as zero while the same value printed by SOURCE on
+   * the line above is correct. Money in a generated program is `COMP-3`, so
+   * every total in every report is affected under the local validator and none
+   * of it says anything about z/OS.
+   *
+   * This is why the pagination test above asserts the shape of the report and
+   * not its figures: with a packed amount those figures are GnuCOBOL's, and
+   * small values pass only because they survive the truncation. `zos/README.md`
+   * records it, and this test fails if GnuCOBOL ever fixes it.
+   */
+  it.skipIf(!available)("does not total a packed amount under GnuCOBOL", () => {
+    const printed = render(
+      program(
+        REPORT,
+        `  line.branch = "LONDON";
+  line.amount = 1000000.00;
+  generate lineDetail;`,
+      ),
+    );
+
+    // The detail line reads the same field correctly.
+    expect(printed).toContain("LONDON   1,000,000.00");
+    // The totals over it do not.
+    expect(printed.some((line) => line.startsWith("SUBTOTAL:"))).toBe(true);
+    for (const line of printed.filter(
+      (entry) => entry.startsWith("SUBTOTAL:") || entry.startsWith("TOTAL:"),
+    )) {
+      expect(line).toMatch(/\s0\.00$/);
+    }
   });
 });

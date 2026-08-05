@@ -60,8 +60,31 @@ fragment above and print the offsets.
 
 ## GnuCOBOL quirks that are not defects here
 
-Neither affects the generated program on z/OS. Both will confuse anyone
-validating locally, so they are written down.
+None of these affects the generated program on z/OS. All of them will confuse
+anyone validating locally, so they are written down.
+
+**Report Writer does not total a packed field.** GnuCOBOL 3.2.0 reads a `COMP-3`
+operand of a `SUM` clause from the wrong place, picking up only its low-order
+digits. A `PIC S9(7)V99 COMP-3` holding 1,000,000.00 totals as **zero**; one
+holding 9,999,999.99 totals as 999.99. The same field read by a `SOURCE` clause
+on the line above prints correctly, so the report shows right details under a
+wrong total. It reproduces in a hand-written program with no BankLang involved —
+two fields of the same value and picture, differing only in `USAGE`:
+
+```cobol
+01  TYPE IS CONTROL FOOTING FINAL.
+    05  LINE PLUS 1.
+        10  COLUMN 1  PIC ZZZ,ZZZ,ZZ9.99 SUM PACKED-AMT.
+        10  COLUMN 20 PIC ZZZ,ZZZ,ZZ9.99 SUM DISPLAY-AMT.
+```
+
+Money is `COMP-3` in every generated program, so **every total in every report is
+wrong under the local validator** and none of it says anything about z/OS. This
+is the one place where a green executed test proves least: small amounts survive
+the truncation and come out right by luck, which is how it went unnoticed. The
+executed tests in `tests/report-writer.test.ts` now assert the divergence
+directly, and prove the totals themselves over a `zoned` amount, which GnuCOBOL
+accumulates correctly. **Report totals are the first thing to check on z/OS.**
 
 **A report file will not bind to a DD name.** GnuCOBOL's default `assign_clause`
 resolves an unquoted `ASSIGN TO <name>` on a file carrying `REPORT IS` to
