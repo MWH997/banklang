@@ -727,6 +727,11 @@ export interface DecimalIRType {
 export interface StringIRType {
   kind: "string";
   length: number;
+  /**
+   * `PIC N(n) USAGE NATIONAL` rather than `PIC X(n)`: `length` counts
+   * characters, and each takes two bytes.
+   */
+  national?: boolean;
 }
 
 export interface BoolIRType {
@@ -773,7 +778,16 @@ export interface IRLoweringResult {
 export function lowerProgramToIR(
   typechecked: TypeCheckResult,
 ): IRLoweringResult {
-  if (typechecked.diagnostics.length > 0 || !typechecked.program) {
+  // Only an error stops lowering. Bailing on any diagnostic at all meant a
+  // warning silently produced no COBOL: a program whose only complaint was an
+  // uninstantiated generic (BANK-TYPE-015) compiled to nothing and came back
+  // `ok: false`, which is neither what the warning says nor what a warning is.
+  if (
+    typechecked.diagnostics.some(
+      (diagnostic) => diagnostic.severity === "error",
+    ) ||
+    !typechecked.program
+  ) {
     return {
       program: null,
       diagnostics: typechecked.diagnostics,
@@ -2451,7 +2465,7 @@ function lowerType(type: ResolvedType): IRType {
     case "decimal":
       return lowerDecimalType(type);
     case "string":
-      return { kind: "string", length: type.length };
+      return { kind: "string", length: type.length, national: type.national };
     case "bool":
       return { kind: "bool" };
     case "record":

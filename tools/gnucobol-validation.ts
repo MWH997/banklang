@@ -65,7 +65,13 @@ export function runGnucobolValidation(
 
   const typechecked = typecheckProgram(parsed.program);
   diagnostics.push(...typechecked.diagnostics);
-  if (diagnostics.length > 0 || !typechecked.program) {
+  // A warning is a hazard the compiler wants recorded, not a reason to refuse
+  // to validate. Stopping on one meant the program most worth compiling here —
+  // the one carrying a known caveat — was the one never compiled.
+  if (
+    diagnostics.some((diagnostic) => diagnostic.severity === "error") ||
+    !typechecked.program
+  ) {
     throw new Error(renderDiagnostics(diagnostics));
   }
 
