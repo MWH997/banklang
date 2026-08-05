@@ -158,6 +158,15 @@ it is not implemented, and then does nothing at run time: the record is left
 untouched and **no exception is raised**, so a program reading a payload runs
 clean and processes an empty record.
 
+On Enterprise COBOL the hazard is different but has the same shape. A parse can
+meet a _nonexception condition_, which does not terminate the statement and
+"might result in the receiver being partially modified" — so `on error` is never
+reached and the record holds some fields and not others, which is exactly what a
+record that parsed cleanly looks like. Only `JSON-STATUS` distinguishes them, and
+the compiler emits a test of it that reports the case to the job log. It reports
+rather than raises, because a nonexception condition is not always an error: a
+document carrying fields the record does not declare is one of them.
+
 Verify the program on z/OS before relying on what it reads, and check the record
 rather than trusting the failure path — a parse that did nothing does not report
 one. `zos/README.md` records the divergence.

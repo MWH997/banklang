@@ -135,7 +135,9 @@ describe("the generated handler", () => {
   });
 
   it("moves text straight into an alphanumeric field", () => {
-    expect(result.cobol).toContain("MOVE XML-TEXT TO ACCOUNT-ID OF ACCOUNT");
+    expect(result.cobol).toContain(
+      "MOVE BANK-XML-1-BUF TO ACCOUNT-ID OF ACCOUNT",
+    );
   });
 
   /**
@@ -145,7 +147,7 @@ describe("the generated handler", () => {
    */
   it("converts text into a number", () => {
     expect(result.cobol).toContain(
-      "COMPUTE BALANCE OF ACCOUNT = FUNCTION NUMVAL(XML-TEXT)",
+      "COMPUTE BALANCE OF ACCOUNT = FUNCTION NUMVAL(BANK-XML-1-BUF)",
     );
   });
 
@@ -261,5 +263,59 @@ describe("it cannot be checked locally", () => {
     expect(built.stderr).not.toContain("error:");
     // The only thing it should say is that it will not run it.
     expect(built.stderr).toContain("XML PARSE is not implemented");
+  });
+});
+
+/**
+ * Character content that arrives in pieces.
+ *
+ * IBM is explicit that "splits in character content might occur at arbitrary
+ * points in the XML data stream, even with unsegmented input", and that the
+ * register signalling it "may be required for any and all attribute values and
+ * element character content". So this is not an edge case for large documents —
+ * it is the ordinary behaviour of the parser.
+ *
+ * Moving each fragment straight to its field keeps the last one and loses the
+ * rest, which is a short but entirely plausible value: an account id of
+ * "ACC-000000000042" arriving in two pieces lands as "0042" and nothing
+ * reports it.
+ *
+ * XML-INFORMATION is 2 while the content continues into a later event and 1 on
+ * the final piece, so the field is assigned only once the value is whole.
+ */
+describe("content split across events", () => {
+  const cobol = program(BINDINGS).cobol ?? "";
+
+  it("accumulates the fragments rather than overwriting", () => {
+    expect(cobol).toContain(
+      "STRING XML-TEXT DELIMITED BY SIZE INTO BANK-XML-1-BUF",
+    );
+    expect(cobol).toContain("WITH POINTER BANK-XML-1-PTR");
+  });
+
+  it("assigns the field only when the parser says the value is complete", () => {
+    expect(cobol).toContain("IF XML-INFORMATION NOT = 2");
+    expect(cobol.indexOf("IF XML-INFORMATION NOT = 2")).toBeLessThan(
+      cobol.indexOf("MOVE BANK-XML-1-BUF TO ACCOUNT-ID OF ACCOUNT"),
+    );
+  });
+
+  /** A new element starts a new value, with nothing of the last left to join. */
+  it("resets the buffer at the start of each element", () => {
+    const start = cobol.indexOf('WHEN "START-OF-ELEMENT"');
+    const content = cobol.indexOf('WHEN "CONTENT-CHARACTERS"');
+    const between = cobol.slice(start, content);
+
+    expect(between).toContain("MOVE SPACES TO BANK-XML-1-BUF");
+    expect(between).toContain("MOVE 1 TO BANK-XML-1-PTR");
+  });
+
+  /**
+   * Where the register is not set at all the test is simply never 2, so each
+   * append is followed by an assignment — which still ends up holding
+   * everything that was appended.
+   */
+  it("declares the buffer well past any field that can receive one", () => {
+    expect(cobol).toContain("01  BANK-XML-1-BUF       PIC X(4096).");
   });
 });
