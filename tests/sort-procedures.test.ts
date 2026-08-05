@@ -1,3 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
@@ -266,5 +271,115 @@ describe("merge", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("MERGE SORTED-POSTINGS-SORT-FILE");
     expect(result.cobol).toContain("OUTPUT PROCEDURE IS");
+  });
+});
+
+/**
+ * `SORT-RETURN`, which the sort product sets to 0 or 16 and which IBM's
+ * programming guide says to test after every SORT and MERGE. A program that
+ * carries on past a failed sort is, in IBM's word, unpredictable.
+ *
+ * The concrete failure is quiet rather than loud: a sort whose input never
+ * opened releases no records, so the output file is written, is empty, and the
+ * job ends with a return code of zero — indistinguishable from a night when
+ * there was nothing to sort.
+ */
+describe("the sort's own outcome", () => {
+  const result = txn(BOTH);
+
+  it("is tested after the SORT", () => {
+    const cobol = result.cobol ?? "";
+
+    expect(cobol).toContain("IF SORT-RETURN NOT = 0");
+    expect(cobol.indexOf("OUTPUT PROCEDURE IS")).toBeLessThan(
+      cobol.indexOf("IF SORT-RETURN NOT = 0"),
+    );
+  });
+
+  /** A job log saying only "sort failed" starts an investigation. */
+  it("says which file failed and what the sort returned", () => {
+    expect(result.cobol).toContain(
+      'DISPLAY "SORT FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+    );
+  });
+
+  it("stops the step rather than writing a partial result", () => {
+    const cobol = result.cobol ?? "";
+    const check = cobol.indexOf("IF SORT-RETURN NOT = 0");
+
+    expect(cobol.slice(check)).toContain("MOVE 16 TO RETURN-CODE");
+    expect(cobol.slice(check)).toContain("GOBACK");
+  });
+
+  it("is tested after a MERGE too", () => {
+    const merged =
+      txn(`  merge rawPostings, otherPostings into sortedPostings on branchId;`)
+        .cobol ?? "";
+
+    expect(merged).toContain(
+      'DISPLAY "MERGE FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+    );
+  });
+
+  /**
+   * Control may not leave a sort procedure while the sort is running, so the
+   * GOBACK an OPEN failure gets anywhere else is not available here. Setting
+   * SORT-RETURN to 16 is how a procedure tells the sort product to give up, and
+   * the test after the SORT statement is what then stops the job.
+   */
+  it("fails the sort from inside a procedure rather than returning", () => {
+    const cobol = result.cobol ?? "";
+    const section = cobol.search(/BANK-SORT-IN-\d+-\d+ SECTION\./);
+    const procedure = cobol.slice(section);
+
+    expect(procedure).toContain('IF RAW-STATUS(1:1) NOT = "0"');
+    expect(procedure).toContain("MOVE 16 TO SORT-RETURN");
+    expect(procedure).not.toContain("GOBACK");
+  });
+});
+
+/**
+ * Run, because the whole point of the check is what happens on a bad day, and
+ * nothing about a sort that works proves the failure path was wired up.
+ */
+describe("executed", () => {
+  const available =
+    spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
+
+  it.skipIf(!available)("stops the job when the sort cannot run", () => {
+    const result = txn(BOTH);
+    expect(result.diagnostics).toEqual([]);
+
+    const dir = mkdtempSync(join(tmpdir(), "bankc-sort-"));
+    writeFileSync(join(dir, "program.cbl"), result.cobol ?? "", "utf8");
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-free",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    // An input file that is there, so the sort runs and the job ends cleanly.
+    writeFileSync(join(dir, "RAWPOSTI"), "", "utf8");
+    const ok = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+    expect(ok.status, ok.stderr).toBe(0);
+
+    // The same program with its input missing. Without the check this run is
+    // the dangerous one: it writes an empty SORTEDPO and returns zero.
+    rmSync(join(dir, "RAWPOSTI"));
+    rmSync(join(dir, "SORTEDPO"), { force: true });
+    const failed = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+
+    expect(failed.stdout).toContain("OPEN FAILED rawPostings STATUS 35");
+    expect(failed.stdout).toContain("SORT FAILED sortedPostings");
+    expect(failed.status).toBe(16);
   });
 });

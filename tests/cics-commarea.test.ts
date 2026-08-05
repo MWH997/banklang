@@ -221,7 +221,7 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
   });
 
   it("tests the status the file declared", () => {
-    expect(result.cobol).toContain('IF FEED-STATUS NOT = "00"');
+    expect(result.cobol).toContain('IF FEED-STATUS(1:1) NOT = "0"');
   });
 
   /** Named, because a job log saying only "open failed" starts an investigation. */
@@ -234,7 +234,7 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
   /** A zero return code on a failed open is what makes it invisible to the job. */
   it("stops with a non-zero return code", () => {
     const text = result.cobol ?? "";
-    const check = text.indexOf('IF FEED-STATUS NOT = "00"');
+    const check = text.indexOf('IF FEED-STATUS(1:1) NOT = "0"');
 
     expect(text.slice(check)).toContain("MOVE 12 TO RETURN-CODE");
     expect(text.slice(check)).toContain("GOBACK");

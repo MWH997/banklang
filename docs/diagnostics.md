@@ -363,10 +363,16 @@ File record layout differs from declared copybook.
 
 ### `BANK-FILE-003` unsafe restart behaviour (warning)
 
-A transaction posts to the ledger inside a loop with no checkpoint. A job that
-dies halfway is rerun, and without a position written down the rerun starts at
-the beginning and posts everything twice. Reported as a warning because the
-compiler cannot tell whether the job is rerunnable another way.
+A transaction posts to the ledger inside a loop without both halves of
+checkpoint/restart. A job that dies halfway is rerun, and without a position
+written down the rerun starts at the beginning and posts everything twice — and
+a position written down but never read back leaves the rerun starting at the
+beginning just the same. Reported as a warning because the compiler cannot tell
+whether the job is rerunnable another way.
+
+The same id covers a restart file that is not `indexed update`. A sequential
+output file is rewritten from the start by the next `OPEN`, so a rerun that dies
+before its own first checkpoint destroys the position it was resuming from.
 
 ### `BANK-FILE-004` invalid key declaration
 

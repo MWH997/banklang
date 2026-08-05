@@ -38,6 +38,7 @@ import type {
   IRSortProcedure,
   IRSortStatement,
   IRReleaseStatement,
+  IRRestartStatement,
   IRReport,
   IRSerializeStatement,
   IRXmlParseStatement,
@@ -394,14 +395,6 @@ export interface JclEmitResult {
 
 export interface JclEmitOptions {
   /**
-   * True when the program runs an internal SORT or MERGE.
-   *
-   * The sort product needs a work dataset, and it looks for it under a DD name
-   * it chooses. A job without one fails at the sort rather than at the compile,
-   * which is a much later and much more confusing place to find out.
-   */
-  usesSort?: boolean;
-  /**
    * True when the program `COPY`s its record layouts.
    *
    * The compile step then needs a SYSLIB pointing at the copybook library, or
@@ -475,8 +468,12 @@ export function emitCobol(
   if (program.files.length > 0) {
     addLine(`       INPUT-OUTPUT SECTION.`);
     addLine(`       FILE-CONTROL.`);
+    const restartFiles = new Set([
+      ...checkpointedFiles(program),
+      ...restartedFiles(program),
+    ]);
     for (const file of program.files) {
-      emitFileControlEntry(file, addLine);
+      emitFileControlEntry(file, addLine, restartFiles.has(file.name));
     }
 
     // A sort-work file is selected like any other; the SD rather than an FD is
@@ -658,6 +655,13 @@ export function emitCobol(
   for (const file of checkpointedFiles(program)) {
     addLine(
       `       01  ${checkpointCounterName(file).padEnd(20)} PIC 9(9) COMP.`,
+    );
+  }
+  // A restart's own flag rather than the file status, because "no position
+  // written yet" is the ordinary first run and not an I/O failure to report.
+  for (const file of restartedFiles(program)) {
+    addLine(
+      `       01  ${restartFoundFlag(file).padEnd(20)} PIC X(1) VALUE "N".`,
     );
   }
   if (programUsesNow(program)) {
@@ -1201,6 +1205,14 @@ export function emitJcl(
     ),
   ];
 
+  // Every step after the first is bypassed when an earlier one failed. Without
+  // it a failed compile still reaches the run step, which then executes
+  // whatever load module the library already held — the previous version — and
+  // the job ends with a return code that says it worked.
+  //
+  // COND states when to *skip*: 4 less than the highest return code so far.
+  const cond = ",COND=(4,LT)";
+
   // The CICS translator runs first: it rewrites EXEC CICS into calls before
   // anything else reads the source, and its output is what the precompiler and
   // then the compiler see.
@@ -1220,7 +1232,7 @@ export function emitJcl(
     lines.push(
       "//* EXEC SQL must be precompiled, and the resulting DBRM bound, before",
       "//* the program can run. Neither step is optional.",
-      "//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'",
+      `//PRECOMP  EXEC PGM=DSNHPC,PARM='HOST(COB2)'${needsCics ? cond : ""}`,
       "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
       `//DBRMLIB  DD DISP=SHR,DSN=DIST.DBRMLIB(${moduleName})`,
       "//SYSPRINT DD SYSOUT=*",
@@ -1233,7 +1245,7 @@ export function emitJcl(
   }
 
   lines.push(
-    "//COMPILE  EXEC PGM=IGYCRCTL",
+    `//COMPILE  EXEC PGM=IGYCRCTL${needsCics || needsDb2 ? cond : ""}`,
     "//SYSPRINT DD SYSOUT=*",
     // A COPY resolves against SYSLIB. Without it the copy statements find
     // nothing and the compile fails on undefined data names.
@@ -1264,6 +1276,10 @@ export function emitJcl(
       "//SYSTSIN  DD *",
       "  DSN SYSTEM(DSN)",
       `  BIND PACKAGE(BANKLANG) MEMBER(${moduleName}) ACT(REP) ISO(CS)`,
+      // A package alone cannot be run. RUN names a plan, so the package has to
+      // be listed in one; binding only the package leaves the program with
+      // nothing to run under and fails at execution rather than at bind.
+      `  BIND PLAN(${moduleName}) PKLIST(BANKLANG.*) ACT(REP) ISO(CS)`,
       "  END",
       "/*",
     );
@@ -1276,23 +1292,80 @@ export function emitJcl(
   // A CICS program has no run step at all: it is started by a transaction
   // identifier in a region, not by EXEC PGM in a job.
   if (!needsCics) {
-    lines.push(`//RUN      EXEC PGM=${moduleName}`);
     if (needsDb2) {
-      lines.push("//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD");
+      // A program with embedded SQL cannot be started by EXEC PGM=. It needs a
+      // thread to Db2, and what establishes one is the DSN command processor:
+      // the step runs TSO in batch, and DSN RUN attaches the program to the
+      // subsystem under a plan. Started directly it gets no thread at all and
+      // fails on its first SQL statement.
+      lines.push(
+        "//* A Db2 program is run by the DSN command processor under TSO in",
+        "//* batch, not by EXEC PGM=. Starting it directly gives it no thread.",
+        `//RUN      EXEC PGM=IKJEFT01,DYNAMNBR=20${cond}`,
+        "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
+        "//SYSTSPRT DD SYSOUT=*",
+      );
+    } else {
+      lines.push(`//RUN      EXEC PGM=${moduleName}${cond}`);
     }
-    lines.push("//SYSOUT   DD SYSOUT=*");
-    if (options.usesSort) {
-      lines.push("//SORTWK01 DD UNIT=SYSDA,SPACE=(CYL,(5,5))");
+    lines.push(
+      "//SYSOUT   DD SYSOUT=*",
+      // Without these an abend produces no readable dump, and what is left to
+      // diagnose it with is the return code.
+      "//CEEDUMP  DD SYSOUT=*",
+      "//SYSUDUMP DD SYSOUT=*",
+    );
+    // The sort product spills to work datasets, and three is the customary
+    // allocation. A merge needs none — its inputs already arrive in order — so
+    // this asks for a real SORT rather than for a SortStatement.
+    //
+    // Derived here rather than declared by the caller: the program is in hand,
+    // and a job whose work datasets depend on a caller remembering to say so is
+    // a job that is missing them the first time someone forgets.
+    if (
+      sortStatements(program).some(
+        (entry) => entry.statement.operation === "sort",
+      )
+    ) {
+      for (const index of [1, 2, 3]) {
+        lines.push(
+          `//SORTWK0${index} DD UNIT=SYSDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
+        );
+      }
     }
     for (const file of program.files) {
-      lines.push(
-        file.mode === "input"
-          ? `//${toDdName(file.name).padEnd(8)} DD DISP=SHR,DSN=BANKLANG.${toDdName(file.name)}`
-          : `//${toDdName(file.name).padEnd(8)} DD DSN=BANKLANG.${toDdName(file.name)},DISP=(NEW,CATLG),`,
-      );
-      if (file.mode === "output") {
-        lines.push("//            UNIT=SYSDA,SPACE=(CYL,(1,1))");
+      const dd = toDdName(file.name).padEnd(8);
+      const dsn = `BANKLANG.${toDdName(file.name)}`;
+      if (file.mode === "input") {
+        lines.push(`//${dd} DD DISP=SHR,DSN=${dsn}`);
+      } else if (file.mode === "update") {
+        // An updated file is read and rewritten in place, so it exists already:
+        // NEW would create an empty one and the program would find nothing in
+        // it. OLD rather than SHR because a second job reading it mid-update
+        // sees a file that is half old and half new.
+        lines.push(`//${dd} DD DISP=OLD,DSN=${dsn}`);
+      } else {
+        // The abnormal disposition matters more than the normal one: a step
+        // that dies halfway through writing has produced a partial dataset, and
+        // cataloguing it invites the next job to read it as if it were
+        // complete.
+        lines.push(
+          `//${dd} DD DSN=${dsn},DISP=(NEW,CATLG,DELETE),`,
+          "//            UNIT=SYSDA,SPACE=(CYL,(1,1))",
+        );
       }
+    }
+    if (needsDb2) {
+      // Last, because DD * runs to its delimiter and anything after it would
+      // be read as command input rather than as JCL.
+      lines.push(
+        "//SYSTSIN  DD *",
+        "  DSN SYSTEM(DSN)",
+        `  RUN PROGRAM(${moduleName}) PLAN(${moduleName}) -`,
+        "      LIB('BANKLANG.LOADLIB')",
+        "  END",
+        "/*",
+      );
     }
   }
 
@@ -1327,6 +1400,7 @@ export function emitJcl(
 function emitFileControlEntry(
   file: IRFile,
   addLine: (line?: string) => void,
+  isRestartFile: boolean,
 ): void {
   const cobolName = fileCobolName(file.name);
   const clauses: string[] = [
@@ -1365,7 +1439,16 @@ function emitFileControlEntry(
     );
   }
 
-  addLine(`           SELECT ${cobolName} ASSIGN TO ${toDdName(file.name)}`);
+  // OPTIONAL for a restart file, and only for one. The first run of a batch has
+  // never written a position, so the dataset does not exist yet; without this
+  // the OPEN fails with status 35 and the job dies on the run that had nothing
+  // to resume from. OPTIONAL is what COBOL has for a file that may legitimately
+  // be absent — it is created on an OPEN I-O. Any other missing file is a
+  // genuine failure and still stops the job.
+  const optional = isRestartFile ? "OPTIONAL " : "";
+  addLine(
+    `           SELECT ${optional}${cobolName} ASSIGN TO ${toDdName(file.name)}`,
+  );
   clauses.forEach((clause, index) => {
     addLine(index === clauses.length - 1 ? `${clause}.` : clause);
   });
@@ -2128,6 +2211,15 @@ function emitStatement(
       case "ReleaseStatement":
         emitReleaseStatement(statement, addLine, indent);
         break;
+      case "RestartStatement":
+        emitRestartStatement(
+          statement,
+          addLine,
+          indentLevel,
+          resultName,
+          false,
+        );
+        break;
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
         break;
@@ -2327,6 +2419,9 @@ function emitTransactionBody(
         break;
       case "CheckpointStatement":
         emitCheckpointStatement(statement, addLine, indent);
+        break;
+      case "RestartStatement":
+        emitRestartStatement(statement, addLine, indentLevel, "", true);
         break;
       case "ConsoleStatement":
         emitConsoleStatement(statement, addLine, indent);
@@ -2561,16 +2656,124 @@ function emitCheckpointStatement(
       `${indent}    MOVE ${name} OF ${source} TO ${name} OF ${fileRecord}`,
     );
   }
+  // One record under one key, rewritten each time, rather than a stream of
+  // positions appended to a file. The first checkpoint of a run writes it; the
+  // rest replace it. A restart then reads exactly one record and knows it is
+  // the furthest point that was committed.
   addLine(`${indent}    WRITE ${fileRecord}`);
+  addLine(`${indent}        INVALID KEY REWRITE ${fileRecord}`);
+  addLine(`${indent}    END-WRITE`);
+  // After the position, not before: a commit that lands with the position not
+  // yet written would leave a restart resuming from further back than the work
+  // that is already durable, and the records in between are posted twice.
   if (statement.commitsSql) {
     addLine(`${indent}    EXEC SQL COMMIT END-EXEC`);
   }
   addLine(`${indent}END-IF`);
 }
 
+/**
+ * `restart <file> into <record> { ... } else { ... }`
+ *
+ * The other half of a checkpoint. Without it the position is written down and
+ * never looked at, so the rerun a checkpoint exists to make safe still starts
+ * at the beginning and posts everything twice.
+ *
+ * A keyed read: the record's key field says which position is being asked for,
+ * and INVALID KEY is the first run, when there is nothing to resume from.
+ */
+function emitRestartStatement(
+  statement: IRRestartStatement,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  const indent = " ".repeat(indentLevel);
+  const fileRecord = fileRecordNameFor(statement.fileName);
+  const target = resolveIdentifier(statement.recordName);
+  const found = restartFoundFlag(statement.fileName);
+
+  if (statement.keyFieldName) {
+    const key = toCobolFieldName(statement.keyFieldName);
+    addLine(`${indent}MOVE ${key} OF ${target} TO ${key} OF ${fileRecord}`);
+  }
+  addLine(`${indent}MOVE "N" TO ${found}`);
+  addLine(`${indent}READ ${fileCobolName(statement.fileName)}`);
+  addLine(`${indent}    INVALID KEY CONTINUE`);
+  addLine(`${indent}    NOT INVALID KEY MOVE "Y" TO ${found}`);
+  addLine(`${indent}END-READ`);
+  addLine(`${indent}IF ${found} = "Y"`);
+  for (const field of statement.recordFields) {
+    if (field.arrayLength !== null) {
+      continue;
+    }
+    const name = toCobolFieldName(field.name);
+    addLine(
+      `${indent}    MOVE ${name} OF ${fileRecord} TO ${name} OF ${target}`,
+    );
+  }
+  emitNestedBlock(
+    statement.resumed,
+    addLine,
+    indentLevel + 4,
+    resultName,
+    inTransaction,
+  );
+  if (statement.fresh) {
+    addLine(`${indent}ELSE`);
+    emitNestedBlock(
+      statement.fresh,
+      addLine,
+      indentLevel + 4,
+      resultName,
+      inTransaction,
+    );
+  }
+  addLine(`${indent}END-IF`);
+}
+
+/** Whichever of the two body emitters the enclosing context calls for. */
+function emitNestedBlock(
+  block: IRBlock,
+  addLine: (line?: string) => void,
+  indentLevel: number,
+  resultName: string,
+  inTransaction: boolean,
+): void {
+  if (inTransaction) {
+    emitTransactionBody(block, addLine, indentLevel);
+  } else {
+    emitStatement(block, addLine, indentLevel, resultName);
+  }
+}
+
+/** True when a restart found the position it was looking for. */
+function restartFoundFlag(fileName: string): string {
+  return `${toCobolName(fileName)}-RS-FOUND`;
+}
+
 /** Records taken since the last restart point was written. */
 function checkpointCounterName(fileName: string): string {
   return `${toCobolName(fileName)}-CP-COUNT`;
+}
+
+/**
+ * The condition for an OPEN that did not work.
+ *
+ * On the first character rather than on `NOT = "00"`, because "00" is not the
+ * only success. The first character is the status key: 0 is successful
+ * completion, and the rest of the class says what was unusual about it. "05" is
+ * an OPTIONAL file that was not there and has been created — which is the
+ * ordinary first run of a batch that keeps a restart position, and stopping the
+ * job for it would mean a restartable batch could never run its first night.
+ * "07" is a tape-oriented CLOSE option on a device that is not tape.
+ *
+ * Anything from 1 upwards is at-end, invalid key, a permanent error, a logic
+ * error, or an implementor code, and none of those is an OPEN that worked.
+ */
+function openFailed(status: string): string {
+  return `${status}(1:1) NOT = "0"`;
 }
 
 /**
@@ -2617,6 +2820,20 @@ function emitSortStatement(
   } else {
     addLine(`${indent}    GIVING ${fileCobolName(statement.output)}`);
   }
+
+  // The sort product reports its outcome in SORT-RETURN — 0, or 16 for a sort
+  // that did not complete — and IBM's guidance is to test it after every SORT
+  // and MERGE, because what a program does having ignored it is undefined. A
+  // failed sort leaves the output file short or empty, so a batch that carries
+  // on writes a plausible-looking result from part of its input.
+  const operation = statement.operation.toUpperCase();
+  addLine(`${indent}IF SORT-RETURN NOT = 0`);
+  addLine(
+    `${indent}    DISPLAY "${operation} FAILED ${statement.output} SORT-RETURN " SORT-RETURN UPON SYSOUT`,
+  );
+  addLine(`${indent}    MOVE 16 TO RETURN-CODE`);
+  addLine(`${indent}    GOBACK`);
+  addLine(`${indent}END-IF`);
 }
 
 /**
@@ -2643,23 +2860,49 @@ function emitSortProcedureSections(
     // Each input file in turn, which is what USING would have done.
     statement.inputs.forEach((file, index) => {
       const last = index === statement.inputs.length - 1;
+      const status = fileStatusNames.get(file) ?? null;
       addLine(`           OPEN INPUT ${fileCobolName(file)}`);
-      addLine(`           MOVE "N" TO ${flag}`);
-      addLine(`           PERFORM UNTIL ${flag} = "Y"`);
-      addLine(`               READ ${fileCobolName(file)}`);
-      addLine(`                   AT END MOVE "Y" TO ${flag}`);
-      addLine(`                   NOT AT END`);
+      // A failed OPEN here cannot be handled the way one in the body is: a
+      // GOBACK would leave the procedure while the sort is running, which is
+      // not allowed. Setting SORT-RETURN to 16 is how a procedure tells the
+      // sort product to give up, and the test after the SORT statement then
+      // stops the job. Without it the READ falls straight to AT END and the
+      // sort quietly orders no records at all.
+      if (status) {
+        addLine(`           IF ${openFailed(status)}`);
+        addLine(
+          `               DISPLAY "OPEN FAILED ${file} STATUS " ${status} UPON SYSOUT`,
+        );
+        addLine(`               MOVE 16 TO SORT-RETURN`);
+        addLine(`           ELSE`);
+      }
+      const body = status ? " ".repeat(4) : "";
+      addLine(`${body}           MOVE "N" TO ${flag}`);
+      addLine(`${body}           PERFORM UNTIL ${flag} = "Y"`);
+      addLine(`${body}               READ ${fileCobolName(file)}`);
+      addLine(`${body}                   AT END MOVE "Y" TO ${flag}`);
+      addLine(`${body}                   NOT AT END`);
       emitSortRecordMapping(
         fileRecordNameFor(file),
         resolveIdentifier(input.recordName),
         input.recordFields,
         addLine,
-        " ".repeat(23),
+        `${body}${" ".repeat(23)}`,
       );
-      emitSortProcedureBody(statement, input, addLine, 23, inTransaction);
-      addLine(`               END-READ`);
-      addLine(`           END-PERFORM`);
-      addLine(`           CLOSE ${fileCobolName(file)}${last ? "." : ""}`);
+      emitSortProcedureBody(
+        statement,
+        input,
+        addLine,
+        23 + body.length,
+        inTransaction,
+      );
+      addLine(`${body}               END-READ`);
+      addLine(`${body}           END-PERFORM`);
+      const end = last && !status ? "." : "";
+      addLine(`${body}           CLOSE ${fileCobolName(file)}${end}`);
+      if (status) {
+        addLine(`           END-IF${last ? "." : ""}`);
+      }
     });
   }
 
@@ -2670,23 +2913,46 @@ function emitSortProcedureSections(
     addLine(`       ${sortProcedureName(statement, "output")} SECTION.`);
     // GIVING would have opened and written the file; with an output procedure
     // that is the program's job, so the generated loop does it.
+    const status = fileStatusNames.get(statement.output) ?? null;
     addLine(`           OPEN OUTPUT ${fileCobolName(statement.output)}`);
-    addLine(`           MOVE "N" TO ${flag}`);
-    addLine(`           PERFORM UNTIL ${flag} = "Y"`);
-    addLine(`               RETURN ${sortWorkName(statement.output)}`);
-    addLine(`                   AT END MOVE "Y" TO ${flag}`);
-    addLine(`                   NOT AT END`);
+    // As in the input procedure, SORT-RETURN rather than GOBACK: control may
+    // not leave a sort procedure while the sort is running.
+    if (status) {
+      addLine(`           IF ${openFailed(status)}`);
+      addLine(
+        `               DISPLAY "OPEN FAILED ${statement.output} STATUS " ${status} UPON SYSOUT`,
+      );
+      addLine(`               MOVE 16 TO SORT-RETURN`);
+      addLine(`           ELSE`);
+    }
+    const body = status ? " ".repeat(4) : "";
+    addLine(`${body}           MOVE "N" TO ${flag}`);
+    addLine(`${body}           PERFORM UNTIL ${flag} = "Y"`);
+    addLine(`${body}               RETURN ${sortWorkName(statement.output)}`);
+    addLine(`${body}                   AT END MOVE "Y" TO ${flag}`);
+    addLine(`${body}                   NOT AT END`);
     emitSortRecordMapping(
       sortWorkRecordName(statement.output),
       resolveIdentifier(output.recordName),
       output.recordFields,
       addLine,
-      " ".repeat(23),
+      `${body}${" ".repeat(23)}`,
     );
-    emitSortProcedureBody(statement, output, addLine, 23, inTransaction);
-    addLine(`               END-RETURN`);
-    addLine(`           END-PERFORM`);
-    addLine(`           CLOSE ${fileCobolName(statement.output)}.`);
+    emitSortProcedureBody(
+      statement,
+      output,
+      addLine,
+      23 + body.length,
+      inTransaction,
+    );
+    addLine(`${body}               END-RETURN`);
+    addLine(`${body}           END-PERFORM`);
+    addLine(
+      `${body}           CLOSE ${fileCobolName(statement.output)}${status ? "" : "."}`,
+    );
+    if (status) {
+      addLine(`           END-IF.`);
+    }
   }
 }
 
@@ -3508,7 +3774,7 @@ function emitFileStatement(
       // with nothing to do. The convention is to report it and stop.
       const status = fileStatusNames.get(statement.fileName) ?? null;
       if (status) {
-        addLine(`${indent}IF ${status} NOT = "00"`);
+        addLine(`${indent}IF ${openFailed(status)}`);
         addLine(
           `${indent}    DISPLAY "OPEN FAILED ${statement.fileName} STATUS " ${status} UPON SYSOUT`,
         );
@@ -4099,12 +4365,39 @@ function endsWithReturnTransid(block: IRBlock): boolean {
 
 /** Files a program checkpoints to, each needing a counter. */
 function checkpointedFiles(program: IRProgram): string[] {
+  return statementFileNames(program, "CheckpointStatement");
+}
+
+/** Files a program restarts from, each needing a found flag. */
+function restartedFiles(program: IRProgram): string[] {
+  return statementFileNames(program, "RestartStatement");
+}
+
+/**
+ * The files named by every statement of one kind, wherever it sits.
+ *
+ * A walk rather than a search of the serialized IR: a regular expression over
+ * JSON depends on the order the lowering happens to build its objects in, which
+ * is not something the lowering promises.
+ */
+function statementFileNames(program: IRProgram, kind: string): string[] {
   const found = new Set<string>();
-  for (const match of JSON.stringify(program.transactions).matchAll(
-    /"kind":"CheckpointStatement","span":\{[^}]*\},"fileName":"([^"]+)"/g,
-  )) {
-    found.add(match[1]);
-  }
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (typeof node !== "object" || node === null) {
+      return;
+    }
+    const entry = node as { kind?: unknown; fileName?: unknown };
+    if (entry.kind === kind && typeof entry.fileName === "string") {
+      found.add(entry.fileName);
+    }
+    Object.values(node).forEach(walk);
+  };
+
+  walk(program.transactions);
   return [...found];
 }
 

@@ -35,6 +35,7 @@ import {
   type FileErrorHandlerNode,
   type ConsoleStatementNode,
   type ReleaseStatementNode,
+  type RestartStatementNode,
   type ResetStatementNode,
   type FileLinageNode,
   type SortProcedureNode,
@@ -189,6 +190,7 @@ export const KEYWORDS = new Set([
   "release",
   "descending",
   "checkpoint",
+  "restart",
   "every",
   "log",
   "accept",
@@ -2528,6 +2530,42 @@ class Parser {
           end: semicolon.span.end,
         },
       } satisfies CheckpointStatementNode;
+    }
+
+    if (this.isKeyword("restart")) {
+      const keyword = this.advance();
+      const fileToken = this.expectIdentifier("Expected the restart file.");
+      if (!this.matchContextual("into")) {
+        this.errorAtCurrent(
+          "BANK-SYN-001",
+          "Expected `into` before the restart record.",
+          "Write `restart restartFile into restartRecord { ... }`.",
+        );
+        return null;
+      }
+      const recordToken = this.expectIdentifier("Expected the restart record.");
+      if (!fileToken || !recordToken) {
+        return null;
+      }
+      const resumed = this.parseBlock();
+      // `else` is optional: a fresh start often needs nothing done, and making
+      // the branch mandatory would fill programs with empty blocks.
+      const fresh = this.matchKeyword("else") ? this.parseBlock() : null;
+      if (!resumed) {
+        return null;
+      }
+      return {
+        kind: "RestartStatement",
+        fileName: fileToken.text,
+        recordName: recordToken.text,
+        resumed,
+        fresh,
+        span: {
+          sourceFile: keyword.span.sourceFile,
+          start: keyword.span.start,
+          end: (fresh ?? resumed).span.end,
+        },
+      } satisfies RestartStatementNode;
     }
 
     if (this.isKeyword("sort") || this.isKeyword("merge")) {

@@ -379,7 +379,6 @@ function runEmit(args: string[], cwd: string): CliResult {
         outputRoot,
       ),
       usesCopybooks: compiled.copybookMode === "copy",
-      usesSort: usesSort(compiled.ir.program as IRProgram),
     });
     writeJclOutputs(jclResult);
     return {
@@ -437,7 +436,6 @@ function runBuild(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
-    usesSort: usesSort(compiled.ir.program as IRProgram),
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -502,7 +500,6 @@ function runAuditReport(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
-    usesSort: usesSort(compiled.ir.program as IRProgram),
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -564,7 +561,6 @@ function runVerify(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
-    usesSort: usesSort(compiled.ir.program as IRProgram),
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -964,13 +960,6 @@ function describeExpression(expression: IRExpression): string {
     case "NullableCheck":
       return `${expression.operation}(${describeExpression(expression.operand)})`;
   }
-}
-
-/** True when a program runs an internal SORT or MERGE, so its job needs a work file. */
-function usesSort(program: IRProgram): boolean {
-  return JSON.stringify(program.transactions).includes(
-    '"kind":"SortStatement"',
-  );
 }
 
 function compileProject(projectPath: string, cwd: string): CompiledProject {

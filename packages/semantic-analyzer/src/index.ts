@@ -97,8 +97,15 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
   const checkpointed = statements.some(
     (statement) => statement.kind === "CheckpointStatement",
   );
+  // Both halves, because a position written down and never read back leaves the
+  // rerun starting at the beginning exactly as it would with no checkpoint at
+  // all. Accepting the checkpoint alone would let this warning be silenced by
+  // the half of the mechanism that does not do anything on its own.
+  const restarted = statements.some(
+    (statement) => statement.kind === "RestartStatement",
+  );
 
-  if (!postsInsideLoop || checkpointed) {
+  if (!postsInsideLoop || (checkpointed && restarted)) {
     return [];
   }
 
@@ -110,9 +117,13 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
     createDiagnostic({
       id: "BANK-FILE-003",
       severity: "warning",
-      message: `Transaction ${transaction.name} posts to the ledger inside a loop with no checkpoint.`,
+      message: checkpointed
+        ? `Transaction ${transaction.name} writes a restart position and never reads one back.`
+        : `Transaction ${transaction.name} posts to the ledger inside a loop with no checkpoint.`,
       span: transaction.span,
-      hint: "A rerun after a mid-stream failure starts again from the beginning. Add `checkpoint <file> from <record> every <n>;` inside the loop, or confirm the job is rerunnable another way.",
+      hint: checkpointed
+        ? "The rerun still starts at the beginning. Add `restart <file> into <record> { ... }` before the loop and resume from the position it finds."
+        : "A rerun after a mid-stream failure starts again from the beginning. Add `checkpoint <file> from <record> every <n>;` inside the loop and `restart <file> into <record> { ... }` before it, or confirm the job is rerunnable another way.",
       backendProfile: null,
     }),
   ];
@@ -344,6 +355,12 @@ function flattenStatements(statements: IRStatement[]): IRStatement[] {
       case "SearchStatement":
         flattened.push(...flattenStatements(statement.body.statements));
         flattened.push(...flattenStatements(statement.notFound.statements));
+        break;
+      case "RestartStatement":
+        flattened.push(...flattenStatements(statement.resumed.statements));
+        if (statement.fresh) {
+          flattened.push(...flattenStatements(statement.fresh.statements));
+        }
         break;
       case "FileStatement":
         if (statement.atEndOfPage) {

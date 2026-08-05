@@ -2026,11 +2026,25 @@ section in the flow of control would be run again on the way past; an
 ### Surviving a failure
 
 ```ts
-checkpoint restartFile from restartPoint every 1000;
+file restartFile indexed update record RestartPoint key jobName status restartStatus;
+
+restartPoint.jobName = "POSTBAT";
+
+restart restartFile into restartPoint {
+  log "RESUMING AFTER ", restartPoint.lastAccountId;
+} else {
+  log "NOTHING TO RESUME";
+}
+
+while ... {
+  ...
+  restartPoint.lastAccountId = posting.accountId;
+  checkpoint restartFile from restartPoint every 1000;
+}
 ```
 
 A job that dies halfway is rerun. Without a position written down, the rerun
-starts at the beginning and posts everything twice. A checkpoint writes that
+starts at the beginning and posts everything twice. `checkpoint` writes that
 position and, in a program with SQL, commits the work up to it — position first,
 commit after, so a restart that finds a position can trust everything up to it
 is durable.
@@ -2038,7 +2052,28 @@ is durable.
 Counting rather than checkpointing every record is the whole trade: a commit
 costs time, and rework after a failure costs the records since the last one.
 
-A transaction that posts to the ledger **inside a loop** with no checkpoint is
+`restart` is the other half, and without it the first half is decoration: a
+position nothing reads back leaves the rerun starting at the beginning exactly
+as it would with no checkpoint at all. It is a keyed read of the restart record.
+The key field of the record has to hold the key being looked for before the
+statement runs, the same way a keyed `read` works. The first branch is taken
+when a position was found, with the record holding it; the `else` branch when
+there was none. `else` is optional, because a fresh start often needs nothing
+done.
+
+The restart file must be **`indexed update`** (`BANK-FILE-003`). A sequential
+output file is rewritten from the start by the next `OPEN`, so a rerun that dies
+before its own first checkpoint destroys the position it was resuming from and
+the run after that starts from the beginning — the failure the whole mechanism
+exists to prevent. One keyed record, rewritten in place by each checkpoint, has
+no such window, and it is what a restart control record on z/OS conventionally
+is: a small KSDS holding the last committed position.
+
+A restart file is generated with `SELECT OPTIONAL`, because the first run of a
+batch has never written a position and the dataset does not exist yet. Every
+other file stays required, and a missing one still stops the job.
+
+A transaction that posts to the ledger **inside a loop** without both halves is
 `BANK-FILE-003`. It is a **warning**, not an error: the compiler can see the
 hazard but cannot tell whether the job is rerunnable another way — a consumed
 and recreated input, a small enough window, an operator procedure. It reports

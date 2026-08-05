@@ -272,6 +272,7 @@ export type IRStatement =
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
+  | IRRestartStatement
   | IRConsoleStatement
   | IRResetStatement
   | IRSearchStatement
@@ -304,6 +305,26 @@ export interface IRCheckpointStatement {
   /** True when the program has SQL, so the checkpoint also commits it. */
   commitsSql: boolean;
   recordFields: { name: string; arrayLength: number | null }[];
+  /** The key the position is written under, so a rerun can find it again. */
+  keyFieldName: string | null;
+}
+
+/**
+ * Reading back the position a checkpoint wrote.
+ *
+ * The half without which the other half is decoration: a keyed read of the
+ * restart record, and the two branches a batch needs — resume from here, or
+ * there is nothing to resume from.
+ */
+export interface IRRestartStatement {
+  kind: "RestartStatement";
+  span: SourceSpan;
+  fileName: string;
+  recordName: string;
+  keyFieldName: string | null;
+  recordFields: { name: string; arrayLength: number | null }[];
+  resumed: IRBlock;
+  fresh: IRBlock | null;
 }
 
 /**
@@ -1960,6 +1981,20 @@ function lowerStatement(
         every: statement.every,
         commitsSql: sqlTable.size > 0,
         recordFields: file?.recordFields ?? [],
+        keyFieldName: file?.keyFieldName ?? null,
+      };
+    }
+    case "RestartStatement": {
+      const file = fileTable.get(statement.fileName);
+      return {
+        kind: "RestartStatement",
+        span: statement.span,
+        fileName: statement.fileName,
+        recordName: statement.recordName,
+        keyFieldName: file?.keyFieldName ?? null,
+        recordFields: file?.recordFields ?? [],
+        resumed: lowerBlock(statement.resumed, scopeTypes),
+        fresh: statement.fresh ? lowerBlock(statement.fresh, scopeTypes) : null,
       };
     }
     case "SortStatement": {
