@@ -262,6 +262,19 @@ export interface FieldDeclarationNode extends NodeBase {
   name: string;
   type: TypeNode;
   /**
+   * `processed: binary<9> = 0;` — a COBOL `VALUE` clause.
+   *
+   * Working storage starts as whatever the region left there unless a field
+   * says otherwise, so a counter with no initial value is a counter that starts
+   * at an unpredictable number. Writing it in the record rather than in an
+   * opening paragraph keeps the fact next to the field, where it cannot drift
+   * out of step when the record gains one.
+   *
+   * A literal only. COBOL evaluates `VALUE` at compile time, so anything that
+   * needs computing belongs in the program.
+   */
+  initialValue: ExpressionNode | null;
+  /**
    * `sensitive nationalId: string<20>` — restricted data that must not reach a
    * log.
    *

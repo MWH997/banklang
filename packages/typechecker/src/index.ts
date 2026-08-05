@@ -216,6 +216,8 @@ export interface ResolvedField {
   justified: boolean;
   /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
   blankWhenZero: boolean;
+  /** `VALUE` — the compile-time literal the field starts as, as COBOL spells it. */
+  initialValue: string | null;
   /**
    * `RENAMES` — the run of fields this one is a second name for.
    *
@@ -4464,6 +4466,7 @@ function resolveRecord(
       name: field.name,
       span: field.span,
       type: resolved,
+      initialValue: resolveInitialValue(field, resolved, diagnostics),
       sensitive: field.sensitive,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
@@ -4560,6 +4563,9 @@ function resolveRenames(
       name: entry.name,
       span: entry.span,
       type: { kind: "string", length: bytes },
+      // A renames is a second name for storage that is already initialised by
+      // the fields it covers, so it carries no VALUE of its own.
+      initialValue: null,
       sensitive: fields.slice(from, to + 1).some((field) => field.sensitive),
       redefines: null,
       dependingOn: null,
@@ -6009,6 +6015,139 @@ function resolveReport(
     groups: declaration.groups,
     detailNames,
   };
+}
+
+/**
+ * The COBOL literal a `VALUE` clause carries, or a diagnostic saying why there
+ * is none.
+ *
+ * COBOL evaluates `VALUE` when it compiles, so the initial value has to be
+ * something the compiler can see: a written number, a written string, a boolean,
+ * or an enum member. Anything computed belongs in the program, where it can be.
+ *
+ * A `REDEFINES` field is refused outright. It has no storage of its own — it is
+ * a second reading of another field's bytes — so a VALUE on it would either be
+ * ignored or overwrite a value that field set, and neither is what was meant.
+ */
+function resolveInitialValue(
+  field: FieldDeclarationNode,
+  type: ResolvedType,
+  diagnostics: Diagnostic[],
+): string | null {
+  const expression = field.initialValue;
+  if (!expression) {
+    return null;
+  }
+
+  const reject = (message: string, hint: string): null => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-COPY-006",
+        severity: "error",
+        message,
+        span: expression.span,
+        hint,
+        backendProfile: null,
+      }),
+    );
+    return null;
+  };
+
+  if (field.redefines) {
+    return reject(
+      `${field.name} redefines ${field.redefines}, so it has no storage of its own to initialise.`,
+      "Put the initial value on the field being redefined, which is where the bytes are.",
+    );
+  }
+
+  switch (expression.kind) {
+    case "DecimalLiteral": {
+      if (!isDecimalType(type) && type.kind !== "currency") {
+        return reject(
+          `${field.name} holds ${describeType(type)}, which cannot start as a number.`,
+          "Give the field a literal of its own type.",
+        );
+      }
+      return expression.text;
+    }
+    case "StringLiteral": {
+      if (type.kind !== "string") {
+        return reject(
+          `${field.name} holds ${describeType(type)}, which cannot start as text.`,
+          "Give the field a literal of its own type.",
+        );
+      }
+      if (expression.value.length > type.length) {
+        return reject(
+          `${field.name} starts as ${expression.value.length} characters but holds ${type.length}.`,
+          "A VALUE longer than the field is truncated silently, so COBOL rejects it instead.",
+        );
+      }
+      return `"${expression.value}"`;
+    }
+    case "BooleanLiteral": {
+      if (type.kind !== "bool") {
+        return reject(
+          `${field.name} holds ${describeType(type)}, which cannot start as a boolean.`,
+          "Give the field a literal of its own type.",
+        );
+      }
+      // A bool is PIC X holding Y or N, which is what the emitter already reads.
+      return expression.value ? `"Y"` : `"N"`;
+    }
+    // `Status.OPEN` parses as a member access; which enum it names is not known
+    // until the type is resolved, which is here.
+    case "MemberAccess": {
+      if (type.kind !== "enum") {
+        return reject(
+          `${field.name} holds ${describeType(type)}, which cannot start as an enum member.`,
+          "Give the field a literal of its own type.",
+        );
+      }
+      if (
+        expression.target.kind !== "Identifier" ||
+        expression.target.name !== type.name
+      ) {
+        return reject(
+          `${field.name} holds ${type.name}, so its initial value has to be one of its members.`,
+          `Write \`${type.name}.${type.members[0] ?? "MEMBER"}\`.`,
+        );
+      }
+      if (!type.members.includes(expression.member)) {
+        return reject(
+          `${type.name} has no member ${expression.member}.`,
+          `Its members are ${type.members.join(", ")}.`,
+        );
+      }
+      return `"${expression.member}"`;
+    }
+    case "EnumMember": {
+      if (type.kind !== "enum") {
+        return reject(
+          `${field.name} holds ${describeType(type)}, which cannot start as an enum member.`,
+          "Give the field a literal of its own type.",
+        );
+      }
+      if (expression.enumName !== type.name) {
+        return reject(
+          `${field.name} holds ${type.name} but starts as a member of ${expression.enumName}.`,
+          "Name a member of the field's own enum.",
+        );
+      }
+      if (!type.members.includes(expression.member)) {
+        return reject(
+          `${type.name} has no member ${expression.member}.`,
+          `Its members are ${type.members.join(", ")}.`,
+        );
+      }
+      return `"${expression.member}"`;
+    }
+    default:
+      return reject(
+        `${field.name} starts as something the compiler cannot evaluate.`,
+        "COBOL works a VALUE out when it compiles, so it has to be a written number, string, boolean, or enum member.",
+      );
+  }
 }
 
 /**

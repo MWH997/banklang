@@ -185,6 +185,8 @@ export interface IRField {
   dependingOn: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
+  /** `VALUE` — the literal the field starts as, already in COBOL's spelling. */
+  initialValue: string | null;
   /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
   justified: boolean;
   /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
@@ -1714,6 +1716,7 @@ function lowerRecord(
       synchronized: field.synchronized,
       justified: field.justified,
       blankWhenZero: field.blankWhenZero,
+      initialValue: field.initialValue,
       renames: field.renames,
     })),
   };
@@ -2686,6 +2689,7 @@ function lowerType(type: ResolvedType): IRType {
           synchronized: field.synchronized,
           justified: field.justified,
           blankWhenZero: field.blankWhenZero,
+          initialValue: field.initialValue,
           renames: field.renames,
         })),
       };

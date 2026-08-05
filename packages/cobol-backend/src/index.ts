@@ -533,7 +533,9 @@ export function emitCobol(
         addLine(`       FD  ${fileCobolName(file.name)}.`);
       }
       addLine(`       01  ${fileRecordName(file)}.`);
+      suppressInitialValues = true;
       emitRecordFields(file.record.fields, 1, addLine);
+      suppressInitialValues = false;
       emitAllRenames(
         file.record,
         fileRecordName(file),
@@ -552,7 +554,9 @@ export function emitCobol(
       addLine("");
       addLine(`       SD  ${sortWorkName(file.name)}.`);
       addLine(`       01  ${sortWorkRecordName(file.name)}.`);
+      suppressInitialValues = true;
       emitRecordFields(file.record.fields, 1, addLine);
+      suppressInitialValues = false;
       emitAllRenames(
         file.record,
         sortWorkRecordName(file.name),
@@ -1458,6 +1462,7 @@ function fieldClauses(field: IRField): {
   synchronized: boolean;
   justified: boolean;
   blankWhenZero: boolean;
+  initialValue: string | null;
 } {
   return {
     redefines: field.redefines,
@@ -1465,6 +1470,7 @@ function fieldClauses(field: IRField): {
     synchronized: field.synchronized,
     justified: field.justified,
     blankWhenZero: field.blankWhenZero,
+    initialValue: field.initialValue,
   };
 }
 
@@ -1481,6 +1487,7 @@ function emitField(
     synchronized?: boolean;
     justified?: boolean;
     blankWhenZero?: boolean;
+    initialValue?: string | null;
   } = {},
 ): void {
   const cobolName = toCobolFieldName(name);
@@ -1503,6 +1510,13 @@ function emitField(
   // report line with no movement prints blank instead of 0.00.
   const justified = clauses.justified ? " JUSTIFIED RIGHT" : "";
   const blankWhenZero = clauses.blankWhenZero ? " BLANK WHEN ZERO" : "";
+  // COBOL does not allow VALUE in the FILE SECTION: an FD record describes a
+  // buffer the file fills, so there is nothing to initialise. The same record
+  // carries its initial values in working storage and drops them here.
+  const initialValue =
+    clauses.initialValue && !suppressInitialValues
+      ? ` VALUE ${clauses.initialValue}`
+      : "";
 
   // A bounded array becomes OCCURS. Arrays of records nest their fields.
   if (type.kind === "array") {
@@ -1539,8 +1553,15 @@ function emitField(
     return;
   }
 
+  // A bool carries its own `VALUE 'N'`, being false unless set. An explicit
+  // initial value replaces it rather than being written beside it, which COBOL
+  // would reject as two VALUE clauses on one field.
+  const picture = initialValue
+    ? formatCobolType(type).replace(/ VALUE '.'$/, "")
+    : formatCobolType(type);
+
   addLine(
-    `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${formatCobolType(type)}${sync}${justified}${blankWhenZero}.`,
+    `${indent}${lvl}  ${(cobolName + redefines).padEnd(20)} ${picture}${sync}${justified}${blankWhenZero}${initialValue}.`,
   );
 
   // Enum members become level-88 condition names, the idiomatic COBOL form.
@@ -1552,6 +1573,15 @@ function emitField(
     }
   }
 }
+
+/**
+ * True while an FD or SD record is being written, where COBOL forbids `VALUE`.
+ *
+ * The same record is emitted in working storage and again inside every file
+ * that holds it, so the clause has to be dropped in one place and kept in the
+ * other rather than being decided when the field was declared.
+ */
+let suppressInitialValues = false;
 
 function nullIndicatorName(fieldName: string): string {
   return `${toCobolFieldName(fieldName)}-IND`;

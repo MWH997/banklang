@@ -422,6 +422,18 @@ declared before the table, which COBOL reads to decide the record's length.
 number's alignment is decided by its picture. `blankWhenZero` prints spaces for
 a zero, so there has to be a number to be zero.
 
+### `BANK-COPY-006` invalid initial value
+
+A field's initial value becomes a COBOL `VALUE` clause, which the compiler
+evaluates when it compiles. It has to be something the compiler can see: a
+written number, string, boolean, or enum member of the field's own type, short
+enough to fit — a `VALUE` longer than its field would be truncated silently, so
+it is refused instead.
+
+A `REDEFINES` field cannot carry one. It has no storage of its own, only a
+second reading of another field's bytes, so the value belongs on the field being
+redefined.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified
