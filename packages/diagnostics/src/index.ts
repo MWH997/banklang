@@ -314,6 +314,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-029",
+    title: "Invalid dynamic call",
+    explanation:
+      "`call <name> using <record>` names its load module by a value rather than by a literal in the source, so the name has to be text and short enough to be one — eight characters, because a longer field is truncated to a name that does not exist. What the compiler cannot check is whether the module is there: that is the nature of a dynamic call, which is why a call with no `on error` is warned about. A static call that cannot be resolved fails at link time where somebody sees it; a dynamic one fails in the middle of a batch.",
+    remediation:
+      "Name the module with a `string<8>` field or a literal, hand over a record, and add `on error { ... }` so a missing module becomes a rejected record rather than an abend.",
+    specReference: "language-reference.md section 9b",
+    implemented: true,
+  },
+  {
     id: "BANK-DEC-001",
     title: "Floating-point money forbidden",
     explanation:

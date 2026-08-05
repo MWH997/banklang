@@ -32,6 +32,8 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "sort",
   "merge",
   "report",
+  "call",
+  "cancel",
   "initiate",
   "generate",
   "terminate",

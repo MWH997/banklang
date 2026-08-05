@@ -204,6 +204,18 @@ wrong row, or reports no match on a row that is there.
 
 Use a plain `search` to walk a table any other way.
 
+### `BANK-TYPE-029` invalid dynamic call
+
+`call <name> using <record>` names its load module by a value rather than by a
+literal in the source, so the name has to be text and short enough to be one:
+eight characters, because a longer field is truncated to a name that does not
+exist and the failure then arrives as a missing module rather than as a length.
+
+What the compiler cannot check is whether the module is _there_. That is the
+nature of a dynamic call, and it is why a `call` with no `on error` is warned
+about: a static call that cannot be resolved fails at link time where somebody
+sees it, and a dynamic one fails in the middle of a batch.
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden

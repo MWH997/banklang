@@ -46,6 +46,7 @@ import {
   type ReportLineNode,
   type ReportPageNode,
   type ReportSourceNode,
+  type ProgramCallStatementNode,
   type ReportStatementNode,
   type SerializeStatementNode,
   type XmlBindingNode,
@@ -170,6 +171,8 @@ export const KEYWORDS = new Set([
   "sort",
   "merge",
   "report",
+  "call",
+  "cancel",
   "initiate",
   "generate",
   "terminate",
@@ -2373,6 +2376,58 @@ class Parser {
     for (const format of ["json", "xml"] as const) {
       if (this.isKeyword(format)) {
         return this.parseSerializeStatement(format);
+      }
+    }
+
+    // `call <name> using <record> on error { ... };` and `cancel <name>;`
+    for (const operation of ["call", "cancel"] as const) {
+      if (this.isKeyword(operation)) {
+        const keyword = this.advance();
+        const program = this.parseExpression();
+        if (!program) {
+          return null;
+        }
+
+        const using =
+          operation === "call" && this.matchContextual("using")
+            ? this.parseFieldReference("Expected the record to hand over.")
+            : null;
+
+        let onError: BlockNode | null = null;
+        if (
+          operation === "call" &&
+          this.isKeyword("on") &&
+          this.next.kind === "keyword" &&
+          this.next.text === "error"
+        ) {
+          this.advance();
+          this.advance();
+          onError = this.parseBlock();
+          if (!onError) {
+            return null;
+          }
+        }
+
+        const semicolon = this.expectPunctuation(
+          ";",
+          `Expected \`;\` after \`${operation}\`.`,
+        );
+        if (!semicolon) {
+          return null;
+        }
+
+        return {
+          kind: "ProgramCallStatement",
+          operation,
+          program,
+          using,
+          onError,
+          span: {
+            sourceFile: keyword.span.sourceFile,
+            start: keyword.span.start,
+            end: semicolon.span.end,
+          },
+        } satisfies ProgramCallStatementNode;
       }
     }
 

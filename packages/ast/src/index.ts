@@ -755,6 +755,7 @@ export type StatementNode =
   | SerializeStatementNode
   | XmlParseStatementNode
   | ReportStatementNode
+  | ProgramCallStatementNode
   | SortStatementNode
   | ReleaseStatementNode
   | CheckpointStatementNode
@@ -1125,6 +1126,32 @@ export interface XmlBindingNode extends NodeBase {
   element: string;
   elementSpan: SourceSpan;
   target: MemberAccessNode | IdentifierNode;
+}
+
+/**
+ * `call <name> using <record> on error { ... };` and `cancel <name>;`
+ *
+ * A dynamic `CALL`: the program being called is named by a *value*, not written
+ * into the source. That is how a bank dispatches — a product code selects the
+ * module that prices it, and a new product ships as a new load module without
+ * relinking anything that calls it.
+ *
+ * `ON EXCEPTION` is what makes it safe. A static call that cannot be resolved
+ * fails at link time, where someone sees it; a dynamic one fails at run time, in
+ * the middle of a batch, and without a handler that is an abend rather than a
+ * rejected record.
+ *
+ * `CANCEL` drops the loaded module so the next call gets it fresh — which
+ * matters when its working storage is state the caller does not want carried
+ * from one invocation to the next.
+ */
+export interface ProgramCallStatementNode extends NodeBase {
+  kind: "ProgramCallStatement";
+  operation: "call" | "cancel";
+  program: ExpressionNode;
+  /** The record handed over, which the callee reads through its LINKAGE. */
+  using: MemberAccessNode | IdentifierNode | null;
+  onError: BlockNode | null;
 }
 
 /**

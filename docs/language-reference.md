@@ -899,6 +899,35 @@ not cosmetic — `WORKING-STORAGE` is shared across invocations, so locals held
 there are overwritten by the nested call and the program returns a wrong answer
 while compiling perfectly.
 
+## 9b-1. Calling another program
+
+```ts
+call request.productModule using payload on error {
+  returnCode = 12;
+};
+
+cancel request.productModule;
+```
+
+A **dynamic** `CALL`: the module is named by a value, not written into the
+source. That is how a bank dispatches — a product code selects the module that
+prices it, and a new product ships as a new load module without relinking
+anything that calls it.
+
+The name is `string<8>` or a literal, because that is what a load module name
+is; a longer field would be truncated to a name that does not exist
+(`BANK-TYPE-029`). The record handed over is what the callee reads through its
+own `LINKAGE SECTION`.
+
+**`on error` is the point.** A static call that cannot be resolved fails at link
+time, where somebody sees it. A dynamic one fails in the middle of a batch, and
+without a handler that is an abend rather than a rejected record — so a `call`
+without one is warned about.
+
+`cancel` drops the loaded module, so the next call gets its working storage as
+the compiler left it rather than as the last call left it. It takes no handler:
+nothing is being entered, so there is no failure to catch.
+
 ## 9c. Assignment
 
 ```ts

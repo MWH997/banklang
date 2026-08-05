@@ -264,6 +264,7 @@ export type IRStatement =
   | IRSerializeStatement
   | IRXmlParseStatement
   | IRReportStatement
+  | IRProgramCallStatement
   | IRSortStatement
   | IRReleaseStatement
   | IRCheckpointStatement
@@ -364,6 +365,16 @@ export interface IRXmlParseStatement {
     /** True when the content has to go through `FUNCTION NUMVAL` to land. */
     numeric: boolean;
   }[];
+  onError: IRBlock | null;
+}
+
+/** `CALL <name> USING <record>` and `CANCEL <name>`, both naming the module by value. */
+export interface IRProgramCallStatement {
+  kind: "ProgramCallStatement";
+  span: SourceSpan;
+  operation: "call" | "cancel";
+  program: IRExpression;
+  using: IRExpression | null;
   onError: IRBlock | null;
 }
 
@@ -1920,6 +1931,19 @@ function lowerStatement(
         targets: statement.targets.map((target) =>
           lowerExpression(target, scopeTypes),
         ),
+      };
+    case "ProgramCallStatement":
+      return {
+        kind: "ProgramCallStatement",
+        span: statement.span,
+        operation: statement.operation,
+        program: lowerExpression(statement.program, scopeTypes),
+        using: statement.using
+          ? lowerExpression(statement.using, scopeTypes)
+          : null,
+        onError: statement.onError
+          ? lowerBlock(statement.onError, scopeTypes)
+          : null,
       };
     case "ReportStatement":
       return {
