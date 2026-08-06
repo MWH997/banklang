@@ -1685,6 +1685,7 @@ function renderHelp(): string {
     "Commands:",
     "  check <project>",
     "  build <project>",
+    "  job <directory>",
     "  emit cobol <project>",
     "  emit copybooks <project>",
     "  emit jcl <project>",
