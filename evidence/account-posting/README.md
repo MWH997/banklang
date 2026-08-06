@@ -41,11 +41,6 @@ pnpm bankc test examples/account-posting
 
 Generated on Node.js 24.
 
-## Related tester notes
-
-- [Banking diagnostics tester notes](../../tester-notes/2026-08-04-banking-diagnostics.md)
-- [Source map coverage tester notes](../../tester-notes/2026-08-04-source-map-coverage-checker.md)
-
 ## Notes
 
 The generated COBOL calls `BANKLEDG` and `BANKAUDT`, which are BankLang calling

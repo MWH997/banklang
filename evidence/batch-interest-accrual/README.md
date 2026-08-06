@@ -23,10 +23,6 @@ example.
 - `maps/source-map.json`
 - `source/main.bank.ts`
 
-## Related tester notes
-
-- [Local variable and arithmetic tester notes](../../tester-notes/2026-07-06-local-variable-arithmetic-expansion.md)
-
 ## Notes
 
 No IBM validation claim is made here. The bundle records local deterministic
