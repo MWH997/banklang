@@ -336,3 +336,66 @@ describe("validated with GnuCOBOL, not IBM", () => {
     });
   }
 });
+
+/**
+ * The citation file, held to the rest of the repository.
+ *
+ * A `CITATION.cff` is metadata nobody reads while working, which is exactly why
+ * it rots: it names a version, a licence and a repository, and each of those is
+ * stated somewhere else that does change. The failure is silent and it surfaces
+ * in the worst place — in somebody else's bibliography, naming a release that
+ * was never cut.
+ *
+ * So every field checked here is compared against the thing it duplicates
+ * rather than against a literal.
+ */
+describe("the citation file", () => {
+  const citation = readFileSync(resolve(process.cwd(), "CITATION.cff"), "utf8");
+  const field = (name: string): string | undefined =>
+    new RegExp(`^${name}:\\s*(.+)$`, "m")
+      .exec(citation)?.[1]
+      ?.trim()
+      .replace(/^["']|["']$/g, "");
+
+  const manifest = JSON.parse(
+    readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
+  ) as { version: string; license: string; homepage: string };
+
+  it("names the version package.json names", () => {
+    expect(field("version")).toBe(manifest.version);
+  });
+
+  it("names a version the changelog knows about", () => {
+    const changelog = readFileSync(
+      resolve(process.cwd(), "CHANGELOG.md"),
+      "utf8",
+    );
+    expect(changelog).toContain(manifest.version);
+  });
+
+  it("names the licence the repository is under", () => {
+    expect(field("license")).toBe(manifest.license);
+    expect(readFileSync(resolve(process.cwd(), "LICENSE"), "utf8")).toContain(
+      "MIT License",
+    );
+  });
+
+  it("points at this repository and this site", () => {
+    expect(field("repository-code")).toBe("https://github.com/MWH997/banklang");
+    expect(field("url")).toBe(manifest.homepage);
+  });
+
+  it("makes the same GnuCOBOL claim every other surface makes", () => {
+    expect(
+      /No IBM\s+Enterprise COBOL validation/i.test(
+        citation.replace(/\s+/g, " "),
+      ),
+      "CITATION.cff describes the project without saying no IBM validation is claimed.",
+    ).toBe(true);
+  });
+
+  it("is the version of the format it declares", () => {
+    // 1.2.0 is what GitHub and Zenodo parse; an older one is read differently.
+    expect(field("cff-version")).toBe("1.2.0");
+  });
+});
