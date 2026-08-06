@@ -68,6 +68,7 @@ export function analyzeProgramSemantics(
     diagnostics.push(...checkAuditEvents(transaction, auditStatements));
     diagnostics.push(...checkLedgerBalance(transaction, ledgerStatements));
     diagnostics.push(...checkRestartable(transaction));
+    diagnostics.push(...checkHeldCursors(transaction, program));
   }
 
   for (const file of program.files) {
@@ -136,6 +137,53 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
       backendProfile: null,
     }),
   ];
+}
+
+/**
+ * A commit inside a cursor loop, over a cursor that will not survive it.
+ *
+ * Db2's Application Programming Guide is unambiguous: "A held cursor does not
+ * close after a commit operation. A cursor that is not held closes after a
+ * commit operation." So a batch that commits inside its own loop — which is
+ * what a long run has to do, to stop the log filling and the locks
+ * accumulating — finds its cursor closed on the next `FETCH`, which answers
+ * `-501`.
+ *
+ * An error rather than a warning, because there is no reading under which the
+ * program is right: either the commit does not belong in the loop or the cursor
+ * needs `hold`, and the author knows which.
+ */
+function checkHeldCursors(
+  transaction: IRTransaction,
+  program: IRProgram,
+): Diagnostic[] {
+  const held = new Map(
+    program.sql
+      .filter((entry) => entry.form === "cursor")
+      .map((entry) => [entry.name, entry.hold]),
+  );
+
+  return flattenStatements(transaction.body.statements)
+    .filter(
+      (statement) =>
+        statement.kind === "CursorLoopStatement" &&
+        held.get(statement.cursorName) === false &&
+        flattenStatements(statement.body.statements).some(
+          (inner) =>
+            inner.kind === "UnitOfWorkStatement" &&
+            inner.operation === "commit",
+        ),
+    )
+    .map((statement) =>
+      createDiagnostic({
+        id: "BANK-SQL-008",
+        severity: "error",
+        message: `Cursor ${(statement as { cursorName: string }).cursorName} is committed inside its own loop and is not declared \`hold\`.`,
+        span: statement.span,
+        hint: "Db2 closes a cursor that is not held when the unit of work commits, so the next FETCH answers -501. Declare the cursor `hold`, or move the commit out of the loop.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
 }
 
 /**

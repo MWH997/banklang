@@ -839,6 +839,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-SQL-008",
+    title: "A commit inside a loop over a cursor that will not survive it",
+    explanation:
+      'Db2\'s Application Programming and SQL Guide: "A held cursor does not close after a commit operation. A cursor that is not held closes after a commit operation." A long batch has to commit inside its own cursor loop — otherwise the log fills and the locks accumulate until nothing else can read the table — and doing that over a cursor without `WITH HOLD` closes it. The next `FETCH` answers `-501`, cursor not open, having already processed part of the result set and committed it.',
+    remediation:
+      "Declare the cursor `hold`, which emits `DECLARE ... CURSOR WITH HOLD FOR`, or move the commit out of the loop.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-012",
     title: "Two files share one DD name",
     explanation:

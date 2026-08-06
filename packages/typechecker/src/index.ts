@@ -366,6 +366,8 @@ export interface ResolvedSql {
   result: ResolvedRecord | null;
   /** `statement` is run with `execute`; `cursor` is read with a bounded loop. */
   form: "statement" | "cursor";
+  /** `WITH HOLD` — the cursor survives a commit. */
+  hold: boolean;
   text: string;
   /**
    * A cursor's SELECT with its `INTO` clause removed, and that clause on its
@@ -1013,6 +1015,7 @@ function resolveSql(
     parameters,
     result,
     form: declaration.form,
+    hold: declaration.hold,
     text: declaration.text,
     cursorSelect: cursor.select,
     cursorInto: cursor.into,

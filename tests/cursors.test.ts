@@ -323,3 +323,116 @@ entry transaction drain(account: Account) {
     expect(errors(result)).toEqual([]);
   });
 });
+
+/**
+ * `WITH HOLD`, and the commit that closes a cursor without it.
+ *
+ * Db2's Application Programming and SQL Guide: "A held cursor does not close
+ * after a commit operation. A cursor that is not held closes after a commit
+ * operation." A long batch has to commit inside its own loop — otherwise the
+ * log fills and the locks accumulate until nothing else can read the table —
+ * and the next `FETCH` over a closed cursor answers `-501`, having already
+ * processed and committed part of the result set.
+ */
+describe("a held cursor", () => {
+  const program = (hold: string, commit: string): string => `module Held;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record AccountRow {
+  rowAccountId: string<16>;
+  rowBalance: BDT;
+}
+
+record RunTotals {
+  rowsSeen: unsigned<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+cursor everyAccount(keyBranch: string<8>)${hold}: AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+
+entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) {
+  for each row in everyAccount(branchId) limit 100000 {
+    totals.rowsSeen = totals.rowsSeen + 1;
+${commit}
+  }
+
+  audit("WALKED", totals.idempotencyKey);
+}
+`;
+
+  it("declares WITH HOLD", () => {
+    const result = compile(program(" hold ", "    commit;"));
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain(
+      "DECLARE EVERY-ACCOUNT CURSOR WITH HOLD FOR",
+    );
+  });
+
+  it("leaves the clause off when the cursor is not held", () => {
+    const result = compile(
+      program(" ", "    totals.rowsSeen = totals.rowsSeen;"),
+    );
+
+    expect(result.cobol).toContain("DECLARE EVERY-ACCOUNT CURSOR FOR");
+    expect(result.cobol).not.toContain("WITH HOLD");
+  });
+
+  it("refuses a commit inside a loop over a cursor that is not held", () => {
+    const ids = compile(program(" ", "    commit;")).diagnostics.map(
+      (entry) => entry.id,
+    );
+
+    expect(ids).toContain("BANK-SQL-008");
+  });
+
+  it("allows the same commit when the cursor is held", () => {
+    const ids = compile(program(" hold ", "    commit;")).diagnostics.map(
+      (entry) => entry.id,
+    );
+
+    expect(ids).not.toContain("BANK-SQL-008");
+  });
+
+  /** A commit after the loop closes a cursor that is already closed. */
+  it("allows a commit outside the loop either way", () => {
+    const result = compile(`module Held2;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record AccountRow {
+  rowAccountId: string<16>;
+  rowBalance: BDT;
+}
+
+record RunTotals {
+  rowsSeen: unsigned<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+cursor everyAccount(keyBranch: string<8>): AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+
+entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) {
+  for each row in everyAccount(branchId) limit 100000 {
+    totals.rowsSeen = totals.rowsSeen + 1;
+  }
+
+  commit;
+  audit("WALKED", totals.idempotencyKey);
+}
+`);
+
+    expect(result.diagnostics).toEqual([]);
+  });
+});
