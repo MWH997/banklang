@@ -64,13 +64,21 @@ export function fitCobolWord(
 }
 
 function rawCobolName(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/[_\s]+/g, "-")
-    .replace(/[^A-Za-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toUpperCase();
+  return (
+    name
+      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+      // A digit starts a word of its own. `WS-TIER-1-RATE` is how the name is
+      // written on an estate, and it is what a copybook holds — so without this
+      // `CM-ADDR-LINE-1` imports as `cmAddrLine1` and comes back out as
+      // `CM-ADDR-LINE1`, a different name for the same field. The importer's
+      // round-trip check is what found it.
+      .replace(/([A-Za-z])(\d)/g, "$1-$2")
+      .replace(/[_\s]+/g, "-")
+      .replace(/[^A-Za-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toUpperCase()
+  );
 }
 
 /**
@@ -707,7 +715,20 @@ export function copybookMemberName(recordName: string): string {
 }
 
 export function toCobolFieldName(fieldName: string): string {
+  // A `reserved <n>;` slot carries a generated name so the field list stays a
+  // list of named things, and it is spelled with a `#` so nothing a programmer
+  // writes can collide with it. What it becomes is `FILLER`, which is not a
+  // name at all: it is the word COBOL uses for space nothing refers to, and it
+  // may repeat within a record.
+  if (isReservedSlotName(fieldName)) {
+    return "FILLER";
+  }
   return toCobolName(fieldName);
+}
+
+/** True for the generated name of a `reserved <n>;` slot. */
+export function isReservedSlotName(fieldName: string): boolean {
+  return fieldName.startsWith("reserved#");
 }
 
 /** Width of the widest enum member, which is the PIC X(n) size. */

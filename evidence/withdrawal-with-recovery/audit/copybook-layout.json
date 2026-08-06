@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/copybook-layout.md",
+  "artifact": "evidence/withdrawal-with-recovery/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "CurrentAccount",

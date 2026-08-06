@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/Code/banklang/evidence/branch-accrual-cursor/audit/copybook-layout.md
+Artifact: evidence/branch-accrual-cursor/audit/copybook-layout.md
 
 ## ACCRUAL-REQUEST
 

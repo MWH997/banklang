@@ -47,7 +47,7 @@ describe("log", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain(
-      'DISPLAY "STARTED " MODE1 OF RUN1 UPON SYSOUT',
+      'DISPLAY "STARTED " MODE-1 OF RUN-1 UPON SYSOUT',
     );
   });
 
@@ -65,7 +65,7 @@ describe("accept", () => {
     const result = txn("  accept parameter into run1.mode1;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("ACCEPT MODE1 OF RUN1 FROM SYSIN");
+    expect(result.cobol).toContain("ACCEPT MODE-1 OF RUN-1 FROM SYSIN");
   });
 
   /** `FROM DATE YYYYMMDD` gives the four-digit year the bare form does not. */
@@ -74,13 +74,13 @@ describe("accept", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain(
-      "ACCEPT RUN-DATE OF RUN1 FROM DATE YYYYMMDD",
+      "ACCEPT RUN-DATE OF RUN-1 FROM DATE YYYYMMDD",
     );
   });
 
   it("reads the clock into a time", () => {
     expect(txn("  accept time into run1.startedAt;").cobol).toContain(
-      "ACCEPT STARTED-AT OF RUN1 FROM TIME",
+      "ACCEPT STARTED-AT OF RUN-1 FROM TIME",
     );
   });
 
@@ -103,7 +103,7 @@ describe("reset", () => {
     const result = txn("  reset run1;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("INITIALIZE RUN1");
+    expect(result.cobol).toContain("INITIALIZE RUN-1");
   });
 
   it("clears a record, not a field", () => {

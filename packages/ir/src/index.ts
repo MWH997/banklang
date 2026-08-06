@@ -185,6 +185,8 @@ export interface IRField {
    * read the BankTS source to find out.
    */
   sensitive: boolean;
+  /** `FILLER` — space nothing names, so nothing may move through it either. */
+  reserved: boolean;
   /** The field whose storage this one re-reads, for a variant record. */
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
@@ -1135,9 +1137,10 @@ export function lowerProgramToIR(
       keyFieldName: file.keyField?.name ?? null,
       alternateKeyNames: file.alternateKeys.map((field) => field.name),
       // A renames overlaps the run it names, so mapping it too would move the
-      // same bytes twice.
+      // same bytes twice; a reserved slot is `FILLER`, which has no name to
+      // move through and whose bytes are nobody's to copy.
       recordFields: file.record.fields
-        .filter((field) => !field.renames)
+        .filter((field) => !field.renames && !field.reserved)
         .map((field) => ({
           name: field.name,
           arrayLength: field.type.kind === "array" ? field.type.length : null,
@@ -1939,6 +1942,7 @@ function lowerRecord(
       span: field.span,
       type: lowerType(field.type),
       sensitive: field.sensitive,
+      reserved: field.reserved,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
       ascendingKey: field.ascendingKey,
@@ -2990,6 +2994,7 @@ function lowerType(type: ResolvedType): IRType {
           span: field.span,
           type: lowerType(field.type),
           sensitive: field.sensitive,
+          reserved: field.reserved,
           redefines: field.redefines,
           dependingOn: field.dependingOn,
           ascendingKey: field.ascendingKey,

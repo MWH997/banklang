@@ -7,7 +7,7 @@
       "severity": "warning",
       "message": "Transaction accrueBranch posts to the ledger inside a loop with no checkpoint.",
       "span": {
-        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
           "line": 42,
           "column": 19

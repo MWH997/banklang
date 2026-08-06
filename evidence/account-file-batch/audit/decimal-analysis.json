@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "AccountRecord",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 7,
           "column": 3
@@ -27,9 +27,9 @@
       "category": "record-field",
       "owner": "PostingRecord",
       "symbol": "postingBalance",
-      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 12,
           "column": 3
@@ -48,9 +48,9 @@
       "category": "parameter",
       "owner": "isOverdrawn",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 20,
           "column": 22
@@ -69,9 +69,9 @@
       "category": "literal",
       "owner": "isOverdrawn",
       "symbol": "0.00",
-      "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+      "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts",
+        "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
           "line": 21,
           "column": 10

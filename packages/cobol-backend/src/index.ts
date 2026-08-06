@@ -758,6 +758,14 @@ export interface CobolEmitResult {
 }
 
 export interface CobolEmitOptions {
+  /**
+   * The bundle root the source map's paths are recorded relative to.
+   *
+   * Where the files are written is a caller's business; what the source map
+   * says they are is part of the artifact, and an absolute path makes the
+   * artifact different on every machine.
+   */
+  artifactRoot?: string;
   cobolArtifactPath?: string;
   sourceMapArtifactPath?: string;
   /**
@@ -813,6 +821,29 @@ export interface JclEmitOptions {
   jclArtifactPath?: string;
 }
 
+/**
+ * An artifact path as the source map should record it: relative to the bundle
+ * root when there is one, and unchanged when there is not.
+ */
+function relativeArtifactPath(path: string, root: string | undefined): string {
+  if (!root) {
+    return path;
+  }
+  // Written out rather than taken from `node:path`, because this module is
+  // compiled into the browser playground and importing a Node built-in there
+  // is what `tests/browser-safety.test.ts` exists to refuse.
+  const trimmed = root.replace(/[/\\]+$/, "");
+  for (const separator of ["/", "\\"]) {
+    const prefix = `${trimmed}${separator}`;
+    if (path.startsWith(prefix)) {
+      return path.slice(prefix.length);
+    }
+  }
+  // A path that is not under the root stays as it was: a `../` chain is no
+  // more portable than an absolute path and is harder to read.
+  return path;
+}
+
 export function emitCobol(
   program: IRProgram,
   options: CobolEmitOptions = {},
@@ -822,6 +853,21 @@ export function emitCobol(
     options.cobolArtifactPath ?? defaultCobolArtifactPath(program.moduleName);
   const sourceMapArtifactPath =
     options.sourceMapArtifactPath ?? "dist/maps/source-map.json";
+  // What the source map records, which is not the same as where the file is
+  // written. A bundle built at `/Users/somebody/banklang/evidence/x` recorded
+  // that absolute path in every entry, so the checked-in evidence could not be
+  // reproduced byte for byte on any other machine — in a project whose first
+  // claim is that the same input always produces the same output. Recorded
+  // relative to the bundle's own root, a source map is the same file wherever
+  // it was built.
+  const recordedCobolPath = relativeArtifactPath(
+    cobolArtifactPath,
+    options.artifactRoot,
+  );
+  const recordedSourceMapPath = relativeArtifactPath(
+    sourceMapArtifactPath,
+    options.artifactRoot,
+  );
   const lines: string[] = [];
   const entries: SourceMapEntry[] = [];
   currentSql = new Map(program.sql.map((entry) => [entry.name, entry]));
@@ -1331,7 +1377,7 @@ export function emitCobol(
         sourceFile: program.sourceFile,
         sourceStart: record.span.start,
         sourceEnd: record.span.end,
-        artifact: cobolArtifactPath,
+        artifact: recordedCobolPath,
         targetStartLine: recordStart,
         targetEndLine: recordStart,
         category: "record",
@@ -1380,7 +1426,7 @@ export function emitCobol(
       sourceFile: program.sourceFile,
       sourceStart: record.span.start,
       sourceEnd: record.span.end,
-      artifact: cobolArtifactPath,
+      artifact: recordedCobolPath,
       targetStartLine: recordStart,
       targetEndLine: recordEnd,
       category: "record",
@@ -1393,7 +1439,7 @@ export function emitCobol(
         sourceFile: program.sourceFile,
         sourceStart: field.span.start,
         sourceEnd: field.span.end,
-        artifact: cobolArtifactPath,
+        artifact: recordedCobolPath,
         targetStartLine: line,
         targetEndLine: Math.max(line, end),
         category: "field",
@@ -1730,7 +1776,7 @@ export function emitCobol(
       sourceFile: program.sourceFile,
       sourceStart: fn.span.start,
       sourceEnd: fn.span.end,
-      artifact: cobolArtifactPath,
+      artifact: recordedCobolPath,
       targetStartLine: functionStart,
       targetEndLine: functionEnd,
       category: "function",
@@ -1765,7 +1811,7 @@ export function emitCobol(
       sourceFile: program.sourceFile,
       sourceStart: transaction.span.start,
       sourceEnd: transaction.span.end,
-      artifact: cobolArtifactPath,
+      artifact: recordedCobolPath,
       targetStartLine: transactionStart,
       targetEndLine: transactionEnd,
       category: "transaction",
@@ -1820,7 +1866,7 @@ export function emitCobol(
     sourceFile: program.sourceFile,
     sourceStart: program.moduleSpan.start,
     sourceEnd: program.moduleSpan.end,
-    artifact: cobolArtifactPath,
+    artifact: recordedCobolPath,
     targetStartLine: moduleLine,
     targetEndLine: moduleLine + 1,
     category: "module",
@@ -1839,7 +1885,7 @@ export function emitCobol(
       sourceFile: program.sourceFile,
       sourceStart: fn.span.start,
       sourceEnd: fn.span.end,
-      artifact: cobolArtifactPath,
+      artifact: recordedCobolPath,
       targetStartLine: start,
       targetEndLine: lineNumber() - 1,
       category: "function",
@@ -1867,7 +1913,7 @@ export function emitCobol(
         sourceFile: program.sourceFile,
         sourceStart: fn.span.start,
         sourceEnd: fn.span.end,
-        artifact: cobolArtifactPath,
+        artifact: recordedCobolPath,
         targetStartLine: start,
         targetEndLine: lineNumber() - 1,
         category: "function",
@@ -1882,7 +1928,7 @@ export function emitCobol(
       version: 1,
       backendProfile,
       sourceFile: program.sourceFile,
-      artifact: sourceMapArtifactPath,
+      artifact: recordedSourceMapPath,
       entries,
     },
     recordLayouts,

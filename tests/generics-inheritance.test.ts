@@ -257,7 +257,7 @@ transaction pick(a: BDT, b: BDT, idempotencyKey: string<36>) {
 }`);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("LARGER-CUR-BDT18-2");
+    expect(result.cobol).toContain("LARGER-CUR-BDT-18-2");
   });
 
   it("emits one paragraph per distinct instantiation", () => {
@@ -408,7 +408,7 @@ transaction pick(a: BDT, b: BDT, c: USD, d: USD, idempotencyKey: string<36>) {
     // Both call sites reach the surviving paragraph.
     expect(result.cobol).not.toContain("LARGER-CUR-USD18-2");
     expect(
-      (result.cobol ?? "").match(/PERFORM LARGER-CUR-BDT18-2/g),
+      (result.cobol ?? "").match(/PERFORM LARGER-CUR-BDT-18-2/g),
     ).toHaveLength(2);
   });
 

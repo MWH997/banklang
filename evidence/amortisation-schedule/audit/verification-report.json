@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/amortisation-schedule/src/main.bank.ts",
+  "project": "examples/amortisation-schedule/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl"
+      "details": "evidence/amortisation-schedule/cobol/AMORTISA.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/amortisation-schedule/maps/source-map.json"
+      "details": "evidence/amortisation-schedule/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/amortisation-schedule/jcl/AMORTISA.jcl"
+      "details": "evidence/amortisation-schedule/jcl/AMORTISA.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/amortisation-schedule/audit"
+      "details": "evidence/amortisation-schedule/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,21 +61,21 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/amortisation-schedule/cobol/AMORTISA.cbl",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/copybooks/INSTALME.cpy",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/copybooks/LOAN.cpy",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/jcl/AMORTISA.jcl",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/amortisation-schedule/audit/gnucobol-validation.md"
+    "evidence/amortisation-schedule/cobol/AMORTISA.cbl",
+    "evidence/amortisation-schedule/maps/source-map.json",
+    "evidence/amortisation-schedule/copybooks/INSTALME.cpy",
+    "evidence/amortisation-schedule/copybooks/LOAN.cpy",
+    "evidence/amortisation-schedule/jcl/AMORTISA.jcl",
+    "evidence/amortisation-schedule/audit/diagnostics.json",
+    "evidence/amortisation-schedule/audit/source-map.json",
+    "evidence/amortisation-schedule/audit/decimal-analysis.json",
+    "evidence/amortisation-schedule/audit/transaction-analysis.json",
+    "evidence/amortisation-schedule/audit/copybook-layout.json",
+    "evidence/amortisation-schedule/audit/generated-artifacts.json",
+    "evidence/amortisation-schedule/audit/verification-report.md",
+    "evidence/amortisation-schedule/audit/verification-report.json",
+    "evidence/amortisation-schedule/audit/validation-matrix.md",
+    "evidence/amortisation-schedule/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

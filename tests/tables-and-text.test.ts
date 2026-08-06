@@ -47,10 +47,10 @@ describe("INSPECT", () => {
     const result = txn('  st.commas = countOf(st.narrative, ",");');
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("MOVE 0 TO COMMAS OF STATEMENT1");
+    expect(result.cobol).toContain("MOVE 0 TO COMMAS OF STATEMENT-1");
     expect(flowed(result.cobol)).toContain(
       flowed(
-        'INSPECT NARRATIVE OF STATEMENT1 TALLYING COMMAS OF STATEMENT1 FOR ALL ","',
+        'INSPECT NARRATIVE OF STATEMENT-1 TALLYING COMMAS OF STATEMENT-1 FOR ALL ","',
       ),
     );
   });
@@ -60,7 +60,7 @@ describe("INSPECT", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain(
-      'INSPECT BRANCH OF STATEMENT1 CONVERTING " " TO "0"',
+      'INSPECT BRANCH OF STATEMENT-1 CONVERTING " " TO "0"',
     );
   });
 
@@ -82,10 +82,10 @@ describe("UNSTRING", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain(
-      'UNSTRING REFERENCE-FLD OF STATEMENT1 DELIMITED BY "-"',
+      'UNSTRING REFERENCE-FLD OF STATEMENT-1 DELIMITED BY "-"',
     );
     expect(result.cobol).toContain(
-      "INTO BRANCH OF STATEMENT1 FOUND OF STATEMENT1",
+      "INTO BRANCH OF STATEMENT-1 FOUND OF STATEMENT-1",
     );
   });
 
@@ -108,7 +108,7 @@ describe("UNSTRING", () => {
     expect(result.diagnostics).toEqual([]);
     const text = flowed(result.cobol);
     expect(text).toContain(
-      flowed("MOVE SPACES TO BRANCH OF STATEMENT1 FOUND OF STATEMENT1"),
+      flowed("MOVE SPACES TO BRANCH OF STATEMENT-1 FOUND OF STATEMENT-1"),
     );
     expect(text.indexOf("MOVE SPACES TO BRANCH")).toBeLessThan(
       text.indexOf("UNSTRING"),
@@ -139,7 +139,7 @@ describe("SEARCH", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("SET LINES-FLD-IDX TO 1");
-    expect(result.cobol).toContain("SEARCH LINES-FLD OF STATEMENT1");
+    expect(result.cobol).toContain("SEARCH LINES-FLD OF STATEMENT-1");
   });
 
   /** The element name stands for the entry the index is pointing at. */
@@ -153,7 +153,7 @@ describe("SEARCH", () => {
 
     expect(flowed(result.cobol)).toContain(
       flowed(
-        'WHEN ENTRY-KIND OF LINES-FLD OF STATEMENT1 (LINES-FLD-IDX) = "DEBIT"',
+        'WHEN ENTRY-KIND OF LINES-FLD OF STATEMENT-1 (LINES-FLD-IDX) = "DEBIT"',
       ),
     );
   });

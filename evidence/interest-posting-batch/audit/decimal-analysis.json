@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "AccrualFeedRow",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 10,
           "column": 3
@@ -27,9 +27,9 @@
       "category": "record-field",
       "owner": "AccrualFeedRow",
       "symbol": "accruedInterest",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 11,
           "column": 3
@@ -48,9 +48,9 @@
       "category": "record-field",
       "owner": "PostingAdvice",
       "symbol": "interestAmount",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 17,
           "column": 3
@@ -69,9 +69,9 @@
       "category": "parameter",
       "owner": "isEligible",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 26,
           "column": 21
@@ -90,9 +90,9 @@
       "category": "parameter",
       "owner": "isEligible",
       "symbol": "minimumBalance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 26,
           "column": 40
@@ -111,9 +111,9 @@
       "category": "parameter",
       "owner": "rateFor",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 31,
           "column": 18
@@ -132,9 +132,9 @@
       "category": "parameter",
       "owner": "rateFor",
       "symbol": "threshold",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 31,
           "column": 37
@@ -153,9 +153,9 @@
       "category": "return-type",
       "owner": "rateFor",
       "symbol": "rateFor",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 31,
           "column": 10
@@ -174,9 +174,9 @@
       "category": "literal",
       "owner": "rateFor",
       "symbol": "0.0450",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 33,
           "column": 12
@@ -195,9 +195,9 @@
       "category": "literal",
       "owner": "rateFor",
       "symbol": "0.0125",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 35,
           "column": 12
@@ -216,9 +216,9 @@
       "category": "parameter",
       "owner": "accrue",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 41,
           "column": 17
@@ -237,9 +237,9 @@
       "category": "parameter",
       "owner": "accrue",
       "symbol": "rate",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 41,
           "column": 36
@@ -258,9 +258,9 @@
       "category": "return-type",
       "owner": "accrue",
       "symbol": "accrue",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 41,
           "column": 10
@@ -279,9 +279,9 @@
       "category": "parameter",
       "owner": "feeFor",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 46,
           "column": 17
@@ -300,9 +300,9 @@
       "category": "parameter",
       "owner": "feeFor",
       "symbol": "fee",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 46,
           "column": 36
@@ -321,9 +321,9 @@
       "category": "return-type",
       "owner": "feeFor",
       "symbol": "feeFor",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 46,
           "column": 10
@@ -342,9 +342,9 @@
       "category": "literal",
       "owner": "feeFor",
       "symbol": "0.00",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 47,
           "column": 23
@@ -363,9 +363,9 @@
       "category": "literal",
       "owner": "feeFor",
       "symbol": "0.00",
-      "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+      "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+        "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
         "start": {
           "line": 50,
           "column": 12

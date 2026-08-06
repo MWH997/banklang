@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/Code/banklang/evidence/amortisation-schedule/audit/copybook-layout.md
+Artifact: evidence/amortisation-schedule/audit/copybook-layout.md
 
 ## INSTALMENT
 

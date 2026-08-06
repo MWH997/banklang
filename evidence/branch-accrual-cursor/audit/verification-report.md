@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts
+Project: examples/branch-accrual-cursor/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl |
+| COBOL emit | passed | evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl |
 | Copybook emit | passed | 3 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/branch-accrual-cursor/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/branch-accrual-cursor/audit |
+| Source map emit | passed | evidence/branch-accrual-cursor/maps/source-map.json |
+| JCL emit | passed | evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl |
+| Audit artifacts | passed | evidence/branch-accrual-cursor/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 17/17 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed after precompiling (db2-precompiler). |

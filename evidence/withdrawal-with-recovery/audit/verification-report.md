@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts
+Project: examples/withdrawal-with-recovery/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl |
+| COBOL emit | passed | evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl |
 | Copybook emit | passed | 3 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/withdrawal-with-recovery/audit |
+| Source map emit | passed | evidence/withdrawal-with-recovery/maps/source-map.json |
+| JCL emit | passed | evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl |
+| Audit artifacts | passed | evidence/withdrawal-with-recovery/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 19/19 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed. |

@@ -75,7 +75,7 @@ describe("synchronized alignment", () => {
     expect(offsets["MASTER.FLAG"]).toBe(0);
     // Fullword: 4-byte boundary, so three bytes of slack after the flag.
     expect(offsets["MASTER.COUNTER"]).toBe(4);
-    expect(offsets["MASTER.CODE1"]).toBe(8);
+    expect(offsets["MASTER.CODE-1"]).toBe(8);
     // Still a fullword. IBM's slack-byte algorithm divides by 2 for a binary
     // item of four digits or fewer and by 4 for one of five or more — there is
     // no eight for binary, which belongs to COMPUTATIONAL-2. So an eighteen

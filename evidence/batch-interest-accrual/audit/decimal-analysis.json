@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "InterestAccount",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+        "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
         "start": {
           "line": 7,
           "column": 3
@@ -27,9 +27,9 @@
       "category": "parameter",
       "owner": "isEligibleForInterest",
       "symbol": "balance",
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+        "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
         "start": {
           "line": 10,
           "column": 32
@@ -48,9 +48,9 @@
       "category": "local-declaration",
       "owner": "isEligibleForInterest",
       "symbol": "projectedBalance",
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+        "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
         "start": {
           "line": 11,
           "column": 3
@@ -69,9 +69,9 @@
       "category": "literal",
       "owner": "isEligibleForInterest",
       "symbol": "25.00",
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+        "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
         "start": {
           "line": 11,
           "column": 46
@@ -90,9 +90,9 @@
       "category": "literal",
       "owner": "isEligibleForInterest",
       "symbol": "1000.00",
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+        "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
         "start": {
           "line": 13,
           "column": 25

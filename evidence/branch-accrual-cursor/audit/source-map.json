@@ -1,11 +1,11 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/maps/source-map.json",
+  "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
   "entries": [
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 1,
         "column": 1
@@ -14,14 +14,14 @@
         "line": 1,
         "column": 27
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 35,
       "targetEndLine": 36,
       "category": "module",
       "symbol": "BranchAccrualCursor"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 5,
         "column": 8
@@ -30,14 +30,14 @@
         "line": 9,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 74,
       "targetEndLine": 77,
       "category": "record",
       "symbol": "AccrualRequest"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 6,
         "column": 3
@@ -46,14 +46,14 @@
         "line": 6,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 75,
       "targetEndLine": 75,
       "category": "field",
       "symbol": "branchId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 7,
         "column": 3
@@ -62,14 +62,14 @@
         "line": 7,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 76,
       "targetEndLine": 76,
       "category": "field",
       "symbol": "accrualRate"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 8,
         "column": 3
@@ -78,14 +78,14 @@
         "line": 8,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 77,
       "targetEndLine": 77,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 11,
         "column": 8
@@ -94,14 +94,14 @@
         "line": 15,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 79,
       "targetEndLine": 82,
       "category": "record",
       "symbol": "AccountBalanceRow"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 12,
         "column": 3
@@ -110,14 +110,14 @@
         "line": 12,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 80,
       "targetEndLine": 80,
       "category": "field",
       "symbol": "rowAccountId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 13,
         "column": 3
@@ -126,14 +126,14 @@
         "line": 13,
         "column": 19
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 81,
       "targetEndLine": 81,
       "category": "field",
       "symbol": "rowBalance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 14,
         "column": 3
@@ -142,14 +142,14 @@
         "line": 14,
         "column": 24
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 82,
       "targetEndLine": 82,
       "category": "field",
       "symbol": "rowStatus"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 17,
         "column": 8
@@ -158,14 +158,14 @@
         "line": 23,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 84,
       "targetEndLine": 89,
       "category": "record",
       "symbol": "AccrualSummary"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 18,
         "column": 3
@@ -174,14 +174,14 @@
         "line": 18,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 85,
       "targetEndLine": 85,
       "category": "field",
       "symbol": "summaryBranchId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 19,
         "column": 3
@@ -190,14 +190,14 @@
         "line": 19,
         "column": 31
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 86,
       "targetEndLine": 86,
       "category": "field",
       "symbol": "accountsRead"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 20,
         "column": 3
@@ -206,14 +206,14 @@
         "line": 20,
         "column": 34
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 87,
       "targetEndLine": 87,
       "category": "field",
       "symbol": "accountsAccrued"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 21,
         "column": 3
@@ -222,14 +222,14 @@
         "line": 21,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 88,
       "targetEndLine": 88,
       "category": "field",
       "symbol": "interestPosted"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 22,
         "column": 3
@@ -238,14 +238,14 @@
         "line": 22,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 89,
       "targetEndLine": 89,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 38,
         "column": 10
@@ -254,14 +254,14 @@
         "line": 40,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 116,
       "targetEndLine": 145,
       "category": "function",
       "symbol": "interestOn"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
         "line": 42,
         "column": 19
@@ -270,7 +270,7 @@
         "line": 68,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl",
+      "artifact": "cobol/BRANCHAC.cbl",
       "targetStartLine": 146,
       "targetEndLine": 278,
       "category": "transaction",

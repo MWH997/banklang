@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/Code/banklang/evidence/account-transfer/audit/copybook-layout.md
+Artifact: evidence/account-transfer/audit/copybook-layout.md
 
 ## TRANSFER-REQUEST
 

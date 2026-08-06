@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts
+Project: examples/batch-interest-accrual/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl |
+| COBOL emit | passed | evidence/batch-interest-accrual/cobol/BATCHINT.cbl |
 | Copybook emit | passed | 1 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/batch-interest-accrual/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/batch-interest-accrual/jcl/BATCHINT.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/batch-interest-accrual/audit |
+| Source map emit | passed | evidence/batch-interest-accrual/maps/source-map.json |
+| JCL emit | passed | evidence/batch-interest-accrual/jcl/BATCHINT.jcl |
+| Audit artifacts | passed | evidence/batch-interest-accrual/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 5/5 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed. |

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/evidence/branch-accrual-cursor/audit/copybook-layout.md",
+  "artifact": "evidence/branch-accrual-cursor/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "AccrualRequest",

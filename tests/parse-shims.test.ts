@@ -98,7 +98,7 @@ describe("what the precompiler writes for a JSON parse", () => {
     expect(translated).toContain('MOVE "ROW-ID" TO BANK-JSON-NAME');
     expect(translated).toContain('MOVE "AMOUNT" TO BANK-JSON-NAME');
     expect(translated).toContain(
-      'CALL "BANKJSON" USING LOAD1-P2, BANK-JSON-DOC-LEN, BANK-JSON-NAME, BANK-JSON-VALUE, BANK-JSON-FOUND',
+      'CALL "BANKJSON" USING LOAD-1-P2, BANK-JSON-DOC-LEN, BANK-JSON-NAME, BANK-JSON-VALUE, BANK-JSON-FOUND',
     );
     // Characters have to be converted into a number rather than moved into one.
     expect(translated).toContain(
@@ -108,7 +108,7 @@ describe("what the precompiler writes for a JSON parse", () => {
 
   /** The shipped artifact is the one z/OS compiles, and it is untouched. */
   it("leaves the statement alone in the artifact itself", () => {
-    expect(result.cobol).toContain("JSON PARSE LOAD1-P2 INTO ROW");
+    expect(result.cobol).toContain("JSON PARSE LOAD-1-P2 INTO ROW");
   });
 
   it.skipIf(!available)("fills the record from the document", () => {
@@ -165,7 +165,7 @@ describe("what the precompiler writes for an XML parse", () => {
 
     expect(translated).toContain('PERFORM UNTIL BANK-XML-END = "Y"');
     expect(translated).toContain(
-      'CALL "BANKXML" USING LOAD1-P2, BANK-XML-DOC-LEN, BANK-XML-POS, BANK-XML-EVENT, BANK-XML-TEXT, BANK-XML-TEXT-LEN, BANK-XML-INFO, BANK-XML-END',
+      'CALL "BANKXML" USING LOAD-1-P2, BANK-XML-DOC-LEN, BANK-XML-POS, BANK-XML-EVENT, BANK-XML-TEXT, BANK-XML-TEXT-LEN, BANK-XML-INFO, BANK-XML-END',
     );
     expect(translated).toContain("PERFORM BANK-XML-1");
   });
@@ -190,7 +190,7 @@ describe("what the precompiler writes for an XML parse", () => {
 
   it("leaves the statement alone in the artifact itself", () => {
     expect(flowed(result.cobol)).toContain(
-      flowed("XML PARSE LOAD1-P2 PROCESSING PROCEDURE BANK-XML-1"),
+      flowed("XML PARSE LOAD-1-P2 PROCESSING PROCEDURE BANK-XML-1"),
     );
     expect(result.cobol).toContain("EVALUATE XML-EVENT");
   });

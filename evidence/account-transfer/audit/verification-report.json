@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/account-transfer/src/main.bank.ts",
+  "project": "examples/account-transfer/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl"
+      "details": "evidence/account-transfer/cobol/ACCOUNTT.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/account-transfer/maps/source-map.json"
+      "details": "evidence/account-transfer/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/account-transfer/jcl/ACCOUNTT.jcl"
+      "details": "evidence/account-transfer/jcl/ACCOUNTT.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/account-transfer/audit"
+      "details": "evidence/account-transfer/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,20 +61,20 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-    "/workspace/Code/banklang/evidence/account-transfer/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/account-transfer/copybooks/TRANSFER.cpy",
-    "/workspace/Code/banklang/evidence/account-transfer/jcl/ACCOUNTT.jcl",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/account-transfer/audit/gnucobol-validation.md"
+    "evidence/account-transfer/cobol/ACCOUNTT.cbl",
+    "evidence/account-transfer/maps/source-map.json",
+    "evidence/account-transfer/copybooks/TRANSFER.cpy",
+    "evidence/account-transfer/jcl/ACCOUNTT.jcl",
+    "evidence/account-transfer/audit/diagnostics.json",
+    "evidence/account-transfer/audit/source-map.json",
+    "evidence/account-transfer/audit/decimal-analysis.json",
+    "evidence/account-transfer/audit/transaction-analysis.json",
+    "evidence/account-transfer/audit/copybook-layout.json",
+    "evidence/account-transfer/audit/generated-artifacts.json",
+    "evidence/account-transfer/audit/verification-report.md",
+    "evidence/account-transfer/audit/verification-report.json",
+    "evidence/account-transfer/audit/validation-matrix.md",
+    "evidence/account-transfer/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

@@ -146,6 +146,7 @@ export const KEYWORDS = new Set([
   "case",
   "enum",
   "sensitive",
+  "reserved",
   "redefines",
   "renames",
   "through",
@@ -1907,6 +1908,23 @@ class Parser {
         continue;
       }
 
+      // `reserved 20;` — bytes the record has and nothing names. Recognised
+      // here rather than in `parseFieldDeclaration` because it has no name and
+      // no type: the count is the whole declaration.
+      //
+      // A field really can be called `reserved`, and what settles it is the
+      // token after: a slot is followed by its byte count, a field by the `:`
+      // before its type. Nothing else can stand in either place.
+      if (this.isKeyword("reserved") && this.next.kind === "number") {
+        const slot = this.parseReservedSlot(fields.length);
+        if (!slot) {
+          this.recover(() => this.synchronizeToFieldOrRecordEnd());
+          continue;
+        }
+        fields.push(slot);
+        continue;
+      }
+
       const field = this.parseFieldDeclaration();
       if (!field) {
         this.recover(() => this.synchronizeToFieldOrRecordEnd());
@@ -1986,6 +2004,56 @@ class Parser {
       span: {
         sourceFile: nameToken.span.sourceFile,
         start: nameToken.span.start,
+        end: semicolon.span.end,
+      },
+    };
+  }
+
+  /** `reserved <n>;` — `FILLER PIC X(n)`, with no name to reach it by. */
+  private parseReservedSlot(index: number): FieldDeclarationNode | null {
+    const keyword = this.expectKeyword(
+      "reserved",
+      "Expected `reserved` to start a filler slot.",
+    );
+    const lengthToken = this.expectNumber(
+      "Expected the number of bytes the slot reserves.",
+    );
+    const semicolon = this.expectPunctuation(
+      ";",
+      "Expected `;` after `reserved <n>`.",
+    );
+
+    if (!keyword || !lengthToken || !semicolon) {
+      return null;
+    }
+
+    const length = Number(lengthToken.text);
+    if (!Number.isInteger(length) || length < 1) {
+      return null;
+    }
+
+    return {
+      kind: "FieldDeclaration",
+      // `#` is not an identifier character, so nothing can name this slot and
+      // nothing a programmer writes can collide with it.
+      name: `reserved#${index + 1}`,
+      type: {
+        kind: "StringType",
+        length,
+        span: lengthToken.span,
+      },
+      initialValue: null,
+      sensitive: false,
+      reserved: true,
+      redefines: null,
+      dependingOn: null,
+      ascendingKey: null,
+      synchronized: false,
+      justified: false,
+      blankWhenZero: false,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
         end: semicolon.span.end,
       },
     };
@@ -2074,6 +2142,7 @@ class Parser {
       type,
       initialValue,
       sensitive: modifierToken !== null,
+      reserved: false,
       redefines,
       dependingOn,
       ascendingKey,

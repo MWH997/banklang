@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 15
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 28,
+      "targetEndLine": 29,
+      "category": "module",
+      "symbol": "IntCalc"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 8,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 12,
+        "column": 2
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 39,
+      "targetEndLine": 42,
+      "category": "record",
+      "symbol": "InterestRequest"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 9,
+        "column": 21
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 40,
+      "targetEndLine": 40,
+      "category": "field",
+      "symbol": "balance"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 10,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 10,
+        "column": 22
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 41,
+      "targetEndLine": 41,
+      "category": "field",
+      "symbol": "interest"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 11,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 11,
+        "column": 30
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 42,
+      "targetEndLine": 42,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 24,
+        "column": 2
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 62,
+      "targetEndLine": 74,
+      "category": "function",
+      "symbol": "rateFor"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 46,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 48,
+        "column": 2
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 75,
+      "targetEndLine": 109,
+      "category": "function",
+      "symbol": "interestOn"
+    },
+    {
+      "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 50,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 56,
+        "column": 2
+      },
+      "artifact": "cobol/INTCALC.cbl",
+      "targetStartLine": 110,
+      "targetEndLine": 125,
+      "category": "transaction",
+      "symbol": "calculateInterest"
+    }
+  ]
+}

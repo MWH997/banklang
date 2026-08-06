@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts",
+  "project": "examples/interest-posting-batch/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl"
+      "details": "evidence/interest-posting-batch/cobol/INTEREST.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/interest-posting-batch/maps/source-map.json"
+      "details": "evidence/interest-posting-batch/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/interest-posting-batch/jcl/INTEREST.jcl"
+      "details": "evidence/interest-posting-batch/jcl/INTEREST.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/interest-posting-batch/audit"
+      "details": "evidence/interest-posting-batch/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,21 +61,21 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/copybooks/ACCRUALF.cpy",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/copybooks/POSTINGA.cpy",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/jcl/INTEREST.jcl",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/interest-posting-batch/audit/gnucobol-validation.md"
+    "evidence/interest-posting-batch/cobol/INTEREST.cbl",
+    "evidence/interest-posting-batch/maps/source-map.json",
+    "evidence/interest-posting-batch/copybooks/ACCRUALF.cpy",
+    "evidence/interest-posting-batch/copybooks/POSTINGA.cpy",
+    "evidence/interest-posting-batch/jcl/INTEREST.jcl",
+    "evidence/interest-posting-batch/audit/diagnostics.json",
+    "evidence/interest-posting-batch/audit/source-map.json",
+    "evidence/interest-posting-batch/audit/decimal-analysis.json",
+    "evidence/interest-posting-batch/audit/transaction-analysis.json",
+    "evidence/interest-posting-batch/audit/copybook-layout.json",
+    "evidence/interest-posting-batch/audit/generated-artifacts.json",
+    "evidence/interest-posting-batch/audit/verification-report.md",
+    "evidence/interest-posting-batch/audit/verification-report.json",
+    "evidence/interest-posting-batch/audit/validation-matrix.md",
+    "evidence/interest-posting-batch/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

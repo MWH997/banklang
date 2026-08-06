@@ -163,6 +163,56 @@ function countSymbol(picture: string, symbol: string): number {
 }
 
 /**
+ * How many bytes a `FILLER` occupies.
+ *
+ * `reserved <n>` counts bytes, not digits, so this cannot go through `typeFor`:
+ * `PIC S9(9) COMP-3` is nine digits and five bytes, and reserving nine would
+ * move every field after it four bytes along. Returns null when the entry is
+ * something whose storage this importer will not guess at — which is the right
+ * answer, because a guess here is a record that lays out wrong and compiles.
+ */
+function fillerBytes(entry: Entry): number | null {
+  const text = entry.clauses.toUpperCase();
+  const pictureMatch = /\bPIC(?:TURE)?\s+(?:IS\s+)?(\S+)/.exec(text);
+  if (!pictureMatch) {
+    return null;
+  }
+  const picture = pictureMatch[1].replace(/\.$/, "");
+
+  if (/[AXN]/.test(picture)) {
+    const bytes =
+      countSymbol(picture, "X") +
+      countSymbol(picture, "A") +
+      // A national character is two bytes.
+      countSymbol(picture, "N") * 2;
+    return bytes > 0 ? bytes : null;
+  }
+
+  const digits = countSymbol(picture, "9");
+  if (digits === 0) {
+    return null;
+  }
+
+  if (/\bCOMP-3\b|\bCOMPUTATIONAL-3\b|\bPACKED-DECIMAL\b/.test(text)) {
+    // Packed decimal: two digits to a byte, plus a nibble for the sign.
+    return Math.ceil((digits + 1) / 2);
+  }
+  if (/\bCOMP-1\b|\bCOMPUTATIONAL-1\b/.test(text)) {
+    return 4;
+  }
+  if (/\bCOMP-2\b|\bCOMPUTATIONAL-2\b/.test(text)) {
+    return 8;
+  }
+  if (/\bCOMP(?:UTATIONAL)?(?:-[45])?\b/.test(text)) {
+    // Binary, sized by the digit count the picture declares.
+    return digits <= 4 ? 2 : digits <= 9 ? 4 : 8;
+  }
+
+  // DISPLAY: one byte a digit, and one more for a separate sign.
+  return digits + (/\bSEPARATE\b/.test(text) ? 1 : 0);
+}
+
+/**
  * The BankTS type for one elementary entry.
  *
  * Usage decides the storage and the picture decides the digits, which is how
@@ -295,13 +345,24 @@ export function importCopybook(
     const name = bankTsName(entry.name);
     const clauses = entry.clauses.toUpperCase();
 
+    // `FILLER` is space nothing names, and `reserved <n>;` is how BankTS says
+    // it. The bytes are what matter: a record imported without them lays out
+    // short, and every field after the gap is at the wrong offset — which is
+    // the one failure a copybook exists to prevent.
+    //
+    // A FILLER with no PICTURE is a group of them, and its members are
+    // imported on their own; only an elementary one becomes a slot.
     if (entry.name === "FILLER") {
-      problems.push({
-        field: `${within}.FILLER`,
-        message:
-          "A FILLER holds space nothing names. BankTS has no way to declare one, so the record would be shorter than the copybook's by that many bytes.",
-      });
-      return null;
+      const bytes = fillerBytes(entry);
+      if (bytes === null) {
+        problems.push({
+          field: `${within}.FILLER`,
+          message:
+            "A FILLER whose length cannot be worked out from its PICTURE would leave every field after it at the wrong offset.",
+        });
+        return null;
+      }
+      return `  reserved ${bytes};`;
     }
 
     const occurs = /\bOCCURS\s+(?:(\d+)\s+TO\s+)?(\d+)(?:\s+TIMES)?/.exec(
