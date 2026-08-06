@@ -24,6 +24,13 @@ in order.
 
 ### Added
 
+- Add ESLint on `typescript-eslint`'s recommended type-checked set as
+  `pnpm lint`, with Prettier moving to `pnpm format:check` —
+  [verification](docs/verification.md).
+- Run the mutation lanes and the citation check on a weekly schedule, opening an
+  issue when a score drops or a source stops resolving.
+- Say in the README that validation is GnuCOBOL and not IBM, and hold all three
+  places that claim to it.
 - Add `pnpm docs:citations`, checking every source the documentation cites
   against the live page rather than against its status code.
 - Add `pnpm test:mutation:lint`, running Stryker over the conformance linter —
@@ -48,6 +55,10 @@ in order.
 
 ### Fixed
 
+- Report a failed clipboard write in the playground, rather than leaving the
+  Copy button silent.
+- Move the zUnit integration page out of `docs/integrations/` and drop the
+  directory — [zunit.md](docs/zunit.md).
 - Frame LSP messages by byte count throughout, so a message carrying a
   non-ASCII character no longer takes the rest of the session with it.
 - Cite a versioned IBM topic that resolves, rather than a product root, a
@@ -70,6 +81,12 @@ in order.
 
 ### Removed
 
+- Remove fifty-six pieces of dead code the new linter found, including a
+  114-line table of COBOL statement verbs the conformance linter never
+  referenced.
+- Cut the glossary from 98 entries to 47, leaving the terms a reader of the
+  generated COBOL, the JCL or the diagnostics meets — [glossary](docs/glossary.md).
+- Remove the AI model settings from `.env.example`, none of which anything read.
 - Remove the glossary's seven AI-model entries, which defined this project's
   own model delegation rather than any term it uses.
 - Remove the pre-0.9.0 development log. `git log --reverse` is where a working
@@ -128,7 +145,7 @@ the checking added for them is the larger half of this release.
   datasets they already agree on and stopped by `COND`.
 - `bankc zunit` — generate a zUnit test case, its configuration and its job from
   `test <name> for <entry transaction>` declarations —
-  [zUnit integration](docs/integrations/zunit-integration.md).
+  [zUnit integration](docs/zunit.md).
 - `packages/conformance-lint` — read an emitted `.cbl`, `.cpy` or `.jcl` as text
   and hold it to rules that each cite a manual —
   [target conformance](docs/target-conformance.md).

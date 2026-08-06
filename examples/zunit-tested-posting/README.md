@@ -64,13 +64,13 @@ against it. A `test` declaration compiles to nothing.
 No generated case in this repository has been **run**. The driver compiles under
 GnuCOBOL, which is narrower evidence than it sounds — `COPY EQAITERC` resolves
 locally to a stand-in declaring the two fields the driver names, because IBM's
-copybook is not here. [zunit-integration.md](../../docs/integrations/zunit-integration.md)
+copybook is not here. [zunit-integration.md](../../docs/zunit.md)
 records where every shape in the artifacts came from, and which two values are
 inferred rather than observed.
 
 ## Related
 
-- [docs/integrations/zunit-integration.md](../../docs/integrations/zunit-integration.md)
+- [docs/zunit.md](../../docs/zunit.md)
 - [parm-driven-batch](../parm-driven-batch/README.md) — the PARM convention the
   `given` values arrive through
 - [account-posting](../account-posting/README.md) — the ledger and audit calls

@@ -1022,7 +1022,7 @@ function runTest(args: string[], cwd: string): CliResult {
  *
  * Separate from `build` on purpose: what `build` writes is what ships, and a
  * test case is not part of the program. It is also the one output that has
- * never been run — see `docs/integrations/zunit-integration.md` — so a project
+ * never been run — see `docs/zunit.md` — so a project
  * asks for it rather than receiving it.
  */
 function runZunit(args: string[], cwd: string): CliResult {

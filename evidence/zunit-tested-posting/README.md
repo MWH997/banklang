@@ -6,7 +6,7 @@ test case its `test` declaration becomes.
 `zunit/` is the part worth reading: a `.bzucfg` configuration, a COBOL test case
 program, and the job that submits them. Every shape in those files is copied
 from a test case IBM's own generator produced, and
-[docs/integrations/zunit-integration.md](../../docs/integrations/zunit-integration.md)
+[docs/zunit.md](../../docs/zunit.md)
 cites which one for each.
 
 The program's own COBOL is byte for byte what it would be with no tests written

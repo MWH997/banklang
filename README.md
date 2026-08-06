@@ -33,6 +33,11 @@ BANK-LED-001  Transaction postTransfer does not balance:
 Retries that post twice, money movement with no audit trail, and unbalanced
 ledger postings become compile errors instead of production incidents.
 
+**Validated with GnuCOBOL, not IBM.** Every example compiles in CI under a
+GnuCOBOL configuration shaped to Enterprise COBOL 6.4 and under GnuCOBOL's own
+default. No IBM Enterprise COBOL validation has been performed, and none is
+claimed.
+
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
 **[What it does not do →](docs/status-and-limits.md)**
@@ -47,9 +52,8 @@ pnpm install && pnpm playground:dev
 
 The **[playground](packages/playground/)** runs the entire compiler in your
 browser — no server, no network call. Click any line of BankTS and the COBOL it
-produced lights up. That cross-link is read straight from the emitted source
-map, so traceability is something you can click rather than something the
-documentation asserts.
+produced lights up, straight from the emitted source map: traceability you can
+click rather than a claim in the documentation.
 
 ## What it generates
 
@@ -66,8 +70,8 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 ```
 
 `MoneyBDT` is `decimal<18, 2>` and `Rate` is `decimal<9, 4>`, so the product has
-scale 6. Storing it as money discards four digits, and the compiler will not let
-that happen silently: `round` with an explicit mode is required.
+scale 6. Storing it as money discards four digits, and the compiler will not do
+that silently: `round` with an explicit mode is required.
 
 Enterprise COBOL has **one** rounding phrase, and `ROUNDED` is half-up away from
 zero. Banker's rounding is arithmetic this compiler writes out:
@@ -101,14 +105,12 @@ boundary case, for a product and for a quotient, in all seven modes. See
 | `BANK-CICS-004` | A CICS response must be tested against its condition name     |
 | `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or a ledger |
 
-`bankc explain BANK-LED-001` prints any of them, and a test asserts that no
-diagnostic can be emitted without a catalogue entry.
-[The full catalogue →](docs/diagnostics.md)
+`bankc explain BANK-LED-001` prints any of them, and no diagnostic can be
+emitted without a catalogue entry. [The full catalogue →](docs/diagnostics.md)
 
 ## Quick start
 
-Requires **Node.js 24+** and pnpm 11.7.0. GnuCOBOL is optional locally and
-installed in CI.
+Requires **Node.js 24+** and pnpm 11.7.0. GnuCOBOL is optional locally.
 
 ```bash
 pnpm bankc init    my-service                 # scaffold a project
@@ -130,8 +132,7 @@ Add `--watch` to any command to rerun on save.
 ## Examples
 
 Each with a checked-in [evidence bundle](evidence/) holding its generated
-artifacts and verification report, each compiled in CI under a GnuCOBOL
-configuration shaped to Enterprise COBOL 6.4.
+artifacts and verification report.
 
 **The language**
 
@@ -175,10 +176,9 @@ configuration shaped to Enterprise COBOL 6.4.
 
 **And five conversions** — [`conversions/`](conversions/) — existing COBOL on one
 side, the BankTS it becomes on the other, and what the compiler produced from
-that BankTS underneath. A sequential master update, a CICS enquiry, a Db2 cursor
+that BankTS underneath: a sequential master update, a CICS enquiry, a Db2 cursor
 batch, hand-written banker's rounding, and a copybook with `REDEFINES`, `FILLER`
-and `OCCURS DEPENDING ON`. Each page prints generated measurements and says what
-the conversion changed about what the program does.
+and `OCCURS DEPENDING ON`. Each page says what the conversion changed.
 
 `withdrawal-with-recovery` is **run**, against the reference runtime in
 [`runtime/`](runtime/README.md), and the test asserts on the balances the ledger

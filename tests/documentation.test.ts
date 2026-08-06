@@ -296,3 +296,37 @@ describe("COBOL printed in the documentation", () => {
     });
   }
 });
+
+/**
+ * The one sentence that must be wherever a reader can arrive.
+ *
+ * The pre-public checklist in `docs/launch-tickets.md` said this was "already
+ * in all three; keep it there". It was in two. The README implied it — "each
+ * compiled in CI under a GnuCOBOL configuration shaped to Enterprise COBOL
+ * 6.4" — and a reader who does not already know that GnuCOBOL is not IBM's
+ * compiler would have read that as validation against the target.
+ *
+ * It is the project's most important claim about what it has *not* done, so it
+ * is checked rather than remembered. The wording differs by surface; what has
+ * to survive is that no IBM Enterprise COBOL validation is claimed.
+ */
+describe("validated with GnuCOBOL, not IBM", () => {
+  const surfaces: [string, string][] = [
+    ["the README", "README.md"],
+    ["the honest-limits page", "docs/status-and-limits.md"],
+    ["the playground", "packages/playground/index.html"],
+  ];
+
+  for (const [name, file] of surfaces) {
+    it(`says so in ${name}`, () => {
+      const text = readFileSync(resolve(process.cwd(), file), "utf8").replace(
+        /\s+/g,
+        " ",
+      );
+      expect(
+        /No IBM\s+Enterprise COBOL validation/i.test(text),
+        `${file} does not say that no IBM Enterprise COBOL validation is claimed.`,
+      ).toBe(true);
+    });
+  }
+});

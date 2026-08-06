@@ -24,7 +24,7 @@ import type { IRProgram } from "../packages/ir/src/index";
  * public repositories. Every assertion here that fixes a shape — the namespace,
  * the element order, the attribute names, the entry point naming, the call to
  * `BZUASSRT` — is checking this generator against those, and
- * `docs/integrations/zunit-integration.md` cites each one.
+ * `docs/zunit.md` cites each one.
  */
 
 const PROGRAM = `module AccountPosting;

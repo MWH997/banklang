@@ -876,7 +876,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "A zUnit case runs a load module, and a load module is entered at one place: the entry transaction. Naming a transaction that is not the entry point, or a name that is not a transaction at all, describes a run that cannot happen — the runner would enter the program where it always does and the test would report on something else entirely.",
     remediation:
       "Name the `entry transaction`. There is exactly one in a program, because COBOL starts at the first statement of the PROCEDURE DIVISION.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -885,8 +885,8 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     explanation:
       'The generator writes `type="BTCH"` cases, which start a program the way a job step does. A CICS transaction is started by a transaction identifier with a COMMAREA — a `type="CICS"` case and a running region — and an IMS program is entered by the region with its PCBs, which a batch driver has none of. Generating a batch case for either would produce an artifact that uploads, compiles, and abends.',
     remediation:
-      "Test the program from CICS or IMS with a case written for that environment. `docs/integrations/zunit-integration.md` records what a CICS case needs that this generator does not have.",
-    specReference: "integrations/zunit-integration.md",
+      "Test the program from CICS or IMS with a case written for that environment. `docs/zunit.md` records what a CICS case needs that this generator does not have.",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -896,7 +896,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "A batch program is entered with a PARM, and the PARM is the scalar parameters of its entry transaction. A record parameter is a buffer the program fills from a file, so there is nothing for the caller to supply — and the driver runs in its own program, so the record is not storage it could reach in any case.",
     remediation:
       "Supply a scalar parameter of the entry transaction, or drive the case through the calls the program makes instead.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -906,7 +906,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "The generated driver holds literals in `MOVE` and `IF` statements and evaluates nothing: a test that computed its own expected value would be a second implementation of the program, running on the mainframe, with nothing checking it. A literal that does not fit what it is compared against is the same defect one step later — COBOL truncates the MOVE that fills the interface, so the comparison would be against a value the program could never have sent.",
     remediation:
       "Write the value out, and write one the field holds. The ledger carries a 32-character account and `PIC S9(16)V99`; the audit trail carries a 32-character event and a 64-character correlation.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -915,7 +915,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     explanation:
       "Each test becomes a `TEST_<NAME>` entry point in one load module, and the runner picks a test by matching that name. Two of them are one entry point: whichever was link-edited last answers for both, and the report names a test that did not run.",
     remediation: "Rename one of them.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -925,7 +925,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "The runner passes the test's name in an 80-character field and matches on the characters before the first space, and the same name becomes part of a COBOL program-name. A name with a space in it would match a prefix of itself, and one with a character COBOL does not allow in a word would not compile.",
     remediation:
       "Use letters and digits. The prose belongs in a comment above the test, where it can say as much as it needs to.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
@@ -935,7 +935,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "A configuration naming no test is one the runner ends having done nothing, with a return code that reads as success. Nothing was run and nothing failed, which is the report a green pipeline is built out of.",
     remediation:
       "Write `test <name> for <entry transaction> { ... }`, or do not ask for a case for this program. Nothing is written for one.",
-    specReference: "integrations/zunit-integration.md",
+    specReference: "zunit.md",
     implemented: true,
   },
   {
