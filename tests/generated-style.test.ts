@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { compileExample, corpus, flowed } from "./helpers";
+import { checked, compileExample, corpus, flowed } from "./helpers";
 
 /**
  * What makes a generated program read as one.
@@ -396,6 +396,7 @@ describe("across the corpus", () => {
   });
 
   it("gives a QSAM FD its blocking and recording mode", () => {
+    let files = 0;
     for (const { example, cobol } of corpus()) {
       // A VSAM file carries neither, so the FDs checked are the ones whose
       // SELECT did not ask for an indexed or relative organisation.
@@ -404,6 +405,7 @@ describe("across the corpus", () => {
           /SELECT ([A-Z][A-Z0-9-]*)[^.]*ORGANIZATION IS SEQUENTIAL/g,
         ),
       ].map((match) => match[1]);
+      files += sequential.length;
 
       for (const file of sequential) {
         const fd = cobol.slice(cobol.indexOf(`FD  ${file}`));
@@ -417,6 +419,8 @@ describe("across the corpus", () => {
         ).toContain("RECORDING MODE");
       }
     }
+
+    checked(files, 15, "sequential files");
   });
 
   it("never writes the return code register in a CICS program", () => {
@@ -454,6 +458,7 @@ describe("across the corpus", () => {
    * nothing but the audit trail.
    */
   it("declares a runtime interface only where it calls the module", () => {
+    let groups = 0;
     const interfaces = [
       { group: "BANK-LEDGER-INTERFACE", module: "BANKLEDG" },
       { group: "BANK-AUDIT-INTERFACE", module: "BANKAUDT" },
@@ -464,11 +469,14 @@ describe("across the corpus", () => {
         if (!cobol.includes(`01  ${group}.`)) {
           continue;
         }
+        groups += 1;
         expect(
           cobol,
           `${example} declares ${group} and never calls ${module}.`,
         ).toContain(`CALL "${module}"`);
       }
     }
+
+    checked(groups, 15, "runtime interface groups");
   });
 });

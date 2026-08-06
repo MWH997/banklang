@@ -99,3 +99,50 @@ describe("playground example coverage", () => {
     expect(ids.length).toBeGreaterThanOrEqual(10);
   });
 });
+
+/**
+ * The VS Code extension, held to being able to start.
+ *
+ * It resolves the language server to `<extensionPath>/server/bin.js` and
+ * nothing built that file. The directory did not exist. So the extension could
+ * only start for a user who had set `banklang.server.path` by hand, and the
+ * repository's own status page said it "builds and typechecks in CI" — which
+ * was true, and told nobody anything, because neither of those runs it.
+ *
+ * The same shape as `pnpm zos:kit`, which built cleanly and threw every time it
+ * was asked to do its job. A build is not a test.
+ */
+describe("the VS Code extension", () => {
+  const manifest = JSON.parse(
+    readFileSync("packages/vscode-extension/package.json", "utf8"),
+  ) as { main: string; scripts: Record<string, string> };
+  const source = readFileSync(
+    "packages/vscode-extension/src/extension.ts",
+    "utf8",
+  );
+
+  /** Every path the extension resolves at run time, relative to itself. */
+  const resolved = [
+    ...source.matchAll(/join\(\s*context\.extensionPath\s*,\s*([^)]+)\)/g),
+  ].map((match) =>
+    match[1]
+      .split(",")
+      .map((part) => part.trim().replace(/^["']|["']$/g, ""))
+      .join("/"),
+  );
+
+  it("resolves a server path", () => {
+    expect(resolved).toEqual(["server/bin.js"]);
+  });
+
+  it("has a build script producing everything it resolves", () => {
+    const scripts = Object.values(manifest.scripts).join(" ");
+
+    for (const path of [...resolved, manifest.main.replace(/^\.\//, "")]) {
+      expect(
+        scripts,
+        `The extension loads ${path} at run time and no build script writes it, so activation fails on a clean install.`,
+      ).toContain(path);
+    }
+  });
+});

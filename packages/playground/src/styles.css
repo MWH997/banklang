@@ -91,6 +91,11 @@ body {
 .masthead__links a {
   color: var(--accent);
   text-decoration: none;
+  /* WCAG 2.5.8 asks for a 24px target. These were 20px tall, which is a miss
+     on a phone and a miss for anyone whose pointing is imprecise. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }
 
 .masthead__links a:hover {
@@ -231,6 +236,20 @@ select,
 .tabs {
   display: flex;
   gap: 2px;
+  /* Five tabs do not fit a 390px phone. Scrolling the strip keeps them
+     reachable; letting it push the page wide makes the whole document scroll
+     sideways, which is the one thing a layout must never do. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 0 0 auto;
 }
 
 .tab {

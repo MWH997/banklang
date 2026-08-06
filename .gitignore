@@ -16,3 +16,6 @@ tmp/
 # against the conventions rather than against assumptions. Read, never copied
 # from, and never committed: they are IBM's to distribute, not this repo's.
 vendor-docs/
+
+# Bundled language server for the VS Code extension, built by its own script.
+packages/vscode-extension/server/

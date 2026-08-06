@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, flowed, localCobol, parmDriver } from "./helpers";
+import { checked, corpus, flowed, localCobol, parmDriver } from "./helpers";
 
 /**
  * Computed subscripts, and every place one can appear.
@@ -279,6 +279,7 @@ describe("executed", () => {
  */
 describe("across the corpus", () => {
   it("range-checks a computed subscript before the statement using it", () => {
+    let tables = 0;
     for (const { example, cobol } of corpus()) {
       // Only a program with a table can subscript one. Everything else that
       // looks like `NAME (SOMETHING)` is a function reference, a CICS
@@ -286,6 +287,7 @@ describe("across the corpus", () => {
       if (!cobol.includes("OCCURS")) {
         continue;
       }
+      tables += 1;
       const text = flowed(cobol)
         .replace(/FUNCTION [A-Z0-9-]+ \([^)]*\)/g, " ")
         .replace(/DFHRESP\([^)]*\)/g, " ")
@@ -311,5 +313,7 @@ describe("across the corpus", () => {
         `${example} subscripts a table with ${computed[0][1]}, which no loop bounds, and emits no bounds status.`,
       ).toContain("BANK-BOUNDS-STATUS");
     }
+
+    checked(tables, 2, "programs with a table");
   });
 });

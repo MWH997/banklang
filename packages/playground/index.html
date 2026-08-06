@@ -47,25 +47,65 @@
 
       <section class="pane pane--output">
         <div class="pane__bar">
-          <div class="tabs" role="tablist">
-            <button class="tab tab--active" data-tab="cobol">COBOL</button>
-            <button class="tab" data-tab="copybook">Copybook</button>
-            <button class="tab" data-tab="diagnostics">
+          <div class="tabs" role="tablist" aria-label="Generated artifact">
+            <button
+              class="tab tab--active"
+              role="tab"
+              aria-selected="true"
+              aria-controls="output-panel"
+              data-tab="cobol"
+            >
+              COBOL
+            </button>
+            <button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="output-panel"
+              data-tab="copybook"
+            >
+              Copybook
+            </button>
+            <button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="output-panel"
+              data-tab="diagnostics"
+            >
               Diagnostics<span
                 id="tab-diagnostics-count"
                 class="badge"
                 hidden
               ></span>
             </button>
-            <button class="tab" data-tab="sourcemap">Source map</button>
-            <button class="tab" data-tab="analysis">Analysis</button>
+            <button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="output-panel"
+              data-tab="sourcemap"
+            >
+              Source map
+            </button>
+            <button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="output-panel"
+              data-tab="analysis"
+            >
+              Analysis
+            </button>
           </div>
           <label class="sr-only" for="copybook-picker">Copybook</label>
           <select id="copybook-picker" hidden></select>
           <button id="copy-output" class="ghost">Copy</button>
         </div>
-        <div id="output-editor" class="editor"></div>
-        <div id="diagnostics" class="diagnostics" hidden></div>
+        <div id="output-panel" role="tabpanel" aria-live="polite">
+          <div id="output-editor" class="editor"></div>
+          <div id="diagnostics" class="diagnostics" hidden></div>
+        </div>
         <p id="trace" class="trace">
           Click a line in either pane to trace it through the source map.
         </p>

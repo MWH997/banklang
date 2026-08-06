@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus } from "./helpers";
+import { checked, corpus } from "./helpers";
 
 const PREAMBLE = `module Failures;
 
@@ -474,16 +474,20 @@ describe("across the corpus", () => {
   });
 
   it("performs every routine THRU its exit paragraph", () => {
+    let performed = 0;
     for (const { example, cobol } of corpus()) {
-      const performed = [
+      const ranges = [
         ...cobol.matchAll(/PERFORM ([A-Z][A-Z0-9-]*) THRU ([A-Z][A-Z0-9-]*)/g),
       ];
-      for (const [, routine, exit] of performed) {
+      performed += ranges.length;
+      for (const [, routine, exit] of ranges) {
         expect(
           exit,
           `${example} performs ${routine} THRU ${exit}, which is not its exit paragraph.`,
         ).toBe(`${routine}-EXIT`);
       }
     }
+
+    checked(performed, 40, "performed ranges");
   });
 });

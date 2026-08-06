@@ -222,3 +222,77 @@ describe("the changelog", () => {
     expect(long).toEqual([]);
   });
 });
+
+/**
+ * COBOL printed in the documentation, held to what the compiler emits.
+ *
+ * The 2026-08-05 audit's §5.8 asked for this and it was applied to the README
+ * only. So `ROUNDED MODE IS NEAREST-EVEN` was taken out of the README and left
+ * in `docs/language-reference.md` — the 108 KB specification the playground
+ * links to — where a seven-row table taught every rounding mode as a phrase
+ * Enterprise COBOL has never had. `docs/cobol-backend.md` had a bool mapping
+ * with 88-levels the emitter does not generate, in a picture spelling and a
+ * literal delimiter it does not use.
+ *
+ * A reader believes the specification over the source. Anything it prints as
+ * generated COBOL has to be COBOL this compiler generates.
+ */
+describe("COBOL printed in the documentation", () => {
+  /** Every fenced `cobol` block in every document, with its file. */
+  const blocks = FILES.filter((file) => !/audit-\d{4}/.test(file)).flatMap(
+    (file) => {
+      const text = readFileSync(resolve(process.cwd(), file), "utf8");
+      return [...text.matchAll(/```cobol\n([\s\S]*?)```/g)].map((match) => ({
+        file,
+        body: match[1],
+      }));
+    },
+  );
+
+  it("has blocks to check", () => {
+    expect(blocks.length).toBeGreaterThan(10);
+  });
+
+  /**
+   * Forms the compiler once emitted and no longer does. Each is a defect that
+   * shipped, so each is a thing a document could still be teaching.
+   */
+  const withdrawn = [
+    {
+      form: /ROUNDED\s+MODE\s+IS/,
+      why: "COBOL 2002; Enterprise COBOL has only ROUNDED",
+    },
+    { form: /\bNEAREST-EVEN\b/, why: "appears in no column of Appendix E" },
+    {
+      form: /PIC X VALUE/,
+      why: "the picture is written PIC X(1) with a repeat count",
+    },
+    { form: /'[YN]'/, why: "the CBL statement names QUOTE as the delimiter" },
+    {
+      form: /88\s+(TRUE|FALSE)-VALUE/,
+      why: "no such condition names are emitted for a bool",
+    },
+    { form: /^\s*MAIN-PARA\./m, why: "the entry paragraph is BANK-MAIN" },
+    {
+      form: /PROGRAM-ID\.\s+[A-Z]{9,}/,
+      why: "a PROGRAM-ID is at most eight characters",
+    },
+    {
+      form: /PROGRAM-ID\.\s+[A-Z0-9]+-/,
+      why: "a PROGRAM-ID carries no hyphen under PGMNAME(COMPAT)",
+    },
+  ];
+
+  for (const { form, why } of withdrawn) {
+    it(`prints no ${form.source}`, () => {
+      const offenders = blocks
+        .filter((block) => form.test(block.body))
+        .map((block) => block.file);
+
+      expect(
+        [...new Set(offenders)],
+        `A document prints COBOL the compiler does not emit: ${why}.`,
+      ).toEqual([]);
+    });
+  }
+});

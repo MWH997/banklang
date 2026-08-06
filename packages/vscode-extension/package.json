@@ -59,7 +59,9 @@
     }
   },
   "scripts": {
-    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs"
+    "build": "pnpm build:extension && pnpm build:server",
+    "build:extension": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
+    "build:server": "esbuild ../language-server/src/bin.ts --bundle --platform=node --format=cjs --outfile=server/bin.js"
   },
   "devDependencies": {
     "@types/vscode": "^1.90.0",

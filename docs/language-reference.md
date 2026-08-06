@@ -963,15 +963,29 @@ let share: MoneyBDT = divide(total, count, "HALF_UP");
 A bare `a / b` is `BANK-DEC-003`. Assigning a wider scale to a narrower one
 without `round(...)` is `BANK-DEC-002`.
 
-| Mode        | COBOL `ROUNDED MODE IS`  | Use                                 |
-| ----------- | ------------------------ | ----------------------------------- |
-| `HALF_EVEN` | `NEAREST-EVEN`           | Banker's rounding; the usual choice |
-| `HALF_UP`   | `NEAREST-AWAY-FROM-ZERO` | Common commercial rounding          |
-| `HALF_DOWN` | `NEAREST-TOWARD-ZERO`    |                                     |
-| `UP`        | `AWAY-FROM-ZERO`         |                                     |
-| `DOWN`      | `TRUNCATION`             | Truncation                          |
-| `CEILING`   | `TOWARD-GREATER`         |                                     |
-| `FLOOR`     | `TOWARD-LESSER`          |                                     |
+Enterprise COBOL has **one** rounding phrase. `ROUNDED` is half-up away from
+zero, and omitting it truncates towards zero; there is no `MODE IS` sub-phrase,
+and `NEAREST-EVEN` appears nowhere in the 6.4 Language Reference. So two of the
+seven modes are a phrase and the other five are arithmetic this compiler writes
+out — a truncation, the excess that truncation discarded, and a conditional step
+of one unit in the last place.
+
+| Mode        | What is emitted    | Use                                  |
+| ----------- | ------------------ | ------------------------------------ |
+| `HALF_UP`   | `ROUNDED`          | Common commercial rounding           |
+| `DOWN`      | no phrase          | Truncation, which is COBOL's default |
+| `HALF_EVEN` | generated sequence | Banker's rounding; the usual choice  |
+| `HALF_DOWN` | generated sequence |                                      |
+| `UP`        | generated sequence |                                      |
+| `CEILING`   | generated sequence |                                      |
+| `FLOOR`     | generated sequence |                                      |
+
+A division rounds from `DIVIDE ... REMAINDER`, which is exact: a quotient has no
+truncation to subtract from. `BANK-DEC-006` refuses a rounding whose work fields
+would not fit the eighteen digits `ARITH(COMPAT)` allows.
+
+[numeric-model.md](numeric-model.md) has each sequence, and
+`examples/rounding-conformance` runs all seven against exact arithmetic.
 
 `round(...)` takes the scale of whatever it is assigned to, mirroring COBOL,
 where `ROUNDED` attaches to the receiving field rather than to the expression.

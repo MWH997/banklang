@@ -221,3 +221,26 @@ export function corpus(): { example: string; cobol: string }[] {
   }
   return compiledCorpus;
 }
+
+/**
+ * How many things an assertion over the corpus actually looked at.
+ *
+ * A loop over a derived collection asserts nothing when the collection is
+ * empty, and passes while doing it. That is the defect this repository keeps
+ * producing — the 2026-08-05 audit's F13 was a test whose fixture reached one
+ * of two branches, and the corpus assertions written to answer it introduced
+ * another: `SET <condition> TO TRUE` never matched, because the emitter
+ * qualifies the condition (`SET OUTCOME-FOUND OF BALANCE-REPLY TO TRUE`) and
+ * the pattern did not allow for it. Zero matches, zero assertions, green.
+ *
+ * So every corpus assertion states its floor. If a change to the compiler or to
+ * the examples means the loop stops finding anything, the floor fails and says
+ * so, rather than the suite quietly checking less than it did yesterday.
+ */
+export function checked(count: number, atLeast: number, what: string): void {
+  if (count < atLeast) {
+    throw new Error(
+      `Only ${count} ${what} were checked across the corpus, and at least ${atLeast} were expected. An assertion that finds nothing passes without asserting anything.`,
+    );
+  }
+}

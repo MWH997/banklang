@@ -16,7 +16,7 @@ import {
   toJclStatement,
   toReferenceFormat,
 } from "../packages/cobol-backend/src/reference-format";
-import { compileExample, corpus } from "./helpers";
+import { checked, compileExample, corpus } from "./helpers";
 
 /**
  * COBOL reference format, which is the shape of the page rather than of the
@@ -288,7 +288,9 @@ describe("every generated artifact", () => {
  */
 describe("across the corpus", () => {
   it("ends every line at column 72", () => {
+    let lines = 0;
     for (const { example, cobol } of corpus()) {
+      lines += cobol.split("\n").length;
       const over = cobol
         .split("\n")
         .map((line, index) => ({ line, at: index + 1 }))
@@ -299,6 +301,8 @@ describe("across the corpus", () => {
         `${example} writes past column 72, where the compiler stops reading.`,
       ).toEqual([]);
     }
+
+    checked(lines, 2000, "generated lines");
   });
 
   it("continues a broken literal with a hyphen in the indicator area", () => {
