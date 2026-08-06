@@ -33,10 +33,7 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
  * refused rather than written.
  */
 
-const COPYBOOK = resolve(
-  process.cwd(),
-  "tests/fixtures/copybooks/ACCTMAST.cpy",
-);
+const COPYBOOK = resolve(process.cwd(), "tests/inputs/copybooks/ACCTMAST.cpy");
 
 /** The BankTS source, compiled, so a record can be emitted back out of it. */
 function recordFrom(source: string, name: string) {
@@ -263,7 +260,7 @@ describe("bankc copybook import", () => {
     const result = runBankc([
       "copybook",
       "import",
-      "tests/fixtures/copybooks/ACCTMAST.cpy",
+      "tests/inputs/copybooks/ACCTMAST.cpy",
     ]);
 
     expect(result.exitCode).toBe(0);
