@@ -2,8 +2,32 @@
   "name": "banklang-vscode",
   "displayName": "BankLang",
   "description": "BankTS language support: banking safety diagnostics, formatting, and COBOL traceability.",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "private": true,
+  "publisher": "mwhassan",
+  "license": "MIT",
+  "icon": "icon.png",
+  "homepage": "https://banklang.mwhassan.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MWH997/banklang.git",
+    "directory": "packages/vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/MWH997/banklang/issues"
+  },
+  "qna": "https://github.com/MWH997/banklang/issues",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "keywords": [
+    "cobol",
+    "mainframe",
+    "banking",
+    "bankts",
+    "zos"
+  ],
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -61,10 +85,12 @@
   "scripts": {
     "build": "pnpm build:extension && pnpm build:server",
     "build:extension": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
-    "build:server": "esbuild ../language-server/src/bin.ts --bundle --platform=node --format=cjs --outfile=server/bin.js"
+    "build:server": "esbuild ../language-server/src/bin.ts --bundle --platform=node --format=cjs --outfile=server/bin.js",
+    "package": "vsce package --no-dependencies --out ../../dist/vsix/"
   },
   "devDependencies": {
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.25.0"
   },
   "dependencies": {

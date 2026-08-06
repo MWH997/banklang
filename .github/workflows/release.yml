@@ -1,0 +1,142 @@
+name: release
+
+# R2, the half a workflow can do.
+#
+# Publishing a release is four claims — this is the code at that version, these
+# are the changes, this is what is inside it, and this artifact came from that
+# code — and three of them can be made mechanically. What cannot is the tag
+# itself: a signature needs a key that belongs to a person, not to a runner.
+# So this refuses to publish an unsigned tag rather than pretending it signed
+# one.
+#
+# To cut a release:
+#
+#   1. Rename `## [Unreleased]` in CHANGELOG.md to `## [0.9.0] - YYYY-MM-DD`.
+#   2. Check `version` in package.json, CITATION.cff and the extension manifest
+#      agree — `pnpm test` fails if they do not.
+#   3. `git tag -s v0.9.0 -m "0.9.0"` and push the tag.
+#
+# Everything below then runs on its own.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "An existing tag to build a release from"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The same checks a pull request gets, on the commit the tag names. Called
+  # rather than copied: a shorter list here would drift from the real one, and
+  # the drift would be invisible until a release shipped something CI rejects.
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # Create the release and upload its assets.
+      contents: write
+      # Mint the OIDC token Sigstore signs the provenance with, and store it.
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Name the version
+        id: version
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # An unsigned tag is a release anybody with push access could have made
+      # and nobody can attribute. GitHub verifies the signature server-side, so
+      # the answer comes from the API rather than from a key on the runner —
+      # which also means this cannot be satisfied by a runner holding a key.
+      #
+      # A lightweight tag has no object to sign at all, and reads here as
+      # `type: commit`.
+      - name: Refuse an unsigned tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          OBJECT=$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+          TYPE=${OBJECT% *}
+          SHA=${OBJECT#* }
+          if [ "$TYPE" != "tag" ]; then
+            echo "::error::$TAG is a lightweight tag. Re-tag with \`git tag -s\`."
+            exit 1
+          fi
+          VERIFIED=$(gh api "repos/${{ github.repository }}/git/tags/$SHA" --jq '.verification.verified')
+          REASON=$(gh api "repos/${{ github.repository }}/git/tags/$SHA" --jq '.verification.reason')
+          if [ "$VERIFIED" != "true" ]; then
+            echo "::error::$TAG carries no verified signature ($REASON)."
+            exit 1
+          fi
+          echo "$TAG is signed and verified."
+
+      - name: Install pnpm
+        run: npm install -g pnpm@11.7.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Before anything is built, so a missing changelog section fails in
+      # seconds rather than after the release has half happened.
+      - name: Take the release notes from the changelog
+        run: pnpm release:notes "${{ steps.version.outputs.version }}" > release-notes.md
+
+      - name: Build the bill of materials
+        run: pnpm sbom:release
+
+      - name: Package the VS Code extension
+        run: pnpm build:vsix
+
+      # Sigstore, through GitHub's own OIDC identity. This is the one part of
+      # R2's "signed and attested" that needs no key of the author's: it states
+      # which workflow, at which commit, produced these bytes, and `gh
+      # attestation verify` checks it against a transparency log.
+      - name: Attest what was built
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/vsix/*.vsix
+            dist/sbom/*.cdx.json
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.version }}" \
+            --notes-file release-notes.md \
+            --verify-tag \
+            dist/vsix/*.vsix \
+            dist/sbom/*.cdx.json
+
+      # Deliberately not `vsce publish`. That needs a marketplace publisher and
+      # a token that belongs to a person; the `.vsix` attached above is the
+      # exact file to upload, and `gh attestation verify` proves it came from
+      # this workflow at this commit.
+      - name: Say what is left to do by hand
+        run: |
+          echo "::notice::Upload dist/vsix/*.vsix to the Visual Studio Marketplace, or run \`vsce publish --packagePath\` with it."

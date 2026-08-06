@@ -6,6 +6,10 @@ on:
     branches:
       - main
       - master
+  # `release.yml` runs this whole file before it publishes anything, so a
+  # release is built from a commit that passed the same checks a pull request
+  # does rather than from a second, shorter list that drifts from this one.
+  workflow_call:
 
 jobs:
   verify:
@@ -95,3 +99,59 @@ jobs:
           name: site
           path: dist/site
           retention-days: 14
+
+      # R4. Packaging reads the archive back and fails if the bundle, the
+      # server or the icon is missing from it, or if the source tree got in —
+      # every one of which packages successfully and prints DONE.
+      - name: Package the VS Code extension
+        run: pnpm build:vsix
+
+      - name: Upload the extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: dist/vsix
+          retention-days: 90
+
+  # R2. The inventory a bank's security function asks for before anything else.
+  #
+  # A job of its own, in parallel, for two reasons. It resolves the prebuilt
+  # binaries for every platform — about a gigabyte, and the only way the BOM
+  # names a licence for all of them; see the measurement in `tools/sbom.ts`.
+  # And it deliberately does not use `cache: "pnpm"`, because that store would
+  # then carry every platform's binaries into every other job's cache.
+  #
+  # It runs on every push rather than only on a tag. The alternative is that the
+  # multi-platform resolve is first exercised on the day of a release, which is
+  # the day it must not fail.
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm@11.7.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `--all-platforms` in `tools/sbom.ts`. Fails on any component with no
+      # licence, so a dependency that ships a binary for a platform the tool
+      # does not resolve stops the build rather than quietly costing the reader
+      # a licence.
+      - name: Build the bill of materials
+        run: pnpm sbom:release
+
+      - name: Upload the bill of materials
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: dist/sbom
+          retention-days: 90
