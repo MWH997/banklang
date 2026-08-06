@@ -17,6 +17,8 @@ tests/fixtures/**
 # somebody else's text, kept as it was written.
 tests/inputs/**
 examples/**/*.bank.ts
+# `pnpm evidence:grades` writes this whole file.
+evidence/GRADES.md
 evidence/**/audit/**
 evidence/**/cobol/**
 evidence/**/copybooks/**
