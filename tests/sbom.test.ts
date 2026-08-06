@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -368,5 +369,50 @@ describe("what problems() catches", () => {
 
     expect(problems(copy, { strict: false })).toEqual([]);
     expect(problems(copy, { strict: true })).toHaveLength(stripped);
+  });
+});
+
+/**
+ * The supply-chain policy, held to being configured rather than described.
+ *
+ * Found by the pre-publication audit on 2026-08-07. Three files — this
+ * workspace's own manifest, the scheduled advisory job, and `tools/sbom.ts` —
+ * described a `minimumReleaseAge` policy the repository held, and the
+ * repository held a comment about one. `pnpm config get minimumReleaseAge`
+ * answered `undefined`.
+ *
+ * The protection was real, because pnpm 11 turns it on at 1440 minutes by
+ * itself. That is the part worth stating precisely: a default is a control
+ * somebody else owns. A pnpm release that lowers it, or a contributor on the
+ * version before the setting existed, gets none of it — and every document here
+ * would go on saying the policy was in force.
+ */
+describe("the release-age policy the documentation describes", () => {
+  const workspace = readFileSync("pnpm-workspace.yaml", "utf8");
+
+  it("is a setting, not a comment about one", () => {
+    const configured = /^minimumReleaseAge:\s*(\d+)\s*$/m.exec(workspace);
+    expect(
+      configured,
+      "pnpm-workspace.yaml describes minimumReleaseAge without setting it",
+    ).not.toBeNull();
+    expect(Number(configured?.[1])).toBeGreaterThanOrEqual(1440);
+  });
+
+  it("is what pnpm actually resolves with", () => {
+    // Read back through pnpm rather than from the file: the question is what
+    // the package manager applies, which is what the comment claims.
+    const applied = execSync("pnpm config get minimumReleaseAge", {
+      encoding: "utf8",
+    }).trim();
+    expect(applied).not.toBe("undefined");
+    expect(Number(applied)).toBeGreaterThanOrEqual(1440);
+  });
+
+  it("takes no blanket exemption, which is what it exists to prevent", () => {
+    // pnpm offers `minimumReleaseAgeExclude` for the one package the policy
+    // just stopped, which is the opposite of what the policy is for.
+    expect(workspace).not.toMatch(/^minimumReleaseAgeExclude:/m);
+    expect(workspace).not.toMatch(/^minimumReleaseAge:\s*0\s*$/m);
   });
 });

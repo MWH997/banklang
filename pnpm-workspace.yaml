@@ -19,16 +19,32 @@ allowBuilds:
   keytar: false
   "@vscode/vsce-sign": false
 
+# A compromised npm release is normally found and pulled within days, so the
+# safe move is not to be among the first to install one. `minimumReleaseAge` is
+# how long a version must have existed before pnpm will resolve it.
+#
+# **Written out rather than left to the default.** pnpm 11 turns this on at 1440
+# minutes on its own, and until 2026-08-07 that default was the whole of the
+# protection here — three files described a policy this workspace held, and this
+# one held a comment about it. A default is a control somebody else can change:
+# a pnpm release that lowers it, or a contributor on pnpm 10 where the setting
+# did not exist, silently gets none of this, and nothing in the repository would
+# say so. 1440 is what was already in force, so writing it changes no
+# resolution; what it changes is that a future pnpm cannot remove it quietly.
+#
+# Raising it to 10080 (seven days) matches the sentence above more honestly and
+# is a decision with a cost on the other side: a *patched* release is held back
+# by the same window, and Dependabot's pull requests would fail `pnpm install`
+# until the version it proposes has aged. That trade is open.
+minimumReleaseAge: 1440
+
 # Held one patch back from the newest vite, which vitest depends on and would
 # otherwise pull in the day it is published.
 #
-# `minimumReleaseAge` exists because a compromised npm release is normally found
-# and pulled within days, so the safe move is to not be among the first to
-# install one. When a fresh version arrives as a transitive dependency, pnpm
-# offers to add it to `minimumReleaseAgeExclude` — an exemption for the one
-# package the policy just stopped, which is the opposite of what the policy is
-# for. Naming a version that is already past the cutoff keeps the check meaning
-# something.
+# When a fresh version arrives as a transitive dependency, pnpm offers to add it
+# to `minimumReleaseAgeExclude` — an exemption for the one package the policy
+# just stopped, which is the opposite of what the policy is for. Naming a
+# version that is already past the cutoff keeps the check meaning something.
 #
 # 8.1.5 is well clear of every advisory that prompted this upgrade: those affect
 # vite up to 6.4.2. Raise this whenever the newest release has aged past the

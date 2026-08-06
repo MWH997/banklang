@@ -12,8 +12,8 @@
  * abandoned their own `cyclonedx-node-pnpm` in favour of it, so the native
  * command *is* the maintained implementation. It also means the tool that
  * inventories the supply chain is not itself a new link in it — which matters
- * here, where `pnpm-workspace.yaml` holds a `minimumReleaseAge` policy
- * precisely to avoid being first to install a fresh release.
+ * here, where `pnpm-workspace.yaml` sets a `minimumReleaseAge` precisely to
+ * avoid being first to install a fresh release.
  *
  * ## Why this wraps the command instead of being one line of YAML
  *

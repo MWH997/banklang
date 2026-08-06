@@ -16,3 +16,13 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+# Dependabot and `minimumReleaseAge` pull against each other, on purpose.
+#
+# `pnpm-workspace.yaml` refuses to resolve a version published less than a day
+# ago; Dependabot's job is to propose one as soon as it exists. A pull request
+# for a same-day release therefore fails `pnpm install --frozen-lockfile` in CI
+# rather than merging, and passes on a rerun once the version has aged.
+#
+# That is the intended outcome and not a misconfiguration: the update is still
+# proposed and still visible, and what the policy buys is that nobody merges it
+# during the window when a compromised release is most likely to still be up.
