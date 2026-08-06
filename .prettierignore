@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# The language server bundle the VS Code extension loads, written by
+# `pnpm --filter banklang-vscode build:server`. esbuild's output, not ours.
+packages/vscode-extension/server/
 # Stryker's sandbox: a copy of the repository, deleted when the run ends.
 .stryker-tmp/
 coverage/

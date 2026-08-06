@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The conformance linter, which is the evidence behind every claim that the generated COBOL is Enterprise COBOL. Nothing was checking the checker: a rule whose test still passes when the rule is inverted is not a rule, and the 2026-08-06 audit found five assertions in this repository that ran, passed and checked the wrong thing. Reading finds those one at a time; a surviving mutant is that defect by definition. See docs/verification.md.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress"],
+  "testRunner": "vitest",
+  "coverageAnalysis": "perTest",
+  "mutate": ["packages/conformance-lint/src/**/*.ts"],
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "timeoutMS": 120000,
+  "concurrency": 8,
+  "htmlReporter": {
+    "fileName": "dist/mutation-lint/index.html"
+  },
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.mutation-lint.config.ts"
+  },
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "incremental": true,
+  "incrementalFile": "dist/mutation-lint/stryker-incremental.json",
+  "ignoreStatic": true
+}

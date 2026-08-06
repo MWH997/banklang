@@ -7,7 +7,7 @@ import { KEYWORDS } from "../packages/parser/src/index";
 import { CONFORMANCE_RULES } from "../packages/conformance-lint/src/index";
 import { DIAGNOSTICS } from "../packages/diagnostics/src/index";
 import { gradeExamples } from "../tools/evidence-grades";
-import { corpus } from "./helpers";
+import { checked, corpus } from "./helpers";
 
 /**
  * No feature may rest on a single example.
@@ -246,6 +246,76 @@ describe("the generated-code standards", () => {
 });
 
 /**
+ * Every test that reads the corpus says how much of it it looked at.
+ *
+ * The recurring defect in this repository is an assertion that runs, passes,
+ * and checks nothing. Six have been found: F13's delimiter test, the
+ * `Checked by` loop directly above this one, an enum regex that missed the
+ * qualified `SET x OF y TO TRUE` and so matched zero of twenty-three examples,
+ * a floor set from a corpus that did not meet it, a framing test named "counts
+ * content length in bytes, not characters" that never counted bytes, and a
+ * conformance rule with no test at all. Every one of them was green.
+ *
+ * A corpus loop is where this is easiest to write by accident, because the loop
+ * still executes — over nothing. `checked(count, atLeast, what)` in
+ * `tests/helpers.ts` is the countermeasure, and this is what makes using it not
+ * optional: a test that reaches for `corpus()` and never states a floor is
+ * asserting over however much it happened to find, which may be none of it.
+ */
+describe("every corpus assertion", () => {
+  /**
+   * The file with its comments removed.
+   *
+   * Needed because the first version of this check searched the raw text and
+   * passed over this very file, which reads the corpus and at the time stated
+   * no floor: the prose above happens to name `checked(`, and that was enough.
+   * A rule about what code does has to be asked of the code.
+   */
+  const code = (file: string) =>
+    readFileSync(file, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+
+  /**
+   * A call with an argument, rather than the two characters `checked(`.
+   *
+   * The second version of this check stripped string literals as well, so that
+   * the assertion message below — which also names `checked()` — could not
+   * satisfy the rule out of its own failure text. Lexing TypeScript with a
+   * regular expression went wrong immediately, swallowing whole statements
+   * between adjacent string arguments. Requiring an argument is the cheap way
+   * to tell the call from the mention: every real call passes a count, and
+   * every mention in prose writes the empty parentheses.
+   */
+  const CALL = /\bchecked\([^)]/;
+
+  const readers = readdirSync("tests")
+    .filter((name) => name.endsWith(".test.ts"))
+    .map((name) => `tests/${name}`)
+    .filter((file) => /\bcorpus\(/.test(code(file)));
+
+  it("has files to check", () => {
+    expect(readers.length).toBeGreaterThan(5);
+  });
+
+  /**
+   * One floor per file, which is coarser than the property deserves: a file
+   * with two corpus loops satisfies this with a floor on one of them. It is
+   * still worth having as it stands, because the failure it prevents is a file
+   * with no floor at all, and the finer version would need to know which loop
+   * a `checked()` belongs to.
+   */
+  for (const file of readers) {
+    it(`states how much it looked at: ${file}`, () => {
+      expect(
+        CALL.test(code(file)),
+        `${file} reads the corpus but never calls checked(). An assertion that finds nothing passes without asserting anything, so a loop over the corpus has to say how much it expected to find.`,
+      ).toBe(true);
+    });
+  }
+});
+
+/**
  * One picture shape, one spelling, across everything the compiler emits.
  *
  * `PIC S9(16)V99` and `PIC S9(16)V9(2)` are the same picture; so are `PIC X`
@@ -288,8 +358,10 @@ describe("every PICTURE in the corpus", () => {
       .join(" ");
 
   const spellings = new Map<string, Map<string, string>>();
+  let pictures = 0;
   for (const { example, cobol } of corpus()) {
     for (const [, picture] of cobol.matchAll(/\bPIC\s+([^\s.]+)/g)) {
+      pictures += 1;
       const shape = normalise(picture);
       const seen = spellings.get(shape) ?? new Map<string, string>();
       if (!seen.has(picture)) {
@@ -300,6 +372,7 @@ describe("every PICTURE in the corpus", () => {
   }
 
   it("has pictures to compare", () => {
+    checked(pictures, 500, "PICTURE clauses");
     expect(spellings.size).toBeGreaterThan(10);
   });
 
