@@ -29,7 +29,7 @@
     "zos"
   ],
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.91.0"
   },
   "categories": [
     "Programming Languages",
@@ -89,11 +89,11 @@
     "package": "vsce package --no-dependencies --out ../../dist/vsix/"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "^1.91.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.25.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^10.1.0"
   }
 }
