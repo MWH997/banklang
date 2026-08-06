@@ -6,6 +6,35 @@ The project must prove that compiler output is deterministic, traceable, and sem
 
 Verification is not optional. It is the difference between a toy transpiler and a bank-grade toolchain.
 
+## 1a. Static analysis
+
+```bash
+pnpm lint          # eslint, with type information
+pnpm format:check  # prettier
+```
+
+Until 2026-08-06 `pnpm lint` was `prettier --check`, and calling a formatter a
+linter is how the gap stayed invisible: TypeScript caught types, Prettier caught
+whitespace, and nothing looked at the space between them. A duplicate
+`case "RaiseStatement"` sat in the formatter until esbuild happened to mention
+it while bundling the language server — TypeScript does not report a duplicate
+case, because the exhaustiveness check over `never` is satisfied by the first
+one.
+
+ESLint runs on `typescript-eslint`'s recommended type-checked set. Its first run
+found ninety-eight problems, of which fifty-six were dead code: forty-two unused
+imports, a 114-line table of COBOL statement verbs in the conformance linter
+that had never been referenced since the commit that introduced it, a regex in a
+test superseded by a comment three lines below it, a flag in the typechecker
+written in three places and read in none, two unreachable functions in the
+emitter, and a call passing the working directory into a parameter named
+`commandName`. See the 2026-08-06 audit, §8.
+
+`no-unnecessary-condition` is deliberately off, and `eslint.config.js` carries
+the reason at length: without `noUncheckedIndexedAccess` it reports correct
+guards as dead, so acting on it would delete the checks that make index access
+safe. Turning both on is ticketed as R7.
+
 ## 2. Test categories
 
 ### 2.1 Unit tests

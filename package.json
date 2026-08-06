@@ -18,8 +18,11 @@
     "fixtures:refresh": "tsx tools/refresh-fixtures.ts",
     "fmt": "tsx tools/format-examples.ts",
     "fmt:check": "tsx tools/format-examples.ts --check",
-    "lint": "prettier --check . --ignore-path .prettierignore",
+    "format": "prettier --write . --ignore-path .prettierignore",
+    "format:check": "prettier --check . --ignore-path .prettierignore",
+    "lint": "eslint .",
     "lint:conformance": "tsx tools/conformance-lint.ts",
+    "lint:fix": "eslint . --fix",
     "lsp": "tsx packages/language-server/src/bin.ts",
     "playground:build": "pnpm --filter @banklang/playground build",
     "playground:dev": "pnpm --filter @banklang/playground dev",
@@ -35,12 +38,16 @@
     "zos:kit": "tsx tools/zos-kit.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@types/node": "^24.0.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.3.3",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.66.0",
     "vitest": "^2.1.8"
   }
 }

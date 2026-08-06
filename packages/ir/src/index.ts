@@ -17,22 +17,15 @@ import {
   type ComparisonOperator,
   type LogicalOperator,
   type RoundingMode,
-  type UnaryExpressionNode,
-  type RoundedExpressionNode,
   type CallExpressionNode,
-  type WhileStatementNode,
-  type AssignStatementNode,
-  type FileStatementNode,
   type StringCallNode,
   type SortProcedureNode,
 } from "../../ast/src/index";
 import type { EditStyle, NumericUsage } from "../../cobol-ir/src/index";
 import type {
   DecimalType,
-  ResolvedField,
   ResolvedFunction,
   ResolvedRecord,
-  ResolvedLocal,
   ResolvedTransaction,
   ResolvedSql,
   ResolvedType,

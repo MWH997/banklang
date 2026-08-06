@@ -1,7 +1,6 @@
 import type { IRProgram, IRRecord, IRType } from "../../ir/src/index";
 import {
   enumWidth,
-  decimalPicture,
   packedDecimalByteLength,
   toCobolName,
   toCobolPicture,
@@ -617,11 +616,10 @@ function inspectPictureLength(picture: string): number {
   const digitsIn = (text: string): number => {
     const repeated = /9\((\d+)\)/g;
     let total = 0;
-    let rest = text;
     for (const match of text.matchAll(repeated)) {
       total += Number(match[1]);
     }
-    rest = text.replace(repeated, "");
+    const rest = text.replace(repeated, "");
     total += (rest.match(/9/g) ?? []).length;
     return total;
   };
@@ -644,7 +642,7 @@ function inspectPictureLength(picture: string): number {
 
   // A numeric-edited picture is one character per position, and every position
   // is written out, so its own length is the byte count.
-  if (/[Z*,.\/]/.test(body) && !body.includes("COMP")) {
+  if (/[Z*,./]/.test(body) && !body.includes("COMP")) {
     return body.replace(/CR|DB/g, "XX").length;
   }
 

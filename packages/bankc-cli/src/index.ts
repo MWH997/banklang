@@ -46,7 +46,6 @@ import {
   type IRProgram,
   type IRType,
   type IRExpression,
-  type IRRecord,
   type IRStatement,
 } from "../../ir/src/index";
 import { parseBankTs } from "../../parser/src/index";
@@ -106,7 +105,6 @@ interface CompiledProject {
   semantics: ReturnType<typeof analyzeProgramSemantics>;
 }
 
-const PLANNED_COMMAND_ERROR = "planned but not implemented yet";
 const AUDIT_SCHEMA_VERSION = 1;
 const BACKEND_PROFILE = "ibm-enterprise-cobol-zos";
 
@@ -128,15 +126,6 @@ interface VerificationReportDocument {
   deterministicRegeneration: AuditCheck;
   sourceMapCoverage: SourceMapCoverageResult;
   gnucobolValidation: GnucobolValidationSummary | null;
-  notes: string[];
-}
-
-interface TestReportDocument {
-  version: number;
-  backendProfile: string;
-  project: string;
-  steps: AuditCheck[];
-  artifacts: string[];
   notes: string[];
 }
 
@@ -260,7 +249,7 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
 }
 
 function runCheck(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "check");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -346,7 +335,7 @@ function readFlagValue(args: string[], flag: string): string | null {
 function runEmit(args: string[], cwd: string): CliResult {
   const [profile, ...rest] = args;
   if (profile === "cobol") {
-    const projectPath = requireProjectPath(rest, "emit cobol");
+    const projectPath = requireProjectPath(rest);
     if (!projectPath) {
       return {
         exitCode: 1,
@@ -385,7 +374,7 @@ function runEmit(args: string[], cwd: string): CliResult {
   }
 
   if (profile === "copybooks") {
-    const projectPath = requireProjectPath(rest, "emit copybooks");
+    const projectPath = requireProjectPath(rest);
     if (!projectPath) {
       return {
         exitCode: 1,
@@ -417,7 +406,7 @@ function runEmit(args: string[], cwd: string): CliResult {
   }
 
   if (profile === "jcl") {
-    const projectPath = requireProjectPath(rest, "emit jcl");
+    const projectPath = requireProjectPath(rest);
     if (!projectPath) {
       return {
         exitCode: 1,
@@ -635,7 +624,7 @@ export function parseJobDescriptor(text: string): JobDescriptor {
  * conditions that stop a night whose extract failed from posting anyway.
  */
 function runJob(args: string[], cwd: string): CliResult {
-  const jobPath = requireProjectPath(args, "job");
+  const jobPath = requireProjectPath(args);
   if (!jobPath) {
     return { exitCode: 1, stdout: "", stderr: renderHelp() };
   }
@@ -716,7 +705,7 @@ function runJob(args: string[], cwd: string): CliResult {
 }
 
 function runBuild(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "build");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -782,7 +771,7 @@ function runBuild(args: string[], cwd: string): CliResult {
 }
 
 function runAuditReport(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "audit-report");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -845,7 +834,7 @@ function runAuditReport(args: string[], cwd: string): CliResult {
 }
 
 function runVerify(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "verify");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -977,7 +966,7 @@ function runVerify(args: string[], cwd: string): CliResult {
 }
 
 function runTest(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "test");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -1037,7 +1026,7 @@ function runTest(args: string[], cwd: string): CliResult {
  * asks for it rather than receiving it.
  */
 function runZunit(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "zunit");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -1096,7 +1085,7 @@ function runZunit(args: string[], cwd: string): CliResult {
 }
 
 function runLayout(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "layout");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return {
       exitCode: 1,
@@ -1134,7 +1123,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
   const jsonMode = rest.includes("--json");
 
   if (subcommand === "inspect") {
-    const filePath = requireCopybookPath(rest, "copybook inspect");
+    const filePath = requireCopybookPath(rest);
     if (!filePath) {
       return {
         exitCode: 1,
@@ -1163,7 +1152,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
   }
 
   if (subcommand === "diff") {
-    const copybookPair = requireCopybookPair(rest, "copybook diff");
+    const copybookPair = requireCopybookPair(rest);
     if (!copybookPair) {
       return {
         exitCode: 1,
@@ -1193,7 +1182,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
   }
 
   if (subcommand === "types") {
-    const filePath = requireCopybookPath(rest, "copybook types");
+    const filePath = requireCopybookPath(rest);
     if (!filePath) {
       return {
         exitCode: 1,
@@ -1222,7 +1211,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
   }
 
   if (subcommand === "import") {
-    const filePath = requireCopybookPath(rest, "copybook import");
+    const filePath = requireCopybookPath(rest);
     if (!filePath) {
       return { exitCode: 1, stdout: "", stderr: renderHelp() };
     }
@@ -1273,7 +1262,7 @@ function runDclgen(args: string[], cwd: string): CliResult {
     };
   }
 
-  const filePath = requireCopybookPath(rest, "dclgen import");
+  const filePath = requireCopybookPath(rest);
   if (!filePath) {
     return { exitCode: 1, stdout: "", stderr: renderHelp() };
   }
@@ -1631,10 +1620,7 @@ function positionalArgs(args: string[]): string[] {
   return positionals;
 }
 
-function requireProjectPath(
-  args: string[],
-  commandName: string,
-): string | null {
+function requireProjectPath(args: string[]): string | null {
   const [project] = positionalArgs(args);
   if (!project) {
     return null;
@@ -1642,10 +1628,7 @@ function requireProjectPath(
   return project;
 }
 
-function requireCopybookPath(
-  args: string[],
-  commandName: string,
-): string | null {
+function requireCopybookPath(args: string[]): string | null {
   const [file] = positionalArgs(args);
   if (!file) {
     return null;
@@ -1658,7 +1641,6 @@ function requireCopybookPath(
 
 function requireCopybookPair(
   args: string[],
-  commandName: string,
 ): { left: string; right: string } | null {
   const files = args.filter((arg) => !arg.startsWith("--"));
   if (files.length < 2) {
@@ -1675,20 +1657,12 @@ function requireCopybookPair(
   return { left: files[0], right: files[1] };
 }
 
-function planned(commandName: string): CliResult {
-  return {
-    exitCode: 1,
-    stdout: "",
-    stderr: `Command "${commandName}" is ${PLANNED_COMMAND_ERROR}.\n`,
-  };
-}
-
 /**
  * `bankc fmt <project>` rewrites source files in place.
  * `--check` reports which files would change and exits non-zero, for CI.
  */
 function runFmt(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "fmt");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return { exitCode: 1, stdout: "", stderr: renderHelp() };
   }
@@ -1780,7 +1754,7 @@ function runInit(args: string[], cwd: string): CliResult {
 
 /** `bankc config <project>` shows the resolved configuration. */
 function runConfig(args: string[], cwd: string): CliResult {
-  const projectPath = requireProjectPath(args, "config");
+  const projectPath = requireProjectPath(args);
   if (!projectPath) {
     return { exitCode: 1, stdout: "", stderr: renderHelp() };
   }
@@ -1830,7 +1804,7 @@ export function watchProject(
   write: (result: CliResult) => void,
 ): () => void {
   const args = argv.filter((arg) => arg !== "--watch");
-  const projectPath = requireProjectPath(args.slice(1), cwd) ?? ".";
+  const projectPath = requireProjectPath(args.slice(1)) ?? ".";
   const sourceFile = resolveSourceFile(projectPath, cwd);
 
   let running = false;

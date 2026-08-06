@@ -4,7 +4,6 @@ import {
   type BlockNode,
   type BooleanLiteralNode,
   type CursorLoopStatementNode,
-  type BinaryExpressionNode,
   type DeclarationNode,
   type DecimalLiteralNode,
   type DecimalTypeNode,
@@ -88,7 +87,6 @@ import {
   type RaiseStatementNode,
   type FailureHandlerNode,
   type EnumDeclarationNode,
-  type EnumMemberNode,
   type IndexAccessNode,
   type NullableCheckNode,
   type SwitchStatementNode,
@@ -2861,7 +2859,7 @@ class Parser {
         }
         target = {
           kind: "MemberAccess",
-          target: target as IdentifierNode,
+          target: target,
           member: memberToken.text,
           span: {
             sourceFile: targetToken.span.sourceFile,
@@ -3250,7 +3248,7 @@ class Parser {
           }
           target = {
             kind: "MemberAccess",
-            target: target as IdentifierNode,
+            target: target,
             member: memberToken.text,
             span: {
               sourceFile: targetToken.span.sourceFile,
@@ -3307,7 +3305,7 @@ class Parser {
         }
         array = {
           kind: "MemberAccess",
-          target: array as IdentifierNode,
+          target: array,
           member: memberToken.text,
           span: {
             sourceFile: arrayToken.span.sourceFile,
@@ -3520,7 +3518,7 @@ class Parser {
       }
       array = {
         kind: "MemberAccess",
-        target: array as IdentifierNode,
+        target: array,
         member: memberToken.text,
         span: {
           sourceFile: arrayToken.span.sourceFile,

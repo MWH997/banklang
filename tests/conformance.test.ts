@@ -236,7 +236,7 @@ describe("record inheritance layout", () => {
 
 runner("executed against the reference runtime", () => {
   it("posts a permitted withdrawal and leaves the ledger balanced", () => {
-    const { result, resultLayout } = run("permitted", {
+    const { result } = run("permitted", {
       accountId: "ACC-0000000001",
       balance: 5000.0,
       minimumBalance: 500.0,

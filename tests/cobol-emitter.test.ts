@@ -3,11 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  loadExampleSource,
-  exampleSourceFile,
-  compileExample,
-} from "./helpers";
+import { compileExample } from "./helpers";
 
 describe("cobol emitter", () => {
   it("emits the golden COBOL output", () => {

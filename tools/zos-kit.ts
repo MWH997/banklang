@@ -1,15 +1,8 @@
-import {
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { compile } from "../packages/compiler/src/index";
 import { emitZunit } from "../packages/zunit/src/index";
-import { renderCopybook } from "../packages/cobol-backend/src/index";
 import {
   copybookMemberName,
   toCobolProgramId,

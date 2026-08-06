@@ -1,12 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { precompile } from "../packages/precompiler/src/index";
 
 import { compileExample, loadExampleSource, localCobol } from "./helpers";
 import { exampleProjects } from "../tools/example-projects";
