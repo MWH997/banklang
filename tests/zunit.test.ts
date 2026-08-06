@@ -188,8 +188,8 @@ describe("the driver", () => {
   /** The order is the point: a debit then a credit is not a credit then a debit. */
   it("checks each call against the expectation of that position", () => {
     const ledger = GENERATED.driver
-      .split("PROGRAM-ID. 'PGM_BANKLEDG'.")[1]
-      .split("END PROGRAM")[0];
+      .split("PROGRAM-ID. 'PGM_BANKLEDG'.")[1]!
+      .split("END PROGRAM")[0]!;
 
     expect(ledger).toMatch(
       /WHEN 1[\s\S]*BANK-LEDGER-OPERATION = 'DEBIT'[\s\S]*WHEN 2[\s\S]*BANK-LEDGER-OPERATION = 'CREDIT'/,
@@ -286,7 +286,7 @@ describe("the program it tests", () => {
   it("is byte for byte what it is without the tests", () => {
     const withTests = emitCobol(programOf(PROGRAM)).cobol;
     const withoutTests = emitCobol(
-      programOf(PROGRAM.split("test postsBothLegs")[0]),
+      programOf(PROGRAM.split("test postsBothLegs")[0]!),
     ).cobol;
 
     expect(withTests).toBe(withoutTests);
@@ -466,7 +466,7 @@ describe("bankc zunit", () => {
     spawnSync("mkdir", ["-p", join(projectRoot, "src")]);
     writeFileSync(
       join(projectRoot, "src", "main.bank.ts"),
-      PROGRAM.split("test postsBothLegs")[0],
+      PROGRAM.split("test postsBothLegs")[0]!,
       "utf8",
     );
 

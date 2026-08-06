@@ -191,7 +191,7 @@ describe("the generated-code standards", () => {
   const page = readFileSync("docs/generated-code-standards.md", "utf8");
   /** The `Checked by` cell of every table row, split on its commas. */
   const checks = [...page.matchAll(/^\|(?!\s*-)[^|]+\|([^|]+)\|\s*$/gm)]
-    .map((row) => row[1].trim())
+    .map((row) => row[1]!.trim())
     .filter((cell) => cell !== "" && cell !== "Checked by")
     .flatMap((cell) => cell.split(/,\s*/).map((part) => part.trim()))
     // Unbackticked here rather than at each use. Leaving the backticks on made
@@ -343,7 +343,7 @@ describe("every PICTURE in the corpus", () => {
   const normalise = (picture: string): string =>
     [...picture.matchAll(/([A-Z90$*+\-.,/])(?:\((\d+)\))?/g)]
       .reduce<{ symbol: string; count: number }[]>(
-        (runs, [, symbol, count]) => {
+        (runs, [, symbol = "", count]) => {
           const last = runs.at(-1);
           const size = count === undefined ? 1 : Number(count);
           if (last?.symbol === symbol) {
@@ -360,7 +360,7 @@ describe("every PICTURE in the corpus", () => {
   const spellings = new Map<string, Map<string, string>>();
   let pictures = 0;
   for (const { example, cobol } of corpus()) {
-    for (const [, picture] of cobol.matchAll(/\bPIC\s+([^\s.]+)/g)) {
+    for (const [, picture = ""] of cobol.matchAll(/\bPIC\s+([^\s.]+)/g)) {
       pictures += 1;
       const shape = normalise(picture);
       const seen = spellings.get(shape) ?? new Map<string, string>();

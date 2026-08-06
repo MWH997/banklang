@@ -495,7 +495,7 @@ function runAnalyse(args: string[], cwd: string): CliResult {
   const outputRoot = resolveOutputRoot(cwd, args);
   mkdirSync(outputRoot, { recursive: true });
   const written = [join(outputRoot, "inventory.md")];
-  writeFileSync(written[0], renderInventory(analyses), "utf8");
+  writeFileSync(written[0]!, renderInventory(analyses), "utf8");
 
   for (const analysis of analyses) {
     const name = analysis.programId ?? "PROGRAM";
@@ -1590,7 +1590,7 @@ function resolveSourceFile(projectPath: string, cwd: string): string {
 function resolveOutputRoot(cwd: string, args: string[]): string {
   const outIndex = args.indexOf("--out");
   if (outIndex >= 0 && args[outIndex + 1]) {
-    return resolve(cwd, args[outIndex + 1]);
+    return resolve(cwd, args[outIndex + 1]!);
   }
 
   return join(cwd, "dist");
@@ -1608,7 +1608,7 @@ const VALUE_FLAGS = new Set(["--format", "--output", "--out"]);
 function positionalArgs(args: string[]): string[] {
   const positionals: string[] = [];
   for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
+    const arg = args[index]!;
     if (arg.startsWith("-")) {
       if (VALUE_FLAGS.has(arg)) {
         index += 1;
@@ -1654,7 +1654,7 @@ function requireCopybookPair(
   ) {
     return null;
   }
-  return { left: files[0], right: files[1] };
+  return { left: files[0]!, right: files[1]! };
 }
 
 /**
@@ -2138,8 +2138,9 @@ function buildVerificationReportDocument(
       `${JSON.stringify(reEmittedCobol.sourceMap, null, 2)}\n` &&
     readFileSync(jclResult.jclArtifactPath, "utf8") === reEmittedJcl.jcl &&
     copybookContents.every((content, index) => {
-      const record = program.records[index];
-      return content === renderCopybook(record);
+      // One copybook per record, emitted from the same list in the same
+      // order, so the index is in range by construction.
+      return content === renderCopybook(program.records[index]!);
     });
   const deterministicRegeneration: AuditCheck = {
     name: "Deterministic regeneration",

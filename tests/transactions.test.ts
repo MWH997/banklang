@@ -37,7 +37,7 @@ transaction postTransfer(request: TransferRequest) {
     expect(parsed.diagnostics).toEqual([]);
     expect(typechecked.diagnostics).toEqual([]);
     expect(typechecked.transactions).toHaveLength(1);
-    expect(typechecked.transactions[0].name).toBe("postTransfer");
+    expect(typechecked.transactions[0]!.name).toBe("postTransfer");
   });
 
   it("keeps debit, credit, and audit usable as field names", () => {
@@ -71,7 +71,7 @@ transaction postTransfer(request: TransferRequest) {
     expect(typechecked.diagnostics.map((entry) => entry.id)).toContain(
       "BANK-TYPE-003",
     );
-    expect(typechecked.diagnostics[0].message).toContain(
+    expect(typechecked.diagnostics[0]!.message).toContain(
       "amount argument must be a decimal or currency value",
     );
   });
@@ -85,7 +85,7 @@ transaction postTransfer(request: TransferRequest) {
 }`,
     );
 
-    expect(typechecked.diagnostics[0].message).toContain(
+    expect(typechecked.diagnostics[0]!.message).toContain(
       "account argument must be a string value",
     );
   });
@@ -113,7 +113,7 @@ transaction postTransfer(request: TransferRequest, idempotencyKey: string<36>) {
 }`,
     );
 
-    expect(typechecked.diagnostics[0].message).toContain(
+    expect(typechecked.diagnostics[0]!.message).toContain(
       "Field access requires a record value",
     );
   });

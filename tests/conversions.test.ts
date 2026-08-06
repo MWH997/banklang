@@ -144,10 +144,10 @@ describe("checked-in artifacts", () => {
           /(?:^|["'\s(])(\/[A-Za-z][^\s"'*)]*)/g,
         )) {
           if (
-            match[1].startsWith("/Users") ||
-            match[1].startsWith("/home") ||
-            match[1].startsWith("/private") ||
-            match[1].startsWith("/var/folders")
+            match[1]!.startsWith("/Users") ||
+            match[1]!.startsWith("/home") ||
+            match[1]!.startsWith("/private") ||
+            match[1]!.startsWith("/var/folders")
           ) {
             offenders.push(`${full}: ${match[1]}`);
           }

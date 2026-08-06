@@ -1,4 +1,12 @@
 import { spawnSync } from "node:child_process";
+
+/*
+ * `spawnSync(..., { encoding: "utf8" })` is typed as returning a string for
+ * `stdout` and `stderr`, and returns null for both when the child could not be
+ * spawned at all — no such binary, no permission. The guards below are for that
+ * case, and the rule cannot see it because @types/node does not say it.
+ */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -346,7 +354,7 @@ function scaleOf(picture: string): number {
     return Number(repeated[1]);
   }
   const literal = /V(9+)/.exec(picture);
-  return literal ? literal[1].length : 0;
+  return literal ? literal[1]!.length : 0;
 }
 
 /**
@@ -372,13 +380,13 @@ export function encodePacked(
     const digit = Number(digits[index]);
     const byteIndex = Math.floor(index / 2);
     if (index % 2 === 0) {
-      buffer[byteIndex] |= digit << 4;
+      buffer[byteIndex]! |= digit << 4;
     } else {
-      buffer[byteIndex] |= digit;
+      buffer[byteIndex]! |= digit;
     }
   }
   buffer[byteLength - 1] =
-    (buffer[byteLength - 1] & 0xf0) | (negative ? 0x0d : 0x0c);
+    (buffer[byteLength - 1]! & 0xf0) | (negative ? 0x0d : 0x0c);
   return buffer;
 }
 
@@ -386,15 +394,15 @@ export function encodePacked(
 export function decodePacked(bytes: Buffer, scale: number): string {
   let digits = "";
   for (let index = 0; index < bytes.length; index += 1) {
-    const high = (bytes[index] & 0xf0) >> 4;
-    const low = bytes[index] & 0x0f;
+    const high = (bytes[index]! & 0xf0) >> 4;
+    const low = bytes[index]! & 0x0f;
     digits += String(high);
     if (index < bytes.length - 1) {
       digits += String(low);
     }
   }
 
-  const signNibble = bytes[bytes.length - 1] & 0x0f;
+  const signNibble = bytes[bytes.length - 1]! & 0x0f;
   const negative = signNibble === 0x0d || signNibble === 0x0b;
   const whole = digits.slice(0, digits.length - scale).replace(/^0+(?=\d)/, "");
   const fraction = digits.slice(digits.length - scale);

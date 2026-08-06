@@ -46,8 +46,8 @@ export function fitCobolWord(
     let longest = -1;
     for (let index = 0; index < segments.length; index += 1) {
       if (
-        segments[index].length > floor &&
-        (longest === -1 || segments[index].length > segments[longest].length)
+        segments[index]!.length > floor &&
+        (longest === -1 || segments[index]!.length > segments[longest]!.length)
       ) {
         longest = index;
       }
@@ -65,7 +65,7 @@ export function fitCobolWord(
       }
       return segments.join("-").slice(0, limit).replace(/-+$/, "");
     }
-    segments[longest] = segments[longest].slice(0, floor);
+    segments[longest] = segments[longest]!.slice(0, floor);
   }
 
   return segments.join("-");

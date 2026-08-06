@@ -232,7 +232,7 @@ describe("every catalogued spec reference", () => {
       }
       const path = rendered
         .replace("Specified by: ", "")
-        .split(/\s+section\s+/)[0];
+        .split(/\s+section\s+/)[0]!;
       return !existsSync(path);
     }).map((entry) => `${entry.id} → ${entry.specReference}`);
 

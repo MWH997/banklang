@@ -375,16 +375,16 @@ class Lexer {
     const startLine = this.line;
     const startColumn = this.column;
     this.tokenStartOffset = this.offset;
-    const char = this.source[this.offset];
+    const char = this.source[this.offset]!;
 
     if (this.isIdentifierStart(char)) {
       let text = "";
       while (
         this.offset < this.source.length &&
-        this.isIdentifierPart(this.source[this.offset])
+        this.isIdentifierPart(this.source[this.offset]!)
       ) {
         text += this.source[this.offset];
-        this.advance(this.source[this.offset]);
+        this.advance(this.source[this.offset]!);
       }
       const kind = KEYWORDS.has(text) ? "keyword" : "identifier";
       return this.makeToken(
@@ -404,7 +404,7 @@ class Lexer {
         this.isDigit(this.source[this.offset])
       ) {
         text += this.source[this.offset];
-        this.advance(this.source[this.offset]);
+        this.advance(this.source[this.offset]!);
       }
       if (this.source[this.offset] === ".") {
         text += ".";
@@ -414,7 +414,7 @@ class Lexer {
           this.isDigit(this.source[this.offset])
         ) {
           text += this.source[this.offset];
-          this.advance(this.source[this.offset]);
+          this.advance(this.source[this.offset]!);
         }
       }
       return this.makeToken(
@@ -434,7 +434,7 @@ class Lexer {
         this.offset < this.source.length &&
         this.source[this.offset] !== '"'
       ) {
-        const current = this.source[this.offset];
+        const current = this.source[this.offset]!;
         if (current === "\n") {
           break;
         }
@@ -467,7 +467,7 @@ class Lexer {
     const pair = char + (this.source[this.offset + 1] ?? "");
     if (TWO_CHAR_OPERATORS.has(pair)) {
       this.advance(char);
-      this.advance(pair[1]);
+      this.advance(pair[1]!);
       return this.makeToken(
         "punctuation",
         pair,
@@ -513,7 +513,7 @@ class Lexer {
     let depth = 1;
     let text = "";
     while (this.offset < this.source.length) {
-      const char = this.source[this.offset];
+      const char = this.source[this.offset]!;
       if (char === "{") {
         depth += 1;
       } else if (char === "}") {
@@ -532,7 +532,7 @@ class Lexer {
 
   private skipTrivia(): void {
     while (this.offset < this.source.length) {
-      const char = this.source[this.offset];
+      const char = this.source[this.offset]!;
 
       if (char === " " || char === "\t" || char === "\r") {
         this.advance(char);
@@ -555,7 +555,7 @@ class Lexer {
           this.source[this.offset] !== "\n"
         ) {
           text += this.source[this.offset];
-          this.advance(this.source[this.offset]);
+          this.advance(this.source[this.offset]!);
         }
         this.comments.push({
           text: text.replace(/^\/\/\s?/, "").trimEnd(),
@@ -1258,10 +1258,13 @@ class Parser {
     return {
       kind: "ReportPage",
       limit: Number(limitToken.text),
-      heading: margins.heading,
-      firstDetail: margins.firstDetail,
-      lastDetail: margins.lastDetail,
-      footing: margins.footing,
+      // `?? null` rather than a cast: `margins` is keyed by the words the
+      // page clause accepts, and a clause that named none of them leaves the
+      // margin unset, which is the same thing as null.
+      heading: margins.heading ?? null,
+      firstDetail: margins.firstDetail ?? null,
+      lastDetail: margins.lastDetail ?? null,
+      footing: margins.footing ?? null,
       span: limitToken.span,
     } satisfies ReportPageNode;
   }
@@ -5106,11 +5109,11 @@ class Parser {
       built = {
         kind: "ArrayType",
         element: built,
-        length: lengths[index].value,
+        length: lengths[index]!.value,
         span: {
           sourceFile: type.span.sourceFile,
           start: type.span.start,
-          end: lengths[lengths.length - 1].end.span.end,
+          end: lengths[lengths.length - 1]!.end.span.end,
         },
       } satisfies ArrayTypeNode;
     }

@@ -34,7 +34,7 @@ function markdownFiles(root: string, base = root): string[] {
 /** Relative links in one file, with the anchor stripped. */
 function relativeLinks(text: string): string[] {
   return [...text.matchAll(/\]\((?!https?:|mailto:|#)([^)#\s]+)(?:#[^)]*)?\)/g)]
-    .map((match) => match[1])
+    .map((match) => match[1]!)
     .filter((target) => !target.startsWith("<"));
 }
 
@@ -97,7 +97,7 @@ describe("every link in every document", () => {
         continue;
       }
       const text = readFileSync(resolve(process.cwd(), file), "utf8");
-      for (const [, named] of text.matchAll(/`([\w./-]+\.md)`/g)) {
+      for (const [, named = ""] of text.matchAll(/`([\w./-]+\.md)`/g)) {
         const base = named.split("/").pop() as string;
         if (
           yetToExist.has(base) ||
@@ -212,7 +212,7 @@ describe("the changelog", () => {
   it("keeps every entry to a line", () => {
     const entries = [...changelog.matchAll(/^- (.+(?:\n {2}.+)*)$/gm)].map(
       (match) =>
-        match[1]
+        match[1]!
           .replace(/\s*\n\s*/g, " ")
           .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"),
     );
@@ -244,7 +244,7 @@ describe("COBOL printed in the documentation", () => {
       const text = readFileSync(resolve(process.cwd(), file), "utf8");
       return [...text.matchAll(/```cobol\n([\s\S]*?)```/g)].map((match) => ({
         file,
-        body: match[1],
+        body: match[1]!,
       }));
     },
   );

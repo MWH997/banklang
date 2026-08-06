@@ -310,7 +310,7 @@ describe("across the corpus", () => {
       }
       expect(
         flowed(cobol),
-        `${example} subscripts a table with ${computed[0][1]}, which no loop bounds, and emits no bounds status.`,
+        `${example} subscripts a table with ${computed[0]![1]}, which no loop bounds, and emits no bounds status.`,
       ).toContain("BANK-BOUNDS-STATUS");
     }
 

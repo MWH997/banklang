@@ -33,7 +33,7 @@ describe("parser", () => {
       id: "BANK-SYN-001",
       severity: "error",
     });
-    expect(result.diagnostics[0].span?.sourceFile).toBe("broken.bank.ts");
+    expect(result.diagnostics[0]!.span?.sourceFile).toBe("broken.bank.ts");
   });
 
   it("parses local variables and arithmetic expressions", () => {

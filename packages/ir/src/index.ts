@@ -1554,7 +1554,7 @@ function shareIdenticalInstantiations(functions: IRFunction[]): {
       // not on the order the typechecker happened to create them in.
       const names = group.map((fn) => fn.name).sort();
       for (const name of names.slice(1)) {
-        round.set(name, names[0]);
+        round.set(name, names[0]!);
       }
     }
 
@@ -2535,7 +2535,7 @@ function stringCallType(
     case "countOf":
       return { kind: "decimal", precision: 9, scale: 0, usage: "packed" };
     case "replaceChars":
-      return { kind: "string", length: lengthOf(expression.args[0]) };
+      return { kind: "string", length: lengthOf(expression.args[0]!) };
     case "substring":
       return {
         kind: "string",
@@ -2550,7 +2550,7 @@ function stringCallType(
         ),
       };
     default:
-      return { kind: "string", length: lengthOf(expression.args[0]) };
+      return { kind: "string", length: lengthOf(expression.args[0]!) };
   }
 }
 
@@ -2805,10 +2805,6 @@ function lowerMemberAccessExpression(
     };
   }
 
-  if (expression.target.kind !== "Identifier") {
-    throw new Error("Unsupported member access target during IR lowering.");
-  }
-
   const targetName = expression.target.name;
   const targetType = scopeTypes.get(targetName);
   if (!targetType || targetType.kind !== "record") {
@@ -2878,7 +2874,7 @@ function lowerDecimalLiteralExpression(
   expression: DecimalLiteralNode,
 ): IRDecimalLiteralExpression {
   const scale = expression.text.includes(".")
-    ? expression.text.split(".")[1].length
+    ? expression.text.split(".")[1]!.length
     : 0;
   const precision = expression.text.replace(".", "").length;
   return {

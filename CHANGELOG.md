@@ -17,6 +17,9 @@ in order.
 
 ### Changed
 
+- Type every index access as possibly absent (`noUncheckedIndexedAccess`), and
+  turn `no-unnecessary-condition` back on now that it can tell a dead guard from
+  a live one — [verification](docs/verification.md).
 - Declare a runtime interface group only where the program calls its module, so
   a program that audits carries no ledger storage.
 - Declare the bounds status and copy index only where a check or a table copy is

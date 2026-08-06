@@ -44,7 +44,7 @@ function recordFrom(source: string, name: string) {
     throw new Error(
       `The imported record did not compile: ${[
         ...parsed.diagnostics,
-        ...(ir.diagnostics ?? []),
+        ...ir.diagnostics,
       ]
         .map((entry) => entry.id)
         .join(", ")}`,
@@ -289,7 +289,7 @@ describe("comparing two layouts", () => {
       },
     );
 
-    expect(problems[0].message).toContain("offset 0");
+    expect(problems[0]!.message).toContain("offset 0");
   });
 });
 

@@ -79,7 +79,7 @@ function markdownFiles(root: string): string[] {
  */
 export function citedUrls(text: string): string[] {
   return [...text.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)]
-    .map((match) => match[1])
+    .map((match) => match[1]!)
     .filter((url) => !url.startsWith("https://example.com"))
     .filter((url) => !url.startsWith(OWN_REPOSITORY));
 }
@@ -109,7 +109,7 @@ function titleOf(html: string): string {
   if (!match) {
     return "";
   }
-  return match[1]
+  return match[1]!
     .replace(/\s+/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&#39;|&apos;/g, "'")

@@ -281,7 +281,7 @@ describe("the delimiter rule reads the artifact's own convention", () => {
 
     const delimiter = only(findings, "literal-delimiter");
     expect(delimiter).toHaveLength(1);
-    expect(delimiter[0].line).toBe(5);
+    expect(delimiter[0]!.line).toBe(5);
   });
 
   it("does not read a literal inside a comment", () => {
@@ -329,7 +329,7 @@ describe("the unreferenced-item rule", () => {
     expect(formatFindings(findings)).toContain(
       "WS-UNUSED is declared and never referenced",
     );
-    expect(unreferenced[0].line).toBe(5);
+    expect(unreferenced[0]!.line).toBe(5);
   });
 
   it("says nothing about an item the procedure division uses", () => {

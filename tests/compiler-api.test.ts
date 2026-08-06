@@ -31,7 +31,7 @@ describe("compiler api", () => {
 
     expect(result.ok).toBe(false);
     expect(result.diagnostics.length).toBeGreaterThan(0);
-    expect(result.diagnostics[0].id).toMatch(/^BANK-SYN-/);
+    expect(result.diagnostics[0]!.id).toMatch(/^BANK-SYN-/);
     expect(result.cobol).toBeNull();
     expect(result.copybooks).toEqual([]);
   });
@@ -44,7 +44,7 @@ function f(a: decimal<18, 2>): bool {
 }`);
 
     expect(result.ok).toBe(false);
-    expect(result.diagnostics[0].id).toMatch(/^BANK-TYPE-/);
+    expect(result.diagnostics[0]!.id).toMatch(/^BANK-TYPE-/);
     expect(result.cobol).toBeNull();
   });
 
@@ -78,7 +78,7 @@ transaction post(request: Posting) {
       sourceFile: "playground.bank.ts",
     });
 
-    expect(result.diagnostics[0].span?.sourceFile).toBe("playground.bank.ts");
+    expect(result.diagnostics[0]!.span?.sourceFile).toBe("playground.bank.ts");
   });
 
   it("is deterministic across repeated calls", () => {

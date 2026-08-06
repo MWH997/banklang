@@ -56,8 +56,8 @@ describe("currency types", () => {
     );
 
     expect(ids(result)).toContain("BANK-DEC-005");
-    expect(result.diagnostics[0].message).toContain("BDT");
-    expect(result.diagnostics[0].message).toContain("USD");
+    expect(result.diagnostics[0]!.message).toContain("BDT");
+    expect(result.diagnostics[0]!.message).toContain("USD");
   });
 
   it("reports BANK-DEC-005 when comparing different currencies", () => {
@@ -140,7 +140,7 @@ describe("enums", () => {
   }`);
 
     expect(ids(result)).toContain("BANK-TYPE-010");
-    expect(result.diagnostics[0].message).toContain("DORMANT");
+    expect(result.diagnostics[0]!.message).toContain("DORMANT");
   });
 
   it("accepts a partial switch with an else branch", () => {

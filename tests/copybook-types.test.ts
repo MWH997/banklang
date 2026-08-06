@@ -15,7 +15,7 @@ describe("copybook types", () => {
     }
 
     const inspection = inspectGeneratedCopybook(
-      renderCopybook(ir.program.records[0]),
+      renderCopybook(ir.program.records[0]!),
     );
 
     const report = renderCopybookTypes(inspection);

@@ -64,7 +64,7 @@ export function executedExamples(cwd = process.cwd()): Set<string> {
     for (const match of text.matchAll(
       /"(examples\/[a-z0-9-]+(?:\/[a-z0-9-]+)?)\/src\/main\.bank\.ts"/g,
     )) {
-      executed.add(match[1]);
+      executed.add(match[1]!);
     }
   }
 

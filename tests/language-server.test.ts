@@ -11,6 +11,12 @@ import {
 
 const URI = "file:///project/src/main.bank.ts";
 
+/**
+ * Stands in when `handle` returns nothing, so a test that expected a reply
+ * fails on the assertion it was written for rather than on a destructuring.
+ */
+const NO_REPLY: JsonRpcMessage = { jsonrpc: "2.0", id: null };
+
 const CLEAN = readFileSync("examples/account-posting/src/main.bank.ts", "utf8");
 
 /**
@@ -52,7 +58,7 @@ function open(server: LanguageServer, text: string): JsonRpcMessage[] {
 }
 
 function diagnosticsFrom(messages: JsonRpcMessage[]) {
-  const params = messages[0].params as {
+  const params = messages[0]!.params as {
     uri: string;
     diagnostics: { code: string; severity: number; message: string }[];
   };
@@ -62,7 +68,7 @@ function diagnosticsFrom(messages: JsonRpcMessage[]) {
 describe("language server lifecycle", () => {
   it("advertises its capabilities on initialize", () => {
     const server = new LanguageServer();
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
@@ -81,7 +87,7 @@ describe("language server lifecycle", () => {
   it("returns an error for an unknown request but ignores unknown notifications", () => {
     const server = new LanguageServer();
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 7,
       method: "textDocument/nonsense",
@@ -122,8 +128,8 @@ describe("language server diagnostics", () => {
       "BANK-AUD-001",
       "BANK-LED-001",
     ]);
-    expect(diagnostics[0].severity).toBe(1);
-    expect(diagnostics[0].message).toContain("idempotency key");
+    expect(diagnostics[0]!.severity).toBe(1);
+    expect(diagnostics[0]!.message).toContain("idempotency key");
   });
 
   it("converts one-based spans to zero-based LSP ranges", () => {
@@ -140,7 +146,7 @@ describe("language server diagnostics", () => {
     // it excluded, a negative column, is not the failure worth guarding. An
     // off-by-one that reported the wrong column, which is what the conversion
     // exists to get right, satisfied it.
-    expect(diagnostics[0].range.start).toEqual({ line: 9, character: 12 });
+    expect(diagnostics[0]!.range.start).toEqual({ line: 9, character: 12 });
   });
 
   it("republishes on change", () => {
@@ -165,7 +171,7 @@ describe("language server hover", () => {
     const server = new LanguageServer();
     open(server, UNSAFE);
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 2,
       method: "textDocument/hover",
@@ -185,7 +191,7 @@ describe("language server hover", () => {
     const server = new LanguageServer();
     open(server, CLEAN);
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 3,
       method: "textDocument/hover",
@@ -205,7 +211,7 @@ describe("language server hover", () => {
 
   it("returns null for an unknown document", () => {
     const server = new LanguageServer();
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 4,
       method: "textDocument/hover",
@@ -224,7 +230,7 @@ describe("language server formatting and symbols", () => {
     const server = new LanguageServer();
     open(server, "module   Messy;\ntype A=decimal<18,2>;\n");
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 5,
       method: "textDocument/formatting",
@@ -233,7 +239,7 @@ describe("language server formatting and symbols", () => {
 
     const edits = response.result as { newText: string }[];
     expect(edits).toHaveLength(1);
-    expect(edits[0].newText).toBe(
+    expect(edits[0]!.newText).toBe(
       "module Messy;\n\ntype A = decimal<18, 2>;\n",
     );
   });
@@ -242,7 +248,7 @@ describe("language server formatting and symbols", () => {
     const server = new LanguageServer();
     open(server, CLEAN);
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 6,
       method: "textDocument/formatting",
@@ -256,7 +262,7 @@ describe("language server formatting and symbols", () => {
     const server = new LanguageServer();
     open(server, CLEAN);
 
-    const [response] = server.handle({
+    const [response = NO_REPLY] = server.handle({
       jsonrpc: "2.0",
       id: 8,
       method: "textDocument/documentSymbol",
@@ -348,7 +354,7 @@ describe("json-rpc framing", () => {
       "unicode",
       "after",
     ]);
-    expect((decoded[0].params as { text: string }).text).toBe("café ☕ — 円");
+    expect((decoded[0]!.params as { text: string }).text).toBe("café ☕ — 円");
   });
 
   it("keeps the stream aligned when a chunk splits a character in two", () => {
@@ -371,6 +377,6 @@ describe("json-rpc framing", () => {
     expect(decoder.push(encoded.subarray(0, middle))).toEqual([]);
     const decoded = decoder.push(encoded.subarray(middle));
     expect(decoded).toHaveLength(1);
-    expect((decoded[0].params as { text: string }).text).toBe("€");
+    expect((decoded[0]!.params as { text: string }).text).toBe("€");
   });
 });

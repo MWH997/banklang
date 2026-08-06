@@ -304,7 +304,7 @@ describe("across the corpus", () => {
         ...flowed(cobol).matchAll(/PERFORM UNTIL ([A-Z][A-Z0-9-]*) >= (\d+)/g),
       ];
       loops += bounds.length;
-      for (const [, counter, limit] of bounds) {
+      for (const [, counter = "", limit = ""] of bounds) {
         expect(
           flowed(cobol),
           `${example} bounds a loop at ${limit} and never tests ${counter} afterwards, so exhaustion ends the step as a success.`,
@@ -322,7 +322,7 @@ describe("across the corpus", () => {
         ...flowed(cobol).matchAll(/READ ([A-Z][A-Z0-9-]*)(.*?)END-READ/g),
       ];
       reads += statements.length;
-      for (const [, file, body] of statements) {
+      for (const [, file = "", body = ""] of statements) {
         // A copy *out of* the record area, which is what is undefined after AT
         // END. The `MOVE "10" TO ...-STATUS` the AT END phrase itself carries
         // is a move into the status field and is the point of the phrase.
@@ -332,7 +332,7 @@ describe("across the corpus", () => {
           body.indexOf("NOT INVALID KEY"),
         );
         for (const copy of copies) {
-          if (!copy[1].endsWith("-RECORD")) {
+          if (!copy[1]!.endsWith("-RECORD")) {
             continue;
           }
           expect(

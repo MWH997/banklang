@@ -1070,7 +1070,9 @@ function expectAmount(
     return false;
   }
 
-  const [integer, fraction = ""] = literal.text.replace(/^[+-]/, "").split(".");
+  const [integer = "", fraction = ""] = literal.text
+    .replace(/^[+-]/, "")
+    .split(".");
   if (
     fraction.length > LEDGER_AMOUNT_SCALE ||
     integer.length + LEDGER_AMOUNT_SCALE > LEDGER_AMOUNT_DIGITS
@@ -1130,7 +1132,7 @@ function literalFitsParameter(
         "The parameter is unsigned, and this supplies a negative number.",
       );
     }
-    const [integer, fraction = ""] = literal.text
+    const [integer = "", fraction = ""] = literal.text
       .replace(/^[+-]/, "")
       .split(".");
     return fraction.length <= type.scale &&
@@ -1223,7 +1225,7 @@ function checkSingleEntryPoint(
       createDiagnostic({
         id: "BANK-TXN-010",
         severity: "error",
-        message: `${extra.name} is a second entry transaction; ${entries[0].name} is already the entry point.`,
+        message: `${extra.name} is a second entry transaction; ${entries[0]!.name} is already the entry point.`,
         span: extra.span,
         hint: "A program starts in one place. Drop `entry` from all but one transaction.",
         backendProfile: "ibm-enterprise-cobol-zos",
@@ -1425,7 +1427,7 @@ function resolveSql(
         severity: "error",
         message: `${declaration.name} is a raw ${unitOfWork[1]}, which the language has a statement for.`,
         span: declaration.span,
-        hint: `Write \`${unitOfWork[1].toLowerCase()};\` instead. Going through SQL skips BANK-SQL-004, which refuses one under CICS because Db2 answers -925 for a COMMIT and -926 for a ROLLBACK there. \`ROLLBACK TO SAVEPOINT\` is allowed and is not this.`,
+        hint: `Write \`${unitOfWork[1]!.toLowerCase()};\` instead. Going through SQL skips BANK-SQL-004, which refuses one under CICS because Db2 answers -925 for a COMMIT and -926 for a ROLLBACK there. \`ROLLBACK TO SAVEPOINT\` is allowed and is not this.`,
         backendProfile: "ibm-enterprise-cobol-zos",
       }),
     );
@@ -1544,7 +1546,7 @@ function resolveCursorText(
       `${declaration.text.slice(0, match.index)}FROM${declaration.text.slice(
         match.index + match[0].length,
       )}`.trim(),
-    into: match[1].trim(),
+    into: match[1]!.trim(),
   };
 }
 
@@ -1618,13 +1620,13 @@ function resolveFile(
   // duplicates, which is usually the reason it exists.
   const alternateKeys: ResolvedField[] = [];
   for (const name of declaration.alternateKeys) {
-    const field = record?.fields.find((entry) => entry.name === name);
+    const field = record.fields.find((entry) => entry.name === name);
     if (!field) {
       diagnostics.push(
         createDiagnostic({
           id: "BANK-FILE-004",
           severity: "error",
-          message: `Record ${record?.name ?? declaration.recordTypeName} has no field named ${name} to use as an alternate key.`,
+          message: `Record ${record.name} has no field named ${name} to use as an alternate key.`,
           span: declaration.span,
           hint: "An alternate key is a field of the record the file holds.",
           backendProfile: null,
@@ -2547,7 +2549,7 @@ function validateSqlStatement(
 
   for (let index = 0; index < statement.args.length; index += 1) {
     const actual = inferExpressionType(
-      statement.args[index],
+      statement.args[index]!,
       scope,
       aliases,
       recordMap,
@@ -2560,7 +2562,7 @@ function validateSqlStatement(
           id: "BANK-SQL-003",
           severity: "error",
           message: `Argument ${index + 1} of ${statement.name} expects ${describeType(expected)} but received ${describeType(actual)}.`,
-          span: statement.args[index].span,
+          span: statement.args[index]!.span,
           hint: "A host variable must match the declared parameter layout.",
           backendProfile: null,
         }),
@@ -4121,7 +4123,7 @@ function validateCursorLoopStatement(
 
   for (let index = 0; index < statement.args.length; index += 1) {
     const actual = inferExpressionType(
-      statement.args[index],
+      statement.args[index]!,
       scope,
       aliases,
       recordMap,
@@ -4134,7 +4136,7 @@ function validateCursorLoopStatement(
           id: "BANK-SQL-003",
           severity: "error",
           message: `Argument ${index + 1} of ${statement.cursorName} expects ${describeType(expected)} but received ${describeType(actual)}.`,
-          span: statement.args[index].span,
+          span: statement.args[index]!.span,
           hint: "A host variable must match the declared parameter layout.",
           backendProfile: null,
         }),
@@ -4878,7 +4880,7 @@ function inferStringCall(
       return { kind: "temporal", unit: "timestamp" };
 
     case "countOf": {
-      const length = stringLength(args[0]);
+      const length = stringLength(args[0]!);
       if (args.length !== 2 || length === null || args[1]?.kind !== "string") {
         return reject(
           "countOf expects a string and the characters to count.",
@@ -4889,7 +4891,7 @@ function inferStringCall(
     }
 
     case "replaceChars": {
-      const length = stringLength(args[0]);
+      const length = stringLength(args[0]!);
       const from = args[1]?.kind === "string" ? args[1].length : null;
       const to = args[2]?.kind === "string" ? args[2].length : null;
       if (
@@ -4918,7 +4920,7 @@ function inferStringCall(
     case "trim":
     case "upper":
     case "lower": {
-      const length = stringLength(args[0]);
+      const length = stringLength(args[0]!);
       if (args.length !== 1 || length === null) {
         return reject(
           `${expression.operation} expects one string.`,
@@ -4929,7 +4931,7 @@ function inferStringCall(
     }
 
     case "substring": {
-      const length = stringLength(args[0]);
+      const length = stringLength(args[0]!);
       const [, startNode, lengthNode] = expression.args;
       const start = literalWholeNumber(startNode);
       const width = literalWholeNumber(lengthNode);
@@ -5112,7 +5114,7 @@ function inferNumericCall(
     case "abs":
     case "integerPart":
     case "fractionPart": {
-      if (!numeric(args[0])) {
+      if (!numeric(args[0]!)) {
         return reject(
           `${expression.operation} takes a number.`,
           "Pass a decimal, a binary, or a currency amount.",
@@ -5120,10 +5122,10 @@ function inferNumericCall(
       }
       // `integerPart` drops the fraction, so it comes back rounded and takes
       // the target's scale — usually zero, which is the point of asking.
-      return expression.operation === "abs" ? args[0] : rounded;
+      return expression.operation === "abs" ? args[0]! : rounded;
     }
     case "sign": {
-      if (!numeric(args[0])) {
+      if (!numeric(args[0]!)) {
         return reject(
           "sign takes a number.",
           "Pass a decimal, a binary, or a currency amount.",
@@ -5145,11 +5147,11 @@ function inferNumericCall(
           );
         }
       }
-      return args[1];
+      return args[1]!;
     }
     case "min":
     case "max": {
-      if (!numeric(args[0]) || !numeric(args[1])) {
+      if (!numeric(args[0]!) || !numeric(args[1]!)) {
         return reject(
           `${expression.operation} compares two numbers.`,
           "Pass two decimals, or two amounts of the same currency.",
@@ -5161,11 +5163,11 @@ function inferNumericCall(
           "Both sides have to be the same type, for the same reason a comparison does.",
         );
       }
-      return args[0];
+      return args[0]!;
     }
     case "annuity":
     case "presentValue": {
-      if (!numeric(args[0])) {
+      if (!numeric(args[0]!)) {
         return reject(
           `${expression.operation} takes a rate per period as its first argument.`,
           "A monthly rate is the annual rate divided by twelve, as a fraction: `decimal<9, 6>` holding 0.005 for 0.5%.",
@@ -5179,7 +5181,7 @@ function inferNumericCall(
             "Declare the term as binary<n> or decimal<n, 0>.",
           );
         }
-      } else if (!numeric(args[1])) {
+      } else if (!numeric(args[1]!)) {
         return reject(
           "presentValue discounts an amount.",
           "Pass the cash flow to discount as a decimal or a currency amount.",
@@ -5226,7 +5228,7 @@ function inferTemporalCall(
       return { kind: "temporal", unit: "date" };
 
     case "addDays":
-      if (args.length !== 2 || !isDate(args[0])) {
+      if (args.length !== 2 || !isDate(args[0]!)) {
         return reject(
           "addDays expects a date and a whole number of days.",
           "Write `addDays(valueDate, 30)`.",
@@ -5241,7 +5243,7 @@ function inferTemporalCall(
       return { kind: "temporal", unit: "date" };
 
     case "daysBetween":
-      if (args.length !== 2 || !isDate(args[0]) || !isDate(args[1])) {
+      if (args.length !== 2 || !isDate(args[0]!) || !isDate(args[1]!)) {
         return reject(
           "daysBetween expects two dates.",
           "Write `daysBetween(openedOn, today())`.",
@@ -5791,8 +5793,8 @@ function validateVariantFields(
           createDiagnostic({
             id: "BANK-COPY-004",
             severity: "error",
-            message: `${following[0].name} follows ${field.name}, whose length depends on ${field.dependingOn}.`,
-            span: following[0].span,
+            message: `${following[0]!.name} follows ${field.name}, whose length depends on ${field.dependingOn}.`,
+            span: following[0]!.span,
             hint: "A field after a table whose length varies moves with the count, so no copybook can give it an offset. Put the varying table last in the record.",
             backendProfile: null,
           }),
@@ -5931,7 +5933,7 @@ function instantiateGenericRecord(
 
   const substitution = new Map<string, TypeNode>();
   generic.typeParameters.forEach((parameter, index) => {
-    substitution.set(parameter.name, normalized[index]);
+    substitution.set(parameter.name, normalized[index]!);
   });
 
   const declaration = instantiateRecord(generic, substitution, mangled);
@@ -7994,7 +7996,7 @@ function checkCicsResponseComparison(
   if (index === -1) {
     return;
   }
-  const other = sides[index === 0 ? 1 : 0];
+  const other = sides[index === 0 ? 1 : 0]!;
   if (other.kind !== "DecimalLiteral" || Number(other.text) === 0) {
     return;
   }
@@ -8030,7 +8032,7 @@ function noteSqlCodeComparison(expression: BinaryExpressionNode): void {
   }
   // An equality against a negative literal names one error, which is a
   // deliberate decision about that error rather than a collapse of all of them.
-  const other = sides[names[0] === "sqlcode" ? 1 : 0];
+  const other = sides[names[0] === "sqlcode" ? 1 : 0]!;
   if (
     other.kind === "DecimalLiteral" &&
     other.text.trimStart().startsWith("-")
@@ -8122,7 +8124,7 @@ function checkCopybookMemberNames(
         createDiagnostic({
           id: "BANK-COPY-007",
           severity: "error",
-          message: `${record.name} and ${sharing[0].name} are both copybook member ${member}.`,
+          message: `${record.name} and ${sharing[0]!.name} are both copybook member ${member}.`,
           span: record.span,
           hint: "A PDS member name is eight characters with the hyphens removed, and that is what a COPY resolves on. Rename one of the records so the two differ within those eight characters.",
           backendProfile: "ibm-enterprise-cobol-zos",
@@ -8162,7 +8164,7 @@ function checkDdNames(files: ResolvedFile[], diagnostics: Diagnostic[]): void {
         createDiagnostic({
           id: "BANK-FILE-012",
           severity: "error",
-          message: `${file.name} and ${sharing[0].name} are both DD name ${dd}.`,
+          message: `${file.name} and ${sharing[0]!.name} are both DD name ${dd}.`,
           span: file.span,
           hint: "A DD name is eight characters with the hyphens removed, and the dataset name is derived from it. Rename one of the files so the two differ within those eight characters.",
           backendProfile: "ibm-enterprise-cobol-zos",
@@ -8344,20 +8346,20 @@ function inferCallExpressionType(
 
   for (let index = 0; index < expression.args.length; index += 1) {
     const actual = inferExpressionType(
-      expression.args[index],
+      expression.args[index]!,
       scope,
       aliases,
       recordMap,
       diagnostics,
     );
-    const expected = signature.parameters[index].type;
+    const expected = signature.parameters[index]!.type;
     if (actual && !typesCompatible(expected, actual)) {
       diagnostics.push(
         createDiagnostic({
           id: "BANK-TYPE-003",
           severity: "error",
           message: `Argument ${index + 1} of ${expression.callee} expects ${describeType(expected)} but received ${describeType(actual)}.`,
-          span: expression.args[index].span,
+          span: expression.args[index]!.span,
           hint: "The subset does not coerce arguments.",
           backendProfile: null,
         }),
@@ -8366,7 +8368,7 @@ function inferCallExpressionType(
     checkRecordArgument(
       expression.callee,
       expected,
-      expression.args[index],
+      expression.args[index]!,
       index,
       diagnostics,
     );
@@ -8476,12 +8478,12 @@ function inferGenericCallType(
   for (const { actual, index } of order) {
     if (
       !unifyTypeParameter(
-        declaration.parameters[index].type,
+        declaration.parameters[index]!.type,
         actual as ResolvedType,
         parameterNames,
         bindings,
         diagnostics,
-        expression.args[index].span,
+        expression.args[index]!.span,
       )
     ) {
       return null;
@@ -8530,20 +8532,20 @@ function inferGenericCallType(
 
   for (let index = 0; index < expression.args.length; index += 1) {
     const actual = inferExpressionType(
-      expression.args[index],
+      expression.args[index]!,
       scope,
       aliases,
       recordMap,
       diagnostics,
     );
-    const expected = signature.parameters[index].type;
+    const expected = signature.parameters[index]!.type;
     if (actual && !typesCompatible(expected, actual)) {
       diagnostics.push(
         createDiagnostic({
           id: "BANK-TYPE-003",
           severity: "error",
           message: `Argument ${index + 1} of ${expression.callee} expects ${describeType(expected)} but received ${describeType(actual)}.`,
-          span: expression.args[index].span,
+          span: expression.args[index]!.span,
           hint: "All uses of one type parameter must agree; the subset does not coerce arguments.",
           backendProfile: null,
         }),
@@ -8552,7 +8554,7 @@ function inferGenericCallType(
     checkRecordArgument(
       expression.callee,
       expected,
-      expression.args[index],
+      expression.args[index]!,
       index,
       diagnostics,
     );
@@ -8692,7 +8694,7 @@ function unifyNestedArguments(
   }
 
   for (let index = 0; index < template.typeArguments.length; index += 1) {
-    const argument = template.typeArguments[index];
+    const argument = template.typeArguments[index]!;
     if (
       argument.kind === "TypeReference" &&
       parameterNames.has(argument.name)
@@ -8713,7 +8715,7 @@ function unifyNestedArguments(
         return false;
       }
       if (!existing) {
-        const node = decodeMangledType(encoded, span);
+        const node = decodeMangledType(encoded!, span);
         if (!node) {
           return false;
         }
@@ -8831,7 +8833,7 @@ function decodeMangledType(encoded: string, span: SourceSpan): TypeNode | null {
   if (money) {
     return {
       kind: "CurrencyType",
-      code: money[1],
+      code: money[1]!,
       precision: Number(money[2]),
       scale: Number(money[3]),
       span,
@@ -9611,7 +9613,7 @@ function resolveReference(
  * happens implicitly.
  */
 function inferDecimalLiteral(node: DecimalLiteralNode): DecimalType {
-  const scale = node.text.includes(".") ? node.text.split(".")[1].length : 0;
+  const scale = node.text.includes(".") ? node.text.split(".")[1]!.length : 0;
   const digits = node.text.replace(".", "").replace(/^0+/, "").length;
   // Precision must cover the scale: `0.00` is scale 2, so it needs at least
   // two digits even though every one of them is a zero.

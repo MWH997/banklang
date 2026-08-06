@@ -268,8 +268,8 @@ function readCopybookEntries(lines: string[]): CopybookEntry[] {
     }
     entries.push({
       level: Number(match[1]),
-      name: match[2],
-      text: match[3].trim(),
+      name: match[2]!,
+      text: match[3]!.trim(),
     });
   }
 
@@ -327,7 +327,7 @@ export function inspectGeneratedCopybook(
     }
     while (
       openGroups.length > 0 &&
-      openGroups[openGroups.length - 1].level >= entry.level
+      openGroups[openGroups.length - 1]!.level >= entry.level
     ) {
       const group = openGroups.pop();
       if (group) {
@@ -378,7 +378,7 @@ export function inspectGeneratedCopybook(
     // the record runs to the end of the longest reading of it.
     const redefines = entry.text.match(/^REDEFINES\s+([A-Z0-9-]+)/);
     const start = redefines
-      ? (startOffsets.get(redefines[1]) ?? offset)
+      ? (startOffsets.get(redefines[1]!) ?? offset)
       : offset;
     startOffsets.set(entry.name, start);
 

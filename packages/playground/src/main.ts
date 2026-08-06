@@ -294,7 +294,7 @@ function outputTextFor(tab: TabId, result: CompileResult): string {
 
 function placeholder(result: CompileResult, artifact: string): string {
   return result.diagnostics.length > 0
-    ? `*> No ${artifact} was emitted.\n*> The compiler stopped at ${result.diagnostics[0].id}.\n*> Open the Diagnostics tab for details.`
+    ? `*> No ${artifact} was emitted.\n*> The compiler stopped at ${result.diagnostics[0]!.id}.\n*> Open the Diagnostics tab for details.`
     : `*> No ${artifact} for this program.`;
 }
 
@@ -452,7 +452,7 @@ function sourceFromUrl(): string | null {
     return null;
   }
   try {
-    const binary = atob(decodeURIComponent(match[1]));
+    const binary = atob(decodeURIComponent(match[1]!));
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
     return new TextDecoder().decode(bytes);
   } catch {
@@ -532,7 +532,7 @@ function boot(): void {
         return;
       }
       event.preventDefault();
-      const next = tabs[(index + step + tabs.length) % tabs.length];
+      const next = tabs[(index + step + tabs.length) % tabs.length]!;
       next.focus();
       selectTab(next);
     });
