@@ -51,6 +51,9 @@
            MOVE 0 TO AZ-TEST-LEN
            INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR
                CHARACTERS BEFORE INITIAL SPACE
+           IF AZ-TEST-LEN = 0
+               MOVE 1 TO AZ-TEST-LEN
+           END-IF
       *> Start the call counters from zero.
            MOVE 1 TO AZ-GRP-INDEX
            MOVE 0 TO AZ-FLAG-IN
@@ -193,6 +196,9 @@
            MOVE 0 TO AZ-TEST-LEN
            INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR
                CHARACTERS BEFORE INITIAL SPACE
+           IF AZ-TEST-LEN = 0
+               MOVE 1 TO AZ-TEST-LEN
+           END-IF
            DISPLAY 'AZU0000I BZU_INIT: ' AZ-TEST(1:AZ-TEST-LEN)
            MOVE AZ-TESTCASE-ID TO AZ-TEST-ID
            GOBACK.
@@ -212,6 +218,9 @@
            MOVE 0 TO AZ-TEST-LEN
            INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR
                CHARACTERS BEFORE INITIAL SPACE
+           IF AZ-TEST-LEN = 0
+               MOVE 1 TO AZ-TEST-LEN
+           END-IF
            DISPLAY 'AZU0000I BZU_TERM: ' AZ-TEST(1:AZ-TEST-LEN)
            GOBACK.
        END PROGRAM 'BZU_TERM'.
@@ -253,6 +262,9 @@
            MOVE 0 TO AZ-TEST-LEN
            INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR
                CHARACTERS BEFORE INITIAL SPACE
+           IF AZ-TEST-LEN = 0
+               MOVE 1 TO AZ-TEST-LEN
+           END-IF
            MOVE 1 TO AZ-GRP-INDEX
            MOVE 0 TO AZ-FLAG-IN
            MOVE RETURN-CODE TO AZ-RC-WORK
@@ -371,6 +383,9 @@
            MOVE 0 TO AZ-TEST-LEN
            INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR
                CHARACTERS BEFORE INITIAL SPACE
+           IF AZ-TEST-LEN = 0
+               MOVE 1 TO AZ-TEST-LEN
+           END-IF
            MOVE 2 TO AZ-GRP-INDEX
            MOVE 0 TO AZ-FLAG-IN
            MOVE RETURN-CODE TO AZ-RC-WORK
