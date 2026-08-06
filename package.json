@@ -42,6 +42,7 @@
     "emit:copybooks": "pnpm bankc emit copybooks examples/account-transfer",
     "evidence:grades": "tsx tools/evidence-grades.ts",
     "evidence:refresh": "tsx tools/refresh-evidence.ts",
+    "examples:verify": "tsx tools/verify-examples.ts",
     "fixtures:refresh": "tsx tools/refresh-fixtures.ts",
     "fmt": "tsx tools/format-examples.ts",
     "fmt:check": "tsx tools/format-examples.ts --check",
