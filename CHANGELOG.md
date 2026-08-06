@@ -30,6 +30,12 @@ in order.
 
 ### Added
 
+- Add `pnpm build:site`, producing the landing page, the playground and the
+  site's assets in one tree — [launch tickets](docs/launch-tickets.md).
+- Add a landing page whose every code block, diagnostic and count is generated
+  from the compiler, and a test that fails when the page prints a line the
+  compiler does not emit.
+- Add an Open Graph card at 1200×630, rendered from real generated COBOL.
 - Add [for-decision-makers.md](docs/for-decision-makers.md), for whoever has to
   accept the risk rather than the COBOL.
 - Add a conformance-finding issue template, for a divergence from what

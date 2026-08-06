@@ -8,6 +8,8 @@
   },
   "scripts": {
     "bankc": "tsx packages/bankc-cli/src/bin.ts",
+    "build:og": "tsx tools/build-og.ts",
+    "build:site": "tsx tools/build-site.ts",
     "conversions:refresh": "tsx tools/refresh-conversions.ts",
     "docs:citations": "tsx tools/check-citations.ts",
     "doctor": "pnpm bankc doctor",

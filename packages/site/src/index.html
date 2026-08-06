@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BankLang — a compiler from a TypeScript-like language to IBM COBOL</title>
+    <meta
+      name="description"
+      content="Write banking logic in BankTS, a small TypeScript-like language, and get readable IBM Enterprise COBOL. The compiler refuses to compile financially unsafe programs: unbalanced ledger postings, retries that post twice, money moving with no audit trail."
+    />
+    <link rel="canonical" href="{{ORIGIN}}/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/assets/site.css" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ORIGIN}}/" />
+    <meta
+      property="og:title"
+      content="BankLang — a TypeScript-like language that compiles to IBM COBOL"
+    />
+    <meta
+      property="og:description"
+      content="It refuses to compile financially unsafe programs. Unbalanced postings, missing idempotency keys and money movement with no audit trail are compile errors."
+    />
+    <meta property="og:image" content="{{ORIGIN}}/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="BankTS source on the left, the IBM COBOL it compiles to on the right."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BankLang" />
+    <meta
+      name="twitter:description"
+      content="A deterministic compiler from a restricted TypeScript-like language to readable IBM Enterprise COBOL."
+    />
+    <meta name="twitter:image" content="{{ORIGIN}}/og.png" />
+
+    <script>
+      // The only script on this page. It runs before paint so a reader who has
+      // chosen a theme does not see the other one first.
+      (() => {
+        const saved = localStorage.getItem("banklang-theme");
+        if (saved) document.documentElement.dataset.theme = saved;
+      })();
+    </script>
+  </head>
+
+  <body>
+    <a class="skip" href="#what">Skip to content</a>
+
+    <header class="top">
+      <a class="wordmark" href="/">BankLang</a>
+      <nav>
+        <a href="/playground/">Playground</a>
+        <a href="https://github.com/MWH997/banklang">GitHub</a>
+        <button
+          id="theme"
+          type="button"
+          class="ghost"
+          aria-label="Switch between light and dark"
+        >
+          Theme
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- 1. What it is. -->
+      <section id="what" class="hero">
+        <h1>
+          A compiler from a TypeScript-like language to readable IBM COBOL.
+        </h1>
+        <p class="lede">
+          You write <strong>BankTS</strong>, a deliberately small language for
+          banking logic. It emits IBM Enterprise COBOL, a copybook for every
+          record, and the JCL to build and run it. No model decides what is
+          generated, and the same input always produces byte-identical output.
+        </p>
+
+        <div class="cta">
+          <a class="button button--primary" href="/playground/"
+            >Try it in your browser</a
+          >
+          <a class="button" href="https://github.com/MWH997/banklang"
+            >Read the code</a
+          >
+        </div>
+
+        <p class="caveat">
+          <strong>Validated with GnuCOBOL, not IBM.</strong> No IBM Enterprise
+          COBOL validation has been performed, and none is claimed.
+          <a
+            href="https://github.com/MWH997/banklang/blob/main/docs/status-and-limits.md"
+            >What that leaves open →</a
+          >
+        </p>
+      </section>
+
+      <!-- 2. The refusal. The claim nobody else makes. -->
+      <section class="band">
+        <h2>It refuses to compile unsafe programs</h2>
+        <p class="section-lede">
+          Not a warning, not a review checklist. The build produces no artifact.
+        </p>
+
+        <div class="split">
+          <figure>
+            <figcaption>BankTS</figcaption>
+            <pre><code class="bankts">{{UNSAFE_BANKTS}}</code></pre>
+          </figure>
+          <figure>
+            <figcaption>What the compiler says</figcaption>
+            <pre
+              class="diagnostics"
+            ><code>{{DIAGNOSTICS}}</code></pre>
+          </figure>
+        </div>
+
+        <p>
+          A retry that posts twice, money moving with no audit trail, and a
+          ledger that does not balance. Each is normally caught by a person — a
+          reviewer who knows to look, an auditor reconciling afterwards. There
+          are <strong>{{DIAGNOSTIC_COUNT}}</strong> such rules, each documented
+          with an explanation and a remediation, and each one provoked by a test
+          that fails if the rule stops working.
+        </p>
+      </section>
+
+      <!-- 3. The output. Where a mainframe engineer decides. -->
+      <section class="band band--alt">
+        <h2>The COBOL it produces</h2>
+        <p class="section-lede">
+          Enterprise COBOL has one rounding phrase, and <code>ROUNDED</code> is
+          half-up away from zero. Banker's rounding is arithmetic this compiler
+          writes out.
+        </p>
+
+        <div class="split">
+          <figure>
+            <figcaption>BankTS</figcaption>
+            <pre><code class="bankts">{{ACCRUE_BANKTS}}</code></pre>
+          </figure>
+          <figure>
+            <figcaption>Generated COBOL</figcaption>
+            <pre><code class="cobol">{{ACCRUE_COBOL}}</code></pre>
+          </figure>
+        </div>
+
+        <p>
+          That sequence is executed and compared against exact arithmetic over
+          every boundary case, for a product and for a quotient, in all seven
+          rounding modes. The overflow branch is not decoration: storing a
+          scale-6 product in a scale-2 field would discard four digits, and the
+          compiler will not do that silently.
+        </p>
+      </section>
+
+      <!-- 4. A conversion. The only question a bank actually asks. -->
+      <section class="band">
+        <h2>What happens to the COBOL you already have</h2>
+        <p class="section-lede">
+          A classic sequential update: read a transaction file, apply each
+          posting, write a new master and a reject file. Every estate has thirty
+          of these.
+        </p>
+
+        <div class="split">
+          <figure>
+            <figcaption>The original</figcaption>
+            <pre><code class="cobol">{{ORIGINAL_COBOL}}</code></pre>
+          </figure>
+          <figure>
+            <figcaption>The BankTS it becomes</figcaption>
+            <pre><code class="bankts">{{CONVERTED_BANKTS}}</code></pre>
+          </figure>
+        </div>
+
+        <p>
+          Four files, one statement, and no <code>FILE STATUS</code> field
+          declared for any of them. A missing input gives file status 35 and the
+          first read hits <code>AT END</code> — the job ends with return code 0
+          having processed nothing. The layouts are unchanged, field for field,
+          so the same datasets are read by the same DD names. What changes is
+          everything the original left implicit.
+        </p>
+        <p class="more">
+          <a href="https://github.com/MWH997/banklang/tree/main/conversions"
+            >Five conversions, side by side →</a
+          >
+        </p>
+      </section>
+
+      <!-- 5. What it is not. Leading with limits is what makes the rest believable. -->
+      <section class="band band--alt">
+        <h2>What it is not</h2>
+        <ul class="limits">
+          <li>
+            <strong>It has never run on z/OS.</strong> Every example compiles
+            with GnuCOBOL, under a dialect configured to Enterprise COBOL 6.4
+            and under GnuCOBOL's own default. GnuCOBOL is not IBM's compiler.
+          </li>
+          <li>
+            <strong>No money has moved through it.</strong> No institution has
+            used it. There is no production deployment and no pilot.
+          </li>
+          <li>
+            <strong>It covers a narrow subset.</strong> Batch and CICS programs
+            against QSAM, VSAM and Db2, with a ledger and audit calling
+            convention it defines itself. It does not replace a core banking
+            package.
+          </li>
+          <li>
+            <strong>Three of {{EXAMPLE_COUNT}} examples are executed</strong>,
+            against a reference runtime in the repository. The rest are compiled
+            and checked as text. The grades are generated, not asserted.
+          </li>
+        </ul>
+        <p class="more">
+          <a
+            href="https://github.com/MWH997/banklang/blob/main/docs/status-and-limits.md"
+            >The full list, with what each limit costs →</a
+          >
+          <a
+            href="https://github.com/MWH997/banklang/blob/main/docs/for-decision-makers.md"
+            >For the person deciding →</a
+          >
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>
+        <a href="/playground/">Playground</a> ·
+        <a href="https://github.com/MWH997/banklang">GitHub</a> ·
+        <a
+          href="https://github.com/MWH997/banklang/blob/main/docs/language-reference.md"
+          >Language reference</a
+        >
+        ·
+        <a
+          href="https://github.com/MWH997/banklang/blob/main/docs/diagnostics.md"
+          >Diagnostics</a
+        >
+      </p>
+      <p class="muted">
+        Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
+        Enterprise COBOL validation is claimed. MIT licensed.
+      </p>
+    </footer>
+
+    <script>
+      // The theme toggle, and nothing else. Everything on this page that could
+      // be built once was built once.
+      document.getElementById("theme").addEventListener("click", () => {
+        const root = document.documentElement;
+        const dark =
+          root.dataset.theme === "dark" ||
+          (!root.dataset.theme &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        root.dataset.theme = dark ? "light" : "dark";
+        localStorage.setItem("banklang-theme", root.dataset.theme);
+      });
+    </script>
+  </body>
+</html>

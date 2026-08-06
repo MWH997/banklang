@@ -72,11 +72,21 @@ describe("compiler core is browser safe", () => {
     });
   }
 
-  it("covers every package except the CLI and playground", () => {
+  /**
+   * Three directories under `packages/` hold no compiler.
+   *
+   * `playground` and `vscode-extension` are applications that consume it.
+   * `site` is the landing page's template, stylesheet and Open Graph card —
+   * HTML, CSS and a PNG, with no TypeScript to be browser safe or otherwise.
+   * Everything else is a package the compiler is made of, and every one of
+   * those has to be classified here.
+   */
+  it("covers every package that holds compiler code", () => {
+    const notCompiler = new Set(["playground", "vscode-extension", "site"]);
     const packages = readdirSync("packages", { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      .filter((name) => name !== "playground" && name !== "vscode-extension");
+      .filter((name) => !notCompiler.has(name));
 
     expect([...BROWSER_SAFE_PACKAGES, ...NODE_PACKAGES].sort()).toEqual(
       packages.sort(),

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BankLang — Open Graph card</title>
+    <style>
+      /*
+       * The 1200x630 card behind og:image, screenshotted to og.png.
+       *
+       * L3: "generated from real compiler output rather than mocked up". The
+       * COBOL below is written here by tools/build-og.ts from the compiler, so
+       * a card showing output the compiler no longer produces is a failing
+       * build rather than a stale picture.
+       */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0d1117;
+        color: #e6edf3;
+        font:
+          16px/1.5 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Helvetica,
+          Arial,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        padding: 56px 64px;
+        gap: 28px;
+      }
+      h1 {
+        font-size: 54px;
+        line-height: 1.08;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+        max-width: 21ch;
+      }
+      .accent {
+        color: #58a6ff;
+      }
+      .panes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+      }
+      .pane {
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        background: #161b22;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .cap {
+        padding: 9px 16px;
+        background: #1c2128;
+        border-bottom: 1px solid #30363d;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #8b949e;
+      }
+      pre {
+        padding: 16px;
+        font:
+          15px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        white-space: pre;
+        overflow: hidden;
+        flex: 1;
+      }
+      .foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        color: #8b949e;
+        font-size: 20px;
+      }
+      .brand {
+        color: #e6edf3;
+        font-weight: 700;
+        font-size: 24px;
+      }
+      .kw {
+        color: #ff7b72;
+      }
+      .str {
+        color: #a5d6ff;
+      }
+      .num {
+        color: #79c0ff;
+      }
+      .com {
+        color: #8b949e;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      A TypeScript-like language that compiles to
+      <span class="accent">IBM COBOL</span>.
+    </h1>
+
+    <div class="panes">
+      <div class="pane">
+        <div class="cap">BankTS</div>
+        <pre>{{OG_BANKTS}}</pre>
+      </div>
+      <div class="pane">
+        <div class="cap">Generated COBOL</div>
+        <pre>{{OG_COBOL}}</pre>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="brand">BankLang</span>
+      <span>banklang.mwhassan.com</span>
+    </div>
+  </body>
+</html>
