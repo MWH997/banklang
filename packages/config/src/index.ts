@@ -41,6 +41,23 @@ export interface BankLangConfig {
    * prints. Defaults to the dollar sign COBOL assumes.
    */
   currencySign: string;
+  /**
+   * Language Environment run-time options, written into the job's `CEEOPTS` DD.
+   *
+   * A step that states none runs on whatever the installation's defaults are,
+   * which is not something a job's behaviour should depend on silently. Two are
+   * emitted by default and are about being able to diagnose a bad night:
+   * `TERMTHDACT(UADUMP)` asks for a readable dump when a program abends, and
+   * `TRAP(ON)` is what puts LE in the path to produce one.
+   *
+   * The rest is a site's. A long-running batch that GETMAINs its way through a
+   * large file wants `HEAP` and `STACK` sized for it, and the numbers depend on
+   * the region and the data rather than on anything the compiler can see — so
+   * this is the place to state them, and the compiler does not invent them.
+   *
+   * Each entry is written on its own card exactly as given.
+   */
+  runtimeOptions: string[];
 }
 
 export type CopybookMode = "inline" | "copy";
@@ -79,6 +96,7 @@ export const DEFAULT_CONFIG: BankLangConfig = {
   copybookMode: "inline",
   decimalPoint: "point",
   currencySign: "$",
+  runtimeOptions: ["TERMTHDACT(UADUMP)", "TRAP(ON)"],
 };
 
 const BACKEND_PROFILES: BackendProfile[] = [
@@ -203,6 +221,28 @@ export function loadConfig(projectPath: string, cwd: string): LoadedConfig {
       );
     } else {
       config.currencySign = source.currencySign;
+    }
+  }
+
+  if (source.runtimeOptions !== undefined) {
+    // A card is what LE reads, so an option wider than one is one it cannot
+    // see the end of. The rest is not validated: the set of options belongs to
+    // Language Environment and grows with it, and a compiler that refused an
+    // option it had not heard of would be one nobody could use a new release
+    // of.
+    if (
+      !Array.isArray(source.runtimeOptions) ||
+      source.runtimeOptions.some((entry) => typeof entry !== "string")
+    ) {
+      problems.push(`"runtimeOptions" must be an array of strings.`);
+    } else if (
+      source.runtimeOptions.some((entry) => (entry as string).length > 69)
+    ) {
+      problems.push(
+        `"runtimeOptions" holds an option longer than a card: CEEOPTS reads columns 1 to 71.`,
+      );
+    } else {
+      config.runtimeOptions = source.runtimeOptions as string[];
     }
   }
 

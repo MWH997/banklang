@@ -573,3 +573,32 @@ entry transaction settle(row: AccountRow, idempotencyKey: string<36>) {
     expect(bind).toContain("PGM=IKJEFT01");
   });
 });
+
+/**
+ * Language Environment run-time options.
+ *
+ * A step that states none runs on whatever the installation's defaults are,
+ * which is not something a job's behaviour should depend on silently. Two are
+ * emitted by default and are about whether a bad night can be diagnosed at
+ * all; the rest is a site's, because a long-running batch's heap and stack
+ * depend on the region and the data rather than on anything the compiler sees.
+ */
+describe("the run-time options a step states", () => {
+  it("asks for a dump and for LE to be in the path to produce one", () => {
+    const jcl = jclFor(PLAIN);
+
+    expect(jcl).toContain("//CEEOPTS  DD *");
+    expect(jcl).toContain("  TERMTHDACT(UADUMP)");
+    expect(jcl).toContain("  TRAP(ON)");
+  });
+
+  it("writes what the project states instead", () => {
+    const jcl = jclFor(PLAIN, {
+      runtimeOptions: ["HEAP(4M,1M,ANYWHERE,KEEP)", "STACK(1M,1M,ANYWHERE)"],
+    });
+
+    expect(jcl).toContain("  HEAP(4M,1M,ANYWHERE,KEEP)");
+    expect(jcl).toContain("  STACK(1M,1M,ANYWHERE)");
+    expect(jcl).not.toContain("TERMTHDACT");
+  });
+});

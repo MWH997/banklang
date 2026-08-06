@@ -68,12 +68,44 @@ pnpm fmt:check    # verify, used by CI
 }
 ```
 
-| Option           | Default                    | Meaning                             |
-| ---------------- | -------------------------- | ----------------------------------- |
-| `entry`          | `src/main.bank.ts`         | Entry source file                   |
-| `outDir`         | `dist`                     | Output root                         |
-| `backendProfile` | `ibm-enterprise-cobol-zos` | Target profile                      |
-| `formatCheck`    | `false`                    | Treat formatting drift as a failure |
+| Option           | Default                          | Meaning                                   |
+| ---------------- | -------------------------------- | ----------------------------------------- |
+| `entry`          | `src/main.bank.ts`               | Entry source file                         |
+| `outDir`         | `dist`                           | Output root                               |
+| `backendProfile` | `ibm-enterprise-cobol-zos`       | Target profile                            |
+| `formatCheck`    | `false`                          | Treat formatting drift as a failure       |
+| `copybookMode`   | `inline`                         | Whether records are written in or `COPY`d |
+| `decimalPoint`   | `point`                          | `DECIMAL-POINT IS COMMA` when `comma`     |
+| `currencySign`   | `$`                              | `CURRENCY SIGN IS`, for an edited picture |
+| `runtimeOptions` | `TERMTHDACT(UADUMP)`, `TRAP(ON)` | Cards written to the job's `CEEOPTS` DD   |
+
+### Language Environment run-time options
+
+A step that states none runs on whatever the installation's defaults are, which
+is not something a job's behaviour should depend on silently. The two defaults
+are about whether a bad night can be diagnosed at all: `TERMTHDACT(UADUMP)`
+asks for a readable dump when a program abends, and `TRAP(ON)` is what puts LE
+in the path to produce one.
+
+Everything else is a site's. A long-running batch wants `HEAP` and `STACK`
+sized for the region and the data, and those are numbers this compiler cannot
+see and does not invent:
+
+```json
+{
+  "runtimeOptions": [
+    "TERMTHDACT(UADUMP)",
+    "TRAP(ON)",
+    "HEAP(4M,1M,ANYWHERE,KEEP)",
+    "STACK(1M,1M,ANYWHERE)"
+  ]
+}
+```
+
+Each entry is written on its own card, exactly as given. Nothing validates the
+option names: the set belongs to Language Environment and grows with it, and a
+compiler that refused an option it had not heard of would be one nobody could
+use a new release of.
 
 Unknown keys and wrong types are reported as warnings and fall back to
 defaults, rather than throwing. A typo in a config file should produce a clear

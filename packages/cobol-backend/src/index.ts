@@ -780,6 +780,13 @@ export interface JclEmitOptions {
    */
   usesCopybooks?: boolean;
   /**
+   * Language Environment run-time options for the job's `CEEOPTS` DD.
+   *
+   * The project's, because a long-running batch's heap and stack depend on the
+   * region and the data rather than on anything the compiler can see.
+   */
+  runtimeOptions?: readonly string[];
+  /**
    * Whether the compile and link-edit steps `EXEC` IBM's cataloged procedure or
    * are written out in full.
    *
@@ -1948,6 +1955,10 @@ export function emitJcl(
   const expanded = options.mode === "expanded" || preprocessed;
 
   const entryTransaction = findEntryTransaction(program);
+  const runtimeOptions = options.runtimeOptions ?? [
+    "TERMTHDACT(UADUMP)",
+    "TRAP(ON)",
+  ];
   const parmFields = batchParmFields(program);
   const parmTemplate = parmFields
     .map((field) => "x".repeat(field.width))
@@ -2184,9 +2195,10 @@ export function emitJcl(
       // Language Environment reads its run-time options from here. A batch step
       // that has none stated runs on whatever the installation defaults are,
       // which is not something a job's behaviour should depend on silently.
+      // What is written is the project's `runtimeOptions`, which defaults to
+      // the two that decide whether a bad night can be diagnosed at all.
       "//CEEOPTS  DD *",
-      "  TERMTHDACT(UADUMP)",
-      "  TRAP(ON)",
+      ...runtimeOptions.map((option) => `  ${option}`),
       "/*",
       // Without these an abend produces no readable dump, and what is left to
       // diagnose it with is the return code.
