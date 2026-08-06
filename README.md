@@ -77,11 +77,7 @@ zero. Banker's rounding is arithmetic this compiler writes out:
            COMPUTE BANK-RND-1-VALUE = (ACCRUE-P1 * ACCRUE-P2)
            COMPUTE BANK-RND-1-EXCESS =
                (ACCRUE-P1 * ACCRUE-P2) - BANK-RND-1-VALUE
-           COMPUTE BANK-RND-1-STEP = 0.01
-           IF BANK-RND-1-EXCESS < 0
-               COMPUTE BANK-RND-1-STEP = -0.01
-           END-IF
-           COMPUTE BANK-RND-1-UNITS = BANK-RND-1-VALUE * 100
+           ...
            EVALUATE TRUE
                WHEN FUNCTION ABS (BANK-RND-1-EXCESS) > 0.005
                    ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE
@@ -90,12 +86,12 @@ zero. Banker's rounding is arithmetic this compiler writes out:
                        ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE
                    END-IF
            END-EVALUATE
-           MOVE BANK-RND-1-VALUE TO ACCRUE-RESULT
 ```
 
 That sequence is executed and compared against exact arithmetic over every
 boundary case, for a product and for a quotient, in all seven modes. See
-[the numeric model](docs/numeric-model.md).
+[the numeric model](docs/numeric-model.md) and
+[`rounding-conformance`](examples/rounding-conformance/).
 
 ## Safety rules the compiler enforces
 
@@ -125,6 +121,7 @@ pnpm bankc check   examples/account-posting   # diagnostics only
 pnpm bankc build   examples/account-posting   # full artifact bundle
 pnpm bankc verify  examples/account-posting   # determinism + coverage
 pnpm bankc test    examples/account-posting   # the above, plus cobc
+pnpm bankc job     examples/end-of-day-settlement  # several programs, one job
 pnpm bankc explain BANK-LED-001               # explain a diagnostic
 
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
@@ -136,9 +133,11 @@ Add `--watch` to any command to rerun on save.
 
 ## Examples
 
-Ten of them, each with a checked-in [evidence bundle](evidence/) holding its
-generated artifacts and verification report, each compiled in CI under a
-GnuCOBOL configuration shaped to Enterprise COBOL 6.4.
+Each with a checked-in [evidence bundle](evidence/) holding its generated
+artifacts and verification report, each compiled in CI under a GnuCOBOL
+configuration shaped to Enterprise COBOL 6.4.
+
+**The language**
 
 | Example                                                          | Demonstrates                                    |
 | ---------------------------------------------------------------- | ----------------------------------------------- |
@@ -147,11 +146,36 @@ GnuCOBOL configuration shaped to Enterprise COBOL 6.4.
 | [`account-file-batch`](examples/account-file-batch/)             | Sequential files, `FILE-CONTROL` and `FD`       |
 | [`batch-interest-accrual`](examples/batch-interest-accrual/)     | Locals, exact decimal arithmetic, `if`/`else`   |
 | [`withdrawal-with-recovery`](examples/withdrawal-with-recovery/) | Inheritance, `raise` / `on failure`, **run**    |
-| [`branch-accrual-cursor`](examples/branch-accrual-cursor/)       | Db2 cursors, bounded row loops, **run**         |
-| [`online-enquiry`](examples/online-enquiry/)                     | CICS, commarea, Db2, three-outcome SQL          |
 | [`statement-generation`](examples/statement-generation/)         | Indexed files, enums, tables, nullables         |
 | [`interest-posting-batch`](examples/interest-posting-batch/)     | Rounding, tiered rates, a fee that can refuse   |
 | [`amortisation-schedule`](examples/amortisation-schedule/)       | Recursion as a `RECURSIVE` program              |
+| [`rounding-conformance`](examples/rounding-conformance/)         | All seven rounding modes, both signs            |
+
+**The subsystems**
+
+| Example                                                    | Demonstrates                                |
+| ---------------------------------------------------------- | ------------------------------------------- |
+| [`online-enquiry`](examples/online-enquiry/)               | CICS, commarea, Db2, three-outcome SQL      |
+| [`branch-accrual-cursor`](examples/branch-accrual-cursor/) | Db2 cursors, bounded row loops, **run**     |
+| [`vsam-browse`](examples/vsam-browse/)                     | `START` / `READ NEXT` on an alternate index |
+| [`mq-request-reply`](examples/mq-request-reply/)           | A queue drained under syncpoint             |
+| [`report-with-controls`](examples/report-with-controls/)   | Report Writer: control breaks and totals    |
+
+**When it goes wrong**
+
+| Example                                              | Demonstrates                              |
+| ---------------------------------------------------- | ----------------------------------------- |
+| [`failed-open`](examples/failed-open/)               | File status 35, 37 and 39 named apart     |
+| [`full-disk`](examples/full-disk/)                   | A `WRITE` out of extents, halfway through |
+| [`deadlock-retry`](examples/deadlock-retry/)         | Db2 -911 and -913, bounded retry          |
+| [`high-volume-master`](examples/high-volume-master/) | A file bigger than the loop bound         |
+
+**A night**
+
+| Example                                                    | Demonstrates                                   |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint    |
+| [`end-of-day-settlement`](examples/end-of-day-settlement/) | Four programs and a sort in **one JCL stream** |
 
 `withdrawal-with-recovery` goes further: it is **run**, against the reference
 runtime in [`runtime/`](runtime/README.md), and the test asserts on the balances

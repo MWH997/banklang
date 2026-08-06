@@ -293,3 +293,30 @@ cics transaction enquire(account: Account) {
     expect(result.cobol).toContain('EXEC CICS ABEND ABCODE("BLNG")');
   });
 });
+
+/**
+ * `""` is a zero-length literal, which Enterprise COBOL does not have.
+ *
+ * GnuCOBOL's default dialect takes it and warns that a SPACE will be assumed;
+ * `IGYCRCTL` rejects it outright. An empty alphanumeric field in COBOL holds
+ * spaces — that is what a MOVE of anything shorter leaves behind — so `SPACES`
+ * is not a substitution for `""` but the only thing it can mean.
+ */
+describe("an empty string literal", () => {
+  const result = compile(`${PREAMBLE}
+entry transaction blank(account: Account) {
+  account.accountId = "";
+
+  if account.accountId == "" {
+    audit("BLANK", account.idempotencyKey);
+  }
+}`);
+
+  it("becomes SPACES rather than a literal the target rejects", () => {
+    expect(result.cobol).not.toContain('""');
+    expect(flowed(result.cobol)).toContain(
+      "MOVE SPACES TO ACCOUNT-ID OF ACCOUNT",
+    );
+    expect(flowed(result.cobol)).toContain("IF ACCOUNT-ID OF ACCOUNT = SPACES");
+  });
+});

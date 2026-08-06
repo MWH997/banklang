@@ -492,7 +492,13 @@ function parmPicture(type: IRType): string {
   switch (type.kind) {
     case "decimal":
     case "currency":
-      return `PIC S9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""} SIGN IS LEADING SEPARATE`;
+      // An `unsigned` cannot hold a sign, so asking the PARM for one costs a
+      // character and asks the operator for something they will not type: a
+      // date declared `unsigned<8,0>` would have to be keyed `+20260805`, and
+      // `IS NUMERIC` on a signed field rejects `20260805` outright.
+      return type.kind === "decimal" && type.usage === "unsigned"
+        ? `PIC 9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""}`
+        : `PIC S9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""} SIGN IS LEADING SEPARATE`;
     case "temporal":
       return temporalPicture(type.unit);
     case "enum":
@@ -511,8 +517,11 @@ function parmWidth(type: IRType): number {
   switch (type.kind) {
     case "decimal":
     case "currency":
-      // One position for the separate sign, then every digit.
-      return type.precision + 1;
+      // One position for the separate sign, then every digit — unless the type
+      // has no sign to separate.
+      return type.kind === "decimal" && type.usage === "unsigned"
+        ? type.precision
+        : type.precision + 1;
     case "temporal":
       return temporalLength(type.unit);
     case "enum":
@@ -8007,7 +8016,13 @@ function renderExpression(expression: IRExpression): string {
     case "BooleanLiteral":
       return expression.value ? "TRUE" : "FALSE";
     case "StringLiteral":
-      return `"${expression.value}"`;
+      // Enterprise COBOL has no zero-length literal. `""` in BankTS means an
+      // empty field, and the figurative constant for an empty alphanumeric
+      // field is SPACES — which is also what the field holds after a MOVE of
+      // anything shorter than it, so a comparison against `""` finds a blank
+      // field and a comparison against `"\"\""` would find nothing. GnuCOBOL
+      // takes the literal and warns; IGYCRCTL rejects it.
+      return expression.value === "" ? "SPACES" : `"${expression.value}"`;
     case "MemberAccess":
       return renderQualifiedFieldReference(expression);
     case "BinaryComparison": {
