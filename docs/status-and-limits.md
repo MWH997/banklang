@@ -57,8 +57,11 @@ sounding impressive:
   uninstantiated generic is never checked at all (`BANK-TYPE-015`).
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
-- **The VS Code extension is unpublished.** It builds and typechecks in CI, but
-  it has not been through marketplace review.
+- **The VS Code extension is unpublished.** Its language server is built by
+  `pnpm build:server` and driven over stdio by `tests/language-server-session.test.ts`,
+  which holds a whole session — initialize, open, hover, symbols, format, change,
+  close, shutdown — against the bundle the extension loads. It has not been
+  through marketplace review, and it has not been run inside VS Code itself.
 - **No zUnit case has been run.** `bankc zunit` writes the three artifacts and
   the driver compiles under GnuCOBOL in both dialects, which is narrower
   evidence than it sounds: `COPY EQAITERC` resolves to a stand-in declaring the

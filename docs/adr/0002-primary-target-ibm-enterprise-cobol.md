@@ -22,5 +22,5 @@ local validation target only.
 
 ## References
 
-- [IBM Enterprise COBOL for z/OS documentation](https://www.ibm.com/docs/en/cobol-zos)
+- [IBM Enterprise COBOL for z/OS 6.4 Language Reference (SC27-8713-03)](https://www.ibm.com/docs/en/SS6SG3_6.4.0/pdf/lrmvs.pdf)
 - [GnuCOBOL official site](https://gnucobol.sourceforge.io/)

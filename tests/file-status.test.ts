@@ -278,10 +278,12 @@ describe("across the corpus", () => {
   });
 
   it("tests the status after every I/O statement it declares", () => {
+    let statusFields = 0;
     for (const { example, cobol } of corpus()) {
       const statuses = [
         ...cobol.matchAll(/FILE STATUS IS ([A-Z][A-Z0-9-]*)/g),
       ].map((match) => match[1]);
+      statusFields += statuses.length;
 
       for (const status of statuses) {
         const tested = flowed(cobol).split(`${status}-OK`).length - 1;
@@ -291,5 +293,11 @@ describe("across the corpus", () => {
         ).toBeGreaterThan(1);
       }
     }
+
+    // Its own floor. The loop above shares this file with one that already
+    // states a floor, and the meta-test in tests/feature-coverage.test.ts only
+    // asks the question once per file — so this one was reachable with nothing
+    // to find and would have passed over an empty corpus.
+    checked(statusFields, 20, "file status fields");
   });
 });

@@ -176,6 +176,275 @@ describe("what the linter refuses", () => {
   });
 });
 
+/**
+ * The two rules the previous pass added, mutated.
+ *
+ * `pnpm test:mutation:lint` was run over the linter for the first time on
+ * 2026-08-06 and scored 61.10%, with 247 survivors. They concentrated in these
+ * two rules: `unreferenced-item` had no test whatsoever — every mutant
+ * survived, including replacing the collection condition with `if (true)` and
+ * emptying the loop that reports the findings — and `literal-delimiter` had
+ * exactly one, covering the case F13 was found in and nothing else.
+ *
+ * A rule that reads text is mostly edge: which lines it skips, where it stops
+ * skipping, and which shapes it deliberately lets through. None of that was
+ * held. What follows is written from the surviving mutants, so each case names
+ * a behaviour that could have been deleted in silence.
+ */
+
+/**
+ * One rule's findings.
+ *
+ * The fixtures below are fragments written to exercise one rule, so they name
+ * fields they never declare and the vocabulary rule has something to say about
+ * every one of them. Narrowing to the rule under test keeps each case about the
+ * behaviour it is named for.
+ */
+function only(
+  findings: ReturnType<typeof lintCobol>,
+  rule: string,
+): ReturnType<typeof lintCobol> {
+  return findings.filter((finding) => finding.rule === rule);
+}
+
+describe("the delimiter rule reads the artifact's own convention", () => {
+  it("takes the apostrophe as the convention when most literals use one", () => {
+    // Kills `chosen = true ? '"' : "'"`. The rule does not have a preferred
+    // delimiter; it reports whichever is in the minority.
+    const findings = lintCobol(
+      "x.cbl",
+      cobol(
+        "           MOVE 'A' TO FIELD-ONE",
+        "           MOVE 'B' TO FIELD-TWO",
+        '           MOVE "C" TO FIELD-THREE',
+      ),
+      { fragment: true },
+    );
+
+    expect(only(findings, "literal-delimiter")).toHaveLength(1);
+    expect(formatFindings(findings)).toContain('"C" is delimited by a quote');
+  });
+
+  it("says nothing when every literal uses the same delimiter", () => {
+    // Kills emptying the `quoted === 0 || quoted === found.length` guard, which
+    // would have the rule report the whole artifact against itself.
+    for (const delimiter of ['"', "'"]) {
+      expect(
+        only(
+          lintCobol(
+            "x.cbl",
+            cobol(
+              `           MOVE ${delimiter}A${delimiter} TO FIELD-ONE`,
+              `           MOVE ${delimiter}B${delimiter} TO FIELD-TWO`,
+            ),
+            { fragment: true },
+          ),
+          "literal-delimiter",
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it("exempts a literal that has to use the other delimiter", () => {
+    // Kills dropping `!literal.text.includes(chosen)`. A literal containing a
+    // quote cannot be written with quotes without doubling them, so switching
+    // it is not an improvement and the rule does not ask for it.
+    const findings = lintCobol(
+      "x.cbl",
+      cobol(
+        '           MOVE "PLAIN" TO FIELD-ONE',
+        '           MOVE "ALSO PLAIN" TO FIELD-TWO',
+        "           MOVE 'HE SAID \"NO\"' TO FIELD-THREE",
+      ),
+      { fragment: true },
+    );
+
+    expect(only(findings, "literal-delimiter")).toEqual([]);
+  });
+
+  it("keeps checking after an EXEC block ends", () => {
+    // Kills emptying `if (/END-EXEC/) { inExec = false; }`. Left in, the rule
+    // treats the rest of the program as SQL and stops looking — and most of
+    // this corpus has an EXEC SQL block near the top, so the rule would have
+    // been dead over exactly the programs it most needs to read.
+    const findings = lintCobol(
+      "x.cbl",
+      cobol(
+        '           MOVE "A" TO FIELD-ONE',
+        "           EXEC SQL",
+        "               SELECT BALANCE INTO :WS-BALANCE FROM ACCOUNTS",
+        "           END-EXEC",
+        "           MOVE 'B' TO FIELD-TWO",
+      ),
+      { fragment: true },
+    );
+
+    const delimiter = only(findings, "literal-delimiter");
+    expect(delimiter).toHaveLength(1);
+    expect(delimiter[0].line).toBe(5);
+  });
+
+  it("does not read a literal inside a comment", () => {
+    // Kills emptying the comment guard. A comment is not code, and an example
+    // quoted in one is the commonest way to trip a text rule.
+    expect(
+      only(
+        lintCobol(
+          "x.cbl",
+          cobol(
+            '           MOVE "A" TO FIELD-ONE',
+            "      * The old form was MOVE 'A' TO FIELD-ONE.",
+            '           MOVE "B" TO FIELD-TWO',
+          ),
+          { fragment: true },
+        ),
+        "literal-delimiter",
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("the unreferenced-item rule", () => {
+  /** Working storage, wrapped in enough program for the rule to find it. */
+  function program(...storage: string[]): string {
+    return cobol(
+      "       IDENTIFICATION DIVISION.",
+      "       PROGRAM-ID. X.",
+      "       DATA DIVISION.",
+      "       WORKING-STORAGE SECTION.",
+      ...storage,
+      "       PROCEDURE DIVISION.",
+      "       BANK-MAIN.",
+      "           GOBACK.",
+    );
+  }
+
+  it("reports an elementary item nothing names again", () => {
+    // Kills emptying the reporting loop, and `if (true)` on the collection
+    // guard. Nothing asserted this rule fires at all until now.
+    const findings = lintCobol("x.cbl", program("       01  WS-UNUSED PIC X."));
+
+    const unreferenced = only(findings, "unreferenced-item");
+    expect(unreferenced).toHaveLength(1);
+    expect(formatFindings(findings)).toContain(
+      "WS-UNUSED is declared and never referenced",
+    );
+    expect(unreferenced[0].line).toBe(5);
+  });
+
+  it("says nothing about an item the procedure division uses", () => {
+    // Kills `uses > 1` becoming `uses >= 1`, which counts the declaration
+    // itself as a use and silences the rule entirely.
+    expect(
+      only(
+        lintCobol(
+          "x.cbl",
+          cobol(
+            "       IDENTIFICATION DIVISION.",
+            "       PROGRAM-ID. X.",
+            "       DATA DIVISION.",
+            "       WORKING-STORAGE SECTION.",
+            "       01  WS-COUNTER PIC 9(4).",
+            "       PROCEDURE DIVISION.",
+            "       BANK-MAIN.",
+            "           MOVE 0 TO WS-COUNTER",
+            "           GOBACK.",
+          ),
+        ),
+        "unreferenced-item",
+      ),
+    ).toEqual([]);
+  });
+
+  it("exempts EXTERNAL storage, which belongs to the run unit", () => {
+    expect(
+      only(
+        lintCobol("x.cbl", program("       01  WS-SHARED PIC X EXTERNAL.")),
+        "unreferenced-item",
+      ),
+    ).toEqual([]);
+  });
+
+  it("exempts a group item, which may be the record's copybook", () => {
+    // A level-01 with no PICTURE of its own is the program's data model. Every
+    // BankTS record becomes both working storage and a copybook, so a program
+    // that only validates one legitimately never names the group again.
+    expect(
+      only(
+        lintCobol(
+          "x.cbl",
+          program(
+            "       01  TRANSFER-REQUEST.",
+            "           05  TR-AMOUNT PIC S9(16)V99 COMP-3.",
+          ),
+        ),
+        "unreferenced-item",
+      ),
+    ).toEqual([]);
+  });
+
+  it("looks only at working storage", () => {
+    // Kills emptying `if (section !== "WORKING-STORAGE") return`. Linkage is
+    // the caller's storage and a program may legitimately not touch a field of
+    // it; local storage is re-established per invocation.
+    expect(
+      only(
+        lintCobol(
+          "x.cbl",
+          cobol(
+            "       IDENTIFICATION DIVISION.",
+            "       PROGRAM-ID. X.",
+            "       DATA DIVISION.",
+            "       LINKAGE SECTION.",
+            "       01  LS-UNUSED PIC X.",
+            "       PROCEDURE DIVISION.",
+            "       BANK-MAIN.",
+            "           GOBACK.",
+          ),
+        ),
+        "unreferenced-item",
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not carry one program's storage into the next", () => {
+    // Kills emptying the PROGRAM-ID reset. Without it, a name declared in the
+    // first program and used only there is still on the list when the second
+    // program is scanned — and because uses are counted over the whole file,
+    // the rule stays quiet about a genuinely dead item in the second.
+    const findings = lintCobol(
+      "x.cbl",
+      cobol(
+        "       IDENTIFICATION DIVISION.",
+        "       PROGRAM-ID. FIRST.",
+        "       DATA DIVISION.",
+        "       WORKING-STORAGE SECTION.",
+        "       01  WS-FIRST PIC X.",
+        "       PROCEDURE DIVISION.",
+        "       FIRST-MAIN.",
+        "           MOVE SPACE TO WS-FIRST",
+        "           GOBACK.",
+        "       END PROGRAM FIRST.",
+        "       IDENTIFICATION DIVISION.",
+        "       PROGRAM-ID. SECOND.",
+        "       DATA DIVISION.",
+        "       WORKING-STORAGE SECTION.",
+        "       01  WS-SECOND PIC X.",
+        "       PROCEDURE DIVISION.",
+        "       SECOND-MAIN.",
+        "           GOBACK.",
+        "       END PROGRAM SECOND.",
+      ),
+    );
+
+    expect(
+      findings
+        .filter((finding) => finding.rule === "unreferenced-item")
+        .map((finding) => finding.message),
+    ).toEqual([expect.stringContaining("WS-SECOND")]);
+  });
+});
+
 describe("what the linter accepts", () => {
   /**
    * The compiler options are the compiler's vocabulary rather than COBOL's,

@@ -132,9 +132,15 @@ describe("language server diagnostics", () => {
       range: { start: { line: number; character: number } };
     }[];
 
-    // The transaction starts on source line 10, so LSP reports line 9.
-    expect(diagnostics[0].range.start.line).toBe(9);
-    expect(diagnostics[0].range.start.character).toBeGreaterThanOrEqual(0);
+    // The transaction is declared on source line 10, column 13. LSP counts
+    // both from zero, so the range starts at line 9, character 12.
+    //
+    // The column used to be asserted as `toBeGreaterThanOrEqual(0)`, which is
+    // true of every number the conversion can produce except one — and the one
+    // it excluded, a negative column, is not the failure worth guarding. An
+    // off-by-one that reported the wrong column, which is what the conversion
+    // exists to get right, satisfied it.
+    expect(diagnostics[0].range.start).toEqual({ line: 9, character: 12 });
   });
 
   it("republishes on change", () => {
@@ -320,16 +326,51 @@ describe("json-rpc framing", () => {
   });
 
   it("counts content length in bytes, not characters", () => {
+    // This test is older than the bug it now catches, and for that whole time
+    // it passed against a decoder that sliced the body by character count.
+    // Reading `Content-Length` bytes as characters overruns the body, but
+    // `String.prototype.slice` clamps at the end of the string, so a lone
+    // message still came back whole and the assertion held. The property only
+    // has consequences when another message follows: the overrun eats into the
+    // next header, and both messages are lost. So the check is a non-ASCII
+    // message with a second one behind it, which is what a connection sends.
     const decoder = new MessageDecoder();
-    const encoded = encodeMessage({
-      jsonrpc: "2.0",
-      id: 3,
-      method: "unicode",
-      params: { text: "café ☕" },
-    });
+    const chunk =
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "unicode",
+        params: { text: "café ☕ — 円" },
+      }) + encodeMessage({ jsonrpc: "2.0", id: 4, method: "after" });
 
-    const decoded = decoder.push(encoded);
+    const decoded = decoder.push(chunk);
+    expect(decoded.map((message) => message.method)).toEqual([
+      "unicode",
+      "after",
+    ]);
+    expect((decoded[0].params as { text: string }).text).toBe("café ☕ — 円");
+  });
+
+  it("keeps the stream aligned when a chunk splits a character in two", () => {
+    // A stdio transport can deliver a chunk boundary in the middle of a
+    // multi-byte character. Reassembly has to happen on bytes; decoding each
+    // chunk to a string first would turn the halves into replacement
+    // characters and change the byte length of the body.
+    const decoder = new MessageDecoder();
+    const encoded = Buffer.from(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "split",
+        params: { text: "€" },
+      }),
+      "utf8",
+    );
+    const middle = encoded.indexOf(Buffer.from("€", "utf8")) + 1;
+
+    expect(decoder.push(encoded.subarray(0, middle))).toEqual([]);
+    const decoded = decoder.push(encoded.subarray(middle));
     expect(decoded).toHaveLength(1);
-    expect((decoded[0].params as { text: string }).text).toBe("café ☕");
+    expect((decoded[0].params as { text: string }).text).toBe("€");
   });
 });

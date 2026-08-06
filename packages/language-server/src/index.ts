@@ -371,12 +371,25 @@ export function encodeMessage(message: JsonRpcMessage): string {
  *
  * A stdio transport delivers arbitrary chunks, so messages must be reassembled
  * rather than assumed to arrive whole.
+ *
+ * The buffer is bytes, not characters, throughout. `Content-Length` counts
+ * bytes — the LSP specification's base protocol says so — and the two differ
+ * for every non-ASCII character. Buffering the stream as a string and then
+ * slicing it by the byte count takes too many characters, which leaves the
+ * remainder starting partway into the next header and desynchronises the
+ * connection for the rest of the session. Because `String.prototype.slice`
+ * clamps rather than throwing, a message decoded on its own still comes out
+ * intact; the damage only appears when something follows it, which on a live
+ * connection is always.
  */
 export class MessageDecoder {
-  private buffer = "";
+  private buffer = Buffer.alloc(0);
 
-  public push(chunk: string): JsonRpcMessage[] {
-    this.buffer += chunk;
+  public push(chunk: string | Buffer): JsonRpcMessage[] {
+    this.buffer = Buffer.concat([
+      this.buffer,
+      typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk,
+    ]);
     const messages: JsonRpcMessage[] = [];
 
     for (;;) {
@@ -385,22 +398,24 @@ export class MessageDecoder {
         break;
       }
 
-      const header = this.buffer.slice(0, headerEnd);
+      const header = this.buffer.subarray(0, headerEnd).toString("ascii");
       const match = /Content-Length:\s*(\d+)/i.exec(header);
       if (!match) {
         // Unparseable header: drop it rather than spin forever.
-        this.buffer = this.buffer.slice(headerEnd + 4);
+        this.buffer = this.buffer.subarray(headerEnd + 4);
         continue;
       }
 
       const length = Number(match[1]);
       const bodyStart = headerEnd + 4;
-      if (Buffer.byteLength(this.buffer.slice(bodyStart), "utf8") < length) {
+      if (this.buffer.length - bodyStart < length) {
         break;
       }
 
-      const body = this.buffer.slice(bodyStart, bodyStart + length);
-      this.buffer = this.buffer.slice(bodyStart + length);
+      const body = this.buffer
+        .subarray(bodyStart, bodyStart + length)
+        .toString("utf8");
+      this.buffer = this.buffer.subarray(bodyStart + length);
 
       try {
         messages.push(JSON.parse(body) as JsonRpcMessage);

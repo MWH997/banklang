@@ -24,6 +24,14 @@ in order.
 
 ### Added
 
+- Add `pnpm docs:citations`, checking every source the documentation cites
+  against the live page rather than against its status code.
+- Add `pnpm test:mutation:lint`, running Stryker over the conformance linter —
+  [verification](docs/verification.md).
+- Hold the language server to a whole editing session over stdio, against the
+  bundle the VS Code extension loads.
+- Require every test that reads the corpus to state how much it expected to
+  find.
 - Add the `unreferenced-item` conformance rule, refusing an elementary
   working-storage item nothing names —
   [target conformance](docs/target-conformance.md).
@@ -40,6 +48,13 @@ in order.
 
 ### Fixed
 
+- Frame LSP messages by byte count throughout, so a message carrying a
+  non-ASCII character no longer takes the rest of the session with it.
+- Cite a versioned IBM topic that resolves, rather than a product root, a
+  retired slug or Db2 for Linux, UNIX and Windows —
+  [glossary](docs/glossary.md).
+- Test the two conformance rules the last release added, one of which had no
+  test at all.
 - Print the rounding modes the compiler actually emits in the language
   reference, rather than a `ROUNDED MODE IS` phrase Enterprise COBOL has never
   had — [numeric model](docs/numeric-model.md).
@@ -55,6 +70,8 @@ in order.
 
 ### Removed
 
+- Remove the glossary's seven AI-model entries, which defined this project's
+  own model delegation rather than any term it uses.
 - Remove the pre-0.9.0 development log. `git log --reverse` is where a working
   record belongs.
 

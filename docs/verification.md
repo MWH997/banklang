@@ -196,6 +196,43 @@ corpus assertions, `cobc` and the oracle, and its _presentation_ is not. That is
 the same gap the audit found by hand, now with a number on it and a way to watch
 it move.
 
+### 2.3c Mutation tests over the conformance linter
+
+```bash
+pnpm test:mutation:lint
+```
+
+The third lane, and the one that asks the uncomfortable question. Every claim in
+this repository of the form "the generated COBOL does not do X" is a claim about
+a rule in `packages/conformance-lint`. Nothing was checking the checker.
+
+`vitest.mutation-lint.config.ts` runs the linter's own suites plus the corpus
+checks that point it at every example and every checked-in artifact, because a
+rule is only as good as the text it is aimed at.
+
+#### What it scored
+
+Run on 2026-08-06. First run, before any test was written for it:
+
+| Run                           | Score | Covered | Killed | Survived | No coverage |
+| ----------------------------- | ----- | ------- | ------ | -------- | ----------- |
+| First                         | 61.10 | 63.02   | 418    | 247      | 21          |
+| After eleven tests were added | 68.65 | 70.70   | 470    | 196      | 20          |
+
+**It found a rule with no test at all.** `unreferenced-item` was added in the
+previous pass of the 2026-08-06 audit and shipped with none: every mutant
+survived, including replacing its collection condition with `if (true)` and
+emptying the loop that reports its findings. The rule works — it found six dead
+storage items the day it was written — and nothing in the suite would have
+noticed if it stopped.
+
+It also found that `literal-delimiter`, the rule written to close F13, could stop
+reading at the first `EXEC SQL` and go on passing, because emptying
+`if (/END-EXEC/) { inExec = false }` survived. Most programs in this corpus have
+an `EXEC SQL` block near the top.
+
+Read the remaining 196 as a finding, in the same terms as §2.3b's 198.
+
 ### 2.4 Fuzz tests
 
 Fuzz:
