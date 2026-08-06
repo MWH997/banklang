@@ -20,6 +20,7 @@
  *     dist/site/
  *       index.html          the landing page
  *       assets/site.css     its stylesheet, and nothing else
+ *       docs/               every page under docs/, rendered
  *       playground/         the existing bundle, unchanged
  *       schema/banklang.json  the config schema `bankc init` points at
  *       favicon.svg  og.png  robots.txt  sitemap.xml
@@ -40,6 +41,7 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { buildDocs, docFiles } from "./build-docs";
 import { compile } from "../packages/compiler/src/index";
 import { SCHEMA_URL } from "../packages/config/src/index";
 import { configJsonSchema } from "../packages/config/src/schema";
@@ -60,7 +62,7 @@ export const SITE_ORIGIN = "https://banklang.mwhassan.com";
  * once. These are deliberately small — enough for the constructs on this page.
  * ------------------------------------------------------------------ */
 
-const escapeHtml = (text: string): string =>
+export const escapeHtml = (text: string): string =>
   text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -70,7 +72,7 @@ const escapeHtml = (text: string): string =>
 const BANKTS_KEYWORDS =
   /\b(module|type|record|function|transaction|return|let|if|else|for|each|in|raise|on|failure|file|test|currency|decimal|string|bool|date|enum|extends)\b/g;
 
-function highlightBankTs(code: string): string {
+export function highlightBankTs(code: string): string {
   return escapeHtml(code)
     .replace(/(\/\/[^\n]*)/g, '<span class="c-com">$1</span>')
     .replace(/(&quot;[^&]*?&quot;)/g, '<span class="c-str">$1</span>')
@@ -85,7 +87,7 @@ function highlightBankTs(code: string): string {
  * colouring it as code would misrepresent the output on the one page where a
  * mainframe engineer is deciding whether the output is readable.
  */
-function highlightCobol(code: string): string {
+export function highlightCobol(code: string): string {
   return code
     .split("\n")
     .map((line) => {
@@ -279,7 +281,15 @@ export function renderLanding(content: SiteContent): string {
 
 function sitemap(): string {
   const today = new Date().toISOString().slice(0, 10);
-  const pages = ["/", "/playground/"];
+  // Every rendered document, not just the two hand-written entries. Forty-two
+  // pages that nothing links to from outside the site are forty-two pages a
+  // search engine has no reason to fetch.
+  const pages = [
+    "/",
+    "/playground/",
+    "/docs/",
+    ...docFiles().map((file) => `/docs/${file.replace(/\.md$/, ".html")}`),
+  ];
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -299,6 +309,12 @@ function main(): void {
   const content = siteContent();
   writeFileSync(join(OUT, "index.html"), renderLanding(content));
   cpSync(join(SITE, "site.css"), join(OUT, "assets/site.css"));
+  cpSync(join(SITE, "docs.css"), join(OUT, "assets/docs.css"));
+  cpSync(join(SITE, "docs.js"), join(OUT, "assets/docs.js"));
+
+  // D1: every document under `docs/`, rendered, with the sidebar grouped as the
+  // README groups it and a search index built from the same pass.
+  const documents = buildDocs(OUT);
 
   // The playground, built by its own tooling and copied in unchanged. Its
   // `base: "./"` is what lets it work from `/playground/`.
@@ -334,7 +350,7 @@ function main(): void {
   );
   writeFileSync(join(OUT, "sitemap.xml"), sitemap());
 
-  console.log(`Built ${OUT}`);
+  console.log(`Built ${OUT} (${String(documents)} documents)`);
 }
 
 if (process.argv[1]?.endsWith("build-site.ts")) {

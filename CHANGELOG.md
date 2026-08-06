@@ -51,6 +51,9 @@ in order.
 
 ### Added
 
+- Render every document under `docs/` as part of the site, with the sidebar
+  grouped as the README groups it and a search index the browser scans —
+  [launch tickets](docs/launch-tickets.md).
 - Add a weekly `advisories` job, opening an issue when a dependency picks up a
   published advisory — [audit](docs/audit-2026-08-06.md).
 - Add a JSON Schema for `banklang.json`, built from the constants the loader

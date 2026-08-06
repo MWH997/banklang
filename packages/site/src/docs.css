@@ -1,0 +1,420 @@
+/*
+ * The documentation pages, layered on top of `site.css`.
+ *
+ * The palette, the header, the buttons and the code colours all come from
+ * there, so a reader moving from the landing page to a document does not cross
+ * a visual seam. What is here is only what a document needs and a landing page
+ * does not: a three-column shell, prose measure, tables, and the search box.
+ *
+ * Every pair used here is already measured — `site.css` says where. Nothing in
+ * this file introduces a new colour.
+ */
+
+.shell {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr) 14rem;
+  gap: 2.5rem;
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 4rem;
+  align-items: start;
+}
+
+/* One column well before it is narrow: a three-column layout with a 20ch
+   measure is unreadable long before it overflows. */
+@media (max-width: 64rem) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .toc {
+    display: none;
+  }
+  .side {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* ------------------------------------------------------------- sidebar */
+
+.side {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  font-size: 0.92rem;
+}
+
+.side section {
+  margin-bottom: 1.5rem;
+}
+
+.side h2 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side li {
+  margin: 0;
+}
+
+/* WCAG 2.5.8: a standalone navigation target is at least 24px. */
+.side a {
+  display: block;
+  min-height: 24px;
+  padding: 0.28rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+
+.side a:hover {
+  background: var(--panel);
+}
+
+.side a[aria-current="page"] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--panel);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------- search */
+
+.search {
+  margin-bottom: 1rem;
+}
+
+.search input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.search input::placeholder {
+  color: var(--muted);
+}
+
+.results {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.results a {
+  display: block;
+  padding: 0.5rem 0.7rem;
+  min-height: 24px;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.results a:last-child {
+  border-bottom: 0;
+}
+
+.results a:hover,
+.results a:focus-visible {
+  background: var(--panel-2);
+}
+
+.results .where {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.results .none {
+  padding: 0.6rem 0.7rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------ on this page */
+
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  font-size: 0.86rem;
+}
+
+.toc h2 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+}
+
+.toc a {
+  display: block;
+  min-height: 24px;
+  padding: 0.22rem 0 0.22rem 0.75rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.toc a:hover {
+  color: var(--text);
+}
+
+.toc .lvl-3 a {
+  padding-left: 1.5rem;
+  font-size: 0.95em;
+}
+
+/* ---------------------------------------------------------------- prose */
+
+.doc {
+  min-width: 0;
+  /* A measure, not a width: long lines of prose are the single most common
+     reason a documentation page is not read. */
+  max-width: 46rem;
+
+  /*
+   * `site.css` styles bare `main` for the landing page — `margin: 0 auto` and
+   * its own horizontal padding — and this element is a `main`. Inherited into a
+   * grid item, `margin: auto` switches off `justify-self: stretch`, so the
+   * column stopped constraining it and it sized to its own max-content instead:
+   * 691px of prose inside a 343px track on a phone, clipped by the body's
+   * `overflow-x: hidden`. The shell owns the padding here.
+   */
+  margin: 0;
+  padding: 0;
+}
+
+.doc h1 {
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+  line-height: 1.2;
+  margin: 0 0 1rem;
+  max-width: none;
+}
+
+.doc h2 {
+  font-size: 1.4rem;
+  margin: 2.5rem 0 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Most of these documents already write `---` before a section, which is a
+   rule of its own. Drawing the heading's rule as well printed two lines a few
+   pixels apart on nearly every page. The document's own separator wins. */
+.doc hr + h2 {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.doc h3 {
+  font-size: 1.12rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.doc h4 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.4rem;
+  color: var(--muted);
+}
+
+.doc p,
+.doc li {
+  line-height: 1.7;
+}
+
+.doc ul,
+.doc ol {
+  padding-left: 1.35rem;
+}
+
+.doc li {
+  margin: 0.3rem 0;
+}
+
+.doc blockquote {
+  margin: 1.25rem 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.doc hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0 1.5rem;
+}
+
+.doc :not(pre) > code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 0.12em 0.35em;
+  font-size: 0.88em;
+}
+
+.doc pre.code {
+  margin: 1.1rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  /* Code is the one thing allowed to scroll sideways, inside its own box. */
+  overflow-x: auto;
+  font: 13px/1.55 var(--mono);
+}
+
+/* A wide table must scroll inside itself rather than push the page sideways. */
+.doc table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.92rem;
+}
+
+.doc th,
+.doc td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc th {
+  background: var(--panel-2);
+  font-weight: 600;
+}
+
+.doc a {
+  color: var(--accent);
+}
+
+.edit {
+  font-size: 0.9rem;
+}
+
+.edit a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+/* --------------------------------------------------------- docs index */
+
+.group {
+  margin: 2rem 0;
+}
+
+.cards {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.6rem;
+}
+
+.cards a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.cards a:hover {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------- narrow screens */
+
+/*
+ * On a phone the sidebar came first in the document, so a reader met twenty-five
+ * navigation links before the first sentence of the page they had asked for. It
+ * is behind a button now, and the document is what loads.
+ *
+ * The button is the only thing here that needs script, and the script is the one
+ * already on the page.
+ */
+.narrow-only {
+  display: none;
+}
+
+@media (max-width: 64rem) {
+  .narrow-only {
+    display: inline-flex;
+  }
+
+  .side {
+    display: none;
+  }
+
+  .side.open {
+    display: block;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/*
+ * The header wraps rather than clipping its last item.
+ *
+ * Five items at the landing page's 1.25rem gap come to a few pixels over 390,
+ * so the contents button sat half off the screen — visible at 375 because the
+ * row wrapped, invisible at 390 because it did not quite. The gap closes before
+ * the row does.
+ */
+.top nav {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+@media (max-width: 40rem) {
+  .top nav {
+    gap: 0.7rem;
+  }
+}
