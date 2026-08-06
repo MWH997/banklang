@@ -36,6 +36,8 @@ import {
   type UnitOfWorkStatementNode,
   type BooleanLiteralNode,
   type DeclarationNode,
+  type TestDeclarationNode,
+  type TestStepNode,
   type DecimalLiteralNode,
   type DecimalTypeNode,
   type Diagnostic,
@@ -386,6 +388,58 @@ export interface ResolvedSql {
   hostVariables: { name: string; origin: "parameter" | "result" }[];
 }
 
+/**
+ * A `test` declaration, resolved against the program it runs.
+ *
+ * Held apart from everything else in the result because nothing downstream of
+ * the COBOL emitter reads it: `packages/zunit` does, and the program that ships
+ * is identical whether the tests are there or not.
+ */
+export interface ResolvedTest {
+  name: string;
+  span: SourceSpan;
+  /** The entry transaction, which under zUnit is the whole program. */
+  transactionName: string;
+  givens: ResolvedTestGiven[];
+  /** In source order: the calls are compared against in the order they arrive. */
+  expectations: ResolvedTestExpectation[];
+}
+
+/** One field of the PARM the step is started with. */
+export interface ResolvedTestGiven {
+  parameter: string;
+  span: SourceSpan;
+  type: ResolvedType;
+  value: ResolvedTestLiteral;
+}
+
+export type ResolvedTestExpectation =
+  | {
+      kind: "ledger";
+      operation: "debit" | "credit";
+      account: ResolvedTestLiteral;
+      amount: ResolvedTestLiteral;
+      span: SourceSpan;
+    }
+  | {
+      kind: "audit";
+      event: ResolvedTestLiteral;
+      correlation: ResolvedTestLiteral;
+      span: SourceSpan;
+    };
+
+/**
+ * A constant, and only a constant.
+ *
+ * The generated driver has no expressions in it: every value is a literal in a
+ * `MOVE` or in the `IF` that compares one. Anything else would need the test to
+ * evaluate something at run time, on the mainframe, in a program written to
+ * check another program — which is where a test framework starts being the
+ * thing that needs testing.
+ */
+export type ResolvedTestLiteral =
+  { kind: "string"; value: string } | { kind: "decimal"; text: string };
+
 export interface TypeCheckResult {
   program: ProgramNode | null;
   diagnostics: Diagnostic[];
@@ -412,6 +466,8 @@ export interface TypeCheckResult {
   callTargets: ReadonlyMap<CallExpressionNode, string>;
   /** Base record name for each record declared with `extends`. */
   recordBases: ReadonlyMap<string, string>;
+  /** `test` declarations, which become zUnit artifacts and no COBOL. */
+  tests: ResolvedTest[];
 }
 
 export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
@@ -440,6 +496,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
       sql: [],
       callTargets: new Map(),
       recordBases: new Map(),
+      tests: [],
     };
   }
 
@@ -688,6 +745,13 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   checkCopybookMemberNames(records, diagnostics);
   checkDdNames(files, diagnostics);
 
+  const tests = resolveTests(
+    program,
+    transactions,
+    databases.length > 0,
+    diagnostics,
+  );
+
   return {
     program,
     diagnostics,
@@ -704,7 +768,398 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     sql: sqlStatements,
     callTargets,
     recordBases,
+    tests,
   };
+}
+
+/** The widths the two runtime interfaces give a test something to compare. */
+const LEDGER_ACCOUNT_WIDTH = 32;
+const LEDGER_AMOUNT_SCALE = 2;
+const LEDGER_AMOUNT_DIGITS = 18;
+const AUDIT_EVENT_WIDTH = 32;
+const AUDIT_CORRELATION_WIDTH = 64;
+
+/** The longest test name, which becomes a COBOL word in the generated driver. */
+const TEST_NAME_LIMIT = 25;
+
+/**
+ * Resolves every `test` declaration against the program it claims to run.
+ *
+ * The checks here are all about what a zUnit driver can reach. It is a separate
+ * program: it starts the program under test through its entry point, so it can
+ * supply the LINKAGE the step is started with and intercept the modules the
+ * program calls — and it cannot see a single byte of that program's
+ * WORKING-STORAGE. A test that asked for anything else would generate an
+ * artifact that compiles, uploads, runs, and reports a pass it never checked.
+ */
+function resolveTests(
+  program: ProgramNode,
+  transactions: ResolvedTransaction[],
+  isImsProgram: boolean,
+  diagnostics: Diagnostic[],
+): ResolvedTest[] {
+  const declarations = program.declarations.filter(
+    (declaration): declaration is TestDeclarationNode =>
+      declaration.kind === "TestDeclaration",
+  );
+  const tests: ResolvedTest[] = [];
+  const seen = new Map<string, SourceSpan>();
+
+  for (const declaration of declarations) {
+    const previous = seen.get(declaration.name.toUpperCase());
+    if (previous) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TEST-005",
+          severity: "error",
+          message: `There is already a test named ${declaration.name}.`,
+          span: declaration.span,
+          hint: `Each test becomes a \`TEST_${declaration.name.toUpperCase()}\` entry point in one load module, and COBOL program-names do not distinguish case.`,
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      continue;
+    }
+    seen.set(declaration.name.toUpperCase(), declaration.span);
+
+    if (
+      declaration.name.length > TEST_NAME_LIMIT ||
+      !/^[A-Za-z][A-Za-z0-9]*$/.test(declaration.name)
+    ) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TEST-006",
+          severity: "error",
+          message: `${declaration.name} does not fit the name of a generated test.`,
+          span: declaration.span,
+          hint: `The runner matches a test by the characters before the first space in an 80-character field, and the name also becomes a COBOL word: use letters and digits, at most ${TEST_NAME_LIMIT} of them.`,
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      continue;
+    }
+
+    const transaction = transactions.find(
+      (candidate) => candidate.name === declaration.transactionName,
+    );
+    if (!transaction || !transaction.isEntry) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TEST-001",
+          severity: "error",
+          message: transaction
+            ? `${declaration.transactionName} is not the entry transaction, so a test cannot start it.`
+            : `${declaration.transactionName} is not a transaction in this program.`,
+          span: declaration.transactionSpan,
+          hint: "A zUnit case runs a load module, and a load module is entered at its entry transaction. Name that one.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      continue;
+    }
+
+    if (transaction.isCics || isImsProgram) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TEST-002",
+          severity: "error",
+          message: `${transaction.name} is not started the way a generated test starts a program.`,
+          span: declaration.span,
+          hint: transaction.isCics
+            ? 'A CICS transaction is started by a transaction identifier with a COMMAREA, which is a `type="CICS"` zUnit case and a running region. The generator writes batch cases only.'
+            : "An IMS program is entered by the region with its PCBs, which a batch driver has none of.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+      continue;
+    }
+
+    const givens: ResolvedTestGiven[] = [];
+    const expectations: ResolvedTestExpectation[] = [];
+    let rejected = false;
+
+    for (const step of declaration.steps) {
+      if (step.kind === "TestGiven") {
+        const parameter = transaction.parameters.find(
+          (candidate) => candidate.name === step.parameter,
+        );
+        if (
+          !parameter ||
+          parameter.type.kind === "record" ||
+          parameter.type.kind === "array"
+        ) {
+          diagnostics.push(
+            createDiagnostic({
+              id: "BANK-TEST-003",
+              severity: "error",
+              message: parameter
+                ? `${step.parameter} is a ${parameter.type.kind}, and a step is not started with one.`
+                : `${transaction.name} has no parameter named ${step.parameter}.`,
+              span: step.span,
+              hint: "A batch program is entered with a PARM, which is the scalar parameters of its entry transaction. A record parameter is a buffer the program fills from a file, so there is nothing for the caller to supply.",
+              backendProfile: "ibm-enterprise-cobol-zos",
+            }),
+          );
+          rejected = true;
+          continue;
+        }
+
+        const value = testLiteral(step.value, diagnostics);
+        if (
+          !value ||
+          !literalFitsParameter(value, parameter.type, step, diagnostics)
+        ) {
+          rejected = true;
+          continue;
+        }
+
+        givens.push({
+          parameter: parameter.name,
+          span: step.span,
+          type: parameter.type,
+          value,
+        });
+        continue;
+      }
+
+      if (step.kind === "TestExpectLedger") {
+        const account = testLiteral(step.account, diagnostics);
+        const amount = testLiteral(step.amount, diagnostics);
+        if (!account || !amount) {
+          rejected = true;
+          continue;
+        }
+        if (
+          !expectString(
+            account,
+            LEDGER_ACCOUNT_WIDTH,
+            "the ledger's account",
+            step,
+            diagnostics,
+          ) ||
+          !expectAmount(amount, step, diagnostics)
+        ) {
+          rejected = true;
+          continue;
+        }
+        expectations.push({
+          kind: "ledger",
+          operation: step.operation,
+          account,
+          amount,
+          span: step.span,
+        });
+        continue;
+      }
+
+      const event = testLiteral(step.event, diagnostics);
+      const correlation = testLiteral(step.correlation, diagnostics);
+      if (!event || !correlation) {
+        rejected = true;
+        continue;
+      }
+      if (
+        !expectString(
+          event,
+          AUDIT_EVENT_WIDTH,
+          "the audit trail's event",
+          step,
+          diagnostics,
+        ) ||
+        !expectString(
+          correlation,
+          AUDIT_CORRELATION_WIDTH,
+          "the audit trail's correlation",
+          step,
+          diagnostics,
+        )
+      ) {
+        rejected = true;
+        continue;
+      }
+      expectations.push({
+        kind: "audit",
+        event,
+        correlation,
+        span: step.span,
+      });
+    }
+
+    if (rejected) {
+      continue;
+    }
+
+    tests.push({
+      name: declaration.name,
+      span: declaration.span,
+      transactionName: transaction.name,
+      givens,
+      expectations,
+    });
+  }
+
+  return tests;
+}
+
+/** A `given` or an `expect` argument, which has to be a literal. */
+function testLiteral(
+  expression: ExpressionNode,
+  diagnostics: Diagnostic[],
+): ResolvedTestLiteral | null {
+  if (expression.kind === "StringLiteral") {
+    return { kind: "string", value: expression.value };
+  }
+  if (expression.kind === "DecimalLiteral") {
+    return { kind: "decimal", text: expression.text };
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-TEST-004",
+      severity: "error",
+      message: "A test supplies and compares constants.",
+      span: expression.span,
+      hint: "The generated driver holds literals in `MOVE` and `IF` statements and evaluates nothing, so every value in a test has to be written out.",
+      backendProfile: "ibm-enterprise-cobol-zos",
+    }),
+  );
+  return null;
+}
+
+function expectString(
+  literal: ResolvedTestLiteral,
+  width: number,
+  what: string,
+  step: TestStepNode,
+  diagnostics: Diagnostic[],
+): boolean {
+  if (literal.kind !== "string") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TEST-004",
+        severity: "error",
+        message: `${what} is text, and ${literal.text} is a number.`,
+        span: step.span,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return false;
+  }
+  if (literal.value.length > width) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TEST-004",
+        severity: "error",
+        message: `${what} is ${width} characters, and this expects ${literal.value.length}.`,
+        span: step.span,
+        hint: "COBOL truncates the MOVE that fills the interface, so the comparison would be against a value the program could never have sent.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return false;
+  }
+  return true;
+}
+
+function expectAmount(
+  literal: ResolvedTestLiteral,
+  step: TestStepNode,
+  diagnostics: Diagnostic[],
+): boolean {
+  if (literal.kind !== "decimal") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TEST-004",
+        severity: "error",
+        message: "A ledger amount is a number.",
+        span: step.span,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return false;
+  }
+
+  const [integer, fraction = ""] = literal.text.replace(/^[+-]/, "").split(".");
+  if (
+    fraction.length > LEDGER_AMOUNT_SCALE ||
+    integer.length + LEDGER_AMOUNT_SCALE > LEDGER_AMOUNT_DIGITS
+  ) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TEST-004",
+        severity: "error",
+        message: `The ledger interface carries ${LEDGER_AMOUNT_DIGITS} digits with ${LEDGER_AMOUNT_SCALE} after the point, and ${literal.text} does not fit it.`,
+        span: step.span,
+        hint: "`BANK-LEDGER-AMOUNT` is `PIC S9(16)V99 COMP-3`, and the posting the program made was truncated into it before the test could see it.",
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return false;
+  }
+  return true;
+}
+
+/** Whether a `given` value fits the PARM field it is written into. */
+function literalFitsParameter(
+  literal: ResolvedTestLiteral,
+  type: ResolvedType,
+  step: TestStepNode,
+  diagnostics: Diagnostic[],
+): boolean {
+  const refuse = (message: string, hint?: string): false => {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-TEST-004",
+        severity: "error",
+        message,
+        span: step.span,
+        hint: hint ?? null,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+    return false;
+  };
+
+  if (type.kind === "string") {
+    return literal.kind === "string"
+      ? literal.value.length <= type.length ||
+          refuse(
+            `The parameter holds ${type.length} characters, and this supplies ${literal.value.length}.`,
+          )
+      : refuse("The parameter is text, and this supplies a number.");
+  }
+
+  if (type.kind === "decimal" || type.kind === "currency") {
+    if (literal.kind !== "decimal") {
+      return refuse("The parameter is a number, and this supplies text.");
+    }
+    const negative = literal.text.startsWith("-");
+    if (negative && type.kind === "decimal" && type.usage === "unsigned") {
+      return refuse(
+        "The parameter is unsigned, and this supplies a negative number.",
+      );
+    }
+    const [integer, fraction = ""] = literal.text
+      .replace(/^[+-]/, "")
+      .split(".");
+    return fraction.length <= type.scale &&
+      integer.length <= type.precision - type.scale
+      ? true
+      : refuse(
+          `The parameter holds ${type.precision} digits with ${type.scale} after the point, and ${literal.text} does not fit it.`,
+        );
+  }
+
+  if (type.kind === "temporal") {
+    return literal.kind === "decimal"
+      ? true
+      : refuse("A date or a time arrives in the PARM as digits.");
+  }
+
+  return refuse(
+    `A ${type.kind} is not something a PARM carries.`,
+    "A batch step is started with text, and the generated driver writes that text into the parameter list the program reads.",
+  );
 }
 
 /**

@@ -1471,6 +1471,58 @@ export interface CicsStatementNode extends NodeBase {
   key: ExpressionNode | null;
 }
 
+/**
+ * `test postsBothLegs for postAccounts { ... }` — a zUnit test case.
+ *
+ * The one declaration that is not compiled into the program. It describes a run
+ * of the program under IBM's z/OS Automated Unit Testing Framework: what the
+ * step is started with, and what the program must ask the ledger and the audit
+ * trail to do. `packages/zunit` turns it into the three artifacts the runner
+ * needs; the COBOL emitter ignores it entirely.
+ *
+ * The shape is dictated by what a zUnit driver can actually see. It runs in its
+ * own program, so the program under test's WORKING-STORAGE is not reachable:
+ * the observable surface is the LINKAGE the program is entered with and the
+ * calls it makes, and the expectations here are exactly those two things.
+ * `docs/integrations/zunit-integration.md` records where each piece of the
+ * generated artifact comes from.
+ */
+export interface TestDeclarationNode extends NodeBase {
+  kind: "TestDeclaration";
+  /** Names the test, and so the `TEST_<name>` entry point the runner calls. */
+  name: string;
+  /** The entry transaction the case runs, which is the whole program. */
+  transactionName: string;
+  transactionSpan: SourceSpan;
+  /** Kept in source order: the expectations are an ordered sequence. */
+  steps: TestStepNode[];
+}
+
+export type TestStepNode =
+  TestGivenNode | TestExpectLedgerNode | TestExpectAuditNode;
+
+/** `given runDate = 20260805;` — one field of the step's PARM. */
+export interface TestGivenNode extends NodeBase {
+  kind: "TestGiven";
+  parameter: string;
+  value: ExpressionNode;
+}
+
+/** `expect debit("0001", 100.00);` — the next call the ledger receives. */
+export interface TestExpectLedgerNode extends NodeBase {
+  kind: "TestExpectLedger";
+  operation: "debit" | "credit";
+  account: ExpressionNode;
+  amount: ExpressionNode;
+}
+
+/** `expect audit("POSTED", "IDEM-1");` — the next call the audit trail gets. */
+export interface TestExpectAuditNode extends NodeBase {
+  kind: "TestExpectAudit";
+  event: ExpressionNode;
+  correlation: ExpressionNode;
+}
+
 export type DeclarationNode =
   | TypeAliasDeclarationNode
   | RecordDeclarationNode
@@ -1482,6 +1534,7 @@ export type DeclarationNode =
   | ReportDeclarationNode
   | EnumDeclarationNode
   | FileErrorHandlerNode
+  | TestDeclarationNode
   | SqlDeclarationNode;
 
 export interface ProgramNode extends NodeBase {

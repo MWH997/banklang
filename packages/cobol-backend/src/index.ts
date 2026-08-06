@@ -2901,22 +2901,75 @@ function toDdName(fileName: string): string {
   return toCobolName(fileName).replace(/-/g, "").slice(0, 8);
 }
 
+/**
+ * The two runtime interfaces, described once.
+ *
+ * The program declares these groups and passes them to `BANKLEDG` and
+ * `BANKAUDT`; a generated zUnit stub declares the same groups in its LINKAGE
+ * SECTION to read what the program sent. Two descriptions of one layout is how
+ * a stub ends up comparing the account against the first 32 bytes of something
+ * else, so there is one — and `bytes` is here because the zUnit configuration
+ * has to state the parameter's length in the `lengths` attribute, which nothing
+ * checks at run time.
+ */
+export interface RuntimeInterfaceField {
+  name: string;
+  picture: string;
+  /** Bytes the field occupies, which for COMP-3 is not its digit count. */
+  bytes: number;
+}
+
+export interface RuntimeInterface {
+  /** Load module the group is passed to. */
+  module: string;
+  group: string;
+  fields: RuntimeInterfaceField[];
+}
+
+export const RUNTIME_INTERFACES: readonly RuntimeInterface[] = [
+  {
+    module: LEDGER_PROGRAM,
+    group: LEDGER_INTERFACE_GROUP,
+    fields: [
+      { name: LEDGER_OPERATION_FIELD, picture: "PIC X(6)", bytes: 6 },
+      {
+        name: LEDGER_ACCOUNT_FIELD,
+        picture: `PIC X(${LEDGER_ACCOUNT_LENGTH})`,
+        bytes: LEDGER_ACCOUNT_LENGTH,
+      },
+      {
+        name: LEDGER_AMOUNT_FIELD,
+        picture: LEDGER_AMOUNT_PICTURE,
+        // 18 digits packed two to a byte, plus the byte the sign shares.
+        bytes: 10,
+      },
+    ],
+  },
+  {
+    module: AUDIT_PROGRAM,
+    group: AUDIT_INTERFACE_GROUP,
+    fields: [
+      {
+        name: AUDIT_EVENT_FIELD,
+        picture: `PIC X(${AUDIT_EVENT_LENGTH})`,
+        bytes: AUDIT_EVENT_LENGTH,
+      },
+      {
+        name: AUDIT_CORRELATION_FIELD,
+        picture: `PIC X(${AUDIT_CORRELATION_LENGTH})`,
+        bytes: AUDIT_CORRELATION_LENGTH,
+      },
+    ],
+  },
+];
+
 function emitLedgerInterfaceStorage(addLine: (line?: string) => void): void {
-  addLine(`       01  ${LEDGER_INTERFACE_GROUP}.`);
-  addLine(`           05  ${LEDGER_OPERATION_FIELD.padEnd(24)} PIC X(6).`);
-  addLine(
-    `           05  ${LEDGER_ACCOUNT_FIELD.padEnd(24)} PIC X(${LEDGER_ACCOUNT_LENGTH}).`,
-  );
-  addLine(
-    `           05  ${LEDGER_AMOUNT_FIELD.padEnd(24)} ${LEDGER_AMOUNT_PICTURE}.`,
-  );
-  addLine(`       01  ${AUDIT_INTERFACE_GROUP}.`);
-  addLine(
-    `           05  ${AUDIT_EVENT_FIELD.padEnd(24)} PIC X(${AUDIT_EVENT_LENGTH}).`,
-  );
-  addLine(
-    `           05  ${AUDIT_CORRELATION_FIELD.padEnd(24)} PIC X(${AUDIT_CORRELATION_LENGTH}).`,
-  );
+  for (const runtimeInterface of RUNTIME_INTERFACES) {
+    addLine(`       01  ${runtimeInterface.group}.`);
+    for (const field of runtimeInterface.fields) {
+      addLine(`           05  ${field.name.padEnd(24)} ${field.picture}.`);
+    }
+  }
 }
 
 function emitRecordFields(

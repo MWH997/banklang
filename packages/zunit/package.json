@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/zunit",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

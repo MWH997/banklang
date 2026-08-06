@@ -50,6 +50,7 @@ import {
   type IRStatement,
 } from "../../ir/src/index";
 import { parseBankTs } from "../../parser/src/index";
+import { emitZunit, zunitModuleName } from "../../zunit/src/index";
 import { typecheckProgram } from "../../typechecker/src/index";
 import {
   copybookMemberName,
@@ -233,6 +234,8 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runVerify(rest, cwd);
     case "test":
       return runTest(rest, cwd);
+    case "zunit":
+      return runZunit(rest, cwd);
     case "layout":
       return runLayout(rest, cwd);
     case "copybook":
@@ -1025,6 +1028,63 @@ function runTest(args: string[], cwd: string): CliResult {
   };
 }
 
+/**
+ * `bankc zunit <project>` writes the three artifacts a zUnit case is made of.
+ *
+ * Separate from `build` on purpose: what `build` writes is what ships, and a
+ * test case is not part of the program. It is also the one output that has
+ * never been run — see `docs/integrations/zunit-integration.md` — so a project
+ * asks for it rather than receiving it.
+ */
+function runZunit(args: string[], cwd: string): CliResult {
+  const projectPath = requireProjectPath(args, "zunit");
+  if (!projectPath) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: renderHelp(),
+    };
+  }
+
+  const outputRoot = resolveOutputRoot(cwd, args);
+  const compiled = compileProject(projectPath, cwd);
+  if (blockingDiagnostics(compiled).length > 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: renderDiagnostics(blockingDiagnostics(compiled)),
+    };
+  }
+
+  const program = compiled.ir.program as IRProgram;
+  const zunitRoot = join(outputRoot, "zunit");
+  const moduleName = zunitModuleName(program);
+  const result = emitZunit(program, {
+    configurationArtifactPath: join(zunitRoot, `${moduleName}.bzucfg`),
+    driverArtifactPath: join(zunitRoot, `${moduleName}.cbl`),
+    jclArtifactPath: join(zunitRoot, `${moduleName}.jcl`),
+  });
+
+  mkdirSync(zunitRoot, { recursive: true });
+  writeFileSync(result.configurationArtifactPath, result.configuration, "utf8");
+  writeFileSync(result.driverArtifactPath, result.driver, "utf8");
+  writeFileSync(result.jclArtifactPath, result.jcl, "utf8");
+
+  return {
+    exitCode: 0,
+    stdout:
+      [
+        `Wrote ${result.configurationArtifactPath}`,
+        `Wrote ${result.driverArtifactPath}`,
+        `Wrote ${result.jclArtifactPath}`,
+      ].join("\n") + "\n",
+    stderr:
+      result.diagnostics.length > 0
+        ? renderDiagnostics(result.diagnostics)
+        : advisoryDiagnostics(compiled),
+  };
+}
+
 function runLayout(args: string[], cwd: string): CliResult {
   const projectPath = requireProjectPath(args, "layout");
   if (!projectPath) {
@@ -1474,6 +1534,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
         sql: [],
         callTargets: new Map(),
         recordBases: new Map(),
+        tests: [],
       };
   const ir = parsed.program
     ? lowerProgramToIR(typechecked)
@@ -1837,6 +1898,7 @@ function renderHelp(): string {
     "  audit-report <project>",
     "  verify <project>",
     "  test <project>",
+    "  zunit <project>",
     "  layout <project>",
     "  doctor",
     "  copybook import <file>",

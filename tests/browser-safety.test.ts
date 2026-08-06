@@ -30,6 +30,9 @@ const BROWSER_SAFE_PACKAGES = [
   // program needs a file system, and keeping it out of one means the
   // playground could show an inventory of a program somebody pastes in.
   "migration-analysis",
+  // The zUnit generator writes three artifacts as strings and leaves putting
+  // them anywhere to its caller, so it runs wherever the compiler does.
+  "zunit",
 ];
 
 /** Packages allowed to touch the file system and process. */
