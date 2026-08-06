@@ -934,7 +934,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     explanation:
       "A configuration naming no test is one the runner ends having done nothing, with a return code that reads as success. Nothing was run and nothing failed, which is the report a green pipeline is built out of.",
     remediation:
-      "Write `test <name> for <entry transaction> { ... }`, or do not generate a case for this program.",
+      "Write `test <name> for <entry transaction> { ... }`, or do not ask for a case for this program. Nothing is written for one.",
     specReference: "integrations/zunit-integration.md",
     implemented: true,
   },
