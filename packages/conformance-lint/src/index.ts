@@ -59,6 +59,8 @@ const AREA_B_COLUMN = 12;
 
 /** Column 7, the indicator area, as an index into the line. */
 const INDICATOR_INDEX = 6;
+/** Column 7, the indicator area, which no statement may begin in. */
+const INDICATOR_COLUMN = 7;
 
 /** Column 8, where Area A begins, as an index into the line. */
 const AREA_A_INDEX = 7;
@@ -391,6 +393,43 @@ function copiesMqDefinitions(text: string): boolean {
 }
 
 /**
+ * True when the zUnit info block's copybook is in the artifact.
+ *
+ * A generated test case declares `01 AZ-INFO-BLOCK. COPY EQAITERC.`, which is
+ * what IBM's own generator writes and what resolves on z/OS from the IDz
+ * copybook library. The linter reads one artifact at a time and cannot expand a
+ * copybook it does not have, so the fields the driver names are accepted — and
+ * only in an artifact that copies the member defining them.
+ *
+ * Named one by one rather than by a prefix, unlike the MQI's: there are two of
+ * them, and `ITER` is a word general enough that accepting it anywhere would
+ * cost more than it is worth.
+ */
+function copiesZunitDefinitions(text: string): boolean {
+  return /\bCOPY\s+EQAITERC\b/.test(text);
+}
+
+const ZUNIT_INFO_BLOCK_FIELDS = new Set(["ITER", "TC-WORK-AREA"]);
+
+/**
+ * The column a `CBL` or `PROCESS` statement begins in, or null for other lines.
+ *
+ * Read from the whole line rather than from Area B, because the statement may
+ * begin in column 1 — before the sequence number area that ordinary source
+ * reserves.
+ */
+function processStatementColumn(line: string): number | null {
+  const match = /^(\s*)(?:CBL|PROCESS)\s/.exec(line);
+  if (match) {
+    return match[1].length + 1;
+  }
+  // Behind a sequence number, which the Language Reference allows and requires
+  // to begin with a digit.
+  const numbered = /^([0-9]\S{0,5})(\s+)(?:CBL|PROCESS)\s/.exec(line);
+  return numbered ? numbered[1].length + numbered[2].length + 1 : null;
+}
+
+/**
  * The MQI entry points, which the binder resolves out of the MQ stub.
  *
  * They are not in the artifact and they are not one of the runtime programs
@@ -428,8 +467,11 @@ export function lintCobol(
   // Report Writer precompiler's, and the queue manager's copybooks.
   const hasReportSection = /\bREPORT\s+SECTION\s*\./.test(text);
   const hasMqCopybooks = copiesMqDefinitions(text);
+  const hasZunitCopybook = copiesZunitDefinitions(text);
   /** True while inside an `EXEC ... END-EXEC` block, whose text is not COBOL. */
   let inExec = false;
+  /** True once anything but a `PROCESS` statement has been read. */
+  let sawSourceLine = false;
 
   lines.forEach((line, index) => {
     const at = index + 1;
@@ -445,14 +487,36 @@ export function lintCobol(
       );
     }
 
-    // A `CBL` or `PROCESS` statement is compiler-directing rather than source.
-    // The Programming Guide puts it "before the IDENTIFICATION DIVISION header
-    // and before any comment lines", says it "can start in column 1 or after"
-    // when there is no sequence field, and requires it to end at or before
-    // column 72 — which the line-length rule above has already checked. It has
-    // no indicator area and no Area A, so the rest of this does not apply.
-    if (/^(?:CBL|PROCESS)\s/.test(line)) {
+    // A `CBL` or `PROCESS` statement is compiler-directing rather than source,
+    // so it has no indicator area and no Area A and the rest of this does not
+    // apply to it. Its own rules are checked instead.
+    //
+    // The Language Reference: it "can be preceded by a sequence number in
+    // columns 1 through 6", "PROCESS or CBL can begin in column 8 or after; if
+    // a sequence number is not specified, PROCESS or CBL can begin in column 1
+    // or after", it "must end before or at column 72" — which the line-length
+    // rule above has already checked — and it "must be placed before any
+    // comment lines or other compiler-directing statements".
+    const processColumn = processStatementColumn(line);
+    if (processColumn !== null) {
+      if (processColumn === INDICATOR_COLUMN) {
+        report(
+          "process-statement",
+          `PROCESS begins in column ${INDICATOR_COLUMN}, the indicator area; it belongs in column 1 or after, or in column 8 or after behind a sequence number.`,
+          'LR, "PROCESS(CBL) statement"',
+        );
+      }
+      if (sawSourceLine) {
+        report(
+          "process-statement",
+          "PROCESS follows a comment or another statement; it must be placed before any comment lines or other compiler-directing statements.",
+          'LR, "PROCESS(CBL) statement"',
+        );
+      }
       return;
+    }
+    if (line.trim() !== "") {
+      sawSourceLine = true;
     }
 
     const indicator = line[INDICATOR_INDEX] ?? " ";
@@ -612,7 +676,8 @@ export function lintCobol(
         !declared.has(word) &&
         !PROGRAM_TEXT_WORDS.has(word) &&
         !(hasReportSection && REPORT_WRITER_WORDS.has(word)) &&
-        !(hasMqCopybooks && /^MQ[A-Z0-9-]*$/.test(word))
+        !(hasMqCopybooks && /^MQ[A-Z0-9-]*$/.test(word)) &&
+        !(hasZunitCopybook && ZUNIT_INFO_BLOCK_FIELDS.has(word))
       ) {
         report(
           "vocabulary",

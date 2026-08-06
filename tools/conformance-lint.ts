@@ -34,6 +34,7 @@ import { copybookMemberName } from "../packages/cobol-ir/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
+import { emitZunit } from "../packages/zunit/src/index";
 import { exampleProjects } from "./example-projects";
 
 /** Every generated artifact, by where it came from. */
@@ -90,6 +91,20 @@ export function freshArtifacts(cwd = process.cwd()): LintableArtifact[] {
       artifacts.push({
         file: `${project}/(generated)/${copybookMemberName(record.name)}.cpy`,
         text: renderCopybook(record),
+      });
+    }
+    // A generated zUnit case is COBOL and JCL that ships to the same machine,
+    // so it is held to the same rules. It reaches z/OS as a member of the same
+    // library as the program it tests.
+    if (ir.program.tests.length > 0) {
+      const zunit = emitZunit(ir.program);
+      artifacts.push({
+        file: `${project}/(generated)/${zunit.moduleName}.cbl`,
+        text: zunit.driver,
+      });
+      artifacts.push({
+        file: `${project}/(generated)/${zunit.moduleName}.jcl`,
+        text: zunit.jcl,
       });
     }
     void name;

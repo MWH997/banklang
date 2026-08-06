@@ -122,9 +122,92 @@ describe("what the linter refuses", () => {
 
     expect(findings.map((finding) => finding.rule)).toContain("continuation");
   });
+
+  /**
+   * The Language Reference: a `PROCESS` statement "can be preceded by a
+   * sequence number in columns 1 through 6" and "can begin in column 8 or
+   * after; if a sequence number is not specified, PROCESS or CBL can begin in
+   * column 1 or after". Column 7 is the indicator area and is neither.
+   */
+  it("a PROCESS statement in the indicator area", () => {
+    const findings = lintCobol("x.cbl", cobol("      PROCESS NODYNAM"));
+
+    expect(findings.map((finding) => finding.rule)).toContain(
+      "process-statement",
+    );
+    expect(formatFindings(findings)).toContain("column 7");
+  });
+
+  /** It "must be placed before any comment lines or other compiler-directing statements". */
+  it("a PROCESS statement after a comment", () => {
+    const findings = lintCobol(
+      "x.cbl",
+      cobol("      *> A note.", "       PROCESS NODYNAM"),
+    );
+
+    expect(findings.map((finding) => finding.rule)).toContain(
+      "process-statement",
+    );
+  });
 });
 
 describe("what the linter accepts", () => {
+  /**
+   * The compiler options are the compiler's vocabulary rather than COBOL's,
+   * and the statement has no Area A. A generated zUnit driver opens with one.
+   */
+  it("a PROCESS statement and its options", () => {
+    expect(
+      lintCobol(
+        "x.cbl",
+        cobol(
+          "       PROCESS NODLL,NODYNAM,TEST(NOSEP),NOCICS,NOSQL,PGMN(LU),NOSEQ",
+          "       IDENTIFICATION DIVISION.",
+          "       PROGRAM-ID. X.",
+        ),
+        { fragment: true },
+      ),
+    ).toEqual([]);
+  });
+
+  /** The same statement in column 1, which is the other placement allowed. */
+  it("a PROCESS statement in column 1", () => {
+    expect(
+      lintCobol("x.cbl", cobol("PROCESS NODYNAM"), { fragment: true }),
+    ).toEqual([]);
+  });
+
+  /**
+   * `ITER` and `TC-WORK-AREA` are IBM's, from a copybook the linter does not
+   * have. They are accepted in an artifact that copies the member declaring
+   * them, and nowhere else — the same rule the MQI's names get.
+   */
+  it("the zUnit info block's fields, where the artifact copies EQAITERC", () => {
+    expect(
+      lintCobol(
+        "x.cbl",
+        cobol(
+          "       01  AZ-INFO-BLOCK.",
+          "           COPY EQAITERC.",
+          "       01  AZ-GRP-INDEX             PIC 9(8).",
+          "           MOVE 1 TO AZ-GRP-INDEX",
+          "           CALL 'GTMEMRC' USING TC-WORK-AREA OF AZ-INFO-BLOCK",
+        ),
+        { fragment: true },
+      ),
+    ).toEqual([]);
+  });
+
+  it("refuses those same fields where it does not", () => {
+    const findings = lintCobol(
+      "x.cbl",
+      cobol("           MOVE 1 TO TC-WORK-AREA OF AZ-INFO-BLOCK"),
+      { fragment: true },
+    );
+
+    expect(formatFindings(findings)).toContain("TC-WORK-AREA");
+  });
+
   it("a well-formed data description entry", () => {
     expect(
       lintCobol(
