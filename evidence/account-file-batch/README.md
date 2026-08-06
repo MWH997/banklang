@@ -42,10 +42,6 @@ pnpm bankc test examples/account-file-batch
 
 Generated on Node.js 24.
 
-## Related tester notes
-
-- [Banking diagnostics tester notes](../../tester-notes/2026-08-04-banking-diagnostics.md)
-
 ## Notes
 
 Read and write statements are not part of the current subset, so the generated

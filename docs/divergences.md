@@ -1,0 +1,209 @@
+# Divergences
+
+Where GnuCOBOL and IBM Enterprise COBOL disagree, and where BankLang and the
+target disagree. Numbered so they can be cited.
+
+This is the repository's best evidence that its claims are bounded, and it used
+to be buried in `zos/README.md`. Every entry is one of three kinds:
+
+- **Measured** — reproduced, with the reproduction here.
+- **Suspected** — a place the two compilers plausibly differ, not yet checked.
+- **Deliberate** — BankLang not doing what the target could do, on purpose.
+
+Local validation is GnuCOBOL 3.2.0 under `tools/banklang-ibm.conf`. Nothing in
+this repository has been compiled by IBM Enterprise COBOL, and until it has,
+every entry marked "suspected" stays suspected.
+
+---
+
+## D1. `USAGE NATIONAL` inside a group — **measured**
+
+GnuCOBOL 3.2.0 allocates **four bytes per national character inside a group**,
+where Enterprise COBOL holds each in two bytes of UTF-16. Standalone at the 01
+level GnuCOBOL allocates two, which makes it an inconsistency in GnuCOBOL rather
+than a rule.
+
+```cobol
+01  H.
+    05  A2 PIC N(4) USAGE NATIONAL.
+    05  C2 PIC X(4).
+01  FLAT REDEFINES H PIC X(100).
+```
+
+`C2` starts at byte 17 under GnuCOBOL and at byte 9 under Enterprise COBOL.
+
+BankLang emits the Enterprise COBOL width, because Enterprise COBOL is the
+target, and warns `BANK-TYPE-024` on every `national<n>` field to say that local
+validation does not cover it. The conversion between an alphanumeric and a
+national is refused outright: the bytes would differ between the two compilers
+and GnuCOBOL implements neither `NATIONAL-OF` nor `DISPLAY-OF` to make them
+agree.
+
+**This is the most likely thing in this repository to be wrong, and the cheapest
+to check.**
+
+## D2. Report Writer totals a packed field wrongly — **measured**
+
+GnuCOBOL 3.2.0 reads a `COMP-3` operand of a `SUM` clause from the wrong place,
+picking up only its low-order digits. A `PIC S9(7)V99 COMP-3` holding
+1,000,000.00 totals as **zero**; one holding 9,999,999.99 totals as 999.99. The
+same field read by a `SOURCE` clause on the line above prints correctly, so the
+report shows right details under a wrong total.
+
+```cobol
+01  TYPE IS CONTROL FOOTING FINAL.
+    05  LINE PLUS 1.
+        10  COLUMN 1  PIC ZZZ,ZZZ,ZZ9.99 SUM PACKED-AMT.
+        10  COLUMN 20 PIC ZZZ,ZZZ,ZZ9.99 SUM DISPLAY-AMT.
+```
+
+Money is `COMP-3` in every generated program, so every total in every report is
+wrong under the local validator and none of it says anything about z/OS. Small
+amounts survive the truncation and come out right by luck, which is how it went
+unnoticed. `tests/report-writer.test.ts` asserts the divergence directly and
+proves the totals over a `zoned` amount, which GnuCOBOL accumulates correctly.
+
+**Report totals are the first thing to check on z/OS.**
+
+## D3. A report file will not bind to a DD name — **measured**
+
+GnuCOBOL's default `assign_clause` resolves an unquoted `ASSIGN TO <name>` on a
+file carrying `REPORT IS` to report-section storage rather than to the DD name,
+so the output lands in a file named after a printed value — a filename like
+`        0.00`. Compile with `-fassign-clause=external` to bind it. On z/OS the
+DD comes from the JCL and the question does not arise.
+
+## D4. `JSON PARSE` and `XML PARSE` compile and do nothing — **measured**
+
+GnuCOBOL warns `-Wpending` that neither is implemented, then leaves the record
+untouched and raises no exception — so a program reading a payload runs clean
+and processes an empty record. That is the worst shape a divergence can take,
+because every local signal says the program worked.
+
+The local build routes both through the precompiler, which rewrites them into
+calls on `BANKJSON` and `BANKXML` in `runtime/`. **The shipped artifact keeps
+the statement** Enterprise COBOL implements.
+
+The stubs are scans, not parsers: `BANKJSON` reads a quoted name at the top
+level and the scalar after its colon, `BANKXML` reads the next tag and the
+characters between tags. Nesting, arrays, escapes, attributes, namespaces,
+entity references and CDATA are past what either attempts. Every parse carries
+`BANK-TYPE-025` for that reason.
+
+## D5. A `CBL` statement — **measured**
+
+GnuCOBOL reads `CBL` in column 1 as text in the sequence number area and reports
+an invalid indicator in column 7. Every generated program opens with two of
+them, stating the compiler options its behaviour depends on, so every local
+compile goes through the precompiler to have them removed. The shipped artifact
+keeps them.
+
+## D6. A single-letter data name beside `RECORDING MODE` — **measured**
+
+Every generated QSAM `FD` carries `RECORDING MODE IS F` or `V`. GnuCOBOL will
+not then accept `V` as a data name in the same program; Enterprise COBOL will,
+`V` being nowhere in Appendix E's reserved word table. This is the local
+compiler being stricter than the target rather than a construct the target
+refuses, and it only arises for a one-character record or field name.
+
+## D7. `VALUE` on an `EXTERNAL` item — **measured**
+
+Enterprise COBOL honours a `VALUE` clause on an elementary `EXTERNAL` item;
+GnuCOBOL ignores it and leaves the storage at `LOW-VALUES`. Both failure
+registers are `EXTERNAL`, so neither carries a `VALUE` clause and `BANK-MAIN`
+sets both — otherwise `BANK-FAILURE-CODE NOT = SPACES` would be true before
+anything had failed, on one of the two targets only.
+
+## D8. `cobc -x` refuses `PROCEDURE DIVISION USING` — **measured**
+
+"Executable program requested but PROCEDURE/ENTRY has USING clause". A batch
+program that takes entry parameters reads them from the job's PARM, so it has a
+USING clause; a Unix process has no parameter list to pass. z/OS says the same
+thing the other way round, by having the initiator build one before the program
+is entered.
+
+Locally such a program is compiled as a module and driven from a generated
+driver that builds the parameter list. The GnuCOBOL gate compiles it with `-m`.
+
+## D9. `COMP` sizing and `SYNCHRONIZED` — **suspected**
+
+Halfword, fullword and doubleword boundaries, and what `SYNC` skips to reach
+one. BankLang emits IBM's allocation — 1–4 digits in two bytes, 5–9 in four,
+10–18 in eight — and computes slack from it.
+
+## D10. The `COMP-3` sign nibble on an unsigned field — **suspected**
+
+And what `NUMPROC` does to a comparison against one. The generated program is
+compiled `NUMPROC(NOPFD)`, which does not assume a preferred sign.
+
+## D11. Collating sequence — **suspected**
+
+EBCDIC ordering is not ASCII ordering. Any comparison of alphanumerics, any
+`SORT` key, and any `88` level with a `THRU` range orders differently on the two.
+`FEED-STATUS-OK VALUE "00" THRU "09"` is safe — digits are contiguous and in the
+same order in both — but a range over letters is not.
+
+## D12. Sort work datasets and the sort product — **suspected**
+
+The generated job allocates three `SORTWK` datasets, which is customary. Which
+sort product runs, and what it wants, is a site's.
+
+## D13. Reserved word lists — **suspected**
+
+The two are close but not identical. BankLang mangles against the union, so a
+name acceptable to IBM may still be mangled here — which is safe but visible.
+
+---
+
+## Deliberate differences
+
+### D14. `NOSSRANGE`, and a generated bounds check instead
+
+`SSRANGE` would range-check every subscript for free. The generated program
+checks its own and fails the step with a named failure instead, because
+`SSRANGE` abends rather than setting a return code the next step's `COND=` can
+read, and because it is a compile option — a program built without it silently
+loses the checking, where a check in the source cannot be switched off by a JCL
+change.
+
+### D15. No floating point
+
+`COMP-1` and `COMP-2` exist in the target and are not in the language. A bank's
+arithmetic is decimal, and binary floating point cannot represent 0.10. The
+copybook and DCLGEN importers refuse a floating-point column rather than
+approximating it.
+
+### D16. No `ALTER`, no `GO TO` the source can write, no `PERFORM THRU` a range
+
+the source chose
+
+The one `GO TO` in a generated program is the failure path, and it goes to the
+enclosing routine's exit. `ALTER` is not emitted at all.
+
+### D17. Five rounding modes are generated arithmetic
+
+Enterprise COBOL has one rounding phrase and `ROUNDED` is half-up away from
+zero. `HALF_EVEN`, `HALF_DOWN`, `UP`, `CEILING` and `FLOOR` are written out as a
+truncation, the excess that truncation discarded, and a conditional step of one
+unit in the last place. See [numeric-model.md](numeric-model.md).
+
+### D18. No `FILLER`
+
+BankTS has no way to declare bytes nothing names, so a copybook holding one is
+reported rather than imported: the record would be shorter than the copybook by
+that many bytes, which moves every field after it.
+
+### D19. No varying-length string
+
+Db2's `VARCHAR` is a group of two level-49 items, a halfword length and the
+text. There is no BankTS declaration for one, so `bankc dclgen import` reports
+the column.
+
+---
+
+## What closing these looks like
+
+[zos/README.md](../zos/README.md) is the kit: `pnpm zos:kit` writes every
+program, copybook and job in the member names the JCL expects, and
+`RESULTS-TEMPLATE.md` is what to fill in. A finding that contradicts something
+this repository claims is the most valuable thing that exercise can produce.

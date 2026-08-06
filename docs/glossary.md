@@ -56,12 +56,12 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** A durable, named record that a business-significant action occurred, carrying a correlation value that ties it to the originating request.
 
-**Why it matters to BankLang:** `language-spec.md` section 11 requires every transaction to emit at least one audit event with a compile-time constant name. BankLang enforces this with `BANK-AUD-001` and `BANK-AUD-003`, and lowers the event to a call against the audit interface described in [ADR-0003](docs/adr/0003-ledger-and-audit-calling-convention.md). A statically known event name keeps audit trails greppable and stable across releases.
+**Why it matters to BankLang:** `language-reference.md` section 11 requires every transaction to emit at least one audit event with a compile-time constant name. BankLang enforces this with `BANK-AUD-001` and `BANK-AUD-003`, and lowers the event to a call against the audit interface described in [ADR-0003](adr/0003-ledger-and-audit-calling-convention.md). A statically known event name keeps audit trails greppable and stable across releases.
 
 **References:**
 
-- [Banking Safety Specification](banking-safety-spec.md)
-- [BankLang Language Specification](language-spec.md)
+- [Diagnostics](diagnostics.md)
+- [Language reference](language-reference.md)
 
 ## AST / Abstract Syntax Tree
 
@@ -341,11 +341,11 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** An accounting method in which every financial event is recorded as equal and opposite debit and credit entries, so total debits always equal total credits.
 
-**Why it matters to BankLang:** `language-spec.md` section 10 requires debit and credit totals to balance for ledger-posting operations. BankLang checks this as `BANK-LED-001`. Because the compiler does not evaluate expressions, balance is proven structurally by comparing the multiset of debited and credited amount expressions. The check is conservative: it reports what it cannot prove rather than accepting it.
+**Why it matters to BankLang:** `language-reference.md` section 10 requires debit and credit totals to balance for ledger-posting operations. BankLang checks this as `BANK-LED-001`. Because the compiler does not evaluate expressions, balance is proven structurally by comparing the multiset of debited and credited amount expressions. The check is conservative: it reports what it cannot prove rather than accepting it.
 
 **References:**
 
-- [Banking Safety Specification](banking-safety-spec.md)
+- [Diagnostics](diagnostics.md)
 
 ---
 
@@ -422,7 +422,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** A two-character COBOL data item that receives the outcome of each I/O operation on a file, set through the `FILE STATUS` clause of a `SELECT` entry.
 
-**Why it matters to BankLang:** `language-spec.md` section 13 requires file status to be checked. A BankTS `file` declaration binds a status field with its `status` clause, and BankLang reports `BANK-FILE-001` when one is missing, because without it the generated program has nowhere to observe an I/O result.
+**Why it matters to BankLang:** `language-reference.md` section 13 requires file status to be checked. A BankTS `file` declaration binds a status field with its `status` clause, and BankLang reports `BANK-FILE-001` when one is missing, because without it the generated program has nowhere to observe an I/O result.
 
 **References:**
 
@@ -529,11 +529,11 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** A caller-supplied value that uniquely identifies a request, so that repeating the request produces the same effect as performing it once.
 
-**Why it matters to BankLang:** `language-spec.md` section 10 requires every transaction to have an idempotency key, because retries are routine in payment and messaging infrastructure and an unkeyed retry can post an amount twice. BankLang reports `BANK-TXN-001` when a transaction has no parameter named `idempotencyKey` and no record parameter declaring that field.
+**Why it matters to BankLang:** `language-reference.md` section 10 requires every transaction to have an idempotency key, because retries are routine in payment and messaging infrastructure and an unkeyed retry can post an amount twice. BankLang reports `BANK-TXN-001` when a transaction has no parameter named `idempotencyKey` and no record parameter declaring that field.
 
 **References:**
 
-- [Banking Safety Specification](banking-safety-spec.md)
+- [Diagnostics](diagnostics.md)
 
 ---
 
@@ -766,7 +766,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** The proportion of source-language symbols that have a source map entry resolving to a real location in the generated artifact, together with the set of symbols that do not.
 
-**Why it matters to BankLang:** Traceability is an audit claim, so it needs a measurement rather than an assumption. `bankc verify` reports coverage for every module, record, field, and function, and fails when an entry is missing or when an entry points at a line range that does not contain the generated COBOL name it describes. The corresponding diagnostics are `BANK-GEN-001` through `BANK-GEN-006` in `banking-safety-spec.md`.
+**Why it matters to BankLang:** Traceability is an audit claim, so it needs a measurement rather than an assumption. `bankc verify` reports coverage for every module, record, field, and function, and fails when an entry is missing or when an entry points at a line range that does not contain the generated COBOL name it describes. The corresponding diagnostics are `BANK-GEN-001` through `BANK-GEN-006` in `diagnostics.md`.
 
 **References:**
 
@@ -871,8 +871,8 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **References:**
 
-- [BankLang Language Specification](language-spec.md)
-- [ADR-0003](docs/adr/0003-ledger-and-audit-calling-convention.md)
+- [Language reference](language-reference.md)
+- [ADR-0003](adr/0003-ledger-and-audit-calling-convention.md)
 
 ---
 

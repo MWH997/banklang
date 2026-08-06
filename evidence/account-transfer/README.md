@@ -22,11 +22,6 @@ This bundle captures the generated artifacts for the account-transfer example.
 - `maps/source-map.json`
 - `source/main.bank.ts`
 
-## Related tester notes
-
-- [Foundation tester notes](../../tester-notes/2026-07-06-banklang-foundation.md)
-- [Copybook tester notes](../../tester-notes/2026-07-06-copybook-generation.md)
-
 ## Notes
 
 No IBM validation claim is made here. The bundle records local deterministic

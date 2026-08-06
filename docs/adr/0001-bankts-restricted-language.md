@@ -24,5 +24,5 @@ explicit types, fixed layouts, and deterministic control flow.
 
 ## References
 
-- [BankLang Language Specification](../../language-spec.md)
+- [BankLang Language Specification](../language-reference.md)
 - [TypeScript official site](https://www.typescriptlang.org/)

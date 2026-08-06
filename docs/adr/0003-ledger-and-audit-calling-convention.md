@@ -60,6 +60,6 @@ copybook on the receiving side.
 
 ## References
 
-- [BankLang Language Specification](../../language-spec.md)
-- [Banking Safety Specification](../../banking-safety-spec.md)
+- [BankLang Language Specification](../language-reference.md)
+- [Banking Safety Specification](../diagnostics.md)
 - [IBM Enterprise COBOL CALL statement](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=statements-call-statement)
