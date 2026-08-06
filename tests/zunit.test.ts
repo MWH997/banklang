@@ -225,6 +225,24 @@ describe("the driver", () => {
     expect(GENERATED.driver).not.toContain("DECIMAL-POINT");
   });
 
+  /**
+   * A test name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
+   * modification of no characters — an abend under SSRANGE and undefined
+   * without it. IBM's own generated cases carry the same exposure; this one
+   * does not.
+   */
+  it("never reference-modifies zero characters of the test name", () => {
+    const guards = GENERATED.driver
+      .split("\n")
+      .filter((line) => line.includes("IF AZ-TEST-LEN = 0")).length;
+    const uses = GENERATED.driver
+      .split("\n")
+      .filter((line) => line.includes("INSPECT AZ-TEST TALLYING")).length;
+
+    expect(guards).toBe(uses);
+    expect(guards).toBeGreaterThan(0);
+  });
+
   it("fits reference format", () => {
     for (const line of GENERATED.driver.split("\n")) {
       expect(line.length).toBeLessThanOrEqual(72);
