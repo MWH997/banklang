@@ -51,6 +51,14 @@ in order.
 
 ### Added
 
+- Add `pnpm sbom:release`, producing a CycloneDX 1.7 bill of materials with a
+  licence for every component, and attach it to the release —
+  [launch tickets](docs/launch-tickets.md).
+- Add `pnpm build:vsix`, packaging the VS Code extension and reading the archive
+  back to check what is in it.
+- Add a release workflow that runs the whole of CI, refuses an unsigned tag,
+  attests what it built through Sigstore, and publishes the changelog's own
+  section as the release notes.
 - Give the playground the site's header, a one-line explanation of the panes,
   and a versioned share link — [launch tickets](docs/launch-tickets.md).
 - Link every example README and every runnable documentation block into the
@@ -103,6 +111,14 @@ in order.
 
 ### Fixed
 
+- Write a licence into the bill of materials for the ten proprietary components
+  pnpm's generator drops, which were the only ten it said nothing about —
+  [launch tickets](docs/launch-tickets.md).
+- Number the VS Code extension `0.9.0` rather than `0.1.0`. It bundles the
+  compiler, and two versions moving apart let the editor report a diagnostic the
+  command line does not.
+- Report the project's version from the language server, which had answered
+  `0.1.0` on every `initialize` since it was written.
 - Report a failed clipboard write in the playground, rather than leaving the
   Copy button silent.
 - Move the zUnit integration page out of `docs/integrations/` and drop the

@@ -1,5 +1,15 @@
 import type { Diagnostic as BankDiagnostic } from "../../ast/src/index";
 import { compile } from "../../compiler/src/index";
+/**
+ * What the server tells the editor it is.
+ *
+ * A literal, because this file is bundled by esbuild and shipped inside the VS
+ * Code extension — there is no `package.json` beside it at runtime to read. It
+ * had said `0.1.0` since it was written, which was wrong from the first release
+ * and wrong in the one place a user looks when a diagnostic disagrees with the
+ * command line. `tests/vscode-extension.test.ts` holds it to the root manifest.
+ */
+export const SERVER_VERSION = "0.9.0";
 import { explainDiagnostic } from "../../diagnostics/src/index";
 import { formatBankTs } from "../../formatter/src/index";
 import { parseBankTs } from "../../parser/src/index";
@@ -150,7 +160,10 @@ export class LanguageServer {
         documentFormattingProvider: true,
         documentSymbolProvider: true,
       },
-      serverInfo: { name: "banklang-language-server", version: "0.1.0" },
+      serverInfo: {
+        name: "banklang-language-server",
+        version: SERVER_VERSION,
+      },
     };
   }
 
