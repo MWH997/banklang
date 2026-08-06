@@ -45,6 +45,29 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DOCS = join(ROOT, "docs");
 
 /** Every markdown file under `docs/`, as a path relative to `docs/`. */
+/**
+ * Documents that stay in the repository and off the site.
+ *
+ * These are working papers. The audits are this project's own criticism of
+ * itself and the ticket list is the plan for fixing it — both belong in the
+ * repository, where somebody evaluating the engineering can read them in the
+ * context of the commits that answered them, and neither is written for a
+ * visitor who arrived from a link.
+ *
+ * The site rendered them anyway, listed them in `sitemap.xml`, and pointed
+ * search engines at them: `robots.txt` allows everything. So a reader searching
+ * for a phrase met the pre-publication security checklist and a paragraph that,
+ * read on its own, sounded like the resolution of a doubt about who owned the
+ * repository. Found by the 2026-08-07 audit.
+ *
+ * Excluded from the site, not hidden. Every one of them is a file in `docs/`
+ * that GitHub renders, and the README links the audits by name.
+ */
+export const UNPUBLISHED = [
+  /^audit-\d{4}-\d{2}-\d{2}\.md$/,
+  /^launch-tickets\.md$/,
+];
+
 export function docFiles(): string[] {
   const found: string[] = [];
   const walk = (directory: string): void => {
@@ -53,7 +76,10 @@ export function docFiles(): string[] {
       if (entry.isDirectory()) {
         walk(path);
       } else if (entry.name.endsWith(".md")) {
-        found.push(relative(DOCS, path));
+        const file = relative(DOCS, path);
+        if (!UNPUBLISHED.some((pattern) => pattern.test(file))) {
+          found.push(file);
+        }
       }
     }
   };
@@ -185,8 +211,11 @@ export function rewriteLink(href: string, fromFile: string): string {
   const inside = relative(DOCS, target);
   const escapes = inside.startsWith("..");
 
-  if (escapes) {
-    // Out of `docs/` — the repository is the only place it still exists.
+  // Out of `docs/`, or in it and not published — either way the repository is
+  // the only place the reader can still open it. A link to a page the site does
+  // not render is a 404 on our own domain, which is a worse answer than sending
+  // somebody to the file on GitHub where it does exist.
+  if (escapes || UNPUBLISHED.some((pattern) => pattern.test(inside))) {
     const fromRepoRoot = relative(ROOT, target);
     return `https://github.com/MWH997/banklang/blob/main/${fromRepoRoot}${suffix}`;
   }
