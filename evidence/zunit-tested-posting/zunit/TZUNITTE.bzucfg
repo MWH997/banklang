@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<runner:RunnerConfiguration xmlns:runner="http://www.ibm.com/zUnit/4.0.0.0/TestRunner" id="d012252c-2493-4992-8419-78b0a40d97ba">
+  <runner:options contOnTestCaseError="false" contOnTestCaseFail="true" contOnTestError="false" contOnTestFail="true" fileIOCapture="compat"/>
+  <runner:testCase moduleName="TZUNITTE">
+    <test name="POSTSBOTHLEGS" entry="TEST_POSTSBOTHLEGS" type="BTCH" init="BZU_INIT" term="BZU_TERM" program="ZUNITTES" skipTest="false" resetFile="true" stubCall="true" dummy="false" noPlaybackData="true"/>
+  </runner:testCase>
+  <runner:intercept module="ZUNITTES" stub="false" lengths="73" parmtype="I" retcode="true" exist="false"/>
+  <runner:intercept module="BANKLEDG" stub="true" lengths="48" parmtype="I" retcode="false" exist="false"/>
+  <runner:intercept module="BANKAUDT" stub="true" lengths="96" parmtype="I" retcode="false" exist="false"/>
+  <runner:playback moduleName="ZUNITTES"/>
+  <runner:fileAttributes hlqDdName="AZUHLQ"/>
+</runner:RunnerConfiguration>

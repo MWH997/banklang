@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "phase": "verify",
+  "project": "examples/zunit-tested-posting/src/main.bank.ts",
+  "checks": [
+    {
+      "name": "Parse",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "Typecheck",
+      "status": "passed",
+      "details": "0 diagnostics"
+    },
+    {
+      "name": "COBOL emit",
+      "status": "passed",
+      "details": "evidence/zunit-tested-posting/cobol/ZUNITTES.cbl"
+    },
+    {
+      "name": "Copybook emit",
+      "status": "passed",
+      "details": "0 copybook file(s)"
+    },
+    {
+      "name": "Source map emit",
+      "status": "passed",
+      "details": "evidence/zunit-tested-posting/maps/source-map.json"
+    },
+    {
+      "name": "JCL emit",
+      "status": "passed",
+      "details": "evidence/zunit-tested-posting/jcl/ZUNITTES.jcl"
+    },
+    {
+      "name": "Audit artifacts",
+      "status": "passed",
+      "details": "evidence/zunit-tested-posting/audit"
+    },
+    {
+      "name": "Deterministic regeneration",
+      "status": "passed",
+      "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+    },
+    {
+      "name": "Source map coverage",
+      "status": "passed",
+      "details": "2/2 traced symbols, all entries anchored in the generated COBOL."
+    },
+    {
+      "name": "GnuCOBOL validation",
+      "status": "passed",
+      "details": "Local cobc validation passed."
+    },
+    {
+      "name": "Audit schema",
+      "status": "passed",
+      "details": "version 1, backend profile ibm-enterprise-cobol-zos"
+    }
+  ],
+  "artifacts": [
+    "evidence/zunit-tested-posting/cobol/ZUNITTES.cbl",
+    "evidence/zunit-tested-posting/maps/source-map.json",
+    "evidence/zunit-tested-posting/jcl/ZUNITTES.jcl",
+    "evidence/zunit-tested-posting/audit/diagnostics.json",
+    "evidence/zunit-tested-posting/audit/source-map.json",
+    "evidence/zunit-tested-posting/audit/decimal-analysis.json",
+    "evidence/zunit-tested-posting/audit/transaction-analysis.json",
+    "evidence/zunit-tested-posting/audit/copybook-layout.json",
+    "evidence/zunit-tested-posting/audit/generated-artifacts.json",
+    "evidence/zunit-tested-posting/audit/verification-report.md",
+    "evidence/zunit-tested-posting/audit/verification-report.json",
+    "evidence/zunit-tested-posting/audit/validation-matrix.md",
+    "evidence/zunit-tested-posting/audit/gnucobol-validation.md"
+  ],
+  "deterministicRegeneration": {
+    "name": "Deterministic regeneration",
+    "status": "passed",
+    "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
+  },
+  "sourceMapCoverage": {
+    "expectedSymbolCount": 2,
+    "coveredSymbolCount": 2,
+    "diagnostics": []
+  },
+  "gnucobolValidation": {
+    "backendRequirements": [],
+    "precompiled": false,
+    "precompiledArtifact": "evidence/zunit-tested-posting/gnucobol/cobol/ZUNITTES-PRE.cbl",
+    "backendProfile": "gnucobol-local",
+    "sourceArtifact": "examples/zunit-tested-posting/src/main.bank.ts",
+    "sourceArtifactHash": "e956d5884443bb70dfa500e17a97bd9ebf5831f8cc29dd58d194ac7b75668902",
+    "generatedArtifact": "evidence/zunit-tested-posting/gnucobol/cobol/ZUNITTES.cbl",
+    "generatedArtifactHash": "e009ab87bb6127ec39f6871d2e5251c894d95018e50022fe6cb0ed0e052acd67",
+    "sourceMapArtifact": "evidence/zunit-tested-posting/gnucobol/maps/source-map.json",
+    "sourceMapArtifactHash": "1c528b351eb781cc4ff734fd5d6d9f3d8e2291b1da868ebbbe162b4bf930ccef",
+    "compilerExecutable": "cobc",
+    "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
+    "compilerCommand": "cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/zunit-tested-posting/gnucobol/copybooks evidence/zunit-tested-posting/gnucobol/cobol/ZUNITTES-PRE.cbl -o evidence/zunit-tested-posting/gnucobol/bin/zunittes",
+    "compilerExitCode": 0,
+    "compilerStatus": "passed",
+    "compilerOutput": "ld: warning: -undefined suppress is deprecated\nld: warning: -undefined suppress is deprecated",
+    "defaultDialectStatus": "passed",
+    "defaultDialectOutput": "ld: warning: -undefined suppress is deprecated\nld: warning: -undefined suppress is deprecated",
+    "dialectsDiverge": false,
+    "validatedWithGnucobol": true,
+    "knownBackendGaps": [
+      "This local profile covers the account-transfer subset only.",
+      "GnuCOBOL validation is local smoke testing, not IBM Enterprise COBOL proof.",
+      "Db2, CICS, and VSAM sections are not exercised by this example."
+    ]
+  },
+  "notes": [
+    "This report records the current deterministic compiler pipeline for the supported subset.",
+    "IBM Enterprise COBOL validation is not claimed here.",
+    "GnuCOBOL validation is recorded separately in dist/audit/gnucobol-validation.md when available."
+  ]
+}

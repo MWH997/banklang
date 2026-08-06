@@ -40,6 +40,7 @@ const GENERATED_DIRECTORIES = [
   "jcl",
   "maps",
   "source",
+  "zunit",
 ];
 
 /**
@@ -98,6 +99,20 @@ export function refreshEvidence(cwd = process.cwd()): string[] {
     if (result.exitCode !== 0) {
       throw new Error(
         `bankc test ${project} failed:\n${result.stderr}${result.stdout}`,
+      );
+    }
+
+    // The zUnit case, for a project that declares tests. `bankc test` does not
+    // write one — what `build` writes is what ships, and a test case is not
+    // part of the program — so it is asked for separately here, because a
+    // bundle is what a reader checks the claims against and the claim is that
+    // the case is generated.
+    const zunit = runBankc(["zunit", project, "--out", target], cwd);
+    // Most examples declare no tests, and the generator refuses to write a
+    // configuration naming none. That is the answer for those, not a failure.
+    if (zunit.exitCode !== 0 && !zunit.stderr.includes("BANK-TEST-007")) {
+      throw new Error(
+        `bankc zunit ${project} failed:\n${zunit.stderr}${zunit.stdout}`,
       );
     }
 

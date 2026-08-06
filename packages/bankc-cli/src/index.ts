@@ -1065,6 +1065,19 @@ function runZunit(args: string[], cwd: string): CliResult {
     jclArtifactPath: join(zunitRoot, `${moduleName}.jcl`),
   });
 
+  // A configuration naming no test is one the runner ends having done nothing,
+  // with a return code that reads as success. Nothing is written for one.
+  const refusals = result.diagnostics.filter(
+    (entry) => entry.severity === "error",
+  );
+  if (refusals.length > 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: renderDiagnostics(refusals),
+    };
+  }
+
   mkdirSync(zunitRoot, { recursive: true });
   writeFileSync(result.configurationArtifactPath, result.configuration, "utf8");
   writeFileSync(result.driverArtifactPath, result.driver, "utf8");
@@ -1078,10 +1091,7 @@ function runZunit(args: string[], cwd: string): CliResult {
         `Wrote ${result.driverArtifactPath}`,
         `Wrote ${result.jclArtifactPath}`,
       ].join("\n") + "\n",
-    stderr:
-      result.diagnostics.length > 0
-        ? renderDiagnostics(result.diagnostics)
-        : advisoryDiagnostics(compiled),
+    stderr: advisoryDiagnostics(compiled),
   };
 }
 

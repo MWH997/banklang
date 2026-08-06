@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "examples/zunit-tested-posting/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "examples/zunit-tested-posting/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 26
+      },
+      "artifact": "cobol/ZUNITTES.cbl",
+      "targetStartLine": 34,
+      "targetEndLine": 35,
+      "category": "module",
+      "symbol": "ZunitTestedPosting"
+    },
+    {
+      "sourceFile": "examples/zunit-tested-posting/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 13,
+        "column": 2
+      },
+      "artifact": "cobol/ZUNITTES.cbl",
+      "targetStartLine": 95,
+      "targetEndLine": 109,
+      "category": "transaction",
+      "symbol": "postOne"
+    }
+  ]
+}

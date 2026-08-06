@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdtempSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -407,12 +407,17 @@ test aNameFarTooLongToBeAGeneratedCobolWord for go {
     ).toContain("BANK-TEST-006");
   });
 
-  it("says so when a program asked for a case declares no tests", () => {
+  /**
+   * A configuration naming no test is one the runner ends having done nothing,
+   * with a return code that reads as success — which is what a green pipeline
+   * is built out of. Nothing is written for one.
+   */
+  it("refuses a case for a program that declares no tests", () => {
     const program = programOf(PREAMBLE);
+    const refused = emitZunit(program).diagnostics;
 
-    expect(emitZunit(program).diagnostics.map((entry) => entry.id)).toContain(
-      "BANK-TEST-007",
-    );
+    expect(refused.map((entry) => entry.id)).toContain("BANK-TEST-007");
+    expect(refused.every((entry) => entry.severity === "error")).toBe(true);
   });
 
   it("accepts the test that started all this", () => {
@@ -435,6 +440,23 @@ describe("bankc zunit", () => {
     expect(result.stdout).toContain("TACCOUNT.bzucfg");
     expect(result.stdout).toContain("TACCOUNT.cbl");
     expect(result.stdout).toContain("TACCOUNT.jcl");
+  });
+
+  it("writes nothing for a project with no tests", () => {
+    const dir = mkdtempSync(join(tmpdir(), "bankc-zunit-empty-"));
+    const projectRoot = join(dir, "project");
+    spawnSync("mkdir", ["-p", join(projectRoot, "src")]);
+    writeFileSync(
+      join(projectRoot, "src", "main.bank.ts"),
+      PROGRAM.split("test postsBothLegs")[0],
+      "utf8",
+    );
+
+    const result = runBankc(["zunit", projectRoot, "--out", join(dir, "out")]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("BANK-TEST-007");
+    expect(existsSync(join(dir, "out", "zunit"))).toBe(false);
   });
 
   it("names the module the way IBM's editor does", () => {

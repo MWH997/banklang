@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifacts": [
+    "evidence/zunit-tested-posting/cobol/ZUNITTES.cbl",
+    "evidence/zunit-tested-posting/maps/source-map.json",
+    "evidence/zunit-tested-posting/jcl/ZUNITTES.jcl",
+    "evidence/zunit-tested-posting/audit/diagnostics.json",
+    "evidence/zunit-tested-posting/audit/source-map.json",
+    "evidence/zunit-tested-posting/audit/decimal-analysis.json",
+    "evidence/zunit-tested-posting/audit/transaction-analysis.json",
+    "evidence/zunit-tested-posting/audit/copybook-layout.json",
+    "evidence/zunit-tested-posting/audit/generated-artifacts.json",
+    "evidence/zunit-tested-posting/audit/verification-report.md",
+    "evidence/zunit-tested-posting/audit/verification-report.json",
+    "evidence/zunit-tested-posting/audit/validation-matrix.md",
+    "evidence/zunit-tested-posting/audit/gnucobol-validation.md"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "transactions": [
+    {
+      "name": "postOne",
+      "parameters": [
+        "account",
+        "amount",
+        "idempotencyKey"
+      ],
+      "ledgerPostings": [
+        {
+          "operation": "debit",
+          "account": "account",
+          "amount": "amount"
+        },
+        {
+          "operation": "credit",
+          "account": "SUSPENSE",
+          "amount": "amount"
+        }
+      ],
+      "auditEvents": [
+        {
+          "event": "POSTED",
+          "correlation": "idempotencyKey"
+        }
+      ]
+    }
+  ],
+  "status": "analyzed"
+}

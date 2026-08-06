@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "artifact": "evidence/zunit-tested-posting/audit/copybook-layout.md",
+  "reports": []
+}
