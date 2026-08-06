@@ -349,7 +349,7 @@ function printDeclaration(
         ? `: ${declaration.resultTypeName}`
         : "";
       printer.push(
-        `${declaration.form === "cursor" ? "cursor" : "sql"} ${declaration.name}(${printParameters(declaration.parameters)})${declaration.hold ? " hold" : ""}${result} {${trailing}`,
+        `${declaration.form === "cursor" ? "cursor" : "sql"} ${declaration.name}(${printParameters(declaration.parameters)})${declaration.hold ? " hold" : ""}${declaration.rowset === null ? "" : ` rowset ${declaration.rowset}`}${result} {${trailing}`,
       );
       for (const line of declaration.text.split("\n")) {
         printer.push(line.trim().length > 0 ? `${INDENT}${line.trim()}` : "");

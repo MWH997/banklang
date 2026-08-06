@@ -1154,6 +1154,19 @@ export function emitCobol(
           `       01  ${cursorRowCounter(statement.name).padEnd(20)} PIC 9(9) COMP.`,
         );
       }
+      if (statement.form === "cursor" && statement.rowset !== null) {
+        // How many rows the last FETCH actually returned, and where in the
+        // rowset the loop is. Both are the program's own counters rather than
+        // host variables, so they sit outside the declare section — but the
+        // arrays the rows land in are host variables and go inside one.
+        addLine(
+          `       01  ${rowsetCountName(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+        );
+        addLine(
+          `       01  ${rowsetIndexName(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+        );
+        emitRowsetArrays(statement, program, addLine);
+      }
     }
   }
 
@@ -7586,6 +7599,82 @@ function cursorRowCounter(cursorName: string): string {
   return cobolWord(toCobolName(cursorName), "ROWS");
 }
 
+/** How many rows the last rowset FETCH returned, taken from `SQLERRD(3)`. */
+function rowsetCountName(cursorName: string): string {
+  return cobolWord(toCobolName(cursorName), "SET-ROWS");
+}
+
+/** Where in the current rowset the loop is. */
+function rowsetIndexName(cursorName: string): string {
+  return cobolWord(toCobolName(cursorName), "SET-IX");
+}
+
+/**
+ * The columns a rowset FETCH reads, in the order the cursor's own INTO names
+ * them.
+ *
+ * Taken from the `INTO` the author wrote rather than from the record's field
+ * order, because those two can differ and it is the SELECT list the columns
+ * arrive in. A row landing in the wrong field is the defect this whole compiler
+ * is about.
+ */
+function rowsetFields(declaration: IRSql): string[] {
+  return [
+    ...(declaration.cursorInto ?? "").matchAll(/:([A-Za-z_][A-Za-z0-9_]*)/g),
+  ].map((match) => match[1]);
+}
+
+/** The `INTO` of a rowset FETCH: one host-variable array per column. */
+function rowsetIntoClause(declaration: IRSql): string {
+  return rowsetFields(declaration)
+    .map((field) => `:${rowsetArrayName(declaration.name, field)}`)
+    .join(", ");
+}
+
+/** The host-variable array one column of a rowset lands in. */
+function rowsetArrayName(cursorName: string, fieldName: string): string {
+  return cobolWord(toCobolName(cursorName), "A", toCobolFieldName(fieldName));
+}
+
+/**
+ * The host-variable arrays a rowset FETCH writes into.
+ *
+ * One array per column, each an elementary item with its own `OCCURS`, which
+ * is what the Application Programming and SQL Guide's syntax diagram for a
+ * COBOL host-variable array shows — a level in the range 2 to 48 with a
+ * picture and an `OCCURS` of 1 to 32767. A group with the `OCCURS` on the
+ * group instead is a host structure array, which a multiple-row FETCH does not
+ * take, and Db2 answers `UNDECLARED HOST VARIABLE ARRAY`.
+ *
+ * They are their own declare section for the same reason every other host
+ * variable is in one: Db2 requires it, and requires that nothing else be.
+ */
+function emitRowsetArrays(
+  declaration: IRSql,
+  program: IRProgram,
+  addLine: (line?: string) => void,
+): void {
+  const record = program.records.find(
+    (entry) => entry.name === declaration.resultRecordName,
+  );
+  if (!record || declaration.rowset === null) {
+    return;
+  }
+
+  addLine(`           EXEC SQL BEGIN DECLARE SECTION END-EXEC.`);
+  addLine(`       01  ${cobolWord(toCobolName(declaration.name), "ROWSET")}.`);
+  for (const field of record.fields) {
+    if (field.renames || field.reserved) {
+      continue;
+    }
+    addLine(
+      `           05  ${rowsetArrayName(declaration.name, field.name).padEnd(24)} ${formatCobolType(field.type)}`,
+    );
+    addLine(`               OCCURS ${declaration.rowset} TIMES.`);
+  }
+  addLine(`           EXEC SQL END DECLARE SECTION END-EXEC.`);
+}
+
 /**
  * Rewrites host variables from BankTS names to the COBOL fields they resolve
  * to: parameters become dedicated host-variable storage, and result fields
@@ -7662,7 +7751,7 @@ function emitCursorDeclarations(
     }
     emitExecSql(
       [
-        `DECLARE ${toCobolName(declaration.name)} CURSOR${declaration.hold ? " WITH HOLD" : ""} FOR`,
+        `DECLARE ${toCobolName(declaration.name)} CURSOR${declaration.hold ? " WITH HOLD" : ""}${declaration.rowset === null ? "" : " WITH ROWSET POSITIONING"} FOR`,
         ...rewriteHostVariables(declaration.cursorSelect, declaration, null)
           .split("\n")
           .map((line) => `    ${line.trim()}`),
@@ -7710,20 +7799,37 @@ function emitCursorLoopStatement(
   emitExecSql([`OPEN ${cursor}`], addLine, indent);
   addLine(`${indent}MOVE 0 TO ${counter}`);
   addLine(`${indent}PERFORM UNTIL ${counter} >= ${statement.limit}`);
-  emitExecSql(
-    [
-      `FETCH ${cursor}`,
-      `INTO ${rewriteHostVariables(declaration.cursorInto ?? "", declaration, row)}`,
-    ],
-    addLine,
-    `${indent}    `,
-  );
-  // A negative SQLCODE is an error, not an end. `+100` is the only "no more
-  // rows"; `-911` is a deadlock the thread lost, `-904` a resource that was not
-  // available, `-805` a package that was never bound. Leaving the loop on one
-  // of those and carrying on processes a partial result set as though it were
-  // the whole one — which for a settlement run is a day half posted, reported
-  // as a day posted.
+
+  const rowset = declaration.rowset;
+  const body = (level: number): void => {
+    if (inTransaction) {
+      emitTransactionBody(statement.body, addLine, level);
+    } else {
+      emitStatement(statement.body, addLine, level, resultName);
+    }
+  };
+
+  if (rowset === null) {
+    emitExecSql(
+      [
+        `FETCH ${cursor}`,
+        `INTO ${rewriteHostVariables(declaration.cursorInto ?? "", declaration, row)}`,
+      ],
+      addLine,
+      `${indent}    `,
+    );
+  } else {
+    emitExecSql(
+      [
+        `FETCH NEXT ROWSET FROM ${cursor}`,
+        `FOR ${rowset} ROWS`,
+        `INTO ${rowsetIntoClause(declaration)}`,
+      ],
+      addLine,
+      `${indent}    `,
+    );
+  }
+
   // A negative SQLCODE is an error, not an end. `+100` is the only "no more
   // rows"; `-911` is a deadlock the thread lost, `-904` a resource that was not
   // available, `-805` a package that was never bound. Leaving the loop on one
@@ -7741,14 +7847,47 @@ function emitCursorLoopStatement(
   addLine(`${indent}        MOVE 12 TO ${RETURN_CODE_FIELD}`);
   addLine(`${indent}        MOVE "SQL-FETCH-FAILED" TO ${FAILURE_CODE_FIELD}`);
   addLine(`${indent}    END-IF`);
-  addLine(`${indent}    IF SQLCODE NOT = 0`);
-  addLine(`${indent}        EXIT PERFORM`);
-  addLine(`${indent}    END-IF`);
-  addLine(`${indent}    ADD 1 TO ${counter}`);
-  if (inTransaction) {
-    emitTransactionBody(statement.body, addLine, indentLevel + 4);
+
+  if (rowset === null) {
+    addLine(`${indent}    IF SQLCODE NOT = 0`);
+    addLine(`${indent}        EXIT PERFORM`);
+    addLine(`${indent}    END-IF`);
+    addLine(`${indent}    ADD 1 TO ${counter}`);
+    body(indentLevel + 4);
   } else {
-    emitStatement(statement.body, addLine, indentLevel + 4, resultName);
+    const rows = rowsetCountName(declaration.name);
+    const index = rowsetIndexName(declaration.name);
+    addLine(`${indent}    IF SQLCODE < 0`);
+    addLine(`${indent}        EXIT PERFORM`);
+    addLine(`${indent}    END-IF`);
+    // `SQLERRD(3)` is how many rows the FETCH returned, which on the last
+    // rowset is fewer than were asked for. The Application Programming and SQL
+    // Guide is explicit that `+100` arrives *with* that last partial rowset —
+    // "when the last row has been retrieved, the program must still process
+    // the rows in the last rowset through that last row" — so the rows are
+    // processed first and the `+100` is acted on at the bottom of the loop.
+    // Leaving on the `+100` where a single-row fetch would is a batch that
+    // silently drops up to one rowset of work off the end of every run.
+    addLine(`${indent}    MOVE SQLERRD(3) TO ${rows}`);
+    addLine(`${indent}    IF ${rows} = 0`);
+    addLine(`${indent}        EXIT PERFORM`);
+    addLine(`${indent}    END-IF`);
+    addLine(`${indent}    PERFORM VARYING ${index} FROM 1 BY 1`);
+    addLine(
+      `${indent}        UNTIL ${index} > ${rows} OR ${counter} >= ${statement.limit}`,
+    );
+    for (const field of rowsetFields(declaration)) {
+      addLine(
+        `${indent}        MOVE ${rowsetArrayName(declaration.name, field)} (${index}) TO`,
+      );
+      addLine(`${indent}            ${toCobolFieldName(field)} OF ${row}`);
+    }
+    addLine(`${indent}        ADD 1 TO ${counter}`);
+    body(indentLevel + 8);
+    addLine(`${indent}    END-PERFORM`);
+    addLine(`${indent}    IF SQLCODE = 100`);
+    addLine(`${indent}        EXIT PERFORM`);
+    addLine(`${indent}    END-IF`);
   }
   addLine(`${indent}END-PERFORM`);
   // The bound stopping the loop is a result set the program did not finish

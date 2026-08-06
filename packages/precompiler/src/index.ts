@@ -415,6 +415,17 @@ export function precompile(cobol: string): PrecompileResult {
   // statement after it and make a scripted outcome name the wrong one.
   let sqlStatements = 0;
 
+  // Every name declared with an `OCCURS`, which is what a Db2 host-variable
+  // array is. Read from the source rather than passed in, because this module
+  // takes COBOL text and knows nothing about the compiler that wrote it.
+  const arrayHostVariables = new Set(
+    [
+      ...cobol.matchAll(
+        /^.{6}[ -]\s*\d\d\s+([A-Z][A-Z0-9-]*)[^.]*?\bOCCURS\b/gim,
+      ),
+    ].map((match) => match[1].toUpperCase()),
+  );
+
   const usesSql = /^\s*EXEC\s+SQL\b/im.test(cobol);
   const usesCics = /^\s*EXEC\s+CICS\b/im.test(cobol);
   // A commarea is storage the caller owns and CICS makes addressable before the
@@ -575,7 +586,15 @@ export function precompile(cobol: string): PrecompileResult {
         output.push(...translateCursorDeclaration(body, indent));
       } else {
         sqlStatements += 1;
-        output.push(...translateSql(body, indent, terminated, sqlStatements));
+        output.push(
+          ...translateSql(
+            body,
+            indent,
+            terminated,
+            sqlStatements,
+            arrayHostVariables,
+          ),
+        );
       }
     } else {
       cicsBlocks += 1;
@@ -822,8 +841,19 @@ function translateSql(
   indent: string,
   terminated: boolean,
   statementNumber: number,
+  /** Names declared with an `OCCURS`, which is what a host-variable array is. */
+  arrayHostVariables: ReadonlySet<string>,
 ): string[] {
-  const hostVariables = extractHostVariables(body);
+  const hostVariables = extractHostVariables(body).map((reference) =>
+    // A host-variable array is passed to the real precompiler's generated call
+    // by address; here it is passed by its first element, because a COBOL
+    // `CALL ... USING` of a name with an `OCCURS` and no subscript is a
+    // compile error. Nothing is lost by it: the local `DSNHLI` writes no host
+    // variables at all, so what this call proves is that the operands resolve
+    // and are the right types, and the first element is the same type as the
+    // rest. Recorded as a divergence.
+    arrayHostVariables.has(reference) ? `${reference} (1)` : reference,
+  );
   const operands = ["SQLCA", SQL_STATEMENT_FIELD, ...hostVariables];
 
   return [

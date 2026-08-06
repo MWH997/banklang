@@ -65,10 +65,12 @@ sounding impressive:
   `vendor-docs/`. Writing one from the shape of the examples in a blog post is
   exactly how `ROUNDED MODE IS NEAREST-EVEN` got emitted for two years, so it is
   not written at all.
-- **Db2 is shallow in four specific ways**: no multi-row `FETCH`, no isolation
-  level on a statement, no savepoints, and no `LOCK TABLE`. `WITH HOLD` was the
-  fifth and is now `cursor ... hold`, because a batch that commits inside its
-  own cursor loop needs it and the alternative is `-501` halfway through.
+- **Db2's depth is now there, and three of the five were never missing.**
+  BankLang does not parse SQL, so isolation levels, savepoints and `LOCK TABLE`
+  always worked — what was missing was a test, a rule, and a page saying so.
+  `WITH HOLD` and multi-row `FETCH` are real additions (`cursor ... hold`,
+  `cursor ... rowset n`). What remains genuinely absent is scrollable cursors,
+  `GET DIAGNOSTICS`, and dynamic SQL — the last on purpose (`BANK-SQL-002`).
 - **`bankc analyse` reads rather than compiles.** It is a count of what is in
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.
