@@ -38,7 +38,7 @@ cases IBM's editor produced**, published in public repositories:
 | [`retirementCalculator/application-conf/Cobol.properties`](https://github.com/rbsmall/retirementCalculator) | `cobol_compileDebugParms=TEST` — the program under test is compiled with `TEST` |
 
 Two values in the generated configuration are **inferred** rather than observed.
-They are named as such in [divergences.md](../divergences.md), D20 and D21, with
+They are named as such in [divergences.md](divergences.md), D20 and D21, with
 the fallback written down for each.
 
 ---
@@ -228,21 +228,21 @@ generated driver under GnuCOBOL's default dialect and under
 statements, procedure pointers and all.
 
 **That evidence is narrower than it sounds.** `COPY EQAITERC` resolves locally
-to [`runtime/zunit/EQAITERC.cpy`](../../runtime/zunit/EQAITERC.cpy), a stand-in
+to [`runtime/zunit/EQAITERC.cpy`](../runtime/zunit/EQAITERC.cpy), a stand-in
 declaring the two fields the driver names — because IBM's own copybook is not
 here. What the compile establishes is that the syntax is accepted and every name
 resolves. It establishes nothing about the info block's layout.
 
 **No generated case has been run.** Not locally — there is no runner here — and
-not on z/OS, because [zos/README.md](../../zos/README.md) has no `RESULTS.md`
-yet. This is the "compiled" grade in [evidence/GRADES.md](../../evidence/GRADES.md)
+not on z/OS, because [zos/README.md](../zos/README.md) has no `RESULTS.md`
+yet. This is the "compiled" grade in [evidence/GRADES.md](../evidence/GRADES.md)
 and not the "executed" one, and the two inferred values in D20 and D21 are the
 kind of thing a single real run would settle.
 
 ## Related pages
 
-- [divergences.md](../divergences.md) — D20 and D21, the inferred values
-- [verification.md](../verification.md) — what each grade of evidence means
-- [examples/zunit-tested-posting](../../examples/zunit-tested-posting/README.md)
+- [divergences.md](divergences.md) — D20 and D21, the inferred values
+- [verification.md](verification.md) — what each grade of evidence means
+- [examples/zunit-tested-posting](../examples/zunit-tested-posting/README.md)
 - [ZUnit overview](https://www.ibm.com/docs/en/developer-for-zos/15.0.x?topic=applications-zos-automated-unit-testing-framework-zunit)
 - [Integrating IBM zUnit Testing into a CI/CD pipeline](https://www.ibm.com/support/pages/system/files/inline-files/Integrating%20IBM%20zUnit%20Testing%20into%20an%20open%20and%20modern%20CICD%20pipeline%20-%20v1.2_0.pdf)

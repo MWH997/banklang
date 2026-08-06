@@ -10,7 +10,7 @@
  * into the driver, which is the "supplied" rather than the "recorded" route.
  *
  * Every shape here was taken from test cases IBM's own generator produced,
- * which are quoted and cited in `docs/integrations/zunit-integration.md`. The
+ * which are quoted and cited in `docs/zunit.md`. The
  * parts that are inferred rather than observed are marked in that page and in
  * `docs/divergences.md`; there are two of them, and neither is guessed at
  * silently.

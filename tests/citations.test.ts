@@ -143,13 +143,41 @@ function entries(): { term: string; body: string }[] {
 describe("the glossary", () => {
   const all = entries();
 
-  it("defines the terms it did before the AI-model entries were removed", () => {
-    // A floor, not a target. Seven entries were removed in the 2026-08-06 pass
-    // because they defined this project's own model-delegation habits — "the assistant
-    // is the orchestrator", a model quota, a model as a workhorse — in the
-    // canonical glossary of a COBOL compiler. Nothing in the repository used
-    // them. If this count falls further, something else went with them.
-    expect(all.length).toBeGreaterThanOrEqual(91);
+  it("still defines the mainframe terms it was cut down to", () => {
+    // A floor, not a target, and it has moved once. The file held 98 entries
+    // and 48 KB. Seven went because they defined this project's own AI model
+    // delegation — "the assistant is the orchestrator", a model quota, a model as a
+    // workhorse — in the canonical glossary of a COBOL compiler. Forty-three
+    // more went under D3: how this repository is written, general computing a
+    // reader of a compiler already knows, and adjacent IBM products that are
+    // roadmap notes rather than terms. What is left is what a reader of the
+    // generated COBOL, the JCL or the diagnostics needs, and it should not
+    // shrink further without a reason.
+    expect(all.length).toBeGreaterThanOrEqual(47);
+  });
+
+  it("defines the COBOL a reader of the generated output meets", () => {
+    // The point of the cut was to leave the terms that earn their place. If one
+    // of these goes missing, the file has been trimmed past what it is for.
+    const terms = new Set(all.map((entry) => entry.term));
+    for (const required of [
+      "COMP-3 / Packed decimal",
+      "PIC / PICTURE clause",
+      "OCCURS",
+      "REDEFINES",
+      "88-level condition name",
+      "File status",
+      "DD name",
+      "JCL / Job Control Language",
+      "SQLCA",
+      "EIBRESP",
+      "EBCDIC",
+      "VSAM",
+    ]) {
+      expect(terms, `the glossary no longer defines ${required}`).toContain(
+        required,
+      );
+    }
   });
 
   it("keeps every entry to the four parts it requires of itself", () => {

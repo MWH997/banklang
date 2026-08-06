@@ -104,7 +104,7 @@ believes.
 4. **The test framework for the source is thin.** `test <name> for <entry
 transaction>` becomes a zUnit case that runs on z/OS, and what it can assert
    is the PARM the step is started with and the calls the program makes — see
-   `docs/integrations/zunit-integration.md`. Anything beyond that, you test the
+   `docs/zunit.md`. Anything beyond that, you test the
    generated program the way you test any COBOL program.
 
 5. **Nobody on your team knows the language.** That is a real cost and it does

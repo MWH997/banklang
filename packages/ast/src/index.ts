@@ -1484,7 +1484,7 @@ export interface CicsStatementNode extends NodeBase {
  * own program, so the program under test's WORKING-STORAGE is not reachable:
  * the observable surface is the LINKAGE the program is entered with and the
  * calls it makes, and the expectations here are exactly those two things.
- * `docs/integrations/zunit-integration.md` records where each piece of the
+ * `docs/zunit.md` records where each piece of the
  * generated artifact comes from.
  */
 export interface TestDeclarationNode extends NodeBase {

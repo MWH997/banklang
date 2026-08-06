@@ -2646,5 +2646,5 @@ runner intercepts the modules that program calls — so the observable surface i
 the LINKAGE the step is started with and the calls it makes, and nothing else.
 The program's `WORKING-STORAGE` is not reachable, and a test that appeared to
 assert on it would be reporting a pass nobody checked. See
-[integrations/zunit-integration.md](integrations/zunit-integration.md) for where
+[zunit.md](zunit.md) for where
 every shape in the generated artifacts came from.

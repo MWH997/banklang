@@ -127,7 +127,7 @@ Db2, in the order a batch meets them:
 `bankc zunit`. It was blocked on not having IBM's schema, and what unblocked it
 was test cases IBM's own generator produced, published in public repositories:
 every shape in the three artifacts is copied from one of those and cited in
-[integrations/zunit-integration.md](integrations/zunit-integration.md). Two
+[zunit.md](zunit.md). Two
 values are inferred rather than observed and say so, in D20 and D21. No
 generated case has been run — that is what the z/OS kit is for.
 
