@@ -110,9 +110,41 @@ number means:
   text alone. A changed message is a test failure that says nothing about
   whether the rule works.
 
-It takes roughly three quarters of an hour on four cores, so it is not in the
-default `pnpm test`. `incremental` is on, and the second run over unchanged code
-is quick.
+It takes roughly an hour on eight cores, so it is not in the default
+`pnpm test`. `incremental` is on, and the second run over unchanged code is
+quick.
+
+#### What it scored, and what that is worth
+
+Run on 2026-08-06, 4,585 mutants, 56 minutes:
+
+| Package           | Score | Covered | Killed | Survived | No coverage |
+| ----------------- | ----- | ------- | ------ | -------- | ----------- |
+| typechecker       | 70.24 | 79.18   | 3,003  | 792      | 484         |
+| semantic-analyzer | 64.65 | 70.33   | 192    | 81       | 24          |
+| **All**           | 69.88 | 78.59   | 3,195  | 873      | 508         |
+
+Two numbers, because they answer different questions. **Covered** is the share
+of mutants some test reached and killed — how good the tests are at what they
+look at. **Total** counts the 508 mutants no test in
+`vitest.mutation.config.ts` reaches at all, which is the more useful number and
+the lower one.
+
+The survivors cluster: 483 conditional expressions, 99 logical operators, 74
+block statements. A large share of those are in diagnostic construction —
+message text, hint text, `span` selection — where an inverted condition changes
+what a message says rather than whether the program is refused. That is a real
+limit of the measurement here rather than an excuse: it means the number
+understates how well the _rules_ are tested and overstates how much of the
+remainder is worth chasing.
+
+**It found a defect in a rule written an hour before it ran.** `BANK-SQL-008`
+tested `operation === "commit"`, and mutating that to `true` survived the entire
+suite — nothing distinguished a commit in a cursor loop from a rollback. The
+manual settles which is right: "A ROLLBACK statement closes all open cursors. A
+COMMIT statement ... closes cursors that are not declared WITH HOLD." So the
+rule was too narrow, not the test, and `hold` saves a commit and saves nothing
+from a rollback. That is the whole argument for running this.
 
 ### 2.4 Fuzz tests
 
