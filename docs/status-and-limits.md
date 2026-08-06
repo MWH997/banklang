@@ -59,14 +59,14 @@ sounding impressive:
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but
   it has not been through marketplace review.
-- **No zUnit test generation.** A zUnit test case is three artifacts — an XML
-  configuration, a generated COBOL driver, and a playback file — and IBM's
-  schema for the first is not in `vendor-docs/` and its documentation pages
-  refuse automated retrieval. What is known is written down in
-  [integrations/zunit-integration.md](integrations/zunit-integration.md),
-  including the four things that would have to be true to build it. Writing one
-  from a fragment in a community article is how `ROUNDED MODE IS NEAREST-EVEN`
-  got emitted for two years.
+- **No zUnit case has been run.** `bankc zunit` writes the three artifacts and
+  the driver compiles under GnuCOBOL in both dialects, which is narrower
+  evidence than it sounds: `COPY EQAITERC` resolves to a stand-in declaring the
+  two fields the driver names, because IBM's copybook is not here. Two values in
+  the configuration are inferred rather than observed and are named as such
+  (D20, D21). What a case can assert is also narrow by construction — the PARM
+  the step is started with, and the calls the program makes — because those are
+  what a driver running in its own program can see.
 - **Db2's depth is now there, and three of the five were never missing.**
   BankLang does not parse SQL, so isolation levels, savepoints and `LOCK TABLE`
   always worked — what was missing was a test, a rule, and a page saying so.

@@ -12,6 +12,7 @@ CI integration, and editor support.
 | `bankc build <project>`       | COBOL, copybooks, JCL, source map, audit bundle    |
 | `bankc verify <project>`      | Determinism and source-map coverage                |
 | `bankc test <project>`        | check, build, verify, plus local `cobc` validation |
+| `bankc zunit <project>`       | zUnit test case: configuration, driver, and job    |
 | `bankc fmt <project>`         | Format source; `--check` to verify only            |
 | `bankc explain [id]`          | Explain a diagnostic, or list the catalogue        |
 | `bankc config <project>`      | Show the resolved configuration                    |

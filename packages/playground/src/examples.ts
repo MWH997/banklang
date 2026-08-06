@@ -158,6 +158,12 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "Step four. Control breaks written by hand with LINAGE pagination, and the last branch total that has no successor to trigger it.",
     order: 22,
   },
+  "zunit-tested-posting": {
+    title: "A program with a test case",
+    blurb:
+      "A test written next to the program, in the same language, which becomes a zUnit case that runs on z/OS and compiles to nothing here.",
+    order: 23,
+  },
 };
 
 function idFromPath(path: string): string {

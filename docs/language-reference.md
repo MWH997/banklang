@@ -2581,3 +2581,56 @@ debitAccount -> DEBIT-ACCOUNT
 ```
 
 Conflicts are resolved with stable suffixes derived from source position and symbol table order, not randomness.
+
+## 16. Tests
+
+A `test` declaration describes a run of the program under IBM's z/OS Automated
+Unit Testing Framework. It is the one declaration that compiles to nothing: what
+`bankc build` writes is byte for byte what it would write with the tests
+deleted, and `bankc zunit` is what turns them into the three artifacts a zUnit
+case is made of.
+
+```
+test postsBothLegs for postOne {
+  given account = "0001234567890123";
+  given amount = 100.00;
+  given idempotencyKey = "IDEM-0001";
+  expect debit("0001234567890123", 100.00);
+  expect credit("SUSPENSE", 100.00);
+  expect audit("POSTED", "IDEM-0001");
+}
+```
+
+`test`, `given` and `expect` are matched in position rather than reserved, so
+all three stay usable as field and parameter names — copybooks are full of
+`TEST-FLAG`.
+
+**`for`** names the entry transaction, which under zUnit is the whole program.
+Naming anything else is `BANK-TEST-001`, and a CICS transaction or an IMS
+program is `BANK-TEST-002`: neither is started the way a batch case starts a
+program.
+
+**`given`** supplies one scalar parameter of that transaction, which is one
+field of the job's PARM. A record parameter is refused (`BANK-TEST-003`) — it is
+a buffer the program fills from a file, so there is nothing for a caller to
+supply.
+
+**`expect`** names the calls the program must make to the ledger and the audit
+trail, **in order**. The generated case checks each call against the expectation
+in that position and fails a run that made fewer or more.
+
+Every value is a literal (`BANK-TEST-004`). The generated driver holds them in
+`MOVE` and `IF` statements and evaluates nothing.
+
+Test names are letters and digits, at most 25 of them, and unique
+(`BANK-TEST-005`, `BANK-TEST-006`): each becomes a `TEST_<NAME>` entry point in
+one load module, and the runner picks a test by matching the name.
+
+What a test may say is decided by what a zUnit driver can see. It runs in its
+own program — it enters the program under test through its entry point and the
+runner intercepts the modules that program calls — so the observable surface is
+the LINKAGE the step is started with and the calls it makes, and nothing else.
+The program's `WORKING-STORAGE` is not reachable, and a test that appeared to
+assert on it would be reporting a pass nobody checked. See
+[integrations/zunit-integration.md](integrations/zunit-integration.md) for where
+every shape in the generated artifacts came from.
