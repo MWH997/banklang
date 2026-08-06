@@ -53,8 +53,16 @@ export function fitCobolWord(
       }
     }
     if (longest === -1) {
-      // Every segment is already at the floor. Nothing readable is left to give
-      // up, so the name is cut to length rather than emitted over it.
+      // Every segment is already at the floor. Cutting the tail would take the
+      // suffix off, and the suffix is what tells a routine from its parameter
+      // cell, its result field and its exit paragraph — so a long enough
+      // function name gave all four the same 30-character word, and the
+      // program declared it twice and performed the wrong one. Segments come
+      // out of the middle instead, where a long name carries least, and the
+      // first and the last are kept.
+      while (segments.length > 2 && segments.join("-").length > limit) {
+        segments.splice(Math.floor(segments.length / 2), 1);
+      }
       return segments.join("-").slice(0, limit).replace(/-+$/, "");
     }
     segments[longest] = segments[longest].slice(0, floor);
@@ -907,10 +915,16 @@ export function decimalPicture(
 ): string {
   const integerDigits = precision - scale;
   const sign = usage === "unsigned" ? "" : "S";
+  // `decimal<2, 2>` has no integer digits, and `9(0)` is not a picture: the
+  // compiler answers "number or constant in parentheses must be greater than
+  // zero". `SV99` is what a value entirely below the decimal point is written
+  // as — a rate, a fraction — and it was unreachable from any hand-written
+  // fixture, because every one of them had at least one integer digit.
+  const wholePart = integerDigits > 0 ? `9(${integerDigits})` : "";
   const digits =
     scale === 0
-      ? `${sign}9(${integerDigits})`
-      : `${sign}9(${integerDigits})V${"9".repeat(scale)}`;
+      ? `${sign}${wholePart}`
+      : `${sign}${wholePart}V${"9".repeat(scale)}`;
 
   switch (usage) {
     case "packed":

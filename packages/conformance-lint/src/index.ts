@@ -625,7 +625,114 @@ export function lintCobol(
 
   if (!options.fragment) {
     findings.push(...unresolvedCalls(file, text, options.knownPrograms ?? []));
+    findings.push(...duplicateDeclarations(file, lines, hasReportSection));
   }
+
+  return findings;
+}
+
+/**
+ * Two things in one program declared under the same name.
+ *
+ * The rule the compiler cannot check for itself. Every generated name comes
+ * from a source name through an abbreviation, and a long enough function name
+ * gave its own paragraph, its parameter cell, its result field and its exit
+ * paragraph the same thirty-character word: the program declared it twice and
+ * performed the wrong one, and every static check the compiler had passed. What
+ * `IGYCRCTL` says is "redefinition of X", and this is that rule read off the
+ * text rather than derived from the emitter's intentions.
+ *
+ * Compared under the path that qualifies them, because that is COBOL's own
+ * rule: a reference has to be unique or uniquely qualifiable, so two `05
+ * ACCOUNT-ID`s under two different `01`s are two names a program can tell apart
+ * and two under the same `01` are not. `FILLER` is exempt, because it is not a
+ * name at all.
+ */
+function duplicateDeclarations(
+  file: string,
+  lines: string[],
+  hasReportSection: boolean,
+): ConformanceFinding[] {
+  const findings: ConformanceFinding[] = [];
+  const seen = new Map<string, number>();
+  /** The groups a data description entry is currently inside, outermost first. */
+  let path: { level: number; name: string }[] = [];
+  let section = "";
+  let inExec = false;
+
+  lines.forEach((line, index) => {
+    if (isCommentLine(line) || line.trim() === "") {
+      return;
+    }
+    const content = line.slice(AREA_A_INDEX);
+    if (/\bEXEC\s+(SQL|CICS|DLI)\b/.test(content)) {
+      inExec = true;
+    }
+    if (inExec) {
+      if (/\bEND-EXEC\b/.test(content)) {
+        inExec = false;
+      }
+      return;
+    }
+
+    const sectionHeader = /^\s*([A-Z][A-Z0-9-]*)\s+SECTION\s*\./.exec(content);
+    if (sectionHeader) {
+      section = sectionHeader[1];
+      path = [];
+      return;
+    }
+    // A contained program starts a namespace of its own.
+    if (/^\s*PROGRAM-ID\./.test(content)) {
+      seen.clear();
+      section = "";
+      path = [];
+      return;
+    }
+
+    const declaration = /^\s*(\d\d)\s+([A-Z][A-Z0-9-]*)/.exec(content);
+    const paragraph = /^ {0,3}([A-Z][A-Z0-9-]*)\.\s*$/.exec(content);
+    const name = declaration?.[2] ?? paragraph?.[1];
+    if (!name || name === "FILLER") {
+      return;
+    }
+    // In a REPORT SECTION the word after a level number is a Report Writer
+    // clause — `05 LINE PLUS 1`, `10 COLUMN 32` — rather than a name anybody
+    // chose, so it repeats by design.
+    if (hasReportSection && REPORT_WRITER_WORDS.has(name)) {
+      return;
+    }
+    // A level-66 renames a run that is already declared, and a level-88 is a
+    // condition name on the item above it; neither is a second declaration of
+    // the item's own name.
+    if (declaration && (declaration[1] === "66" || declaration[1] === "88")) {
+      return;
+    }
+
+    let key: string;
+    if (declaration) {
+      const level = Number(declaration[1]);
+      // Everything at this level or below it has ended.
+      path = path.filter((entry) => entry.level < level);
+      key = `${section}/${path.map((entry) => entry.name).join(".")}/${name}`;
+      path.push({ level, name });
+    } else {
+      // A paragraph name is unique across the whole procedure division: a
+      // `PERFORM` names it with nothing to qualify it by.
+      key = name;
+    }
+    const earlier = seen.get(key);
+    if (earlier !== undefined) {
+      findings.push({
+        file,
+        line: index + 1,
+        rule: "duplicate-name",
+        message: `${name} is already declared at line ${earlier}. The compiler answers "redefinition of ${name}".`,
+        citation: 'LR, "User-defined words"',
+      });
+      return;
+    }
+    seen.set(key, index + 1);
+  });
 
   return findings;
 }
