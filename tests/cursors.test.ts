@@ -400,6 +400,52 @@ ${commit}
     expect(ids).not.toContain("BANK-SQL-008");
   });
 
+  /**
+   * A rollback is not a commit, and `hold` does not save it.
+   *
+   * The Application Programming and SQL Guide: "A ROLLBACK statement closes all
+   * open cursors. A COMMIT statement ... closes cursors that are not declared
+   * WITH HOLD and leaves open those cursors that are declared WITH HOLD." The
+   * CICS section says it again — "SYNCPOINT ROLLBACK closes all cursors".
+   *
+   * This pair exists because mutation testing found it. Replacing
+   * `operation === "commit"` with `true` in the rule survived the whole suite,
+   * which meant nothing distinguished the two verbs — and the correct answer
+   * turned out to be that the rule was too narrow rather than the test.
+   */
+  it("refuses a rollback inside the loop even when the cursor is held", () => {
+    const ids = compile(program(" hold ", "    rollback;")).diagnostics.map(
+      (entry) => entry.id,
+    );
+
+    expect(ids).toContain("BANK-SQL-008");
+  });
+
+  it("says a rollback closes every cursor, not just an unheld one", () => {
+    const message = compile(
+      program(" hold ", "    rollback;"),
+    ).diagnostics.find((entry) => entry.id === "BANK-SQL-008");
+
+    expect(message?.message).toContain("rolled back");
+    expect(message?.hint).toContain("held or not");
+  });
+
+  it("refuses a rollback over an unheld cursor too", () => {
+    const ids = compile(program(" ", "    rollback;")).diagnostics.map(
+      (entry) => entry.id,
+    );
+
+    expect(ids).toContain("BANK-SQL-008");
+  });
+
+  /** Neither verb in the loop is the ordinary case, and it stays clean. */
+  it("allows a loop that ends no unit of work", () => {
+    expect(
+      compile(program(" ", "    totals.rowsSeen = totals.rowsSeen;"))
+        .diagnostics,
+    ).toEqual([]);
+  });
+
   /** A commit after the loop closes a cursor that is already closed. */
   it("allows a commit outside the loop either way", () => {
     const result = compile(`module Held2;

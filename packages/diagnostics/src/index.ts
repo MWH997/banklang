@@ -840,11 +840,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   },
   {
     id: "BANK-SQL-008",
-    title: "A commit inside a loop over a cursor that will not survive it",
+    title: "A unit of work ended inside a loop over the cursor it closes",
     explanation:
-      'Db2\'s Application Programming and SQL Guide: "A held cursor does not close after a commit operation. A cursor that is not held closes after a commit operation." A long batch has to commit inside its own cursor loop — otherwise the log fills and the locks accumulate until nothing else can read the table — and doing that over a cursor without `WITH HOLD` closes it. The next `FETCH` answers `-501`, cursor not open, having already processed part of the result set and committed it.',
+      'Db2\'s Application Programming and SQL Guide draws the line exactly: "A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes cursors that are not declared WITH HOLD and leaves open those cursors that are declared WITH HOLD." A long batch has to commit inside its own cursor loop — otherwise the log fills and the locks accumulate until nothing else can read the table — and doing that over a cursor without `WITH HOLD` closes it. A rollback closes it whether it is held or not. Either way the next `FETCH` answers `-501`, cursor not open, having already processed and committed part of the result set.',
     remediation:
-      "Declare the cursor `hold`, which emits `DECLARE ... CURSOR WITH HOLD FOR`, or move the commit out of the loop.",
+      "For a commit, declare the cursor `hold`, which emits `DECLARE ... CURSOR WITH HOLD FOR`, or move the commit out of the loop. For a rollback, only moving it out will do.",
     specReference: "language-reference.md section 12",
     implemented: true,
   },

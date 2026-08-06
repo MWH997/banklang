@@ -1420,6 +1420,19 @@ because there is no reading under which the program is right: either the commit
 does not belong in the loop, or the cursor needs `hold`, and the author knows
 which.
 
+**A rollback is not a commit, and `hold` does not save it.** The same manual:
+"A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes
+cursors that are not declared WITH HOLD and leaves open those cursors that are
+declared WITH HOLD." Under CICS it says it again — "SYNCPOINT ROLLBACK closes
+all cursors". So a `rollback;` inside a cursor loop is `BANK-SQL-008` whether
+the cursor is held or not, and the only fix is to move it out.
+
+`hold` is also not available everywhere. The manual: "You cannot use DECLARE
+CURSOR...WITH HOLD in message processing programs (MPP) and message-driven batch
+message processing (BMP). Each message is a new user for Db2." The compiler does
+not know which kind of IMS region a program will run in, so it does not refuse
+one — this is a thing to know rather than a thing it checks.
+
 Holding a cursor is not free. Db2 does not close a held cursor at a syncpoint —
 the same manual says "Close all cursors that are declared with the WITH HOLD
 option before each sync point. Db2 does not automatically close them" — and a

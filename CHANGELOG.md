@@ -70,7 +70,7 @@ end of.
 - **Sixty random valid programs**, generated on boundaries a person does not choose: names at 29, 30 and 31 characters, every rounding mode, precisions and scales at the `ARITH(COMPAT)` edge, tables at one occurrence and at five hundred. Each has to compile clean, pass the conformance linter and be accepted by `cobc`. It found `PIC S9(0)V99` for a `decimal<2, 2>`, and a function name long enough to give its paragraph, its parameter cell, its result field and its exit paragraph one thirty-character word.
 - **`duplicate-name`** in the conformance linter: two things in one program declared under the same name, compared under the path that qualifies them. What `IGYCRCTL` reports as "redefinition of X", read off the text rather than derived from the emitter's intentions.
 - **Meta-tests.** No statement kind may be written once in the whole suite; every diagnostic catalogued as implemented must be named by a test; the evidence grades are counted into `evidence/GRADES.md`. They found five catalogued rules nothing provoked, two CICS commands with one test each, and a key on a `rewriteFile` accepted silently.
-- **`pnpm test:mutation`** — Stryker against the typechecker and the semantic analyser, the two packages that decide whether a program is refused.
+- **`pnpm test:mutation`** — Stryker against the typechecker and the semantic analyser, the two packages that decide whether a program is refused. 4,585 mutants, 69.88% overall and 78.59% of what the tests reach, with the counts and what they are worth in `docs/verification.md`. It found a defect in a rule written an hour before it ran: `BANK-SQL-008` tested for a commit, and mutating that test to `true` survived the whole suite, which meant nothing distinguished a commit in a cursor loop from a rollback.
 
 ### Added — reading COBOL that already exists
 
@@ -88,7 +88,9 @@ end of.
 
 ### Added — Db2
 
-- **`cursor ... hold`** emits `DECLARE ... CURSOR WITH HOLD FOR`, and `BANK-SQL-008` refuses a commit inside a loop over a cursor that is not held. A long batch has to commit inside its own loop, and without `WITH HOLD` the next `FETCH` answers `-501` having already committed part of the result set.
+- **`cursor ... hold`** emits `DECLARE ... CURSOR WITH HOLD FOR`, and **`cursor ... rowset n`** emits `WITH ROWSET POSITIONING` with a `FETCH ... FOR n ROWS` into a host-variable array per column — processing the last partial rowset before acting on the `+100` that arrives with it.
+- **`BANK-SQL-008`** refuses a unit of work ended inside the loop over the cursor it closes. The manual draws the line: a `ROLLBACK` closes every open cursor, a `COMMIT` closes the ones that are not held. So `hold` saves a commit and saves nothing from a rollback, and either way the next `FETCH` answers `-501` having already committed part of the result set.
+- **`BANK-SQL-009`** refuses a raw `COMMIT` or `ROLLBACK` written as SQL, which routes around `BANK-SQL-004` and the restart rules. `ROLLBACK TO SAVEPOINT` is left alone, because IMS and CICS allow it.
 
 ### Documentation
 

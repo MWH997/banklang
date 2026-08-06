@@ -140,18 +140,22 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
 }
 
 /**
- * A commit inside a cursor loop, over a cursor that will not survive it.
+ * A commit or a rollback inside a cursor loop, over a cursor that will not
+ * survive it.
  *
- * Db2's Application Programming Guide is unambiguous: "A held cursor does not
- * close after a commit operation. A cursor that is not held closes after a
- * commit operation." So a batch that commits inside its own loop — which is
- * what a long run has to do, to stop the log filling and the locks
- * accumulating — finds its cursor closed on the next `FETCH`, which answers
- * `-501`.
+ * The two are not the same and the Application Programming and SQL Guide is
+ * exact about the difference: "A ROLLBACK statement closes all open cursors. A
+ * COMMIT statement ... closes cursors that are not declared WITH HOLD and
+ * leaves open those cursors that are declared WITH HOLD." So `hold` saves a
+ * commit and saves nothing from a rollback — and under CICS the manual says the
+ * same again, that "SYNCPOINT ROLLBACK closes all cursors".
+ *
+ * Either way the next `FETCH` answers `-501`, cursor not open, after the loop
+ * has already processed and committed part of the result set.
  *
  * An error rather than a warning, because there is no reading under which the
- * program is right: either the commit does not belong in the loop or the cursor
- * needs `hold`, and the author knows which.
+ * program is right: either the statement does not belong in the loop or the
+ * cursor needs `hold`, and for a rollback only the first is available.
  */
 function checkHeldCursors(
   transaction: IRTransaction,
@@ -163,27 +167,36 @@ function checkHeldCursors(
       .map((entry) => [entry.name, entry.hold]),
   );
 
-  return flattenStatements(transaction.body.statements)
-    .filter(
-      (statement) =>
-        statement.kind === "CursorLoopStatement" &&
-        held.get(statement.cursorName) === false &&
-        flattenStatements(statement.body.statements).some(
-          (inner) =>
-            inner.kind === "UnitOfWorkStatement" &&
-            inner.operation === "commit",
-        ),
-    )
-    .map((statement) =>
+  return flattenStatements(transaction.body.statements).flatMap((statement) => {
+    if (statement.kind !== "CursorLoopStatement") {
+      return [];
+    }
+    const isHeld = held.get(statement.cursorName) === true;
+    const closes = flattenStatements(statement.body.statements).find(
+      (inner) =>
+        inner.kind === "UnitOfWorkStatement" &&
+        // A rollback closes every cursor; a commit closes only the ones that
+        // are not held.
+        (inner.operation === "rollback" || !isHeld),
+    );
+    if (!closes || closes.kind !== "UnitOfWorkStatement") {
+      return [];
+    }
+
+    return [
       createDiagnostic({
         id: "BANK-SQL-008",
         severity: "error",
-        message: `Cursor ${(statement as { cursorName: string }).cursorName} is committed inside its own loop and is not declared \`hold\`.`,
+        message: `Cursor ${statement.cursorName} is ${closes.operation === "commit" ? "committed" : "rolled back"} inside its own loop, which closes it.`,
         span: statement.span,
-        hint: "Db2 closes a cursor that is not held when the unit of work commits, so the next FETCH answers -501. Declare the cursor `hold`, or move the commit out of the loop.",
+        hint:
+          closes.operation === "rollback"
+            ? "A ROLLBACK closes every open cursor, held or not, so the next FETCH answers -501. Move the rollback out of the loop; `hold` does not help here."
+            : "Db2 closes a cursor that is not held when the unit of work commits, so the next FETCH answers -501. Declare the cursor `hold`, or move the commit out of the loop.",
         backendProfile: "ibm-enterprise-cobol-zos",
       }),
-    );
+    ];
+  });
 }
 
 /**
