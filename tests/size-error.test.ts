@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, flowed, localCobol } from "./helpers";
+import { checked, corpus, flowed, localCobol } from "./helpers";
 
 /**
  * `ON SIZE ERROR` — what COBOL does when a result does not fit.
@@ -232,6 +232,7 @@ describe("across the corpus", () => {
    * did not.
    */
   it("fails the step wherever it can name a failure", () => {
+    let programs = 0;
     for (const { example, cobol } of corpus()) {
       const named =
         flowed(cobol).split(/MOVE "[A-Z0-9-]+" TO BANK-FAILURE-CODE/).length -
@@ -239,6 +240,7 @@ describe("across the corpus", () => {
       if (named === 0) {
         continue;
       }
+      programs += 1;
       const failed =
         flowed(cobol).split("MOVE 12 TO BANK-RETURN-CODE").length - 1;
 
@@ -247,5 +249,7 @@ describe("across the corpus", () => {
         `${example} names a failure ${named} time(s) and sets a non-zero return code ${failed} time(s), so at least one raise ends the step looking like a clean run.`,
       ).toBeGreaterThanOrEqual(named);
     }
+
+    checked(programs, 15, "programs that can name a failure");
   });
 });

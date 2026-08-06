@@ -36,13 +36,48 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 ```
 
 `HALF_EVEN` is banker's rounding, the usual choice for interest because it does
-not bias upward across many postings. It lowers to:
+not bias upward across many postings. Enterprise COBOL has no phrase for it —
+`ROUNDED` is half-up away from zero and there is nothing else — so the compiler
+writes the arithmetic out: the truncated value, the excess truncation
+discarded, and a step of one unit in the last place taken only when the excess
+is over half, or exactly half onto an odd digit.
 
 ```cobol
        ACCRUE.
-           COMPUTE ACCRUE-RESULT ROUNDED MODE IS NEAREST-EVEN = (ACCRUE-P1 * ACCRUE-P2)
-           GOBACK.
+           *> HALF_EVEN is generated. COBOL has
+           *> only ROUNDED, which is HALF_UP.
+           COMPUTE BANK-RND-1-VALUE = (ACCRUE-P1 * ACCRUE-P2)
+               ON SIZE ERROR
+                   DISPLAY "ARITHMETIC OVERFLOW ACCRUE-RESULT" UPON
+                       SYSOUT
+                   MOVE 12 TO BANK-RETURN-CODE
+                   MOVE "ARITHMETIC-OVERFLOW" TO BANK-FAILURE-CODE
+                   GO TO ACCRUE-EXIT
+           END-COMPUTE
+           COMPUTE BANK-RND-1-EXCESS =
+               (ACCRUE-P1 * ACCRUE-P2) - BANK-RND-1-VALUE
+           COMPUTE BANK-RND-1-STEP = 0.01
+           IF BANK-RND-1-EXCESS < 0
+               COMPUTE BANK-RND-1-STEP = -0.01
+           END-IF
+           COMPUTE BANK-RND-1-UNITS = BANK-RND-1-VALUE * 100
+           EVALUATE TRUE
+               WHEN FUNCTION ABS (BANK-RND-1-EXCESS) > 0.005
+                   ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE
+               WHEN FUNCTION ABS (BANK-RND-1-EXCESS) = 0.005
+                   IF FUNCTION MOD (BANK-RND-1-UNITS, 2) = 1
+                       ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE
+                   END-IF
+           END-EVALUATE
+           MOVE BANK-RND-1-VALUE TO ACCRUE-RESULT
+           CONTINUE.
+       ACCRUE-EXIT.
+           EXIT.
 ```
+
+The sequence is checked against exact arithmetic in
+[`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts), and
+`examples/rounding-conformance` runs all seven modes.
 
 Bare division is rejected outright (`BANK-DEC-003`). Write
 `divide(a, b, "HALF_UP")` so the rounding decision is visible in the source.

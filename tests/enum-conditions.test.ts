@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, localCobol } from "./helpers";
+import { checked, corpus, localCobol } from "./helpers";
 
 /**
  * `SET <condition> TO TRUE` — what the level-88 names are for.
@@ -232,12 +232,21 @@ entry transaction shift(account: Account, mirror: Mirror) {
  */
 describe("across the corpus", () => {
   it("declares a condition name for every enum member", () => {
+    let conditions = 0;
     for (const { example, cobol } of corpus()) {
       // `SET X TO TRUE` names a condition; every one of them has to be
       // declared as an 88 somewhere in the same program.
-      const set = [...cobol.matchAll(/SET ([A-Z][A-Z0-9-]*) TO TRUE/g)].map(
-        (match) => match[1],
-      );
+      // Qualified, because the emitter writes `SET OUTCOME-FOUND OF
+      // BALANCE-REPLY TO TRUE` — a record is emitted in working storage and
+      // again inside every FD that holds it, so the condition needs its group.
+      // Without the `OF` the pattern matched nothing at all and this loop
+      // asserted nothing, in every example, silently.
+      const set = [
+        ...cobol.matchAll(
+          /SET ([A-Z][A-Z0-9-]*)(?: OF [A-Z][A-Z0-9-]*)* TO TRUE/g,
+        ),
+      ].map((match) => match[1]);
+      conditions += set.length;
 
       for (const condition of new Set(set)) {
         expect(
@@ -246,5 +255,7 @@ describe("across the corpus", () => {
         ).toMatch(new RegExp(`88\\s+${condition}\\s`));
       }
     }
+
+    checked(conditions, 4, "enum condition assignments");
   });
 });

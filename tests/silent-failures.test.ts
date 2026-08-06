@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, flowed } from "./helpers";
+import { checked, corpus, flowed } from "./helpers";
 
 /**
  * The endings that look like success.
@@ -279,7 +279,9 @@ cics transaction enquire(account: Account) {
  */
 describe("across the corpus", () => {
   it("compares a CICS response against DFHRESP, never a number", () => {
+    let responses = 0;
     for (const { example, cobol } of corpus()) {
+      responses += flowed(cobol).split("DFHRESP(NORMAL)").length - 1;
       const numeric = [
         ...flowed(cobol).matchAll(/IF \(?[A-Z0-9-]*RESP[A-Z0-9-]* = (-?\d+)/g),
       ];
@@ -288,13 +290,20 @@ describe("across the corpus", () => {
         `${example} compares a CICS response against a literal.`,
       ).toEqual([]);
     }
+
+    // One, across twenty-three examples. That is thin for a rule the audit
+    // raised as F8, and it is recorded in docs/audit-2026-08-06.md rather
+    // than papered over with a floor the corpus does not meet.
+    checked(responses, 1, "CICS response comparisons");
   });
 
   it("gives every bounded loop an exhausted branch", () => {
+    let loops = 0;
     for (const { example, cobol } of corpus()) {
       const bounds = [
         ...flowed(cobol).matchAll(/PERFORM UNTIL ([A-Z][A-Z0-9-]*) >= (\d+)/g),
       ];
+      loops += bounds.length;
       for (const [, counter, limit] of bounds) {
         expect(
           flowed(cobol),
@@ -302,14 +311,18 @@ describe("across the corpus", () => {
         ).toContain(`IF ${counter} >= ${limit}`);
       }
     }
+
+    checked(loops, 10, "bounded loops");
   });
 
   it("reads a record area only in the success phrase", () => {
+    let reads = 0;
     for (const { example, cobol } of corpus()) {
-      const reads = [
+      const statements = [
         ...flowed(cobol).matchAll(/READ ([A-Z][A-Z0-9-]*)(.*?)END-READ/g),
       ];
-      for (const [, file, body] of reads) {
+      reads += statements.length;
+      for (const [, file, body] of statements) {
         // A copy *out of* the record area, which is what is undefined after AT
         // END. The `MOVE "10" TO ...-STATUS` the AT END phrase itself carries
         // is a move into the status field and is the point of the phrase.
@@ -329,5 +342,7 @@ describe("across the corpus", () => {
         }
       }
     }
+
+    checked(reads, 10, "READ statements");
   });
 });

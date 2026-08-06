@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, flowed, localCobol } from "./helpers";
+import { checked, corpus, flowed, localCobol } from "./helpers";
 
 /**
  * The file status key, tested after every I/O statement rather than after
@@ -259,10 +259,12 @@ entry transaction emit1(line: FeedLine, note: Note) {
  */
 describe("across the corpus", () => {
   it("gives every file status field its condition names", () => {
+    let fields = 0;
     for (const { example, cobol } of corpus()) {
       const statuses = [
         ...cobol.matchAll(/FILE STATUS IS ([A-Z][A-Z0-9-]*)/g),
       ].map((match) => match[1]);
+      fields += statuses.length;
 
       for (const status of statuses) {
         expect(
@@ -271,6 +273,8 @@ describe("across the corpus", () => {
         ).toContain(`88  ${status}-OK`);
       }
     }
+
+    checked(fields, 20, "file status fields");
   });
 
   it("tests the status after every I/O statement it declares", () => {

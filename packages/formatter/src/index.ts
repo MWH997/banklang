@@ -585,10 +585,6 @@ function printStatement(
       printer.push(`${indent}release ${statement.recordName};${trailing}`);
       return;
 
-    case "RaiseStatement":
-      printer.push(`${indent}raise "${statement.code}";${trailing}`);
-      return;
-
     case "SplitStatement":
       printer.push(
         `${indent}split ${printExpression(statement.source)} by ${printExpression(statement.delimiter)} into ${statement.targets.map(printExpression).join(", ")};${trailing}`,

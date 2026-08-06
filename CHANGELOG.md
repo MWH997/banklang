@@ -31,6 +31,27 @@ in order.
   what emitted text looks like — [verification](docs/verification.md).
 - Add [launch-tickets.md](docs/launch-tickets.md), scoping the site at
   `banklang.mwhassan.com` and everything else before the repository is public.
+- Hold every fenced COBOL block in every document to what the compiler emits,
+  rather than the README alone.
+- State how much each corpus assertion looked at, so one that stops finding
+  anything fails instead of passing.
+- Require every path the VS Code extension resolves at run time to be written by
+  one of its build scripts.
+
+### Fixed
+
+- Print the rounding modes the compiler actually emits in the language
+  reference, rather than a `ROUNDED MODE IS` phrase Enterprise COBOL has never
+  had — [numeric model](docs/numeric-model.md).
+- Correct the bool mapping, program structure and unsupported-feature list in
+  the COBOL backend specification, none of which matched the emitter.
+- Build the language server the VS Code extension loads, so the extension can
+  start without the server path being set by hand.
+- Remove a duplicate `case "RaiseStatement"` in the formatter.
+- Stop the playground scrolling sideways on a 390px viewport, and give its
+  header links a 24px target.
+- Give the playground's tab strip the rest of its ARIA pattern: `role="tab"`,
+  `aria-selected`, a `tabpanel`, a roving tabindex and arrow keys.
 
 ### Removed
 

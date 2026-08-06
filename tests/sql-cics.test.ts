@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { corpus, flowed } from "./helpers";
+import { checked, corpus, flowed } from "./helpers";
 
 const PREAMBLE = `module Online;
 
@@ -321,16 +321,20 @@ cics transaction enquiry(request: Request, row: Row) {
  */
 describe("across the corpus", () => {
   it("follows every EXEC CICS RETURN with GOBACK", () => {
+    let returns = 0;
     for (const { example, cobol } of corpus()) {
-      const returns = [
+      const statements = [
         ...flowed(cobol).matchAll(/EXEC CICS RETURN END-EXEC(.{0,20})/g),
       ];
-      for (const [, after] of returns) {
+      returns += statements.length;
+      for (const [, after] of statements) {
         expect(
           after.trimStart(),
           `${example} ends a CICS transaction without a GOBACK behind it.`,
         ).toMatch(/^GOBACK/);
       }
     }
+
+    checked(returns, 1, "CICS RETURN statements");
   });
 });

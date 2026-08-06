@@ -501,13 +501,40 @@ function boot(): void {
   });
   $("#example-blurb").textContent = ALL_EXAMPLES[0]?.blurb ?? "";
 
-  for (const button of document.querySelectorAll<HTMLButtonElement>(".tab")) {
-    button.addEventListener("click", () => {
-      activeTab = button.dataset.tab as TabId;
-      for (const other of document.querySelectorAll(".tab")) {
-        other.classList.toggle("tab--active", other === button);
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>(".tab")];
+
+  /**
+   * Select a tab, in the class the styling reads and the state a screen reader
+   * reads. `role="tablist"` without `aria-selected` announces a tablist and
+   * then cannot say which tab is current, which is worse than no role at all.
+   */
+  const selectTab = (button: HTMLButtonElement): void => {
+    activeTab = button.dataset.tab as TabId;
+    for (const other of tabs) {
+      const current = other === button;
+      other.classList.toggle("tab--active", current);
+      other.setAttribute("aria-selected", String(current));
+      // Roving tabindex: one stop for the whole strip, then arrow keys within
+      // it. Five tabs each taking a Tab press is five presses to reach the
+      // output.
+      other.tabIndex = current ? 0 : -1;
+    }
+    renderOutput();
+  };
+
+  for (const [index, button] of tabs.entries()) {
+    button.tabIndex = index === 0 ? 0 : -1;
+    button.addEventListener("click", () => selectTab(button));
+    button.addEventListener("keydown", (event) => {
+      const step =
+        event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+      if (step === 0) {
+        return;
       }
-      renderOutput();
+      event.preventDefault();
+      const next = tabs[(index + step + tabs.length) % tabs.length];
+      next.focus();
+      selectTab(next);
     });
   }
 
