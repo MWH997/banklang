@@ -136,6 +136,22 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
   let current: Paragraph | null = null;
   let inProcedure = false;
   let inDeclaratives = false;
+  /**
+   * Between `FILE-CONTROL.` and the end of the section.
+   *
+   * Files are only declared there, and `SELECT` outside it is something else —
+   * a data name ending in `-SELECT`, or the word inside a message. Found by
+   * running this over AWS's CardDemo: `COCRDLIC` declares
+   * `05 WS-EDIT-SELECT PIC X(1)` and displays
+   * `'PLEASE SELECT ONLY ONE RECORD TO VIEW OR UPDATE'`, and the report claimed
+   * the program had two files called `PIC` and `ONLY`, neither of which
+   * declared a `FILE STATUS`. A finding invented out of a literal is worse than
+   * a missed one: it is the kind a reader checks, does not find, and stops
+   * trusting the rest of the page over.
+   */
+  let inFileControl = false;
+  /** `PROGRAM-ID.` has been seen and its name is on a line still to come. */
+  let awaitingProgramId = false;
   /** The first paragraph after `END DECLARATIVES`, which is the entry point. */
   let entryParagraph: string | null = null;
   let exec: { kind: string; text: string; line: number } | null = null;
@@ -172,14 +188,45 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
       return;
     }
 
-    programId ??= /\bPROGRAM-ID\.\s+([A-Z0-9$#@-]+)/.exec(upper)?.[1] ?? null;
+    /*
+     * `PROGRAM-ID.` and the name it introduces, which need not share a line.
+     *
+     * A COBOL clause continues across lines, and nine of CardDemo's thirty-one
+     * programs write the name underneath: `PROGRAM-ID.` on one line, `COACTUPC`
+     * on the next. Requiring both on one line reported those nine with no name
+     * at all — an estate report where a third of the rows say `?` is one nobody
+     * reads twice.
+     */
+    if (programId === null) {
+      const sameLine = /\bPROGRAM-ID\.\s*([A-Z0-9$#@-]+)/.exec(upper);
+      if (sameLine) {
+        programId = sameLine[1] ?? null;
+      } else if (awaitingProgramId) {
+        programId = /^\s*([A-Z0-9$#@-]+)/.exec(upper)?.[1] ?? null;
+        awaitingProgramId = false;
+      } else if (/\bPROGRAM-ID\s*\.\s*$/.test(upper)) {
+        awaitingProgramId = true;
+      }
+    }
 
     for (const member of upper.matchAll(/\bCOPY\s+([A-Z0-9$#@-]+)/g)) {
       copybooks.add(member[1]!);
     }
 
-    const select = /\bSELECT\s+(?:OPTIONAL\s+)?([A-Z0-9-]+)/.exec(upper);
-    if (select && !inProcedure) {
+    if (/\bFILE-CONTROL\s*\./.test(upper)) {
+      inFileControl = true;
+    }
+    if (/\b(?:DATA|PROCEDURE)\s+DIVISION\s*\./.test(upper)) {
+      inFileControl = false;
+    }
+
+    // `(?<![A-Z0-9-])` rather than `\b`: a hyphen is a word boundary to a
+    // regular expression and a letter to COBOL, so `\bSELECT` matches inside
+    // `WS-EDIT-SELECT`.
+    const select = /(?<![A-Z0-9-])SELECT\s+(?:OPTIONAL\s+)?([A-Z0-9-]+)/.exec(
+      upper,
+    );
+    if (select && inFileControl && !inProcedure) {
       files.set(select[1]!, {
         name: select[1]!,
         dd: null,

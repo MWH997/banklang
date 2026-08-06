@@ -254,3 +254,109 @@ describe("bankc analyse", () => {
     expect(result.stderr).toContain("No .cbl or .cob members");
   });
 });
+
+/**
+ * What first contact with somebody else's COBOL found.
+ *
+ * G4 asked for a benchmark corpus of third-party COBOL. Before any of it could
+ * be converted, the analyser was run over one — AWS's CardDemo, Apache-2.0,
+ * thirty-one CICS and batch programs — and it got two things wrong on code
+ * nobody here had written. Both are shapes that never occur in this
+ * repository's own conversions, which is exactly why they survived: every
+ * original in `conversions/` was written by the author of the reader.
+ *
+ * The fragments below are the shapes, rewritten. Neither is CardDemo's text.
+ */
+describe("COBOL written by somebody else", () => {
+  /**
+   * A COBOL clause continues across lines, so `PROGRAM-ID.` and the name it
+   * introduces need not share one. Nine of CardDemo's thirty-one programs
+   * write the name underneath, and all nine came out of the report with no
+   * name at all — an estate inventory where a third of the rows say `?`.
+   */
+  it("finds a program name written on the line after PROGRAM-ID", () => {
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID.
+            COACCTUP.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           GOBACK.
+`,
+      "COACCTUP.cbl",
+    );
+
+    expect(analysis.programId).toBe("COACCTUP");
+  });
+
+  it("still finds one written on the same line", () => {
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    CBACT04C.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           GOBACK.
+`,
+      "CBACT04C.cbl",
+    );
+
+    expect(analysis.programId).toBe("CBACT04C");
+  });
+
+  /**
+   * A hyphen is a word boundary to a regular expression and a letter to COBOL,
+   * so `\bSELECT` matched inside `WS-EDIT-SELECT`; and `SELECT` inside a
+   * message is not a file either. The report claimed two files called `PIC`
+   * and `ONLY`, and then that neither declared a `FILE STATUS`.
+   *
+   * An invented finding is worse than a missed one. It is the kind a reader
+   * checks, does not find, and stops trusting the rest of the page over.
+   */
+  it("does not read a data name ending in -SELECT as a file", () => {
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. COCRDLIS.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-EDIT-FLAGS.
+           05 WS-EDIT-SELECT             PIC X(1).
+           05 WS-MESSAGE                 PIC X(48)
+              VALUE 'PLEASE SELECT ONLY ONE RECORD TO VIEW'.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           GOBACK.
+`,
+      "COCRDLIS.cbl",
+    );
+
+    expect(analysis.files).toEqual([]);
+  });
+
+  it("still reads a real one, and still says it has no FILE STATUS", () => {
+    // `CBSTM03A` genuinely declares two files with no status field, which is
+    // the finding that has to survive the fix.
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CBSTMT03.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT STMT-FILE ASSIGN TO STMTFILE.
+           SELECT HTML-FILE ASSIGN TO HTMLFILE.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-EDIT-SELECT                PIC X(1).
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           GOBACK.
+`,
+      "CBSTMT03.cbl",
+    );
+
+    expect(analysis.files.map((file) => file.name)).toEqual([
+      "STMT-FILE",
+      "HTML-FILE",
+    ]);
+    expect(analysis.files.every((file) => !file.statusChecked)).toBe(true);
+  });
+});

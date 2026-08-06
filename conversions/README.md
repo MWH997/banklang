@@ -33,6 +33,67 @@ mistake. `INTCALC` computes the right answer for every positive balance.
 If you have COBOL you can share, converting it is the better test. The
 [copybook importer](../docs/toolchain.md) is where to start.
 
+## Third-party COBOL, and what can actually be used
+
+Checked 2026-08-07. The obvious fix for the weakness above is to convert
+somebody else's code, and the constraint is not finding COBOL — it is finding
+COBOL whose licence permits publishing a derivative of it here.
+
+| Corpus                                                                                       | Licence       | Size                      | Verdict                                      |
+| -------------------------------------------------------------------------------------------- | ------------- | ------------------------- | -------------------------------------------- |
+| [AWS CardDemo](https://github.com/aws-samples/aws-mainframe-modernization-carddemo)          | Apache-2.0    | 44 programs, 30,175 lines | **Usable, and the right domain**             |
+| [CICS GENAPP](https://github.com/cicsdev/cics-genapp)                                        | EPL-2.0       | 31 programs, 365 KB       | Usable with care; weak copyleft              |
+| [COBOL Programming Course](https://github.com/openmainframeproject/cobol-programming-course) | CC-BY-4.0     | teaching material         | Attribution is fine, CC on code is not       |
+| [NIST CCVS85](https://sourceforge.net/projects/gnucobol/files/nist/)                         | Public domain | 512 programs              | Wrong tool: compiler tests, not applications |
+| The four repositories [zunit.md](../docs/zunit.md) cites                                     | **None**      | small                     | Cite what they show; copy nothing            |
+
+**CardDemo is the answer.** Apache-2.0 with a per-file licence header and a
+`NOTICE`, actively maintained, and it is a credit-card management application —
+batch interest calculation over indexed VSAM, CICS screens, Db2, JCL. That is
+this compiler's subject matter rather than a general sample. Apache-2.0 permits
+a derivative provided the licence, the copyright notice and a statement of
+changes travel with it, which is a directory in this repository and a paragraph.
+
+**EPL-2.0 is where it gets awkward**, and GENAPP is the one that carries it. The
+EPL's reciprocity applies to modified source, and BankTS written from a reading
+of an EPL program is arguably a modified form of it. That is an argument, not a
+fact, and a repository that wants to be trusted should not be the place it gets
+tested.
+
+**The NIST suite is public domain and still the wrong tool.** 512 programs that
+exist to check whether a compiler implements the 1985 standard — they exercise
+language features, not banking, and converting one demonstrates nothing about
+what happens to an estate. It would be a good corpus for the _reader_, which is
+a different exercise.
+
+**The four repositories cited for the zUnit work carry no licence at all.** That
+is not a problem for what was done with them — [zunit.md](../docs/zunit.md)
+records what each one _shows_ (an element order, a name truncation, a JCL
+parameter), which is a fact about a file format rather than an expressive work,
+and no line of any of them is in this repository. It does mean none of them can
+become a conversion.
+
+### What the first run over somebody else's code already found
+
+CardDemo has not been converted. `bankc analyse` was run over its thirty-one
+`app/cbl` programs, which is the part that needs no licence decision because it
+generates nothing, and the report was wrong twice — on shapes that do not occur
+in any of the five originals above, because the author of the reader wrote those
+too:
+
+- **Nine programs came back with no name.** They write `PROGRAM-ID.` on one line
+  and the name on the next, which is legal and which nothing here does. An
+  inventory of an estate where a third of the rows say `?` is one nobody reads
+  twice.
+- **Two files were invented.** `COCRDLIC` declares `05 WS-EDIT-SELECT PIC X(1)`
+  and displays `'PLEASE SELECT ONLY ONE RECORD…'`; the reader took `PIC` and
+  `ONLY` for file names and then reported that neither declared a `FILE STATUS`.
+  A hyphen is a word boundary to a regular expression and a letter to COBOL.
+
+Both are fixed, with the shapes as regression tests. That is the argument for
+the corpus in one paragraph: the value is not the conversion, it is that
+somebody else's code is written in ways yours is not.
+
 ## What each conversion contains
 
 ```
