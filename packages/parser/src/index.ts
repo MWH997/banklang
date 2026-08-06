@@ -156,6 +156,7 @@ export const KEYWORDS = new Set([
   "blankWhenZero",
   "sql",
   "cursor",
+  "hold",
   "execute",
   "cics",
   "link",
@@ -849,6 +850,11 @@ class Parser {
     const parameters = this.parseParameters();
     this.expectPunctuation(")", "Expected `)` after parameter list.");
 
+    // `cursor accountsInBranch(...) hold : AccountRow { ... }` — after the
+    // parameters, because it is a property of the cursor rather than of what it
+    // returns, and before the result type so the `:` still introduces one.
+    const hold = form === "cursor" && this.matchKeyword("hold");
+
     let resultTypeName: string | null = null;
     if (this.matchPunctuation(":")) {
       const resultToken = this.expectIdentifier(
@@ -905,6 +911,7 @@ class Parser {
       parameters,
       resultTypeName,
       form,
+      hold,
       text: captured.text.trim(),
       hostVariables,
       span: {

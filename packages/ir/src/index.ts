@@ -75,6 +75,8 @@ export interface IRSql {
   resultRecordName: string | null;
   /** `statement` runs once; `cursor` is declared, opened, fetched, and closed. */
   form: "statement" | "cursor";
+  /** `WITH HOLD` — the cursor survives a commit. */
+  hold: boolean;
   text: string;
   /** A cursor's SELECT without its INTO, and that INTO on its own. */
   cursorSelect: string | null;
@@ -1283,6 +1285,7 @@ export function lowerProgramToIR(
         })),
         resultRecordName: entry.result?.name ?? null,
         form: entry.form,
+        hold: entry.hold,
         text: entry.text,
         cursorSelect: entry.cursorSelect,
         cursorInto: entry.cursorInto,

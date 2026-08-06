@@ -116,7 +116,7 @@ Theme: the second program of each kind, rather than the first.
 
 Db2, in the order a batch meets them:
 
-- `WITH HOLD` cursors, so a loop can commit without losing its position
+- ~~`WITH HOLD` cursors~~ — done, `cursor ... hold`, with `BANK-SQL-008`
 - multi-row `FETCH`
 - isolation level on a statement
 - savepoints

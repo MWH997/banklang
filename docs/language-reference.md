@@ -1394,6 +1394,38 @@ bind the select list to the record's fields positionally instead.
 A cursor and a `sql` statement are not interchangeable (`BANK-SQL-005`). One
 lowers to a single `EXEC SQL`, the other to four.
 
+### A cursor that survives a commit
+
+```ts
+cursor accountsInBranch(keyBranch: string<8>) hold : AccountBalanceRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+```
+
+`DECLARE ... CURSOR WITH HOLD FOR`. The Application Programming and SQL Guide
+puts it plainly: "A held cursor does not close after a commit operation. A
+cursor that is not held closes after a commit operation."
+
+A long batch has to commit inside its own cursor loop. Not committing means the
+log fills and the locks accumulate until nothing else can read the table, so a
+run over a million rows commits every few thousand — and over a cursor that is
+not held, the `FETCH` after the first commit answers `-501`, cursor not open,
+having already processed and committed part of the result set.
+
+`BANK-SQL-008` refuses that combination. It is an error rather than a warning
+because there is no reading under which the program is right: either the commit
+does not belong in the loop, or the cursor needs `hold`, and the author knows
+which.
+
+Holding a cursor is not free. Db2 does not close a held cursor at a syncpoint —
+the same manual says "Close all cursors that are declared with the WITH HOLD
+option before each sync point. Db2 does not automatically close them" — and a
+thread with an open cursor cannot be reused. The generated `CLOSE` is what
+covers that, and it is emitted whether the cursor is held or not.
+
 ## 12a. IMS DL/I
 
 ```ts

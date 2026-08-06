@@ -97,9 +97,9 @@ boundary case, for a product and for a quotient, in all seven modes. See
 | `BANK-LED-001`  | Debits and credits must balance                               |
 | `BANK-DEC-003`  | A division must state its rounding mode                       |
 | `BANK-SQL-007`  | A `SQLCODE` test must separate an error from a missing row    |
+| `BANK-SQL-008`  | A commit inside a cursor loop needs a `hold` cursor           |
 | `BANK-CICS-004` | A CICS response must be tested against its condition name     |
 | `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or a ledger |
-| `BANK-FILE-001` | A file declaration must bind a `FILE STATUS` field            |
 
 `bankc explain BANK-LED-001` prints any of them, and a test asserts that no
 diagnostic can be emitted without a catalogue entry.

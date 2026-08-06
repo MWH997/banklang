@@ -207,6 +207,20 @@ export interface SqlDeclarationNode extends NodeBase {
    * stream and is read with a bounded loop, which lowers to a different set of
    * Db2 statements: `DECLARE`, `OPEN`, `FETCH`, `CLOSE`.
    */
+  /**
+   * `WITH HOLD` — a cursor that survives a commit.
+   *
+   * Db2's Application Programming Guide: "A held cursor does not close after a
+   * commit operation. A cursor that is not held closes after a commit
+   * operation." A batch that commits inside its own cursor loop — which is what
+   * a long run has to do, to stop the log filling and the locks accumulating —
+   * loses its position without this, and the next `FETCH` answers -501.
+   *
+   * Db2 does not close a held cursor on its own and a thread holding an open
+   * cursor cannot be reused, so the `CLOSE` matters more here rather than less.
+   * The compiler emits it either way.
+   */
+  hold: boolean;
   form: "statement" | "cursor";
   /** Raw SQL text as written. */
   text: string;

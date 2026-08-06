@@ -65,10 +65,10 @@ sounding impressive:
   `vendor-docs/`. Writing one from the shape of the examples in a blog post is
   exactly how `ROUNDED MODE IS NEAREST-EVEN` got emitted for two years, so it is
   not written at all.
-- **Db2 is shallow in five specific ways**: no multi-row `FETCH`, no `WITH HOLD`
-  cursor, no isolation level on a statement, no savepoints, and no `LOCK TABLE`.
-  A batch that commits inside a cursor loop needs `WITH HOLD` and cannot have
-  it, which is the one of the five that bites first.
+- **Db2 is shallow in four specific ways**: no multi-row `FETCH`, no isolation
+  level on a statement, no savepoints, and no `LOCK TABLE`. `WITH HOLD` was the
+  fifth and is now `cursor ... hold`, because a batch that commits inside its
+  own cursor loop needs it and the alternative is `-501` halfway through.
 - **`bankc analyse` reads rather than compiles.** It is a count of what is in
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.

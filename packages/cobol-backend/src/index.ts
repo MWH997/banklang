@@ -7662,7 +7662,7 @@ function emitCursorDeclarations(
     }
     emitExecSql(
       [
-        `DECLARE ${toCobolName(declaration.name)} CURSOR FOR`,
+        `DECLARE ${toCobolName(declaration.name)} CURSOR${declaration.hold ? " WITH HOLD" : ""} FOR`,
         ...rewriteHostVariables(declaration.cursorSelect, declaration, null)
           .split("\n")
           .map((line) => `    ${line.trim()}`),
