@@ -1,0 +1,179 @@
+# Files
+
+File declarations, organisation, keys, and file status.
+
+Part of the [BankTS language reference](../language-reference.md).
+
+## File declarations
+
+```ts
+file accountInput sequential input record AccountRecord status accountInputStatus;
+file postingOutput sequential output record PostingRecord status postingOutputStatus;
+```
+
+Rules:
+
+- file status must be checked
+- record type must map to a copybook-compatible layout
+- generated COBOL must contain file-control and FD sections
+
+The `status` clause names the field that receives the COBOL `FILE STATUS`
+value. It is optional at parse time so that a missing status is reported as
+`BANK-FILE-001` with a remediation hint rather than as a syntax error.
+
+A file is declared `input`, `output`, or `update`. `update` opens I-O, which is
+what a master file update needs: the same `OPEN` serves the read that finds a
+record and the `rewrite` that puts it back.
+
+An indexed file is declared `ACCESS MODE IS DYNAMIC`, not `RANDOM`, because it
+is both read by key and browsed, and `RANDOM` allows only the first.
+
+### Records that vary in length
+
+```ts
+file feed sequential output record FeedLine
+  varying 10 to 80 length feedLength status feedStatus;
+```
+
+`RECORD IS VARYING IN SIZE`. A fixed-length file pads every record to the
+longest one it might hold; for a feed whose records differ by hundreds of bytes
+that is most of the dataset, and on tape it is most of the tape.
+
+`length` names the field that says how much of the record is in use — set it
+before a write, and a read fills it:
+
+```ts
+line.payload = "SHORTER ONE";
+feedLength = textLength(line.payload);
+write feed from line;
+```
+
+`textLength` pairs with it: it is what the field holds rather than how wide it
+was declared, which is exactly the number a varying write needs.
+
+A record written shorter than the declared minimum is not written — COBOL
+rejects it and the file status says so, which is what the `status` field is for.
+
+The bounds have to be a range, and the file has to be `sequential`: an indexed or
+relative dataset addresses a record by key or by position, which a varying length
+would move (`BANK-FILE-009`).
+
+### File operations
+
+```ts
+open accountFeed;
+read accountFeed into account;
+write adviceOutput from advice;
+close accountFeed;
+```
+
+The record variable's type must match the file's declared record type, or the
+bytes would not line up; a mismatch is `BANK-FILE-002`. Reading an output file
+or writing an input file is `BANK-FILE-001`.
+
+A `read` sets the status field to `"10"` at end of file, so a batch loop can
+test it:
+
+```ts
+while accountFeedStatus == "00" limit 100000 {
+  read accountFeed into account;
+}
+```
+
+### What the compiler checks for you
+
+Every I/O statement is followed by a generated test of the file status **key** —
+the first character, since class 0 is successful completion and includes `02`,
+`04`, `05` and `07`, not only `00`. A status outside class 0 names the operation,
+the file and the status in the job log, sets a return code of 12, and stops.
+
+The statuses a statement is written to produce are left to the program: end of
+file on a read, a key that was not there on a keyed read or a browse, a
+duplicate key on a write to a KSDS. Those say the request found nothing, not
+that the file failed, so the loop above still ends the way it always did.
+
+This matters most where nothing else would notice. A `write` that cannot happen
+— the volume full, a `varying` record outside its declared length — leaves the
+loop running and the output file short, and the job ends with a return code of
+zero. Inside a sort's input or output procedure the same failure sets
+`SORT-RETURN` to 16 instead, because control may not leave a sort procedure
+while the sort is running.
+
+Read and write map the record **field by field** rather than moving it as a
+group, so the correspondence between the file record and working storage is
+explicit in the generated COBOL and does not depend on the two layouts being
+byte-identical. An array field is copied element by element, because COBOL
+rejects a move of an `OCCURS` item without a subscript.
+
+The `FD` record is emitted as an unstructured buffer sized from the copybook
+layout, and the structured record is declared once in working storage. Emitting
+the record inside each `FD` as well would duplicate field names and make every
+unqualified reference ambiguous.
+
+### Alternate keys
+
+```ts
+file accountMaster indexed input record Account
+  key accountId alternate customerId, branchId status masterStatus;
+```
+
+A KSDS is read by its primary key and browsed by any of its alternates. A
+program that can only name the primary cannot open a file whose alternate index
+is the whole reason it exists — an account file read by customer, say.
+
+Each alternate is declared `WITH DUPLICATES`, because many accounts per customer
+is nearly always why one exists. Only an indexed file has them
+(`BANK-FILE-004`).
+
+### When an operation fails anyway
+
+```ts
+on error accountInput {
+  log "FILE ERROR ", inStatus;
+  returnCode = 12;
+}
+```
+
+A file status check covers the statement that thought to look. This covers the
+ones that did not: COBOL runs a `USE AFTER STANDARD ERROR` procedure when any
+operation on that file fails, wherever it was written. That is what makes
+`DECLARATIVES` the standard error path rather than a convenience.
+
+The handler is declared at the top level, not inside a transaction, because it
+is not reached from one — it runs when the failure happens. It sees the file
+statuses and nothing else: there is no record in scope and no ledger to post to.
+
+A file may have one handler (`BANK-FILE-005`), which is what COBOL allows. When
+any handler exists, the program's own paragraphs move into a `BANK-BODY SECTION`,
+because everything after `DECLARATIVES` has to be in a section.
+
+### Browsing an indexed file
+
+```ts
+start accountMaster key master.accountId;   // position at or after the key
+readNext accountMaster into master;         // walk from there
+```
+
+`START` uses `KEY IS NOT LESS THAN`, which begins at the first record at or
+after the key — what a range walk wants. An exact match would make a browse from
+a partial key impossible.
+
+`readNext` reports end of data through the file status, the way a sequential
+read does, because a browse runs out rather than failing.
+
+### Updating in place
+
+```ts
+read accountMaster into master key master.accountId;
+master.balance = master.balance + amount;
+rewrite accountMaster from master;
+
+delete accountMaster key master.accountId;
+```
+
+`rewrite` and `delete` need the file open for `update`, because updating a
+record in place means finding it first (`BANK-FILE-005`). `start` and `readNext`
+need an `indexed` file, because there is no index to walk otherwise. A `write`
+or `rewrite` to an indexed file captures `INVALID KEY` in the file status: a
+duplicate key is the failure a KSDS write actually has, and it is silent
+otherwise.

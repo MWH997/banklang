@@ -17,6 +17,9 @@ in order.
 
 ### Changed
 
+- Split the language reference into thirteen topic pages under
+  [docs/language/](docs/language/), and point every diagnostic at a page rather
+  than at a section number two sections shared.
 - Type every index access as possibly absent (`noUncheckedIndexedAccess`), and
   turn `no-unnecessary-condition` back on now that it can tell a dead guard from
   a live one — [verification](docs/verification.md).
