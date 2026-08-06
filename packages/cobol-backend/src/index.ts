@@ -1,20 +1,13 @@
-import type {
-  RoundingMode,
-  SourcePosition,
-  SourceSpan,
-} from "../../ast/src/index";
+import type { RoundingMode, SourcePosition } from "../../ast/src/index";
 import type {
   IRBinaryComparisonExpression,
   IRBinaryArithmeticExpression,
   IRRoundedExpression,
   IRBlock,
-  IRBooleanLiteralExpression,
-  IRDecimalLiteralExpression,
   IRExpression,
   IRField,
   IRIfStatement,
   IRFunction,
-  IRIdentifierExpression,
   IRCursorLoopStatement,
   IRLetStatement,
   IRMappedField,
@@ -67,7 +60,6 @@ import {
   toCobolFieldName,
   toCobolName,
   toCobolParagraphName,
-  toCobolPicture,
   toCobolProgramId,
   enumWidth,
   temporalLength,
@@ -2046,16 +2038,10 @@ export function emitJcl(
   const preprocessed = needsReportWriter || needsCics || needsDb2;
   const expanded = options.mode === "expanded" || preprocessed;
 
-  const entryTransaction = findEntryTransaction(program);
   const runtimeOptions = options.runtimeOptions ?? [
     "TERMTHDACT(UADUMP)",
     "TRAP(ON)",
   ];
-  const parmFields = batchParmFields(program);
-  const parmTemplate = parmFields
-    .map((field) => "x".repeat(field.width))
-    .join("");
-
   // A COPY resolves against SYSLIB, and so does `COPY CMQV`: an MQ program
   // reads the queue manager's own copybooks whether or not the record layouts
   // were written to a library.
@@ -6307,12 +6293,6 @@ function emitOccursCountGuard(
   addLine(`${indent}END-IF`);
 }
 
-function recordTarget(statement: IRFileStatement): string {
-  return statement.recordName
-    ? resolveIdentifier(statement.recordName)
-    : fileRecordNameFor(statement.fileName);
-}
-
 function fileRecordNameFor(fileName: string): string {
   return cobolWord(toCobolName(fileName), "RECORD");
 }
@@ -6558,7 +6538,7 @@ function emitCallsIn(
   indent: string,
 ): void {
   switch (expression.kind) {
-    case "Call":
+    case "Call": {
       for (const argument of expression.args) {
         emitCallsIn(argument, addLine, indent);
       }
@@ -6640,6 +6620,7 @@ function emitCallsIn(
         addLine(`${indent}END-IF`);
       }
       return;
+    }
     case "BinaryComparison":
     case "BinaryArithmetic":
     case "Logical":
@@ -7338,20 +7319,6 @@ function statementFileNames(program: IRProgram, kind: string): string[] {
 function programUsesNow(program: IRProgram): boolean {
   return JSON.stringify([program.functions, program.transactions]).includes(
     '"operation":"now"',
-  );
-}
-
-/** True when any record declares an array, so the bounds field is needed. */
-function programUsesArrays(program: IRProgram): boolean {
-  const hasArray = (fields: IRRecord["fields"]): boolean =>
-    fields.some(
-      (field) =>
-        field.type.kind === "array" ||
-        (field.type.kind === "record" && hasArray(field.type.fields)),
-    );
-  return (
-    program.records.some((record) => hasArray(record.fields)) ||
-    program.files.some((file) => hasArray(file.record.fields))
   );
 }
 

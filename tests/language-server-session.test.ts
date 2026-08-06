@@ -178,7 +178,7 @@ function start(): Session {
     spawn(process.execPath, [BUNDLE], {
       cwd: ROOT,
       stdio: ["pipe", "pipe", "pipe"],
-    }) as ChildProcessWithoutNullStreams,
+    }),
   );
 }
 

@@ -34,8 +34,6 @@ import {
   type XmlParseStatementNode,
   type SplitStatementNode,
   type UnitOfWorkStatementNode,
-  type BooleanLiteralNode,
-  type DeclarationNode,
   type TestDeclarationNode,
   type TestStepNode,
   type DecimalLiteralNode,
@@ -47,17 +45,13 @@ import {
   type IdentifierNode,
   type IfStatementNode,
   type LetStatementNode,
-  type ParameterNode,
   type ProgramNode,
   type RecordDeclarationNode,
-  type ReturnStatementNode,
   type SourceSpan,
   type StringCallNode,
   type StringTypeNode,
-  type TypeAliasDeclarationNode,
   type TypeNode,
   type TypeReferenceNode,
-  type BoolTypeNode,
   type StatementNode,
   type TransactionDeclarationNode,
   type LedgerStatementNode,
@@ -67,11 +61,8 @@ import {
   type WhileStatementNode,
   type AssignStatementNode,
   type FileStatementNode,
-  type EnumDeclarationNode,
   type FileOrganization,
   type SwitchStatementNode,
-  type IndexAccessNode,
-  type NullableCheckNode,
   type SqlDeclarationNode,
   type SqlStatementNode,
   type CicsStatementNode,
@@ -1796,7 +1787,6 @@ function resolveTransaction(
   sqlCodeTested = false;
   sqlCodeFailureTested = false;
   sensitiveLocals = new Set();
-  checkpointSeen = false;
   validateTransactionBody(
     declaration.body,
     scope,
@@ -2329,7 +2319,6 @@ function validateEffectStatement(
       return true;
     case "CheckpointStatement":
       validateCheckpointStatement(statement, scope, diagnostics);
-      checkpointSeen = true;
       return true;
     case "RestartStatement":
       validateRestartStatement(
@@ -2921,8 +2910,6 @@ function validateForEachStatement(
  * that is not in the record sorts on nothing.
  */
 /** True when the body being checked writes a restart point. */
-let checkpointSeen = false;
-
 /**
  * The record a `release` may name, or null outside a sort input procedure.
  *
@@ -6072,7 +6059,6 @@ function resolveFunction(
   sqlCodeTested = false;
   sqlCodeFailureTested = false;
   sensitiveLocals = new Set();
-  checkpointSeen = false;
   validateFunctionBody(
     declaration.body,
     returnType,

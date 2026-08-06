@@ -21,6 +21,7 @@ Run the repository checks:
 
 ```bash
 pnpm lint
+pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm test:gnucobol

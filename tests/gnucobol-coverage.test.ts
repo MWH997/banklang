@@ -134,9 +134,6 @@ const TRANSLATED = new Set(["json-parse", "xml-parse"]);
  */
 const DIVERGENT = new Set(["national"]);
 
-/** Constructs whose COBOL has to go through the precompiler to be executed. */
-const NEEDS_PRECOMPILE = /EXEC\s+(?:CICS|SQL)\b|^\s*(?:JSON|XML)\s+PARSE\b/im;
-
 const available =
   spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
 

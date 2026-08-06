@@ -42,7 +42,8 @@ Read the document that covers the area you are touching:
 ## Local checks
 
 ```bash
-pnpm lint
+pnpm lint          # eslint
+pnpm format:check  # prettier
 pnpm typecheck
 pnpm test
 

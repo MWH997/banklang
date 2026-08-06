@@ -40,7 +40,7 @@ const setHighlight = StateEffect.define<{ from: number; to: number } | null>();
 
 const highlightMark = Decoration.line({ class: "cm-linked-line" });
 
-function highlightField(view: () => EditorView | null) {
+function highlightField() {
   return StateField.define<DecorationSet>({
     create: () => Decoration.none,
     update(value, transaction) {
@@ -115,7 +115,7 @@ function makeSourceEditor(parent: HTMLElement, doc: string): EditorView {
         keymap.of([...defaultKeymap, ...historyKeymap]),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         bankts,
-        highlightField(() => sourceView),
+        highlightField(),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -140,7 +140,7 @@ function makeOutputEditor(parent: HTMLElement): EditorView {
         EditorState.readOnly.of(true),
         readonlyLanguage.of([]),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-        highlightField(() => outputView),
+        highlightField(),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.selectionSet) {
@@ -546,17 +546,32 @@ function boot(): void {
     },
   );
 
-  $("#copy-output").addEventListener("click", async () => {
+  $("#copy-output").addEventListener("click", () => {
     if (!latest) {
       return;
     }
-    await navigator.clipboard.writeText(outputTextFor(activeTab, latest));
     const button = $("#copy-output");
     const original = button.textContent;
-    button.textContent = "Copied";
-    window.setTimeout(() => {
-      button.textContent = original;
-    }, 1200);
+    const restore = () =>
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+
+    // The clipboard can refuse. It does so over plain HTTP, in a browser whose
+    // permission has been denied, and in Firefox without a user gesture it
+    // recognises. The handler used to be `async` and its rejection went
+    // nowhere, so the button said nothing at all and the reader was left
+    // deciding whether the click had registered. Say which happened.
+    navigator.clipboard.writeText(outputTextFor(activeTab, latest)).then(
+      () => {
+        button.textContent = "Copied";
+        restore();
+      },
+      () => {
+        button.textContent = "Copy failed";
+        restore();
+      },
+    );
   });
 
   runCompile();

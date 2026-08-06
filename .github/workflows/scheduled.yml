@@ -1,0 +1,175 @@
+name: scheduled
+
+# The checks that are too slow for a pull request and too valuable to run by
+# hand. Mutation testing takes about an hour; the citation check needs the
+# network and depends on IBM not retiring a topic, which is not something a
+# commit can cause and not something a commit should be blamed for.
+on:
+  schedule:
+    # Mondays, 04:00 UTC.
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  mutation:
+    name: mutation testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      # Every lane reports, rather than the first failure hiding the rest.
+      fail-fast: false
+      matrix:
+        include:
+          - lane: rules
+            script: test:mutation
+            report: dist/mutation
+          - lane: emitter
+            script: test:mutation:emitter
+            report: dist/mutation-emitter
+          - lane: conformance-lint
+            script: test:mutation:lint
+            report: dist/mutation-lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm@11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Stryker exits non-zero when the score falls under the `break` threshold
+      # in its config, so the step failing is the signal. `continue-on-error`
+      # keeps the report upload and the issue below reachable either way.
+      - name: Run ${{ matrix.lane }}
+        id: run
+        continue-on-error: true
+        run: pnpm ${{ matrix.script }}
+
+      - name: Upload the HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-${{ matrix.lane }}
+          path: ${{ matrix.report }}
+          retention-days: 90
+
+      # A silent drop is the failure mode worth preventing: these runs exist to
+      # be read, and nobody reads a workflow that goes green whatever happens.
+      - name: Open an issue when the score falls below its threshold
+        if: steps.run.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lane = "${{ matrix.lane }}";
+            const title = `Mutation score below threshold: ${lane}`;
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "mutation",
+            });
+            const open = existing.data.find((issue) => issue.title === title);
+            const body = [
+              `The \`${lane}\` mutation lane finished under the \`break\` threshold in its Stryker config.`,
+              "",
+              `Run: ${url}`,
+              "",
+              "The HTML report is attached to that run as an artifact. A surviving mutant is a change to the code that no test noticed, so read the survivors before adjusting the threshold.",
+            ].join("\n");
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["mutation"],
+              });
+            }
+
+  citations:
+    name: citations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm@11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `docs/citations.json` records what each cited page resolved to on the
+      # day it was checked. It cannot notice IBM retiring a topic on its own,
+      # and a pull request must not fail because somebody else's site changed.
+      - name: Check every cited source
+        id: check
+        continue-on-error: true
+        run: pnpm docs:citations | tee citations.log
+
+      - name: Open an issue when a citation stops resolving
+        if: steps.check.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const log = fs.readFileSync("citations.log", "utf8");
+            const title = "A cited source no longer resolves";
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "`pnpm docs:citations` found a citation that is broken or has moved.",
+              "",
+              "```",
+              log.slice(0, 50000),
+              "```",
+              "",
+              `Run: ${url}`,
+              "",
+              "A `BROKEN` line means the page is gone or resolved to a product shell. A `MOVED` line means the page is still there under a different heading, which may or may not still support the claim it was cited for — read it before running `pnpm docs:citations --write`.",
+            ].join("\n");
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "citations",
+            });
+            const open = existing.data.find((issue) => issue.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["citations"],
+              });
+            }

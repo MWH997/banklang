@@ -40,6 +40,9 @@ jobs:
         run: pnpm lint
 
       - name: Check formatting
+        run: pnpm format:check
+
+      - name: Check example formatting
         run: pnpm fmt:check
 
       - name: Typecheck

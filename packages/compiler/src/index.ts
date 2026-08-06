@@ -5,7 +5,7 @@ import {
   renderCopybook,
   type SourceMapDocument,
 } from "../../cobol-backend/src/index";
-import { copybookMemberName, toCobolName } from "../../cobol-ir/src/index";
+import { copybookMemberName } from "../../cobol-ir/src/index";
 import {
   buildCopybookLayoutDocument,
   type CopybookLayoutDocument,
