@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { localCobol } from "./helpers";
+import { corpus, localCobol } from "./helpers";
 
 /**
  * `SET <condition> TO TRUE` — what the level-88 names are for.
@@ -220,5 +220,31 @@ entry transaction shift(account: Account, mirror: Mirror) {
     // either not compile or set the wrong one.
     expect(ran.stdout).toContain("ACCOUNT CLOSED");
     expect(ran.stdout).toContain("MIRROR OPEN");
+  });
+});
+
+/**
+ * One 88-level per member, over every example that declares an enum.
+ *
+ * The condition names are what `SET ... TO TRUE` writes through, so a member
+ * without one is a member the program can only reach by spelling its literal
+ * again in the procedure division — which is the drift the 88s exist to stop.
+ */
+describe("across the corpus", () => {
+  it("declares a condition name for every enum member", () => {
+    for (const { example, cobol } of corpus()) {
+      // `SET X TO TRUE` names a condition; every one of them has to be
+      // declared as an 88 somewhere in the same program.
+      const set = [...cobol.matchAll(/SET ([A-Z][A-Z0-9-]*) TO TRUE/g)].map(
+        (match) => match[1],
+      );
+
+      for (const condition of new Set(set)) {
+        expect(
+          cobol,
+          `${example} sets ${condition} and declares no 88 for it.`,
+        ).toMatch(new RegExp(`88\\s+${condition}\\s`));
+      }
+    }
   });
 });

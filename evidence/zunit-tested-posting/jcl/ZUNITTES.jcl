@@ -21,7 +21,7 @@
 //               DD DISP=SHR,DSN=CEE.SCEELKED
 //* PARM layout, positional, one field per entry parameter:
 //*   account X(16) (16)
-//*   amount S9(16)V9(2) SIGN IS LEADING SEPARATE (19)
+//*   amount S9(16)V99 SIGN IS LEADING SEPARATE (19)
 //*   idempotencyKey X(36) (36)
 //RUN      EXEC PGM=ZUNITTES,
 //             PARM='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

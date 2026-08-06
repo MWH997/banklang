@@ -149,6 +149,31 @@ describe("what the linter refuses", () => {
       "process-statement",
     );
   });
+
+  /**
+   * The audit's F13, as a rule rather than as an instance. `MOVE 'Y'` sat two
+   * lines under a `VALUE "N"` in a shipped example, its evidence bundle and a
+   * golden fixture, while a test asserting exactly this passed — because the
+   * program it compiled reached the boolean written as a condition and not the
+   * boolean written as a literal. Read off the text, there is nothing to miss.
+   */
+  it("two delimiters for the literals of one program", () => {
+    const findings = lintCobol(
+      "x.cbl",
+      cobol(
+        '       01  ELIGIBLE-RESULT      PIC X VALUE "N".',
+        "           IF PROJECTED-BALANCE > 1000",
+        "               MOVE 'Y' TO ELIGIBLE-RESULT",
+        "           END-IF",
+      ),
+      { fragment: true },
+    );
+
+    expect(findings.map((finding) => finding.rule)).toContain(
+      "literal-delimiter",
+    );
+    expect(formatFindings(findings)).toContain("One artifact, one delimiter.");
+  });
 });
 
 describe("what the linter accepts", () => {
@@ -216,6 +241,44 @@ describe("what the linter accepts", () => {
           "       01  TRANSFER-REQUEST.",
           "           05  DEBIT-ACCOUNT        PIC X(16).",
           "           05  AMOUNT               PIC S9(16)V99 COMP-3.",
+        ),
+        { fragment: true },
+      ),
+    ).toEqual([]);
+  });
+
+  /**
+   * The generated zUnit driver's shape, copied from what IBM's own generator
+   * produces: apostrophes throughout, because the message text it has to hold
+   * contains a quote. One delimiter, consistently — which is the rule.
+   */
+  it("an artifact that chose the apostrophe and kept to it", () => {
+    expect(
+      lintCobol(
+        "x.cbl",
+        cobol(
+          "       01  PROGRAM-NAME             PIC X(8) VALUE 'ZUNITTES'.",
+          "       01  AZ-TEST                  PIC X(80).",
+          "           DISPLAY 'AZU2001W THE TEST \"' AZ-TEST",
+          "               '\" FAILED DUE TO AN ASSERTION.'",
+        ),
+        { fragment: true },
+      ),
+    ).toEqual([]);
+  });
+
+  /** SQL's string constant is delimited by an apostrophe. That is SQL's rule. */
+  it("an EXEC SQL block whose literal is delimited the SQL way", () => {
+    expect(
+      lintCobol(
+        "x.cbl",
+        cobol(
+          "       01  ACCOUNT-STATUS       PIC X(2).",
+          '           MOVE "00" TO ACCOUNT-STATUS',
+          "           EXEC SQL",
+          "               SELECT BALANCE INTO :ROW-BALANCE FROM ACCOUNT",
+          "               WHERE STATUS = 'OPEN'",
+          "           END-EXEC",
         ),
         { fragment: true },
       ),

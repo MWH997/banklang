@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { compileExample, flowed } from "./helpers";
+import { compileExample, corpus, flowed } from "./helpers";
 
 /**
  * What makes a generated program read as one.
@@ -178,6 +178,41 @@ entry transaction go(account: Account, flag: bool) {
     expect(result.cobol).toContain("QUOTE");
     expect(result.cobol).not.toMatch(/'[A-Z0-9]'/);
   });
+
+  /**
+   * The shape the rule above was written for and did not reach.
+   *
+   * A `bool` reaches working storage two ways: through a condition, which
+   * emits `IF ... MOVE "Y" ... ELSE MOVE "N"`, and through a literal, which
+   * emits the `MOVE` on its own. Only the first was provoked, so the second
+   * kept writing `MOVE 'Y'` two lines under a `VALUE "N"` for as long as the
+   * rule had been in the suite — in a shipped example, its evidence bundle and
+   * its golden fixture. Every way of writing a boolean literal is here now:
+   * a local, a field, and a return.
+   */
+  it("writes a boolean literal with it too", () => {
+    const result = compile(`${PREAMBLE}
+record Flags {
+  active: bool;
+}
+
+function alwaysTrue(): bool {
+  return true;
+}
+
+entry transaction go(account: Account, flags: Flags) {
+  let ready: bool = true;
+  flags.active = false;
+  if ready && alwaysTrue() {
+    audit("READY", account.idempotencyKey);
+  }
+}`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toMatch(/MOVE "Y" TO/);
+    expect(result.cobol).toMatch(/MOVE "N" TO/);
+    expect(result.cobol).not.toMatch(/'[A-Z0-9]'/);
+  });
 });
 
 describe("generated names", () => {
@@ -318,5 +353,92 @@ entry transaction blank(account: Account) {
       "MOVE SPACES TO ACCOUNT-ID OF ACCOUNT",
     );
     expect(flowed(result.cobol)).toContain("IF ACCOUNT-ID OF ACCOUNT = SPACES");
+  });
+});
+
+/**
+ * The house style, over every example rather than one program each.
+ *
+ * This block is the audit F13 lesson written as structure. Every assertion
+ * above compiles a program written here, which proves that program; each of
+ * these reads everything the compiler is asked to produce. The delimiter rule
+ * had a test of the first kind for as long as it had existed, and `MOVE 'Y'`
+ * sat in a shipped example the whole time.
+ */
+describe("across the corpus", () => {
+  it("opens every program with a prologue", () => {
+    for (const { example, cobol } of corpus()) {
+      const prologue = cobol.slice(0, cobol.indexOf("IDENTIFICATION"));
+      expect(prologue, `${example} has no PURPOSE in its prologue.`).toContain(
+        "PURPOSE",
+      );
+      expect(prologue, `${example} does not say how it is entered.`).toContain(
+        "ENTRY",
+      );
+      expect(prologue, `${example} names no return codes.`).toContain(
+        "RETURN CODES",
+      );
+      expect(prologue, `${example} says nothing about rerunning.`).toContain(
+        "RESTART",
+      );
+    }
+  });
+
+  it("names no generated field for a source position", () => {
+    for (const { example, cobol } of corpus()) {
+      // `WS-LOOP-34-3` carried the line and column it was lowered from, so
+      // adding a blank line renamed working storage.
+      expect(
+        cobol,
+        `${example} names a field for a source position.`,
+      ).not.toMatch(/\bWS-[A-Z]+-\d+-\d+\b/);
+    }
+  });
+
+  it("gives a QSAM FD its blocking and recording mode", () => {
+    for (const { example, cobol } of corpus()) {
+      // A VSAM file carries neither, so the FDs checked are the ones whose
+      // SELECT did not ask for an indexed or relative organisation.
+      const sequential = [
+        ...cobol.matchAll(
+          /SELECT ([A-Z][A-Z0-9-]*)[^.]*ORGANIZATION IS SEQUENTIAL/g,
+        ),
+      ].map((match) => match[1]);
+
+      for (const file of sequential) {
+        const fd = cobol.slice(cobol.indexOf(`FD  ${file}`));
+        expect(
+          fd.slice(0, fd.indexOf(".")),
+          `${example} declares ${file} without BLOCK CONTAINS 0 RECORDS.`,
+        ).toContain("BLOCK CONTAINS 0 RECORDS");
+        expect(
+          fd.slice(0, fd.indexOf(".")),
+          `${example} declares ${file} without a RECORDING MODE.`,
+        ).toContain("RECORDING MODE");
+      }
+    }
+  });
+
+  it("never writes the return code register in a CICS program", () => {
+    for (const { example, cobol } of corpus()) {
+      if (!cobol.includes("EXEC CICS")) {
+        continue;
+      }
+      expect(
+        cobol,
+        `${example} is a CICS program and writes RETURN-CODE, which CICS does not read.`,
+      ).not.toMatch(/MOVE [^\n]* TO RETURN-CODE/);
+    }
+  });
+
+  it("closes the SQL declare section after its host variables", () => {
+    for (const { example, cobol } of corpus()) {
+      const begins = (cobol.match(/BEGIN DECLARE SECTION/g) ?? []).length;
+      const ends = (cobol.match(/END DECLARE SECTION/g) ?? []).length;
+      expect(
+        ends,
+        `${example} opens ${begins} declare section(s) and closes ${ends}.`,
+      ).toBe(begins);
+    }
   });
 });

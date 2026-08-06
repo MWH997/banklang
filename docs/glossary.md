@@ -720,7 +720,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** A link to primary documentation or a trustworthy authoritative source supporting a definition or technical claim.
 
-**Why it matters to BankLang:** `definitions.md` must include reference links so contributors can check terminology against real IBM, GnuCOBOL, TypeScript, GitHub, SPDX, OpenSSF, or other relevant documentation.
+**Why it matters to BankLang:** every entry on this page carries reference links, so a contributor can check the terminology against IBM, GnuCOBOL, TypeScript, SPDX or OpenSSF rather than against this page's own wording.
 
 **References:**
 

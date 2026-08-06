@@ -496,9 +496,13 @@ function parmPicture(type: IRType): string {
       // character and asks the operator for something they will not type: a
       // date declared `unsigned<8,0>` would have to be keyed `+20260805`, and
       // `IS NUMERIC` on a signed field rejects `20260805` outright.
+      // The fractional run is spelled out, which is what `decimalPicture`
+      // writes for the packed field this MOVEs into: `V99` and `V9(2)` are the
+      // same picture, and a program holding both spellings of one shape reads
+      // as two people's work.
       return type.kind === "decimal" && type.usage === "unsigned"
-        ? `PIC 9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""}`
-        : `PIC S9(${type.precision - type.scale})${type.scale > 0 ? `V9(${type.scale})` : ""} SIGN IS LEADING SEPARATE`;
+        ? `PIC 9(${type.precision - type.scale})${type.scale > 0 ? `V${"9".repeat(type.scale)}` : ""}`
+        : `PIC S9(${type.precision - type.scale})${type.scale > 0 ? `V${"9".repeat(type.scale)}` : ""} SIGN IS LEADING SEPARATE`;
     case "temporal":
       return temporalPicture(type.unit);
     case "enum":
@@ -1014,8 +1018,19 @@ export function emitCobol(
         (report) => report.fileName === file.name,
       );
       if (reports.length > 0) {
+        // A report file is QSAM and takes the same blocking and recording mode
+        // as any other. IBM's own worked example in the file description entry
+        // documentation carries all three — `FD SAMPLE-REPORT BLOCK CONTAINS 0
+        // RECORDS ... RECORDING MODE IS F ... REPORT IS SAMPLE-REP` — and what
+        // `REPORT IS` removes is the 01 record description, not the clauses
+        // that describe the dataset. Without them the file defaults to
+        // unblocked, and an unblocked dataset of 132-character print lines
+        // wastes most of a track.
+        addLine(`       FD  ${fileCobolName(file.name)}`);
+        addLine(`           BLOCK CONTAINS 0 RECORDS`);
+        addLine(`           RECORDING MODE IS F`);
         addLine(
-          `       FD  ${fileCobolName(file.name)} REPORT IS ${reports.map((report) => toCobolName(report.name)).join(" ")}.`,
+          `           REPORT IS ${reports.map((report) => toCobolName(report.name)).join(" ")}.`,
         );
         continue;
       }
@@ -5291,7 +5306,7 @@ function emitDliWorkingStorage(
     addLine(
       `           05  FILLER               PIC X(8) VALUE "${database.segmentName.padEnd(8)}".`,
     );
-    addLine(`           05  FILLER               PIC X VALUE "(".`);
+    addLine(`           05  FILLER               PIC X(1) VALUE "(".`);
     addLine(
       `           05  FILLER               PIC X(8) VALUE "${database.keyName.padEnd(8)}".`,
     );
@@ -5299,7 +5314,7 @@ function emitDliWorkingStorage(
     addLine(
       `           05  ${ssaValueName(database.name).padEnd(20)} PIC X(${Math.max(width, 1)}).`,
     );
-    addLine(`           05  FILLER               PIC X VALUE ")".`);
+    addLine(`           05  FILLER               PIC X(1) VALUE ")".`);
 
     // Nine bytes: the segment name and a trailing space, which is what makes it
     // unqualified rather than the start of a qualification.
@@ -5307,7 +5322,7 @@ function emitDliWorkingStorage(
     addLine(
       `           05  FILLER               PIC X(8) VALUE "${database.segmentName.padEnd(8)}".`,
     );
-    addLine(`           05  FILLER               PIC X VALUE " ".`);
+    addLine(`           05  FILLER               PIC X(1) VALUE " ".`);
   }
 }
 
@@ -8467,7 +8482,7 @@ function emitBooleanAssignment(
   addLine: (line?: string) => void,
 ): void {
   if (expression.kind === "BooleanLiteral") {
-    addLine(`${indent}MOVE '${expression.value ? "Y" : "N"}' TO ${targetName}`);
+    addLine(`${indent}MOVE "${expression.value ? "Y" : "N"}" TO ${targetName}`);
     return;
   }
 
@@ -8672,9 +8687,14 @@ function roundingFieldDeclarations(
     } else {
       // The excess is what truncation discarded, so it is always less than one
       // unit in the receiver's last place: no integer digits, and every
-      // fractional digit the value being rounded can carry.
+      // fractional digit the value being rounded can carry. Built by
+      // `decimalPicture` rather than written here, so this field is spelled the
+      // way every other field of the same shape is.
       lines.push(
-        `       01  ${roundingFieldName(group, "EXCESS").padEnd(20)} PIC SV9(${shape.operandScale}) COMP-3.`,
+        `       01  ${roundingFieldName(group, "EXCESS").padEnd(20)} ${decimalPicture(
+          shape.operandScale,
+          shape.operandScale,
+        )}.`,
       );
     }
   }
@@ -8856,7 +8876,9 @@ function formatCobolType(type: IRType): string {
         ? `PIC N(${type.length}) USAGE NATIONAL`
         : `PIC X(${type.length})`;
     case "bool":
-      return 'PIC X VALUE "N"';
+      // `X(1)` rather than `X`: the standard is a repeat count on every
+      // alphanumeric picture, and every other one the emitter writes has one.
+      return 'PIC X(1) VALUE "N"';
     case "record":
       return toCobolName(type.name);
     case "currency":

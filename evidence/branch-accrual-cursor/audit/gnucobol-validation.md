@@ -7,7 +7,7 @@
 | source-artifact | examples/branch-accrual-cursor/src/main.bank.ts |
 | source-artifact-sha256 | 2da557dc9a311acc9b5820327100ca0050a66992ddd30ec490c6bb8b9769f04c |
 | generated-artifact | evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC.cbl |
-| generated-artifact-sha256 | 97bad5cb8f0b2fb71946be0e4c0f9e31510ca4b5e8e21216085ed7d1ebb87c20 |
+| generated-artifact-sha256 | 91b59633dde2dca82f3e0fc8c65a0865ccf6831df1950632ba5c1517f91f1035 |
 | source-map-artifact | evidence/branch-accrual-cursor/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 707fcf5d76599c536b46573ce49cafc72647f2581c4023ac42cd5b108fee38f1 |
 | compiler-executable | cobc |

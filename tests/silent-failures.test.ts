@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { corpus, flowed } from "./helpers";
 
 /**
  * The endings that look like success.
@@ -265,5 +265,69 @@ cics transaction enquire(account: Account) {
 }`);
 
     expect(ids(result)).toContain("BANK-CICS-004");
+  });
+});
+
+/**
+ * The endings that look like success, over every example.
+ *
+ * Each of these is an audit finding whose fix was proved on one program: F5 the
+ * bound that reported RC=0, F6 the record area read after AT END, F7 the Db2
+ * error that became "not found", F8 the CICS response compared against a
+ * number. A property that only holds for the program a test wrote is not a
+ * property of the compiler.
+ */
+describe("across the corpus", () => {
+  it("compares a CICS response against DFHRESP, never a number", () => {
+    for (const { example, cobol } of corpus()) {
+      const numeric = [
+        ...flowed(cobol).matchAll(/IF \(?[A-Z0-9-]*RESP[A-Z0-9-]* = (-?\d+)/g),
+      ];
+      expect(
+        numeric.map((match) => match[0]),
+        `${example} compares a CICS response against a literal.`,
+      ).toEqual([]);
+    }
+  });
+
+  it("gives every bounded loop an exhausted branch", () => {
+    for (const { example, cobol } of corpus()) {
+      const bounds = [
+        ...flowed(cobol).matchAll(/PERFORM UNTIL ([A-Z][A-Z0-9-]*) >= (\d+)/g),
+      ];
+      for (const [, counter, limit] of bounds) {
+        expect(
+          flowed(cobol),
+          `${example} bounds a loop at ${limit} and never tests ${counter} afterwards, so exhaustion ends the step as a success.`,
+        ).toContain(`IF ${counter} >= ${limit}`);
+      }
+    }
+  });
+
+  it("reads a record area only in the success phrase", () => {
+    for (const { example, cobol } of corpus()) {
+      const reads = [
+        ...flowed(cobol).matchAll(/READ ([A-Z][A-Z0-9-]*)(.*?)END-READ/g),
+      ];
+      for (const [, file, body] of reads) {
+        // A copy *out of* the record area, which is what is undefined after AT
+        // END. The `MOVE "10" TO ...-STATUS` the AT END phrase itself carries
+        // is a move into the status field and is the point of the phrase.
+        const copies = [...body.matchAll(/MOVE [A-Z0-9-]+ OF ([A-Z0-9-]+)/g)];
+        const success = Math.max(
+          body.indexOf("NOT AT END"),
+          body.indexOf("NOT INVALID KEY"),
+        );
+        for (const copy of copies) {
+          if (!copy[1].endsWith("-RECORD")) {
+            continue;
+          }
+          expect(
+            success !== -1 && copy.index > success,
+            `${example} copies out of ${file}'s record area outside the success phrase.`,
+          ).toBe(true);
+        }
+      }
+    }
   });
 });

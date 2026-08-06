@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol, parmDriver } from "./helpers";
+import { corpus, flowed, localCobol, parmDriver } from "./helpers";
 
 /**
  * Computed subscripts, and every place one can appear.
@@ -268,5 +268,39 @@ describe("executed", () => {
     const out = run(3);
     expect(out.stdout).toContain("TOTAL=+0000000000000042.00");
     expect(out.status).toBe(0);
+  });
+});
+
+/**
+ * The bounds guard, over every example that subscripts anything.
+ *
+ * `SSRANGE` is a compile option a site can turn off, so the check is generated
+ * rather than asked for. That only holds if it is generated everywhere.
+ */
+describe("across the corpus", () => {
+  it("range-checks a computed subscript before the statement using it", () => {
+    for (const { example, cobol } of corpus()) {
+      // Only a program with a table can subscript one. Everything else that
+      // looks like `NAME (SOMETHING)` is a function reference, a CICS
+      // condition name or a reference modification, none of which is indexing.
+      if (!cobol.includes("OCCURS")) {
+        continue;
+      }
+      const text = flowed(cobol)
+        .replace(/FUNCTION [A-Z0-9-]+ \([^)]*\)/g, " ")
+        .replace(/DFHRESP\([^)]*\)/g, " ")
+        .replace(/\([^)]*:[^)]*\)/g, " ");
+      const computed = [
+        ...text.matchAll(/[A-Z][A-Z0-9-]* \(([A-Z][A-Z0-9-]*)\)/g),
+      ];
+
+      if (computed.length === 0) {
+        continue;
+      }
+      expect(
+        flowed(cobol),
+        `${example} subscripts a table with ${computed[0][1]} and emits no bounds status.`,
+      ).toContain("BANK-BOUNDS-STATUS");
+    }
   });
 });

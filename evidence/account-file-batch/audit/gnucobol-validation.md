@@ -7,7 +7,7 @@
 | source-artifact | examples/account-file-batch/src/main.bank.ts |
 | source-artifact-sha256 | 7241aff02790e99f62a8557c129e93e9c4b3542fc73d83d54561262d3b4311ac |
 | generated-artifact | evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl |
-| generated-artifact-sha256 | 75ad574382181d3f17e1da982cf55558c547e7a469c7e932ae3a8fc088abc773 |
+| generated-artifact-sha256 | 5a595e9d6a211c4dd379e474755973f006c9d373792ab85a8dfbe4791b75c351 |
 | source-map-artifact | evidence/account-file-batch/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 4d3df04c621662963b7ab2073fb8a399379054767ec334b64a1a6b03ad213d52 |
 | compiler-executable | cobc |

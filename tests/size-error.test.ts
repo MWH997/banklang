@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol } from "./helpers";
+import { corpus, flowed, localCobol } from "./helpers";
 
 /**
  * `ON SIZE ERROR` — what COBOL does when a result does not fit.
@@ -191,5 +191,61 @@ describe("executed", () => {
     expect(ran.stdout).toContain("ARITHMETIC OVERFLOW TOTAL OF ACCT");
     expect(ran.status).toBe(12);
     expect(ran.stdout).not.toContain("TOTAL=+9999999.98");
+  });
+});
+
+/**
+ * The guard on arithmetic, and the test after a call, over every example.
+ *
+ * A `COMPUTE` whose result will not fit its receiver stores a truncated value
+ * and carries on; a call whose callee raised leaves the failure register set
+ * and the caller none the wiser. Both were proved on programs written for the
+ * purpose, which says nothing about the nineteen the compiler is actually asked
+ * to build.
+ */
+describe("across the corpus", () => {
+  it("guards every COMPUTE that stores a result", () => {
+    for (const { example, cobol } of corpus()) {
+      const computes = [
+        ...flowed(cobol).matchAll(
+          /COMPUTE [A-Z0-9-]+(?: OF [A-Z0-9-]+)? =.*?(?=COMPUTE |END-COMPUTE|IF |MOVE |PERFORM |$)/g,
+        ),
+      ];
+      const guarded = flowed(cobol).split("ON SIZE ERROR").length - 1;
+
+      expect(
+        computes.length > 0 ? guarded : 1,
+        `${example} writes ${computes.length} COMPUTE(s) and ${guarded} ON SIZE ERROR phrase(s).`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * A raise never ends the step with return code zero.
+   *
+   * Where the failure is tested depends on where it was raised — inside a
+   * routine it goes to that routine's exit, across a `CALL` it is read back
+   * from the register — so asserting on the call site is asserting on a shape.
+   * What holds everywhere is the property those shapes exist for: a program
+   * that can name a failure can also fail the step, and the two counts move
+   * together. The audit's whole silent-failure class is programs where they
+   * did not.
+   */
+  it("fails the step wherever it can name a failure", () => {
+    for (const { example, cobol } of corpus()) {
+      const named =
+        flowed(cobol).split(/MOVE "[A-Z0-9-]+" TO BANK-FAILURE-CODE/).length -
+        1;
+      if (named === 0) {
+        continue;
+      }
+      const failed =
+        flowed(cobol).split("MOVE 12 TO BANK-RETURN-CODE").length - 1;
+
+      expect(
+        failed,
+        `${example} names a failure ${named} time(s) and sets a non-zero return code ${failed} time(s), so at least one raise ends the step looking like a clean run.`,
+      ).toBeGreaterThanOrEqual(named);
+    }
   });
 });

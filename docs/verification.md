@@ -350,10 +350,10 @@ Documentation changes must validate terminology.
 
 Checks:
 
-- New important terms are added to `definitions.md`.
+- New important terms are added to [glossary.md](glossary.md).
 - Each definition includes reference links.
 - Definitions prefer primary sources.
-- README/spec/ticket terminology matches `definitions.md`.
+- README and reference-page terminology matches [glossary.md](glossary.md).
 - Tester notes mention whether definitions were updated.
 
-A future CI check should scan Markdown files for configured glossary terms and report terms that appear in docs but are missing from `definitions.md`.
+A future CI check should scan Markdown files for configured glossary terms and report terms that appear in the documentation but are missing from [glossary.md](glossary.md).

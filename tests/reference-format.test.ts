@@ -16,7 +16,7 @@ import {
   toJclStatement,
   toReferenceFormat,
 } from "../packages/cobol-backend/src/reference-format";
-import { compileExample } from "./helpers";
+import { compileExample, corpus } from "./helpers";
 
 /**
  * COBOL reference format, which is the shape of the page rather than of the
@@ -276,4 +276,46 @@ describe("every generated artifact", () => {
       }
     });
   }
+});
+
+/**
+ * The margin, over every example rather than the ones named above.
+ *
+ * A statement wider than Area B is continued rather than truncated, and a
+ * literal broken at the margin carries a hyphen in the indicator area. The
+ * compiler reads to column 72 and discards the rest without a diagnostic, so
+ * an over-long line is a statement silently changed.
+ */
+describe("across the corpus", () => {
+  it("ends every line at column 72", () => {
+    for (const { example, cobol } of corpus()) {
+      const over = cobol
+        .split("\n")
+        .map((line, index) => ({ line, at: index + 1 }))
+        .filter((entry) => entry.line.length > 72);
+
+      expect(
+        over.map((entry) => `${example}:${entry.at}`),
+        `${example} writes past column 72, where the compiler stops reading.`,
+      ).toEqual([]);
+    }
+  });
+
+  it("continues a broken literal with a hyphen in the indicator area", () => {
+    for (const { example, cobol } of corpus()) {
+      const lines = cobol.split("\n");
+      lines.forEach((line, index) => {
+        // An odd number of delimiters means the literal opened here and is
+        // closed on the next line, which therefore has to be a continuation.
+        const quotes = (line.match(/"/g) ?? []).length;
+        if (quotes % 2 === 0 || index + 1 >= lines.length) {
+          return;
+        }
+        expect(
+          lines[index + 1][6],
+          `${example}:${index + 2} continues a literal without a hyphen in column 7.`,
+        ).toBe("-");
+      });
+    }
+  });
 });

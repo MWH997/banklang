@@ -147,3 +147,38 @@ Deliverables:
 - serious demos
 - compatibility matrix
 - contributor process
+
+## Researched, not built
+
+Four integrations were researched during planning and never started. They are
+here rather than as pages of their own, because a page describing something that
+does not exist reads as though it does. What is worth keeping is the reading.
+
+**IBM Dependency Based Build.** DBB builds COBOL, PL/I and Assembler as part of
+a DevOps pipeline, and a generated program has to reach a real z/OS build rather
+than a script invented here. What BankLang would have to emit is the dependency
+graph it already knows: source, copybooks, Db2 precompile and CICS translation
+metadata, and the compiler options `bankc` already writes onto the `CBL`
+statement.
+[Overview](https://www.ibm.com/docs/en/adffz/dbb/3.0.x?topic=dependency-based-build-overview) ·
+[With IDz](https://www.ibm.com/docs/en/developer-for-zos/17.0.x?topic=code-integrating-dependency-based-build-developer-zos)
+
+**z/OS Connect.** Contract-first OpenAPI 3.0 over CICS and IMS. The interesting
+half for a compiler is copybook-to-OpenAPI and back, which is the same layout
+problem `bankc copybook import` already solves in one direction.
+[Designer](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=30-developing-apis-using-zos-connect-designer) ·
+[Calling APIs](https://www.ibm.com/docs/en/zos-connect/3.0.0?topic=20-developing-zos-applications-call-apis)
+
+**Galasa**, for deep integration tests against real CICS and IMS, once anything
+runs on z/OS at all. **COBOL Check** was the other candidate and is marked
+Emeritus by the Open Mainframe Project, so it would need evaluating before
+anything depended on it.
+[Galasa](https://openmainframeproject.org/projects/galasa/) ·
+[COBOL Check](https://github.com/openmainframeproject/cobol-check)
+
+**IBM Z Open Editor.** The editor work that did happen — the LSP and the VS Code
+extension — went its own way. What is still unbuilt is the part that would make
+a generated program navigable from the editor a z/OS developer already uses:
+copybook preview, generated-COBOL preview, and source-to-COBOL navigation.
+[Z Open Editor](https://ibm.github.io/zopeneditor-about/Docs/introduction.html) ·
+[LSP](https://microsoft.github.io/language-server-protocol/)

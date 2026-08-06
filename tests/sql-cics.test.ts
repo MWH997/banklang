@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { corpus, flowed } from "./helpers";
 
 const PREAMBLE = `module Online;
 
@@ -308,5 +308,29 @@ cics transaction enquiry(request: Request, row: Row) {
       "db2-precompiler",
       "cics-translator",
     ]);
+  });
+});
+
+/**
+ * `EXEC CICS RETURN` followed by `GOBACK`, over every CICS example.
+ *
+ * Under CICS the RETURN ends the task and the GOBACK is never reached. Under a
+ * run time where RETURN is an ordinary call it is reached, and without it the
+ * transaction runs its whole body a second time — which is how the defect was
+ * found, and why the belt and braces are both emitted.
+ */
+describe("across the corpus", () => {
+  it("follows every EXEC CICS RETURN with GOBACK", () => {
+    for (const { example, cobol } of corpus()) {
+      const returns = [
+        ...flowed(cobol).matchAll(/EXEC CICS RETURN END-EXEC(.{0,20})/g),
+      ];
+      for (const [, after] of returns) {
+        expect(
+          after.trimStart(),
+          `${example} ends a CICS transaction without a GOBACK behind it.`,
+        ).toMatch(/^GOBACK/);
+      }
+    }
   });
 });

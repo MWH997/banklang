@@ -60,6 +60,52 @@ describe("every link in every document", () => {
 
     expect(broken).toEqual([]);
   });
+
+  /**
+   * A document named in backticks rather than linked.
+   *
+   * The check above reads Markdown links, so it never saw `` `language-spec.md`
+   * `` in `docs/diagnostics.md`, `` `definitions.md` `` in `docs/glossary.md`
+   * and `docs/verification.md`, or `` `repo-conventions.md` `` — four documents
+   * that had not existed for a long time, cited as though a reader could go and
+   * read them. Prose naming a file is a reference whether or not it is a link.
+   */
+  it("names no document that does not exist", () => {
+    const missing: string[] = [];
+    const known = new Set(FILES.map((file) => file.replace(/\\/g, "/")));
+    /**
+     * A document the reader is asked to create, named for that reason.
+     *
+     * `RESULTS.md` is what a z/OS run produces from `RESULTS-TEMPLATE.md`, and
+     * three pages say so in the form "until `RESULTS.md` exists". Its absence
+     * is the point being made.
+     */
+    const yetToExist = new Set(["RESULTS.md"]);
+
+    for (const file of FILES) {
+      // The changelog archive and the audits are records of what was written
+      // at the time, and they name documents later renamed or removed —
+      // `integrations/numeric-semantics.md` became `numeric-model.md` because
+      // the 2026-08-05 audit asked for it. Rewriting either would be rewriting
+      // the history it exists to hold.
+      if (file.startsWith("docs/changelog/") || /audit-\d{4}/.test(file)) {
+        continue;
+      }
+      const text = readFileSync(resolve(process.cwd(), file), "utf8");
+      for (const [, named] of text.matchAll(/`([\w./-]+\.md)`/g)) {
+        const base = named.split("/").pop() as string;
+        if (
+          yetToExist.has(base) ||
+          [...known].some((path) => path.endsWith(`/${base}`) || path === base)
+        ) {
+          continue;
+        }
+        missing.push(`${file} names ${named}`);
+      }
+    }
+
+    expect(missing).toEqual([]);
+  });
 });
 
 /**
@@ -119,17 +165,45 @@ describe("what the README claims", () => {
 });
 
 /**
- * The CHANGELOG reached 126 KB in a single `Unreleased` section. The archive is
- * where everything before the audit response went.
+ * The CHANGELOG reached 126 KB in a single `Unreleased` section, and a byte
+ * ceiling was the first answer to that. A ceiling only says when the problem
+ * has recurred; what keeps the file readable is the entry style, so that is
+ * what is asserted. Common Changelog's rule 3: a change is "no more than one
+ * line long", and the explanation belongs in the document it links to.
  */
 describe("the changelog", () => {
-  it("is short, and says where the rest is", () => {
-    const changelog = readFileSync(
-      resolve(process.cwd(), "CHANGELOG.md"),
-      "utf8",
+  const changelog = readFileSync(
+    resolve(process.cwd(), "CHANGELOG.md"),
+    "utf8",
+  );
+
+  it("says where the rest is", () => {
+    expect(changelog).toContain("docs/changelog/before-2026-08-05.md");
+  });
+
+  /** Keep a Changelog: an Unreleased section, and a date on every version. */
+  it("carries an Unreleased section and a dated version", () => {
+    expect(changelog).toMatch(/^## \[Unreleased\]$/m);
+    expect(changelog).toMatch(/^## \[\d+\.\d+\.\d+\] — \d{4}-\d{2}-\d{2}$/m);
+  });
+
+  /**
+   * Measured over what a reader sees: the bullet's Markdown wrapping undone,
+   * and a link counted as its text rather than its target, since Common
+   * Changelog asks for the links and a URL is not prose. A one-line entry is
+   * one sentence, not one line of the file. The essays this replaced ran past
+   * two thousand characters each.
+   */
+  it("keeps every entry to a line", () => {
+    const entries = [...changelog.matchAll(/^- (.+(?:\n {2}.+)*)$/gm)].map(
+      (match) =>
+        match[1]
+          .replace(/\s*\n\s*/g, " ")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"),
     );
 
-    expect(changelog.length).toBeLessThan(20_000);
-    expect(changelog).toContain("docs/changelog/before-2026-08-05.md");
+    expect(entries.length).toBeGreaterThan(20);
+    const long = entries.filter((entry) => entry.length > 200);
+    expect(long).toEqual([]);
   });
 });

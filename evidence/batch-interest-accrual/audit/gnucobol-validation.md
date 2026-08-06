@@ -7,7 +7,7 @@
 | source-artifact | examples/batch-interest-accrual/src/main.bank.ts |
 | source-artifact-sha256 | e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa |
 | generated-artifact | evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl |
-| generated-artifact-sha256 | ee1d66e79be63198fdd3dd8411de3cb2f53aa3751f31b3d2b1fb3ca2c5a28a2c |
+| generated-artifact-sha256 | 8446fb3376fb7ef57bb289a0d0ac3de2f51ab617f7ff169e50b83bd1c9e152b8 |
 | source-map-artifact | evidence/batch-interest-accrual/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 90ddaa9a1f89df523751d1a2a1db200b6d89e1ba5120e378c6b166e76467c634 |
 | compiler-executable | cobc |

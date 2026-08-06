@@ -38,13 +38,12 @@ about how it was produced, or a test.
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
 | A picture describes at most 18 digits, which is `ARITH(COMPAT)`.                                                         | `digit-count`                      |
 | A PICTURE character-string is at most 50 characters; an alphanumeric literal at most 160.                                | `picture-length`, `literal-length` |
-| One literal delimiter. `"` everywhere, which is what the `CBL` statement's `QUOTE` says.                                 | `tests/generated-style.test.ts`    |
-| `PIC X(2)`, never `PIC XX`. A repeat count is written even for two.                                                      | `tests/ims-dli.test.ts` and others |
+| One literal delimiter. `"` everywhere, which is what the `CBL` statement's `QUOTE` says.                                 | `literal-delimiter`                |
+| One spelling per picture shape. `PIC X(1)` not `PIC X`, `V99` not `V9(2)` — either is legal, both in one program is not. | `tests/feature-coverage.test.ts`   |
 | A file status field carries condition names: `-OK` (`"00" THRU "09"`), `-EOF`, `-DUPKEY`, `-NOTFND`.                     | `tests/generated-style.test.ts`    |
 | An enum field carries one 88-level per member.                                                                           | `tests/enum-conditions.test.ts`    |
 | A QSAM `FD` carries `BLOCK CONTAINS 0 RECORDS` and `RECORDING MODE`. VSAM carries neither.                               | `tests/generated-style.test.ts`    |
 | An SQL declare section holds host variables and nothing else. Records an SQL statement names open sections of their own. | `tests/generated-style.test.ts`    |
-| No data item is declared that nothing references.                                                                        | review                             |
 
 ## 4. Procedure division
 
@@ -110,4 +109,20 @@ where it appeared.
 
 A rule that is not on this page and not checked anywhere is not a rule. If you
 find the emitter following one, either write it down here with its check or stop
-following it.
+following it. `tests/feature-coverage.test.ts` holds this page to that: every
+`Checked by` cell above has to name a conformance rule that exists or a test
+file that reads the whole corpus, and a cell saying "review" fails.
+
+## 9. Not a standard yet
+
+One rule belongs here and is not enforced, so it is stated apart from the table
+rather than inside it.
+
+**No data item is declared that nothing references.** The emitter still writes
+storage a program never uses: the ledger interface group in a program that only
+audits, the bounds and copy work fields in a program with neither, and a record
+declared in BankTS but only ever named as a parameter type. Twelve level-01
+items across the checked-in evidence, listed in
+[audit-2026-08-06.md](audit-2026-08-06.md). Making it a rule means making each
+of those emissions conditional first, because a linter rule that fails on every
+artifact is one somebody turns off.

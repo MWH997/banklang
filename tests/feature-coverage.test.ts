@@ -1,11 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { KEYWORDS } from "../packages/parser/src/index";
+import { CONFORMANCE_RULES } from "../packages/conformance-lint/src/index";
 import { DIAGNOSTICS } from "../packages/diagnostics/src/index";
 import { gradeExamples } from "../tools/evidence-grades";
+import { corpus } from "./helpers";
 
 /**
  * No feature may rest on a single example.
@@ -164,5 +166,153 @@ describe("evidence grades", () => {
         `${name} is graded ${entry.grade}; run pnpm evidence:grades`,
       ).toContain(`| \`${name}\` | ${entry.grade} |`);
     }
+  });
+});
+
+/**
+ * The generated-code standards, held to having a check each.
+ *
+ * `docs/generated-code-standards.md` closes by saying "a rule that is not on
+ * this page and not checked anywhere is not a rule". This is the other half of
+ * that: a rule that is on the page and names a check that does not exist reads
+ * as checked and is not.
+ *
+ * It also encodes what the 2026-08-05 audit's F13 taught, which no meta-test
+ * caught the first time. A conformance-linter rule runs over every emitted
+ * artifact, the checked-in fixtures and the evidence bundles, so it is
+ * corpus-wide by construction. A rule checked by a hand-fixtured test is only
+ * as good as the one program that test compiles — and F13's delimiter test
+ * compiled a program that reached one of the two branches emitting a boolean,
+ * passed, and left `MOVE 'Y'` in a shipped example for as long as it was there.
+ * So a test named here has to assert over the corpus rather than over one
+ * program it wrote itself.
+ */
+describe("the generated-code standards", () => {
+  const page = readFileSync("docs/generated-code-standards.md", "utf8");
+  /** The `Checked by` cell of every table row, split on its commas. */
+  const checks = [...page.matchAll(/^\|(?!\s*-)[^|]+\|([^|]+)\|\s*$/gm)]
+    .map((row) => row[1].trim())
+    .filter((cell) => cell !== "" && cell !== "Checked by")
+    .flatMap((cell) => cell.split(/,\s*/).map((part) => part.trim()))
+    // Unbackticked here rather than at each use. Leaving the backticks on made
+    // the corpus loop below select nothing, so it asserted over an empty list
+    // and passed — the same shape of defect this whole file exists to catch.
+    .map((check) => check.replace(/`/g, "").replace(/ skips them$/, ""));
+
+  const named = [...new Set(checks)];
+  const namedTests = named.filter((check) => check.startsWith("tests/"));
+
+  it("has rows to check", () => {
+    expect(checks.length).toBeGreaterThan(20);
+  });
+
+  it("names test files among them", () => {
+    expect(namedTests.length).toBeGreaterThan(5);
+  });
+
+  /**
+   * Every check is either a rule the linter can report or a test file that
+   * exists. "review" is neither, and neither is "and others" — both name a
+   * hope rather than something that fails.
+   */
+  for (const check of named) {
+    it(`names something that exists: ${check}`, () => {
+      if (check.startsWith("tests/")) {
+        expect(existsSync(check), `${check} does not exist.`).toBe(true);
+        return;
+      }
+      expect(
+        (CONFORMANCE_RULES as readonly string[]).includes(check),
+        `"${check}" is neither a conformance rule nor a test file. A standard whose check is prose is not checked.`,
+      ).toBe(true);
+    });
+  }
+
+  /**
+   * A test may only be named as the check for a standard if it asserts over
+   * every example rather than over one program written inside it. `corpus()`
+   * in `tests/helpers.ts` is what that means here; a test that does not reach
+   * for it is proving one shape.
+   */
+  for (const file of namedTests) {
+    it(`asserts over the corpus rather than one program: ${file}`, () => {
+      const source = readFileSync(file, "utf8");
+      expect(
+        source.includes("corpus("),
+        `${file} is named as the check for a generated-code standard but never reads the corpus. One hand-written program proves one shape — which is how F13 survived.`,
+      ).toBe(true);
+    });
+  }
+});
+
+/**
+ * One picture shape, one spelling, across everything the compiler emits.
+ *
+ * `PIC S9(16)V99` and `PIC S9(16)V9(2)` are the same picture; so are `PIC X`
+ * and `PIC X(1)`. Enterprise COBOL takes either, and a program carrying both
+ * reads as two people's work — the audit's F14, which was reported fixed
+ * because the one spelling it named had gone.
+ *
+ * Both were still being emitted: the PARM field builder wrote the fractional
+ * run as a repeat count where `decimalPicture` writes it out, the rounding work
+ * field wrote its own, and a boolean result cell was `PIC X` where every other
+ * alphanumeric picture carries a count. Nothing caught it because no test
+ * compared two examples against each other — every one of them read a single
+ * artifact and found it self-consistent.
+ *
+ * Normalising to (symbol, count) pairs is what makes the comparison possible:
+ * two spellings that normalise the same are the same picture written twice.
+ */
+describe("every PICTURE in the corpus", () => {
+  /**
+   * `S9(16)V99` becomes `Sx1 9x16 Vx1 9x2`, which `S9(16)V9(2)` also becomes.
+   *
+   * The character class is the PICTURE symbols the Language Reference lists —
+   * digits among them, `9` and `0` being symbols rather than counts.
+   */
+  const normalise = (picture: string): string =>
+    [...picture.matchAll(/([A-Z90$*+\-.,/])(?:\((\d+)\))?/g)]
+      .reduce<{ symbol: string; count: number }[]>(
+        (runs, [, symbol, count]) => {
+          const last = runs.at(-1);
+          const size = count === undefined ? 1 : Number(count);
+          if (last?.symbol === symbol) {
+            last.count += size;
+            return runs;
+          }
+          return [...runs, { symbol, count: size }];
+        },
+        [],
+      )
+      .map((run) => `${run.symbol}x${run.count}`)
+      .join(" ");
+
+  const spellings = new Map<string, Map<string, string>>();
+  for (const { example, cobol } of corpus()) {
+    for (const [, picture] of cobol.matchAll(/\bPIC\s+([^\s.]+)/g)) {
+      const shape = normalise(picture);
+      const seen = spellings.get(shape) ?? new Map<string, string>();
+      if (!seen.has(picture)) {
+        seen.set(picture, example);
+      }
+      spellings.set(shape, seen);
+    }
+  }
+
+  it("has pictures to compare", () => {
+    expect(spellings.size).toBeGreaterThan(10);
+  });
+
+  it("is spelled one way", () => {
+    const divergent = [...spellings.entries()]
+      .filter(([, seen]) => seen.size > 1)
+      .map(
+        ([shape, seen]) =>
+          `${shape}: ${[...seen]
+            .map(([picture, example]) => `${picture} (${example})`)
+            .join(" and ")}`,
+      );
+
+    expect(divergent).toEqual([]);
   });
 });
