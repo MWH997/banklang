@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "cobol/ONLINEEN.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 95,
+      "targetStartLine": 83,
+      "targetEndLine": 91,
       "category": "function",
       "symbol": "isAvailable"
     },
@@ -239,8 +239,8 @@
         "column": 2
       },
       "artifact": "cobol/ONLINEEN.cbl",
-      "targetStartLine": 96,
-      "targetEndLine": 147,
+      "targetStartLine": 92,
+      "targetEndLine": 143,
       "category": "transaction",
       "symbol": "accountEnquiry"
     }

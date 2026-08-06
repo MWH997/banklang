@@ -91,10 +91,13 @@ pnpm test:mutation
 ```
 
 Stryker, against `packages/typechecker` and `packages/semantic-analyzer` — the
-two packages that decide whether a program is refused. The emitter is
-deliberately out of scope: its output is held by golden fixtures, the
-conformance linter and `cobc`, which is a different and already-strong kind of
-evidence.
+two packages that decide whether a program is refused.
+
+There is a second run, `pnpm test:mutation:emitter`, against the code that
+decides what the emitted text looks like. It exists because the reason
+originally given for leaving the emitter out — that golden fixtures, the
+conformance linter and `cobc` already hold it — turned out to be wrong in a way
+worth recording. See §2.3b.
 
 Three configuration decisions are worth knowing, because each changes what the
 number means:
@@ -145,6 +148,53 @@ manual settles which is right: "A ROLLBACK statement closes all open cursors. A
 COMMIT statement ... closes cursors that are not declared WITH HOLD." So the
 rule was too narrow, not the test, and `hold` saves a commit and saves nothing
 from a rollback. That is the whole argument for running this.
+
+### 2.3b Mutation tests over the emitter's formatting
+
+```bash
+pnpm test:mutation:emitter
+```
+
+A separate run, because it asks a different question of different tests.
+
+The emitter was out of scope on the grounds that its output is already held by
+golden fixtures, the conformance linter and `cobc`. The 2026-08-05 audit's F13 —
+`MOVE 'Y'` two lines under a `VALUE "N"` — shipped through all three: the golden
+fixture _contained_ the defect, the linter had no rule for it, and `cobc`
+accepts both delimiters. Three controls, named as sufficient, all passing.
+
+So the scope is the files that decide what emitted text looks like rather than
+what it says: `reference-format.ts`, `prologue.ts`, and the name and picture
+builders in `cobol-ir`. A surviving mutant in those is a house-style rule that
+nothing enforces, which is exactly F13's class. The 8,700-line backend index
+stays out — mutating it produces five figures of mutants, most about semantics,
+which the corpus assertions and `cobc` already answer.
+
+`vitest.mutation-emitter.config.ts` is an allowlist of the ten suites that read
+generated COBOL, rather than a blocklist. The rule suites would cost a full run
+each and kill nothing here.
+
+#### What it scored
+
+Run on 2026-08-06, 667 mutants, 2 minutes 30 seconds:
+
+| File                  | Score | Covered | Killed | Survived | No coverage |
+| --------------------- | ----- | ------- | ------ | -------- | ----------- |
+| `prologue.ts`         | 71.78 | 74.05   | 114    | 41       | 5           |
+| `reference-format.ts` | 66.78 | 72.36   | 179    | 76       | 23          |
+| `cobol-ir/index.ts`   | 43.90 | 52.63   | 86     | 81       | 34          |
+| **All**               | 60.96 | 67.22   | 379    | 198      | 62          |
+
+Read this as a finding rather than as a pass. It clears the 60 threshold by
+under a point, and **198 survivors means 198 places where the emitted text can
+change and nothing complains.** `cobol-ir` at 43.90 is the weakest: that file
+holds the name abbreviation and the picture builders, which is where F13's
+sibling defects — two spellings of one picture, a 31-character word — came from.
+
+The honest reading is that the emitter's _semantics_ are well covered by the
+corpus assertions, `cobc` and the oracle, and its _presentation_ is not. That is
+the same gap the audit found by hand, now with a number on it and a way to watch
+it move.
 
 ### 2.4 Fuzz tests
 

@@ -290,16 +290,25 @@ describe("across the corpus", () => {
         .replace(/FUNCTION [A-Z0-9-]+ \([^)]*\)/g, " ")
         .replace(/DFHRESP\([^)]*\)/g, " ")
         .replace(/\([^)]*:[^)]*\)/g, " ");
+      // A `PERFORM VARYING` index is bounded by the loop that drives it: the
+      // UNTIL clause is the check, and generating a second one inside the loop
+      // would be a branch that cannot be taken. So what needs a guard is a
+      // subscript that came from somewhere the statement does not control.
+      const loopIndexes = new Set(
+        [...text.matchAll(/PERFORM VARYING ([A-Z][A-Z0-9-]*) FROM/g)].map(
+          (match) => match[1],
+        ),
+      );
       const computed = [
         ...text.matchAll(/[A-Z][A-Z0-9-]* \(([A-Z][A-Z0-9-]*)\)/g),
-      ];
+      ].filter((match) => !loopIndexes.has(match[1]));
 
       if (computed.length === 0) {
         continue;
       }
       expect(
         flowed(cobol),
-        `${example} subscripts a table with ${computed[0][1]} and emits no bounds status.`,
+        `${example} subscripts a table with ${computed[0][1]}, which no loop bounds, and emits no bounds status.`,
       ).toContain("BANK-BOUNDS-STATUS");
     }
   });

@@ -47,6 +47,7 @@ export const CONFORMANCE_RULES = [
   "reserved-word",
   "vocabulary",
   "duplicate-name",
+  "unreferenced-item",
   // Data description.
   "literal-length",
   "picture-length",
@@ -733,6 +734,7 @@ export function lintCobol(
   if (!options.fragment) {
     findings.push(...unresolvedCalls(file, text, options.knownPrograms ?? []));
     findings.push(...duplicateDeclarations(file, lines, hasReportSection));
+    findings.push(...unreferencedItems(file, lines));
   }
 
   return findings;
@@ -816,6 +818,97 @@ function mixedLiteralDelimiters(
       message: `${other}${literal.text}${other} is delimited by ${other === '"' ? "a quote" : "an apostrophe"}, and this artifact writes its other literals with ${chosen === '"' ? "a quote" : "an apostrophe"}. One artifact, one delimiter.`,
       citation: 'LR, "Alphanumeric literals"',
     }));
+}
+
+/**
+ * A work field the program declares and never names again.
+ *
+ * Dead storage is what a reviewer points at first, and a generated program
+ * accumulates it the moment a declaration is emitted unconditionally. Six were
+ * shipping: the ledger interface group in four programs that only audit, and a
+ * bounds status and copy index in a program with a table it never subscripts.
+ *
+ * Scoped to *elementary* level-01 items, which is what a text-only checker can
+ * decide. A level-01 group may be the program's own data model — every record a
+ * BankTS module declares becomes both working storage and a copybook, so
+ * `TRANSFER-REQUEST` is unreferenced in a program that only validates an amount
+ * and is still the point of that program. Nothing in the text tells those apart
+ * from an interface group nobody calls, so the group case is held by
+ * `tests/generated-style.test.ts` over the corpus instead, where the compiler's
+ * own knowledge of what it emitted is available.
+ *
+ * `EXTERNAL` is exempt: its storage belongs to the run unit, not to this
+ * compilation unit, so a program that declares one and never writes it is
+ * describing storage a caller owns.
+ */
+function unreferencedItems(
+  file: string,
+  lines: string[],
+): ConformanceFinding[] {
+  const findings: ConformanceFinding[] = [];
+  const declared: { name: string; line: number }[] = [];
+  let section = "";
+  let inExec = false;
+
+  lines.forEach((line, index) => {
+    if (isCommentLine(line) || line.trim() === "") {
+      return;
+    }
+    const content = line.slice(AREA_A_INDEX);
+    if (/\bEXEC\s+(SQL|CICS|DLI)\b/.test(content)) {
+      inExec = true;
+    }
+    if (inExec) {
+      if (/\bEND-EXEC\b/.test(content)) {
+        inExec = false;
+      }
+      return;
+    }
+    const sectionHeader = /^\s*([A-Z][A-Z0-9-]*)\s+SECTION\s*\./.exec(content);
+    if (sectionHeader) {
+      section = sectionHeader[1];
+      return;
+    }
+    if (/^\s*PROCEDURE\s+DIVISION/.test(content)) {
+      section = "PROCEDURE";
+      return;
+    }
+    if (/^\s*PROGRAM-ID\./.test(content)) {
+      // A contained program declares storage of its own.
+      declared.length = 0;
+      section = "";
+      return;
+    }
+    if (section !== "WORKING-STORAGE") {
+      return;
+    }
+    // Elementary only: a level-01 carrying its own PICTURE, with no
+    // subordinate entry. A group is the data model, and may legitimately be
+    // declared for the copybook it becomes.
+    const entry = /^\s*01\s+([A-Z][A-Z0-9-]*)\s+(.*)$/.exec(content);
+    if (!entry || !/\bPIC\b/.test(entry[2]) || /\bEXTERNAL\b/.test(entry[2])) {
+      return;
+    }
+    declared.push({ name: entry[1], line: index + 1 });
+  });
+
+  const text = lines.join("\n");
+  for (const { name, line } of declared) {
+    const uses =
+      text.split(new RegExp(`(?<![A-Z0-9-])${name}(?![A-Z0-9-])`)).length - 1;
+    if (uses > 1) {
+      continue;
+    }
+    findings.push({
+      file,
+      line,
+      rule: "unreferenced-item",
+      message: `${name} is declared and never referenced. Storage a program does not use reads as something the generator forgot to stop emitting.`,
+      citation: 'PG, "Data division"',
+    });
+  }
+
+  return findings;
 }
 
 /**

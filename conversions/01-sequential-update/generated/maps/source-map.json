@@ -303,8 +303,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 185,
-      "targetEndLine": 202,
+      "targetStartLine": 181,
+      "targetEndLine": 198,
       "category": "function",
       "symbol": "shouldReject"
     },
@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 203,
-      "targetEndLine": 229,
+      "targetStartLine": 199,
+      "targetEndLine": 225,
       "category": "function",
       "symbol": "newBalanceFor"
     },
@@ -335,8 +335,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 230,
-      "targetEndLine": 489,
+      "targetStartLine": 226,
+      "targetEndLine": 485,
       "category": "transaction",
       "symbol": "updateAccounts"
     }
