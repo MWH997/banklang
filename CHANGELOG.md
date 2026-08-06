@@ -115,6 +115,13 @@ in order.
 
 ### Fixed
 
+- Report a cited source that redirects to a front page, which answers 200 and
+  reads as alive. NIST's COBOL-85 test suite page had already become one.
+- Find a program name written on the line after `PROGRAM-ID.`, which is legal
+  COBOL and which nine of CardDemo's thirty-one programs do — all nine were
+  inventoried with no name — [migration analysis](docs/migration-analysis.md).
+- Stop `bankc analyse` reporting a file for every data name ending `-SELECT` and
+  every message containing the word.
 - Write a licence into the bill of materials for the ten proprietary components
   pnpm's generator drops, which were the only ten it said nothing about —
   [launch tickets](docs/launch-tickets.md).

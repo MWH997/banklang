@@ -96,8 +96,35 @@ pnpm bankc analyse conversions/01-sequential-update
 and the only thing under "what to look at first" is the original's four files
 with no `FILE STATUS` between them.
 
+## What somebody else's COBOL found
+
+Everything above was written against `conversions/`, and every original in
+`conversions/` was written by the author of this reader. On 2026-08-07 it was
+pointed at
+[AWS CardDemo](https://github.com/aws-samples/aws-mainframe-modernization-carddemo)
+— thirty-one CICS and batch programs, Apache-2.0 — and got two things wrong that
+no test here could have caught, because neither shape occurs in code this
+project wrote:
+
+- **`PROGRAM-ID.` and the name on separate lines.** Legal, common, and nine of
+  the thirty-one do it. All nine came back with no name.
+- **`SELECT` where there is no file.** `05 WS-EDIT-SELECT PIC X(1)` and
+  `'PLEASE SELECT ONLY ONE RECORD…'` both matched, so the report claimed two
+  files called `PIC` and `ONLY` and then that neither declared a `FILE STATUS`.
+  A hyphen is a word boundary to a regular expression and a letter to COBOL.
+
+Both are fixed and both shapes are regression tests. The second is the worse
+one: a finding invented out of a message is the kind a reader checks, does not
+find, and stops trusting the rest of the report over.
+
+The reader is still what this page says it is — reference-format text, nothing
+compiled — so the honest expectation for a first run against an unfamiliar
+estate is that something else is wrong in the same way, and that the report
+saying what it does not know is the part that matters most.
+
 ## Related pages
 
-- [conversions/](../conversions/) — the same programs, converted
+- [conversions/](../conversions/) — the same programs, converted, and the
+  licence table for third-party corpora
 - [toolchain.md](toolchain.md) — the rest of the CLI
 - [roadmap.md](roadmap.md) — what is planned

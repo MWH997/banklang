@@ -134,6 +134,27 @@ function titleOf(html: string): string {
 
 type Result = { url: string; title: string; problem?: string };
 
+/**
+ * A redirect that landed on a front page rather than on the cited page.
+ *
+ * `redirect: "follow"` turns this into a clean 200 with a plausible title, so
+ * the citation reads as alive and points at nothing. The IBM shell check above
+ * is one publisher's version of the same failure; this is the general one, and
+ * it turned up on 2026-08-07 when NIST's COBOL-85 test suite page —
+ * `itl.nist.gov/div897/ctg/cobol_form.htm`, three path segments — began
+ * answering `302` to `nist.gov/itl`, the laboratory's home page, with nothing
+ * about COBOL on it.
+ *
+ * Only a redirect that ends up at or just below a root counts, and only when it
+ * started deeper. A publisher moving a deep page to another deep page is a
+ * reslug, which `MOVED` already reports by the change of title.
+ */
+export function landedOnFrontPage(cited: string, landed: string): boolean {
+  const depth = (value: string): number =>
+    new URL(value).pathname.split("/").filter((part) => part !== "").length;
+  return depth(landed) <= 1 && depth(landed) < depth(cited);
+}
+
 async function fetchTitle(url: string): Promise<Result> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -169,6 +190,27 @@ async function fetchTitle(url: string): Promise<Result> {
         url,
         title,
         problem: "resolved to a sitemap, so the product has no such topic",
+      };
+    }
+    /*
+     * Redirected to a front page, which is a 200 and is not the page.
+     *
+     * The IBM check above is one publisher's version of this. The general form
+     * turned up on 2026-08-07: NIST's COBOL-85 test suite page,
+     * `itl.nist.gov/div897/ctg/cobol_form.htm`, now answers `302` to
+     * `nist.gov/itl/` — the laboratory's home page, with nothing about COBOL on
+     * it. `redirect: "follow"` makes that a clean 200 and a plausible title, so
+     * the citation reads as alive and points at nothing.
+     *
+     * Only a redirect that lands on a *root* counts. A publisher moving a deep
+     * page to another deep page is a move to read rather than a failure, and
+     * `MOVED` already reports the title change.
+     */
+    if (landedOnFrontPage(url, response.url)) {
+      return {
+        url,
+        title,
+        problem: `redirected to ${response.url}, which is a front page rather than the cited one`,
       };
     }
     return { url, title };

@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { allCitations } from "../tools/check-citations";
+import { allCitations, landedOnFrontPage } from "../tools/check-citations";
 
 /**
  * The sources the documentation cites, and the glossary's own contract.
@@ -238,5 +238,53 @@ describe("the glossary", () => {
       const expected = /^\d/.test(term) ? "Numerals" : term[0]!.toUpperCase();
       expect(heading, `"${term}" is filed under "${heading}"`).toBe(expected);
     }
+  });
+});
+
+/**
+ * A redirect that answers 200 and is not the page.
+ *
+ * `redirect: "follow"` makes a dead citation look alive: the fetch succeeds,
+ * the title parses, and the recorded entry says the source resolves. This is
+ * how it was found — NIST's COBOL-85 test suite page,
+ * `itl.nist.gov/div897/ctg/cobol_form.htm`, now answers `302` to `nist.gov/itl`,
+ * the laboratory's home page, which has nothing about COBOL on it. The checker
+ * recorded it as fine.
+ *
+ * Tested as a rule rather than over the network: the network half is the
+ * weekly job, and what has to be right here is which redirects count.
+ */
+describe("a citation that redirects", () => {
+  it("is a problem when it lands on a front page", () => {
+    expect(
+      landedOnFrontPage(
+        "https://www.itl.nist.gov/div897/ctg/cobol_form.htm",
+        "https://www.nist.gov/itl",
+      ),
+    ).toBe(true);
+    expect(
+      landedOnFrontPage("https://example.com/a/b/c", "https://example.com/"),
+    ).toBe(true);
+  });
+
+  it("is not a problem when the page simply moved", () => {
+    // A reslug at the same depth. `MOVED` reports that by the title changing,
+    // which is a thing to read rather than a thing to fail on.
+    expect(
+      landedOnFrontPage(
+        "https://www.ibm.com/docs/en/cobol-zos/6.4.0",
+        "https://www.ibm.com/docs/en/cobol-zos/6.5.0",
+      ),
+    ).toBe(false);
+    expect(
+      landedOnFrontPage("https://example.com/a/b", "https://example.com/x/y/z"),
+    ).toBe(false);
+  });
+
+  it("is not a problem for a citation that was a front page already", () => {
+    // `https://gnucobol.sourceforge.io/` is cited as itself.
+    expect(
+      landedOnFrontPage("https://example.com/", "https://example.com/"),
+    ).toBe(false);
   });
 });
