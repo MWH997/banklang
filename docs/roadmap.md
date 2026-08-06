@@ -123,9 +123,10 @@ Db2, in the order a batch meets them:
 - ~~`LOCK TABLE`~~ — the same
 - ~~`GET DIAGNOSTICS`~~ — never missing either: an ordinary statement in a
   `sql` declaration, with host variables resolved like any other
-- scrollable cursors — genuinely absent, and the one that needs syntax rather
-  than pass-through: the compiler writes the `DECLARE`, so there is nowhere for
-  `SCROLL` to go, and `for each` only fetches forward
+- ~~scrollable cursors~~ — done 2026-08-07, and it was the one that needed
+  syntax rather than pass-through. `cursor ... scroll` emits
+  `INSENSITIVE SCROLL CURSOR`, and `for each ... from n backward` walks the
+  result set from a chosen row with `FETCH ABSOLUTE :position`
 
 ~~zUnit test generation~~ — done, `test <name> for <entry transaction>` and
 `bankc zunit`. It was blocked on not having IBM's schema, and what unblocked it

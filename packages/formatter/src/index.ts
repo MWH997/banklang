@@ -350,7 +350,7 @@ function printDeclaration(
         ? `: ${declaration.resultTypeName}`
         : "";
       printer.push(
-        `${declaration.form === "cursor" ? "cursor" : "sql"} ${declaration.name}(${printParameters(declaration.parameters)})${declaration.hold ? " hold" : ""}${declaration.rowset === null ? "" : ` rowset ${declaration.rowset}`}${result} {${trailing}`,
+        `${declaration.form === "cursor" ? "cursor" : "sql"} ${declaration.name}(${printParameters(declaration.parameters)})${declaration.hold ? " hold" : ""}${declaration.scroll ? " scroll" : ""}${declaration.rowset === null ? "" : ` rowset ${declaration.rowset}`}${result} {${trailing}`,
       );
       for (const line of declaration.text.split("\n")) {
         printer.push(line.trim().length > 0 ? `${INDENT}${line.trim()}` : "");
@@ -772,8 +772,14 @@ function printStatement(
 
     case "CursorLoopStatement": {
       const args = statement.args.map(printExpression).join(", ");
+      // In the order they are read, which is the order they happen: where to
+      // start, which way to go, how far.
+      const from =
+        statement.start === null
+          ? ""
+          : ` from ${printExpression(statement.start)}`;
       printer.push(
-        `${indent}for each ${statement.rowName} in ${statement.cursorName}(${args}) limit ${statement.limit} {${trailing}`,
+        `${indent}for each ${statement.rowName} in ${statement.cursorName}(${args})${from}${statement.backward ? " backward" : ""} limit ${statement.limit} {${trailing}`,
       );
       printBlockBody(statement.body, printer, depth + 1);
       printer.push(`${indent}}`);

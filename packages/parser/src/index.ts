@@ -1018,6 +1018,13 @@ class Parser {
     // returns, and before the result type so the `:` still introduces one.
     const hold = form === "cursor" && this.matchKeyword("hold");
 
+    // `cursor statementPage(...) scroll : TxnRow { ... }`.
+    //
+    // Contextual rather than reserved, like `limit` on the loop that reads it:
+    // `scroll` is a plausible field name and making it a keyword would break
+    // programs that already use it as one.
+    const scroll = form === "cursor" && this.matchContextual("scroll");
+
     // `cursor accountsInBranch(...) rowset 20 : AccountRow { ... }`.
     let rowset: number | null = null;
     if (form === "cursor" && this.matchKeyword("rowset")) {
@@ -1094,6 +1101,7 @@ class Parser {
       form,
       hold,
       rowset,
+      scroll,
       text: captured.text.trim(),
       hostVariables,
       span: {
@@ -3549,10 +3557,15 @@ class Parser {
   }
 
   /**
-   * `for each <row> in <cursor>(args) limit <n> { ... }`
+   * `for each <row> in <cursor>(args) [from <n>] [backward] limit <n> { ... }`
    *
    * The bound is required for the same reason a `while` bound is: a cursor over
    * a table nobody sized is an unbounded loop holding database locks.
+   *
+   * `from` and `backward` are the two things a scrollable cursor can do that a
+   * forward-only one cannot, and they read in the order they happen: where to
+   * start, then which way to go. Both are contextual words, so a record with a
+   * field called `from` still compiles.
    */
   private parseCursorLoopStatement(
     forToken: Token,
@@ -3572,6 +3585,18 @@ class Parser {
       } while (this.matchPunctuation(","));
     }
     this.expectPunctuation(")", "Expected `)` after the cursor arguments.");
+
+    const startToken = this.current;
+    let start: ExpressionNode | null = null;
+    if (this.matchContextual("from")) {
+      start = this.parseExpression();
+      if (!start) {
+        return null;
+      }
+    }
+
+    const backwardToken = this.current;
+    const backward = this.matchContextual("backward");
 
     const limitWord = this.current;
     if (limitWord.kind !== "identifier" || limitWord.text !== "limit") {
@@ -3600,6 +3625,10 @@ class Parser {
       rowSpan: rowToken.span,
       limit: Number(limitToken.text),
       limitSpan: limitToken.span,
+      start,
+      startSpan: start === null ? null : startToken.span,
+      backward,
+      backwardSpan: backward ? backwardToken.span : null,
       body,
       span: {
         sourceFile: forToken.span.sourceFile,

@@ -364,6 +364,8 @@ export interface ResolvedSql {
   hold: boolean;
   /** `rowset <n>` — rows per FETCH, or null for one at a time. */
   rowset: number | null;
+  /** `scroll` — `INSENSITIVE SCROLL`, readable from any row and backward. */
+  scroll: boolean;
   text: string;
   /**
    * A cursor's SELECT with its `INTO` clause removed, and that clause on its
@@ -1479,6 +1481,24 @@ function resolveSql(
     );
   }
 
+  /*
+   * Checked on the declaration rather than where it is read, because a cursor
+   * declared both ways is wrong whether anything reads it or not — and a
+   * declaration nothing reads is exactly the one nobody looks at again.
+   */
+  if (declaration.scroll && declaration.rowset !== null) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-011",
+        severity: "error",
+        message: `Cursor ${declaration.name} is declared both \`scroll\` and \`rowset ${declaration.rowset}\`.`,
+        span: declaration.span,
+        hint: "Drop one: a rowset fetch reads a whole result set in blocks, and a scroll reads part of one from a chosen row.",
+        backendProfile: null,
+      }),
+    );
+  }
+
   const cursor =
     declaration.form === "cursor"
       ? resolveCursorText(declaration, result, diagnostics)
@@ -1492,6 +1512,7 @@ function resolveSql(
     form: declaration.form,
     hold: declaration.hold,
     rowset: declaration.rowset,
+    scroll: declaration.scroll,
     text: declaration.text,
     cursorSelect: cursor.select,
     cursorInto: cursor.into,
@@ -4168,6 +4189,59 @@ function validateCursorLoopStatement(
         backendProfile: null,
       }),
     );
+  }
+
+  /*
+   * Positioned reads, and the cursor that has to allow them.
+   *
+   * Db2 accepts the `DECLARE` of a forward-only cursor and rejects the
+   * `FETCH ABSOLUTE` against it, so the program compiles here, precompiles, and
+   * fails at bind. Reported against the word that asked for it rather than
+   * against the loop, because the fix is either that word or the declaration.
+   */
+  if (!declared.scroll) {
+    for (const [span, word] of [
+      [statement.startSpan, "from"],
+      [statement.backwardSpan, "backward"],
+    ] as const) {
+      if (span === null) {
+        continue;
+      }
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-SQL-010",
+          severity: "error",
+          message: `\`${word}\` reads ${statement.cursorName} from a position, but it is not declared \`scroll\`.`,
+          span,
+          hint: `Write \`cursor ${statement.cursorName}(...) scroll : ...\`, or read it forward from the first row.`,
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+
+  if (statement.start) {
+    const startType = inferExpressionType(
+      statement.start,
+      scope,
+      aliases,
+      recordMap,
+      diagnostics,
+    );
+    // Db2's `FETCH ABSOLUTE :n` takes an integer host variable, and a scaled
+    // decimal in that position is `-301`, not a rounded row number.
+    if (startType && !(startType.kind === "decimal" && startType.scale === 0)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-003",
+          severity: "error",
+          message: `A cursor start position must be a whole number, but ${describeType(startType)} was given.`,
+          span: statement.start.span,
+          hint: "Use a `decimal<n, 0>` field or an integer literal. Db2 counts a negative position from the last row.",
+          backendProfile: null,
+        }),
+      );
+    }
   }
 
   const previousInLoop = inLoopBody;

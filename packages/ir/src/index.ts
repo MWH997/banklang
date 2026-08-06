@@ -116,6 +116,8 @@ export interface IRSql {
   hold: boolean;
   /** `rowset <n>` — rows per FETCH, or null for one at a time. */
   rowset: number | null;
+  /** `scroll` — `INSENSITIVE SCROLL`, readable from any row and backward. */
+  scroll: boolean;
   text: string;
   /** A cursor's SELECT without its INTO, and that INTO on its own. */
   cursorSelect: string | null;
@@ -673,6 +675,15 @@ export interface IRCursorLoopStatement {
   rowRecordName: string;
   /** The most rows the loop may process. */
   limit: number;
+  /**
+   * `from <expression>` — the row to start at, or null for the first.
+   *
+   * Only ever set on a cursor declared `scroll`, which the semantic analyzer
+   * enforces: a forward-only cursor cannot be positioned.
+   */
+  start: IRExpression | null;
+  /** `backward` — towards the first row rather than away from it. */
+  backward: boolean;
   body: IRBlock;
 }
 
@@ -1326,6 +1337,7 @@ export function lowerProgramToIR(
         form: entry.form,
         hold: entry.hold,
         rowset: entry.rowset,
+        scroll: entry.scroll,
         text: entry.text,
         cursorSelect: entry.cursorSelect,
         cursorInto: entry.cursorInto,
@@ -2344,6 +2356,11 @@ function lowerStatement(
         ),
         rowRecordName: statement.rowName,
         limit: statement.limit,
+        start:
+          statement.start === null
+            ? null
+            : lowerExpression(statement.start, scopeTypes),
+        backward: statement.backward,
         body: lowerBlock(statement.body, scopeTypes),
       };
     }
