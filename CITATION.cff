@@ -1,0 +1,41 @@
+# Citation File Format 1.2.0 — https://citation-file-format.github.io
+#
+# GitHub reads this to offer a "Cite this repository" button, and Zenodo and
+# similar archives read it for author and licence metadata. R2 in
+# docs/launch-tickets.md asks for it so the work is citable.
+#
+# `version` is held to package.json and the changelog by
+# tests/documentation.test.ts: a citation naming a version that was never
+# released is the kind of wrong nobody notices until somebody cites it.
+cff-version: 1.2.0
+title: "BankLang: a deterministic compiler from BankTS to IBM Enterprise COBOL"
+message: "If you refer to this software, please cite it using these metadata."
+type: software
+authors:
+  - family-names: Hassan
+    alias: MWH997
+    email: mwh007@outlook.com
+repository-code: "https://github.com/MWH997/banklang"
+url: "https://banklang.mwhassan.com"
+abstract: >-
+  BankLang compiles BankTS, a deliberately small TypeScript-like language for
+  banking logic, to readable IBM Enterprise COBOL, a copybook for every record,
+  and the JCL to build and run it. Compilation is deterministic: no model
+  decides what is generated, and the same input always produces byte-identical
+  output. The compiler refuses to compile financially unsafe programs —
+  unbalanced ledger postings, retries with no idempotency key, and money
+  movement with no audit trail are compile errors rather than review comments.
+  Generated COBOL is validated locally with GnuCOBOL; no IBM Enterprise COBOL
+  validation is claimed.
+keywords:
+  - COBOL
+  - IBM Enterprise COBOL
+  - mainframe
+  - z/OS
+  - compiler
+  - banking
+  - CICS
+  - Db2
+  - JCL
+license: MIT
+version: 0.9.0
