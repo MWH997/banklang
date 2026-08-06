@@ -713,8 +713,11 @@ function drainInstantiations(
   functions: ResolvedFunction[],
   diagnostics: Diagnostic[],
 ): void {
-  // A generic that instantiates itself at a new type would expand forever, so
-  // the depth is capped and reported rather than left to exhaust memory.
+  // Monomorphisation has no fixed point to reach on its own: a generic that
+  // instantiates itself at a new type argument each time expands until memory
+  // runs out. The cap stops that, and it also stops a program with more
+  // instantiations than anyone would want to compile — which is why what it
+  // reports is the cap rather than a claim about termination it cannot make.
   const limit = 200;
   let expanded = 0;
 
@@ -731,9 +734,9 @@ function drainInstantiations(
         createDiagnostic({
           id: "BANK-TYPE-014",
           severity: "error",
-          message: `Generic expansion did not terminate after ${limit} instantiations, starting at ${name}.`,
+          message: `Generic expansion passed ${limit} instantiations, at ${name}.`,
           span: request.span,
-          hint: "A generic function that calls itself at a new type argument expands forever. Fix the recursion so the type arguments stop changing.",
+          hint: "Either a generic calls itself at a type argument that keeps changing, which expands forever, or the program instantiates one generic at more distinct types than the compiler will expand. Each instantiation is a separate copy of the code.",
           backendProfile: null,
         }),
       );
@@ -1954,6 +1957,25 @@ function validateCicsStatement(
         message: `A ${statement.operation} command needs the record key it addresses.`,
         span: statement.span,
         hint: `Write \`${statement.operation} "FILE" into <record> key <value> resp <status>;\`.`,
+        backendProfile: null,
+      }),
+    );
+  }
+
+  // And a rewrite is addressed by nothing: it updates the record the preceding
+  // `READ ... UPDATE` is holding. A key here describes a different operation
+  // from the one the program is doing, and CICS ignores it rather than
+  // honouring it — so the program reads as though it addressed a record it did
+  // not, which is how a rewrite ends up on whatever the last read left.
+  if (statement.operation === "rewriteFile" && statement.key) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-CICS-002",
+        severity: "error",
+        message:
+          "A rewriteFile command names a key, and a REWRITE has no key to name.",
+        span: statement.span,
+        hint: 'A rewrite updates the record the preceding `readFile ... key ...` is holding. Write `rewriteFile "FILE" from <record> resp <status>;`.',
         backendProfile: null,
       }),
     );

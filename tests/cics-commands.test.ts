@@ -94,6 +94,93 @@ describe("file commands", () => {
       "BANK-CICS-002",
     );
   });
+
+  /**
+   * A write with no key, which is the same defect from the other side.
+   *
+   * `WRITE` without `RIDFLD` is a command CICS rejects at run time with
+   * `INVREQ` — after the transaction has done everything before it.
+   */
+  it("requires the key a write addresses", () => {
+    expect(
+      ids(txn('  writeFile "ACCTFILE" from row resp writeResp;')),
+    ).toContain("BANK-CICS-002");
+  });
+
+  /**
+   * A rewrite that names one.
+   *
+   * The record a `REWRITE` updates is the one the preceding `READ ... UPDATE`
+   * is holding, so a key here describes a different operation from the one the
+   * program is doing — and CICS ignores it rather than honouring it.
+   */
+  it("refuses a key on a rewrite", () => {
+    expect(
+      ids(
+        txn(
+          '  rewriteFile "ACCTFILE" from row key request.accountId resp writeResp;',
+        ),
+      ),
+    ).toContain("BANK-CICS-002");
+  });
+
+  /**
+   * Every file command needs somewhere to report the outcome.
+   *
+   * Without `RESP`, a CICS command that fails abends the task with the
+   * condition's own abend code, and the transaction has no chance to say
+   * anything about it — which for a write means an operator seeing `AEIx` and
+   * nothing else.
+   */
+  it("requires a response field on a write", () => {
+    expect(
+      ids(txn('  writeFile "ACCTFILE" from row key request.accountId;')),
+    ).toContain("BANK-CICS-001");
+  });
+
+  it("requires a response field on a rewrite", () => {
+    expect(ids(txn('  rewriteFile "ACCTFILE" from row;'))).toContain(
+      "BANK-CICS-001",
+    );
+  });
+
+  /**
+   * A write response tested against a number the API never promised.
+   *
+   * `DFHRESP(NORMAL)` is the one value CICS gives a name to; the numbers behind
+   * the other conditions belong to the translator. `== 0` is allowed and
+   * generates `DFHRESP(NORMAL)`, so the boundary is the first non-zero literal.
+   */
+  it("refuses a write response compared with a number CICS never named", () => {
+    const result = compile(`${PREAMBLE}
+cics transaction enquire(request: Request, row: AccountRow) {
+  writeFile "ACCTFILE" from row key request.accountId resp writeResp;
+
+  if writeResp == 13 {
+    audit("DUPLICATE", request.idempotencyKey);
+  }
+
+  audit("ENQUIRED", request.idempotencyKey);
+}`);
+
+    expect(ids(result)).toContain("BANK-CICS-004");
+  });
+
+  it("allows a write response tested against zero", () => {
+    const result = compile(`${PREAMBLE}
+cics transaction enquire(request: Request, row: AccountRow) {
+  writeFile "ACCTFILE" from row key request.accountId resp writeResp;
+
+  if writeResp == 0 {
+    audit("WRITTEN", request.idempotencyKey);
+  }
+
+  audit("ENQUIRED", request.idempotencyKey);
+}`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("DFHRESP(NORMAL)");
+  });
 });
 
 describe("temporary storage", () => {
