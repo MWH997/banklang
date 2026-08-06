@@ -108,3 +108,11 @@ on the rerun that needed it.
 - [docs/jcl-model.md](../../docs/jcl-model.md) — the generated job, and what to change
 - [`parm-driven-batch`](../parm-driven-batch/) — restart and checkpoint on their own
 - [`report-with-controls`](../report-with-controls/) — the same report through Report Writer
+
+<!-- playground-link -->
+
+Open each program in the playground:
+
+- [extract](https://banklang.mwhassan.com/playground/#example=end-of-day-settlement/extract)
+- [post](https://banklang.mwhassan.com/playground/#example=end-of-day-settlement/post)
+- [report](https://banklang.mwhassan.com/playground/#example=end-of-day-settlement/report)

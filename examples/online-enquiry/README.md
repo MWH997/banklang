@@ -94,3 +94,7 @@ syntax but have never been precompiled by `DSNHPC`, translated by the CICS
 translator, or run in a region. Every `SQLCODE` and `RESP` above was written down
 by a test: it says what this program does with that outcome, not that Db2 or CICS
 would produce it.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=online-enquiry) — it compiles in your browser, with the generated COBOL beside it.

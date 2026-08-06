@@ -40,3 +40,7 @@ embedded SQL cannot be started by `EXEC PGM=`.
 ## Related
 
 - [docs/error-handling.md](../../docs/error-handling.md) — SQLCODE handling
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=deadlock-retry) — it compiles in your browser, with the generated COBOL beside it.

@@ -52,3 +52,7 @@ documents and holds one message between a put and a get. **It is not IBM MQ.**
 ## Related
 
 - [docs/language-reference.md](../../docs/language-reference.md) — the `queue` declaration
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=mq-request-reply) — it compiles in your browser, with the generated COBOL beside it.

@@ -413,8 +413,36 @@
   row-gap: 0.5rem;
 }
 
+/*
+ * On a narrow screen the navigation gets a row of its own.
+ *
+ * Left to `flex-wrap` alone it stayed beside the wordmark and overflowed
+ * whenever there was *nearly* enough room — it wrapped correctly at 365px and
+ * clipped its last two items at 380. Giving it the full width makes the
+ * behaviour the same at every size below the breakpoint instead of depending
+ * on where the items happen to land.
+ */
 @media (max-width: 40rem) {
+  .top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
   .top nav {
+    width: 100%;
     gap: 0.7rem;
   }
+}
+
+/* The playground link under a runnable code block. */
+.try {
+  margin: -0.6rem 0 1.25rem;
+  font-size: 0.88rem;
+}
+
+.try a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }

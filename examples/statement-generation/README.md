@@ -121,3 +121,7 @@ pnpm bankc test  examples/statement-generation
 
 The generated COBOL is validated locally with GnuCOBOL. No IBM Enterprise COBOL
 validation is claimed.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=statement-generation) — it compiles in your browser, with the generated COBOL beside it.

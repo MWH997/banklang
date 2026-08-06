@@ -39,6 +39,7 @@ import {
   highlightCobol,
   SITE_ORIGIN,
 } from "./build-site";
+import { isRunnable, playgroundUrl } from "./playground-links";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DOCS = join(ROOT, "docs");
@@ -145,7 +146,15 @@ const markdown = MarkdownIt({
       return `<pre class="code"><code>${highlightCobol(code)}</code></pre>`;
     }
     if (/^(ts|typescript|bankts)$/i.test(language)) {
-      return `<pre class="code"><code>${highlightBankTs(code)}</code></pre>`;
+      const block = `<pre class="code"><code>${highlightBankTs(code)}</code></pre>`;
+      // P3: a link, but only where the block is a program rather than a
+      // fragment. Of the 94 BankTS blocks under `docs/`, one parses on its
+      // own; a link on the other 93 opens the documentation's own example onto
+      // a wall of syntax errors, which is worse than no link.
+      if (!isRunnable(code)) {
+        return block;
+      }
+      return `${block}<p class="try"><a href="${playgroundUrl(code)}">Open this program in the playground →</a></p>`;
     }
     return `<pre class="code"><code>${escapeHtml(code)}</code></pre>`;
   },

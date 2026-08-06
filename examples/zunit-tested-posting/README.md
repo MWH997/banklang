@@ -75,3 +75,7 @@ inferred rather than observed.
   `given` values arrive through
 - [account-posting](../account-posting/README.md) — the ledger and audit calls
   the expectations are about
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=zunit-tested-posting) — it compiles in your browser, with the generated COBOL beside it.

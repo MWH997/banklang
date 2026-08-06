@@ -40,3 +40,7 @@ leaves nothing catalogued for the next job to read as though it were complete.
 ## Related
 
 - [docs/jcl-model.md](../../docs/jcl-model.md) — dispositions, and what to change
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=full-disk) — it compiles in your browser, with the generated COBOL beside it.

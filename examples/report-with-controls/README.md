@@ -52,3 +52,7 @@ GnuCOBOL implements Report Writer, so this example compiles and runs locally.
 ## Related
 
 - [docs/divergences.md](../../docs/divergences.md) — where GnuCOBOL and Enterprise COBOL differ
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=report-with-controls) — it compiles in your browser, with the generated COBOL beside it.

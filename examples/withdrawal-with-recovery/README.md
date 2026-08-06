@@ -158,3 +158,7 @@ The run above is against the reference runtime in `runtime/`, which is a set of
 small COBOL programs in this repository — not IBM software. It establishes that
 the generated program executes and computes correctly. It establishes nothing
 about Db2, CICS, or any real ledger. See [`runtime/README.md`](../../runtime/README.md).
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=withdrawal-with-recovery) — it compiles in your browser, with the generated COBOL beside it.

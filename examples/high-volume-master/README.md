@@ -37,3 +37,7 @@ and it fails the step.
 ## Related
 
 - [docs/error-handling.md](../../docs/error-handling.md) — what a failure writes
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=high-volume-master) — it compiles in your browser, with the generated COBOL beside it.
