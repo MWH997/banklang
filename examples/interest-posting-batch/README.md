@@ -156,3 +156,7 @@ working storage. There is no per-field file mapping yet.
 The generated COBOL is validated locally with GnuCOBOL. No IBM Enterprise COBOL
 validation is claimed, and this program has never been run against a real
 ledger.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=interest-posting-batch) — it compiles in your browser, with the generated COBOL beside it.

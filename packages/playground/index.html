@@ -9,31 +9,50 @@
       name="description"
       content="Write BankTS and watch it compile to readable IBM Enterprise COBOL, with banking safety diagnostics and a clickable source map. The real compiler, running client-side."
     />
+    <script>
+      // Before paint, so a reader who chose a theme on another page of the
+      // site does not see the other one here first.
+      (() => {
+        const saved = localStorage.getItem("banklang-theme");
+        if (saved) document.documentElement.dataset.theme = saved;
+      })();
+    </script>
   </head>
   <body>
-    <header class="masthead">
-      <div class="masthead__title">
-        <h1>BankLang</h1>
-        <p>
-          A deterministic compiler from <strong>BankTS</strong>, a restricted
-          TypeScript-like language, to readable COBOL. This page runs the real
-          compiler in your browser — no server, no network call.
-        </p>
-      </div>
-      <nav class="masthead__links">
-        <a href="https://github.com/MWH997/banklang">Source</a>
-        <a
-          href="https://github.com/MWH997/banklang/blob/main/docs/language-reference.md"
-          >Language</a
+    <!--
+      The site's own header, so the playground is a page of the site rather
+      than a detached tool. Absolute paths: this is served at /playground/ and
+      the documentation is at /docs/ on the same domain. `pnpm playground:dev`
+      serves this page alone, where those two links have nowhere to go — the
+      deployed site is what they are for.
+    -->
+    <header class="top">
+      <a class="wordmark" href="/">BankLang</a>
+      <nav>
+        <a href="/docs/">Docs</a>
+        <a href="/docs/language-reference.html">Language</a>
+        <a href="/docs/diagnostics.html">Diagnostics</a>
+        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
+        <button
+          id="theme"
+          type="button"
+          class="ghost"
+          aria-label="Switch between light and dark"
         >
-        <a
-          href="https://github.com/MWH997/banklang/blob/main/docs/diagnostics.md"
-          >Diagnostics</a
-        >
+          Theme
+        </button>
       </nav>
     </header>
 
+    <p class="lede">
+      A deterministic compiler from <strong>BankTS</strong>, a restricted
+      TypeScript-like language, to readable IBM COBOL. The real compiler runs
+      here in your browser — no server, no network call.
+    </p>
+
     <main class="app">
+      <p id="link-problem" class="link-problem" role="status" hidden></p>
+
       <section class="pane pane--source">
         <div class="pane__bar">
           <label class="sr-only" for="example-picker">Example</label>
@@ -41,6 +60,10 @@
           <span id="status" class="status">Compiling…</span>
         </div>
         <p id="example-blurb" class="blurb"></p>
+        <p class="howto">
+          <strong>Edit this.</strong> It recompiles as you type. Click any line
+          to trace it into the COBOL beside it.
+        </p>
         <div id="source-editor" class="editor"></div>
         <div id="summary" class="summary"></div>
       </section>
@@ -101,6 +124,9 @@
           <label class="sr-only" for="copybook-picker">Copybook</label>
           <select id="copybook-picker" hidden></select>
           <button id="copy-output" class="ghost">Copy</button>
+          <button id="share" class="ghost" title="Copy a link to this program">
+            Copy link
+          </button>
         </div>
         <div id="output-panel" role="tabpanel" aria-live="polite">
           <div id="output-editor" class="editor"></div>

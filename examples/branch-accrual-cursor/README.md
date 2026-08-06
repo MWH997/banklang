@@ -105,3 +105,7 @@ unchanged: the test asserts how many rows the loop processed and that it opened,
 bounded, and closed correctly — not what was in them, which only a real Db2
 could supply. Every `SQLCODE` above was written down by the test. No IBM Db2 or
 Enterprise COBOL validation has been performed, and none is claimed.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=branch-accrual-cursor) — it compiles in your browser, with the generated COBOL beside it.

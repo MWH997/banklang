@@ -55,3 +55,7 @@ The narrower emit commands still write their respective outputs:
 The example stays small on purpose. It exists to prove deterministic parsing,
 type resolution, IR lowering, COBOL emission, and source mapping before the
 language grows more features.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-transfer) — it compiles in your browser, with the generated COBOL beside it.

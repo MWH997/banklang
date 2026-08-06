@@ -47,3 +47,7 @@ The narrower emit and validation commands still write their respective outputs:
 
 The example keeps the branching shape simple so the control-flow lowering can
 stay deterministic and readable.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=batch-interest-accrual) — it compiles in your browser, with the generated COBOL beside it.

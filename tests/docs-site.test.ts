@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdtempSync,
@@ -378,12 +378,35 @@ describe("headings", () => {
 });
 
 describe("the source the docs are built from", () => {
-  it("is the markdown in docs/, unmodified by the build", () => {
-    // The generator must never write into `docs/`: the Markdown is the source
-    // of truth and the site is a view of it.
-    const status = execSync("git status --porcelain docs/", {
-      encoding: "utf8",
-    }).trim();
-    expect(status, `the docs build modified docs/:\n${status}`).toBe("");
+  /**
+   * The generator must never write into `docs/`: the Markdown is the source of
+   * truth and the site is a view of it.
+   *
+   * Measured by hashing the tree either side of a build rather than by reading
+   * `git status`, which was the first attempt and was wrong: it reported any
+   * uncommitted edit to a document as though the build had made it, so editing
+   * a page and running the suite failed this for a reason that had nothing to
+   * do with the generator.
+   */
+  const fingerprint = (): string => {
+    const hash = createHash("sha256");
+    for (const file of docFiles()) {
+      hash.update(file);
+      hash.update(readFileSync(join(process.cwd(), "docs", file)));
+    }
+    return hash.digest("hex");
+  };
+
+  it("is left byte-for-byte alone by a build", () => {
+    const before = fingerprint();
+
+    const scratch = mkdtempSync(join(tmpdir(), "banklang-docs-immutable-"));
+    try {
+      buildDocs(scratch);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+
+    expect(fingerprint(), "the docs build wrote into docs/").toBe(before);
   });
 });

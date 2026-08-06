@@ -44,3 +44,7 @@ following `DECLARATIVES` has to be in a section.
 ## Related
 
 - [docs/error-handling.md](../../docs/error-handling.md) — file status, and the 88-levels
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=failed-open) — it compiles in your browser, with the generated COBOL beside it.

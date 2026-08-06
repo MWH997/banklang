@@ -55,3 +55,7 @@ nearly always why one exists.
 ## Related
 
 - [docs/language-reference.md](../../docs/language-reference.md) — file declarations
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=vsam-browse) — it compiles in your browser, with the generated COBOL beside it.

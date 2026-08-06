@@ -431,32 +431,93 @@ function setTrace(entry: SourceMapEntry | null): void {
  * Sharing and boot
  * ------------------------------------------------------------------ */
 
+/**
+ * The hash format a shared link carries, and the reason it has a number.
+ *
+ * A link is a promise that the page will show what the sender saw. BankTS is
+ * pre-1.0 and its syntax may change, so a link written today can be a program
+ * that no longer parses — and the failure mode worth avoiding is not an error,
+ * it is the *silent* one: the same characters compiling to something else, or
+ * decoding into a mangled program that the reader assumes is what was sent.
+ *
+ * The version is checked before the payload is trusted. `v1` is base64 of the
+ * UTF-8 source. Anything else is refused with a message that says so rather
+ * than being fed to `atob` to see what happens.
+ */
+const HASH_VERSION = 1;
+
+interface SharedLink {
+  source: string | null;
+  /** An example to open by name, from a deep link in the documentation. */
+  example: string | null;
+  /** Set when a link was present and could not be honoured. */
+  problem: string | null;
+}
+
+function encodeSource(source: string): string {
+  return btoa(String.fromCharCode(...new TextEncoder().encode(source)));
+}
+
+/** The URL a reader can send somebody, for the program in the editor now. */
+function shareUrl(source: string): string {
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}#v${String(HASH_VERSION)}=${encodeURIComponent(encodeSource(source))}`;
+}
+
 function persistToUrl(source: string): void {
   try {
-    const encoded = btoa(
-      String.fromCharCode(...new TextEncoder().encode(source)),
-    );
     window.history.replaceState(
       null,
       "",
-      `#src=${encodeURIComponent(encoded)}`,
+      `#v${String(HASH_VERSION)}=${encodeURIComponent(encodeSource(source))}`,
     );
   } catch {
     /* Sharing is a convenience; never let it break the editor. */
   }
 }
 
-function sourceFromUrl(): string | null {
-  const match = /#src=([^&]+)/.exec(window.location.hash);
-  if (!match) {
-    return null;
+function readUrl(): SharedLink {
+  const empty: SharedLink = { source: null, example: null, problem: null };
+  const hash = window.location.hash;
+  if (!hash || hash === "#") {
+    return empty;
   }
+
+  // A deep link from the documentation names an example rather than carrying
+  // one, so a page that links to `interest-posting-batch` keeps working when
+  // the example is edited. A slash is allowed because a job of several programs
+  // is keyed by both parts: `end-of-day-settlement/extract`.
+  const named = /^#example=([\w/-]+)$/.exec(hash);
+  if (named) {
+    return { ...empty, example: named[1] ?? null };
+  }
+
+  const versioned = /^#v(\d+)=(.+)$/.exec(hash);
+  if (!versioned) {
+    return {
+      ...empty,
+      problem:
+        "That link is not one this playground wrote. Pick an example to start from.",
+    };
+  }
+
+  const version = Number(versioned[1]);
+  if (version !== HASH_VERSION) {
+    return {
+      ...empty,
+      problem: `That link was written for version ${versioned[1] ?? "?"} of the share format and this playground reads version ${String(HASH_VERSION)}. The program it carries may no longer mean what it did, so it has not been loaded.`,
+    };
+  }
+
   try {
-    const binary = atob(decodeURIComponent(match[1]!));
+    const binary = atob(decodeURIComponent(versioned[2] ?? ""));
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
+    return { ...empty, source: new TextDecoder().decode(bytes) };
   } catch {
-    return null;
+    return {
+      ...empty,
+      problem: "That link is damaged and its program could not be read.",
+    };
   }
 }
 
@@ -481,9 +542,33 @@ function boot(): void {
       `<option value="${example.id}">${escapeHtml(example.title)}</option>`,
   ).join("");
 
-  const initial = sourceFromUrl() ?? EXAMPLES[0]?.source ?? "module Empty;\n";
+  const link = readUrl();
+
+  // A deep link naming an example opens that example, and says so in the
+  // picker — otherwise the reader arrives at a program the picker claims is a
+  // different one.
+  const named = link.example
+    ? ALL_EXAMPLES.find((item) => item.id === link.example)
+    : undefined;
+  if (named) {
+    picker.value = named.id;
+  }
+
+  const initial =
+    link.source ?? named?.source ?? EXAMPLES[0]?.source ?? "module Empty;\n";
   sourceView = makeSourceEditor($("#source-editor"), initial);
   outputView = makeOutputEditor($("#output-editor"));
+
+  if (link.problem) {
+    const notice = $("#link-problem");
+    notice.textContent = link.problem;
+    notice.hidden = false;
+  }
+  if (link.example && !named) {
+    const notice = $("#link-problem");
+    notice.textContent = `There is no example called "${link.example}" in this playground.`;
+    notice.hidden = false;
+  }
 
   picker.addEventListener("change", () => {
     const example = ALL_EXAMPLES.find((item) => item.id === picker.value);
@@ -499,7 +584,10 @@ function boot(): void {
       },
     });
   });
-  $("#example-blurb").textContent = ALL_EXAMPLES[0]?.blurb ?? "";
+  // The blurb belongs to whatever the picker is showing. Setting it to the
+  // first example unconditionally described the wrong program whenever a deep
+  // link had already selected another one.
+  $("#example-blurb").textContent = (named ?? ALL_EXAMPLES[0])?.blurb ?? "";
 
   const tabs = [...document.querySelectorAll<HTMLButtonElement>(".tab")];
 
@@ -572,6 +660,44 @@ function boot(): void {
         restore();
       },
     );
+  });
+
+  // P4: a link to exactly this program, rather than asking the reader to
+  // select the address bar and hope the hash came with it.
+  $("#share").addEventListener("click", () => {
+    if (!sourceView) {
+      return;
+    }
+    const button = $("#share");
+    const original = button.textContent;
+    const restore = () =>
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+
+    navigator.clipboard
+      .writeText(shareUrl(sourceView.state.doc.toString()))
+      .then(
+        () => {
+          button.textContent = "Link copied";
+          restore();
+        },
+        () => {
+          button.textContent = "Copy failed";
+          restore();
+        },
+      );
+  });
+
+  // The theme, shared with the rest of the site through the same key.
+  $("#theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const dark =
+      root.dataset.theme === "dark" ||
+      (!root.dataset.theme &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.dataset.theme = dark ? "light" : "dark";
+    window.localStorage.setItem("banklang-theme", root.dataset.theme);
   });
 
   runCompile();

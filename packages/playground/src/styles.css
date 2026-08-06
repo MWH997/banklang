@@ -29,6 +29,39 @@
   }
 }
 
+/*
+ * The reader's own choice, shared with the rest of the site through
+ * `localStorage`. `[data-theme]` on the root wins over the media query in both
+ * directions, which is what makes the toggle a choice rather than a nudge.
+ */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --panel: #f6f8fa;
+  --panel-2: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #59636e;
+  --accent: #0969da;
+  --ok: #1a7f37;
+  --error: #cf222e;
+  --warn: #9a6700;
+  --link: #0550ae;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --panel-2: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --ok: #3fb950;
+  --error: #f85149;
+  --warn: #d29922;
+  --link: #7ee787;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -37,6 +70,17 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  /*
+   * A column, so the editor takes whatever the header and footer leave. The
+   * height used to be `calc(100vh - 132px)` — a measurement of the header
+   * taken once by hand, which is right until somebody edits the header. Adding
+   * one line to it silently pushed the footer off the bottom of the screen.
+   */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* Never sideways. The audit found the playground doing this at 390px. */
+  overflow-x: hidden;
   font:
     15px/1.5 -apple-system,
     BlinkMacSystemFont,
@@ -56,50 +100,100 @@ body {
   white-space: nowrap;
 }
 
-/* ---------- masthead ---------- */
+/* ---------- the site's header, shared with every other page ---------- */
 
-.masthead {
+.top {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  gap: 1rem;
+  padding: 1rem clamp(1rem, 5vw, 2rem);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+/* WCAG 2.5.8 asks for a 24px target. These were 20px tall, which is a miss on
+   a phone and a miss for anyone whose pointing is imprecise. */
+.top nav a,
+.top nav button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 0.92rem;
+}
+
+.top nav a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.top nav a:hover {
+  text-decoration: underline;
+}
+
+/*
+ * On a narrow screen the navigation gets a row of its own.
+ *
+ * Left to `flex-wrap` alone it stayed beside the wordmark and overflowed
+ * whenever there was *nearly* enough room — it wrapped correctly at 365px and
+ * clipped its last two items at 380. Giving it the full width makes the
+ * behaviour the same at every size below the breakpoint instead of depending
+ * on where the items happen to land.
+ */
+@media (max-width: 40rem) {
+  .top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .top nav {
+    width: 100%;
+    gap: 0.7rem;
+  }
+}
+
+.lede {
+  margin: 0;
+  padding: 0.85rem clamp(1rem, 5vw, 2rem);
+  max-width: 74ch;
+  color: var(--muted);
+  font-size: 13.5px;
   border-bottom: 1px solid var(--border);
   background: var(--panel);
 }
 
-.masthead h1 {
-  margin: 0 0 4px;
-  font-size: 20px;
-  letter-spacing: -0.01em;
-}
-
-.masthead__title p {
+/*
+ * P2: a first-time visitor sees two panes of code and no instruction. This is
+ * the instruction. One line, above the editor, where somebody who has not seen
+ * this before is already looking.
+ */
+.howto {
   margin: 0;
-  max-width: 68ch;
+  padding: 6px 12px;
+  font-size: 12.5px;
   color: var(--muted);
-  font-size: 13.5px;
+  border-bottom: 1px solid var(--border);
 }
 
-.masthead__links {
-  display: flex;
-  gap: 16px;
-  font-size: 13.5px;
-}
-
-.masthead__links a {
-  color: var(--accent);
-  text-decoration: none;
-  /* WCAG 2.5.8 asks for a 24px target. These were 20px tall, which is a miss
-     on a phone and a miss for anyone whose pointing is imprecise. */
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-}
-
-.masthead__links a:hover {
-  text-decoration: underline;
+.howto strong {
+  color: var(--text);
 }
 
 /* ---------- layout ---------- */
@@ -109,14 +203,31 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   background: var(--border);
-  height: calc(100vh - 132px);
+  flex: 1;
   min-height: 520px;
 }
 
+/*
+ * Stacked rather than squeezed. Two panes of fixed-format COBOL side by side
+ * inside 390px is two columns of nothing.
+ *
+ * Each pane gets a viewport-relative height rather than growing to its
+ * content: the 2026-08-06 audit measured the output pane at 1227px on a phone,
+ * which works and is not designed — a reader scrolls past a screen and a half
+ * of generated COBOL to reach the diagnostics that are the point of the page.
+ */
 @media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .pane {
+    max-height: 70vh;
+  }
+
+  .editor {
+    min-height: 220px;
   }
 }
 
@@ -421,4 +532,21 @@ select[hidden] {
 
 .footer p {
   margin: 0;
+}
+
+/*
+ * A shared link that could not be honoured.
+ *
+ * `role="status"` rather than `alert`: it is information about the link that
+ * brought the reader here, not an error in what they are doing, and an alert
+ * interrupts a screen reader mid-sentence to say so.
+ */
+.link-problem {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px clamp(1rem, 5vw, 2rem);
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--warn);
+  color: var(--text);
+  font-size: 13px;
 }

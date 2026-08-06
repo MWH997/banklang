@@ -43,3 +43,7 @@ held in two BigInts.
 ## Related
 
 - [docs/numeric-model.md](../../docs/numeric-model.md) — the whole rounding model
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=rounding-conformance) — it compiles in your browser, with the generated COBOL beside it.

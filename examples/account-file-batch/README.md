@@ -110,3 +110,7 @@ Running the CLI from the repository root writes generated artifacts to `dist/`:
 
 The generated COBOL is validated locally with GnuCOBOL. No IBM Enterprise COBOL
 validation is claimed.
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-file-batch) — it compiles in your browser, with the generated COBOL beside it.

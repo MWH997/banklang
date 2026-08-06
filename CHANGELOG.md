@@ -51,6 +51,10 @@ in order.
 
 ### Added
 
+- Give the playground the site's header, a one-line explanation of the panes,
+  and a versioned share link — [launch tickets](docs/launch-tickets.md).
+- Link every example README and every runnable documentation block into the
+  playground, by name where an example has one.
 - Render every document under `docs/` as part of the site, with the sidebar
   grouped as the README groups it and a search index the browser scans —
   [launch tickets](docs/launch-tickets.md).

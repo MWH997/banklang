@@ -47,3 +47,7 @@ JCL.
 
 - [docs/jcl-model.md](../../docs/jcl-model.md) — the generated job
 - [docs/error-handling.md](../../docs/error-handling.md) — return codes
+
+<!-- playground-link -->
+
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=parm-driven-batch) — it compiles in your browser, with the generated COBOL beside it.

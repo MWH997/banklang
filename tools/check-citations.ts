@@ -81,7 +81,8 @@ export function citedUrls(text: string): string[] {
   return [...text.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)]
     .map((match) => match[1]!)
     .filter((url) => !url.startsWith("https://example.com"))
-    .filter((url) => !url.startsWith(OWN_REPOSITORY));
+    .filter((url) => !url.startsWith(OWN_REPOSITORY))
+    .filter((url) => !url.startsWith(OWN_SITE));
 }
 
 /**
@@ -91,6 +92,20 @@ export function citedUrls(text: string): string[] {
  * when the CI badge points at a workflow that has been renamed.
  */
 const OWN_REPOSITORY = "https://github.com/MWH997/banklang";
+
+/**
+ * This project's own site, for the same reason and one more.
+ *
+ * A citation check exists to notice when *somebody else's* page moves — IBM
+ * retiring a topic is the case it was written for. Our own pages move when we
+ * move them, and the tests that already cover them are stronger: the playground
+ * links in the example READMEs are checked against the example ids the
+ * playground actually loads (`tests/playground-links.test.ts`), which catches a
+ * broken link the day it breaks rather than the week the schedule next runs.
+ *
+ * It also has nowhere to resolve to yet. The domain is not served until A1.
+ */
+const OWN_SITE = "https://banklang.mwhassan.com";
 
 /** Every URL cited anywhere in the repository, with where it was cited. */
 export function allCitations(root = ROOT): Map<string, string[]> {

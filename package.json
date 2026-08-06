@@ -51,6 +51,8 @@
     "lsp": "tsx packages/language-server/src/bin.ts",
     "playground:build": "pnpm --filter @banklang/playground build",
     "playground:dev": "pnpm --filter @banklang/playground dev",
+    "playground:links": "tsx tools/playground-links.ts",
+    "playground:links:check": "tsx tools/playground-links.ts --check",
     "playground:preview": "pnpm --filter @banklang/playground preview",
     "test": "vitest run",
     "test:determinism": "vitest run tests/determinism.test.ts",
