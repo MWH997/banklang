@@ -173,11 +173,11 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
   },
   {
     id: "BANK-TYPE-014",
-    title: "Generic expansion does not terminate",
+    title: "Generic expansion passed the instantiation limit",
     explanation:
-      "A generic function calls itself at a type argument that keeps changing. Generics are monomorphised, so each new type argument creates another instantiation and the expansion never finishes.",
+      "Generics are monomorphised: every distinct type argument becomes another copy of the code, and the compiler expands at most 200 of them. Either a generic calls itself at a type argument that keeps changing — which would expand forever — or the program legitimately instantiates one generic at more distinct types than that.",
     remediation:
-      "Make the recursive call use the same type arguments as the enclosing function.",
+      "Make a recursive call use the same type arguments as the enclosing function, or reduce the number of distinct types one generic is used at.",
     specReference: "language-reference.md section 5",
     implemented: true,
   },
@@ -475,7 +475,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
       "BANK-LEDGER-AMOUNT is PIC S9(16)V99. An amount with more integer digits or a finer scale loses digits in the MOVE, and COBOL truncates silently.",
     remediation:
       "Round to two decimal places with an explicit mode, or narrow the amount type, so the loss is stated rather than silent.",
-    specReference: "docs/adr/0003-ledger-and-audit-calling-convention.md",
+    specReference: "adr/0003-ledger-and-audit-calling-convention.md",
     implemented: true,
   },
   {
