@@ -221,6 +221,18 @@ export interface SqlDeclarationNode extends NodeBase {
    * The compiler emits it either way.
    */
   hold: boolean;
+  /**
+   * `rowset <n>` — `WITH ROWSET POSITIONING`, and a `FETCH ... FOR n ROWS`.
+   *
+   * One `FETCH` per row is one call into Db2 per row. A rowset fetch takes n at
+   * a time into host-variable arrays, which for a million-row batch is the
+   * difference between a million crossings and fifty thousand.
+   *
+   * Null for an ordinary cursor. The dimension is an integer constant in 1 to
+   * 32767, which is what the Application Programming and SQL Guide allows a
+   * host-variable array's `OCCURS` to be.
+   */
+  rowset: number | null;
   form: "statement" | "cursor";
   /** Raw SQL text as written. */
   text: string;

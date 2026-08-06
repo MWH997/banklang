@@ -77,6 +77,8 @@ export interface IRSql {
   form: "statement" | "cursor";
   /** `WITH HOLD` — the cursor survives a commit. */
   hold: boolean;
+  /** `rowset <n>` — rows per FETCH, or null for one at a time. */
+  rowset: number | null;
   text: string;
   /** A cursor's SELECT without its INTO, and that INTO on its own. */
   cursorSelect: string | null;
@@ -1286,6 +1288,7 @@ export function lowerProgramToIR(
         resultRecordName: entry.result?.name ?? null,
         form: entry.form,
         hold: entry.hold,
+        rowset: entry.rowset,
         text: entry.text,
         cursorSelect: entry.cursorSelect,
         cursorInto: entry.cursorInto,

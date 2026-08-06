@@ -1426,6 +1426,84 @@ option before each sync point. Db2 does not automatically close them" — and a
 thread with an open cursor cannot be reused. The generated `CLOSE` is what
 covers that, and it is emitted whether the cursor is held or not.
 
+### Many rows per fetch
+
+```ts
+cursor accountsInBranch(keyBranch: string<8>) rowset 100 : AccountBalanceRow {
+  ...
+}
+```
+
+`DECLARE ... CURSOR WITH ROWSET POSITIONING FOR`, and a
+`FETCH NEXT ROWSET FROM ... FOR 100 ROWS` into a host-variable array per column.
+One fetch per row is one crossing into Db2 per row; over a million-row master
+that is the difference between a million crossings and ten thousand.
+
+The loop reads the same: `for each row in ...` still gives one row at a time.
+What changed is underneath it — an inner `PERFORM VARYING` over the rows the
+last fetch returned, moving each column's array element into the record before
+the body runs.
+
+**The last rowset is the part that is easy to get wrong.** From the Application
+Programming and SQL Guide: "when the last row has been retrieved, the program
+must still process the rows in the last rowset through that last row." `+100`
+arrives _with_ the final partial rowset, not after it — so a loop that leaves on
+the `+100` where a single-row fetch would silently drops up to one rowset of
+work off the end of every run, and the total is short by a number nobody can
+predict. The generated loop processes the rowset first and tests `SQLCODE = 100`
+at the bottom.
+
+How many rows came back is `SQLERRD(3)`. The declared bound still applies inside
+a rowset, so `limit 1000` with `rowset 100` stops at a thousand rows rather than
+at the end of the eleventh fetch.
+
+The dimension is 1 to 32767, which is what the manual allows a host-variable
+array's `OCCURS` to be. Each column becomes an elementary item with its own
+`OCCURS` — a group with the `OCCURS` on the group is a host structure array,
+which a multiple-row fetch does not take, and Db2 answers
+`UNDECLARED HOST VARIABLE ARRAY`.
+
+### What SQL BankLang does not have words for
+
+BankLang does not parse SQL. It resolves the `:hostVariable` references and
+emits the statement as written, so anything Db2 accepts in a static statement
+already works without the language knowing about it:
+
+```ts
+sql lockAccounts() {
+  LOCK TABLE ACCOUNT IN EXCLUSIVE MODE
+}
+
+sql markPoint() {
+  SAVEPOINT BEFORE_POSTING ON ROLLBACK RETAIN CURSORS
+}
+
+sql undoToPoint() {
+  ROLLBACK TO SAVEPOINT BEFORE_POSTING
+}
+
+cursor repeatableRead(keyBranch: string<8>): AccountBalanceRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+  WITH RR
+}
+```
+
+Isolation levels, savepoints and `LOCK TABLE` need nothing from the compiler.
+
+**Two things do not go here.** A bare `COMMIT` or `ROLLBACK` written as SQL is
+`BANK-SQL-009`, because the language has `commit;` and `rollback;` and routing
+around them skips the rules attached to them — `BANK-SQL-004`, which refuses one
+inside a `cics transaction` because Db2 answers `-925` for a `COMMIT` and `-926`
+for a `ROLLBACK` there, and `BANK-FILE-003`, which is about where a batch can be
+restarted from.
+
+`ROLLBACK TO SAVEPOINT` is a different statement and is left alone. The same
+manual: "IMS and CICS environments do not allow those SQL statements; however,
+IMS and CICS do allow ROLLBACK TO SAVEPOINT."
+
 ## 12a. IMS DL/I
 
 ```ts

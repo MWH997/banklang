@@ -849,6 +849,15 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-SQL-009",
+    title: "A unit-of-work verb written as raw SQL",
+    explanation:
+      "`commit` and `rollback` are statements of the language, and writing the same thing inside a `sql` declaration routes around every check attached to them — `BANK-SQL-004`, which refuses one inside a `cics transaction` because Db2 answers -925 for a COMMIT and -926 for a ROLLBACK there, and `BANK-FILE-003`, which is about where a batch can be restarted from. `ROLLBACK TO SAVEPOINT` is a different statement: the Application Programming and SQL Guide says IMS and CICS do allow it, and this rule leaves it alone.",
+    remediation: "Write `commit;` or `rollback;`.",
+    specReference: "language-reference.md section 12",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-012",
     title: "Two files share one DD name",
     explanation:

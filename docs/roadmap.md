@@ -117,10 +117,11 @@ Theme: the second program of each kind, rather than the first.
 Db2, in the order a batch meets them:
 
 - ~~`WITH HOLD` cursors~~ — done, `cursor ... hold`, with `BANK-SQL-008`
-- multi-row `FETCH`
-- isolation level on a statement
-- savepoints
-- `LOCK TABLE`
+- ~~multi-row `FETCH`~~ — done, `cursor ... rowset n`
+- ~~isolation level on a statement~~ — never missing: the SQL is passed through
+- ~~savepoints~~ — the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
+- ~~`LOCK TABLE`~~ — the same
+- scrollable cursors, and `GET DIAGNOSTICS`
 
 zUnit test generation. Blocked, and worth saying why: the test case is an XML
 configuration plus a generated COBOL driver, and IBM's schema for it is not in

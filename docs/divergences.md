@@ -187,11 +187,36 @@ zero. `HALF_EVEN`, `HALF_DOWN`, `UP`, `CEILING` and `FLOOR` are written out as a
 truncation, the excess that truncation discarded, and a conditional step of one
 unit in the last place. See [numeric-model.md](numeric-model.md).
 
-### D18. No `FILLER`
+### D18. `FILLER` is `reserved <n>;`
 
-BankTS has no way to declare bytes nothing names, so a copybook holding one is
-reported rather than imported: the record would be shorter than the copybook by
-that many bytes, which moves every field after it.
+BankTS declares bytes nothing names as `reserved 20;`, which emits
+`FILLER PIC X(20)`. The importer counts bytes rather than digits — a
+`PIC S9(9) COMP-3` filler is nine digits and five bytes — and refuses a copybook
+whose fillers it cannot size, because a record one byte short moves every field
+after it.
+
+Nothing can read a reserved slot, assign to it, or move a record through it.
+`FILLER` is not a name in COBOL either.
+
+### D19a. A host-variable array is passed by its first element locally
+
+The real Db2 precompiler generates a call that passes a host-variable array by
+address. `packages/precompiler` passes `NAME (1)` instead, because a COBOL
+`CALL ... USING` naming an item with an `OCCURS` and no subscript is a compile
+error and the subset has no address-of.
+
+What the local compile establishes is unchanged: that the operands resolve and
+are the types the statement needs, the first element being the same type as the
+rest. Nothing is read back either way — `runtime/DSNHLI` writes no host
+variables at all. What ships to z/OS keeps the `EXEC SQL FETCH NEXT ROWSET`
+exactly as written, and `DSNHPC` generates the real call.
+
+Its consequence is stated rather than hidden: **no rowset loop in this
+repository has been executed.** The local runtime cannot set `SQLERRD(3)`, so
+the loop sees no rows and leaves. `cursor ... rowset n` is proved by what the
+compiler emits, by the conformance linter, and by `cobc` accepting it — the
+"compiled" grade in [`evidence/GRADES.md`](../evidence/GRADES.md), not the
+"executed" one.
 
 ### D19. No varying-length string
 

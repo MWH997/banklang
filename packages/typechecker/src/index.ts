@@ -368,6 +368,8 @@ export interface ResolvedSql {
   form: "statement" | "cursor";
   /** `WITH HOLD` — the cursor survives a commit. */
   hold: boolean;
+  /** `rowset <n>` — rows per FETCH, or null for one at a time. */
+  rowset: number | null;
   text: string;
   /**
    * A cursor's SELECT with its `INTO` clause removed, and that clause on its
@@ -959,6 +961,30 @@ function resolveSql(
     }
   }
 
+  // `commit;` and `rollback;` are statements of the language, and writing the
+  // same thing as raw SQL routes around every check attached to them:
+  // `BANK-SQL-004`, which refuses one under CICS because Db2 answers -925 or
+  // -926 there, and `BANK-FILE-003`, which is about where a batch can be
+  // restarted from. The Application Programming and SQL Guide is explicit that
+  // "IMS and CICS environments do not allow those SQL statements; however, IMS
+  // and CICS do allow ROLLBACK TO SAVEPOINT" — so the savepoint form is left
+  // alone, and it is the one this rule exists to keep usable.
+  const unitOfWork = /^\s*(COMMIT|ROLLBACK)\b(?!\s+TO\s+SAVEPOINT\b)/.exec(
+    upper,
+  );
+  if (unitOfWork) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-SQL-009",
+        severity: "error",
+        message: `${declaration.name} is a raw ${unitOfWork[1]}, which the language has a statement for.`,
+        span: declaration.span,
+        hint: `Write \`${unitOfWork[1].toLowerCase()};\` instead. Going through SQL skips BANK-SQL-004, which refuses one under CICS because Db2 answers -925 for a COMMIT and -926 for a ROLLBACK there. \`ROLLBACK TO SAVEPOINT\` is allowed and is not this.`,
+        backendProfile: "ibm-enterprise-cobol-zos",
+      }),
+    );
+  }
+
   const hostVariables: ResolvedSql["hostVariables"] = [];
   for (const host of declaration.hostVariables) {
     const isParameter = parameters.some(
@@ -1016,6 +1042,7 @@ function resolveSql(
     result,
     form: declaration.form,
     hold: declaration.hold,
+    rowset: declaration.rowset,
     text: declaration.text,
     cursorSelect: cursor.select,
     cursorInto: cursor.into,

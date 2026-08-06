@@ -66,6 +66,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "sql",
   "cursor",
   "hold",
+  "rowset",
   "execute",
   "cics",
   "link",

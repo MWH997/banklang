@@ -157,6 +157,7 @@ export const KEYWORDS = new Set([
   "sql",
   "cursor",
   "hold",
+  "rowset",
   "execute",
   "cics",
   "link",
@@ -855,6 +856,24 @@ class Parser {
     // returns, and before the result type so the `:` still introduces one.
     const hold = form === "cursor" && this.matchKeyword("hold");
 
+    // `cursor accountsInBranch(...) rowset 20 : AccountRow { ... }`.
+    let rowset: number | null = null;
+    if (form === "cursor" && this.matchKeyword("rowset")) {
+      const sizeToken = this.expectNumber(
+        "Expected the number of rows a rowset fetch takes at a time.",
+      );
+      const size = Number(sizeToken?.text ?? "0");
+      if (!Number.isInteger(size) || size < 1 || size > 32767) {
+        this.errorAtCurrent(
+          "BANK-SYN-002",
+          `A rowset takes ${sizeToken?.text ?? "?"} rows at a time, which is not a whole number in 1 to 32767.`,
+          "That is the range the Application Programming and SQL Guide allows a host-variable array's OCCURS to be.",
+        );
+        return null;
+      }
+      rowset = size;
+    }
+
     let resultTypeName: string | null = null;
     if (this.matchPunctuation(":")) {
       const resultToken = this.expectIdentifier(
@@ -912,6 +931,7 @@ class Parser {
       resultTypeName,
       form,
       hold,
+      rowset,
       text: captured.text.trim(),
       hostVariables,
       span: {

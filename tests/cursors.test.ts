@@ -436,3 +436,198 @@ entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) 
     expect(result.diagnostics).toEqual([]);
   });
 });
+
+/**
+ * A rowset fetch, and the last partial rowset it would be easy to drop.
+ *
+ * One `FETCH` per row is one crossing into Db2 per row. `WITH ROWSET
+ * POSITIONING` and `FETCH ... FOR n ROWS` take n at a time into host-variable
+ * arrays, which over a million rows is the difference between a million
+ * crossings and fifty thousand.
+ *
+ * The trap is at the end. The Application Programming and SQL Guide: "when the
+ * last row has been retrieved, the program must still process the rows in the
+ * last rowset through that last row." `+100` arrives *with* the final partial
+ * rowset, not after it, so leaving the loop where a single-row fetch would
+ * silently drops up to one rowset of work off the end of every run.
+ */
+describe("a rowset cursor", () => {
+  const source = (clause: string): string => `module Rowset;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record AccountRow {
+  rowAccountId: string<16>;
+  rowBalance: BDT;
+}
+
+record RunTotals {
+  rowsSeen: unsigned<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+cursor everyAccount(keyBranch: string<8>)${clause}: AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+
+entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) {
+  for each row in everyAccount(branchId) limit 100000 {
+    totals.rowsSeen = totals.rowsSeen + 1;
+  }
+
+  audit("WALKED", totals.idempotencyKey);
+}
+`;
+
+  const rowset = compile(source(" rowset 20 "));
+
+  it("compiles clean", () => {
+    expect(rowset.diagnostics).toEqual([]);
+  });
+
+  it("declares the cursor WITH ROWSET POSITIONING", () => {
+    expect(flowed(rowset.cobol)).toContain(
+      "DECLARE EVERY-ACCOUNT CURSOR WITH ROWSET POSITIONING FOR",
+    );
+  });
+
+  /**
+   * One elementary item per column with its own `OCCURS`, which is what the
+   * manual's syntax diagram for a COBOL host-variable array shows. A group with
+   * the `OCCURS` on the group is a host structure array, which a multiple-row
+   * FETCH does not take: Db2 answers `UNDECLARED HOST VARIABLE ARRAY`.
+   */
+  it("declares one host-variable array per column", () => {
+    const cobol = flowed(rowset.cobol);
+    expect(cobol).toContain(
+      "05 EVERY-ACCOUNT-A-ROW-ACCOUNT-ID PIC X(16) OCCURS 20 TIMES.",
+    );
+    expect(cobol).toContain(
+      "05 EVERY-ACCOUNT-A-ROW-BALANCE PIC S9(16)V99 COMP-3 OCCURS 20 TIMES.",
+    );
+  });
+
+  it("fetches a rowset rather than a row", () => {
+    expect(flowed(rowset.cobol)).toContain(
+      "FETCH NEXT ROWSET FROM EVERY-ACCOUNT FOR 20 ROWS INTO :EVERY-ACCOUNT-A-ROW-ACCOUNT-ID, :EVERY-ACCOUNT-A-ROW-BALANCE",
+    );
+  });
+
+  it("takes the row count from SQLERRD(3)", () => {
+    expect(flowed(rowset.cobol)).toContain(
+      "MOVE SQLERRD(3) TO EVERY-ACCOUNT-SET-ROWS",
+    );
+  });
+
+  /** The property the whole feature turns on. */
+  it("processes the last rowset before acting on the +100", () => {
+    const cobol = flowed(rowset.cobol);
+    const endOfRowset = cobol.indexOf("END-PERFORM");
+    const hundred = cobol.indexOf("IF SQLCODE = 100");
+
+    expect(endOfRowset).toBeGreaterThan(0);
+    expect(hundred).toBeGreaterThan(endOfRowset);
+  });
+
+  it("still stops at the declared bound, inside a rowset", () => {
+    expect(flowed(rowset.cobol)).toContain(
+      "UNTIL EVERY-ACCOUNT-SET-IX > EVERY-ACCOUNT-SET-ROWS OR EVERY-ACCOUNT-ROWS >= 100000",
+    );
+  });
+
+  it("leaves an ordinary cursor fetching one row at a time", () => {
+    const single = compile(source(" "));
+
+    // The module in this fixture is called `Rowset`, so the word is in the
+    // PROGRAM-ID whatever the cursor does. The assertion is on the constructs.
+    expect(single.cobol).not.toContain("WITH ROWSET POSITIONING");
+    expect(single.cobol).not.toContain("SQLERRD(3)");
+    expect(flowed(single.cobol)).toContain("FETCH EVERY-ACCOUNT INTO");
+  });
+
+  it("can be held and rowset at once", () => {
+    const both = compile(source(" hold rowset 50 "));
+
+    expect(both.diagnostics).toEqual([]);
+    expect(flowed(both.cobol)).toContain(
+      "DECLARE EVERY-ACCOUNT CURSOR WITH HOLD WITH ROWSET POSITIONING FOR",
+    );
+  });
+
+  it("refuses a dimension outside what an OCCURS may be", () => {
+    expect(
+      compile(source(" rowset 40000 ")).diagnostics.map((entry) => entry.id),
+    ).toContain("BANK-SYN-002");
+  });
+});
+
+/**
+ * The unit-of-work verbs, and the route around the rules attached to them.
+ *
+ * BankLang passes SQL through verbatim, so `LOCK TABLE`, `SAVEPOINT`,
+ * `ROLLBACK TO SAVEPOINT` and an isolation clause all already work — but so did
+ * a raw `COMMIT`, which skips `BANK-SQL-004`. The Application Programming and
+ * SQL Guide: "IMS and CICS environments do not allow those SQL statements;
+ * however, IMS and CICS do allow ROLLBACK TO SAVEPOINT."
+ */
+describe("SQL the language already carries", () => {
+  const withStatement = (text: string): ReturnType<typeof compile> =>
+    compile(`module Raw;
+
+record Account {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+sql doIt() {
+  ${text}
+}
+
+entry transaction go(account: Account) {
+  execute doIt();
+
+  if sqlcode < 0 {
+    raise "SQL_ERROR";
+  }
+
+  audit("DONE", account.idempotencyKey);
+}
+`);
+
+  it("emits a LOCK TABLE as written", () => {
+    const result = withStatement("LOCK TABLE ACCOUNT IN EXCLUSIVE MODE");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("LOCK TABLE ACCOUNT IN EXCLUSIVE MODE");
+  });
+
+  it("emits a savepoint as written", () => {
+    const result = withStatement(
+      "SAVEPOINT BEFORE_POSTING ON ROLLBACK RETAIN CURSORS",
+    );
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cobol).toContain("SAVEPOINT BEFORE_POSTING");
+  });
+
+  it("allows ROLLBACK TO SAVEPOINT, which CICS and IMS allow", () => {
+    const result = withStatement("ROLLBACK TO SAVEPOINT BEFORE_POSTING");
+
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("refuses a raw COMMIT, which the language has a statement for", () => {
+    expect(
+      withStatement("COMMIT").diagnostics.map((entry) => entry.id),
+    ).toContain("BANK-SQL-009");
+  });
+
+  it("refuses a raw ROLLBACK", () => {
+    expect(
+      withStatement("ROLLBACK").diagnostics.map((entry) => entry.id),
+    ).toContain("BANK-SQL-009");
+  });
+});
