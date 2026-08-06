@@ -83,7 +83,7 @@ export interface DecimalTypeNode extends NodeBase {
    * `decimal`, because the choice is about the bytes and belongs next to the
    * digit count that decides how many of them there are.
    */
-  usage?: "packed" | "binary" | "display" | "native";
+  usage?: "packed" | "binary" | "display" | "unsigned" | "native";
 }
 
 export interface StringTypeNode extends NodeBase {

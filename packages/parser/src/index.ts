@@ -207,6 +207,7 @@ export const KEYWORDS = new Set([
   "edited",
   "binary",
   "zoned",
+  "unsigned",
   "native",
   "transaction",
   "file",
@@ -4572,15 +4573,16 @@ class Parser {
       }
     }
 
-    for (const usage of ["binary", "zoned", "native"] as const) {
+    for (const usage of ["binary", "zoned", "unsigned", "native"] as const) {
       if (this.matchKeyword(usage)) {
         const keyword = this.previous;
         this.expectPunctuation("<", `Expected \`<\` after \`${usage}\`.`);
         const precisionToken = this.expectNumber("Expected digit count.");
         // A binary field is a whole number: a counter, a subscript, or a code.
-        // Zoned decimal is a general number and carries a scale like any other.
+        // The two display forms are general numbers and carry a scale like any
+        // other — `zoned` with a separate trailing sign, `unsigned` with none.
         let scaleToken = null;
-        if (usage === "zoned") {
+        if (usage === "zoned" || usage === "unsigned") {
           this.expectPunctuation(
             ",",
             "Expected `,` between precision and scale.",
@@ -4594,7 +4596,7 @@ class Parser {
         if (!keyword || !precisionToken || !closeAngle) {
           return null;
         }
-        if (usage === "zoned" && !scaleToken) {
+        if ((usage === "zoned" || usage === "unsigned") && !scaleToken) {
           return null;
         }
         return this.withArraySuffix({
@@ -4606,7 +4608,9 @@ class Parser {
               ? "binary"
               : usage === "native"
                 ? "native"
-                : "display",
+                : usage === "unsigned"
+                  ? "unsigned"
+                  : "display",
           span: {
             sourceFile: keyword.span.sourceFile,
             start: keyword.span.start,

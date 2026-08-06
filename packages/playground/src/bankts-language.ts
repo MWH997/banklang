@@ -100,6 +100,7 @@ export const PLAYGROUND_TYPES = new Set([
   "edited",
   "binary",
   "zoned",
+  "unsigned",
   "native",
 ]);
 

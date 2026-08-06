@@ -277,13 +277,35 @@ function readCopybookEntries(lines: string[]): CopybookEntry[] {
   return entries;
 }
 
+/**
+ * The lines of a copybook that carry data description entries.
+ *
+ * Reference format, because that is what a copybook on z/OS is: column 7 is the
+ * indicator area, so `*` or `/` there is a comment, and columns 73 to 80 are
+ * the identification area and not part of the text. `*>` is the floating
+ * comment indicator this compiler writes.
+ *
+ * A copybook written by somebody else is the whole point of reading one, and
+ * the first hand-written copybook this met opened with three `*` comment lines
+ * that the generated-copybook reader tried to parse as an entry.
+ */
+export function copybookLines(sourceText: string): string[] {
+  return sourceText
+    .split(/\r?\n/)
+    .map((line) => (line.length > 72 ? line.slice(0, 72) : line).trimEnd())
+    .filter(
+      (line) =>
+        line.trim().length > 0 &&
+        !(line.length >= 7 && (line[6] === "*" || line[6] === "/")) &&
+        !line.trimStart().startsWith("*>") &&
+        !line.trimStart().startsWith("*"),
+    );
+}
+
 export function inspectGeneratedCopybook(
   sourceText: string,
 ): CopybookInspection {
-  const lines = sourceText
-    .split(/\r?\n/)
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0 && !line.trimStart().startsWith("*>"));
+  const lines = copybookLines(sourceText);
 
   const entries = readCopybookEntries(lines);
   const record = entries.find((entry) => entry.level === 1);
@@ -755,7 +777,9 @@ function formatLayoutType(type: IRType): string {
         ? `binary<${type.precision}>`
         : type.usage === "display"
           ? `zoned<${type.precision},${type.scale}>`
-          : `decimal<${type.precision},${type.scale}>`;
+          : type.usage === "unsigned"
+            ? `unsigned<${type.precision},${type.scale}>`
+            : `decimal<${type.precision},${type.scale}>`;
     case "string":
       return `${type.national ? "national" : "string"}<${type.length}>`;
     case "bool":
@@ -791,7 +815,7 @@ function formatLayoutUsage(type: IRType): string {
     case "decimal":
       return type.usage === "binary"
         ? "COMP"
-        : type.usage === "display"
+        : type.usage === "display" || type.usage === "unsigned"
           ? "DISPLAY"
           : "COMP-3";
     case "currency":

@@ -49,7 +49,15 @@ export function describeTypeNode(node: TypeNode): string {
     case "DecimalType":
       // Usage is part of the instantiation: two fields with the same digits but
       // different storage generate different COBOL.
-      return `${node.usage === "binary" ? "bin" : node.usage === "display" ? "zon" : "dec"}${node.precision}_${node.scale}`;
+      return `${
+        node.usage === "binary"
+          ? "bin"
+          : node.usage === "display"
+            ? "zon"
+            : node.usage === "unsigned"
+              ? "uns"
+              : "dec"
+      }${node.precision}_${node.scale}`;
     case "StringType":
       // A national is twice the bytes, so it is a different instantiation.
       return `${node.national ? "nat" : "str"}${node.length}`;
