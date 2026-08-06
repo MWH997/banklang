@@ -9,6 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
 
 import { compileExample, loadExampleSource, localCobol } from "./helpers";
+import { exampleProjects } from "../tools/example-projects";
 
 /**
  * Every checked-in example must produce COBOL that a real compiler accepts.
@@ -18,10 +19,7 @@ import { compileExample, loadExampleSource, localCobol } from "./helpers";
  * GnuCOBOL check only ever compiled the account-transfer example, so nothing
  * covered the others.
  */
-const EXAMPLES = readdirSync("examples", { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => `examples/${entry.name}`)
-  .sort();
+const EXAMPLES = exampleProjects();
 
 function cobcAvailable(): boolean {
   return spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
@@ -34,19 +32,21 @@ describe("generated COBOL compiles", () => {
 
   for (const example of EXAMPLES) {
     it.skipIf(!cobcAvailable())(`compiles ${example} with cobc`, () => {
-      // Embedded SQL and CICS need a precompiler, so plain cobc cannot check
-      // them. Such a program is reported here rather than silently passing.
+      // Embedded SQL and CICS need a precompiler that is not on this machine,
+      // so plain cobc cannot check them; the local `precompile` step covers
+      // what it can and those two are skipped here. MQ and Report Writer are
+      // not skipped: `precompile` substitutes local declarations for the queue
+      // manager's copybooks, and GnuCOBOL implements Report Writer, so both
+      // compile locally and a program that stops compiling should say so.
       const requirements = compile(
         loadExampleSource(example),
       ).backendRequirements;
-      if (requirements.length > 0) {
-        expect(
-          requirements.every(
-            (requirement) =>
-              requirement === "db2-precompiler" ||
-              requirement === "cics-translator",
-          ),
-        ).toBe(true);
+      const needsPrecompiler = requirements.some(
+        (requirement) =>
+          requirement === "db2-precompiler" ||
+          requirement === "cics-translator",
+      );
+      if (needsPrecompiler) {
         return;
       }
 

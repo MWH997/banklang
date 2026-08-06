@@ -17,9 +17,9 @@ The input program lives in `src/main.bank.ts` and uses:
 Running the CLI from the repository root writes generated artifacts to `dist/`.
 The `build` command produces a full bundle:
 
-- `dist/cobol/BATCH-INTEREST-ACCRUAL.cbl`
-- `dist/copybooks/INTEREST-ACCOUNT.cpy`
-- `dist/jcl/BATCH-INTEREST-ACCRUAL.jcl`
+- `dist/cobol/BATCHINT.cbl`
+- `dist/copybooks/INTEREST.cpy`
+- `dist/jcl/BATCHINT.jcl`
 - `dist/maps/source-map.json`
 - `dist/audit/diagnostics.json`
 - `dist/audit/source-map.json`
@@ -41,7 +41,7 @@ The narrower emit and validation commands still write their respective outputs:
   `verify`, then writes `dist/audit/bankc-test-report.md` plus the local
   GnuCOBOL report in `dist/audit/gnucobol-validation.md`
 - `pnpm bankc emit jcl examples/batch-interest-accrual` writes
-  `dist/jcl/BATCH-INTEREST-ACCRUAL.jcl`
+  `dist/jcl/BATCHINT.jcl`
 
 ## Notes
 

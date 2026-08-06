@@ -296,6 +296,89 @@ export type IRStatement =
   | IRSearchStatement
   | IRRaiseStatement;
 
+/**
+ * Every block nested inside one statement.
+ *
+ * There are six walkers over the IR — what a block can fail with, what posts to
+ * the ledger, which routines it calls, which statements a rule counts — and
+ * each of them used to enumerate the block-carrying statement kinds itself.
+ * Every one of them missed `QueueStatement`, so a transaction whose only audit
+ * event was inside an MQ get was reported as having none, and a ledger posting
+ * inside one was invisible to `BANK-LED-001`. A rule that cannot see the code
+ * is worse than no rule: it reports a clean program.
+ *
+ * Adding a statement kind with a block is now one edit here rather than six
+ * spread across two packages, and forgetting it is a missing case in a
+ * `switch` the compiler checks rather than a silent omission.
+ */
+export function childBlocks(statement: IRStatement): IRBlock[] {
+  switch (statement.kind) {
+    case "IfStatement":
+      return [
+        statement.thenBranch,
+        ...(statement.elseBranch ? [statement.elseBranch] : []),
+      ];
+    case "WhileStatement":
+    case "ForEachStatement":
+    case "CursorLoopStatement":
+      return [statement.body];
+    case "SearchStatement":
+      return [statement.body, statement.notFound];
+    case "SwitchStatement":
+      return [
+        ...statement.cases.map((entry) => entry.body),
+        ...(statement.otherwise ? [statement.otherwise] : []),
+      ];
+    case "RestartStatement":
+      return [statement.resumed, ...(statement.fresh ? [statement.fresh] : [])];
+    case "QueueStatement":
+      return [
+        ...(statement.body ? [statement.body] : []),
+        ...(statement.notFound ? [statement.notFound] : []),
+      ];
+    case "SortStatement":
+      return [
+        ...(statement.inputProcedure ? [statement.inputProcedure.body] : []),
+        ...(statement.outputProcedure ? [statement.outputProcedure.body] : []),
+      ];
+    case "FileStatement":
+      return statement.atEndOfPage ? [statement.atEndOfPage] : [];
+    case "SerializeStatement":
+    case "XmlParseStatement":
+    case "ProgramCallStatement":
+      return statement.onError ? [statement.onError] : [];
+    case "LetStatement":
+    case "ReturnStatement":
+    case "LedgerStatement":
+    case "AuditStatement":
+    case "AssignStatement":
+    case "ExpressionStatement":
+    case "SqlStatement":
+    case "CicsStatement":
+    case "UnitOfWorkStatement":
+    case "ReturnCodeStatement":
+    case "SplitStatement":
+    case "ReportStatement":
+    case "DliStatement":
+    case "ReleaseStatement":
+    case "CheckpointStatement":
+    case "ConsoleStatement":
+    case "ResetStatement":
+    case "RaiseStatement":
+      return [];
+  }
+}
+
+/** Every statement in a block, including those nested inside one. */
+export function flattenIRStatements(statements: IRStatement[]): IRStatement[] {
+  return statements.flatMap((statement) => [
+    statement,
+    ...childBlocks(statement).flatMap((block) =>
+      flattenIRStatements(block.statements),
+    ),
+  ]);
+}
+
 /** `DISPLAY` to the job log, or `ACCEPT` from the job or the clock. */
 export interface IRConsoleStatement {
   kind: "ConsoleStatement";
@@ -1050,6 +1133,7 @@ export function lowerProgramToIR(
       statusName: file.statusName,
       recordVarying: file.recordVarying,
       keyFieldName: file.keyField?.name ?? null,
+      alternateKeyNames: file.alternateKeys.map((field) => field.name),
       // A renames overlaps the run it names, so mapping it too would move the
       // same bytes twice.
       recordFields: file.record.fields
@@ -1232,6 +1316,8 @@ const fileTable = new Map<
     statusName: string | null;
     recordVarying: { min: number; max: number; lengthName: string } | null;
     keyFieldName: string | null;
+    /** The other indexes a browse may walk, by field name. */
+    alternateKeyNames: string[];
     recordFields: IRMappedField[];
   }
 >();
@@ -1567,42 +1653,25 @@ function findFailingFunctions(functions: IRFunction[]): Set<string> {
 /** True when a block raises directly or guards a computed subscript. */
 function blockCanFail(block: IRBlock): boolean {
   for (const statement of block.statements) {
+    // Everything nested, except a sort procedure. Control may not leave one
+    // while the sort is running, so a guard inside a sort procedure does not
+    // raise: it sets `SORT-RETURN` to 16, and the `SORT` statement's own check
+    // is what reports it in the block that contains the sort. Counting it here
+    // would wrap a transaction that cannot fail in a failure handler that
+    // cannot run.
+    if (
+      statement.kind !== "SortStatement" &&
+      childBlocks(statement).some(blockCanFail)
+    ) {
+      return true;
+    }
+
     switch (statement.kind) {
       case "RaiseStatement":
         return true;
       case "IfStatement":
-        if (
-          expressionNeedsBoundsCheck(statement.condition) ||
-          blockCanFail(statement.thenBranch) ||
-          (statement.elseBranch ? blockCanFail(statement.elseBranch) : false)
-        ) {
-          return true;
-        }
-        break;
       case "WhileStatement":
-        if (
-          expressionNeedsBoundsCheck(statement.condition) ||
-          blockCanFail(statement.body)
-        ) {
-          return true;
-        }
-        break;
-      case "ForEachStatement":
-      case "CursorLoopStatement":
-        if (blockCanFail(statement.body)) {
-          return true;
-        }
-        break;
-      case "SearchStatement":
-        if (blockCanFail(statement.body) || blockCanFail(statement.notFound)) {
-          return true;
-        }
-        break;
-      case "SwitchStatement":
-        if (
-          statement.cases.some((entry) => blockCanFail(entry.body)) ||
-          (statement.otherwise ? blockCanFail(statement.otherwise) : false)
-        ) {
+        if (expressionNeedsBoundsCheck(statement.condition)) {
           return true;
         }
         break;
@@ -1725,51 +1794,11 @@ function numericCallType(
 
 /** True when a block posts to the ledger, directly or in a nested block. */
 function blockPostsToLedger(block: IRBlock): boolean {
-  for (const statement of block.statements) {
-    switch (statement.kind) {
-      case "LedgerStatement":
-        return true;
-      case "IfStatement":
-        if (
-          blockPostsToLedger(statement.thenBranch) ||
-          (statement.elseBranch
-            ? blockPostsToLedger(statement.elseBranch)
-            : false)
-        ) {
-          return true;
-        }
-        break;
-      case "WhileStatement":
-      case "ForEachStatement":
-      case "CursorLoopStatement":
-        if (blockPostsToLedger(statement.body)) {
-          return true;
-        }
-        break;
-      case "SearchStatement":
-        if (
-          blockPostsToLedger(statement.body) ||
-          blockPostsToLedger(statement.notFound)
-        ) {
-          return true;
-        }
-        break;
-      case "SwitchStatement":
-        if (
-          statement.cases.some((entry) => blockPostsToLedger(entry.body)) ||
-          (statement.otherwise
-            ? blockPostsToLedger(statement.otherwise)
-            : false)
-        ) {
-          return true;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  return false;
+  return block.statements.some(
+    (statement) =>
+      statement.kind === "LedgerStatement" ||
+      childBlocks(statement).some(blockPostsToLedger),
+  );
 }
 
 function findRecursiveFunctions(functions: IRFunction[]): Set<string> {
@@ -1848,35 +1877,13 @@ function collectCalls(block: IRBlock): Set<string> {
           walkExpression(statement.expression);
           break;
         case "IfStatement":
-          walkExpression(statement.condition);
-          walkBlock(statement.thenBranch);
-          if (statement.elseBranch) {
-            walkBlock(statement.elseBranch);
-          }
-          break;
         case "WhileStatement":
           walkExpression(statement.condition);
-          walkBlock(statement.body);
-          break;
-        case "ForEachStatement":
-        case "CursorLoopStatement":
-          walkBlock(statement.body);
-          break;
-        case "SearchStatement":
-          walkBlock(statement.body);
-          walkBlock(statement.notFound);
-          break;
-        case "SwitchStatement":
-          for (const branch of statement.cases) {
-            walkBlock(branch.body);
-          }
-          if (statement.otherwise) {
-            walkBlock(statement.otherwise);
-          }
           break;
         default:
           break;
       }
+      childBlocks(statement).forEach(walkBlock);
     }
   };
 
@@ -2382,7 +2389,15 @@ function lowerStatement(
         fileMode: file.mode,
         fileOrganization: file.organization,
         statusName: file.statusName,
-        keyFieldName: file.keyFieldName,
+        // A `start` naming an alternate key browses that index instead. The
+        // field the statement names is what COBOL takes the key of reference
+        // from, and every READ NEXT after it follows the same one.
+        keyFieldName:
+          (statement.operation === "start" &&
+          statement.key?.kind === "MemberAccess" &&
+          file.alternateKeyNames.includes(statement.key.member)
+            ? statement.key.member
+            : null) ?? file.keyFieldName,
         key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
         recordFields: file.recordFields,
         advancing: statement.advancing,

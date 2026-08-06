@@ -673,6 +673,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
 
   checkSingleEntryPoint(transactions, diagnostics);
   checkCopybookMemberNames(records, diagnostics);
+  checkDdNames(files, diagnostics);
 
   return {
     program,
@@ -3910,6 +3911,26 @@ function validateAssignStatement(
   }
 }
 
+/**
+ * The alternate key a `start` names, if it names one.
+ *
+ * `start accountMaster key account.customerId` is a browse on the alternate
+ * index over `customerId`. COBOL takes the key of reference from the data item
+ * the START names and every subsequent READ NEXT follows that index, so the
+ * field in the expression is the whole declaration — there is no separate
+ * syntax to add. Returns null when the expression is anything else, which
+ * leaves the primary key as the one to check against.
+ */
+export function alternateKeyNamed(
+  key: ExpressionNode,
+  file: ResolvedFile,
+): ResolvedField | null {
+  if (key.kind !== "MemberAccess") {
+    return null;
+  }
+  return file.alternateKeys.find((field) => field.name === key.member) ?? null;
+}
+
 function validateFileStatement(
   statement: FileStatementNode,
   scope: Map<string, ResolvedType>,
@@ -4030,6 +4051,17 @@ function validateFileStatement(
         }),
       );
     } else {
+      // A browse may walk an alternate index, and that is nearly always why the
+      // alternate exists — an account file read by customer. COBOL decides the
+      // key of reference from the field the START names, so naming an alternate
+      // key's own field is how the program asks for it. A `read ... key` still
+      // has to be the primary: READ with a KEY names a random read, and Db2 is
+      // not in this; a duplicate alternate has no single record to fetch.
+      const browseKey =
+        statement.operation === "start"
+          ? alternateKeyNamed(statement.key, file)
+          : null;
+      const declaredKey = browseKey ?? file.keyField;
       const keyType = inferExpressionType(
         statement.key,
         scope,
@@ -4039,16 +4071,19 @@ function validateFileStatement(
       );
       if (
         keyType &&
-        file.keyField &&
-        !typesCompatible(file.keyField.type, keyType)
+        declaredKey &&
+        !typesCompatible(declaredKey.type, keyType)
       ) {
         diagnostics.push(
           createDiagnostic({
             id: "BANK-FILE-004",
             severity: "error",
-            message: `Key expression is ${describeType(keyType)} but the record key ${file.keyField.name} is ${describeType(file.keyField.type)}.`,
+            message: `Key expression is ${describeType(keyType)} but the record key ${declaredKey.name} is ${describeType(declaredKey.type)}.`,
             span: statement.key.span,
-            hint: "The key must match the declared record key field.",
+            hint:
+              file.alternateKeys.length > 0 && statement.operation === "start"
+                ? `The key must be the record key ${declaredKey.name} or an alternate: ${file.alternateKeys.map((key) => key.name).join(", ")}.`
+                : "The key must match the declared record key field.",
             backendProfile: null,
           }),
         );
@@ -7586,6 +7621,46 @@ function checkCopybookMemberNames(
           message: `${record.name} and ${sharing[0].name} are both copybook member ${member}.`,
           span: record.span,
           hint: "A PDS member name is eight characters with the hyphens removed, and that is what a COPY resolves on. Rename one of the records so the two differ within those eight characters.",
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+    }
+  }
+}
+
+/**
+ * Two files whose DD names collide.
+ *
+ * The same eight-character truncation as a copybook member, and the same class
+ * of defect one step further out. `settlementExtract` and `settlementReport`
+ * are both `SETTLEME`, so the generated job allocates one DD twice — and since
+ * the dataset name is derived from it too, the report's output is written over
+ * the extract's input under a name that looks deliberate.
+ *
+ * A DD name is one to eight characters, which is what makes the truncation
+ * necessary and the collision possible. It shows up in a job of several
+ * programs first, but it is a defect in one program with two such files as
+ * well: the second SELECT assigns to a DD the first one already has.
+ */
+function checkDdNames(files: ResolvedFile[], diagnostics: Diagnostic[]): void {
+  const byDd = new Map<string, ResolvedFile[]>();
+  for (const file of files) {
+    const dd = copybookMemberName(file.name);
+    byDd.set(dd, [...(byDd.get(dd) ?? []), file]);
+  }
+
+  for (const [dd, sharing] of byDd) {
+    if (sharing.length < 2) {
+      continue;
+    }
+    for (const file of sharing.slice(1)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-012",
+          severity: "error",
+          message: `${file.name} and ${sharing[0].name} are both DD name ${dd}.`,
+          span: file.span,
+          hint: "A DD name is eight characters with the hyphens removed, and the dataset name is derived from it. Rename one of the files so the two differ within those eight characters.",
           backendProfile: "ibm-enterprise-cobol-zos",
         }),
       );

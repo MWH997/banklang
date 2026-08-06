@@ -14,6 +14,7 @@ import type {
   IRType,
   IRFile,
 } from "../../ir/src/index";
+import { flattenIRStatements } from "../../ir/src/index";
 import {
   divisionRemainderShape,
   MAX_COMPAT_DIGITS,
@@ -137,15 +138,31 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
   ];
 }
 
-/** True when a statement is a loop whose body posts to the ledger. */
+/**
+ * True when a statement is a loop whose body posts to the ledger and whose
+ * position a rerun could not work out for itself.
+ *
+ * A drain off a queue is the exception. An MQ get runs under
+ * `MQGMO-SYNCPOINT`, so a message read by a unit of work that never committed
+ * goes back on the queue and one read by a unit of work that did is gone: the
+ * queue holds the position, and writing a second copy of it into a restart
+ * record would be a position that can disagree with the one MQ is keeping.
+ */
 function loopPosts(statement: IRStatement): boolean {
   switch (statement.kind) {
     case "WhileStatement":
     case "ForEachStatement":
-    case "CursorLoopStatement":
-      return flattenStatements(statement.body.statements).some(
-        (inner) => inner.kind === "LedgerStatement",
+    case "CursorLoopStatement": {
+      const inner = flattenStatements(statement.body.statements);
+      const drainsAQueue = inner.some(
+        (nested) =>
+          nested.kind === "QueueStatement" && nested.operation === "get",
       );
+      return (
+        !drainsAQueue &&
+        inner.some((nested) => nested.kind === "LedgerStatement")
+      );
+    }
     // A loop inside a branch counts too: the money still moves repeatedly.
     case "IfStatement":
       return (
@@ -343,72 +360,12 @@ function canonicalExpression(expression: IRExpression): string {
  * loop or a `switch` branch: a transaction whose only posting was inside a
  * `while` had, as far as the double-entry check could see, no postings at all,
  * and so balanced trivially. Money moving inside a loop is money moving.
+ *
+ * The descent itself is `flattenIRStatements`, so the list of statement kinds
+ * that hold a block lives in one place. Keeping a copy here is how the MQ get
+ * came to be missed by every rule in this file.
  */
-function flattenStatements(statements: IRStatement[]): IRStatement[] {
-  const flattened: IRStatement[] = [];
-  for (const statement of statements) {
-    flattened.push(statement);
-    switch (statement.kind) {
-      case "IfStatement":
-        flattened.push(...flattenStatements(statement.thenBranch.statements));
-        if (statement.elseBranch) {
-          flattened.push(...flattenStatements(statement.elseBranch.statements));
-        }
-        break;
-      case "WhileStatement":
-      case "ForEachStatement":
-      case "CursorLoopStatement":
-        flattened.push(...flattenStatements(statement.body.statements));
-        break;
-      case "SearchStatement":
-        flattened.push(...flattenStatements(statement.body.statements));
-        flattened.push(...flattenStatements(statement.notFound.statements));
-        break;
-      case "RestartStatement":
-        flattened.push(...flattenStatements(statement.resumed.statements));
-        if (statement.fresh) {
-          flattened.push(...flattenStatements(statement.fresh.statements));
-        }
-        break;
-      case "FileStatement":
-        if (statement.atEndOfPage) {
-          flattened.push(
-            ...flattenStatements(statement.atEndOfPage.statements),
-          );
-        }
-        break;
-      case "SerializeStatement":
-      case "XmlParseStatement":
-      case "ProgramCallStatement":
-        if (statement.onError) {
-          flattened.push(...flattenStatements(statement.onError.statements));
-        }
-        break;
-      case "SortStatement":
-        for (const procedure of [
-          statement.inputProcedure,
-          statement.outputProcedure,
-        ]) {
-          if (procedure) {
-            flattened.push(...flattenStatements(procedure.body.statements));
-          }
-        }
-        break;
-      case "SwitchStatement":
-        for (const branch of statement.cases) {
-          flattened.push(...flattenStatements(branch.body.statements));
-        }
-        if (statement.otherwise) {
-          flattened.push(...flattenStatements(statement.otherwise.statements));
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  return flattened;
-}
+const flattenStatements = flattenIRStatements;
 
 function diagnostic(
   id: string,

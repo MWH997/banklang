@@ -214,7 +214,7 @@ Good:
 ```txt
 BANK-GEN-004 error
 Generated COBOL source map is missing entry for function validateAmount.
-Artifact: dist/cobol/ACCOUNT-TRANSFER.cbl
+Artifact: dist/cobol/ACCOUNTT.cbl
 ```
 
 ## 8. Tester notes as verification evidence

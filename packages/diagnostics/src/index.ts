@@ -839,6 +839,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-012",
+    title: "Two files share one DD name",
+    explanation:
+      "A DD name is one to eight characters, so the file name is truncated to reach one — and `settlementExtract` and `settlementReport` both become `SETTLEME`. The generated job then allocates the same DD twice in one step, and because the dataset name is derived from the DD name as well, the second file's dataset is the first one's. In a job of several programs that means one step writing over the dataset another step is about to read, under a name that looks deliberate.",
+    remediation:
+      "Rename one of the files so the two differ within the first eight characters once the hyphens are removed.",
+    specReference: "language-reference.md section 13",
+    implemented: true,
+  },
+  {
     id: "BANK-GEN-001",
     title: "Module missing source map entry",
     explanation: "The generated source map has no entry for the module.",

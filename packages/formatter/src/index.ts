@@ -1,5 +1,6 @@
 import type {
   BlockNode,
+  ReportSourceNode,
   CommentTrivia,
   DeclarationNode,
   Diagnostic,
@@ -237,12 +238,109 @@ function printDeclaration(
 
     case "FileDeclaration": {
       const key = declaration.keyField ? ` key ${declaration.keyField}` : "";
+      const alternates =
+        declaration.alternateKeys.length > 0
+          ? ` alternate ${declaration.alternateKeys.join(", ")}`
+          : "";
+      const varying = declaration.recordVarying
+        ? ` varying ${declaration.recordVarying.min} to ${declaration.recordVarying.max} length ${declaration.recordVarying.lengthName}`
+        : "";
+      const linage = declaration.linage
+        ? [
+            ` page ${declaration.linage.lines}`,
+            declaration.linage.footingAt === null
+              ? ""
+              : ` footing ${declaration.linage.footingAt}`,
+            declaration.linage.linesAtTop === null
+              ? ""
+              : ` top ${declaration.linage.linesAtTop}`,
+            declaration.linage.linesAtBottom === null
+              ? ""
+              : ` bottom ${declaration.linage.linesAtBottom}`,
+          ].join("")
+        : "";
       const status = declaration.statusName
         ? ` status ${declaration.statusName}`
         : "";
       printer.push(
-        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${key}${status};${trailing}`,
+        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${key}${alternates}${varying}${linage}${status};${trailing}`,
       );
+      return;
+    }
+
+    case "DatabaseDeclaration": {
+      const status = declaration.statusName
+        ? ` status ${declaration.statusName}`
+        : "";
+      printer.push(
+        `database ${declaration.name} segment "${declaration.segmentName}" key ${declaration.keyName} record ${declaration.recordTypeName}${status};${trailing}`,
+      );
+      return;
+    }
+
+    case "QueueDeclaration": {
+      const status = declaration.statusName
+        ? ` status ${declaration.statusName}`
+        : "";
+      printer.push(
+        `queue ${declaration.name} manager "${declaration.managerName}" name "${declaration.queueName}" ${declaration.direction} record ${declaration.recordTypeName}${status};${trailing}`,
+      );
+      return;
+    }
+
+    case "FileErrorHandler":
+      printer.push(`on error ${declaration.fileName} {${trailing}`);
+      printBlockBody(declaration.body, printer, 1);
+      printer.push("}");
+      return;
+
+    case "ReportDeclaration": {
+      const controls =
+        declaration.controls.length > 0
+          ? ` control ${declaration.controls.map((entry) => entry.name).join(", ")}`
+          : "";
+      const page = declaration.page
+        ? [
+            ` page ${declaration.page.limit}`,
+            declaration.page.heading === null
+              ? ""
+              : ` heading ${declaration.page.heading}`,
+            declaration.page.firstDetail === null
+              ? ""
+              : ` firstDetail ${declaration.page.firstDetail}`,
+            declaration.page.lastDetail === null
+              ? ""
+              : ` lastDetail ${declaration.page.lastDetail}`,
+            declaration.page.footing === null
+              ? ""
+              : ` footing ${declaration.page.footing}`,
+          ].join("")
+        : "";
+      printer.push(
+        `report ${declaration.name} on ${declaration.fileName}${controls}${page} {${trailing}`,
+      );
+      for (const group of declaration.groups) {
+        const named = group.name ? ` ${group.name}` : "";
+        const control = group.control ? ` ${group.control}` : "";
+        printer.push(`${INDENT}${group.type}${named}${control} {`);
+        for (const line of group.lines) {
+          const position =
+            line.position.kind === "absolute"
+              ? `line ${line.position.value}`
+              : line.position.value === 1
+                ? "line next"
+                : `line plus ${line.position.value}`;
+          printer.push(`${INDENT.repeat(2)}${position} {`);
+          for (const column of line.columns) {
+            printer.push(
+              `${INDENT.repeat(3)}column ${column.column} ${printReportSource(column.source)};`,
+            );
+          }
+          printer.push(`${INDENT.repeat(2)}}`);
+        }
+        printer.push(`${INDENT}}`);
+      }
+      printer.push("}");
       return;
     }
 
@@ -267,6 +365,22 @@ function printDeclaration(
       }
       printer.push("}");
       return;
+  }
+
+  unprintable(declaration);
+}
+
+/** One `column` entry's value: a literal, a field, a total, or the page. */
+function printReportSource(source: ReportSourceNode): string {
+  switch (source.kind) {
+    case "ReportLiteral":
+      return JSON.stringify(source.value);
+    case "ReportField":
+      return source.field;
+    case "ReportSum":
+      return `sum ${source.field}`;
+    case "ReportPageNumber":
+      return "pageNumber";
   }
 }
 
@@ -375,16 +489,224 @@ function printStatement(
       return;
 
     case "FileStatement": {
+      // Every clause the statement can carry, because the formatter reprints
+      // from the tree rather than editing the text: a clause this misses is
+      // one the formatter deletes. `readNext ... into`, `rewrite ... from`,
+      // `advancing` and `on page` were all missing, and running the formatter
+      // over a browse silently turned `readNext accountMaster into account`
+      // into `readNext accountMaster` — which then would not parse, so the
+      // damage was at least loud. `write ... advancing page` parses perfectly
+      // well without the `advancing`, and quietly writes over the last line.
       const clause =
-        statement.operation === "read"
-          ? ` into ${statement.recordName}`
-          : statement.operation === "write"
-            ? ` from ${statement.recordName}`
-            : "";
+        statement.recordName === null
+          ? ""
+          : statement.operation === "read" || statement.operation === "readNext"
+            ? ` into ${statement.recordName}`
+            : ` from ${statement.recordName}`;
+      const key = statement.key ? ` key ${printExpression(statement.key)}` : "";
+      const advancing =
+        statement.advancing === null ? "" : ` advancing ${statement.advancing}`;
+      const head = `${indent}${statement.operation} ${statement.fileName}${clause}${key}${advancing}`;
+
+      if (!statement.atEndOfPage) {
+        printer.push(`${head};${trailing}`);
+        return;
+      }
+
+      printer.push(`${head} on page {`);
+      printBlockBody(statement.atEndOfPage, printer, depth + 1);
+      printer.push(`${indent}};${trailing}`);
+      return;
+    }
+
+    case "ConsoleStatement": {
+      if (statement.operation === "log") {
+        printer.push(
+          `${indent}log ${statement.values.map(printExpression).join(", ")};${trailing}`,
+        );
+        return;
+      }
+      printer.push(
+        `${indent}accept ${statement.source} into ${printExpression(statement.target as ExpressionNode)};${trailing}`,
+      );
+      return;
+    }
+
+    case "UnitOfWorkStatement":
+      printer.push(`${indent}${statement.operation};${trailing}`);
+      return;
+
+    case "ReturnCodeStatement":
+      printer.push(
+        `${indent}returnCode = ${printExpression(statement.value)};${trailing}`,
+      );
+      return;
+
+    case "ResetStatement":
+      printer.push(`${indent}reset ${statement.recordName};${trailing}`);
+      return;
+
+    case "ReleaseStatement":
+      printer.push(`${indent}release ${statement.recordName};${trailing}`);
+      return;
+
+    case "RaiseStatement":
+      printer.push(`${indent}raise "${statement.code}";${trailing}`);
+      return;
+
+    case "SplitStatement":
+      printer.push(
+        `${indent}split ${printExpression(statement.source)} by ${printExpression(statement.delimiter)} into ${statement.targets.map(printExpression).join(", ")};${trailing}`,
+      );
+      return;
+
+    case "ReportStatement":
+      printer.push(
+        `${indent}${statement.operation} ${statement.target};${trailing}`,
+      );
+      return;
+
+    case "CheckpointStatement":
+      printer.push(
+        `${indent}checkpoint ${statement.fileName} from ${statement.recordName} every ${statement.every};${trailing}`,
+      );
+      return;
+
+    case "RestartStatement": {
+      printer.push(
+        `${indent}restart ${statement.fileName} into ${statement.recordName} {${trailing}`,
+      );
+      printBlockBody(statement.resumed, printer, depth + 1);
+      if (statement.fresh) {
+        printer.push(`${indent}} else {`);
+        printBlockBody(statement.fresh, printer, depth + 1);
+      }
+      printer.push(`${indent}}`);
+      return;
+    }
+
+    case "SerializeStatement": {
+      const count = statement.count
+        ? ` count ${printExpression(statement.count)}`
+        : "";
+      const head = `${indent}${statement.format} ${printExpression(statement.target)} from ${printExpression(statement.source)}${count}`;
+      if (!statement.onError) {
+        printer.push(`${head};${trailing}`);
+        return;
+      }
+      printer.push(`${head} on error {${trailing}`);
+      printBlockBody(statement.onError, printer, depth + 1);
+      printer.push(`${indent}};`);
+      return;
+    }
+
+    case "XmlParseStatement": {
+      printer.push(
+        `${indent}xml parse ${printExpression(statement.source)} into {${trailing}`,
+      );
+      for (const binding of statement.bindings) {
+        printer.push(
+          `${indent}${INDENT}"${binding.element}": ${printExpression(binding.target)},`,
+        );
+      }
+      if (!statement.onError) {
+        printer.push(`${indent}};`);
+        return;
+      }
+      printer.push(`${indent}} on error {`);
+      printBlockBody(statement.onError, printer, depth + 1);
+      printer.push(`${indent}};`);
+      return;
+    }
+
+    case "ProgramCallStatement": {
+      const using = statement.using
+        ? ` using ${printExpression(statement.using)}`
+        : "";
+      const head = `${indent}${statement.operation} ${printExpression(statement.program)}${using}`;
+      if (!statement.onError) {
+        printer.push(`${head};${trailing}`);
+        return;
+      }
+      printer.push(`${head} on error {${trailing}`);
+      printBlockBody(statement.onError, printer, depth + 1);
+      printer.push(`${indent}};`);
+      return;
+    }
+
+    case "DliStatement": {
+      const record = statement.recordName
+        ? ` into ${statement.recordName}`
+        : "";
       const key = statement.key ? ` key ${printExpression(statement.key)}` : "";
       printer.push(
-        `${indent}${statement.operation} ${statement.fileName}${clause}${key};${trailing}`,
+        `${indent}${statement.operation} ${statement.databaseName}${record}${key};${trailing}`,
       );
+      return;
+    }
+
+    case "QueueStatement": {
+      if (statement.operation === "connect") {
+        printer.push(
+          `${indent}connectQueue ${statement.queueName};${trailing}`,
+        );
+        return;
+      }
+      if (statement.operation === "disconnect") {
+        printer.push(
+          `${indent}disconnectQueue ${statement.queueName};${trailing}`,
+        );
+        return;
+      }
+      if (statement.operation === "put") {
+        printer.push(
+          `${indent}putMessage ${statement.queueName} from ${statement.recordName};${trailing}`,
+        );
+        return;
+      }
+      printer.push(
+        `${indent}getMessage ${statement.queueName} into ${statement.recordName} {${trailing}`,
+      );
+      printBlockBody(statement.body as BlockNode, printer, depth + 1);
+      if (statement.notFound) {
+        printer.push(`${indent}} else {`);
+        printBlockBody(statement.notFound, printer, depth + 1);
+      }
+      printer.push(`${indent}};`);
+      return;
+    }
+
+    case "SortStatement": {
+      const keys = statement.keys
+        .map((key) => `${key.name}${key.descending ? " descending" : ""}`)
+        .join(", ");
+      printer.push(
+        `${indent}${statement.operation} ${statement.inputs.join(", ")} into ${statement.output} by ${keys}${statement.inputProcedure || statement.outputProcedure ? " {" : ";"}${trailing}`,
+      );
+      if (statement.inputProcedure) {
+        printer.push(`${indent}${INDENT}on input {`);
+        printBlockBody(statement.inputProcedure.body, printer, depth + 2);
+        printer.push(`${indent}${INDENT}}`);
+      }
+      if (statement.outputProcedure) {
+        printer.push(`${indent}${INDENT}on output {`);
+        printBlockBody(statement.outputProcedure.body, printer, depth + 2);
+        printer.push(`${indent}${INDENT}}`);
+      }
+      if (statement.inputProcedure || statement.outputProcedure) {
+        printer.push(`${indent}}`);
+      }
+      return;
+    }
+
+    case "SearchStatement": {
+      printer.push(
+        `${indent}search ${statement.sorted ? "sorted " : ""}${statement.elementName} in ${printExpression(statement.array)} where ${printExpression(statement.condition)} {${trailing}`,
+      );
+      printBlockBody(statement.body, printer, depth + 1);
+      printer.push(`${indent}} else {`);
+      printBlockBody(statement.notFound, printer, depth + 1);
+      printer.push(`${indent}}`);
       return;
     }
 
@@ -445,6 +767,25 @@ function printStatement(
       return;
     }
   }
+
+  unprintable(statement);
+}
+
+/**
+ * A node the printer has no case for.
+ *
+ * `never` makes this a compile error rather than a run-time one: a statement
+ * kind added to the AST and not to the printer will not typecheck. The throw is
+ * the belt to that brace, because the alternative is what actually happened —
+ * every switch here simply fell through, printed nothing, and the formatter
+ * deleted the statement from the source. `pnpm fmt` silently removed every
+ * `log`, `commit`, `rollback`, `checkpoint`, `restart`, `getMessage`, `initiate`
+ * and `on error` handler from a program, and the result still parsed.
+ */
+function unprintable(node: never): never {
+  throw new Error(
+    `The formatter has no printer for ${(node as { kind: string }).kind}. Formatting would delete it.`,
+  );
 }
 
 function printType(type: TypeNode): string {

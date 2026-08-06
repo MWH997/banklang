@@ -1,13 +1,12 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
 import { formatBankTs } from "../packages/formatter/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
+import { exampleProjects } from "../tools/example-projects";
 
-const EXAMPLES = readdirSync("examples", { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => `examples/${entry.name}/src/main.bank.ts`);
+const EXAMPLES = exampleProjects().map((path) => `${path}/src/main.bank.ts`);
 
 function format(source: string): string {
   return formatBankTs(source).text;
@@ -156,16 +155,34 @@ function f(a: M): bool {
 `);
   });
 
-  it("produces source that still parses to the same shape", () => {
+  /**
+   * The whole tree, not the shape of its top level.
+   *
+   * This test used to compare the list of declaration kinds, which is a
+   * comparison every program passes: the formatter printed nothing at all for
+   * seventeen of the thirty statement kinds, so running `pnpm fmt` deleted
+   * every `log`, `commit`, `rollback`, `checkpoint`, `restart`, `getMessage`,
+   * `initiate` and `on error` handler from a program — and the result still
+   * parsed, still had the same declarations, and still passed here.
+   *
+   * Spans are excluded because formatting moves lines, which is its job.
+   * Everything else has to survive the round trip exactly.
+   */
+  it("produces source that parses back to the same tree", () => {
+    const withoutSpans = (value: unknown): string =>
+      JSON.stringify(value, (key, node) =>
+        key === "span" || key.endsWith("Span") ? undefined : node,
+      );
+
     for (const path of EXAMPLES) {
       const source = readFileSync(path, "utf8");
       const before = parseBankTs(source, path);
       const after = parseBankTs(format(source), path);
 
       expect(after.diagnostics).toEqual([]);
-      expect(
-        JSON.stringify(after.program?.declarations.map((d) => d.kind)),
-      ).toBe(JSON.stringify(before.program?.declarations.map((d) => d.kind)));
+      expect(withoutSpans(after.program), path).toBe(
+        withoutSpans(before.program),
+      );
     }
   });
 

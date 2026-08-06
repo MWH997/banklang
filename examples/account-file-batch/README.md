@@ -99,10 +99,10 @@ DD names are folded to eight uppercase alphanumeric characters, so
 
 Running the CLI from the repository root writes generated artifacts to `dist/`:
 
-- `dist/cobol/ACCOUNT-FILE-BATCH.cbl`
-- `dist/copybooks/ACCOUNT-RECORD.cpy`
-- `dist/copybooks/POSTING-RECORD.cpy`
-- `dist/jcl/ACCOUNT-FILE-BATCH.jcl`
+- `dist/cobol/ACCOUNTF.cbl`
+- `dist/copybooks/ACCOUNTR.cpy`
+- `dist/copybooks/POSTINGR.cpy`
+- `dist/jcl/ACCOUNTF.jcl`
 - `dist/maps/source-map.json`
 - the audit bundle under `dist/audit/`
 

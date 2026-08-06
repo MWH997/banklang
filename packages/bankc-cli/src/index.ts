@@ -15,8 +15,11 @@ import {
 import {
   emitCobol,
   emitJcl,
+  emitJobJcl,
   type CobolEmitResult,
   type JclEmitResult,
+  type JobSortStep,
+  type JobStep,
   renderCopybook,
 } from "../../cobol-backend/src/index";
 import {
@@ -176,6 +179,8 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runCheck(rest, cwd);
     case "build":
       return runBuild(rest, cwd);
+    case "job":
+      return runJob(rest, cwd);
     case "emit":
       return runEmit(rest, cwd);
     case "audit-report":
@@ -403,6 +408,182 @@ function runEmit(args: string[], cwd: string): CliResult {
     exitCode: 1,
     stdout: "",
     stderr: `Unknown emit target: ${profile}\n`,
+  };
+}
+
+export const JOB_FILE_NAME = "job.json";
+
+/** One step as `job.json` writes it. */
+type JobDescriptorStep =
+  { kind: "program"; name: string; project: string } | JobSortStep;
+
+interface JobDescriptor {
+  name: string;
+  description: string;
+  steps: JobDescriptorStep[];
+}
+
+/**
+ * `job.json`, read strictly.
+ *
+ * A step name becomes a JCL step name, which is one to eight characters and is
+ * what a restart and every `COND` refer to; a job whose steps are named by
+ * whatever happened to be in the file is one an operator cannot restart at a
+ * step. Everything here is checked when the job is built rather than trusted
+ * and written into the stream, because a malformed name is a JCL error at
+ * three in the morning and a clear message now.
+ */
+export function parseJobDescriptor(text: string): JobDescriptor {
+  const raw = JSON.parse(text) as Record<string, unknown>;
+  const name = raw.name;
+  const description = raw.description;
+  const steps = raw.steps;
+
+  if (typeof name !== "string" || name.length === 0) {
+    throw new Error("A job needs a name.");
+  }
+  if (typeof description !== "string" || description.length === 0) {
+    throw new Error("A job needs a description; it goes on the JOB card.");
+  }
+  if (!Array.isArray(steps) || steps.length === 0) {
+    throw new Error("A job needs at least one step.");
+  }
+
+  const seen = new Set<string>();
+  const parsed = steps.map((entry, index) => {
+    const step = entry as Record<string, unknown>;
+    const stepName = step.name;
+    if (
+      typeof stepName !== "string" ||
+      !/^[A-Z#$@][A-Z0-9#$@]{0,7}$/.test(stepName)
+    ) {
+      throw new Error(
+        `Step ${index + 1} needs a name of one to eight characters, starting with a letter, as JCL requires.`,
+      );
+    }
+    if (seen.has(stepName)) {
+      throw new Error(
+        `Two steps are named ${stepName}. A COND and a restart both refer to a step by name, so they have to differ.`,
+      );
+    }
+    seen.add(stepName);
+
+    if (typeof step.project === "string") {
+      return {
+        kind: "program" as const,
+        name: stepName,
+        project: step.project,
+      };
+    }
+    if (
+      typeof step.input === "string" &&
+      typeof step.output === "string" &&
+      typeof step.fields === "string"
+    ) {
+      return {
+        kind: "sort" as const,
+        name: stepName,
+        input: step.input,
+        output: step.output,
+        fields: step.fields,
+      };
+    }
+    throw new Error(
+      `Step ${stepName} is neither a program (\`project\`) nor a sort (\`input\`, \`output\`, \`fields\`).`,
+    );
+  });
+
+  return { name, description, steps: parsed };
+}
+
+/**
+ * `bankc job <dir>` — build every program in a job directory, then emit the one
+ * job stream that runs them.
+ *
+ * A job directory holds `job.json` and a subdirectory per program, each of them
+ * an ordinary BankLang project. Every program is built exactly as `bankc build`
+ * would build it, load module and build job and all; what this adds is the
+ * stream that runs them in order, with the sort steps between and the
+ * conditions that stop a night whose extract failed from posting anyway.
+ */
+function runJob(args: string[], cwd: string): CliResult {
+  const jobPath = requireProjectPath(args, "job");
+  if (!jobPath) {
+    return { exitCode: 1, stdout: "", stderr: renderHelp() };
+  }
+
+  const descriptorPath = resolve(cwd, jobPath, JOB_FILE_NAME);
+  if (!existsSync(descriptorPath)) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `No ${JOB_FILE_NAME} in ${jobPath}. A job directory holds one, naming the steps in order.\n`,
+    };
+  }
+
+  let descriptor: JobDescriptor;
+  try {
+    descriptor = parseJobDescriptor(readFileSync(descriptorPath, "utf8"));
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `${descriptorPath}: ${(error as Error).message}\n`,
+    };
+  }
+
+  const outputRoot = resolveOutputRoot(cwd, args);
+  const written: string[] = [];
+  const steps: JobStep[] = [];
+  let runtimeOptions: readonly string[] = [];
+
+  for (const step of descriptor.steps) {
+    if (step.kind === "sort") {
+      steps.push(step);
+      continue;
+    }
+
+    // Each program is a project of its own, built into its own directory so
+    // two programs in one job cannot overwrite each other's artifacts.
+    const projectPath = join(jobPath, step.project);
+    const result = runBuild(
+      [projectPath, "--out", join(outputRoot, step.project)],
+      cwd,
+    );
+    if (result.exitCode !== 0) {
+      return {
+        exitCode: result.exitCode,
+        stdout: "",
+        stderr: `${projectPath}\n${result.stderr}`,
+      };
+    }
+    written.push(...result.stdout.trimEnd().split("\n"));
+
+    const compiled = compileProject(projectPath, cwd);
+    steps.push({
+      kind: "program",
+      name: step.name,
+      program: compiled.ir.program as IRProgram,
+    });
+    runtimeOptions = compiled.runtimeOptions;
+  }
+
+  const jclPath = join(
+    outputRoot,
+    "jcl",
+    `${toCobolProgramId(descriptor.name)}.jcl`,
+  );
+  const jcl = emitJobJcl(
+    { name: descriptor.name, description: descriptor.description, steps },
+    { runtimeOptions },
+  );
+  mkdirSync(dirname(jclPath), { recursive: true });
+  writeFileSync(jclPath, jcl, "utf8");
+
+  return {
+    exitCode: 0,
+    stdout: [...written, `Wrote ${jclPath}`].join("\n") + "\n",
+    stderr: "",
   };
 }
 
