@@ -29,6 +29,7 @@ import {
   renderCopybookTypes,
 } from "../../copybook/src/index";
 import { compareLayouts, importCopybook } from "../../copybook/src/import";
+import { importDclgen } from "../../copybook/src/dclgen";
 import { analyzeProgramSemantics } from "../../semantic-analyzer/src/index";
 import {
   lowerProgramToIR,
@@ -185,6 +186,8 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runLayout(rest, cwd);
     case "copybook":
       return runCopybook(rest, cwd);
+    case "dclgen":
+      return runDclgen(rest, cwd);
     case "explain":
       return runExplain(rest);
     case "fmt":
@@ -862,6 +865,70 @@ function runCopybook(args: string[], cwd: string): CliResult {
 }
 
 /**
+ * A DCLGEN member read into a BankTS record.
+ *
+ * DCLGEN is Db2's own declarations generator, so the member states each
+ * column's real SQL type and whether it may be null — two things a copybook
+ * cannot say. A nullable column becomes `nullable<T>`, which is what makes
+ * `BANK-TYPE-008` refuse a program that reads one without checking.
+ *
+ * The member also carries DCLGEN's own COBOL declaration for the same columns,
+ * and every type read here is turned back into a picture and compared against
+ * it. A disagreement is this compiler being wrong about Db2.
+ */
+function runDclgen(args: string[], cwd: string): CliResult {
+  const [subcommand, ...rest] = args;
+  const jsonMode = rest.includes("--json");
+
+  if (subcommand !== "import") {
+    return {
+      exitCode: 1,
+      stdout: renderHelp(),
+      stderr: `Unknown dclgen subcommand: ${subcommand ?? ""}\n`,
+    };
+  }
+
+  const filePath = requireCopybookPath(rest, "dclgen import");
+  if (!filePath) {
+    return { exitCode: 1, stdout: "", stderr: renderHelp() };
+  }
+
+  try {
+    const imported = importDclgen(readFileSync(resolve(cwd, filePath), "utf8"));
+    if (jsonMode) {
+      return {
+        exitCode: imported.problems.length > 0 ? 1 : 0,
+        stdout: `${JSON.stringify(imported, null, 2)}\n`,
+        stderr: "",
+      };
+    }
+    if (imported.problems.length > 0) {
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${[
+          `${filePath} did not import cleanly.`,
+          "",
+          ...imported.problems.map(
+            (problem) => `${problem.field}: ${problem.message}`,
+          ),
+          "",
+          "Nothing was written. A host variable of the wrong shape is one Db2",
+          "refuses at bind time if you are lucky.",
+        ].join("\n")}\n`,
+      };
+    }
+    return { exitCode: 0, stdout: `${imported.source}\n`, stderr: "" };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `${error instanceof Error ? error.message : String(error)}\n`,
+    };
+  }
+}
+
+/**
  * A copybook read into a BankTS record, and the round trip that proves it.
  *
  * The record is emitted straight back to a copybook and the two layouts are
@@ -1439,6 +1506,7 @@ function renderHelp(): string {
     "  layout <project>",
     "  doctor",
     "  copybook import <file>",
+    "  dclgen import <file>",
     "  copybook inspect <file>",
     "  copybook types <file>",
     "  copybook diff <left> <right>",

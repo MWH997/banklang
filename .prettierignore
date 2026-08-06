@@ -13,6 +13,9 @@ tmp/
 # `pnpm fixtures:refresh` write these; `pnpm lint:conformance` is what checks
 # them, against the target's rules rather than against a style.
 tests/fixtures/**
+# Copybooks and DCLGEN members this compiler reads rather than writes. They are
+# somebody else's text, kept as it was written.
+tests/inputs/**
 examples/**/*.bank.ts
 evidence/**/audit/**
 evidence/**/cobol/**
