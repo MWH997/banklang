@@ -115,6 +115,9 @@ in order.
 
 ### Fixed
 
+- Verify the examples in CI through the one enumeration every other tool uses,
+  rather than walking the directory and running `bankc test` on the job of four
+  programs.
 - Report a cited source that redirects to a front page, which answers 200 and
   reads as alive. NIST's COBOL-85 test suite page had already become one.
 - Find a program name written on the line after `PROGRAM-ID.`, which is legal

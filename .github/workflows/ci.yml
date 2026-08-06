@@ -58,13 +58,12 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # `tools/verify-examples.ts` rather than a loop over `examples/*/`, which
+      # is what this was and which assumed every example is one program.
+      # `end-of-day-settlement` is a job of four, so the loop ran `bankc test`
+      # on a directory with no `src/main.bank.ts` and stopped the build.
       - name: Verify every example
-        run: |
-          for example in examples/*/; do
-            echo "::group::bankc test $example"
-            pnpm bankc test "$example"
-            echo "::endgroup::"
-          done
+        run: pnpm examples:verify
 
       # Banking safety diagnostics as SARIF, so they appear as inline
       # annotations on a pull request rather than only in this log.
