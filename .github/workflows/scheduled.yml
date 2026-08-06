@@ -37,12 +37,12 @@ jobs:
             script: test:mutation:lint
             report: dist/mutation-lint
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         run: npm install -g pnpm@11.7.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "pnpm"
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload the HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-${{ matrix.lane }}
           path: ${{ matrix.report }}
@@ -70,7 +70,7 @@ jobs:
       # be read, and nobody reads a workflow that goes green whatever happens.
       - name: Open an issue when the score falls below its threshold
         if: steps.run.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const lane = "${{ matrix.lane }}";
@@ -112,12 +112,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         run: npm install -g pnpm@11.7.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "pnpm"
@@ -139,7 +139,7 @@ jobs:
 
       - name: Open an issue when an advisory affects a dependency
         if: steps.check.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
@@ -186,12 +186,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         run: npm install -g pnpm@11.7.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "pnpm"
@@ -209,7 +209,7 @@ jobs:
 
       - name: Open an issue when a citation stops resolving
         if: steps.check.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
