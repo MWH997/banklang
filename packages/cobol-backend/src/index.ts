@@ -56,7 +56,6 @@ import {
   decimalPicture,
   divisionRemainderShape,
   fitCobolWord,
-  packedDecimalByteLength,
   toCobolFieldName,
   toCobolName,
   toCobolParagraphName,
@@ -9027,8 +9026,4 @@ export function renderCopybook(record: IRRecord): string {
   emitAllRenames(record, toCobolName(record.name), addLine, " ".repeat(11));
 
   return `${lines.join("\n")}\n`;
-}
-
-export function countPackedDecimalBytes(precision: number): number {
-  return packedDecimalByteLength(precision);
 }

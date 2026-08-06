@@ -1,5 +1,4 @@
 import {
-  astToJson,
   createDiagnostic,
   type BlockNode,
   type BooleanLiteralNode,
@@ -5383,8 +5382,4 @@ class Parser {
 export function parseBankTs(source: string, sourceFile: string): ParsedProgram {
   const parser = new Parser(source, sourceFile);
   return parser.parseProgram();
-}
-
-export function parseBankTsToJson(source: string, sourceFile: string): unknown {
-  return astToJson(parseBankTs(source, sourceFile));
 }

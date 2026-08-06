@@ -3,6 +3,17 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 
 export const CONFIG_FILE_NAME = "banklang.json";
 
+/**
+ * Where the schema for this file is published.
+ *
+ * `bankc init` writes it into every generated config, so it has to be a URL
+ * that resolves: `pnpm build:site` writes `configJsonSchema()` to this path.
+ * It previously named `banklang.dev`, which is not a domain this project owns
+ * and has never served anything — an editor following it got nothing, and the
+ * project was pointing its users at somebody else's namespace.
+ */
+export const SCHEMA_URL = "https://banklang.mwhassan.com/schema/banklang.json";
+
 export type BackendProfile = "ibm-enterprise-cobol-zos" | "gnucobol-local";
 
 export interface BankLangConfig {
@@ -35,7 +46,7 @@ export interface BankLangConfig {
    * every picture and every literal — so it belongs to the project rather than
    * to a field.
    */
-  decimalPoint: "point" | "comma";
+  decimalPoint: DecimalPoint;
   /**
    * `CURRENCY SIGN IS "<c>"`, for what an edited picture's currency position
    * prints. Defaults to the dollar sign COBOL assumes.
@@ -62,7 +73,15 @@ export interface BankLangConfig {
 
 export type CopybookMode = "inline" | "copy";
 
-const COPYBOOK_MODES: CopybookMode[] = ["inline", "copy"];
+export const COPYBOOK_MODES: CopybookMode[] = ["inline", "copy"];
+
+export type DecimalPoint = "point" | "comma";
+
+/**
+ * Exported so `configJsonSchema()` offers exactly what the loader below
+ * accepts, rather than a second list that can drift from this one.
+ */
+export const DECIMAL_POINTS: DecimalPoint[] = ["point", "comma"];
 
 /**
  * Characters a picture clause already means something by.
@@ -99,7 +118,7 @@ export const DEFAULT_CONFIG: BankLangConfig = {
   runtimeOptions: ["TERMTHDACT(UADUMP)", "TRAP(ON)"],
 };
 
-const BACKEND_PROFILES: BackendProfile[] = [
+export const BACKEND_PROFILES: BackendProfile[] = [
   "ibm-enterprise-cobol-zos",
   "gnucobol-local",
 ];
@@ -192,10 +211,15 @@ export function loadConfig(projectPath: string, cwd: string): LoadedConfig {
   }
 
   if (source.decimalPoint !== undefined) {
-    if (source.decimalPoint === "point" || source.decimalPoint === "comma") {
-      config.decimalPoint = source.decimalPoint;
+    if (
+      typeof source.decimalPoint === "string" &&
+      (DECIMAL_POINTS as string[]).includes(source.decimalPoint)
+    ) {
+      config.decimalPoint = source.decimalPoint as DecimalPoint;
     } else {
-      problems.push(`"decimalPoint" must be "point" or "comma".`);
+      problems.push(
+        `"decimalPoint" must be one of: ${DECIMAL_POINTS.join(", ")}.`,
+      );
     }
   }
 
@@ -270,15 +294,10 @@ export function loadConfig(projectPath: string, cwd: string): LoadedConfig {
   return { config, path, root: directory, problems };
 }
 
-/** Resolves a config-relative path against the config root. */
-export function resolveFromConfig(loaded: LoadedConfig, value: string): string {
-  return isAbsolute(value) ? value : join(loaded.root, value);
-}
-
 export function renderDefaultConfig(): string {
   return `${JSON.stringify(
     {
-      $schema: "https://banklang.dev/schema/banklang.json",
+      $schema: SCHEMA_URL,
       ...DEFAULT_CONFIG,
     },
     null,

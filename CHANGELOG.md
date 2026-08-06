@@ -15,8 +15,29 @@ in order.
 
 ## [Unreleased]
 
+### Fixed
+
+- Point the `$schema` in a generated `banklang.json` at a URL that resolves,
+  rather than at a domain this project does not own —
+  [toolchain](docs/toolchain.md).
+- Compile the reference runtime once per machine rather than six modules per
+  test, so the executed conformance tests stop timing out on a loaded runner —
+  [verification](docs/verification.md).
+- Remove the claim of Docker-based verification from `CONTRIBUTING.md`; there is
+  no Dockerfile in this repository.
+
+### Security
+
+- Upgrade Vitest to 4 and pin `vite` and `qs`, clearing eight advisories in the
+  build and test tooling, one of them critical. `pnpm audit` now reports none —
+  [audit](docs/audit-2026-08-06.md).
+
 ### Changed
 
+- Type a conformance finding's `rule` as the union of valid rule ids rather than
+  `string`, so a misspelled id cannot be reported.
+- Declare the project's licence, repository, description and version in
+  `package.json`, which is where a licence scanner and an SBOM generator look.
 - Split the language reference into thirteen topic pages under
   [docs/language/](docs/language/), and point every diagnostic at a page rather
   than at a section number two sections shared.
@@ -30,6 +51,10 @@ in order.
 
 ### Added
 
+- Add a weekly `advisories` job, opening an issue when a dependency picks up a
+  published advisory — [audit](docs/audit-2026-08-06.md).
+- Add a JSON Schema for `banklang.json`, built from the constants the loader
+  validates against and served by `pnpm build:site`.
 - Add `pnpm build:site`, producing the landing page, the playground and the
   site's assets in one tree — [launch tickets](docs/launch-tickets.md).
 - Add a landing page whose every code block, diagnostic and count is generated

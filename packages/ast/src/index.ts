@@ -57,10 +57,6 @@ export function formatDiagnostic(diagnostic: Diagnostic): string {
   return `${diagnostic.id} ${diagnostic.severity}${location}\n  ${diagnostic.message}${hint}${backendProfile}`;
 }
 
-export function astToJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
 export interface NodeBase {
   kind: string;
   span: SourceSpan;

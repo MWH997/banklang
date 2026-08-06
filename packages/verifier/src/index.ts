@@ -9,19 +9,6 @@ export interface DeterminismComparison {
   rightBytes: number;
 }
 
-export function compareExactText(
-  left: string,
-  right: string,
-): DeterminismComparison {
-  const leftBytes = Buffer.byteLength(left, "utf8");
-  const rightBytes = Buffer.byteLength(right, "utf8");
-  return {
-    identical: left === right,
-    leftBytes,
-    rightBytes,
-  };
-}
-
 export function compareExactBytes(
   left: Uint8Array,
   right: Uint8Array,

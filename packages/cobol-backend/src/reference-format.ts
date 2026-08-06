@@ -60,14 +60,6 @@ export function toReferenceFormat(line: string): string[] {
   return wrapStatement(indent, body);
 }
 
-/** Applies reference format to a whole artifact. */
-export function toReferenceFormatText(text: string): string {
-  return text
-    .split("\n")
-    .flatMap((line) => toReferenceFormat(line))
-    .join("\n");
-}
-
 /** The last column of a JCL statement's fields. */
 export const JCL_LAST_COLUMN = 71;
 

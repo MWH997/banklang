@@ -61,7 +61,7 @@ pnpm fmt:check    # verify, used by CI
 
 ```json
 {
-  "$schema": "https://banklang.dev/schema/banklang.json",
+  "$schema": "https://banklang.mwhassan.com/schema/banklang.json",
   "entry": "src/main.bank.ts",
   "outDir": "dist",
   "backendProfile": "ibm-enterprise-cobol-zos",

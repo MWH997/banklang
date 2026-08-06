@@ -1,5 +1,27 @@
 {
   "name": "banklang",
+  "version": "0.9.0",
+  "description": "A deterministic compiler from BankTS, a restricted TypeScript-like language for banking logic, to readable IBM Enterprise COBOL.",
+  "license": "MIT",
+  "homepage": "https://banklang.mwhassan.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MWH997/banklang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MWH997/banklang/issues"
+  },
+  "keywords": [
+    "cobol",
+    "ibm-enterprise-cobol",
+    "mainframe",
+    "zos",
+    "compiler",
+    "banking",
+    "cics",
+    "db2",
+    "jcl"
+  ],
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.7.0",
@@ -50,6 +72,6 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.66.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.10"
   }
 }

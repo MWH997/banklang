@@ -2,3 +2,26 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+
+# Held one patch back from the newest vite, which vitest depends on and would
+# otherwise pull in the day it is published.
+#
+# `minimumReleaseAge` exists because a compromised npm release is normally found
+# and pulled within days, so the safe move is to not be among the first to
+# install one. When a fresh version arrives as a transitive dependency, pnpm
+# offers to add it to `minimumReleaseAgeExclude` — an exemption for the one
+# package the policy just stopped, which is the opposite of what the policy is
+# for. Naming a version that is already past the cutoff keeps the check meaning
+# something.
+#
+# 8.1.5 is well clear of every advisory that prompted this upgrade: those affect
+# vite up to 6.4.2. Raise this whenever the newest release has aged past the
+# window, rather than excluding it.
+overrides:
+  vite: 8.1.5
+  # Stryker reaches qs through typed-rest-client, four levels down, and pins a
+  # line with a `stringify` DoS (GHSA-q8mj-m7cp-5q26). Nothing here calls it —
+  # the mutation runners talk to no HTTP service — but "unreachable" is an
+  # argument that has to be re-made every time somebody scans this repository,
+  # and the patched release is a patch bump on the same line.
+  qs: ^6.15.3
