@@ -99,6 +99,8 @@ import {
   type CicsStatementNode,
   type CicsOperation,
   type ForEachStatementNode,
+  type TestDeclarationNode,
+  type TestStepNode,
 } from "../../ast/src/index";
 
 type TokenKind =
@@ -835,12 +837,175 @@ class Parser {
       return this.parseSqlDeclaration("cursor");
     }
 
+    // `test <name> for <transaction> { ... }`, matched contextually so `test`
+    // stays a usable field name. Copybooks are full of them — TEST-FLAG,
+    // TEST-IND — and a word reserved for a declaration nothing compiles would
+    // be the worst trade in the keyword table.
+    if (
+      this.current.kind === "identifier" &&
+      this.current.text === "test" &&
+      this.next.kind === "identifier"
+    ) {
+      return this.parseTestDeclaration();
+    }
+
     this.errorAtCurrent(
       "BANK-SYN-002",
       `Unexpected token ${this.current.text}.`,
       "Expected a declaration.",
     );
     return null;
+  }
+
+  /**
+   * `test postsBothLegs for postAccounts { given ...; expect ...; }`
+   *
+   * `given` and `expect` are matched contextually inside the body for the same
+   * reason `test` is: neither is a keyword anywhere else, so neither is taken
+   * away from the rest of the language.
+   */
+  private parseTestDeclaration(): TestDeclarationNode | null {
+    const keyword = this.advance();
+    const nameToken = this.expectIdentifier(
+      "Expected a test name after `test`.",
+    );
+    if (!this.matchKeyword("for")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        "Expected `for` after the test name.",
+        "Write `test <name> for <entry transaction> { ... }`.",
+      );
+      return null;
+    }
+
+    const transactionToken = this.expectIdentifier(
+      "Expected the transaction the test runs.",
+    );
+    if (!this.expectPunctuation("{", "Expected `{` to open the test body.")) {
+      return null;
+    }
+
+    const steps: TestStepNode[] = [];
+    while (!this.is("eof") && !this.isPunctuation("}")) {
+      const step = this.parseTestStep();
+      if (!step) {
+        return null;
+      }
+      steps.push(step);
+    }
+
+    const close = this.expectPunctuation(
+      "}",
+      "Expected `}` to close the test body.",
+    );
+    if (!nameToken || !transactionToken || !close) {
+      return null;
+    }
+
+    return {
+      kind: "TestDeclaration",
+      name: nameToken.text,
+      transactionName: transactionToken.text,
+      transactionSpan: transactionToken.span,
+      steps,
+      span: {
+        sourceFile: keyword.span.sourceFile,
+        start: keyword.span.start,
+        end: close.span.end,
+      },
+    };
+  }
+
+  private parseTestStep(): TestStepNode | null {
+    if (!this.is("identifier")) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        `Expected \`given\` or \`expect\`, and found ${this.current.text}.`,
+        "A test body is `given <parameter> = <value>;` and `expect <call>;`.",
+      );
+      return null;
+    }
+
+    const word = this.advance();
+    if (word.text === "given") {
+      const parameter = this.expectIdentifier(
+        "Expected the parameter `given` supplies.",
+      );
+      this.expectPunctuation("=", "Expected `=` after the parameter name.");
+      const value = this.parseExpression();
+      const end = this.expectPunctuation(";", "Expected `;` after `given`.");
+      if (!parameter || !value || !end) {
+        return null;
+      }
+      return {
+        kind: "TestGiven",
+        parameter: parameter.text,
+        value,
+        span: {
+          sourceFile: word.span.sourceFile,
+          start: word.span.start,
+          end: end.span.end,
+        },
+      };
+    }
+
+    if (word.text !== "expect") {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        `Expected \`given\` or \`expect\`, and found ${word.text}.`,
+        "A test body is `given <parameter> = <value>;` and `expect <call>;`.",
+      );
+      return null;
+    }
+
+    const callToken = this.expectIdentifier(
+      "Expected `debit`, `credit` or `audit` after `expect`.",
+    );
+    if (!callToken) {
+      return null;
+    }
+
+    if (!["debit", "credit", "audit"].includes(callToken.text)) {
+      this.errorAtCurrent(
+        "BANK-SYN-001",
+        `\`expect ${callToken.text}\` is not something a test can observe.`,
+        "A zUnit driver sees the calls the program makes: `expect debit(...)`, `expect credit(...)` and `expect audit(...)`.",
+      );
+      return null;
+    }
+
+    this.expectPunctuation("(", "Expected `(` after the expected call.");
+    const first = this.parseExpression();
+    this.expectPunctuation(",", "Expected `,` between the two arguments.");
+    const second = this.parseExpression();
+    this.expectPunctuation(")", "Expected `)` after the arguments.");
+    const end = this.expectPunctuation(";", "Expected `;` after `expect`.");
+    if (!first || !second || !end) {
+      return null;
+    }
+
+    const span = {
+      sourceFile: word.span.sourceFile,
+      start: word.span.start,
+      end: end.span.end,
+    };
+
+    if (callToken.text === "audit") {
+      return {
+        kind: "TestExpectAudit",
+        event: first,
+        correlation: second,
+        span,
+      };
+    }
+
+    return {
+      kind: "TestExpectLedger",
+      operation: callToken.text === "debit" ? "debit" : "credit",
+      account: first,
+      amount: second,
+      span,
+    };
   }
 
   private parseSqlDeclaration(

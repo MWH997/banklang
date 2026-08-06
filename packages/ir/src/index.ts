@@ -62,7 +62,51 @@ export interface IRProgram {
    * compilation is not a meaningful check and must not be reported as one.
    */
   backendRequirements: BackendRequirement[];
+  /**
+   * `test` declarations, carried through untouched.
+   *
+   * Nothing in the COBOL emitter reads them: they are here because the zUnit
+   * generator needs the program and its tests together, and the IR is where the
+   * program is. `tests/zunit.test.ts` asserts that a program's COBOL is
+   * byte-for-byte the same with them and without.
+   */
+  tests: IRTest[];
 }
+
+/** One zUnit case: what the step is started with, and what it must ask for. */
+export interface IRTest {
+  name: string;
+  span: SourceSpan;
+  transactionName: string;
+  givens: IRTestGiven[];
+  expectations: IRTestExpectation[];
+}
+
+export interface IRTestGiven {
+  /** BankTS parameter name, matched to a PARM field by the emitter. */
+  parameter: string;
+  span: SourceSpan;
+  type: IRType;
+  value: IRTestLiteral;
+}
+
+export type IRTestExpectation =
+  | {
+      kind: "ledger";
+      operation: "debit" | "credit";
+      account: IRTestLiteral;
+      amount: IRTestLiteral;
+      span: SourceSpan;
+    }
+  | {
+      kind: "audit";
+      event: IRTestLiteral;
+      correlation: IRTestLiteral;
+      span: SourceSpan;
+    };
+
+export type IRTestLiteral =
+  { kind: "string"; value: string } | { kind: "decimal"; text: string };
 
 export type BackendRequirement =
   "db2-precompiler" | "cics-translator" | "report-writer-precompiler" | "mq";
@@ -1311,6 +1355,18 @@ export function lowerProgramToIR(
           ? (["cics-translator"] as const)
           : []),
       ],
+      tests: typechecked.tests.map((test) => ({
+        name: test.name,
+        span: test.span,
+        transactionName: test.transactionName,
+        givens: test.givens.map((given) => ({
+          parameter: given.parameter,
+          span: given.span,
+          type: lowerType(given.type),
+          value: given.value,
+        })),
+        expectations: test.expectations,
+      })),
     },
     diagnostics: typechecked.diagnostics,
   };

@@ -10,6 +10,7 @@ import type {
   ProgramNode,
   TypeParameterNode,
   StatementNode,
+  TestStepNode,
   TypeNode,
 } from "../../ast/src/index";
 import { parseBankTs } from "../../parser/src/index";
@@ -365,9 +366,33 @@ function printDeclaration(
       }
       printer.push("}");
       return;
+
+    case "TestDeclaration":
+      printer.push(
+        `test ${declaration.name} for ${declaration.transactionName} {${trailing}`,
+      );
+      for (const step of declaration.steps) {
+        printer.push(`${INDENT}${printTestStep(step)}`);
+      }
+      printer.push("}");
+      return;
   }
 
   unprintable(declaration);
+}
+
+/** One line of a `test` body, which is a `given` or an expected call. */
+function printTestStep(step: TestStepNode): string {
+  switch (step.kind) {
+    case "TestGiven":
+      return `given ${step.parameter} = ${printExpression(step.value)};`;
+    case "TestExpectLedger":
+      return `expect ${step.operation}(${printExpression(step.account)}, ${printExpression(step.amount)});`;
+    case "TestExpectAudit":
+      return `expect audit(${printExpression(step.event)}, ${printExpression(step.correlation)});`;
+  }
+
+  unprintable(step);
 }
 
 /** One `column` entry's value: a literal, a field, a total, or the page. */
