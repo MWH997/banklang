@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Stryker's sandbox: a copy of the repository, deleted when the run ends.
+.stryker-tmp/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/

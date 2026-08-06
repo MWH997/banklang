@@ -54,6 +54,66 @@ Important areas:
 - source map ranges
 - deterministic ordering
 
+#### Generated programs
+
+`tests/generated-programs.test.ts` builds sixty random **valid** BankTS programs
+from `tools/generate-programs.ts` and asserts three things of each: it compiles
+with no errors, its COBOL and JCL pass the conformance linter, and `cobc`
+accepts it under `tools/banklang-ibm.conf`.
+
+The point is not to fuzz the parser. It is that every hand-written fixture is a
+shape somebody thought of, and the 2026-08-05 audit's most serious finding — a
+COBOL word one character over the limit — lived in a shape nobody had, because
+every fixture used short names. So the generator spends most of its budget on
+boundaries: names at 29, 30 and 31 characters, every rounding mode, precisions
+and scales at the edge of what `ARITH(COMPAT)` allows, tables at one occurrence
+and at five hundred.
+
+It is deterministic. The seed is the program, and a failure names the seed that
+reproduces it.
+
+It found two defects on its first run, both unreachable from any example:
+`decimal<2, 2>` — a value entirely below the decimal point, which is what a rate
+is — emitted `PIC S9(0)V99`, and a function name long enough to need
+abbreviating gave its paragraph, its parameter cell, its result field and its
+exit paragraph the same thirty-character word.
+
+### 2.3a Mutation tests
+
+The diagnostics are the product. A safety rule with no test that fails when you
+invert it is not a rule, it is a comment — and reading the suite cannot tell the
+two apart, because a test that compiles a bad program and asserts the right
+diagnostic passes just as well when the rule is deleted and another rule catches
+the same program.
+
+```bash
+pnpm test:mutation
+```
+
+Stryker, against `packages/typechecker` and `packages/semantic-analyzer` — the
+two packages that decide whether a program is refused. The emitter is
+deliberately out of scope: its output is held by golden fixtures, the
+conformance linter and `cobc`, which is a different and already-strong kind of
+evidence.
+
+Three configuration decisions are worth knowing, because each changes what the
+number means:
+
+- **`vitest.mutation.config.ts`** narrows the suite Stryker runs. Left out is
+  everything that cannot answer the question — the repository-hygiene tests,
+  which read files rather than compile programs, and the ones that spawn `cobc`,
+  which are minutes each and prove things about the emitter.
+- **`ignoreStatic`** skips mutants in module-level initialisers. Over half the
+  mutants are in the diagnostic catalogue and the reserved-word tables, and
+  measuring one of those means rerunning the entire suite for it.
+- **`excludedMutations: ["StringLiteral", "Regex"]`** leaves diagnostic message
+  text alone. A changed message is a test failure that says nothing about
+  whether the rule works.
+
+It takes roughly three quarters of an hour on four cores, so it is not in the
+default `pnpm test`. `incremental` is on, and the second run over unchanged code
+is quick.
+
 ### 2.4 Fuzz tests
 
 Fuzz:
