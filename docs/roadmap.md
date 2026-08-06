@@ -123,12 +123,13 @@ Db2, in the order a batch meets them:
 - ~~`LOCK TABLE`~~ — the same
 - scrollable cursors, and `GET DIAGNOSTICS`
 
-zUnit test generation. Blocked, and researched rather than assumed: see
-[integrations/zunit-integration.md](integrations/zunit-integration.md), which
-records the three artifacts a test case is, the DDs its runner allocates, the
-fragment of the `.bzucfg` that is known, and the four things that would have to
-be in hand before a generator could be written. Inventing the rest is how this
-project emitted a rounding phrase Enterprise COBOL has never had.
+~~zUnit test generation~~ — done, `test <name> for <entry transaction>` and
+`bankc zunit`. It was blocked on not having IBM's schema, and what unblocked it
+was test cases IBM's own generator produced, published in public repositories:
+every shape in the three artifacts is copied from one of those and cited in
+[integrations/zunit-integration.md](integrations/zunit-integration.md). Two
+values are inferred rather than observed and say so, in D20 and D21. No
+generated case has been run — that is what the z/OS kit is for.
 
 ## v1.0 — Serious open-source release
 

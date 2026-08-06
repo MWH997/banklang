@@ -668,6 +668,52 @@ A transaction reached the backend but has no source map entry. `language-spec.md
 section 10 requires the generated COBOL to expose the transaction boundary in
 the source map.
 
+## 12a. Test case diagnostics
+
+A `test` declaration becomes a zUnit case rather than COBOL, and these are about
+what such a case can actually observe. The driver runs in its own program, so
+the program under test's `WORKING-STORAGE` is not reachable from it: a test that
+appeared to assert on one would report a pass nobody checked.
+
+### `BANK-TEST-001` a test naming something it cannot start
+
+`for` names something that is not the entry transaction, or is not a transaction
+at all. A zUnit case runs a load module, and a load module is entered at one
+place.
+
+### `BANK-TEST-002` a test on a program a batch case cannot start
+
+A CICS transaction is started by a transaction identifier with a COMMAREA, which
+is a `type="CICS"` case and a running region; an IMS program is entered by the
+region with its PCBs. The generator writes `type="BTCH"` cases.
+
+### `BANK-TEST-003` a `given` naming something the step is not started with
+
+A batch program is entered with a PARM, which is the scalar parameters of its
+entry transaction. A record parameter is a buffer the program fills from a file.
+
+### `BANK-TEST-004` a test value that is not a constant, or does not fit
+
+The generated driver holds literals and evaluates nothing. A literal wider than
+the field it is compared against is the same defect one step later: COBOL
+truncates the `MOVE` that fills the interface, so the comparison would be
+against a value the program could never have sent.
+
+### `BANK-TEST-005` two tests with one name
+
+Each test becomes a `TEST_<NAME>` entry point in one load module, and two of
+them are one entry point.
+
+### `BANK-TEST-006` a test name that will not survive being generated
+
+The runner matches a test on the characters before the first space in an
+80-character field, and the name also becomes part of a COBOL program-name.
+
+### `BANK-TEST-007` a program asked for a case and declaring no tests
+
+A configuration naming no test ends having done nothing, with a return code that
+reads as success.
+
 ## 13. Severity levels
 
 ```txt

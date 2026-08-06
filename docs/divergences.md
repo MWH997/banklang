@@ -224,6 +224,40 @@ Db2's `VARCHAR` is a group of two level-49 items, a halfword length and the
 text. There is no BankTS declaration for one, so `bankc dclgen import` reports
 the column.
 
+### D20. A generated zUnit driver compiles against a stand-in `EQAITERC`
+
+The driver declares its info block as `01 AZ-INFO-BLOCK. COPY EQAITERC.`,
+because that is what IBM's own generator writes and what resolves on z/OS from
+the IDz copybook library. That copybook is not in this repository, so a local
+compile has nothing to resolve — and
+[`runtime/zunit/EQAITERC.cpy`](../runtime/zunit/EQAITERC.cpy) declares the two
+fields the driver names, `ITER` and `TC-WORK-AREA`, and nothing else. Inventing
+the rest would be a claim about a layout nobody here has seen.
+
+What the compile establishes is therefore narrow: the driver's syntax is
+accepted under both dialects and every name in it resolves. It establishes
+nothing about the info block's offsets, and **no generated case has been run**,
+locally or on z/OS. `pnpm bankc zunit` output is graded "compiled" for that
+reason.
+
+The artifact that ships is unaffected: it carries `COPY EQAITERC`, exactly as
+IBM's generator writes it.
+
+### D21. `noPlaybackData="true"` is inferred
+
+A generated case supplies its data in the driver rather than replaying a
+recording, so it writes `<runner:playback moduleName="…"/>` with no file and
+sets `noPlaybackData="true"` on each test.
+
+The attribute is in the 4.0.0.0 configurations observed, and every one of them
+carries `false` — because every one of them has a recording. Nothing public
+carries `true`, so the value is read from the attribute's name and from the
+3.0.0.0 case that has an empty `<runner:playback>` element and no such attribute
+at all.
+
+If a runner refuses it, the fallback is `noPlaybackData="false"` with the same
+empty `playback` element, which is the 3.0.0.0 shape. One real run settles it.
+
 ---
 
 ## What closing these looks like
