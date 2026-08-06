@@ -78,15 +78,20 @@ jobs:
           sarif_file: bankc.sarif
           category: banklang
 
-      # The playground bundles the compiler for the browser. Building it here
-      # catches anything that accidentally introduces a Node-only dependency
-      # into the compiler core.
-      - name: Build playground
-        run: pnpm playground:build
+      # A3, the deployment gate. The whole site is built here, after every
+      # check above has passed, and Cloudflare Pages builds from the same
+      # command. A red build cannot produce a page: the steps above fail the
+      # job before this one runs.
+      #
+      # Building the site also builds the playground, which bundles the
+      # compiler for the browser — so this still catches anything that
+      # accidentally introduces a Node-only dependency into the compiler core.
+      - name: Build the site
+        run: pnpm build:site
 
-      - name: Upload playground bundle
+      - name: Upload the site
         uses: actions/upload-artifact@v4
         with:
-          name: playground
-          path: packages/playground/dist
+          name: site
+          path: dist/site
           retention-days: 14
