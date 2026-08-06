@@ -24,6 +24,7 @@
     "playground:dev": "pnpm --filter @banklang/playground dev",
     "playground:preview": "pnpm --filter @banklang/playground preview",
     "test": "vitest run",
+    "test:mutation": "stryker run",
     "test:determinism": "vitest run tests/determinism.test.ts",
     "test:gnucobol": "tsx tools/gnucobol-validation.ts",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
@@ -31,6 +32,8 @@
     "zos:kit": "tsx tools/zos-kit.ts"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@types/node": "^24.0.0",
     "prettier": "^3.3.3",
     "tsx": "^4.19.2",

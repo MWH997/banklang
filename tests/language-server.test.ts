@@ -13,6 +13,22 @@ const URI = "file:///project/src/main.bank.ts";
 
 const CLEAN = readFileSync("examples/account-posting/src/main.bank.ts", "utf8");
 
+/**
+ * The zero-based line a construct is written on, found rather than counted.
+ *
+ * A hard-coded line number couples the test to an example's layout, so a
+ * comment added to `account-posting` silently moves what is being hovered — and
+ * the assertion still passes or fails for a reason that has nothing to do with
+ * the language server.
+ */
+function lineOf(source: string, needle: string): number {
+  const line = source.split("\n").findIndex((text) => text.includes(needle));
+  if (line === -1) {
+    throw new Error(`No line contains ${needle}`);
+  }
+  return line;
+}
+
 const UNSAFE = `module Unsafe;
 
 type MoneyBDT = decimal<18, 2>;
@@ -169,7 +185,10 @@ describe("language server hover", () => {
       method: "textDocument/hover",
       params: {
         textDocument: { uri: URI },
-        position: { line: 11, character: 2 },
+        position: {
+          line: lineOf(CLEAN, "transaction postTransfer"),
+          character: 2,
+        },
       },
     });
 
