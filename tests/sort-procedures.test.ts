@@ -77,7 +77,9 @@ describe("input procedure", () => {
     const result = txn(BOTH);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toMatch(/INPUT PROCEDURE IS BANK-SORT-IN-\d+-\d+\b/);
+    expect(result.cobol).toMatch(
+      /INPUT PROCEDURE IS ORDER-POSTINGS-SORT-1-IN\b/,
+    );
     expect(result.cobol).not.toContain("USING RAW-POSTINGS-FILE");
   });
 
@@ -96,7 +98,7 @@ describe("input procedure", () => {
 
     expect(cobol).toContain("OPEN INPUT RAW-POSTINGS-FILE");
     expect(cobol).toContain("READ RAW-POSTINGS-FILE");
-    expect(cobol).toMatch(/AT END MOVE "Y" TO BANK-SORT-IN-\d+-\d+-END/);
+    expect(cobol).toMatch(/AT END MOVE "Y" TO ORDER-POSTINGS-SORT-1-IN-END/);
     expect(cobol).toContain("CLOSE RAW-POSTINGS-FILE");
   });
 
@@ -107,7 +109,7 @@ describe("input procedure", () => {
    */
   it("declares its own end flag", () => {
     expect(txn(BOTH).cobol).toMatch(
-      /BANK-SORT-IN-\d+-\d+-END\s+PIC X\(1\) VALUE "N"/,
+      /ORDER-POSTINGS-SORT-1-IN-END\s+PIC X\(1\) VALUE "N"/,
     );
   });
 
@@ -172,7 +174,9 @@ describe("output procedure", () => {
   it("replaces GIVING", () => {
     const result = txn(BOTH);
 
-    expect(result.cobol).toMatch(/OUTPUT PROCEDURE IS BANK-SORT-OUT-\d+-\d+\b/);
+    expect(result.cobol).toMatch(
+      /OUTPUT PROCEDURE IS ORDER-POSTINGS-SORT-1-OUT\b/,
+    );
     expect(result.cobol).not.toContain("GIVING SORTED-POSTINGS-FILE");
   });
 
@@ -185,7 +189,7 @@ describe("output procedure", () => {
 
     expect(cobol).toContain("OPEN OUTPUT SORTED-POSTINGS-FILE");
     expect(cobol).toContain("RETURN SORTED-POSTINGS-SORT-FILE");
-    expect(cobol).toMatch(/AT END MOVE "Y" TO BANK-SORT-OUT-\d+-\d+-END/);
+    expect(cobol).toMatch(/AT END MOVE "Y" TO ORDER-POSTINGS-SORT-1-OUT-END/);
     expect(cobol).toContain("END-RETURN");
     expect(cobol).toContain("CLOSE SORTED-POSTINGS-FILE");
   });
@@ -209,24 +213,30 @@ describe("where the procedures are placed", () => {
   it("comes after the body that performs the sort", () => {
     const cobol = txn(BOTH).cobol ?? "";
 
-    const section = cobol.search(/BANK-SORT-IN-\d+-\d+ SECTION\./);
+    const section = cobol.search(/ORDER-POSTINGS-SORT-1-IN SECTION\./);
 
     expect(cobol.indexOf("ORDER-POSTINGS.")).toBeLessThan(section);
     expect(cobol.indexOf("GOBACK.")).toBeLessThan(section);
   });
 
-  /** Two sorts in one program need two sets of names. */
-  it("names each procedure after its statement's position", () => {
+  /**
+   * Two sorts in one routine need two sets of names, and the name says which
+   * routine and which sort rather than which line of the source file — a name
+   * built from a source position renames itself when a blank line is added
+   * above it.
+   */
+  it("names each procedure after its routine and its ordinal", () => {
     const cobol =
       txn(`  sort rawPostings into sortedPostings on branchId
     input posting { release posting; };
   sort otherPostings into sortedPostings on accountId
     input posting { release posting; };`).cobol ?? "";
 
-    const sections = cobol.match(/BANK-SORT-IN-\d+-\d+ SECTION\./g) ?? [];
+    const sections = cobol.match(/^ {7}(\S+) SECTION\./gm) ?? [];
 
-    expect(sections).toHaveLength(2);
-    expect(new Set(sections).size).toBe(2);
+    expect(sections).toContain("       ORDER-POSTINGS-SORT-1-IN SECTION.");
+    expect(sections).toContain("       ORDER-POSTINGS-SORT-2-IN SECTION.");
+    expect(new Set(sections).size).toBe(sections.length);
   });
 });
 
@@ -333,8 +343,8 @@ describe("the sort's own outcome", () => {
     const cobol =
       txn("  sort rawPostings into sortedPostings on branchId;").cobol ?? "";
 
-    expect(cobol).toContain('IF RAW-STATUS(1:1) NOT = "0"');
-    expect(cobol).toContain('IF SORTED-STATUS(1:1) NOT = "0"');
+    expect(cobol).toContain("IF NOT RAW-STATUS-OK");
+    expect(cobol).toContain("IF NOT SORTED-STATUS-OK");
     expect(flowed(cobol)).toContain(
       flowed(
         'DISPLAY "SORT FAILED rawPostings STATUS " RAW-STATUS UPON SYSOUT',
@@ -347,7 +357,7 @@ describe("the sort's own outcome", () => {
     const cobol = result.cobol ?? "";
     const body = cobol.slice(
       cobol.indexOf("ORDER-POSTINGS."),
-      cobol.search(/BANK-SORT-IN-\d+-\d+ SECTION\./),
+      cobol.search(/ORDER-POSTINGS-SORT-1-IN SECTION\./),
     );
 
     expect(body).not.toContain("RAW-STATUS");
@@ -374,10 +384,10 @@ describe("the sort's own outcome", () => {
    */
   it("fails the sort from inside a procedure rather than returning", () => {
     const cobol = result.cobol ?? "";
-    const section = cobol.search(/BANK-SORT-IN-\d+-\d+ SECTION\./);
+    const section = cobol.search(/ORDER-POSTINGS-SORT-1-IN SECTION\./);
     const procedure = cobol.slice(section);
 
-    expect(procedure).toContain('IF RAW-STATUS(1:1) NOT = "0"');
+    expect(procedure).toContain("IF NOT RAW-STATUS-OK");
     expect(procedure).toContain("MOVE 16 TO SORT-RETURN");
     expect(procedure).not.toContain("GOBACK");
   });
@@ -396,7 +406,11 @@ describe("executed", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-sort-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

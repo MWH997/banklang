@@ -50,12 +50,17 @@ const INDEXED = `file store indexed update record Master key accountId status st
 
 describe("the condition each check tests", () => {
   /**
-   * On the key, not on `= "00"`. A check written `NOT = "00"` stops the job for
-   * a status that says the operation worked — which for an OPTIONAL file
-   * created on its first run means a restartable batch could never run its
-   * first night.
+   * On the successful-completion group, not on `= "00"`. A check written
+   * `NOT = "00"` stops the job for a status that says the operation worked —
+   * which for an OPTIONAL file created on its first run means a restartable
+   * batch could never run its first night.
+   *
+   * Written as a condition name rather than as reference modification on the
+   * first character. Both are correct; only one is what a COBOL programmer
+   * writes, and the file status key is the field a batch program's whole error
+   * model runs through.
    */
-  it("is the status key rather than an exact status", () => {
+  it("is the successful-completion group rather than an exact status", () => {
     const result = program(
       SEQUENTIAL,
       `  open feed;
@@ -64,9 +69,7 @@ describe("the condition each check tests", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(flowed(result.cobol)).toContain(
-      flowed('IF FEED-STATUS(1:1) NOT = "0"'),
-    );
+    expect(flowed(result.cobol)).toContain(flowed("IF NOT FEED-STATUS-OK"));
     expect(result.cobol).not.toContain('FEED-STATUS NOT = "00"');
   });
 
@@ -85,7 +88,7 @@ describe("the condition each check tests", () => {
     );
 
     expect(flowed(result.cobol)).toContain(
-      flowed('IF FEED-STATUS(1:1) NOT = "0" AND FEED-STATUS NOT = "10"'),
+      flowed("IF NOT FEED-STATUS-OK AND NOT FEED-STATUS-EOF"),
     );
   });
 
@@ -98,7 +101,7 @@ describe("the condition each check tests", () => {
     );
 
     expect(flowed(result.cobol)).toContain(
-      flowed('IF STORE-STATUS(1:1) NOT = "0" AND STORE-STATUS NOT = "23"'),
+      flowed("IF NOT STORE-STATUS-OK AND NOT STORE-STATUS-NOTFND"),
     );
   });
 
@@ -111,7 +114,7 @@ describe("the condition each check tests", () => {
     );
 
     expect(flowed(result.cobol)).toContain(
-      flowed('IF STORE-STATUS(1:1) NOT = "0" AND STORE-STATUS NOT = "22"'),
+      flowed("IF NOT STORE-STATUS-OK AND NOT STORE-STATUS-DUPKEY"),
     );
   });
 });
@@ -219,7 +222,11 @@ entry transaction emit1(line: FeedLine, note: Note) {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-filestatus-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

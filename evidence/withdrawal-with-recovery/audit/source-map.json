@@ -15,8 +15,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 6,
-      "targetEndLine": 7,
+      "targetStartLine": 36,
+      "targetEndLine": 37,
       "category": "module",
       "symbol": "WithdrawalWithRecovery"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 41,
-      "targetEndLine": 44,
+      "targetStartLine": 83,
+      "targetEndLine": 86,
       "category": "record",
       "symbol": "CurrentAccount"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 42,
-      "targetEndLine": 42,
+      "targetStartLine": 84,
+      "targetEndLine": 84,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 43,
-      "targetEndLine": 43,
+      "targetStartLine": 85,
+      "targetEndLine": 85,
       "category": "field",
       "symbol": "balance"
     },
@@ -79,8 +79,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 44,
-      "targetEndLine": 44,
+      "targetStartLine": 86,
+      "targetEndLine": 86,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 45,
-      "targetEndLine": 50,
+      "targetStartLine": 87,
+      "targetEndLine": 92,
       "category": "record",
       "symbol": "SavingsAccount"
     },
@@ -111,8 +111,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 46,
-      "targetEndLine": 46,
+      "targetStartLine": 88,
+      "targetEndLine": 88,
       "category": "field",
       "symbol": "accountId"
     },
@@ -127,8 +127,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 47,
-      "targetEndLine": 47,
+      "targetStartLine": 89,
+      "targetEndLine": 89,
       "category": "field",
       "symbol": "balance"
     },
@@ -143,8 +143,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 48,
-      "targetEndLine": 48,
+      "targetStartLine": 90,
+      "targetEndLine": 90,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -159,8 +159,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 49,
-      "targetEndLine": 49,
+      "targetStartLine": 91,
+      "targetEndLine": 91,
       "category": "field",
       "symbol": "minimumBalance"
     },
@@ -175,8 +175,8 @@
         "column": 23
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 50,
-      "targetEndLine": 50,
+      "targetStartLine": 92,
+      "targetEndLine": 92,
       "category": "field",
       "symbol": "requested"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 51,
-      "targetEndLine": 55,
+      "targetStartLine": 93,
+      "targetEndLine": 97,
       "category": "record",
       "symbol": "WithdrawalResult"
     },
@@ -207,8 +207,8 @@
         "column": 25
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 52,
-      "targetEndLine": 52,
+      "targetStartLine": 94,
+      "targetEndLine": 94,
       "category": "field",
       "symbol": "accountId"
     },
@@ -223,8 +223,8 @@
         "column": 21
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 53,
-      "targetEndLine": 53,
+      "targetStartLine": 95,
+      "targetEndLine": 95,
       "category": "field",
       "symbol": "paidOut"
     },
@@ -239,8 +239,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 54,
-      "targetEndLine": 54,
+      "targetStartLine": 96,
+      "targetEndLine": 96,
       "category": "field",
       "symbol": "closingBalance"
     },
@@ -255,8 +255,8 @@
         "column": 30
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 55,
-      "targetEndLine": 55,
+      "targetStartLine": 97,
+      "targetEndLine": 97,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -271,8 +271,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 92,
+      "targetStartLine": 129,
+      "targetEndLine": 134,
       "category": "function",
       "symbol": "ledgerBalanceOf"
     },
@@ -287,8 +287,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 93,
-      "targetEndLine": 106,
+      "targetStartLine": 135,
+      "targetEndLine": 148,
       "category": "function",
       "symbol": "permittedAmount"
     },
@@ -303,8 +303,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-      "targetStartLine": 107,
-      "targetEndLine": 244,
+      "targetStartLine": 149,
+      "targetEndLine": 285,
       "category": "transaction",
       "symbol": "withdraw"
     }

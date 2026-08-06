@@ -7,9 +7,9 @@
 | source-artifact | examples/statement-generation/src/main.bank.ts |
 | source-artifact-sha256 | 6c8de1f6aa35b7a864feee37005986d4f8a3021a97d4825c3d2f38021ba0f43c |
 | generated-artifact | evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl |
-| generated-artifact-sha256 | 5b016f818e3966df75d26c5fd7e30c29f51f03978aed3a8273bf06434c127c91 |
+| generated-artifact-sha256 | 2d6627d396df8c173b6f397e29f87e056dde8db786676ff5521fea5afa2829eb |
 | source-map-artifact | evidence/statement-generation/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 5c0e668d655a9b5a0746219f5d5de80380771d7591e8e314a51461428a7164f3 |
+| source-map-artifact-sha256 | 5ffae2d7ea9543bf70150dff7973ad66a475f664deea3a65bfaea81d2a521ee6 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/statement-generation/gnucobol/copybooks evidence/statement-generation/gnucobol/cobol/STATEMEN-PRE.cbl -o evidence/statement-generation/gnucobol/bin/statemen |

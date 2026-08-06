@@ -261,7 +261,11 @@ describe("it cannot be checked locally", () => {
 
     const result = program(BINDINGS);
     const dir = mkdtempSync(join(tmpdir(), "bankc-xmlparse-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

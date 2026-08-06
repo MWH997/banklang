@@ -7,9 +7,9 @@
 | source-artifact | examples/account-file-batch/src/main.bank.ts |
 | source-artifact-sha256 | 7241aff02790e99f62a8557c129e93e9c4b3542fc73d83d54561262d3b4311ac |
 | generated-artifact | evidence/account-file-batch/gnucobol/cobol/ACCOUNTF.cbl |
-| generated-artifact-sha256 | feb1ba4ab67391ea81ebc65ad9623bd428704998f737dfdab0589094b1d7d20b |
+| generated-artifact-sha256 | 75ad574382181d3f17e1da982cf55558c547e7a469c7e932ae3a8fc088abc773 |
 | source-map-artifact | evidence/account-file-batch/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 4e85232f676d7e16893217dc240dd3c6e3fa8e98791fb6c7df32be5aa170b5c3 |
+| source-map-artifact-sha256 | 4d3df04c621662963b7ab2073fb8a399379054767ec334b64a1a6b03ad213d52 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -m -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/account-file-batch/gnucobol/copybooks evidence/account-file-batch/gnucobol/cobol/ACCOUNTF-PRE.cbl -o evidence/account-file-batch/gnucobol/bin/accountf |

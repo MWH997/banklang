@@ -12,7 +12,7 @@
            05  OPENING-BALANCE      PIC S9(16)V99 COMP-3.
            05  CLOSING-BALANCE      PIC S9(16)V99 COMP-3.
            05  LINES-FLD OCCURS 100 TIMES
-                   INDEXED BY LINES-FLD-IDX.
+                   INDEXED BY STATEMENT-LINES-FLD-IDX.
                10  ENTRY-KIND           PIC X(6).
                    88  ENTRY-KIND-DEBIT             VALUE "DEBIT".
                    88  ENTRY-KIND-CREDIT            VALUE "CREDIT".

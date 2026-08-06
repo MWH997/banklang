@@ -163,7 +163,11 @@ describe("executed", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-varying-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
     // The record length is an entry parameter, so it arrives in the job's PARM
     // and the program takes `PROCEDURE DIVISION USING`. The driver supplies the
     // parameter list the initiator would.

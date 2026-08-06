@@ -66,7 +66,7 @@ describe("what a field can start as", () => {
   });
 
   /**
-   * A bool already carries `VALUE 'N'`, being false unless set. An explicit
+   * A bool already carries `VALUE "N"`, being false unless set. An explicit
    * value replaces it rather than being written beside it, which COBOL would
    * reject as two VALUE clauses on one field.
    */
@@ -75,7 +75,7 @@ describe("what a field can start as", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain('ACTIVE               PIC X VALUE "Y".');
-    expect(result.cobol).not.toContain("VALUE 'N' VALUE");
+    expect(result.cobol).not.toContain('VALUE "N" VALUE');
   });
 
   it("nothing, which is still the default", () => {
@@ -199,7 +199,11 @@ entry transaction run(counters: Counters) {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-initial-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

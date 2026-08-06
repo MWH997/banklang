@@ -92,7 +92,7 @@ entry transaction settle(account: Account) {
     expect(storage).not.toContain("01  SCRATCH ");
 
     // The body has to read the qualified field, not the bare one.
-    expect(result.cobol).toContain("COMPUTE FEE-ON-SCRATCH = FEE-ON-P1");
+    expect(result.cobol).toContain("MOVE FEE-ON-P1 TO FEE-ON-SCRATCH");
     expectCobcAccepts(result.cobol ?? "");
   });
 

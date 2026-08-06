@@ -7,9 +7,9 @@
 | source-artifact | examples/batch-interest-accrual/src/main.bank.ts |
 | source-artifact-sha256 | e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa |
 | generated-artifact | evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl |
-| generated-artifact-sha256 | b1e0d405dca3c89031ff15d9e2e7a7c0436d872999ccc23b4fd9a7fad6b2974d |
+| generated-artifact-sha256 | ee1d66e79be63198fdd3dd8411de3cb2f53aa3751f31b3d2b1fb3ca2c5a28a2c |
 | source-map-artifact | evidence/batch-interest-accrual/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 1b438b53a7c0a6b2b5a1fbc3efa189bb529b08bbf166b5e146072a5be1d8c178 |
+| source-map-artifact-sha256 | 90ddaa9a1f89df523751d1a2a1db200b6d89e1ba5120e378c6b166e76467c634 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/batch-interest-accrual/gnucobol/copybooks evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT-PRE.cbl -o evidence/batch-interest-accrual/gnucobol/bin/batchint |

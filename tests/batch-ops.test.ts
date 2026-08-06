@@ -440,7 +440,11 @@ entry transaction post(posting: Posting, point: RestartPoint) {
     expect(errors(result)).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-restart-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",
