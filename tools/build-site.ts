@@ -21,6 +21,7 @@
  *       index.html          the landing page
  *       assets/site.css     its stylesheet, and nothing else
  *       playground/         the existing bundle, unchanged
+ *       schema/banklang.json  the config schema `bankc init` points at
  *       favicon.svg  og.png  robots.txt  sitemap.xml
  *
  * Usage: pnpm build:site
@@ -40,6 +41,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { compile } from "../packages/compiler/src/index";
+import { SCHEMA_URL } from "../packages/config/src/index";
+import { configJsonSchema } from "../packages/config/src/schema";
 import { DIAGNOSTICS } from "../packages/diagnostics/src/index";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -314,6 +317,16 @@ function main(): void {
   } else {
     console.warn("No og.png; run tools/build-og.ts to regenerate it.");
   }
+
+  // The schema `bankc init` writes into every generated `banklang.json`.
+  //
+  // The path comes from the URL rather than being written out again beside it:
+  // a generated config points an editor at `SCHEMA_URL`, and the only thing
+  // that makes that resolve is this file landing at exactly that path. Deriving
+  // it means the two cannot be changed apart.
+  const schemaPath = join(OUT, new URL(SCHEMA_URL).pathname);
+  mkdirSync(dirname(schemaPath), { recursive: true });
+  writeFileSync(schemaPath, `${JSON.stringify(configJsonSchema(), null, 2)}\n`);
 
   writeFileSync(
     join(OUT, "robots.txt"),

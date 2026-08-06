@@ -7,7 +7,14 @@ import { spawnSync } from "node:child_process";
  * case, and the rule cannot see it because @types/node does not say it.
  */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -185,7 +192,7 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
     );
   }
 
-  compileRuntime(workDir);
+  const runtimeDir = ensureRuntime();
 
   const compileResult = spawnSync(
     "cobc",
@@ -200,7 +207,12 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
 
   // GnuCOBOL resolves `ASSIGN TO NAME` through DD_NAME, which is the closest
   // local equivalent of a JCL DD statement.
-  const env: NodeJS.ProcessEnv = { ...process.env, COB_LIBRARY_PATH: workDir };
+  // The working directory first, so a test that puts a module beside its own
+  // program still overrides the shared runtime; the cache second.
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    COB_LIBRARY_PATH: `${workDir}:${runtimeDir}`,
+  };
   for (const ddName of Object.keys(options.inputs ?? {})) {
     env[`DD_${ddName}`] = join(workDir, ddName);
   }
@@ -245,21 +257,111 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
  */
 const MODULE_EXTENSION = process.platform === "darwin" ? "dylib" : "so";
 
-/** Compiles the reference runtime into callable modules beside the program. */
-function compileRuntime(workDir: string): void {
+/**
+ * The reference runtime, compiled once and shared rather than rebuilt per test.
+ *
+ * These six modules are the same for every run: nothing a test does can change
+ * `runtime/*.cbl`. Rebuilding them into each test's working directory cost six
+ * `cobc` invocations per test, which is most of what a conformance test spent
+ * its time on — around 1.8s of a 2.2s test, against a 5s timeout. That margin
+ * held only while the runner scheduled these files with little else beside
+ * them; on a loaded runner the tests began timing out, which is a suite that
+ * reports a compiler defect when the machine was merely busy.
+ *
+ * The cache is keyed by the runtime sources, the `cobc` that compiles them and
+ * the platform, so an edit to a `.cbl`, a compiler upgrade or a different OS
+ * all produce a different key rather than a stale module. Modules are found
+ * through `COB_LIBRARY_PATH`, so they are read from the cache where they were
+ * built and never copied.
+ */
+function runtimeCacheKey(): string {
+  const hash = createHash("sha256");
+  hash.update(process.platform);
+  hash.update(MODULE_EXTENSION);
+  // The compiler's own identity: a GnuCOBOL upgrade must not reuse modules
+  // built by the previous one.
+  const version = spawnSync("cobc", ["--version"], { encoding: "utf8" });
+  hash.update(version.stdout ?? "");
+  for (const program of RUNTIME_PROGRAMS) {
+    hash.update(program);
+    hash.update(readFileSync(join(process.cwd(), "runtime", `${program}.cbl`)));
+  }
+  return hash.digest("hex").slice(0, 16);
+}
+
+let runtimeModuleDir: string | undefined;
+
+/**
+ * Builds the reference runtime before the suite starts, so no test is timed
+ * while it happens.
+ *
+ * The cache makes the build a once-per-machine cost, but *something* has to pay
+ * it, and without this it is whichever conformance test runs first — on a cold
+ * CI runner, a test that normally takes half a second and now also compiles six
+ * modules. Doing it here moves the cost outside every test's clock, which is
+ * the difference between a slow first test and a flaky one.
+ *
+ * Silent when GnuCOBOL is absent: the suites that need it already skip, and a
+ * contributor without `cobc` should not meet a failing global setup.
+ */
+export function prepareRuntime(): void {
+  if (!hasCobc()) {
+    return;
+  }
+  ensureRuntime();
+}
+
+/** Builds the reference runtime if it is not already built, and says where. */
+function ensureRuntime(): string {
+  if (runtimeModuleDir !== undefined) {
+    return runtimeModuleDir;
+  }
+
+  const root = join(
+    process.cwd(),
+    "node_modules",
+    ".cache",
+    "banklang-runtime",
+  );
+  const target = join(root, runtimeCacheKey());
+  if (existsSync(target)) {
+    runtimeModuleDir = target;
+    return target;
+  }
+
+  // Built under a private name and moved into place, because vitest runs test
+  // files in parallel workers and two of them can reach this at once. `rename`
+  // is atomic, so the loser finds the winner's directory already there and uses
+  // it rather than reading modules another process is still writing.
+  const staging = `${target}.${process.pid}`;
+  rmSync(staging, { recursive: true, force: true });
+  mkdirSync(staging, { recursive: true });
+
   for (const program of RUNTIME_PROGRAMS) {
     const source = join(process.cwd(), "runtime", `${program}.cbl`);
     const compiled = spawnSync(
       "cobc",
       ["-m", "-fixed", source, "-o", `${program}.${MODULE_EXTENSION}`],
-      { cwd: workDir, encoding: "utf8" },
+      { cwd: staging, encoding: "utf8" },
     );
     if (compiled.status !== 0) {
+      rmSync(staging, { recursive: true, force: true });
       throw new ConformanceError(
         `cobc failed on runtime/${program}.cbl:\n${compiled.stdout ?? ""}${compiled.stderr ?? ""}`,
       );
     }
   }
+
+  try {
+    renameSync(staging, target);
+  } catch {
+    // Another worker published first. Its modules were built from the same
+    // sources by the same compiler, which is what the key says.
+    rmSync(staging, { recursive: true, force: true });
+  }
+
+  runtimeModuleDir = target;
+  return target;
 }
 
 function readLines(path: string): string[] {

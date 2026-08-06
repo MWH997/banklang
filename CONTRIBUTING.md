@@ -4,8 +4,8 @@ BankLang changes should be small, deterministic, and reviewable.
 
 ## Toolchain
 
-- **Node.js 24 or newer.** This is the supported runtime for local development,
-  CI, and Docker-based verification.
+- **Node.js 24 or newer.** This is the supported runtime for both local
+  development and CI.
 - **pnpm 11.7.0**, pinned by the `packageManager` field.
 - **GnuCOBOL** (optional locally, installed in CI). Without `cobc`, the
   compile-verification tests skip rather than fail.

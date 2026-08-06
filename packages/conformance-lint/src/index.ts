@@ -71,8 +71,16 @@ export interface ConformanceFinding {
   file: string;
   /** 1-based line, so an editor and a compiler listing agree. */
   line: number;
-  /** Stable identifier, for suppressing and for counting. */
-  rule: string;
+  /**
+   * Stable identifier, for suppressing and for counting.
+   *
+   * The union rather than `string`, so a rule id that is not in
+   * `CONFORMANCE_RULES` cannot be reported. A misspelling here would produce a
+   * finding nothing suppresses and no test names, which is the quiet kind of
+   * wrong: the linter goes on passing and one rule silently stops being one
+   * anybody can act on.
+   */
+  rule: ConformanceRule;
   message: string;
   /** Manual and section the rule comes from. */
   citation: string;
@@ -392,7 +400,11 @@ export function lintCobol(
 
   lines.forEach((line, index) => {
     const at = index + 1;
-    const report = (rule: string, message: string, citation: string): void => {
+    const report = (
+      rule: ConformanceRule,
+      message: string,
+      citation: string,
+    ): void => {
       findings.push({ file, line: at, rule, message, citation });
     };
 
@@ -906,7 +918,7 @@ export function lintJcl(file: string, text: string): ConformanceFinding[] {
   );
   const report = (
     line: number,
-    rule: string,
+    rule: ConformanceRule,
     message: string,
     citation: string,
   ): void => {

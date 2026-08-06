@@ -1,4 +1,4 @@
-import type { IRRecord, IRType } from "../../ir/src/index";
+import type { IRType } from "../../ir/src/index";
 
 /**
  * The longest user-defined word IBM Enterprise COBOL accepts.
@@ -114,10 +114,6 @@ export function toCobolProgramId(moduleName: string): string {
 
 export function toCobolParagraphName(functionName: string): string {
   return toCobolName(functionName);
-}
-
-export function toCobolRecordName(record: IRRecord): string {
-  return toCobolName(record.name);
 }
 
 /**
