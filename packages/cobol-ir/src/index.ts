@@ -865,7 +865,19 @@ export function toCobolPicture(type: IRType): string {
  * distinction exists at all is that a compiler that only knows COMP-3 cannot
  * read an existing estate's copybooks.
  */
-export type NumericUsage = "packed" | "binary" | "display" | "native";
+/**
+ * How a number is stored.
+ *
+ * `packed` is COMP-3 and is what a bank's arithmetic runs on. `binary` is COMP,
+ * `native` is COMP-5, and the two display forms are the ones a copybook is full
+ * of: `display` carries a separate trailing sign, which spends a byte and makes
+ * the field readable as text, and `unsigned` carries none at all, which is what
+ * `PIC 9(n)` is and what most dates, counts and codes on an estate are declared
+ * as. A record imported from a copybook needs both, and a field imported at the
+ * wrong length moves every field after it.
+ */
+export type NumericUsage =
+  "packed" | "binary" | "display" | "unsigned" | "native";
 
 export function decimalPicture(
   precision: number,
@@ -873,10 +885,11 @@ export function decimalPicture(
   usage: NumericUsage = "packed",
 ): string {
   const integerDigits = precision - scale;
+  const sign = usage === "unsigned" ? "" : "S";
   const digits =
     scale === 0
-      ? `S9(${integerDigits})`
-      : `S9(${integerDigits})V${"9".repeat(scale)}`;
+      ? `${sign}9(${integerDigits})`
+      : `${sign}9(${integerDigits})V${"9".repeat(scale)}`;
 
   switch (usage) {
     case "packed":
@@ -894,6 +907,10 @@ export function decimalPicture(
       // makes the field readable as plain text, which is what a file a person
       // or another system reads needs.
       return `PIC ${digits} SIGN IS TRAILING SEPARATE`;
+    case "unsigned":
+      // No sign at all, which is what `PIC 9(n)` is: one byte per digit and
+      // nothing spent on a sign the field cannot hold.
+      return `PIC ${digits}`;
   }
 }
 
@@ -982,5 +999,7 @@ export function numericByteLength(
       return precision <= 4 ? 2 : precision <= 9 ? 4 : 8;
     case "display":
       return precision + 1;
+    case "unsigned":
+      return precision;
   }
 }

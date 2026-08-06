@@ -454,7 +454,9 @@ function printType(type: TypeNode): string {
         ? `binary<${type.precision}>`
         : type.usage === "display"
           ? `zoned<${type.precision}, ${type.scale}>`
-          : `decimal<${type.precision}, ${type.scale}>`;
+          : type.usage === "unsigned"
+            ? `unsigned<${type.precision}, ${type.scale}>`
+            : `decimal<${type.precision}, ${type.scale}>`;
     case "StringType":
       return `${type.national ? "national" : "string"}<${type.length}>`;
     case "BoolType":

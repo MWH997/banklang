@@ -78,7 +78,7 @@
       "patterns": [
         {
           "name": "support.type.primitive.bankts",
-          "match": "\\b(decimal|string|national|bool|currency|nullable|date|time|timestamp|edited|binary|zoned|native)\\b"
+          "match": "\\b(decimal|string|national|bool|currency|nullable|date|time|timestamp|edited|binary|zoned|unsigned|native)\\b"
         },
         {
           "name": "entity.name.type.bankts",

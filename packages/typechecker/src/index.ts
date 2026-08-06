@@ -5041,9 +5041,13 @@ function declaredByteLength(type: ResolvedType): number {
       if (usage === "binary") {
         return type.precision <= 4 ? 2 : type.precision <= 9 ? 4 : 8;
       }
-      return usage === "display"
-        ? type.precision + 1
-        : Math.ceil((type.precision + 1) / 2);
+      if (usage === "display") {
+        return type.precision + 1;
+      }
+      if (usage === "unsigned") {
+        return type.precision;
+      }
+      return Math.ceil((type.precision + 1) / 2);
     }
     case "enum":
       return Math.max(...type.members.map((member) => member.length), 1);
@@ -8309,7 +8313,9 @@ function describeType(type: ResolvedType): string {
         ? `binary<${type.precision}>`
         : type.usage === "display"
           ? `zoned<${type.precision}, ${type.scale}>`
-          : `decimal<${type.precision}, ${type.scale}>`;
+          : type.usage === "unsigned"
+            ? `unsigned<${type.precision}, ${type.scale}>`
+            : `decimal<${type.precision}, ${type.scale}>`;
     case "string":
       return `${type.national ? "national" : "string"}<${type.length}>`;
     case "bool":

@@ -115,14 +115,23 @@ rather than invented.
 ### 3c. How a number is stored
 
 `decimal<p, s>` is packed decimal, `COMP-3`, which is what a ledger amount is
-held in. Two other usages exist because a real estate's copybooks are full of
-them, and a compiler that only knows `COMP-3` cannot read those files at all:
+held in. The others exist because a real estate's copybooks are full of them,
+and a compiler that only knows `COMP-3` cannot read those files at all:
 
-| Declaration    | Picture                                      | Bytes           | Used for                             |
-| -------------- | -------------------------------------------- | --------------- | ------------------------------------ |
-| `decimal<p,s>` | `PIC S9(p-s)V9(s) COMP-3`                    | `ceil((p+1)/2)` | money, and anything computed with it |
-| `binary<n>`    | `PIC S9(n) COMP`                             | 2, 4, or 8      | counters, sequence numbers, codes    |
-| `zoned<p,s>`   | `PIC S9(p-s)V9(s) SIGN IS TRAILING SEPARATE` | `p + 1`         | unpacked numbers in legacy input     |
+| Declaration     | Picture                                      | Bytes           | Used for                                |
+| --------------- | -------------------------------------------- | --------------- | --------------------------------------- |
+| `decimal<p,s>`  | `PIC S9(p-s)V9(s) COMP-3`                    | `ceil((p+1)/2)` | money, and anything computed with it    |
+| `binary<n>`     | `PIC S9(n) COMP`                             | 2, 4, or 8      | counters, sequence numbers, codes       |
+| `native<n>`     | `PIC S9(n) COMP-5`                           | 2, 4, or 8      | an interface to something outside COBOL |
+| `zoned<p,s>`    | `PIC S9(p-s)V9(s) SIGN IS TRAILING SEPARATE` | `p + 1`         | unpacked numbers a person reads         |
+| `unsigned<p,s>` | `PIC 9(p-s)V9(s)`                            | `p`             | dates, counts and codes on an estate    |
+
+`unsigned` is the one that surprises people, and it is the most common numeric
+picture in a copybook. `PIC 9(8)` carries no sign, so it is eight bytes rather
+than nine and cannot hold a negative — assigning one stores its absolute value,
+which is COBOL's rule and not something this compiler changes. It exists
+because `zoned` is a byte wider, and importing a `PIC 9(8)` as a `zoned<8,0>`
+would move every field after it.
 
 A `binary` field is held in the halfword, fullword, or doubleword that fits its
 declared digit count, which is how IBM Enterprise COBOL allocates `COMP`: 1–4

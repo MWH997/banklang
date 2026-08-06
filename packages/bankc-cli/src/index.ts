@@ -28,6 +28,7 @@ import {
   renderCopybookInspection,
   renderCopybookTypes,
 } from "../../copybook/src/index";
+import { compareLayouts, importCopybook } from "../../copybook/src/import";
 import { analyzeProgramSemantics } from "../../semantic-analyzer/src/index";
 import {
   lowerProgramToIR,
@@ -832,11 +833,107 @@ function runCopybook(args: string[], cwd: string): CliResult {
     }
   }
 
+  if (subcommand === "import") {
+    const filePath = requireCopybookPath(rest, "copybook import");
+    if (!filePath) {
+      return { exitCode: 1, stdout: "", stderr: renderHelp() };
+    }
+
+    try {
+      return renderCopybookImport(
+        readFileSync(resolve(cwd, filePath), "utf8"),
+        filePath,
+        jsonMode,
+      );
+    } catch (error) {
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${error instanceof Error ? error.message : String(error)}\n`,
+      };
+    }
+  }
+
   return {
     exitCode: 1,
     stdout: "",
     stderr: `Unknown copybook subcommand: ${subcommand ?? ""}\n`,
   };
+}
+
+/**
+ * A copybook read into a BankTS record, and the round trip that proves it.
+ *
+ * The record is emitted straight back to a copybook and the two layouts are
+ * compared field by field. An import that does not survive that is refused: a
+ * field read at the wrong length moves every field after it, and a record that
+ * lays out differently from the one the rest of the estate uses is a program
+ * reading somebody else’s data.
+ */
+function renderCopybookImport(
+  sourceText: string,
+  filePath: string,
+  jsonMode: boolean,
+): CliResult {
+  const imported = importCopybook(sourceText);
+  const problems = [...imported.problems];
+
+  // Round-tripped only when the import is whole. A record missing a field it
+  // could not read would fail the comparison for a reason already reported,
+  // and saying it twice helps nobody.
+  if (problems.length === 0) {
+    const module = `module CopybookImport;\n\n${imported.source}\n`;
+    const parsed = parseBankTs(module, filePath);
+    const typechecked = typecheckProgram(parsed.program);
+    const ir = lowerProgramToIR(typechecked);
+    const record = ir.program?.records.find(
+      (entry) => entry.name === imported.recordName,
+    );
+
+    if (!record) {
+      problems.push({
+        field: imported.recordName,
+        message: `The imported record does not compile: ${[
+          ...parsed.diagnostics,
+          ...typechecked.diagnostics,
+        ]
+          .map((entry) => entry.id)
+          .join(", ")}`,
+      });
+    } else {
+      problems.push(
+        ...compareLayouts(
+          inspectGeneratedCopybook(sourceText),
+          inspectGeneratedCopybook(renderCopybook(record)),
+        ),
+      );
+    }
+  }
+
+  if (jsonMode) {
+    return {
+      exitCode: problems.length > 0 ? 1 : 0,
+      stdout: `${JSON.stringify({ ...imported, problems }, null, 2)}\n`,
+      stderr: "",
+    };
+  }
+
+  if (problems.length > 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `${[
+        `${filePath} did not import cleanly.`,
+        "",
+        ...problems.map((problem) => `${problem.field}: ${problem.message}`),
+        "",
+        "Nothing was written. A record that lays out differently from the",
+        "copybook is worse than no record at all.",
+      ].join("\n")}\n`,
+    };
+  }
+
+  return { exitCode: 0, stdout: `${imported.source}\n`, stderr: "" };
 }
 
 /**
@@ -1341,6 +1438,7 @@ function renderHelp(): string {
     "  test <project>",
     "  layout <project>",
     "  doctor",
+    "  copybook import <file>",
     "  copybook inspect <file>",
     "  copybook types <file>",
     "  copybook diff <left> <right>",
