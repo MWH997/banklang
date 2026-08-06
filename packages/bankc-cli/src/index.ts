@@ -86,6 +86,8 @@ interface CompiledProject {
   copybookMode: "inline" | "copy";
   decimalPoint: "point" | "comma";
   currencySign: string;
+  /** Language Environment options the job's `CEEOPTS` DD states. */
+  runtimeOptions: string[];
   sourceText: string;
   parsed: ReturnType<typeof parseBankTs>;
   typechecked: ReturnType<typeof typecheckProgram>;
@@ -387,6 +389,7 @@ function runEmit(args: string[], cwd: string): CliResult {
         outputRoot,
       ),
       usesCopybooks: compiled.copybookMode === "copy",
+      runtimeOptions: compiled.runtimeOptions,
     });
     writeJclOutputs(jclResult);
     return {
@@ -444,6 +447,7 @@ function runBuild(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
+    runtimeOptions: compiled.runtimeOptions,
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -508,6 +512,7 @@ function runAuditReport(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
+    runtimeOptions: compiled.runtimeOptions,
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -569,6 +574,7 @@ function runVerify(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     usesCopybooks: compiled.copybookMode === "copy",
+    runtimeOptions: compiled.runtimeOptions,
   });
   writeJclOutputs(jclResult);
   const auditRoot = writeAuditOutputs(
@@ -1178,6 +1184,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
     copybookMode,
     decimalPoint: projectConfig.decimalPoint,
     currencySign: projectConfig.currencySign,
+    runtimeOptions: projectConfig.runtimeOptions,
     sourceText,
     parsed,
     typechecked,
