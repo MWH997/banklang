@@ -124,5 +124,30 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
   },
 
+  {
+    /*
+     * Script that runs in a browser rather than in Node.
+     *
+     * `packages/site/src/docs.js` is served to a reader, so `document`,
+     * `fetch` and `requestAnimationFrame` are defined and `process` is not.
+     * Declared rather than switched off: the point of `no-undef` here is to
+     * catch a Node global that would be `undefined` on the page.
+     */
+    files: ["packages/site/src/*.js"],
+    languageOptions: {
+      globals: {
+        cancelAnimationFrame: "readonly",
+        document: "readonly",
+        fetch: "readonly",
+        localStorage: "readonly",
+        location: "readonly",
+        matchMedia: "readonly",
+        requestAnimationFrame: "readonly",
+        URL: "readonly",
+        window: "readonly",
+      },
+    },
+  },
+
   prettier,
 );
