@@ -34,6 +34,7 @@ import { copybookMemberName } from "../packages/cobol-ir/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
+import { exampleProjects } from "./example-projects";
 
 /** Every generated artifact, by where it came from. */
 export interface LintableArtifact {
@@ -142,13 +143,6 @@ function collectArtifacts(root: string, cwd: string): LintableArtifact[] {
     }
   }
   return artifacts;
-}
-
-function exampleProjects(cwd: string): string[] {
-  return readdirSync(resolve(cwd, "examples"), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => `examples/${entry.name}`)
-    .sort();
 }
 
 if (

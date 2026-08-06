@@ -16,9 +16,9 @@ The input program lives in `src/main.bank.ts` and uses:
 Running the CLI from the repository root writes generated artifacts to `dist/`.
 The `build` command produces a full bundle:
 
-- `dist/cobol/ACCOUNT-TRANSFER.cbl`
-- `dist/copybooks/TRANSFER-REQUEST.cpy`
-- `dist/jcl/ACCOUNT-TRANSFER.jcl`
+- `dist/cobol/ACCOUNTT.cbl`
+- `dist/copybooks/TRANSFER.cpy`
+- `dist/jcl/ACCOUNTT.jcl`
 - `dist/maps/source-map.json`
 - `dist/audit/copybook-layout.md`
 - `dist/audit/diagnostics.json`
@@ -36,11 +36,11 @@ The `build` command produces a full bundle:
 The narrower emit commands still write their respective outputs:
 
 - `pnpm bankc emit cobol examples/account-transfer` writes
-  `dist/cobol/ACCOUNT-TRANSFER.cbl` and `dist/maps/source-map.json`
+  `dist/cobol/ACCOUNTT.cbl` and `dist/maps/source-map.json`
 - `pnpm bankc emit copybooks examples/account-transfer` writes
-  `dist/copybooks/TRANSFER-REQUEST.cpy`
+  `dist/copybooks/TRANSFER.cpy`
 - `pnpm bankc emit jcl examples/account-transfer` writes
-  `dist/jcl/ACCOUNT-TRANSFER.jcl`
+  `dist/jcl/ACCOUNTT.jcl`
 - `pnpm bankc audit-report examples/account-transfer` writes the audit bundle
 - `pnpm bankc verify examples/account-transfer` writes verification reports in
   `dist/audit/verification-report.md` and `dist/audit/verification-report.json`

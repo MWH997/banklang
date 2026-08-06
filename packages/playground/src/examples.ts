@@ -9,11 +9,21 @@ export interface PlaygroundExample {
  * Example sources are pulled from `examples/` at build time, so the playground
  * always shows the same programs the test suite and evidence bundles use.
  */
-const sources = import.meta.glob("../../../examples/*/src/main.bank.ts", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const sources = {
+  ...(import.meta.glob("../../../examples/*/src/main.bank.ts", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>),
+  // A job directory holds a program per subdirectory rather than a `src/` of
+  // its own, so the picker needs both depths or the several-program example is
+  // the one thing the playground cannot show.
+  ...(import.meta.glob("../../../examples/*/*/src/main.bank.ts", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>),
+};
 
 const META: Record<string, { title: string; blurb: string; order: number }> = {
   "account-transfer": {
@@ -76,10 +86,82 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "A Db2 cursor read with a bounded loop. The OPEN and CLOSE are generated, so it cannot be left open.",
     order: 10,
   },
+  "parm-driven-batch": {
+    title: "PARM-driven batch",
+    blurb:
+      "The batch entry convention: the job's PARM behind its halfword length, validated, with a restart position.",
+    order: 11,
+  },
+  "high-volume-master": {
+    title: "High-volume master",
+    blurb:
+      "A file bigger than the loop bound. Running out of bound and running out of file end the step differently.",
+    order: 12,
+  },
+  "rounding-conformance": {
+    title: "Rounding conformance",
+    blurb:
+      "All seven rounding modes over the same tie, both signs. Five of them are arithmetic the compiler writes out.",
+    order: 13,
+  },
+  "failed-open": {
+    title: "Failed open",
+    blurb:
+      "What an OPEN that fails looks like: 35, 37 and 39 named apart, and a USE declarative behind them.",
+    order: 14,
+  },
+  "full-disk": {
+    title: "Full disk",
+    blurb:
+      "A WRITE that runs out of extents halfway through, and the message that lets the rerun start from the right record.",
+    order: 15,
+  },
+  "deadlock-retry": {
+    title: "Deadlock retry",
+    blurb:
+      "Db2 -911 and -913 told apart from a real error, retried a bounded number of times with an explicit rollback.",
+    order: 16,
+  },
+  "vsam-browse": {
+    title: "VSAM browse",
+    blurb:
+      "START and READ NEXT on an alternate index, with the walk stopping itself when the key stops matching.",
+    order: 17,
+  },
+  "mq-request-reply": {
+    title: "MQ request/reply",
+    blurb:
+      "A queue drained under syncpoint, where a get has three outcomes and the empty one is not a failure.",
+    order: 18,
+  },
+  "report-with-controls": {
+    title: "Report with control breaks",
+    blurb:
+      "Report Writer: subtotals, a grand total and page headings, none of which the source adds up itself.",
+    order: 19,
+  },
+  "end-of-day-settlement/extract": {
+    title: "End of day: extract",
+    blurb:
+      "Step one of a four-step night. Selects what settles and posts nothing, so a bad selection can be rerun.",
+    order: 20,
+  },
+  "end-of-day-settlement/post": {
+    title: "End of day: post",
+    blurb:
+      "Step three. The one step that cannot simply be rerun, so it is the one that keeps a restart position.",
+    order: 21,
+  },
+  "end-of-day-settlement/report": {
+    title: "End of day: report",
+    blurb:
+      "Step four. Control breaks written by hand with LINAGE pagination, and the last branch total that has no successor to trigger it.",
+    order: 22,
+  },
 };
 
 function idFromPath(path: string): string {
-  return path.split("/examples/")[1]?.split("/")[0] ?? path;
+  return path.split("/examples/")[1]?.replace("/src/main.bank.ts", "") ?? path;
 }
 
 export const EXAMPLES: PlaygroundExample[] = Object.entries(sources)

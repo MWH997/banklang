@@ -2135,143 +2135,14 @@ export function emitJcl(
   // A CICS program has no run step at all: it is started by a transaction
   // identifier in a region, not by EXEC PGM in a job.
   if (!needsCics) {
-    if (parmFields.length > 0) {
-      lines.push(
-        "//* PARM layout, positional, one field per entry parameter:",
-        ...parmFields.map(
-          (field) =>
-            `//*   ${field.source} ${field.picture.replace(/^PIC /, "")} (${field.width})`,
-        ),
-      );
-    }
-    if (needsDb2) {
-      // A program with embedded SQL cannot be started by EXEC PGM=. It needs a
-      // thread to Db2, and what establishes one is the DSN command processor:
-      // the step runs TSO in batch, and DSN RUN attaches the program to the
-      // subsystem under a plan. Started directly it gets no thread at all and
-      // fails on its first SQL statement.
-      // IKJEFT1B rather than IKJEFT01, for the abend. Both return the program's
-      // code — DSN puts the highest value from the RUN subcommand in register
-      // 15 — but under IKJEFT01 a program that abends does not abend the step:
-      // TSO catches it and the step ends *normally* with condition code 12.
-      // A step that ended normally takes the normal disposition, so the DELETE
-      // on the output datasets below would not be honoured and a half-written
-      // dataset would be catalogued after all. IKJEFT1B terminates the step
-      // with X'04C', which is what makes a conditional disposition mean
-      // something.
-      lines.push(
-        "//* A Db2 program is run by the DSN command processor under TSO in",
-        "//* batch, not by EXEC PGM=. Starting it directly gives it no thread.",
-        `//RUN      EXEC PGM=IKJEFT1B,DYNAMNBR=20,REGION=0M${cond}`,
-        "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
-        `//         DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
-        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
-        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
-        "//SYSTSPRT DD SYSOUT=*",
-      );
-    } else {
-      lines.push(
-        `//RUN      EXEC PGM=${moduleName}${parmFields.length > 0 ? `,PARM='${parmTemplate}'` : ""},`,
-        `//             REGION=0M${cond}`,
-        // Without STEPLIB the module that was just written to the load library
-        // is not on any search the step makes, and the step ends S806 — module
-        // not found — having compiled and linked perfectly.
-        `//STEPLIB  DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
-        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
-        `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
-      );
-    }
-    // The MQ run-time libraries. The stub linked into the load module resolves
-    // each MQI call through them, so without these the program abends on its
-    // first MQCONN rather than reporting a reason code.
-    if (needsMq) {
-      lines.push(
-        "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
-        "//         DD DISP=SHR,DSN=MQM.SCSQLOAD",
-      );
-    }
     lines.push(
-      "//SYSOUT   DD SYSOUT=*",
-      // Language Environment reads its run-time options from here. A batch step
-      // that has none stated runs on whatever the installation defaults are,
-      // which is not something a job's behaviour should depend on silently.
-      // What is written is the project's `runtimeOptions`, which defaults to
-      // the two that decide whether a bad night can be diagnosed at all.
-      "//CEEOPTS  DD *",
-      ...runtimeOptions.map((option) => `  ${option}`),
-      "/*",
-      // Without these an abend produces no readable dump, and what is left to
-      // diagnose it with is the return code.
-      "//CEEDUMP  DD SYSOUT=*",
-      "//SYSUDUMP DD SYSOUT=*",
+      ...runStepLines(program, {
+        stepName: "RUN",
+        moduleName,
+        cond,
+        runtimeOptions,
+      }),
     );
-    // `ACCEPT ... FROM SYSIN` reads a card from this DD. The statement used to
-    // be emitted with no DD allocated for it at all.
-    if (readsSysin(program)) {
-      lines.push(
-        "//* The program ACCEPTs control input from SYSIN.",
-        "//SYSIN    DD *",
-        "/*",
-      );
-    }
-    // The sort product spills to work datasets, and three is the customary
-    // allocation. A merge needs none — its inputs already arrive in order — so
-    // this asks for a real SORT rather than for a SortStatement.
-    //
-    // Derived here rather than declared by the caller: the program is in hand,
-    // and a job whose work datasets depend on a caller remembering to say so is
-    // a job that is missing them the first time someone forgets.
-    if (
-      sortStatements(program).some(
-        (entry) => entry.statement.operation === "sort",
-      )
-    ) {
-      for (const index of [1, 2, 3]) {
-        lines.push(
-          `//SORTWK0${index} DD UNIT=SYSALLDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
-        );
-      }
-    }
-    for (const file of program.files) {
-      const dd = toDdName(file.name).padEnd(8);
-      const dsn = `${JCL_DATA_PREFIX}.${toDdName(file.name)}`;
-      // The record length is the record the FD describes, which the compiler
-      // has already laid out. A dataset created without one is allocated with
-      // the system default and the first WRITE fails on a length mismatch.
-      const lrecl = describeRecordLayout(file.record).totalLength;
-      if (file.mode === "input") {
-        lines.push(`//${dd} DD DISP=SHR,DSN=${dsn}`);
-      } else if (file.mode === "update") {
-        // An updated file is read and rewritten in place, so it exists already:
-        // NEW would create an empty one and the program would find nothing in
-        // it. OLD rather than SHR because a second job reading it mid-update
-        // sees a file that is half old and half new.
-        lines.push(`//${dd} DD DISP=OLD,DSN=${dsn}`);
-      } else {
-        // The abnormal disposition matters more than the normal one: a step
-        // that dies halfway through writing has produced a partial dataset, and
-        // cataloguing it invites the next job to read it as if it were
-        // complete.
-        lines.push(
-          `//${dd} DD DSN=${dsn},DISP=(NEW,CATLG,DELETE),`,
-          "//            UNIT=SYSALLDA,SPACE=(CYL,(1,1)),",
-          `//            DCB=(RECFM=FB,LRECL=${lrecl},BLKSIZE=0)`,
-        );
-      }
-    }
-    if (needsDb2) {
-      // Last, because DD * runs to its delimiter and anything after it would
-      // be read as command input rather than as JCL.
-      lines.push(
-        "//SYSTSIN  DD *",
-        "  DSN SYSTEM(DSN)",
-        `  RUN PROGRAM(${moduleName}) PLAN(${moduleName}) -`,
-        `      LIB('${JCL_LOAD_LIBRARY}')${parmFields.length > 0 ? " -" : ""}`,
-        ...(parmFields.length > 0 ? [`      PARM('${parmTemplate}')`] : []),
-        "  END",
-        "/*",
-      );
-    }
   }
 
   if (needsCics) {
@@ -2288,6 +2159,346 @@ export function emitJcl(
     jcl: `${lines.flatMap((line) => toJclStatement(line)).join("\n")}\n`,
     jclArtifactPath,
   };
+}
+
+/**
+ * One step of a job stream: a program the compiler generated, or a sort.
+ */
+export type JobStep = JobProgramStep | JobSortStep;
+
+export interface JobProgramStep {
+  kind: "program";
+  /** The step name, which is what a `COND` and a restart refer to. */
+  name: string;
+  program: IRProgram;
+}
+
+/**
+ * A sort between two programs.
+ *
+ * Not a `SORT` statement inside a program: a separate step running the sort
+ * product, which is how a real night does it. The reason is operational rather
+ * than aesthetic — a sort that runs as its own step can be restarted on its
+ * own, its work datasets are sized against that step's region, and the file it
+ * produces is on disk for the next step to be rerun against without redoing
+ * the extract.
+ */
+export interface JobSortStep {
+  kind: "sort";
+  name: string;
+  /** The file, by its BankLang name, whose dataset is read. */
+  input: string;
+  /** The file, by its BankLang name, the sorted records are written to. */
+  output: string;
+  /** The `SORT FIELDS=` operand, exactly as it goes on the control card. */
+  fields: string;
+}
+
+export interface JobEmitOptions {
+  runtimeOptions?: readonly string[];
+}
+
+/**
+ * The job stream a night runs: several programs, one job, real dependencies.
+ *
+ * `emitJcl` writes a job that compiles, links and runs one program, which is
+ * what a developer submits while building it. That is not what a batch is. A
+ * batch is four or five programs and a sort in one job, each step reading the
+ * dataset the step before it wrote, every step after the first conditional on
+ * the ones before, and a single return code at the end that says whether the
+ * night worked.
+ *
+ * The datasets are what tie the steps together, and they are not stated here:
+ * a file's DSN is derived from its BankLang name, so two programs that declare
+ * a file with the same name are already reading and writing the same dataset.
+ * The job does not have to be told what the programs already agree on, and it
+ * cannot get it wrong.
+ *
+ * Nothing is compiled here. On an estate the load modules are built by their
+ * own job and promoted through environments; a production job stream that
+ * compiled its own programs would be running code that had not been through
+ * whatever the site's promotion is. `bankc build` emits the build job for each
+ * program.
+ */
+export function emitJobJcl(
+  job: {
+    name: string;
+    description: string;
+    steps: JobStep[];
+  },
+  options: JobEmitOptions = {},
+): string {
+  const jobName = toCobolProgramId(job.name);
+  const runtimeOptions = options.runtimeOptions ?? [
+    "TERMTHDACT(UADUMP)",
+    "TRAP(ON)",
+  ];
+
+  // Every file every program in the stream declares, so a sort step can be
+  // told two names and work out the two datasets and the record length itself.
+  const files = new Map<string, IRFile>();
+  // Two programs in one job whose module names differ only past the eighth
+  // character are two steps running the same load module, and the second build
+  // overwrote the first. The job is where it shows up, because a program built
+  // on its own has nothing to collide with.
+  const modules = new Map<string, string>();
+  for (const step of job.steps) {
+    if (step.kind !== "program") {
+      continue;
+    }
+    for (const file of step.program.files) {
+      files.set(file.name, file);
+    }
+    const module = toJclJobName(step.program.moduleName);
+    const earlier = modules.get(module);
+    if (earlier !== undefined && earlier !== step.program.moduleName) {
+      throw new Error(
+        `Steps running ${earlier} and ${step.program.moduleName} would both load ${module}. A load module name is eight characters with the hyphens removed, so the two modules have to differ within those eight.`,
+      );
+    }
+    modules.set(module, step.program.moduleName);
+  }
+
+  const lines: string[] = [
+    "//* Generated by bankc. Do not edit this file directly.",
+    `//${jobName} JOB (BANKLANG),'${job.description.slice(0, 20).toUpperCase()}',`,
+    "//             CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID,REGION=0M",
+    `//* ${job.description}`,
+    "//*",
+    "//* The steps, in order:",
+    ...job.steps.map((step) =>
+      step.kind === "program"
+        ? `//*   ${step.name.padEnd(8)} ${toJclJobName(step.program.moduleName)}`
+        : `//*   ${step.name.padEnd(8)} SORT ${step.input} INTO ${step.output}`,
+    ),
+    "//*",
+    "//* A step after the first is bypassed when an earlier one failed, so",
+    "//* a job that stops stops with the datasets it had written, and not",
+    "//* with a later step running over them. Dataset names, unit and space",
+    "//* parameters are placeholders for a site's own standards.",
+  ];
+
+  job.steps.forEach((step, index) => {
+    // The first step has nothing before it to be conditional on. Every other
+    // one does, and without this a failed extract still reaches the post step,
+    // which posts whatever the previous night left in the dataset.
+    const cond = index === 0 ? "" : ",COND=(4,LT)";
+
+    if (step.kind === "program") {
+      lines.push(
+        "//*",
+        ...runStepLines(step.program, {
+          stepName: step.name,
+          moduleName: toJclJobName(step.program.moduleName),
+          cond,
+          runtimeOptions,
+        }),
+      );
+      return;
+    }
+
+    const input = files.get(step.input);
+    const output = files.get(step.output);
+    if (!input || !output) {
+      throw new Error(
+        `Sort step ${step.name} names a file no program in the job declares: ${input ? step.output : step.input}`,
+      );
+    }
+
+    lines.push(
+      "//*",
+      `//${step.name.padEnd(8)} EXEC PGM=SORT,REGION=0M${cond}`,
+      "//SYSOUT   DD SYSOUT=*",
+      `//SORTIN   DD DISP=SHR,DSN=${JCL_DATA_PREFIX}.${toDdName(step.input)}`,
+      `//SORTOUT  DD DSN=${JCL_DATA_PREFIX}.${toDdName(step.output)},DISP=(NEW,CATLG,DELETE),`,
+      "//            UNIT=SYSALLDA,SPACE=(CYL,(1,1)),",
+      `//            DCB=(RECFM=FB,LRECL=${describeRecordLayout(output.record).totalLength},BLKSIZE=0)`,
+      // Three work datasets is the customary allocation. A sort with none
+      // spills nowhere and fails on anything that does not fit in the region.
+      ...[1, 2, 3].map(
+        (index) =>
+          `//SORTWK0${index} DD UNIT=SYSALLDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
+      ),
+      "//SYSIN    DD *",
+      `  SORT FIELDS=(${step.fields})`,
+      "/*",
+    );
+  });
+
+  return `${lines.flatMap((line) => toJclStatement(line)).join("\n")}\n`;
+}
+
+/**
+ * The run step for one program: the EXEC, the libraries it needs, the LE
+ * options, and a DD for every file it declares.
+ *
+ * Written once because a job stream has several of them. `bankc build` emits a
+ * job that compiles, links and runs one program; `bankc job` emits the stream a
+ * night actually runs, where four programs and a sort share one job and the
+ * datasets one step writes are the ones the next step reads. The step differs
+ * only in its name and its `COND`, and everything else — the DSN a file
+ * resolves to, the disposition an output takes, whether Db2 means the step runs
+ * under IKJEFT1B rather than EXEC PGM — has to be identical in both, or the
+ * job that runs a program is not running the program that was built.
+ */
+function runStepLines(
+  program: IRProgram,
+  options: {
+    stepName: string;
+    moduleName: string;
+    cond: string;
+    runtimeOptions: readonly string[];
+  },
+): string[] {
+  const lines: string[] = [];
+  const { moduleName, cond, runtimeOptions } = options;
+  const step = options.stepName.padEnd(8);
+  const needsDb2 = program.backendRequirements.includes("db2-precompiler");
+  const needsMq = program.backendRequirements.includes("mq");
+  const parmFields = batchParmFields(program);
+  const parmTemplate = parmFields
+    .map((field) => "x".repeat(field.width))
+    .join("");
+
+  if (parmFields.length > 0) {
+    lines.push(
+      "//* PARM layout, positional, one field per entry parameter:",
+      ...parmFields.map(
+        (field) =>
+          `//*   ${field.source} ${field.picture.replace(/^PIC /, "")} (${field.width})`,
+      ),
+    );
+  }
+  if (needsDb2) {
+    // A program with embedded SQL cannot be started by EXEC PGM=. It needs a
+    // thread to Db2, and what establishes one is the DSN command processor:
+    // the step runs TSO in batch, and DSN RUN attaches the program to the
+    // subsystem under a plan. Started directly it gets no thread at all and
+    // fails on its first SQL statement.
+    // IKJEFT1B rather than IKJEFT01, for the abend. Both return the program's
+    // code — DSN puts the highest value from the RUN subcommand in register
+    // 15 — but under IKJEFT01 a program that abends does not abend the step:
+    // TSO catches it and the step ends *normally* with condition code 12.
+    // A step that ended normally takes the normal disposition, so the DELETE
+    // on the output datasets below would not be honoured and a half-written
+    // dataset would be catalogued after all. IKJEFT1B terminates the step
+    // with X'04C', which is what makes a conditional disposition mean
+    // something.
+    lines.push(
+      "//* A Db2 program is run by the DSN command processor under TSO in",
+      "//* batch, not by EXEC PGM=. Starting it directly gives it no thread.",
+      `//${step} EXEC PGM=IKJEFT1B,DYNAMNBR=20,REGION=0M${cond}`,
+      "//STEPLIB  DD DISP=SHR,DSN=DSN.SDSNLOAD",
+      `//         DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
+      `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
+      `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
+      "//SYSTSPRT DD SYSOUT=*",
+    );
+  } else {
+    lines.push(
+      `//${step} EXEC PGM=${moduleName}${parmFields.length > 0 ? `,PARM='${parmTemplate}'` : ""},`,
+      `//             REGION=0M${cond}`,
+      // Without STEPLIB the module that was just written to the load library
+      // is not on any search the step makes, and the step ends S806 — module
+      // not found — having compiled and linked perfectly.
+      `//STEPLIB  DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
+      `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
+      `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
+    );
+  }
+  // The MQ run-time libraries. The stub linked into the load module resolves
+  // each MQI call through them, so without these the program abends on its
+  // first MQCONN rather than reporting a reason code.
+  if (needsMq) {
+    lines.push(
+      "//         DD DISP=SHR,DSN=MQM.SCSQANLE",
+      "//         DD DISP=SHR,DSN=MQM.SCSQLOAD",
+    );
+  }
+  lines.push(
+    "//SYSOUT   DD SYSOUT=*",
+    // Language Environment reads its run-time options from here. A batch step
+    // that has none stated runs on whatever the installation defaults are,
+    // which is not something a job's behaviour should depend on silently.
+    // What is written is the project's `runtimeOptions`, which defaults to
+    // the two that decide whether a bad night can be diagnosed at all.
+    "//CEEOPTS  DD *",
+    ...runtimeOptions.map((option) => `  ${option}`),
+    "/*",
+    // Without these an abend produces no readable dump, and what is left to
+    // diagnose it with is the return code.
+    "//CEEDUMP  DD SYSOUT=*",
+    "//SYSUDUMP DD SYSOUT=*",
+  );
+  // `ACCEPT ... FROM SYSIN` reads a card from this DD. The statement used to
+  // be emitted with no DD allocated for it at all.
+  if (readsSysin(program)) {
+    lines.push(
+      "//* The program ACCEPTs control input from SYSIN.",
+      "//SYSIN    DD *",
+      "/*",
+    );
+  }
+  // The sort product spills to work datasets, and three is the customary
+  // allocation. A merge needs none — its inputs already arrive in order — so
+  // this asks for a real SORT rather than for a SortStatement.
+  //
+  // Derived here rather than declared by the caller: the program is in hand,
+  // and a job whose work datasets depend on a caller remembering to say so is
+  // a job that is missing them the first time someone forgets.
+  if (
+    sortStatements(program).some(
+      (entry) => entry.statement.operation === "sort",
+    )
+  ) {
+    for (const index of [1, 2, 3]) {
+      lines.push(
+        `//SORTWK0${index} DD UNIT=SYSALLDA,SPACE=(CYL,(5,5)),DISP=(NEW,DELETE,DELETE)`,
+      );
+    }
+  }
+  for (const file of program.files) {
+    const dd = toDdName(file.name).padEnd(8);
+    const dsn = `${JCL_DATA_PREFIX}.${toDdName(file.name)}`;
+    // The record length is the record the FD describes, which the compiler
+    // has already laid out. A dataset created without one is allocated with
+    // the system default and the first WRITE fails on a length mismatch.
+    const lrecl = describeRecordLayout(file.record).totalLength;
+    if (file.mode === "input") {
+      lines.push(`//${dd} DD DISP=SHR,DSN=${dsn}`);
+    } else if (file.mode === "update") {
+      // An updated file is read and rewritten in place, so it exists already:
+      // NEW would create an empty one and the program would find nothing in
+      // it. OLD rather than SHR because a second job reading it mid-update
+      // sees a file that is half old and half new.
+      lines.push(`//${dd} DD DISP=OLD,DSN=${dsn}`);
+    } else {
+      // The abnormal disposition matters more than the normal one: a step
+      // that dies halfway through writing has produced a partial dataset, and
+      // cataloguing it invites the next job to read it as if it were
+      // complete.
+      lines.push(
+        `//${dd} DD DSN=${dsn},DISP=(NEW,CATLG,DELETE),`,
+        "//            UNIT=SYSALLDA,SPACE=(CYL,(1,1)),",
+        `//            DCB=(RECFM=FB,LRECL=${lrecl},BLKSIZE=0)`,
+      );
+    }
+  }
+  if (needsDb2) {
+    // Last, because DD * runs to its delimiter and anything after it would
+    // be read as command input rather than as JCL.
+    lines.push(
+      "//SYSTSIN  DD *",
+      "  DSN SYSTEM(DSN)",
+      `  RUN PROGRAM(${moduleName}) PLAN(${moduleName}) -`,
+      `      LIB('${JCL_LOAD_LIBRARY}')${parmFields.length > 0 ? " -" : ""}`,
+      ...(parmFields.length > 0 ? [`      PARM('${parmTemplate}')`] : []),
+      "  END",
+      "/*",
+    );
+  }
+
+  return lines;
 }
 
 /**

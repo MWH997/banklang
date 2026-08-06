@@ -32,9 +32,9 @@ fail with the corresponding diagnostic.
 Running the CLI from the repository root writes generated artifacts to `dist/`.
 The `build` command produces a full bundle:
 
-- `dist/cobol/ACCOUNT-POSTING.cbl`
-- `dist/copybooks/TRANSFER-REQUEST.cpy`
-- `dist/jcl/ACCOUNT-POSTING.jcl`
+- `dist/cobol/ACCOUNTP.cbl`
+- `dist/copybooks/POSTTRAN.cpy`
+- `dist/jcl/ACCOUNTP.jcl`
 - `dist/maps/source-map.json`
 - `dist/audit/diagnostics.json`
 - `dist/audit/source-map.json`

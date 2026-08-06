@@ -7,6 +7,7 @@ import {
   copybookMemberName,
   toCobolProgramId,
 } from "../packages/cobol-ir/src/index";
+import { exampleProjects } from "./example-projects";
 
 /**
  * Builds an upload bundle for someone with z/OS access.
@@ -31,10 +32,9 @@ interface Member {
   record?: string;
 }
 
-const EXAMPLES = readdirSync("examples", { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
+const EXAMPLES = exampleProjects().map((path) =>
+  path.replace(/^examples\//, ""),
+);
 
 export function buildZosKit(outputRoot = join("dist", "zos")): {
   members: number;

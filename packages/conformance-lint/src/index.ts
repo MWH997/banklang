@@ -97,6 +97,9 @@ const MAX_DSN = 44;
  */
 const DIVISION_PARAGRAPHS = new Set([
   "AUTHOR",
+  // `DECLARATIVES.` opens the USE procedures and is a word of the language,
+  // not a paragraph anybody named. It reads exactly like one in Area A.
+  "DECLARATIVES",
   "DATE-COMPILED",
   "DATE-WRITTEN",
   "FILE-CONTROL",
@@ -316,6 +319,103 @@ export function lintArtifact(
   });
 }
 
+/**
+ * Words the Report Writer precompiler defines, not the COBOL compiler.
+ *
+ * Report Writer is not part of Enterprise COBOL. The Language Reference lists
+ * `RD`, `PAGE LIMIT`, `CONTROL HEADING`, `SUM`, `COLUMN` and the rest as
+ * features "supported with the optional IBM COBOL Report Writer Precompiler and
+ * Libraries (5798-DYR)", so none of them appears in Appendix E — and a
+ * vocabulary rule that reads Appendix E therefore reports every line of a
+ * REPORT SECTION.
+ *
+ * Which is the correct answer for a program handed straight to `IGYCRCTL`. The
+ * generated job for such a program runs `SPCRWCOB` first and the compiler reads
+ * what that wrote, so these are accepted only in an artifact that has a REPORT
+ * SECTION — the same condition the emitter uses to decide the job needs the
+ * precompiler at all.
+ */
+const REPORT_WRITER_WORDS = new Set([
+  "RD",
+  "REPORT",
+  "REPORTS",
+  "CONTROL",
+  "CONTROLS",
+  "FINAL",
+  "LIMIT",
+  "LIMITS",
+  "HEADING",
+  "FIRST",
+  "LAST",
+  "DETAIL",
+  "FOOTING",
+  "TYPE",
+  "PH",
+  "PF",
+  "CH",
+  "CF",
+  "DE",
+  "RH",
+  "RF",
+  "LINE",
+  "LINES",
+  "NEXT",
+  "PLUS",
+  "COLUMN",
+  "COLUMNS",
+  "SOURCE",
+  "SUM",
+  "RESET",
+  "GROUP",
+  "INDICATE",
+  "INITIATE",
+  "GENERATE",
+  "TERMINATE",
+  "LINE-COUNTER",
+  "PAGE-COUNTER",
+]);
+
+/**
+ * True when the MQI's own copybooks are in the artifact.
+ *
+ * `MQCC-OK`, `MQOD-OBJECTNAME`, `MQGMO-SYNCPOINT` and the rest come from
+ * `COPY CMQV` and its siblings, which the queue manager supplies in
+ * `MQM.SCSQCOBC` and the generated job puts on SYSLIB. The linter reads one
+ * artifact at a time and cannot expand a copybook it does not have, so the
+ * names are accepted by their prefix — and only where the artifact copies the
+ * library that defines them. Every MQI name begins `MQ`, which is why the
+ * prefix is a rule rather than a guess.
+ */
+function copiesMqDefinitions(text: string): boolean {
+  return /\bCOPY\s+CMQ/.test(text);
+}
+
+/**
+ * The MQI entry points, which the binder resolves out of the MQ stub.
+ *
+ * They are not in the artifact and they are not one of the runtime programs
+ * this repository ships, so `call-resolvable` reports them — correctly, for a
+ * link-edit that was given only the load library. The generated job puts
+ * `MQM.SCSQLOAD` on SYSLIB precisely so these resolve, and it does that for an
+ * artifact that copies the MQ definitions, which is the same condition used
+ * here. A program that calls `MQPUT` without copying `CMQV` has no `MQPMO` to
+ * pass it and would not have compiled.
+ */
+const MQI_ENTRY_POINTS = new Set([
+  "MQCONN",
+  "MQCONNX",
+  "MQDISC",
+  "MQOPEN",
+  "MQCLOSE",
+  "MQGET",
+  "MQPUT",
+  "MQPUT1",
+  "MQINQ",
+  "MQSET",
+  "MQCMIT",
+  "MQBACK",
+]);
+
 export function lintCobol(
   file: string,
   text: string,
@@ -324,6 +424,10 @@ export function lintCobol(
   const findings: ConformanceFinding[] = [];
   const lines = text.split("\n");
   const declared = declaredNames(lines);
+  // Two vocabularies the COBOL compiler does not supply and the job does: the
+  // Report Writer precompiler's, and the queue manager's copybooks.
+  const hasReportSection = /\bREPORT\s+SECTION\s*\./.test(text);
+  const hasMqCopybooks = copiesMqDefinitions(text);
   /** True while inside an `EXEC ... END-EXEC` block, whose text is not COBOL. */
   let inExec = false;
 
@@ -463,7 +567,14 @@ export function lintCobol(
     }
 
     const declaration = /^\s*(\d\d)\s+([A-Z][A-Z0-9-]*)/.exec(content);
-    if (declaration && isReservedCobolWord(declaration[2])) {
+    // A report group entry is `05 LINE PLUS 1` and `10 COLUMN 1 PIC ...`: the
+    // word after the level number is a clause of the Report Writer's grammar
+    // rather than a name anybody chose, so the data-name rule does not apply.
+    if (
+      declaration &&
+      isReservedCobolWord(declaration[2]) &&
+      !(hasReportSection && REPORT_WRITER_WORDS.has(declaration[2]))
+    ) {
       report(
         "reserved-word",
         `${declaration[2]} is a reserved word and cannot be a data name.`,
@@ -499,7 +610,9 @@ export function lintCobol(
         !IBM_RESERVED_WORDS.has(word) &&
         !IBM_FUNCTION_NAMES.has(word) &&
         !declared.has(word) &&
-        !PROGRAM_TEXT_WORDS.has(word)
+        !PROGRAM_TEXT_WORDS.has(word) &&
+        !(hasReportSection && REPORT_WRITER_WORDS.has(word)) &&
+        !(hasMqCopybooks && /^MQ[A-Z0-9-]*$/.test(word))
       ) {
         report(
           "vocabulary",
@@ -720,6 +833,12 @@ function unresolvedCalls(
     defined.add(name.toUpperCase());
   }
 
+  if (copiesMqDefinitions(text)) {
+    for (const entry of MQI_ENTRY_POINTS) {
+      defined.add(entry);
+    }
+  }
+
   const findings: ConformanceFinding[] = [];
   text.split("\n").forEach((line, index) => {
     if (isCommentLine(line)) {
@@ -799,7 +918,7 @@ function areaAEntry(content: string): boolean {
   return (
     /^(IDENTIFICATION|ENVIRONMENT|DATA|PROCEDURE)\s+DIVISION/.test(trimmed) ||
     /^[A-Z][A-Z0-9-]*\s+SECTION\s*\./.test(trimmed) ||
-    /^(FD|SD)\s/.test(trimmed) ||
+    /^(FD|SD|RD)\s/.test(trimmed) ||
     /^(01|77)\s/.test(trimmed) ||
     /^[A-Z][A-Z0-9-]*\.\s*$/.test(trimmed) ||
     /^(DECLARATIVES|END\s+DECLARATIVES)\s*\.$/.test(trimmed) ||

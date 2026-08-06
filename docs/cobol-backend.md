@@ -255,7 +255,7 @@ Source map fields:
   "sourceFile": "examples/account-transfer/src/main.bank.ts",
   "sourceStart": { "line": 10, "column": 1 },
   "sourceEnd": { "line": 18, "column": 2 },
-  "artifact": "dist/cobol/ACCOUNT-TRANSFER.cbl",
+  "artifact": "dist/cobol/ACCOUNTT.cbl",
   "targetStartLine": 120,
   "targetEndLine": 163,
   "category": "function",

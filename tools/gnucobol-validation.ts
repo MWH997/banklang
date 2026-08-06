@@ -19,6 +19,7 @@ import {
   toCobolProgramId,
 } from "../packages/cobol-ir/src/index";
 import { precompile } from "../packages/precompiler/src/index";
+import { exampleProjects } from "./example-projects";
 
 export interface GnucobolValidationSummary {
   backendProfile: "gnucobol-local";
@@ -442,9 +443,5 @@ if (
 
 /** Every example project, so the lane covers what the repo ships. */
 function listExampleProjects(cwd: string): string[] {
-  const root = resolve(cwd, "examples");
-  return readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => `examples/${entry.name}`)
-    .sort();
+  return exampleProjects(cwd);
 }

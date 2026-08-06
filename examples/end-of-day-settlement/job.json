@@ -1,0 +1,15 @@
+{
+  "name": "EODSETL",
+  "description": "End-of-day settlement",
+  "steps": [
+    { "name": "EXTRACT", "project": "extract" },
+    {
+      "name": "SORTITEM",
+      "input": "settlementExtract",
+      "output": "sortedSettlement",
+      "fields": "1,8,CH,A,9,16,CH,A"
+    },
+    { "name": "POST", "project": "post" },
+    { "name": "REPORT", "project": "report" }
+  ]
+}

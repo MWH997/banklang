@@ -1,6 +1,5 @@
-import { readdirSync } from "node:fs";
-
 import { runBankc } from "../packages/bankc-cli/src/index";
+import { exampleProjects } from "./example-projects";
 
 /**
  * Formats every checked-in example, or verifies formatting with `--check`.
@@ -9,10 +8,7 @@ import { runBankc } from "../packages/bankc-cli/src/index";
  */
 const checkOnly = process.argv.includes("--check");
 
-const examples = readdirSync("examples", { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => `examples/${entry.name}`)
-  .sort();
+const examples = exampleProjects();
 
 let failed = false;
 
