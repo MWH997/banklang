@@ -8,9 +8,11 @@
 
 ## Validation
 
-- [ ] `pnpm lint`
+- [ ] `pnpm lint` (eslint)
+- [ ] `pnpm format:check` (prettier)
 - [ ] `pnpm typecheck`
 - [ ] `pnpm test`
+- [ ] `pnpm lint:conformance`
 - [ ] `bankc test` passes for every example
 - [ ] Generated COBOL compiles with `cobc` (or CI covers it)
 
