@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/statement-generation/src/main.bank.ts",
+  "project": "examples/statement-generation/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl"
+      "details": "evidence/statement-generation/cobol/STATEMEN.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/statement-generation/maps/source-map.json"
+      "details": "evidence/statement-generation/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/statement-generation/jcl/STATEMEN.jcl"
+      "details": "evidence/statement-generation/jcl/STATEMEN.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/statement-generation/audit"
+      "details": "evidence/statement-generation/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,22 +61,22 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl",
-    "/workspace/Code/banklang/evidence/statement-generation/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/statement-generation/copybooks/LEDGEREN.cpy",
-    "/workspace/Code/banklang/evidence/statement-generation/copybooks/STATEMEN.cpy",
-    "/workspace/Code/banklang/evidence/statement-generation/copybooks/ACCOUNTM.cpy",
-    "/workspace/Code/banklang/evidence/statement-generation/jcl/STATEMEN.jcl",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/statement-generation/audit/gnucobol-validation.md"
+    "evidence/statement-generation/cobol/STATEMEN.cbl",
+    "evidence/statement-generation/maps/source-map.json",
+    "evidence/statement-generation/copybooks/LEDGEREN.cpy",
+    "evidence/statement-generation/copybooks/STATEMEN.cpy",
+    "evidence/statement-generation/copybooks/ACCOUNTM.cpy",
+    "evidence/statement-generation/jcl/STATEMEN.jcl",
+    "evidence/statement-generation/audit/diagnostics.json",
+    "evidence/statement-generation/audit/source-map.json",
+    "evidence/statement-generation/audit/decimal-analysis.json",
+    "evidence/statement-generation/audit/transaction-analysis.json",
+    "evidence/statement-generation/audit/copybook-layout.json",
+    "evidence/statement-generation/audit/generated-artifacts.json",
+    "evidence/statement-generation/audit/verification-report.md",
+    "evidence/statement-generation/audit/verification-report.json",
+    "evidence/statement-generation/audit/validation-matrix.md",
+    "evidence/statement-generation/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

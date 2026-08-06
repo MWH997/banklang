@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+  "project": "examples/withdrawal-with-recovery/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl"
+      "details": "evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/maps/source-map.json"
+      "details": "evidence/withdrawal-with-recovery/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl"
+      "details": "evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit"
+      "details": "evidence/withdrawal-with-recovery/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,22 +61,22 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/copybooks/CURRENTA.cpy",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/copybooks/SAVINGSA.cpy",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/copybooks/WITHDRAW.cpy",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/gnucobol-validation.md"
+    "evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+    "evidence/withdrawal-with-recovery/maps/source-map.json",
+    "evidence/withdrawal-with-recovery/copybooks/CURRENTA.cpy",
+    "evidence/withdrawal-with-recovery/copybooks/SAVINGSA.cpy",
+    "evidence/withdrawal-with-recovery/copybooks/WITHDRAW.cpy",
+    "evidence/withdrawal-with-recovery/jcl/WITHDRAW.jcl",
+    "evidence/withdrawal-with-recovery/audit/diagnostics.json",
+    "evidence/withdrawal-with-recovery/audit/source-map.json",
+    "evidence/withdrawal-with-recovery/audit/decimal-analysis.json",
+    "evidence/withdrawal-with-recovery/audit/transaction-analysis.json",
+    "evidence/withdrawal-with-recovery/audit/copybook-layout.json",
+    "evidence/withdrawal-with-recovery/audit/generated-artifacts.json",
+    "evidence/withdrawal-with-recovery/audit/verification-report.md",
+    "evidence/withdrawal-with-recovery/audit/verification-report.json",
+    "evidence/withdrawal-with-recovery/audit/validation-matrix.md",
+    "evidence/withdrawal-with-recovery/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

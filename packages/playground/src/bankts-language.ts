@@ -21,6 +21,7 @@ export const PLAYGROUND_KEYWORDS = new Set([
   "case",
   "enum",
   "sensitive",
+  "reserved",
   "redefines",
   "renames",
   "through",

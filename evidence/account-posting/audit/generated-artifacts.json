@@ -2,19 +2,19 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "artifacts": [
-    "/workspace/Code/banklang/evidence/account-posting/cobol/ACCOUNTP.cbl",
-    "/workspace/Code/banklang/evidence/account-posting/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/account-posting/copybooks/POSTTRAN.cpy",
-    "/workspace/Code/banklang/evidence/account-posting/jcl/ACCOUNTP.jcl",
-    "/workspace/Code/banklang/evidence/account-posting/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/account-posting/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/account-posting/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/account-posting/audit/gnucobol-validation.md"
+    "evidence/account-posting/cobol/ACCOUNTP.cbl",
+    "evidence/account-posting/maps/source-map.json",
+    "evidence/account-posting/copybooks/POSTTRAN.cpy",
+    "evidence/account-posting/jcl/ACCOUNTP.jcl",
+    "evidence/account-posting/audit/diagnostics.json",
+    "evidence/account-posting/audit/source-map.json",
+    "evidence/account-posting/audit/decimal-analysis.json",
+    "evidence/account-posting/audit/transaction-analysis.json",
+    "evidence/account-posting/audit/copybook-layout.json",
+    "evidence/account-posting/audit/generated-artifacts.json",
+    "evidence/account-posting/audit/verification-report.md",
+    "evidence/account-posting/audit/verification-report.json",
+    "evidence/account-posting/audit/validation-matrix.md",
+    "evidence/account-posting/audit/gnucobol-validation.md"
   ]
 }

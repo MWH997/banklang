@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/statement-generation/src/main.bank.ts
+Project: examples/statement-generation/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/statement-generation/cobol/STATEMEN.cbl |
+| COBOL emit | passed | evidence/statement-generation/cobol/STATEMEN.cbl |
 | Copybook emit | passed | 3 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/statement-generation/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/statement-generation/jcl/STATEMEN.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/statement-generation/audit |
+| Source map emit | passed | evidence/statement-generation/maps/source-map.json |
+| JCL emit | passed | evidence/statement-generation/jcl/STATEMEN.jcl |
+| Audit artifacts | passed | evidence/statement-generation/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 22/22 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed. |

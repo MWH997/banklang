@@ -1,0 +1,456 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 16
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 31,
+      "targetEndLine": 32,
+      "category": "module",
+      "symbol": "CustRead"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 8,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 11,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 76,
+      "targetEndLine": 78,
+      "category": "record",
+      "symbol": "CmParty"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 9,
+        "column": 24
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 77,
+      "targetEndLine": 77,
+      "category": "field",
+      "symbol": "cmPerson"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 10,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 10,
+        "column": 15
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 78,
+      "targetEndLine": 78,
+      "category": "field",
+      "symbol": "reserved#2"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 13,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 79,
+      "targetEndLine": 81,
+      "category": "record",
+      "symbol": "CmCompany"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 14,
+        "column": 23
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 80,
+      "targetEndLine": 80,
+      "category": "field",
+      "symbol": "cmRegNo"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 15,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 29
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 81,
+      "targetEndLine": 81,
+      "category": "field",
+      "symbol": "cmTradingName"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 18,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 22,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 82,
+      "targetEndLine": 85,
+      "category": "record",
+      "symbol": "CmAddresses"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 19,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 19,
+        "column": 27
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 83,
+      "targetEndLine": 83,
+      "category": "field",
+      "symbol": "cmAddrLine1"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 20,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 20,
+        "column": 27
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 84,
+      "targetEndLine": 84,
+      "category": "field",
+      "symbol": "cmAddrLine2"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 21,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 21,
+        "column": 29
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 85,
+      "targetEndLine": 85,
+      "category": "field",
+      "symbol": "cmAddrPostcode"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 24,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 34,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 86,
+      "targetEndLine": 104,
+      "category": "record",
+      "symbol": "CustomerRecord"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 25,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 25,
+        "column": 24
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 87,
+      "targetEndLine": 87,
+      "category": "field",
+      "symbol": "cmCustNo"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 26,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 26,
+        "column": 22
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 88,
+      "targetEndLine": 88,
+      "category": "field",
+      "symbol": "cmName"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 27,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 27,
+        "column": 21
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 89,
+      "targetEndLine": 89,
+      "category": "field",
+      "symbol": "cmKind"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 28,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 28,
+        "column": 20
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 90,
+      "targetEndLine": 92,
+      "category": "field",
+      "symbol": "cmParty"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 29,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 29,
+        "column": 42
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 93,
+      "targetEndLine": 95,
+      "category": "field",
+      "symbol": "cmCompany"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 30,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 30,
+        "column": 28
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 96,
+      "targetEndLine": 96,
+      "category": "field",
+      "symbol": "cmOpened"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 31,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 31,
+        "column": 29
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 97,
+      "targetEndLine": 97,
+      "category": "field",
+      "symbol": "cmBalance"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 32,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 32,
+        "column": 31
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 98,
+      "targetEndLine": 98,
+      "category": "field",
+      "symbol": "cmAddrCount"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 33,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 33,
+        "column": 56
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 99,
+      "targetEndLine": 104,
+      "category": "field",
+      "symbol": "cmAddresses"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 36,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 42,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 105,
+      "targetEndLine": 110,
+      "category": "record",
+      "symbol": "ReadTotals"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 37,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 37,
+        "column": 33
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 106,
+      "targetEndLine": 106,
+      "category": "field",
+      "symbol": "customersRead"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 38,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 38,
+        "column": 28
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 107,
+      "targetEndLine": 107,
+      "category": "field",
+      "symbol": "personal"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 39,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 39,
+        "column": 29
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 108,
+      "targetEndLine": 108,
+      "category": "field",
+      "symbol": "corporate"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 40,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 40,
+        "column": 32
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 109,
+      "targetEndLine": 109,
+      "category": "field",
+      "symbol": "addressLines"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 41,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 41,
+        "column": 30
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 110,
+      "targetEndLine": 110,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 55,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 108,
+        "column": 2
+      },
+      "artifact": "cobol/CUSTREAD.cbl",
+      "targetStartLine": 137,
+      "targetEndLine": 299,
+      "category": "transaction",
+      "symbol": "readCustomers"
+    }
+  ]
+}

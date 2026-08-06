@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/account-file-batch/src/main.bank.ts
+Project: examples/account-file-batch/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/account-file-batch/cobol/ACCOUNTF.cbl |
+| COBOL emit | passed | evidence/account-file-batch/cobol/ACCOUNTF.cbl |
 | Copybook emit | passed | 2 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/account-file-batch/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/account-file-batch/jcl/ACCOUNTF.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/account-file-batch/audit |
+| Source map emit | passed | evidence/account-file-batch/maps/source-map.json |
+| JCL emit | passed | evidence/account-file-batch/jcl/ACCOUNTF.jcl |
+| Audit artifacts | passed | evidence/account-file-batch/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 10/10 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed. |

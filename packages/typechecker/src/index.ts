@@ -237,6 +237,15 @@ export interface ResolvedField {
   renames: { from: string; to: string } | null;
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
+  /**
+   * `reserved <n>;` — space the record has and nothing names.
+   *
+   * It is a field so that the layout has it, and it is never put in scope so
+   * that nothing can name it: COBOL's `FILLER` is not a name, and a slot a
+   * program could write to would be writing into space the layout says belongs
+   * to nobody.
+   */
+  reserved: boolean;
 }
 
 export interface ResolvedParameter {
@@ -4947,6 +4956,7 @@ function resolveRecord(
       type: resolved,
       initialValue: resolveInitialValue(field, resolved, diagnostics),
       sensitive: field.sensitive,
+      reserved: field.reserved,
       redefines: field.redefines,
       dependingOn: field.dependingOn,
       ascendingKey: field.ascendingKey,
@@ -5035,6 +5045,7 @@ function resolveRenames(
       name: entry.name,
       span: entry.span,
       type: { kind: "string", length: bytes },
+      reserved: false,
       // A renames is a second name for storage that is already initialised by
       // the fields it covers, so it carries no VALUE of its own.
       initialValue: null,

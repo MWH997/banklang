@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "AccrualRequest",
       "symbol": "accrualRate",
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
           "line": 7,
           "column": 3
@@ -27,9 +27,9 @@
       "category": "record-field",
       "owner": "AccrualSummary",
       "symbol": "accountsRead",
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
           "line": 19,
           "column": 3
@@ -48,9 +48,9 @@
       "category": "record-field",
       "owner": "AccrualSummary",
       "symbol": "accountsAccrued",
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
           "line": 20,
           "column": 3
@@ -69,9 +69,9 @@
       "category": "parameter",
       "owner": "interestOn",
       "symbol": "rate",
-      "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+      "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/branch-accrual-cursor/src/main.bank.ts",
+        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
           "line": 38,
           "column": 35

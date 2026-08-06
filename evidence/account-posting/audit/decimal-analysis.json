@@ -6,9 +6,9 @@
       "category": "record-field",
       "owner": "PostTransferRequest",
       "symbol": "amount",
-      "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
+      "sourceFile": "examples/account-posting/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/account-posting/src/main.bank.ts",
+        "sourceFile": "examples/account-posting/src/main.bank.ts",
         "start": {
           "line": 8,
           "column": 3

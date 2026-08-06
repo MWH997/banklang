@@ -2,7 +2,7 @@
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
   "phase": "verify",
-  "project": "/workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts",
+  "project": "examples/online-enquiry/src/main.bank.ts",
   "checks": [
     {
       "name": "Parse",
@@ -17,7 +17,7 @@
     {
       "name": "COBOL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl"
+      "details": "evidence/online-enquiry/cobol/ONLINEEN.cbl"
     },
     {
       "name": "Copybook emit",
@@ -27,17 +27,17 @@
     {
       "name": "Source map emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/online-enquiry/maps/source-map.json"
+      "details": "evidence/online-enquiry/maps/source-map.json"
     },
     {
       "name": "JCL emit",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/online-enquiry/jcl/ONLINEEN.jcl"
+      "details": "evidence/online-enquiry/jcl/ONLINEEN.jcl"
     },
     {
       "name": "Audit artifacts",
       "status": "passed",
-      "details": "/workspace/Code/banklang/evidence/online-enquiry/audit"
+      "details": "evidence/online-enquiry/audit"
     },
     {
       "name": "Deterministic regeneration",
@@ -61,22 +61,22 @@
     }
   ],
   "artifacts": [
-    "/workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl",
-    "/workspace/Code/banklang/evidence/online-enquiry/maps/source-map.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/copybooks/ENQUIRYR.cpy",
-    "/workspace/Code/banklang/evidence/online-enquiry/copybooks/ACCOUNTB.cpy",
-    "/workspace/Code/banklang/evidence/online-enquiry/copybooks/BALANCER.cpy",
-    "/workspace/Code/banklang/evidence/online-enquiry/jcl/ONLINEEN.jcl",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/diagnostics.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/source-map.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/decimal-analysis.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/transaction-analysis.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/copybook-layout.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/generated-artifacts.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/verification-report.md",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/verification-report.json",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/validation-matrix.md",
-    "/workspace/Code/banklang/evidence/online-enquiry/audit/gnucobol-validation.md"
+    "evidence/online-enquiry/cobol/ONLINEEN.cbl",
+    "evidence/online-enquiry/maps/source-map.json",
+    "evidence/online-enquiry/copybooks/ENQUIRYR.cpy",
+    "evidence/online-enquiry/copybooks/ACCOUNTB.cpy",
+    "evidence/online-enquiry/copybooks/BALANCER.cpy",
+    "evidence/online-enquiry/jcl/ONLINEEN.jcl",
+    "evidence/online-enquiry/audit/diagnostics.json",
+    "evidence/online-enquiry/audit/source-map.json",
+    "evidence/online-enquiry/audit/decimal-analysis.json",
+    "evidence/online-enquiry/audit/transaction-analysis.json",
+    "evidence/online-enquiry/audit/copybook-layout.json",
+    "evidence/online-enquiry/audit/generated-artifacts.json",
+    "evidence/online-enquiry/audit/verification-report.md",
+    "evidence/online-enquiry/audit/verification-report.json",
+    "evidence/online-enquiry/audit/validation-matrix.md",
+    "evidence/online-enquiry/audit/gnucobol-validation.md"
   ],
   "deterministicRegeneration": {
     "name": "Deterministic regeneration",

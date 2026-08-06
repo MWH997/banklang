@@ -286,6 +286,19 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   sensitive: boolean;
   /**
+   * `reserved <n>;` — bytes the record has and nothing names, emitted as
+   * `FILLER PIC X(n)`.
+   *
+   * Every copybook on an estate has them, so a record language without one
+   * cannot describe the records it has to interoperate with: the importer
+   * refused such a copybook rather than laying it out short, which is the right
+   * answer and a useless one. A reserved slot is deliberately unreachable —
+   * nothing can read it, assign to it, or move a record through it — because
+   * COBOL's `FILLER` is not a name, and a program able to write to one would be
+   * writing into space the layout says belongs to nobody.
+   */
+  reserved: boolean;
+  /**
    * `redefines otherField` — a second reading of storage another field already
    * occupies.
    *

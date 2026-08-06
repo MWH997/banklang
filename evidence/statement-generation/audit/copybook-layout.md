@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/Code/banklang/evidence/statement-generation/audit/copybook-layout.md
+Artifact: evidence/statement-generation/audit/copybook-layout.md
 
 ## LEDGER-ENTRY
 

@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/online-enquiry/src/main.bank.ts
+Project: examples/online-enquiry/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/online-enquiry/cobol/ONLINEEN.cbl |
+| COBOL emit | passed | evidence/online-enquiry/cobol/ONLINEEN.cbl |
 | Copybook emit | passed | 3 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/online-enquiry/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/online-enquiry/jcl/ONLINEEN.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/online-enquiry/audit |
+| Source map emit | passed | evidence/online-enquiry/maps/source-map.json |
+| JCL emit | passed | evidence/online-enquiry/jcl/ONLINEEN.jcl |
+| Audit artifacts | passed | evidence/online-enquiry/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 15/15 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed after precompiling (db2-precompiler and cics-translator). |

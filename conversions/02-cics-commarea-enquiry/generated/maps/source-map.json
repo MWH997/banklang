@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 15
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 29,
+      "targetEndLine": 30,
+      "category": "module",
+      "symbol": "AcctEnq"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 7,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 12,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 41,
+      "targetEndLine": 45,
+      "category": "record",
+      "symbol": "CommareaLayout"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 8,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 8,
+        "column": 24
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 42,
+      "targetEndLine": 42,
+      "category": "field",
+      "symbol": "caAcctNo"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 9,
+        "column": 23
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 43,
+      "targetEndLine": 43,
+      "category": "field",
+      "symbol": "caBalance"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 10,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 10,
+        "column": 27
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 44,
+      "targetEndLine": 44,
+      "category": "field",
+      "symbol": "caReturnCode"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 11,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 11,
+        "column": 30
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 45,
+      "targetEndLine": 45,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 17,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 47,
+      "targetEndLine": 49,
+      "category": "record",
+      "symbol": "AccountRow"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 15,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 24
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 48,
+      "targetEndLine": 48,
+      "category": "field",
+      "symbol": "rowBalance"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 16,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 24
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 49,
+      "targetEndLine": 49,
+      "category": "field",
+      "symbol": "rowStatus"
+    },
+    {
+      "sourceFile": "conversions/02-cics-commarea-enquiry/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 26,
+        "column": 18
+      },
+      "sourceEnd": {
+        "line": 61,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTENQ.cbl",
+      "targetStartLine": 76,
+      "targetEndLine": 115,
+      "category": "transaction",
+      "symbol": "enquireAccount"
+    }
+  ]
+}

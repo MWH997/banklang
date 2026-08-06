@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 16
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 37,
+      "targetEndLine": 38,
+      "category": "module",
+      "symbol": "AcctUpdt"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 12,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 17,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 113,
+      "targetEndLine": 117,
+      "category": "record",
+      "symbol": "TransRecord"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 13,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 13,
+        "column": 24
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 114,
+      "targetEndLine": 114,
+      "category": "field",
+      "symbol": "trAcctNo"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 14,
+        "column": 22
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 115,
+      "targetEndLine": 115,
+      "category": "field",
+      "symbol": "trAmount"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 15,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 21
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 116,
+      "targetEndLine": 116,
+      "category": "field",
+      "symbol": "trType"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 16,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 23
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 117,
+      "targetEndLine": 117,
+      "category": "field",
+      "symbol": "trFiller"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 19,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 23,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 118,
+      "targetEndLine": 121,
+      "category": "record",
+      "symbol": "MasterRecord"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 20,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 20,
+        "column": 24
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 119,
+      "targetEndLine": 119,
+      "category": "field",
+      "symbol": "miAcctNo"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 21,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 21,
+        "column": 23
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 120,
+      "targetEndLine": 120,
+      "category": "field",
+      "symbol": "miBalance"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 22,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 22,
+        "column": 23
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 121,
+      "targetEndLine": 121,
+      "category": "field",
+      "symbol": "miStatus"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 28,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 31,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 122,
+      "targetEndLine": 124,
+      "category": "record",
+      "symbol": "RejectRecord"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 29,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 29,
+        "column": 28
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 123,
+      "targetEndLine": 123,
+      "category": "field",
+      "symbol": "rejectAcctNo"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 30,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 30,
+        "column": 28
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 124,
+      "targetEndLine": 124,
+      "category": "field",
+      "symbol": "rejectFiller"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 33,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 38,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 125,
+      "targetEndLine": 129,
+      "category": "record",
+      "symbol": "RunCounts"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 34,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 34,
+        "column": 29
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 126,
+      "targetEndLine": 126,
+      "category": "field",
+      "symbol": "countRead"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 35,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 35,
+        "column": 32
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 127,
+      "targetEndLine": 127,
+      "category": "field",
+      "symbol": "countApplied"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 36,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 36,
+        "column": 33
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 128,
+      "targetEndLine": 128,
+      "category": "field",
+      "symbol": "countRejected"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 37,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 37,
+        "column": 30
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 129,
+      "targetEndLine": 129,
+      "category": "field",
+      "symbol": "idempotencyKey"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 58,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 76,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 185,
+      "targetEndLine": 202,
+      "category": "function",
+      "symbol": "shouldReject"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 78,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 84,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 203,
+      "targetEndLine": 229,
+      "category": "function",
+      "symbol": "newBalanceFor"
+    },
+    {
+      "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 86,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 166,
+        "column": 2
+      },
+      "artifact": "cobol/ACCTUPDT.cbl",
+      "targetStartLine": 230,
+      "targetEndLine": 489,
+      "category": "transaction",
+      "symbol": "updateAccounts"
+    }
+  ]
+}

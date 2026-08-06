@@ -192,21 +192,59 @@ describe("what the importer refuses", () => {
     expect(typeFor("PIC S9(20) COMP-3").problem).toContain("18");
   });
 
-  /**
-   * A FILLER is bytes nothing names. BankTS has no way to declare one, so the
-   * imported record would be shorter than the copybook by that many bytes —
-   * which moves every field after it in every program that shares it.
-   */
-  it("a FILLER, which it has no way to declare", () => {
+  /** A FILLER whose bytes cannot be worked out moves every field after it. */
+  it("a FILLER it cannot size", () => {
+    const imported = importCopybook(`       01  BAD-FILLER.
+           05  KEEP-ME                PIC X(4).
+           05  FILLER.
+           05  KEEP-ME-TOO            PIC X(4).
+`);
+
+    expect(
+      imported.problems.map((problem) => problem.message).join(" "),
+    ).toContain("wrong offset");
+  });
+});
+
+/**
+ * `FILLER` is bytes nothing names, and every copybook on an estate has them.
+ *
+ * The importer used to refuse one outright, which is the right answer to the
+ * question "can this be laid out short?" and a useless answer to the question
+ * "can this copybook be imported?" — no real record could be. `reserved <n>;`
+ * is what BankTS says instead, and it counts bytes rather than digits: a
+ * `PIC S9(9) COMP-3` FILLER is nine digits and five bytes, and reserving nine
+ * would move every field after it four bytes along.
+ */
+describe("a FILLER", () => {
+  it("becomes a reserved slot of the same width", () => {
     const imported = importCopybook(`       01  WITH-FILLER.
            05  KEEP-ME                PIC X(4).
            05  FILLER                 PIC X(6).
            05  KEEP-ME-TOO            PIC X(4).
 `);
 
-    expect(
-      imported.problems.map((problem) => problem.message).join(" "),
-    ).toContain("FILLER");
+    expect(imported.problems).toEqual([]);
+    expect(imported.source).toContain("reserved 6;");
+  });
+
+  it("counts the bytes a packed FILLER occupies, not its digits", () => {
+    const imported = importCopybook(`       01  PACKED-FILLER.
+           05  KEEP-ME                PIC X(4).
+           05  FILLER                 PIC S9(9) COMP-3.
+`);
+
+    expect(imported.problems).toEqual([]);
+    expect(imported.source).toContain("reserved 5;");
+  });
+
+  it("counts a separate sign on a display FILLER", () => {
+    const imported = importCopybook(`       01  SIGNED-FILLER.
+           05  FILLER                 PIC S9(4) SIGN IS LEADING SEPARATE.
+`);
+
+    expect(imported.problems).toEqual([]);
+    expect(imported.source).toContain("reserved 5;");
   });
 });
 

@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "backendProfile": "ibm-enterprise-cobol-zos",
+  "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
+  "entries": [
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 1,
+        "column": 1
+      },
+      "sourceEnd": {
+        "line": 1,
+        "column": 14
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 33,
+      "targetEndLine": 34,
+      "category": "module",
+      "symbol": "BrAccr"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 6,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 10,
+        "column": 2
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 50,
+      "targetEndLine": 53,
+      "category": "record",
+      "symbol": "AccountRow"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 7,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 7,
+        "column": 28
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 51,
+      "targetEndLine": 51,
+      "category": "field",
+      "symbol": "rowAccountId"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 8,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 8,
+        "column": 24
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 52,
+      "targetEndLine": 52,
+      "category": "field",
+      "symbol": "rowBalance"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 9,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 9,
+        "column": 24
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 53,
+      "targetEndLine": 53,
+      "category": "field",
+      "symbol": "rowStatus"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 12,
+        "column": 8
+      },
+      "sourceEnd": {
+        "line": 16,
+        "column": 2
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 55,
+      "targetEndLine": 58,
+      "category": "record",
+      "symbol": "AccrualCounts"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 13,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 13,
+        "column": 28
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 56,
+      "targetEndLine": 56,
+      "category": "field",
+      "symbol": "rowsRead"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 14,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 14,
+        "column": 30
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 57,
+      "targetEndLine": 57,
+      "category": "field",
+      "symbol": "rowsPosted"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 15,
+        "column": 3
+      },
+      "sourceEnd": {
+        "line": 15,
+        "column": 28
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 58,
+      "targetEndLine": 58,
+      "category": "field",
+      "symbol": "interestPosted"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 30,
+        "column": 10
+      },
+      "sourceEnd": {
+        "line": 32,
+        "column": 2
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 115,
+      "targetEndLine": 144,
+      "category": "function",
+      "symbol": "interestOn"
+    },
+    {
+      "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
+      "sourceStart": {
+        "line": 37,
+        "column": 19
+      },
+      "sourceEnd": {
+        "line": 70,
+        "column": 2
+      },
+      "artifact": "cobol/BRACCR.cbl",
+      "targetStartLine": 145,
+      "targetEndLine": 243,
+      "category": "transaction",
+      "symbol": "accrueBranch"
+    }
+  ]
+}

@@ -384,6 +384,34 @@ Rules:
 - nested records are allowed
 - arrays must be bounded
 
+### Space nothing names
+
+```ts
+record CustomerParty {
+  personName: string<30>;
+  reserved 20;
+}
+```
+
+`FILLER PIC X(20)`. Every copybook on an estate has them — a field that was
+removed, a gap left for one that is coming, an area another program's copybook
+overlays — and a record language without a way to say so cannot describe the
+records it has to interoperate with. The importer used to refuse such a
+copybook outright, which is the right answer to "can this be laid out short?"
+and a useless answer to "can this copybook be imported?"
+
+A reserved slot has no name and there is deliberately no way to give it one:
+nothing can read it, assign to it, or move a record through it. `FILLER` is not
+a name in COBOL either, and a slot a program could write to would be writing
+into space the layout says belongs to nobody.
+
+The number is **bytes**, not digits. `PIC S9(9) COMP-3` is nine digits and five
+bytes, and `reserved 9` where the copybook had five would move every field after
+it four bytes along.
+
+A field really can be called `reserved`; what settles it is the token after.
+A slot is followed by its byte count, a field by the `:` before its type.
+
 ### 5c. Variant records and variable-length tables
 
 Two clauses a real copybook is built on:

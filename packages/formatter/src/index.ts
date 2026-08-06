@@ -386,6 +386,16 @@ function printReportSource(source: ReportSourceNode): string {
 
 function printField(field: FieldDeclarationNode, printer: Printer): void {
   const trailing = printer.trailingCommentFor(field.span.start.line);
+
+  // A reserved slot has no name and no type to print: the count is the whole
+  // declaration, and the name it carries internally is not one anybody wrote.
+  if (field.reserved) {
+    printer.push(
+      `${INDENT}reserved ${field.type.kind === "StringType" ? field.type.length : 0};${trailing}`,
+    );
+    return;
+  }
+
   const modifier = field.sensitive ? "sensitive " : "";
   printer.push(
     `${INDENT}${modifier}${field.name}: ${printType(field.type)};${trailing}`,

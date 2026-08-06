@@ -1,11 +1,11 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/maps/source-map.json",
+  "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
   "entries": [
     {
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceStart": {
         "line": 1,
         "column": 1
@@ -14,14 +14,14 @@
         "line": 1,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+      "artifact": "cobol/BATCHINT.cbl",
       "targetStartLine": 24,
       "targetEndLine": 25,
       "category": "module",
       "symbol": "BatchInterestAccrual"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceStart": {
         "line": 5,
         "column": 8
@@ -30,14 +30,14 @@
         "line": 8,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+      "artifact": "cobol/BATCHINT.cbl",
       "targetStartLine": 31,
       "targetEndLine": 33,
       "category": "record",
       "symbol": "InterestAccount"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceStart": {
         "line": 6,
         "column": 3
@@ -46,14 +46,14 @@
         "line": 6,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+      "artifact": "cobol/BATCHINT.cbl",
       "targetStartLine": 32,
       "targetEndLine": 32,
       "category": "field",
       "symbol": "accountId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceStart": {
         "line": 7,
         "column": 3
@@ -62,14 +62,14 @@
         "line": 7,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+      "artifact": "cobol/BATCHINT.cbl",
       "targetStartLine": 33,
       "targetEndLine": 33,
       "category": "field",
       "symbol": "balance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/batch-interest-accrual/src/main.bank.ts",
+      "sourceFile": "examples/batch-interest-accrual/src/main.bank.ts",
       "sourceStart": {
         "line": 10,
         "column": 10
@@ -78,7 +78,7 @@
         "line": 18,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/batch-interest-accrual/cobol/BATCHINT.cbl",
+      "artifact": "cobol/BATCHINT.cbl",
       "targetStartLine": 39,
       "targetEndLine": 56,
       "category": "function",

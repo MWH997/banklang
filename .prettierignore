@@ -27,3 +27,8 @@ evidence/**/source/**
 
 # Documents received from outside, kept as they were written.
 docs/audit-*.md
+
+# Conversion sources are BankTS, and the generated output is the compiler's.
+conversions/**/banklang/**
+conversions/**/generated/**
+conversions/**/original/**

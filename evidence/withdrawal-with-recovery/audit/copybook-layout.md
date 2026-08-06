@@ -3,7 +3,7 @@
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 
-Artifact: /workspace/Code/banklang/evidence/withdrawal-with-recovery/audit/copybook-layout.md
+Artifact: evidence/withdrawal-with-recovery/audit/copybook-layout.md
 
 ## CURRENT-ACCOUNT
 

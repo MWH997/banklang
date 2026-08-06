@@ -1,11 +1,11 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
-  "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/maps/source-map.json",
+  "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
+  "artifact": "maps/source-map.json",
   "entries": [
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 1,
         "column": 1
@@ -14,14 +14,14 @@
         "line": 1,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 36,
       "targetEndLine": 37,
       "category": "module",
       "symbol": "WithdrawalWithRecovery"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 8,
         "column": 8
@@ -30,14 +30,14 @@
         "line": 12,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 83,
       "targetEndLine": 86,
       "category": "record",
       "symbol": "CurrentAccount"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 9,
         "column": 3
@@ -46,14 +46,14 @@
         "line": 9,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 84,
       "targetEndLine": 84,
       "category": "field",
       "symbol": "accountId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 10,
         "column": 3
@@ -62,14 +62,14 @@
         "line": 10,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 85,
       "targetEndLine": 85,
       "category": "field",
       "symbol": "balance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 11,
         "column": 3
@@ -78,14 +78,14 @@
         "line": 11,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 86,
       "targetEndLine": 86,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 14,
         "column": 8
@@ -94,14 +94,14 @@
         "line": 17,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 87,
       "targetEndLine": 92,
       "category": "record",
       "symbol": "SavingsAccount"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 9,
         "column": 3
@@ -110,14 +110,14 @@
         "line": 9,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 88,
       "targetEndLine": 88,
       "category": "field",
       "symbol": "accountId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 10,
         "column": 3
@@ -126,14 +126,14 @@
         "line": 10,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 89,
       "targetEndLine": 89,
       "category": "field",
       "symbol": "balance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 11,
         "column": 3
@@ -142,14 +142,14 @@
         "line": 11,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 90,
       "targetEndLine": 90,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 15,
         "column": 3
@@ -158,14 +158,14 @@
         "line": 15,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 91,
       "targetEndLine": 91,
       "category": "field",
       "symbol": "minimumBalance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 16,
         "column": 3
@@ -174,14 +174,14 @@
         "line": 16,
         "column": 23
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 92,
       "targetEndLine": 92,
       "category": "field",
       "symbol": "requested"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 19,
         "column": 8
@@ -190,14 +190,14 @@
         "line": 24,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 93,
       "targetEndLine": 97,
       "category": "record",
       "symbol": "WithdrawalResult"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 20,
         "column": 3
@@ -206,14 +206,14 @@
         "line": 20,
         "column": 25
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 94,
       "targetEndLine": 94,
       "category": "field",
       "symbol": "accountId"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 21,
         "column": 3
@@ -222,14 +222,14 @@
         "line": 21,
         "column": 21
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 95,
       "targetEndLine": 95,
       "category": "field",
       "symbol": "paidOut"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 22,
         "column": 3
@@ -238,14 +238,14 @@
         "line": 22,
         "column": 28
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 96,
       "targetEndLine": 96,
       "category": "field",
       "symbol": "closingBalance"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 23,
         "column": 3
@@ -254,14 +254,14 @@
         "line": 23,
         "column": 30
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 97,
       "targetEndLine": 97,
       "category": "field",
       "symbol": "idempotencyKey"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 34,
         "column": 10
@@ -270,14 +270,14 @@
         "line": 36,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 129,
       "targetEndLine": 134,
       "category": "function",
       "symbol": "ledgerBalanceOf"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 41,
         "column": 10
@@ -286,14 +286,14 @@
         "line": 51,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 135,
       "targetEndLine": 148,
       "category": "function",
       "symbol": "permittedAmount"
     },
     {
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceStart": {
         "line": 53,
         "column": 19
@@ -302,7 +302,7 @@
         "line": 85,
         "column": 2
       },
-      "artifact": "/workspace/Code/banklang/evidence/withdrawal-with-recovery/cobol/WITHDRAW.cbl",
+      "artifact": "cobol/WITHDRAW.cbl",
       "targetStartLine": 149,
       "targetEndLine": 285,
       "category": "transaction",

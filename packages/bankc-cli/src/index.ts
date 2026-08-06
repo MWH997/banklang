@@ -3,9 +3,9 @@ import {
   mkdirSync,
   readFileSync,
   watch,
-  writeFileSync,
+  writeFileSync as writeArtifactBytes,
 } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import {
   formatDiagnostic,
@@ -157,7 +157,41 @@ interface TransactionAnalysisDocument {
   transactions: unknown[];
 }
 
+/**
+ * Where the command was run, for writing paths down the way they were typed.
+ *
+ * Module state rather than a parameter because every artifact writer would
+ * otherwise have to carry it, and there are twenty-three of them. Set once per
+ * invocation, at the top of `runBankc`.
+ */
+let commandCwd = process.cwd();
+
+/**
+ * Writes an artifact, with this machine's absolute paths taken back out of it.
+ *
+ * `evidence/` is checked in and is what a reader is invited to check the
+ * project's claims against, and every report in it named
+ * `/Users/<somebody>/Code/banklang/...` — so nobody else could reproduce a byte
+ * of it, in a project whose first claim is that the same input always produces
+ * the same output. The paths are still there and still correct; they are
+ * relative to where the command ran, which is what a reader can act on.
+ */
+function writeFileSync(
+  path: string,
+  content: string,
+  encoding: "utf8" = "utf8",
+): void {
+  writeArtifactBytes(path, portablePaths(content), encoding);
+}
+
+/** Absolute paths under the working directory, rewritten as relative ones. */
+export function portablePaths(text: string, cwd = commandCwd): string {
+  const prefix = `${cwd.replace(/\/+$/, "")}/`;
+  return text.split(prefix).join("");
+}
+
 export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
+  commandCwd = cwd;
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
     return {
       exitCode: 0,
@@ -324,6 +358,7 @@ function runEmit(args: string[], cwd: string): CliResult {
         outputRoot,
       ),
       sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+      artifactRoot: outputRoot,
       copybookMode: compiled.copybookMode,
       decimalPoint: compiled.decimalPoint,
       currencySign: compiled.currencySign,
@@ -613,6 +648,7 @@ function runBuild(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    artifactRoot: outputRoot,
     copybookMode: compiled.copybookMode,
     decimalPoint: compiled.decimalPoint,
     currencySign: compiled.currencySign,
@@ -678,6 +714,7 @@ function runAuditReport(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    artifactRoot: outputRoot,
     copybookMode: compiled.copybookMode,
     decimalPoint: compiled.decimalPoint,
     currencySign: compiled.currencySign,
@@ -740,6 +777,7 @@ function runVerify(args: string[], cwd: string): CliResult {
       outputRoot,
     ),
     sourceMapArtifactPath: join(outputRoot, "maps", "source-map.json"),
+    artifactRoot: outputRoot,
     copybookMode: compiled.copybookMode,
     decimalPoint: compiled.decimalPoint,
     currencySign: compiled.currencySign,
@@ -1322,7 +1360,12 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
   const projectConfig = loadConfig(projectPath, cwd).config;
   const copybookMode = projectConfig.copybookMode;
   const sourceText = readFileSync(sourceFile, "utf8");
-  const parsed = parseBankTs(sourceText, sourceFile);
+  // Parsed under the path as it was typed, not the resolved one. Every
+  // diagnostic, every source map entry and every audit report carries this
+  // string, and an absolute path makes all three different on every machine —
+  // in a project whose first claim is that the same input produces the same
+  // output. `evidence/` is checked in, so that difference was checked in too.
+  const parsed = parseBankTs(sourceText, relativeToCwd(sourceFile, cwd));
   const typechecked = parsed.program
     ? typecheckProgram(parsed.program)
     : {
@@ -1372,6 +1415,17 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
     ir,
     semantics,
   };
+}
+
+/**
+ * A path as it should be written down: relative to where the command was run.
+ *
+ * Paths outside the working directory keep their absolute form, because a
+ * `../../..` chain is no more portable and is harder to read.
+ */
+function relativeToCwd(path: string, cwd: string): string {
+  const within = relative(cwd, path);
+  return within.startsWith("..") || isAbsolute(within) ? path : within;
 }
 
 function resolveSourceFile(projectPath: string, cwd: string): string {
@@ -1935,6 +1989,7 @@ function buildVerificationReportDocument(
   const reEmittedCobol = emitCobol(program, {
     cobolArtifactPath: emitResult.cobolArtifactPath,
     sourceMapArtifactPath: emitResult.sourceMapArtifactPath,
+    artifactRoot: outputRoot,
   });
   const reEmittedJcl = emitJcl(program, {
     jclArtifactPath: jclResult.jclArtifactPath,

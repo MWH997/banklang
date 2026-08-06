@@ -1,6 +1,6 @@
 # Verification Report
 
-Project: /workspace/Code/banklang/examples/interest-posting-batch/src/main.bank.ts
+Project: examples/interest-posting-batch/src/main.bank.ts
 Version: 1
 Backend profile: ibm-enterprise-cobol-zos
 Phase: verify
@@ -9,11 +9,11 @@ Phase: verify
 | --- | --- | --- |
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
-| COBOL emit | passed | /workspace/Code/banklang/evidence/interest-posting-batch/cobol/INTEREST.cbl |
+| COBOL emit | passed | evidence/interest-posting-batch/cobol/INTEREST.cbl |
 | Copybook emit | passed | 2 copybook file(s) |
-| Source map emit | passed | /workspace/Code/banklang/evidence/interest-posting-batch/maps/source-map.json |
-| JCL emit | passed | /workspace/Code/banklang/evidence/interest-posting-batch/jcl/INTEREST.jcl |
-| Audit artifacts | passed | /workspace/Code/banklang/evidence/interest-posting-batch/audit |
+| Source map emit | passed | evidence/interest-posting-batch/maps/source-map.json |
+| JCL emit | passed | evidence/interest-posting-batch/jcl/INTEREST.jcl |
+| Audit artifacts | passed | evidence/interest-posting-batch/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
 | Source map coverage | passed | 17/17 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed. |

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "artifact": "/workspace/Code/banklang/evidence/interest-posting-batch/audit/copybook-layout.md",
+  "artifact": "evidence/interest-posting-batch/audit/copybook-layout.md",
   "reports": [
     {
       "recordName": "AccrualFeedRow",

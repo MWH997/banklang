@@ -6,9 +6,9 @@
       "category": "literal",
       "owner": "permittedAmount",
       "symbol": "0.00",
-      "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+      "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
       "sourceSpan": {
-        "sourceFile": "/workspace/Code/banklang/examples/withdrawal-with-recovery/src/main.bank.ts",
+        "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
         "start": {
           "line": 42,
           "column": 19

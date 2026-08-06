@@ -47,9 +47,9 @@ pnpm install && pnpm playground:dev
 
 The **[playground](packages/playground/)** runs the entire compiler in your
 browser — no server, no network call. Click any line of BankTS and the COBOL it
-produced lights up, and vice versa. That cross-link is read straight from the
-emitted source map, so traceability is something you can click rather than
-something the documentation asserts.
+produced lights up. That cross-link is read straight from the emitted source
+map, so traceability is something you can click rather than something the
+documentation asserts.
 
 ## What it generates
 
@@ -67,17 +67,12 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 
 `MoneyBDT` is `decimal<18, 2>` and `Rate` is `decimal<9, 4>`, so the product has
 scale 6. Storing it as money discards four digits, and the compiler will not let
-that happen silently: `round` with an explicit mode is required, and bare
-division is rejected outright for the same reason.
+that happen silently: `round` with an explicit mode is required.
 
 Enterprise COBOL has **one** rounding phrase, and `ROUNDED` is half-up away from
 zero. Banker's rounding is arithmetic this compiler writes out:
 
 ```cobol
-           COMPUTE BANK-RND-1-VALUE = (ACCRUE-P1 * ACCRUE-P2)
-           COMPUTE BANK-RND-1-EXCESS =
-               (ACCRUE-P1 * ACCRUE-P2) - BANK-RND-1-VALUE
-           ...
            EVALUATE TRUE
                WHEN FUNCTION ABS (BANK-RND-1-EXCESS) > 0.005
                    ADD BANK-RND-1-STEP TO BANK-RND-1-VALUE
@@ -177,6 +172,13 @@ configuration shaped to Enterprise COBOL 6.4.
 | [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint    |
 | [`end-of-day-settlement`](examples/end-of-day-settlement/) | Four programs and a sort in **one JCL stream** |
 
+**And five conversions** — [`conversions/`](conversions/) — existing COBOL on one
+side, the BankTS it becomes on the other, and what the compiler produced from
+that BankTS underneath. A sequential master update, a CICS enquiry, a Db2 cursor
+batch, hand-written banker's rounding, and a copybook with `REDEFINES`, `FILLER`
+and `OCCURS DEPENDING ON`. Each page prints generated measurements and says what
+the conversion changed about what the program does.
+
 `withdrawal-with-recovery` goes further: it is **run**, against the reference
 runtime in [`runtime/`](runtime/README.md), and the test asserts on the balances
 the ledger ends up holding. That is what catches a defect that compiles — the
@@ -188,10 +190,7 @@ every static check passed.
 ```ts
 import { compile } from "@banklang/compiler";
 
-const result = compile(source);
-result.diagnostics; // typed diagnostics with spans and hints
-result.cobol; // the generated program
-result.sourceMap; // every traced symbol
+const result = compile(source); // diagnostics, cobol, sourceMap
 ```
 
 ## Documentation
