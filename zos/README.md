@@ -118,9 +118,12 @@ implemented by GnuCOBOL and are executed by the tests directly.
 pnpm tsx tools/zos-kit.ts
 ```
 
-That writes `dist/zos/` with every generated program, copybook, and job, in the
-eight-character member names the JCL already expects. `MANIFEST.txt` says which
-dataset each folder belongs in.
+That writes `dist/zos/` with every generated program, copybook, job and zUnit
+configuration, in the eight-character member names the JCL already expects.
+`MANIFEST.txt` says which dataset each folder belongs in. Each program's
+copybooks go to a library of its own: these examples are independent programs
+rather than one application, and several declare an `AccountRecord` of their own
+with different fields.
 
 Then, in order:
 
@@ -134,6 +137,14 @@ Then, in order:
    program and a transaction, and drive it from a terminal.
 4. **Run the batch programs** against the same seeded input the local
    conformance suite uses, and compare the output records byte for byte.
+5. **Run the zUnit case.** `TZUNITTE`, whose job compiles the driver and submits
+   it through `EQAPPLAY`. Compile `ZUNITTES` with `TEST` first and put both in
+   the same load library — that is what the runner intercepts the program's
+   calls through. This is the one artifact in the bundle nothing here has ever
+   run, which makes it the most valuable thing in it: it settles divergence
+   **D21** — whether a runner accepts `noPlaybackData="true"` — and it is the
+   only way to learn anything about **D20**, the info block whose layout is
+   behind a copybook this repository does not have.
 
 ## What to write down
 
