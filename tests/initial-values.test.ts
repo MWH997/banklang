@@ -74,7 +74,7 @@ describe("what a field can start as", () => {
     const result = withRecord("  active: bool = true;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain('ACTIVE               PIC X VALUE "Y".');
+    expect(result.cobol).toContain('ACTIVE               PIC X(1) VALUE "Y".');
     expect(result.cobol).not.toContain('VALUE "N" VALUE');
   });
 

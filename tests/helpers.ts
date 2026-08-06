@@ -11,6 +11,7 @@ import { lowerProgramToIR, type IRProgram } from "../packages/ir/src/index";
 import { precompile } from "../packages/precompiler/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
+import { exampleProjects } from "../tools/example-projects";
 
 /**
  * A generated artifact with its line breaks flattened to single spaces.
@@ -191,4 +192,32 @@ export function compileExample(examplePath = "examples/account-transfer") {
     ir,
     emit,
   };
+}
+
+/**
+ * Every example, compiled, as one list.
+ *
+ * A style assertion made against a program written inside the test proves that
+ * program. The 2026-08-05 audit's F13 is what that costs: a test asserting one
+ * literal delimiter compiled a program reaching one of the two branches that
+ * emit a boolean, passed, and left `MOVE 'Y'` in a shipped example, its
+ * evidence bundle and a golden fixture for as long as the test had existed.
+ *
+ * So a rule about generated code is asserted here, over everything the compiler
+ * is asked to produce, and `tests/feature-coverage.test.ts` requires any test
+ * named as the check for a generated-code standard to reach for this.
+ *
+ * Compiled once per process and memoised: nineteen examples through the whole
+ * front end is a second or so, and every caller wants the same answer.
+ */
+let compiledCorpus: { example: string; cobol: string }[] | undefined;
+
+export function corpus(): { example: string; cobol: string }[] {
+  if (!compiledCorpus) {
+    compiledCorpus = exampleProjects().map((example) => ({
+      example,
+      cobol: compileExample(example).emit.cobol,
+    }));
+  }
+  return compiledCorpus;
 }

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol } from "./helpers";
+import { corpus, flowed, localCobol } from "./helpers";
 
 /**
  * The file status key, tested after every I/O statement rather than after
@@ -246,5 +246,46 @@ entry transaction emit1(line: FeedLine, note: Note) {
 
     expect(ran.stdout).toContain("WRITE FAILED feed STATUS 44");
     expect(ran.status).toBe(12);
+  });
+});
+
+/**
+ * Every I/O statement's status, over every example.
+ *
+ * The rule is not "OPEN is checked" — it is that no I/O statement is left
+ * unchecked, and the difference only shows on programs nobody wrote for this
+ * test. Each file declared in the corpus has to have condition names, and each
+ * of its statements a test of them.
+ */
+describe("across the corpus", () => {
+  it("gives every file status field its condition names", () => {
+    for (const { example, cobol } of corpus()) {
+      const statuses = [
+        ...cobol.matchAll(/FILE STATUS IS ([A-Z][A-Z0-9-]*)/g),
+      ].map((match) => match[1]);
+
+      for (const status of statuses) {
+        expect(
+          cobol,
+          `${example} binds ${status} as a file status and declares no ${status}-OK condition.`,
+        ).toContain(`88  ${status}-OK`);
+      }
+    }
+  });
+
+  it("tests the status after every I/O statement it declares", () => {
+    for (const { example, cobol } of corpus()) {
+      const statuses = [
+        ...cobol.matchAll(/FILE STATUS IS ([A-Z][A-Z0-9-]*)/g),
+      ].map((match) => match[1]);
+
+      for (const status of statuses) {
+        const tested = flowed(cobol).split(`${status}-OK`).length - 1;
+        expect(
+          tested,
+          `${example} declares ${status} and tests it ${tested} time(s); a file is opened, used and closed.`,
+        ).toBeGreaterThan(1);
+      }
+    }
   });
 });

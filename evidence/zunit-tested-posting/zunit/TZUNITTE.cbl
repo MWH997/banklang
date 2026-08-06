@@ -34,7 +34,7 @@
            05  BANK-PARM-LENGTH     PIC S9(4) COMP.
            05  BANK-PARM-DATA.
                10  BANK-PARM-ACCOUNT        PIC X(16).
-               10  BANK-PARM-AMOUNT         PIC S9(16)V9(2) SIGN IS
+               10  BANK-PARM-AMOUNT         PIC S9(16)V99 SIGN IS
                    LEADING SEPARATE.
                10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
        LINKAGE SECTION.
@@ -161,7 +161,7 @@
            05  BANK-PARM-LENGTH     PIC S9(4) COMP.
            05  BANK-PARM-DATA.
                10  BANK-PARM-ACCOUNT        PIC X(16).
-               10  BANK-PARM-AMOUNT         PIC S9(16)V9(2) SIGN IS
+               10  BANK-PARM-AMOUNT         PIC S9(16)V99 SIGN IS
                    LEADING SEPARATE.
                10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
        PROCEDURE DIVISION.

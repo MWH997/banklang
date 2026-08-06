@@ -87,10 +87,17 @@ describe("the report description", () => {
     expect(result.diagnostics).toEqual([]);
   });
 
-  /** The FD names the report, and the RD in the REPORT SECTION describes it. */
+  /**
+   * The FD names the report, and the RD in the REPORT SECTION describes it.
+   *
+   * It also describes the dataset, which `REPORT IS` does not excuse it from:
+   * IBM's worked example in the file description entry documentation carries
+   * `BLOCK CONTAINS 0 RECORDS` and `RECORDING MODE IS F` alongside it. What
+   * `REPORT IS` removes is the 01 record description.
+   */
   it("puts the report on the file", () => {
-    expect(result.cobol).toContain(
-      "FD  STATEMENT-FILE-FILE REPORT IS BRANCH-SUMMARY.",
+    expect(flowed(result.cobol)).toContain(
+      "FD STATEMENT-FILE-FILE BLOCK CONTAINS 0 RECORDS RECORDING MODE IS F REPORT IS BRANCH-SUMMARY.",
     );
     expect(result.cobol).toContain("REPORT SECTION.");
     expect(result.cobol).toContain("RD  BRANCH-SUMMARY");

@@ -94,7 +94,7 @@
     "sourceArtifact": "examples/batch-interest-accrual/src/main.bank.ts",
     "sourceArtifactHash": "e00d1e4d0c48933eff9446afff772724436223f218d12e8015f4ac80369f10aa",
     "generatedArtifact": "evidence/batch-interest-accrual/gnucobol/cobol/BATCHINT.cbl",
-    "generatedArtifactHash": "ee1d66e79be63198fdd3dd8411de3cb2f53aa3751f31b3d2b1fb3ca2c5a28a2c",
+    "generatedArtifactHash": "8446fb3376fb7ef57bb289a0d0ac3de2f51ab617f7ff169e50b83bd1c9e152b8",
     "sourceMapArtifact": "evidence/batch-interest-accrual/gnucobol/maps/source-map.json",
     "sourceMapArtifactHash": "90ddaa9a1f89df523751d1a2a1db200b6d89e1ba5120e378c6b166e76467c634",
     "compilerExecutable": "cobc",

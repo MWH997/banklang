@@ -53,7 +53,6 @@ an unverified release, not a passing one.
 - Update README command inventory and limitations if behavior changed.
 - Update example READMEs and evidence bundle READMEs if generated output changed.
 - Add or update tester notes for compiler behavior, generated output, or security changes.
-- Add or update AI review logs for medium/high-risk changes.
 - Keep generated outputs deterministic and avoid timestamps.
 
 ## 4. Git hygiene

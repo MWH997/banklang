@@ -44,6 +44,26 @@ Manuals, as extracted in `vendor-docs/`:
 | `vocabulary`        | Every word is a name the artifact declares or a word Enterprise COBOL reserves.                                        | LR, Appendix E                      |
 | `call-resolvable`   | Every `CALL "X"` names a program the run unit will hold.                                                               | PG, "Resolving external references" |
 | `duplicate-name`    | Two things in one program are not declared under the same name, compared under the path that qualifies them.           | LR, "User-defined words"            |
+| `literal-delimiter` | Every alphanumeric literal in one artifact is delimited the same way. Style rather than conformance; see below.        | LR, "Alphanumeric literals"         |
+
+### The delimiter rule, which is not a conformance rule
+
+Enterprise COBOL takes either delimiter, so nothing here is refused by the
+target. It is in the linter because it is refused by a _reviewer_, and because
+the 2026-08-05 audit's F13 came back: `MOVE 'Y'` two lines under a `VALUE "N"`
+survived in a shipped example, its evidence bundle and a golden fixture, while a
+test asserting exactly this passed. The test's program reached the boolean
+written as a condition, which emits `IF … MOVE "Y" … ELSE MOVE "N"`, and never
+the boolean written as a literal, which emits the `MOVE` alone.
+
+The rule reads the artifact rather than the emitter: whichever delimiter more of
+its literals use is the one it has chosen, and a literal written with the other
+one is reported. A literal whose text _contains_ the chosen delimiter is exempt,
+because switching is one of the two ways COBOL allows that character to appear.
+That exemption is what lets the generated zUnit driver hold
+`AZU2001W THE TEST "` in apostrophes, which is the shape IBM's own generator
+produces. `EXEC` blocks are skipped: an SQL string constant is delimited by an
+apostrophe and a delimited identifier by a quote, and those are SQL's rules.
 
 ### The vocabulary rule
 

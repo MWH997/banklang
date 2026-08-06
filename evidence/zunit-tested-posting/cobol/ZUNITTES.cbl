@@ -14,7 +14,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>     job's PARM behind a halfword length: 71 characters,
       *>     positional.
       *>   account             X(16) (16)
-      *>   amount              S9(16)V9(2) SIGN IS LEADING SEPARATE (19)
+      *>   amount              S9(16)V99 SIGN IS LEADING SEPARATE (19)
       *>   idempotencyKey      X(36) (36)
       *>   A PARM shorter than that ends the step with return code 12
       *>     rather than reading past what was passed.
@@ -54,7 +54,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            05  BANK-PARM-LENGTH         PIC S9(4) COMP.
            05  BANK-PARM-DATA.
                10  BANK-PARM-ACCOUNT    PIC X(16).
-               10  BANK-PARM-AMOUNT     PIC S9(16)V9(2) SIGN IS LEADING
+               10  BANK-PARM-AMOUNT     PIC S9(16)V99 SIGN IS LEADING
                    SEPARATE.
                10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
 

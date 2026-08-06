@@ -77,6 +77,30 @@ sounding impressive:
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.
 
+## What may be claimed, and what may not
+
+The wording is fixed in advance, so that the question "is this overstated?" has
+an answer written before there is any incentive to answer it loosely.
+
+Allowed while no IBM compiler has run this output:
+
+> BankLang emits artifacts targeting IBM Enterprise COBOL for z/OS 6.4.
+
+Not allowed:
+
+> Validated with IBM Enterprise COBOL. IBM-compatible. Production-ready on z/OS.
+
+Allowed once a real validation exists, and only for what it covered:
+
+> Selected generated artifacts were validated with IBM Enterprise COBOL for
+> z/OS under the documented environment, compiler version, and compiler
+> options.
+
+The target line is 6.4 throughout: that is the Language Reference and
+Programming Guide every citation in [target-conformance.md](target-conformance.md)
+comes from, the level `tools/banklang-ibm.conf` is shaped to, and the version
+named in the generated `CBL` statement's options.
+
 ## The two lists that matter more than this page
 
 - [divergences.md](divergences.md) — every place GnuCOBOL and Enterprise COBOL

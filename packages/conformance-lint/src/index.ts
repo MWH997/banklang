@@ -25,6 +25,46 @@ import {
   RESERVED_WORDS as IBM_RESERVED_WORDS,
 } from "./ibm-words";
 
+/**
+ * Every rule this linter can report, as a list rather than as whatever the
+ * source happens to contain.
+ *
+ * Exported because a rule is a promise: `docs/generated-code-standards.md`
+ * names one against each standard it documents, and a meta-test holds that
+ * page to this list. Naming a rule that does not exist would otherwise read as
+ * a check and be nothing.
+ */
+export const CONFORMANCE_RULES = [
+  // Reference format, and the compiler-directing statements that are exempt.
+  "line-length",
+  "sequence-area",
+  "indicator-area",
+  "area-a",
+  "process-statement",
+  // Names.
+  "word-length",
+  "program-id-length",
+  "reserved-word",
+  "vocabulary",
+  "duplicate-name",
+  // Data description.
+  "literal-length",
+  "picture-length",
+  "digit-count",
+  "literal-delimiter",
+  // Whether the run unit will hold what the program calls.
+  "call-resolvable",
+  // JCL.
+  "card-length",
+  "name-field",
+  "dsn-qualifier",
+  "dsn-length",
+  "continuation",
+  "required-dd",
+] as const;
+
+export type ConformanceRule = (typeof CONFORMANCE_RULES)[number];
+
 export interface ConformanceFinding {
   /** Artifact the finding is in, as the caller named it. */
   file: string;
@@ -688,12 +728,94 @@ export function lintCobol(
     }
   });
 
+  findings.push(...mixedLiteralDelimiters(file, lines));
+
   if (!options.fragment) {
     findings.push(...unresolvedCalls(file, text, options.knownPrograms ?? []));
     findings.push(...duplicateDeclarations(file, lines, hasReportSection));
   }
 
   return findings;
+}
+
+/**
+ * Two delimiters for the alphanumeric literals of one artifact.
+ *
+ * Enterprise COBOL accepts both, so this is style rather than conformance —
+ * but it is the style a reviewer reads as machine-generated, which is what the
+ * 2026-08-05 audit's F13 was about, and a rule is the only thing that keeps it
+ * fixed. `MOVE 'Y'` two lines under a `VALUE "N"` survived a suite that already
+ * had a test for exactly this, because the test's program reached one of the
+ * two ways a boolean is written and not the other.
+ *
+ * Phrased over the text rather than over any one emitter: whichever delimiter
+ * the artifact uses most is the one it has chosen, and a literal written with
+ * the other one is reported. A literal whose text *contains* the chosen
+ * delimiter is exempt — switching is one of the two ways COBOL allows that
+ * character to appear, the other being to double it, and neither is wrong. That
+ * exemption is what lets the generated zUnit driver hold `AZU2001W THE TEST "`
+ * in apostrophes, which is the shape IBM's own generator produces.
+ *
+ * `EXEC` blocks are skipped, as everywhere else here: an SQL string constant is
+ * delimited by an apostrophe and a delimited identifier by a quote, and those
+ * are SQL's rules rather than COBOL's.
+ */
+function mixedLiteralDelimiters(
+  file: string,
+  lines: string[],
+): ConformanceFinding[] {
+  const found: { line: number; delimiter: string; text: string }[] = [];
+  let inExec = false;
+
+  lines.forEach((line, index) => {
+    if (isCommentLine(line) || line.trim() === "") {
+      return;
+    }
+    const content = line.slice(AREA_A_INDEX);
+    if (/\bEXEC\s+(SQL|CICS|DLI)\b/.test(content)) {
+      inExec = true;
+    }
+    if (inExec) {
+      if (/\bEND-EXEC\b/.test(content)) {
+        inExec = false;
+      }
+      return;
+    }
+    // Only a literal closed on the line it opens. One continued across the
+    // margin has no closing delimiter here and the next line's opening one is
+    // not a second literal, so both are left alone rather than guessed at.
+    for (const match of content.matchAll(
+      /"((?:[^"]|"")*)"|'((?:[^']|'')*)'/g,
+    )) {
+      found.push({
+        line: index + 1,
+        delimiter: match[1] === undefined ? "'" : '"',
+        text: match[1] ?? match[2] ?? "",
+      });
+    }
+  });
+
+  const quoted = found.filter((literal) => literal.delimiter === '"').length;
+  if (quoted === 0 || quoted === found.length) {
+    return [];
+  }
+  // The artifact's own convention, read off it rather than assumed: whichever
+  // delimiter more of its literals use.
+  const chosen = quoted * 2 >= found.length ? '"' : "'";
+  const other = chosen === '"' ? "'" : '"';
+
+  return found
+    .filter(
+      (literal) =>
+        literal.delimiter === other && !literal.text.includes(chosen),
+    )
+    .map((literal) => ({
+      file,
+      line: literal.line,
+      rule: "literal-delimiter",
+      message: `${other}${literal.text}${other} is delimited by ${other === '"' ? "a quote" : "an apostrophe"}, and this artifact writes its other literals with ${chosen === '"' ? "a quote" : "an apostrophe"}. One artifact, one delimiter.`,
+      citation: 'LR, "Alphanumeric literals"',
+    }));
 }
 
 /**

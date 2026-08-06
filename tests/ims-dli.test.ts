@@ -128,13 +128,13 @@ describe("the program the region enters", () => {
     expect(text).toContain(
       '05  FILLER               PIC X(8) VALUE "ACCTSEG ".',
     );
-    expect(text).toContain('05  FILLER               PIC X VALUE "(".');
+    expect(text).toContain('05  FILLER               PIC X(1) VALUE "(".');
     expect(text).toContain(
       '05  FILLER               PIC X(8) VALUE "ACCTID  ".',
     );
     expect(text).toContain('05  FILLER               PIC X(2) VALUE " =".');
     expect(text).toContain("05  ACCOUNT-DB-SSA-VALUE PIC X(10).");
-    expect(text).toContain('05  FILLER               PIC X VALUE ")".');
+    expect(text).toContain('05  FILLER               PIC X(1) VALUE ")".');
   });
 
   it("calls DL/I and reads the status back", () => {
@@ -213,7 +213,7 @@ describe("each operation is its own function code", () => {
     expect(text).toContain(
       '05  FILLER               PIC X(8) VALUE "ACCTSEG ".',
     );
-    expect(text).toContain('05  FILLER               PIC X VALUE " ".');
+    expect(text).toContain('05  FILLER               PIC X(1) VALUE " ".');
   });
 });
 

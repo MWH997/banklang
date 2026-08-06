@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { corpus } from "./helpers";
 
 const PREAMBLE = `module Failures;
 
@@ -445,5 +446,44 @@ entry transaction two(request: Request) {
 }`);
 
     expect(ids(result)).toContain("BANK-TXN-010");
+  });
+});
+
+/**
+ * The exit convention, over every example rather than the one written above.
+ *
+ * `PERFORM ... THRU ...-EXIT` and a single terminating paragraph are the whole
+ * of the audit F4 fix, and a fix proved on one program is proved for one
+ * program. Every generated paragraph in the corpus is read here instead.
+ */
+describe("across the corpus", () => {
+  it("ends the program only in BANK-MAIN", () => {
+    for (const { example, cobol } of corpus()) {
+      // A contained program has a BANK-MAIN of its own, and a recursive one
+      // returns through its own exit; both are terminations of that program.
+      const terminators = cobol
+        .split("\n")
+        .filter((line) => /^\s+GOBACK\.?$/.test(line.slice(6)));
+      const mains = cobol.match(/^ {7}BANK-MAIN\.$/gm) ?? [];
+
+      expect(
+        terminators.length,
+        `${example} ends the program ${terminators.length} times for ${mains.length} BANK-MAIN paragraph(s).`,
+      ).toBeLessThanOrEqual(mains.length + 1);
+    }
+  });
+
+  it("performs every routine THRU its exit paragraph", () => {
+    for (const { example, cobol } of corpus()) {
+      const performed = [
+        ...cobol.matchAll(/PERFORM ([A-Z][A-Z0-9-]*) THRU ([A-Z][A-Z0-9-]*)/g),
+      ];
+      for (const [, routine, exit] of performed) {
+        expect(
+          exit,
+          `${example} performs ${routine} THRU ${exit}, which is not its exit paragraph.`,
+        ).toBe(`${routine}-EXIT`);
+      }
+    }
   });
 });

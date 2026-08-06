@@ -664,9 +664,10 @@ changes its line layout.
 
 ### `BANK-GEN-007` transaction missing source map entry
 
-A transaction reached the backend but has no source map entry. `language-spec.md`
-section 10 requires the generated COBOL to expose the transaction boundary in
-the source map.
+A transaction reached the backend but has no source map entry. The generated
+COBOL has to expose the transaction boundary in the source map — see
+[language-reference.md](language-reference.md) for what a transaction is, and
+[verification.md](verification.md) for what the map is checked against.
 
 ## 12a. Test case diagnostics
 
