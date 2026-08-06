@@ -83,12 +83,17 @@ describe("every link in every document", () => {
     const yetToExist = new Set(["RESULTS.md"]);
 
     for (const file of FILES) {
-      // The changelog archive and the audits are records of what was written
-      // at the time, and they name documents later renamed or removed —
-      // `integrations/numeric-semantics.md` became `numeric-model.md` because
-      // the 2026-08-05 audit asked for it. Rewriting either would be rewriting
-      // the history it exists to hold.
-      if (file.startsWith("docs/changelog/") || /audit-\d{4}/.test(file)) {
+      // Two kinds of document name a file that is not there, and are right to.
+      //
+      // An audit is a record of what was written at the time, and it names
+      // documents later renamed or removed — `integrations/numeric-semantics.md`
+      // became `numeric-model.md` because the 2026-08-05 audit asked for it.
+      // Rewriting it would be rewriting the history it exists to hold.
+      //
+      // A ticket names what it exists to have written: `launch-tickets.md` asks
+      // for `docs/for-decision-makers.md`, and the day that resolves is the day
+      // the ticket is done.
+      if (/audit-\d{4}/.test(file) || file === "docs/launch-tickets.md") {
         continue;
       }
       const text = readFileSync(resolve(process.cwd(), file), "utf8");
@@ -177,8 +182,18 @@ describe("the changelog", () => {
     "utf8",
   );
 
+  /**
+   * The 126 KB was first moved to `docs/changelog/before-2026-08-05.md` rather
+   * than fixed, and a reader who clicked found the same wall under a new name.
+   * It is deleted: `git log` holds every entry, which is where a working record
+   * belongs. What the file has to keep doing is say so, rather than starting at
+   * 0.9.0 as though nothing came before it.
+   */
   it("says where the rest is", () => {
-    expect(changelog).toContain("docs/changelog/before-2026-08-05.md");
+    // Wrapping is Prettier's, not the document's: the phrase this looks for
+    // fell across a line break the moment the file was formatted.
+    expect(changelog.replace(/\s+/g, " ")).toContain("in the commit history");
+    expect(changelog).toContain("git log");
   });
 
   /** Keep a Changelog: an Unreleased section, and a date on every version. */

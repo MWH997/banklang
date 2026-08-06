@@ -143,8 +143,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCOUNTF.cbl",
-      "targetStartLine": 134,
-      "targetEndLine": 142,
+      "targetStartLine": 130,
+      "targetEndLine": 138,
       "category": "function",
       "symbol": "isOverdrawn"
     },
@@ -159,8 +159,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCOUNTF.cbl",
-      "targetStartLine": 143,
-      "targetEndLine": 240,
+      "targetStartLine": 139,
+      "targetEndLine": 236,
       "category": "transaction",
       "symbol": "postAccounts"
     }

@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 160,
-      "targetEndLine": 169,
+      "targetStartLine": 156,
+      "targetEndLine": 165,
       "category": "function",
       "symbol": "isStatementable"
     },
@@ -335,8 +335,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 170,
-      "targetEndLine": 182,
+      "targetStartLine": 166,
+      "targetEndLine": 178,
       "category": "function",
       "symbol": "suppressionReason"
     },
@@ -351,8 +351,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 183,
-      "targetEndLine": 359,
+      "targetStartLine": 179,
+      "targetEndLine": 355,
       "category": "transaction",
       "symbol": "generateStatement"
     }

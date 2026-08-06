@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
-      "targetStartLine": 62,
-      "targetEndLine": 74,
+      "targetStartLine": 58,
+      "targetEndLine": 70,
       "category": "function",
       "symbol": "rateFor"
     },
@@ -111,8 +111,8 @@
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
-      "targetStartLine": 75,
-      "targetEndLine": 109,
+      "targetStartLine": 71,
+      "targetEndLine": 105,
       "category": "function",
       "symbol": "interestOn"
     },
@@ -127,8 +127,8 @@
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
-      "targetStartLine": 110,
-      "targetEndLine": 125,
+      "targetStartLine": 106,
+      "targetEndLine": 121,
       "category": "transaction",
       "symbol": "calculateInterest"
     }

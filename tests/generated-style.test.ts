@@ -441,4 +441,34 @@ describe("across the corpus", () => {
       ).toBe(begins);
     }
   });
+
+  /**
+   * A runtime interface group is declared only by a program that calls it.
+   *
+   * The conformance linter cannot decide this one from the text: a level-01
+   * group may be the program's own data model, and every record a BankTS
+   * module declares becomes both working storage and a copybook, so an
+   * unreferenced group is not by itself wrong. Here the compiler's own output
+   * is in hand, so the question can be asked exactly — the group is thirty-
+   * eight bytes of ledger storage, and four examples carried it while calling
+   * nothing but the audit trail.
+   */
+  it("declares a runtime interface only where it calls the module", () => {
+    const interfaces = [
+      { group: "BANK-LEDGER-INTERFACE", module: "BANKLEDG" },
+      { group: "BANK-AUDIT-INTERFACE", module: "BANKAUDT" },
+    ];
+
+    for (const { example, cobol } of corpus()) {
+      for (const { group, module } of interfaces) {
+        if (!cobol.includes(`01  ${group}.`)) {
+          continue;
+        }
+        expect(
+          cobol,
+          `${example} declares ${group} and never calls ${module}.`,
+        ).toContain(`CALL "${module}"`);
+      }
+    }
+  });
 });

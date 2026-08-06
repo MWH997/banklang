@@ -159,8 +159,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTENQ.cbl",
-      "targetStartLine": 76,
-      "targetEndLine": 115,
+      "targetStartLine": 72,
+      "targetEndLine": 111,
       "category": "transaction",
       "symbol": "enquireAccount"
     }

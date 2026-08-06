@@ -68,7 +68,7 @@ failed owes the region is an abend.
 
 |                                                | Original | Regenerated |
 | ---------------------------------------------- | -------- | ----------- |
-| Lines of code, comments and blanks excluded    | 43       | 86          |
+| Lines of code, comments and blanks excluded    | 43       | 82          |
 | `GO TO` a paragraph that is not an exit        | 0        | 0           |
 | `GO TO` in total, single-exit returns included | 0        | 0           |
 | File operations whose result is tested         | 0 of 0   | 0 of 0      |

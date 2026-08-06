@@ -9,12 +9,33 @@ links to rather than here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and is pre-1.0, so
 the language and the CLI may still change between minor versions.
 
-Everything before 0.9.0 is in
-[docs/changelog/before-2026-08-05.md](docs/changelog/before-2026-08-05.md).
+0.9.0 is the first versioned release. Everything before it is in the commit
+history, which is where a working record belongs: `git log --reverse` reads it
+in order.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- Declare a runtime interface group only where the program calls its module, so
+  a program that audits carries no ledger storage.
+- Declare the bounds status and copy index only where a check or a table copy is
+  generated, rather than wherever a record declares an array.
+
+### Added
+
+- Add the `unreferenced-item` conformance rule, refusing an elementary
+  working-storage item nothing names —
+  [target conformance](docs/target-conformance.md).
+- Add `pnpm test:mutation:emitter`, running Stryker over the code that decides
+  what emitted text looks like — [verification](docs/verification.md).
+- Add [launch-tickets.md](docs/launch-tickets.md), scoping the site at
+  `banklang.mwhassan.com` and everything else before the repository is public.
+
+### Removed
+
+- Remove the pre-0.9.0 development log. `git log --reverse` is where a working
+  record belongs.
 
 ## [0.9.0] — 2026-08-06
 

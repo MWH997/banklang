@@ -1241,10 +1241,12 @@ export function emitCobol(
   if (programUsesNow(program)) {
     addLine(`       01  ${CURRENT_DATE_FIELD.padEnd(20)} PIC X(21).`);
   }
-  if (programUsesArrays(program)) {
+  if (programNeedsBoundsStatus(program)) {
     addLine(
       `       01  ${BOUNDS_STATUS_FIELD.padEnd(20)} PIC X(2) VALUE "00".`,
     );
+  }
+  if (programNeedsCopyIndex(program)) {
     addLine(`       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP.`);
   }
   for (const line of FAILURE_REGISTERS) {
@@ -1550,8 +1552,15 @@ export function emitCobol(
     declaredIndexes.add(name);
     addLine(`       01  ${name.padEnd(20)} PIC 9(9) COMP.`);
   }
-  if (program.transactions.length > 0) {
-    emitLedgerInterfaceStorage(addLine);
+  const usedInterfaces = new Set<string>();
+  if (programCallsLedger(program)) {
+    usedInterfaces.add(LEDGER_INTERFACE_GROUP);
+  }
+  if (programCallsAudit(program)) {
+    usedInterfaces.add(AUDIT_INTERFACE_GROUP);
+  }
+  if (usedInterfaces.size > 0) {
+    emitLedgerInterfaceStorage(addLine, usedInterfaces);
   }
 
   // A record parameter is a reference cell rather than storage of its own. The
@@ -2978,8 +2987,15 @@ export const RUNTIME_INTERFACES: readonly RuntimeInterface[] = [
   },
 ];
 
-function emitLedgerInterfaceStorage(addLine: (line?: string) => void): void {
+function emitLedgerInterfaceStorage(
+  addLine: (line?: string) => void,
+  /** The groups this program passes on a CALL. Anything else is dead storage. */
+  used: ReadonlySet<string>,
+): void {
   for (const runtimeInterface of RUNTIME_INTERFACES) {
+    if (!used.has(runtimeInterface.group)) {
+      continue;
+    }
     addLine(`       01  ${runtimeInterface.group}.`);
     for (const field of runtimeInterface.fields) {
       addLine(`           05  ${field.name.padEnd(24)} ${field.picture}.`);
@@ -7336,6 +7352,117 @@ function programUsesArrays(program: IRProgram): boolean {
   return (
     program.records.some((record) => hasArray(record.fields)) ||
     program.files.some((file) => hasArray(file.record.fields))
+  );
+}
+
+/**
+ * The blocks a statement carries, found by shape rather than by kind.
+ *
+ * Six walkers in this file each enumerate the block-carrying kinds, and every
+ * one of them once missed `QueueStatement` — a transaction whose only audit
+ * event was inside an MQ get was reported as having none. Reading the
+ * block-shaped properties cannot miss a kind that did not exist when it was
+ * written, which is why the typechecker does it this way too. New code uses
+ * this; the six are worth migrating.
+ */
+function nestedBlocksOf(statement: IRStatement): IRBlock[] {
+  const candidates = [
+    (statement as { body?: IRBlock }).body,
+    (statement as { thenBranch?: IRBlock }).thenBranch,
+    (statement as { elseBranch?: IRBlock | null }).elseBranch,
+    (statement as { otherwise?: IRBlock | null }).otherwise,
+    (statement as { notFound?: IRBlock }).notFound,
+    (statement as { resumed?: IRBlock }).resumed,
+    (statement as { fresh?: IRBlock | null }).fresh,
+    (statement as { handler?: IRBlock | null }).handler,
+  ];
+  const cases = (statement as { cases?: { body: IRBlock }[] }).cases ?? [];
+  return [...candidates, ...cases.map((entry) => entry.body)].filter(
+    (block): block is IRBlock => Boolean(block),
+  );
+}
+
+/** Every statement in the program, however deeply nested, in no order. */
+function everyStatement(program: IRProgram): IRStatement[] {
+  const found: IRStatement[] = [];
+  const walk = (block: IRBlock): void => {
+    for (const statement of block.statements) {
+      found.push(statement);
+      for (const nested of nestedBlocksOf(statement)) {
+        walk(nested);
+      }
+    }
+  };
+  for (const fn of program.functions) {
+    walk(fn.body);
+  }
+  for (const transaction of program.transactions) {
+    walk(transaction.body);
+    if (transaction.failureHandler) {
+      walk(transaction.failureHandler);
+    }
+  }
+  for (const handler of program.fileErrorHandlers) {
+    walk(handler.body);
+  }
+  return found;
+}
+
+/**
+ * True when the program actually posts to the ledger, or actually audits.
+ *
+ * Both interface groups used to be emitted for any program with a transaction,
+ * so a program that only audits declared thirty-eight bytes of ledger storage
+ * it never names, and four of the checked-in examples carried it. Dead storage
+ * in generated code is what a reviewer points at first.
+ */
+function programCallsLedger(program: IRProgram): boolean {
+  return everyStatement(program).some(
+    (statement) => statement.kind === "LedgerStatement",
+  );
+}
+
+function programCallsAudit(program: IRProgram): boolean {
+  return everyStatement(program).some(
+    (statement) => statement.kind === "AuditStatement",
+  );
+}
+
+/**
+ * True when a bounds check is actually generated.
+ *
+ * Declaring an array is not using one. `amortisation-schedule` has a table it
+ * only ever reads at a literal subscript, and carried a status field nothing
+ * wrote. Asked through the same function the emitter guards with, so the
+ * declaration and the use cannot disagree.
+ */
+function programNeedsBoundsStatus(program: IRProgram): boolean {
+  return everyStatement(program).some(
+    (statement) => collectStatementBoundsChecks(statement).length > 0,
+  );
+}
+
+/**
+ * True when a table is copied element by element.
+ *
+ * Which happens in two places: a `read into` or `write from` whose record holds
+ * a table, and a sort's record mapping. A program with a table it never moves
+ * through either needs no index.
+ */
+function programNeedsCopyIndex(program: IRProgram): boolean {
+  const hasArray = (fields: IRRecord["fields"]): boolean =>
+    fields.some(
+      (field) =>
+        field.type.kind === "array" ||
+        (field.type.kind === "record" && hasArray(field.type.fields)),
+    );
+  if (program.files.some((file) => hasArray(file.record.fields))) {
+    return true;
+  }
+  return (
+    everyStatement(program).some(
+      (statement) => statement.kind === "SortStatement",
+    ) && program.records.some((record) => hasArray(record.fields))
   );
 }
 

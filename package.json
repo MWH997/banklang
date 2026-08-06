@@ -25,6 +25,7 @@
     "playground:preview": "pnpm --filter @banklang/playground preview",
     "test": "vitest run",
     "test:mutation": "stryker run",
+    "test:mutation:emitter": "stryker run stryker.emitter.config.json",
     "test:determinism": "vitest run tests/determinism.test.ts",
     "test:gnucobol": "tsx tools/gnucobol-validation.ts",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
