@@ -59,6 +59,19 @@ sounding impressive:
   the same amount are reported as unbalanced.
 - **The VS Code extension is unpublished.** It builds and typechecks in CI, but
   it has not been through marketplace review.
+- **No zUnit test generation.** `docs/integrations/zunit-integration.md` is a
+  roadmap note, and it is still only that. zUnit's test case is an XML
+  configuration plus a generated COBOL driver, and IBM's schema for it is not in
+  `vendor-docs/`. Writing one from the shape of the examples in a blog post is
+  exactly how `ROUNDED MODE IS NEAREST-EVEN` got emitted for two years, so it is
+  not written at all.
+- **Db2 is shallow in five specific ways**: no multi-row `FETCH`, no `WITH HOLD`
+  cursor, no isolation level on a statement, no savepoints, and no `LOCK TABLE`.
+  A batch that commits inside a cursor loop needs `WITH HOLD` and cannot have
+  it, which is the one of the five that bites first.
+- **`bankc analyse` reads rather than compiles.** It is a count of what is in
+  the source, not an estimate of what a conversion costs, and
+  [migration-analysis.md](migration-analysis.md) lists what it cannot see.
 
 ## The two lists that matter more than this page
 

@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/migration-analysis",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

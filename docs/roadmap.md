@@ -100,12 +100,33 @@ Theme: legacy-estate relevance.
 
 Deliverables:
 
-- COBOL inventory tools
-- copybook dependency graph
-- SQL extractor
-- CICS extractor
-- paragraph graph
-- skeleton migration output
+- COBOL inventory tools — **done**, `bankc analyse`
+- SQL extractor — **done**
+- CICS extractor — **done**
+- paragraph graph — **done**, as Mermaid
+- copybook dependency graph — copybooks are named, not followed
+- skeleton migration output — not started, and the least certain of the six: a
+  skeleton that is wrong in a way a reader trusts is worse than none
+
+See [migration-analysis.md](migration-analysis.md).
+
+## v0.9 — The depth each subsystem is missing
+
+Theme: the second program of each kind, rather than the first.
+
+Db2, in the order a batch meets them:
+
+- `WITH HOLD` cursors, so a loop can commit without losing its position
+- multi-row `FETCH`
+- isolation level on a statement
+- savepoints
+- `LOCK TABLE`
+
+zUnit test generation. Blocked, and worth saying why: the test case is an XML
+configuration plus a generated COBOL driver, and IBM's schema for it is not in
+`vendor-docs/`. Inventing one from the shape of a published example is how this
+project emitted a rounding phrase Enterprise COBOL has never had, so it stays
+unwritten until the schema is in hand.
 
 ## v1.0 — Serious open-source release
 
