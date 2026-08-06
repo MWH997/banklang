@@ -1,7 +1,14 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
 import { compile } from "../packages/compiler/src/index";
+import { emitZunit } from "../packages/zunit/src/index";
 import { renderCopybook } from "../packages/cobol-backend/src/index";
 import {
   copybookMemberName,
@@ -30,6 +37,17 @@ interface Member {
   content: string;
   /** The record a copybook holds, so a name clash can say which two clashed. */
   record?: string;
+  /**
+   * The library the member goes to, for the folders that have one per program.
+   *
+   * The examples are independent programs rather than one application, and
+   * seven of them declare an `AccountRecord`, a `TransferRequest` or a
+   * `PostingLine` of their own with different fields. One flat copybook library
+   * would ship one program's record under another program's name — so each
+   * program's copybooks go to a library of its own, and the clash that is still
+   * an error is two records inside one program.
+   */
+  library?: string;
 }
 
 const EXAMPLES = exampleProjects().map((path) =>
@@ -41,9 +59,22 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   examples: string[];
   skipped: { example: string; reason: string }[];
 } {
+  // Removed rather than overwritten. A member that was renamed leaves the old
+  // one behind, and a bundle holding both is a library where two members claim
+  // to be the same program — which is exactly the failure the collision check
+  // below exists to prevent, arriving by another route.
+  rmSync(outputRoot, { recursive: true, force: true });
+
   const cobol: Member[] = [];
+  /** Program members only: a test case driver is in cobol/ and is not one. */
+  const programs: string[] = [];
   const copybooks: Member[] = [];
   const jcl: Member[] = [];
+  // A generated zUnit case: the driver goes to the COBOL library beside the
+  // program it tests, and the configuration to a library of its own. It is the
+  // one part of this bundle nothing here has ever run — see divergence D20 —
+  // so a run of it is worth more than a run of anything else in the folder.
+  const bzucfg: Member[] = [];
   const skipped: { example: string; reason: string }[] = [];
 
   for (const example of EXAMPLES) {
@@ -68,6 +99,7 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
       .slice(0, 8);
 
     cobol.push({ name: member, content: result.cobol });
+    programs.push(member);
     if (result.jcl) {
       jcl.push({ name: member, content: result.jcl });
     }
@@ -76,7 +108,15 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
         name: copybookMemberName(copybook.record),
         content: copybook.content,
         record: copybook.record,
+        library: member,
       });
+    }
+
+    if (result.program.tests.length > 0) {
+      const zunit = emitZunit(result.program);
+      cobol.push({ name: zunit.moduleName, content: zunit.driver });
+      jcl.push({ name: zunit.moduleName, content: zunit.jcl });
+      bzucfg.push({ name: zunit.moduleName, content: zunit.configuration });
     }
   }
 
@@ -90,17 +130,20 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   const write = (folder: string, members: Member[]): void => {
     const written = new Map<string, Member>();
     for (const member of members) {
-      const earlier = written.get(member.name);
+      const key = member.library
+        ? `${member.library}/${member.name}`
+        : member.name;
+      const earlier = written.get(key);
       if (earlier) {
         if (earlier.content !== member.content) {
           collisions.push(
-            `${folder}/${member.name}: ${earlier.record ?? earlier.name} and ${member.record ?? member.name}`,
+            `${folder}/${key}: ${earlier.record ?? earlier.name} and ${member.record ?? member.name}`,
           );
         }
         continue;
       }
-      written.set(member.name, member);
-      const path = join(outputRoot, folder, `${member.name}.txt`);
+      written.set(key, member);
+      const path = join(outputRoot, folder, `${key}.txt`);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, member.content, "utf8");
     }
@@ -114,6 +157,7 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   write("cobol", cobol);
   write("copybooks", copybooks);
   write("jcl", jcl);
+  write("bzucfg", bzucfg);
 
   if (collisions.length > 0) {
     throw new Error(
@@ -131,13 +175,13 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   mkdirSync(dirname(manifestPath), { recursive: true });
   writeFileSync(
     manifestPath,
-    renderManifest(cobol, copybooks, jcl, skipped),
+    renderManifest(cobol, copybooks, jcl, bzucfg, skipped),
     "utf8",
   );
 
   return {
-    members: cobol.length + copybooks.length + jcl.length,
-    examples: cobol.map((member) => member.name),
+    members: cobol.length + copybooks.length + jcl.length + bzucfg.length,
+    examples: programs,
     skipped,
   };
 }
@@ -146,6 +190,7 @@ function renderManifest(
   cobol: Member[],
   copybooks: Member[],
   jcl: Member[],
+  bzucfg: Member[],
   skipped: { example: string; reason: string }[],
 ): string {
   const lines = [
@@ -154,8 +199,9 @@ function renderManifest(
     "Upload each folder to a PDS with the matching name:",
     "",
     "  cobol/      -> <HLQ>.BANKLANG.COBOL    (LRECL 80, RECFM FB)",
-    "  copybooks/  -> <HLQ>.BANKLANG.COPYLIB  (LRECL 80, RECFM FB)",
+    "  copybooks/<program>/ -> <HLQ>.BANKLANG.<program>.COPYLIB",
     "  jcl/        -> <HLQ>.BANKLANG.JCL      (LRECL 80, RECFM FB)",
+    "  bzucfg/     -> <HLQ>.ZUNIT.BZUCFG      (LRECL 80, RECFM FB)",
     "",
     "The COBOL is fixed reference format: sequence area 1-6 blank, the",
     "indicator in 7, Area A from 8, and nothing past column 72. Compile it",
@@ -168,17 +214,46 @@ function renderManifest(
     "so the bundle refuses to build rather than ship one under the other's",
     "name.",
     "",
+    "Each program's copybooks go to a library of its own. These examples are",
+    "independent programs rather than one application, and several declare an",
+    "`AccountRecord` or a `PostingLine` of their own with different fields; one",
+    "flat library would ship one program's record under another's name. A real",
+    "estate shares a library, and there the eight-character rule is what stops",
+    "the same thing happening.",
+    "",
     "Members",
     "-------",
   ];
+
+  if (bzucfg.length > 0) {
+    lines.push(
+      "",
+      "zUnit test cases",
+      "----------------",
+      "",
+      "A member of cobol/ named T<program> is a generated zUnit test case, and",
+      "bzucfg/ holds its configuration. Its job compiles the driver and runs it",
+      "through EQAPPLAY. The program under test has to be compiled with TEST",
+      "and be in the same load library: that is what the runner intercepts its",
+      "calls through, and a program compiled without it calls the real",
+      "BANKLEDG.",
+      "",
+      "Nothing here has ever been run. Two values in each configuration are",
+      "inferred rather than observed — divergences D20 and D21 — and one real",
+      "run settles both.",
+    );
+  }
 
   for (const [folder, members] of [
     ["cobol", cobol],
     ["copybooks", copybooks],
     ["jcl", jcl],
+    ["bzucfg", bzucfg],
   ] as const) {
     for (const member of members) {
-      lines.push(`  ${folder}/${member.name}`);
+      lines.push(
+        `  ${folder}/${member.library ? `${member.library}/` : ""}${member.name}`,
+      );
     }
   }
 

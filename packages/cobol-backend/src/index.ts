@@ -6453,7 +6453,7 @@ function collectStatementBoundsChecks(
   const checks = collectBoundsChecks(statement);
   const seen = new Set<string>();
   return checks.filter((check) => {
-    const key = `${check.index} ${check.length}`;
+    const key = `${check.index}\u0000${check.length}`;
     if (seen.has(key)) {
       return false;
     }

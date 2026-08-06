@@ -99,6 +99,12 @@ end of.
 - **What a test may say is decided by what a driver can see.** It runs in its own program, so the program under test's `WORKING-STORAGE` is not reachable: `given` is the PARM the step is started with and `expect` is the calls the program makes, in order, and there is nothing else. `BANK-TEST-001` to `BANK-TEST-007` refuse the tests that would have looked like they asserted something.
 - The generated driver compiles under GnuCOBOL in both dialects — nested sibling programs, `ENTRY` statements, procedure pointers and all. That evidence is narrower than the rest of this repository's compiled grade and says so: `COPY EQAITERC` resolves to a stand-in declaring the two fields the driver names, because IBM's copybook is not here, and **no generated case has been run**.
 
+### Fixed — a documented command that could not run
+
+- **`pnpm zos:kit` refused to build a bundle, every time, for months.** The upload bundle is how a generated program reaches a mainframe, and the tool that writes it threw: seven records — an `AccountRecord` here, a `TransferRequest` there — are declared by two examples each with different fields, and one flat copybook library would ship one program's record under another program's name. The refusal was right and the model was wrong. These examples are independent programs rather than one application, so each program's copybooks now go to a library of its own, and the clash that is still an error is two records inside one program. Nothing had noticed because nothing tested it; `tests/zos-kit.test.ts` does now.
+- The kit clears its output tree before writing it. A member that was renamed left the old one behind, which is the same defect the collision check exists to prevent, arriving by another route.
+- The bundle carries the generated zUnit case and its configuration, and `zos/README.md` says what running it settles: D21 outright, and the only thing that can be learnt about D20.
+
 ### Documentation
 
 - Ten new pages, and the README split. `docs/getting-started.md` is the read-this-first path; `docs/for-mainframe-engineers.md` reads the generated COBOL construct by construct with the person who has to accept it; `docs/status-and-limits.md` promotes the honest-limits section out of the bottom of the README; and `docs/divergences.md` promotes the GnuCOBOL-against-IBM list out of `zos/README.md` into a numbered, citable one. `generated-code-standards.md`, `target-conformance.md`, `error-handling.md`, `numeric-model.md`, `jcl-model.md`, `security-and-data.md` and `comparison.md` are the rest.
