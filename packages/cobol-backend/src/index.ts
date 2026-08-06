@@ -51,6 +51,22 @@ import type {
   IRProgramCallStatement,
   IRTemporalCallExpression,
 } from "../../ir/src/index";
+/*
+ * The one enumeration of which statements carry blocks.
+ *
+ * Six walkers in this file each had their own, and they disagreed: on
+ * 2026-08-07 `collectLoops` did not list `SwitchStatement` while
+ * `planStatementNames` did, so a `while` loop inside a `switch` branch was
+ * given a counter name and never a counter declaration. The emitter then
+ * referenced a field in no `WORKING-STORAGE` entry and `cobc` answered
+ * `'CLASSIFY-LOOP-1' is not defined` — a program this compiler called clean
+ * that no COBOL compiler will accept.
+ *
+ * `childBlocks` is a `switch` over every statement kind with no `default`, so a
+ * kind added with a block and forgotten here is a type error rather than a
+ * silent omission. That is the property none of the six had.
+ */
+import { childBlocks } from "../../ir/src/index";
 import {
   copybookMemberName,
   decimalPicture,
@@ -2854,26 +2870,8 @@ function collectCicsRespNames(block: IRBlock): string[] {
     if (statement.kind === "CicsStatement" && statement.respName) {
       names.push(statement.respName);
     }
-    if (statement.kind === "IfStatement") {
-      names.push(...collectCicsRespNames(statement.thenBranch));
-      if (statement.elseBranch) {
-        names.push(...collectCicsRespNames(statement.elseBranch));
-      }
-    }
-    if (
-      statement.kind === "WhileStatement" ||
-      statement.kind === "ForEachStatement" ||
-      statement.kind === "CursorLoopStatement"
-    ) {
-      names.push(...collectCicsRespNames(statement.body));
-    }
-    if (statement.kind === "SwitchStatement") {
-      for (const branch of statement.cases) {
-        names.push(...collectCicsRespNames(branch.body));
-      }
-      if (statement.otherwise) {
-        names.push(...collectCicsRespNames(statement.otherwise));
-      }
+    for (const nested of childBlocks(statement)) {
+      names.push(...collectCicsRespNames(nested));
     }
   }
   return names;
@@ -6337,33 +6335,8 @@ function planStatementNames(program: IRProgram): Map<object, string> {
       if (statement.kind === "SortStatement") {
         names.set(statement, cobolWord(routine, "SORT", String(next("sort"))));
       }
-      if (statement.kind === "SortStatement") {
-        for (const procedure of [
-          statement.inputProcedure,
-          statement.outputProcedure,
-        ]) {
-          if (procedure) {
-            walk(procedure.body, routine, counts);
-          }
-        }
-      }
-      for (const nested of [
-        (statement as { body?: IRBlock }).body,
-        (statement as { notFound?: IRBlock }).notFound,
-        (statement as { thenBranch?: IRBlock }).thenBranch,
-        (statement as { elseBranch?: IRBlock | null }).elseBranch,
-      ]) {
-        if (nested) {
-          walk(nested, routine, counts);
-        }
-      }
-      if (statement.kind === "SwitchStatement") {
-        for (const branch of statement.cases) {
-          walk(branch.body, routine, counts);
-        }
-        if (statement.otherwise) {
-          walk(statement.otherwise, routine, counts);
-        }
+      for (const nested of childBlocks(statement)) {
+        walk(nested, routine, counts);
       }
     }
   };
@@ -7325,40 +7298,13 @@ function programUsesNow(program: IRProgram): boolean {
   );
 }
 
-/**
- * The blocks a statement carries, found by shape rather than by kind.
- *
- * Six walkers in this file each enumerate the block-carrying kinds, and every
- * one of them once missed `QueueStatement` — a transaction whose only audit
- * event was inside an MQ get was reported as having none. Reading the
- * block-shaped properties cannot miss a kind that did not exist when it was
- * written, which is why the typechecker does it this way too. New code uses
- * this; the six are worth migrating.
- */
-function nestedBlocksOf(statement: IRStatement): IRBlock[] {
-  const candidates = [
-    (statement as { body?: IRBlock }).body,
-    (statement as { thenBranch?: IRBlock }).thenBranch,
-    (statement as { elseBranch?: IRBlock | null }).elseBranch,
-    (statement as { otherwise?: IRBlock | null }).otherwise,
-    (statement as { notFound?: IRBlock }).notFound,
-    (statement as { resumed?: IRBlock }).resumed,
-    (statement as { fresh?: IRBlock | null }).fresh,
-    (statement as { handler?: IRBlock | null }).handler,
-  ];
-  const cases = (statement as { cases?: { body: IRBlock }[] }).cases ?? [];
-  return [...candidates, ...cases.map((entry) => entry.body)].filter(
-    (block): block is IRBlock => Boolean(block),
-  );
-}
-
 /** Every statement in the program, however deeply nested, in no order. */
 function everyStatement(program: IRProgram): IRStatement[] {
   const found: IRStatement[] = [];
   const walk = (block: IRBlock): void => {
     for (const statement of block.statements) {
       found.push(statement);
-      for (const nested of nestedBlocksOf(statement)) {
+      for (const nested of childBlocks(statement)) {
         walk(nested);
       }
     }
@@ -7441,27 +7387,9 @@ function collectForEachIndexes(block: IRBlock): IRForEachStatement[] {
   for (const statement of block.statements) {
     if (statement.kind === "ForEachStatement") {
       found.push(statement);
-      found.push(...collectForEachIndexes(statement.body));
     }
-    if (
-      statement.kind === "WhileStatement" ||
-      statement.kind === "CursorLoopStatement"
-    ) {
-      found.push(...collectForEachIndexes(statement.body));
-    }
-    if (statement.kind === "IfStatement") {
-      found.push(...collectForEachIndexes(statement.thenBranch));
-      if (statement.elseBranch) {
-        found.push(...collectForEachIndexes(statement.elseBranch));
-      }
-    }
-    if (statement.kind === "SwitchStatement") {
-      for (const branch of statement.cases) {
-        found.push(...collectForEachIndexes(branch.body));
-      }
-      if (statement.otherwise) {
-        found.push(...collectForEachIndexes(statement.otherwise));
-      }
+    for (const nested of childBlocks(statement)) {
+      found.push(...collectForEachIndexes(nested));
     }
   }
   return found;
@@ -7472,19 +7400,9 @@ function collectLoops(block: IRBlock): IRWhileStatement[] {
   for (const statement of block.statements) {
     if (statement.kind === "WhileStatement") {
       loops.push(statement);
-      loops.push(...collectLoops(statement.body));
     }
-    if (
-      statement.kind === "ForEachStatement" ||
-      statement.kind === "CursorLoopStatement"
-    ) {
-      loops.push(...collectLoops(statement.body));
-    }
-    if (statement.kind === "IfStatement") {
-      loops.push(...collectLoops(statement.thenBranch));
-      if (statement.elseBranch) {
-        loops.push(...collectLoops(statement.elseBranch));
-      }
+    for (const nested of childBlocks(statement)) {
+      loops.push(...collectLoops(nested));
     }
   }
   return loops;
@@ -8612,34 +8530,12 @@ function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
 
   const visit = (current: IRBlock): void => {
     for (const statement of current.statements) {
-      switch (statement.kind) {
-        case "LetStatement":
-          if (!seen.has(statement.name)) {
-            seen.add(statement.name);
-            locals.push(statement);
-          }
-          break;
-        case "IfStatement":
-          visit(statement.thenBranch);
-          if (statement.elseBranch) {
-            visit(statement.elseBranch);
-          }
-          break;
-        case "WhileStatement":
-        case "ForEachStatement":
-        case "CursorLoopStatement":
-          visit(statement.body);
-          break;
-        case "SwitchStatement":
-          for (const branch of statement.cases) {
-            visit(branch.body);
-          }
-          if (statement.otherwise) {
-            visit(statement.otherwise);
-          }
-          break;
-        default:
-          break;
+      if (statement.kind === "LetStatement" && !seen.has(statement.name)) {
+        seen.add(statement.name);
+        locals.push(statement);
+      }
+      for (const nested of childBlocks(statement)) {
+        visit(nested);
       }
     }
   };

@@ -801,6 +801,81 @@ export type StatementNode =
   | SearchStatementNode
   | RaiseStatementNode;
 
+/**
+ * Every block nested inside one statement.
+ *
+ * The source-level twin of the IR's `childBlocks`, and it exists for the same
+ * reason. The typechecker had its own version that read a fixed list of
+ * property names, and that list was missing `otherwise` — a `switch`'s `else`
+ * branch — along with sort procedures and the `on error` blocks. Two checks
+ * walk with it, and both were wrong in the quiet direction: a `release` in a
+ * `switch` else branch was reported as missing, and a `rewrite` in one was
+ * never checked for the read that has to precede it (`BANK-FILE-010`), so a
+ * program with a real defect passed.
+ *
+ * A `switch` over every kind with no `default`, so a statement added with a
+ * block and forgotten here is a type error rather than a check that silently
+ * stops covering it. The same defect in the backend emitted COBOL that
+ * referenced an undeclared field; see `childBlocks` in the IR package.
+ */
+export function childBlocksOf(statement: StatementNode): BlockNode[] {
+  switch (statement.kind) {
+    case "IfStatement":
+      return [
+        statement.thenBranch,
+        ...(statement.elseBranch ? [statement.elseBranch] : []),
+      ];
+    case "WhileStatement":
+    case "ForEachStatement":
+    case "CursorLoopStatement":
+      return [statement.body];
+    case "SwitchStatement":
+      return [
+        ...statement.cases.map((entry) => entry.body),
+        ...(statement.otherwise ? [statement.otherwise] : []),
+      ];
+    case "SearchStatement":
+      return [statement.body, statement.notFound];
+    case "RestartStatement":
+      return [statement.resumed, ...(statement.fresh ? [statement.fresh] : [])];
+    case "QueueStatement":
+      return [
+        ...(statement.body ? [statement.body] : []),
+        ...(statement.notFound ? [statement.notFound] : []),
+      ];
+    case "SortStatement":
+      return [
+        ...(statement.inputProcedure ? [statement.inputProcedure.body] : []),
+        ...(statement.outputProcedure ? [statement.outputProcedure.body] : []),
+      ];
+    case "FileStatement":
+      return statement.atEndOfPage ? [statement.atEndOfPage] : [];
+    case "SerializeStatement":
+    case "XmlParseStatement":
+    case "ProgramCallStatement":
+      return statement.onError ? [statement.onError] : [];
+    case "LetStatement":
+    case "ReturnStatement":
+    case "LedgerStatement":
+    case "AuditStatement":
+    case "AssignStatement":
+    case "ExpressionStatement":
+    case "SqlStatement":
+    case "CicsStatement":
+    case "UnitOfWorkStatement":
+    case "ReturnCodeStatement":
+    case "ConsoleStatement":
+    case "ResetStatement":
+    case "SplitStatement":
+    case "ReportStatement":
+    case "DliStatement":
+    case "ReleaseStatement":
+    case "CheckpointStatement":
+    case "RaiseStatement":
+      return [];
+  }
+}
+
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
   expression: ExpressionNode;
