@@ -12,9 +12,14 @@ title: "BankLang: a deterministic compiler from BankTS to IBM Enterprise COBOL"
 message: "If you refer to this software, please cite it using these metadata."
 type: software
 authors:
+  # `orcid` has to be the full https://orcid.org/… form. GitHub and Zenodo match
+  # it against that exact pattern, so a bare identifier or a `www.` host is
+  # dropped silently rather than rejected.
   - family-names: Hassan
+    given-names: Md Wahid
     alias: MWH997
     email: mwh007@outlook.com
+    orcid: "https://orcid.org/0009-0001-8609-8322"
 repository-code: "https://github.com/MWH997/banklang"
 url: "https://banklang.mwhassan.com"
 abstract: >-

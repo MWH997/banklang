@@ -398,4 +398,22 @@ describe("the citation file", () => {
     // 1.2.0 is what GitHub and Zenodo parse; an older one is read differently.
     expect(field("cff-version")).toBe("1.2.0");
   });
+
+  /**
+   * The one field here that fails silently.
+   *
+   * A version or a licence that drifts is caught above by comparing it against
+   * the file it duplicates. An ORCID has nothing to compare against — it is
+   * only ever right or wrong — and the schema matches it against
+   * `https://orcid.org/` exactly. A bare identifier, or the `www.` host that
+   * orcid.org itself redirects from, is dropped rather than reported: the
+   * citation renders, the author's identifier is simply not in it.
+   */
+  it("gives the author's ORCID in the form the schema matches", () => {
+    const orcid = /orcid:\s*["']?([^"'\s]+)/.exec(citation)?.[1];
+    expect(orcid, "no ORCID in CITATION.cff").toBeDefined();
+    expect(orcid).toMatch(
+      /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/,
+    );
+  });
 });
