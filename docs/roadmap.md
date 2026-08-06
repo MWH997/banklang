@@ -123,11 +123,12 @@ Db2, in the order a batch meets them:
 - ~~`LOCK TABLE`~~ — the same
 - scrollable cursors, and `GET DIAGNOSTICS`
 
-zUnit test generation. Blocked, and worth saying why: the test case is an XML
-configuration plus a generated COBOL driver, and IBM's schema for it is not in
-`vendor-docs/`. Inventing one from the shape of a published example is how this
-project emitted a rounding phrase Enterprise COBOL has never had, so it stays
-unwritten until the schema is in hand.
+zUnit test generation. Blocked, and researched rather than assumed: see
+[integrations/zunit-integration.md](integrations/zunit-integration.md), which
+records the three artifacts a test case is, the DDs its runner allocates, the
+fragment of the `.bzucfg` that is known, and the four things that would have to
+be in hand before a generator could be written. Inventing the rest is how this
+project emitted a rounding phrase Enterprise COBOL has never had.
 
 ## v1.0 — Serious open-source release
 
