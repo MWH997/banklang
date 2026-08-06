@@ -57,7 +57,42 @@ end of.
 
 - **`runtimeOptions`** in `banklang.json`, written onto the job's `CEEOPTS` DD, one card each. A long-running batch's heap and stack depend on the region and the data, so the compiler provides the place rather than the numbers.
 
+### Added — examples, a job, and conversions
+
+- **Nine examples** the audit named: `parm-driven-batch`, `high-volume-master`, `rounding-conformance`, `failed-open`, `full-disk`, `deadlock-retry`, `vsam-browse`, `mq-request-reply`, `report-with-controls`. Nothing showed scale, nothing showed failure, and nothing showed a night; these do.
+- **`bankc job`** — a job directory of several programs and a sort in one JCL stream, chained by the datasets the programs already agree on and stopped by `COND` when a step fails. `end-of-day-settlement` is extract → sort → post → report, and only the posting step keeps a restart position, because only it cannot simply be rerun.
+- **`conversions/`** — existing COBOL on one side, the BankTS it becomes on the other, and what the compiler produced from that BankTS underneath. Five of them, with generated measurements on each page and a statement of what each conversion changes about what the program does. Every original was written for this repository in period style, and the index says so.
+- **`start` may name an alternate key**, which is nearly always why the alternate exists.
+- **`reserved <n>;`** — `FILLER PIC X(n)`. The copybook importer refused a `FILLER` outright, which is the right answer to "can this be laid out short?" and a useless answer to "can this copybook be imported?"
+
+### Added — the tests that find what nobody thought of
+
+- **Sixty random valid programs**, generated on boundaries a person does not choose: names at 29, 30 and 31 characters, every rounding mode, precisions and scales at the `ARITH(COMPAT)` edge, tables at one occurrence and at five hundred. Each has to compile clean, pass the conformance linter and be accepted by `cobc`. It found `PIC S9(0)V99` for a `decimal<2, 2>`, and a function name long enough to give its paragraph, its parameter cell, its result field and its exit paragraph one thirty-character word.
+- **`duplicate-name`** in the conformance linter: two things in one program declared under the same name, compared under the path that qualifies them. What `IGYCRCTL` reports as "redefinition of X", read off the text rather than derived from the emitter's intentions.
+- **Meta-tests.** No statement kind may be written once in the whole suite; every diagnostic catalogued as implemented must be named by a test; the evidence grades are counted into `evidence/GRADES.md`. They found five catalogued rules nothing provoked, two CICS commands with one test each, and a key on a `rewriteFile` accepted silently.
+- **`pnpm test:mutation`** — Stryker against the typechecker and the semantic analyser, the two packages that decide whether a program is refused.
+
+### Added — reading COBOL that already exists
+
+- **`bankc analyse`**: programs, paragraphs, the `PERFORM` and `GO TO` graph as Mermaid, files and whether each binds a `FILE STATUS`, every `EXEC SQL` and `EXEC CICS` with what it names and whether it captures `RESP`, calls, copybooks, `ALTER`. It compiles nothing, which is what lets it read a member whose copybooks nobody has — and every report prints what that costs.
+
+### Fixed — found while building the above
+
+- **The formatter deleted code.** It printed nothing at all for seventeen of the thirty statement kinds, so `pnpm fmt` silently removed every `log`, `commit`, `rollback`, `checkpoint`, `restart`, `getMessage`, `initiate` and `on error` handler from a program — and the round-trip test compared the list of declaration kinds, which survives having every statement removed. Both switches are exhaustive over `never` now, and the test compares the whole tree.
+- **Six IR walkers each enumerated the block-carrying statement kinds** and every one missed `QueueStatement`, so a transaction whose only audit event was inside an MQ get was reported as having none.
+- **Two files whose names agree in eight characters share a DD name** (`BANK-FILE-012`), so one step's output is written over the dataset the next step reads. Two programs in one job whose module names agree in eight are one load module, which `bankc job` refuses.
+- **Every checked-in evidence bundle carried this machine's absolute paths**, so none of it could be reproduced byte for byte anywhere else — in a project whose first claim is that the same input always produces the same output.
+- **A PARM field for an `unsigned` type was given a separate sign**, so a date declared `unsigned<8,0>` cost nine characters and had to be keyed `+20260805`.
+- **`""` is a zero-length literal**, which Enterprise COBOL does not have.
+- **A digit now starts a word** in a generated name: `CM-ADDR-LINE-1`, which is what a copybook holds, rather than `CM-ADDR-LINE1`.
+
+### Added — Db2
+
+- **`cursor ... hold`** emits `DECLARE ... CURSOR WITH HOLD FOR`, and `BANK-SQL-008` refuses a commit inside a loop over a cursor that is not held. A long batch has to commit inside its own loop, and without `WITH HOLD` the next `FETCH` answers `-501` having already committed part of the result set.
+
 ### Documentation
 
 - Ten new pages, and the README split. `docs/getting-started.md` is the read-this-first path; `docs/for-mainframe-engineers.md` reads the generated COBOL construct by construct with the person who has to accept it; `docs/status-and-limits.md` promotes the honest-limits section out of the bottom of the README; and `docs/divergences.md` promotes the GnuCOBOL-against-IBM list out of `zos/README.md` into a numbered, citable one. `generated-code-standards.md`, `target-conformance.md`, `error-handling.md`, `numeric-model.md`, `jcl-model.md`, `security-and-data.md` and `comparison.md` are the rest.
 - The README's flagship example printed `COMPUTE … ROUNDED MODE IS NEAREST-EVEN`. It now prints what the compiler emits.
+- `docs/migration-analysis.md`, and the example table split four ways so nineteen examples are still findable.
+- `docs/status-and-limits.md` names what is still missing rather than implying it: no zUnit generation, and four Db2 depths. zUnit is blocked on IBM's schema, which is not in `vendor-docs/` — inventing one from a published example is how this project came to emit a rounding phrase Enterprise COBOL has never had.
