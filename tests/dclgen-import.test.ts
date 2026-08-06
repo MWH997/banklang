@@ -114,7 +114,7 @@ describe("what the importer refuses", () => {
            10 AMOUNT               PIC S9(9)V9(2) USAGE COMP-3.
 `);
 
-    expect(imported.problems[0].message).toContain("DCLGEN declares");
+    expect(imported.problems[0]!.message).toContain("DCLGEN declares");
   });
 });
 

@@ -338,12 +338,12 @@ const ZUNIT_INFO_BLOCK_FIELDS = new Set(["ITER", "TC-WORK-AREA"]);
 function processStatementColumn(line: string): number | null {
   const match = /^(\s*)(?:CBL|PROCESS)\s/.exec(line);
   if (match) {
-    return match[1].length + 1;
+    return match[1]!.length + 1;
   }
   // Behind a sequence number, which the Language Reference allows and requires
   // to begin with a digit.
   const numbered = /^([0-9]\S{0,5})(\s+)(?:CBL|PROCESS)\s/.exec(line);
-  return numbered ? numbered[1].length + numbered[2].length + 1 : null;
+  return numbered ? numbered[1]!.length + numbered[2]!.length + 1 : null;
 }
 
 /**
@@ -507,10 +507,10 @@ export function lintCobol(
     }
 
     const programId = /^\s*PROGRAM-ID\.\s+([A-Z0-9-]+)/.exec(content);
-    if (programId && programId[1].length > MAX_PROGRAM_ID) {
+    if (programId && programId[1]!.length > MAX_PROGRAM_ID) {
       report(
         "program-id-length",
-        `PROGRAM-ID ${programId[1]} is ${programId[1].length} characters; it becomes a load module member name, which is at most ${MAX_PROGRAM_ID}.`,
+        `PROGRAM-ID ${programId[1]} is ${programId[1]!.length} characters; it becomes a load module member name, which is at most ${MAX_PROGRAM_ID}.`,
         'LR, "PROGRAM-ID paragraph"',
       );
     }
@@ -529,7 +529,7 @@ export function lintCobol(
       content,
     );
     if (picture) {
-      const shape = picture[1].replace(/\.$/, "");
+      const shape = picture[1]!.replace(/\.$/, "");
       if (shape.length > MAX_PICTURE) {
         report(
           "picture-length",
@@ -553,8 +553,8 @@ export function lintCobol(
     // rather than a name anybody chose, so the data-name rule does not apply.
     if (
       declaration &&
-      isReservedCobolWord(declaration[2]) &&
-      !(hasReportSection && REPORT_WRITER_WORDS.has(declaration[2]))
+      isReservedCobolWord(declaration[2]!) &&
+      !(hasReportSection && REPORT_WRITER_WORDS.has(declaration[2]!))
     ) {
       report(
         "reserved-word",
@@ -566,8 +566,8 @@ export function lintCobol(
     const paragraph = /^ {0,3}([A-Z][A-Z0-9-]*)\.\s*$/.exec(content);
     if (
       paragraph &&
-      !DIVISION_PARAGRAPHS.has(paragraph[1]) &&
-      isReservedCobolWord(paragraph[1])
+      !DIVISION_PARAGRAPHS.has(paragraph[1]!) &&
+      isReservedCobolWord(paragraph[1]!)
     ) {
       report(
         "reserved-word",
@@ -742,7 +742,7 @@ function unreferencedItems(
     }
     const sectionHeader = /^\s*([A-Z][A-Z0-9-]*)\s+SECTION\s*\./.exec(content);
     if (sectionHeader) {
-      section = sectionHeader[1];
+      section = sectionHeader[1]!;
       return;
     }
     if (/^\s*PROCEDURE\s+DIVISION/.test(content)) {
@@ -762,10 +762,14 @@ function unreferencedItems(
     // subordinate entry. A group is the data model, and may legitimately be
     // declared for the copybook it becomes.
     const entry = /^\s*01\s+([A-Z][A-Z0-9-]*)\s+(.*)$/.exec(content);
-    if (!entry || !/\bPIC\b/.test(entry[2]) || /\bEXTERNAL\b/.test(entry[2])) {
+    if (
+      !entry ||
+      !/\bPIC\b/.test(entry[2]!) ||
+      /\bEXTERNAL\b/.test(entry[2]!)
+    ) {
       return;
     }
-    declared.push({ name: entry[1], line: index + 1 });
+    declared.push({ name: entry[1]!, line: index + 1 });
   });
 
   const text = lines.join("\n");
@@ -833,7 +837,7 @@ function duplicateDeclarations(
 
     const sectionHeader = /^\s*([A-Z][A-Z0-9-]*)\s+SECTION\s*\./.exec(content);
     if (sectionHeader) {
-      section = sectionHeader[1];
+      section = sectionHeader[1]!;
       path = [];
       return;
     }
@@ -953,7 +957,7 @@ export function lintJcl(file: string, text: string): ConformanceFinding[] {
 
     const card = /^\/\/(\S*)\s+(\S+)(?:\s+(.*))?$/.exec(line);
     if (card) {
-      const [, name, operation, operands = ""] = card;
+      const [, name = "", operation = "", operands = ""] = card;
 
       if (name !== "") {
         for (const part of name.split(".")) {
@@ -979,7 +983,8 @@ export function lintJcl(file: string, text: string): ConformanceFinding[] {
       // A concatenated DD, which continues the one before it.
     }
 
-    for (const [, dsn] of line.matchAll(/DSN(?:AME)?=([^,\s()]+)/g)) {
+    for (const match of line.matchAll(/DSN(?:AME)?=([^,\s()]+)/g)) {
+      const dsn = match[1]!;
       if (dsn.startsWith("&")) {
         continue;
       }
@@ -1108,7 +1113,7 @@ function unresolvedCalls(
       return;
     }
     const call = /\bCALL\s+"([^"]+)"/.exec(line);
-    if (call && !defined.has(call[1].toUpperCase())) {
+    if (call && !defined.has(call[1]!.toUpperCase())) {
       findings.push({
         file,
         line: index + 1,

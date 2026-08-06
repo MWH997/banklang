@@ -48,7 +48,7 @@ export const FIXTURES: {
   {
     file: "tests/fixtures/transfer-request.cpy",
     example: "examples/account-transfer",
-    render: (program) => renderCopybook(program.records[0]),
+    render: (program) => renderCopybook(program.records[0]!),
   },
   {
     file: "tests/fixtures/account-posting.cbl",

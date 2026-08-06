@@ -14,7 +14,7 @@ describe("copybook diff", () => {
       throw new Error("Expected the example to compile.");
     }
 
-    const copybook = renderCopybook(ir.program.records[0]);
+    const copybook = renderCopybook(ir.program.records[0]!);
     const diff = diffGeneratedCopybooks(copybook, copybook);
 
     expect(diff.identical).toBe(true);
@@ -27,7 +27,7 @@ describe("copybook diff", () => {
       throw new Error("Expected the example to compile.");
     }
 
-    const left = renderCopybook(ir.program.records[0]);
+    const left = renderCopybook(ir.program.records[0]!);
     const right = left.replace("PIC X(16).", "PIC X(18).");
     const diff = diffGeneratedCopybooks(left, right);
 

@@ -11,7 +11,7 @@ describe("copybook inspection", () => {
       throw new Error("Expected the example to compile.");
     }
 
-    const generated = renderCopybook(ir.program.records[0]);
+    const generated = renderCopybook(ir.program.records[0]!);
     const inspection = inspectGeneratedCopybook(generated);
 
     expect(inspection.cobolName).toBe("TRANSFER-REQUEST");
@@ -57,7 +57,7 @@ describe("every picture the compiler emits", () => {
 `;
 
     const lengths = Object.fromEntries(
-      (inspectGeneratedCopybook(copybook).fields ?? []).map((field) => [
+      inspectGeneratedCopybook(copybook).fields.map((field) => [
         field.cobolName,
         field.length,
       ]),

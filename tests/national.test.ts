@@ -125,7 +125,7 @@ describe("the copybook", () => {
     if (!result.program) {
       throw new Error("Expected the record to compile.");
     }
-    return renderCopybook(result.program.records[0]);
+    return renderCopybook(result.program.records[0]!);
   }
 
   it("carries the picture", () => {

@@ -100,7 +100,7 @@ describe("source map coverage", () => {
 
     expect(coverage.diagnostics).toHaveLength(1);
     expect(coverage.diagnostics[0]).toMatchObject({ id: "BANK-GEN-005" });
-    expect(coverage.diagnostics[0].message).toContain(
+    expect(coverage.diagnostics[0]!.message).toContain(
       "outside the generated artifact",
     );
   });
@@ -118,7 +118,7 @@ describe("source map coverage", () => {
 
     expect(coverage.diagnostics).toHaveLength(1);
     expect(coverage.diagnostics[0]).toMatchObject({ id: "BANK-GEN-006" });
-    expect(coverage.diagnostics[0].message).toContain("VALIDATE-AMOUNT");
+    expect(coverage.diagnostics[0]!.message).toContain("VALIDATE-AMOUNT");
   });
 
   it("does not let a prefixed COBOL name satisfy an unrelated entry", () => {

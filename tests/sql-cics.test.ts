@@ -147,7 +147,7 @@ transaction t(request: Request, row: Row) {
 }`);
 
     expect(ids(result)).toContain("BANK-SQL-003");
-    expect(result.diagnostics[0].message).toContain("both a parameter");
+    expect(result.diagnostics[0]!.message).toContain("both a parameter");
   });
 
   it("reports BANK-SQL-003 when the result is discarded", () => {
@@ -327,7 +327,7 @@ describe("across the corpus", () => {
         ...flowed(cobol).matchAll(/EXEC CICS RETURN END-EXEC(.{0,20})/g),
       ];
       returns += statements.length;
-      for (const [, after] of statements) {
+      for (const [, after = ""] of statements) {
         expect(
           after.trimStart(),
           `${example} ends a CICS transaction without a GOBACK behind it.`,

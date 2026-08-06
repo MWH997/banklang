@@ -164,7 +164,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     }
     const execStart = /\bEXEC\s+(SQL|CICS|DLI)\b(.*)$/.exec(upper);
     if (execStart) {
-      exec = { kind: execStart[1], text: execStart[2], line };
+      exec = { kind: execStart[1]!, text: execStart[2]!, line };
       if (/\bEND-EXEC\b/.test(upper)) {
         recordExec(exec, sql, cics);
         exec = null;
@@ -175,13 +175,13 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     programId ??= /\bPROGRAM-ID\.\s+([A-Z0-9$#@-]+)/.exec(upper)?.[1] ?? null;
 
     for (const member of upper.matchAll(/\bCOPY\s+([A-Z0-9$#@-]+)/g)) {
-      copybooks.add(member[1]);
+      copybooks.add(member[1]!);
     }
 
     const select = /\bSELECT\s+(?:OPTIONAL\s+)?([A-Z0-9-]+)/.exec(upper);
     if (select && !inProcedure) {
-      files.set(select[1], {
-        name: select[1],
+      files.set(select[1]!, {
+        name: select[1]!,
         dd: null,
         organization: null,
         operations: [],
@@ -190,15 +190,15 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     }
     const assign = /\bASSIGN\s+TO\s+(?:[A-Z]+-)?([A-Z0-9-]+)/.exec(upper);
     if (assign && files.size > 0) {
-      const last = [...files.values()][files.size - 1];
-      last.dd = assign[1];
+      const last = [...files.values()][files.size - 1]!;
+      last.dd = assign[1]!;
     }
     const organization = /\bORGANIZATION\s+(?:IS\s+)?([A-Z]+)/.exec(upper);
     if (organization && files.size > 0) {
-      [...files.values()][files.size - 1].organization = organization[1];
+      [...files.values()][files.size - 1]!.organization = organization[1]!;
     }
     if (/\bFILE\s+STATUS\s+(?:IS\s+)?/.test(upper) && files.size > 0) {
-      [...files.values()][files.size - 1].statusChecked = true;
+      [...files.values()][files.size - 1]!.statusChecked = true;
     }
 
     if (/^\s*PROCEDURE\s+DIVISION/.test(upper)) {
@@ -224,10 +224,10 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     if (
       header &&
       raw[AREA_A_INDEX] !== " " &&
-      !/^(DECLARATIVES)$/.test(header[1])
+      !/^(DECLARATIVES)$/.test(header[1]!)
     ) {
       current = {
-        name: header[1].toUpperCase(),
+        name: header[1]!.toUpperCase(),
         section: header[2] !== undefined,
         line,
         statements: 0,
@@ -273,15 +273,15 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
       !/\bPERFORM\s+(UNTIL|VARYING|WITH)\b/.test(upper) &&
       !/\bPERFORM\s+[A-Z0-9-]+\s+TIMES\b/.test(upper)
     ) {
-      current?.performs.push(performed[1]);
+      current?.performs.push(performed[1]!);
       if (performed[2]) {
         current?.performsThru.push(performed[2]);
       }
     }
 
     for (const jump of upper.matchAll(/\bGO\s+TO\s+([A-Z0-9][A-Z0-9-]*)/g)) {
-      current?.goTos.push(jump[1]);
-      if (!/-EXIT$/.test(jump[1])) {
+      current?.goTos.push(jump[1]!);
+      if (!/-EXIT$/.test(jump[1]!)) {
         jumps += 1;
       }
     }
@@ -297,7 +297,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     // world is written with the other one.
     const call = /\bCALL\s+(?:"([^"]+)"|'([^']+)')/.exec(upper);
     if (call) {
-      calls.add(call[1] ?? call[2]);
+      calls.add(call[1] ?? call[2]!);
     } else if (/\bCALL\s+[A-Z]/.test(upper)) {
       dynamicCalls += 1;
     }
@@ -307,7 +307,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
         `^\\s*${verb}\\s+(?:INPUT\\s+|OUTPUT\\s+|I-O\\s+|EXTEND\\s+)?([A-Z0-9-]+)`,
       ).exec(upper);
       if (used) {
-        const file = files.get(used[1]);
+        const file = files.get(used[1]!);
         if (file && !file.operations.includes(verb)) {
           file.operations.push(verb);
         }
@@ -347,7 +347,7 @@ function recordExec(
     for (const match of body.matchAll(
       /\b(?:FROM|INTO|UPDATE|TABLE|CURSOR\s+FOR|DECLARE)\s+([A-Z][A-Z0-9_.]*)/g,
     )) {
-      names.add(match[1]);
+      names.add(match[1]!);
     }
     sql.push({ verb, names: [...names].sort(), line: exec.line });
     return;
@@ -405,7 +405,7 @@ function unreachableParagraphs(
         continue;
       }
       for (let step = start; step <= end; step += 1) {
-        named.add(paragraphs[step].name);
+        named.add(paragraphs[step]!.name);
       }
     }
   }
@@ -429,7 +429,7 @@ function unreachableParagraphs(
       // statements of its own always falls into its first paragraph — reading
       // an empty paragraph as one that leaves had the entry point of every
       // generated program reported as dead code.
-      const previous = paragraphs[index - 1];
+      const previous = paragraphs[index - 1]!;
       return previous.goTos.length > 0 && !previous.section;
     })
     .map((paragraph) => paragraph.name);

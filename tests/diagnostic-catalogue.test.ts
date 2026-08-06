@@ -46,7 +46,7 @@ function emittedDiagnosticIds(): Set<string> {
     for (const file of files) {
       const source = readFileSync(file, "utf8");
       for (const match of source.matchAll(/"(BANK-[A-Z]+-\d+)"/g)) {
-        ids.add(match[1]);
+        ids.add(match[1]!);
       }
     }
   }
@@ -125,7 +125,7 @@ describe("diagnostic catalogue", () => {
   it("documents every id that docs/diagnostics.md lists", () => {
     const doc = readFileSync("docs/diagnostics.md", "utf8");
     const documented = [...doc.matchAll(/`(BANK-[A-Z]+-\d+)`/g)].map(
-      (match) => match[1],
+      (match) => match[1]!,
     );
     const missing = [...new Set(documented)]
       .filter((id) => !explainDiagnostic(id))

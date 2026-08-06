@@ -215,12 +215,12 @@ function readColumns(text: string): {
   // `DECIMAL(15,2)`, which is what the depth counter is for.
   let depth = 0;
   let start = 0;
-  const body = declare[2];
+  const body = declare[2]!;
   const parts: string[] = [];
   for (let index = 0; index < body.length; index += 1) {
-    if (body[index] === "(") depth += 1;
-    else if (body[index] === ")") depth -= 1;
-    else if (body[index] === "," && depth === 0) {
+    if (body[index]! === "(") depth += 1;
+    else if (body[index]! === ")") depth -= 1;
+    else if (body[index]! === "," && depth === 0) {
       parts.push(body.slice(start, index));
       start = index + 1;
     }
@@ -236,10 +236,10 @@ function readColumns(text: string): {
     if (!match) {
       throw new Error(`Not a column definition: ${trimmed}`);
     }
-    const rest = match[2].trim();
+    const rest = match[2]!.trim();
     const nullable = !/\bNOT\s+NULL\b/i.test(rest);
     columns.push({
-      column: match[1],
+      column: match[1]!,
       sqlType: rest
         .replace(/\bNOT\s+NULL\b.*$/i, "")
         .replace(/\bWITH\s+DEFAULT\b.*$/i, "")
@@ -249,7 +249,7 @@ function readColumns(text: string): {
     });
   }
 
-  return { table: declare[1].replace(/"/g, ""), columns };
+  return { table: declare[1]!.replace(/"/g, ""), columns };
 }
 
 /** DCLGEN's own COBOL declaration, as a picture per column name. */
@@ -270,7 +270,7 @@ function readHostPictures(text: string): Map<string, string> {
     const entry = /^\d\d\s+([A-Z0-9$#@-]+)\s+(.*)\.$/i.exec(pending);
     pending = "";
     if (entry) {
-      pictures.set(entry[1].toUpperCase(), entry[2].trim());
+      pictures.set(entry[1]!.toUpperCase(), entry[2]!.trim());
     }
   }
 

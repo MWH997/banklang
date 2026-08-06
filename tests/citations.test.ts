@@ -120,7 +120,7 @@ describe("the README's badges", () => {
     const readme = readFileSync(resolve(ROOT, "README.md"), "utf8");
     const workflows = [
       ...readme.matchAll(/actions\/workflows\/([\w.-]+\.yml)/g),
-    ].map((match) => match[1]);
+    ].map((match) => match[1]!);
     expect(workflows.length).toBeGreaterThan(0);
     for (const workflow of new Set(workflows)) {
       expect(
@@ -136,7 +136,7 @@ function entries(): { term: string; body: string }[] {
   // Everything after the entry template's own closing rule.
   const body = GLOSSARY.slice(GLOSSARY.indexOf("\n---\n\n# "));
   return [...body.matchAll(/\n## (.+)\n([\s\S]*?)(?=\n## |\n# |$)/g)].map(
-    (match) => ({ term: match[1].trim(), body: match[2] }),
+    (match) => ({ term: match[1]!.trim(), body: match[2]! }),
   );
 }
 
@@ -235,7 +235,7 @@ describe("the glossary", () => {
         .slice(3)
         .trim()
         .replace(/^[^A-Za-z0-9]+/, "");
-      const expected = /^\d/.test(term) ? "Numerals" : term[0].toUpperCase();
+      const expected = /^\d/.test(term) ? "Numerals" : term[0]!.toUpperCase();
       expect(heading, `"${term}" is filed under "${heading}"`).toBe(expected);
     }
   });

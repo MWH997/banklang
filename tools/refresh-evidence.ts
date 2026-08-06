@@ -53,7 +53,7 @@ const GENERATED_DIRECTORIES = [
 function templateReadme(bundle: string): string {
   const title = bundle
     .split("-")
-    .map((word) => `${word[0].toUpperCase()}${word.slice(1)}`)
+    .map((word) => `${word[0]!.toUpperCase()}${word.slice(1)}`)
     .join(" ");
 
   return [

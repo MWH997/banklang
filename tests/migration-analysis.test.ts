@@ -63,7 +63,7 @@ describe("a sequential update", () => {
    * not be read as the `PERFORM n TIMES` form.
    */
   it("reads a performed paragraph whose name starts with a digit", () => {
-    const main = ACCTUPDT.paragraphs[0];
+    const main = ACCTUPDT.paragraphs[0]!;
     expect(main.performs).toContain("1000-READ-TRANS");
     expect(main.performs).toContain("2000-PROCESS");
   });

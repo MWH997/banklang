@@ -68,7 +68,7 @@ describe("comparison operators", () => {
     );
 
     expect(ids(result)).toContain("BANK-TYPE-003");
-    expect(result.diagnostics[0].message).toContain("matching scale");
+    expect(result.diagnostics[0]!.message).toContain("matching scale");
   });
 });
 
@@ -131,7 +131,7 @@ describe("arithmetic and rounding", () => {
     );
 
     expect(ids(result)).toContain("BANK-DEC-003");
-    expect(result.diagnostics[0].hint).toContain("divide(a, b,");
+    expect(result.diagnostics[0]!.hint).toContain("divide(a, b,");
   });
 
   it("accepts divide() with an explicit mode", () => {
@@ -307,7 +307,7 @@ function f(a: MoneyBDT): bool {
 }`,
     );
 
-    expect(result.diagnostics[0].message).toContain("expects 1 argument");
+    expect(result.diagnostics[0]!.message).toContain("expects 1 argument");
   });
 
   it("checks argument types", () => {
@@ -321,7 +321,7 @@ function f(a: MoneyBDT): bool {
 }`,
     );
 
-    expect(result.diagnostics[0].message).toContain("Argument 1 of g");
+    expect(result.diagnostics[0]!.message).toContain("Argument 1 of g");
   });
 });
 

@@ -37,7 +37,7 @@ function grammarKeywords(): Set<string> {
   const found = new Set<string>();
 
   for (const match of grammar.matchAll(/\\\\b\(([A-Za-z|]+)\)\\\\b/g)) {
-    for (const word of match[1].split("|")) {
+    for (const word of match[1]!.split("|")) {
       found.add(word);
     }
   }
@@ -125,7 +125,7 @@ describe("the VS Code extension", () => {
   const resolved = [
     ...source.matchAll(/join\(\s*context\.extensionPath\s*,\s*([^)]+)\)/g),
   ].map((match) =>
-    match[1]
+    match[1]!
       .split(",")
       .map((part) => part.trim().replace(/^["']|["']$/g, ""))
       .join("/"),

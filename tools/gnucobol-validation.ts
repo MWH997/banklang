@@ -156,7 +156,7 @@ export function runGnucobolValidation(
   // that is the claim a reader cares about; removing one line is not the same
   // as translating embedded SQL.
   const generatedCobol = readFileSync(artifacts.cobolPath, "utf8");
-  const backendRequirements = ir.program?.backendRequirements ?? [];
+  const backendRequirements = ir.program.backendRequirements;
   const precompiled =
     backendRequirements.some(
       (requirement) => requirement !== "report-writer-precompiler",

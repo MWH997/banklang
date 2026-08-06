@@ -66,9 +66,9 @@ class Printer {
   public flushCommentsBefore(line: number, indent: string): void {
     while (
       this.commentIndex < this.comments.length &&
-      this.comments[this.commentIndex].span.start.line < line
+      this.comments[this.commentIndex]!.span.start.line < line
     ) {
-      const comment = this.comments[this.commentIndex];
+      const comment = this.comments[this.commentIndex]!;
       this.commentIndex += 1;
       if (comment.ownLine) {
         this.push(`${indent}// ${comment.text}`.trimEnd());
@@ -90,7 +90,7 @@ class Printer {
     if (index === -1) {
       return "";
     }
-    const comment = this.comments[index];
+    const comment = this.comments[index]!;
     this.comments.splice(index, 1);
     return ` // ${comment.text}`;
   }
@@ -106,7 +106,7 @@ class Printer {
       index < this.comments.length;
       index += 1
     ) {
-      const comment = this.comments[index];
+      const comment = this.comments[index]!;
       if (comment.span.start.line >= line) {
         break;
       }
@@ -136,7 +136,7 @@ class Printer {
 
   public flushRemaining(): void {
     while (this.commentIndex < this.comments.length) {
-      const comment = this.comments[this.commentIndex];
+      const comment = this.comments[this.commentIndex]!;
       this.commentIndex += 1;
       if (comment.ownLine) {
         this.push(`// ${comment.text}`.trimEnd());

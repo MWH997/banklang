@@ -279,7 +279,7 @@ function runProgram(source: string, dir: string): string[] {
     .split("\n")
     .flatMap((line) => {
       const match = /^CASE (\d+) (.+)$/.exec(line.trim());
-      return match ? [[Number(match[1]), match[2].trim()] as const] : [];
+      return match ? [[Number(match[1]), match[2]!.trim()] as const] : [];
     })
     .sort((a, b) => a[0] - b[0])
     .map(([, value]) => value);
@@ -329,7 +329,7 @@ describe.skipIf(!available)("every rounding mode, run and checked", () => {
           SCALE,
           mode,
         );
-        const actual = asDecimal(answers[index]);
+        const actual = asDecimal(answers[index]!);
 
         expect(
           sameValue(actual, expected),
@@ -352,7 +352,7 @@ describe.skipIf(!available)("every rounding mode, run and checked", () => {
           SCALE,
           mode,
         );
-        const actual = asDecimal(answers[index]);
+        const actual = asDecimal(answers[index]!);
 
         expect(
           sameValue(actual, expected),

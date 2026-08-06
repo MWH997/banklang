@@ -122,7 +122,7 @@ describe("the copybook carries every clause", () => {
     if (!result.program) {
       throw new Error("Expected the record to compile.");
     }
-    return renderCopybook(result.program.records[0]);
+    return renderCopybook(result.program.records[0]!);
   }
 
   it("keeps REDEFINES", () => {
@@ -149,7 +149,7 @@ describe("the copybook carries every clause", () => {
       throw new Error("Expected the record to compile.");
     }
 
-    expect(flowed(renderCopybook(result.program.records[0]))).toContain(
+    expect(flowed(renderCopybook(result.program.records[0]!))).toContain(
       flowed("BLANK WHEN ZERO."),
     );
   });
@@ -193,7 +193,7 @@ entry transaction render(line: StatementLine) {
       throw new Error("Expected the record to compile.");
     }
     const inspected = inspectGeneratedCopybook(
-      renderCopybook(result.program.records[0]),
+      renderCopybook(result.program.records[0]!),
     );
 
     expect(inspected.fields.map((field) => field.cobolName)).toEqual([

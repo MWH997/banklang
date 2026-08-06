@@ -104,7 +104,8 @@ export function toJclStatement(line: string): string[] {
     return [line];
   }
 
-  const [, head, operands] = match;
+  // Both groups are mandatory in the pattern that produced this match.
+  const [, head, operands] = match as unknown as [string, string, string];
   // Column 16 is the last column a continued field may resume in, and lining
   // every continuation up there is what a reader expects to see.
   const resume = `//${" ".repeat(13)}`;
@@ -339,7 +340,7 @@ function endOfToken(text: string, from: number): number {
 
 /** The index of a literal's closing delimiter, given the opening one. */
 function endOfLiteral(text: string, open: number): number {
-  const quote = text[open];
+  const quote: string = text[open]!;
   let index = open + 1;
 
   while (index < text.length) {
@@ -407,7 +408,8 @@ function splitLiteral(
   continueAt: number,
   continued: boolean,
 ): { lines: string[]; tail: string } {
-  const quote = literal[0];
+  // The caller passes a literal, which by definition opens with its delimiter.
+  const quote = literal[0]!;
   const lines: string[] = [];
   let rest = literal.slice(1, -1);
   let margin = firstMargin;
@@ -415,7 +417,7 @@ function splitLiteral(
   let hyphen = continued;
   // A continuation that opens with two quotes puts one quote in the value,
   // which is how a doubled quote straddling the margin is carried over.
-  let opener = quote;
+  let opener: string = quote;
 
   for (;;) {
     const room = COBOL_LAST_COLUMN - margin - head.length - opener.length;

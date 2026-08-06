@@ -365,8 +365,8 @@ function collectRecordItems(lines: string[]): Map<string, RecordItem[]> {
       continue;
     }
     const level = Number(entry[1]);
-    const name = entry[2];
-    const rest = entry[3];
+    const name = entry[2]!;
+    const rest = entry[3]!;
     // A condition name is not storage, and a renames names a run already there.
     if (level === 88 || level === 66) {
       continue;
@@ -380,7 +380,7 @@ function collectRecordItems(lines: string[]): Map<string, RecordItem[]> {
       }
       continue;
     }
-    while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+    while (stack.length > 1 && stack[stack.length - 1]!.level >= level) {
       stack.pop();
     }
     stack.push({ level, name });
@@ -423,7 +423,7 @@ export function precompile(cobol: string): PrecompileResult {
       ...cobol.matchAll(
         /^.{6}[ -]\s*\d\d\s+([A-Z][A-Z0-9-]*)[^.]*?\bOCCURS\b/gim,
       ),
-    ].map((match) => match[1].toUpperCase()),
+    ].map((match) => match[1]!.toUpperCase()),
   );
 
   const usesSql = /^\s*EXEC\s+SQL\b/im.test(cobol);
@@ -447,7 +447,7 @@ export function precompile(cobol: string): PrecompileResult {
   let awaitingParagraph = false;
 
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+    const line = lines[index]!;
     const trimmed = line.trim();
 
     // A `CBL` statement states the compiler options the program's behaviour
@@ -498,7 +498,7 @@ export function precompile(cobol: string): PrecompileResult {
     // stand-in of the fields the compiler sets.
     const mqCopy = /^COPY\s+(CMQ[A-Z]+)\b[^.]*\.$/i.exec(trimmed);
     if (mqCopy) {
-      const name = mqCopy[1].toUpperCase();
+      const name = mqCopy[1]!.toUpperCase();
       if (name === "CMQV") {
         output.push("      *> MQ constants supplied by the precompiler.");
         output.push(...MQ_CONSTANT_LINES);
@@ -557,16 +557,16 @@ export function precompile(cobol: string): PrecompileResult {
       continue;
     }
 
-    const kind = execMatch[1].toUpperCase() as "SQL" | "CICS";
+    const kind = execMatch[1]!.toUpperCase() as "SQL" | "CICS";
     const indent = line.slice(0, line.length - line.trimStart().length);
 
     // Collect the block, which may be on one line or span several.
-    let body = execMatch[2];
+    let body = execMatch[2]!;
     let closed = /END-EXEC/i.test(body);
     while (!closed && index + 1 < lines.length) {
       index += 1;
       body += `\n${lines[index]}`;
-      closed = /END-EXEC/i.test(lines[index]);
+      closed = /END-EXEC/i.test(lines[index]!);
     }
     // A block written `END-EXEC.` terminates the COBOL sentence, so the
     // period has to survive translation or the paragraph loses its terminator.
@@ -658,9 +658,9 @@ function readBlock(
   start: number,
   terminator: RegExp,
 ): ParseBlock {
-  const indent = lines[start].slice(
+  const indent = lines[start]!.slice(
     0,
-    lines[start].length - lines[start].trimStart().length,
+    lines[start]!.length - lines[start]!.trimStart().length,
   );
   const body: string[] = [];
   const onException: string[] = [];
@@ -668,7 +668,7 @@ function readBlock(
   let index = start;
 
   for (; index < lines.length; index += 1) {
-    const trimmed = lines[index].trim();
+    const trimmed = lines[index]!.trim();
     if (terminator.test(trimmed)) {
       break;
     }
@@ -677,7 +677,7 @@ function readBlock(
       continue;
     }
     if (inException) {
-      onException.push(lines[index]);
+      onException.push(lines[index]!);
     } else {
       body.push(trimmed);
     }
@@ -688,7 +688,7 @@ function readBlock(
     onException,
     indent,
     last: index,
-    terminated: /\.\s*$/.test(lines[Math.min(index, lines.length - 1)]),
+    terminated: /\.\s*$/.test(lines[Math.min(index, lines.length - 1)]!),
   };
 }
 
@@ -723,7 +723,7 @@ function translateJsonParse(
     ];
   }
 
-  const [, document, record] = match;
+  const [, document, record] = match as unknown as [string, string, string];
   const items = records.get(record.toUpperCase()) ?? [];
   const inner = `${indent}    `;
   const out = [
@@ -951,7 +951,7 @@ function extractHostVariables(body: string): string[] {
   const pattern = /:([A-Za-z][A-Za-z0-9-]*)(\s+OF\s+([A-Za-z][A-Za-z0-9-]*))?/g;
 
   for (const match of body.matchAll(pattern)) {
-    const reference = match[3] ? `${match[1]} OF ${match[3]}` : match[1];
+    const reference = match[3] ? `${match[1]} OF ${match[3]}` : match[1]!;
     if (!found.includes(reference)) {
       found.push(reference);
     }
@@ -979,7 +979,7 @@ function extractCicsCommand(body: string): string {
 /** The data item a command's `RESP` option names, if it has one. */
 function extractCicsRespTarget(body: string): string | null {
   const match = /\bRESP\s*\(\s*([A-Za-z][A-Za-z0-9-]*)\s*\)/i.exec(body);
-  return match ? match[1] : null;
+  return match ? match[1]! : null;
 }
 
 /**
@@ -990,7 +990,7 @@ function extractCicsOperands(body: string): string[] {
   const found: string[] = [];
 
   for (const match of body.matchAll(/\(([^)]*)\)/g)) {
-    const inner = match[1].trim();
+    const inner = match[1]!.trim();
     if (inner.length === 0 || inner.startsWith('"') || inner.startsWith("'")) {
       continue;
     }

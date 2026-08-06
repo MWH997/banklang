@@ -40,7 +40,8 @@ export class Random {
   }
 
   pick<T>(values: readonly T[]): T {
-    return values[this.next() % values.length];
+    // Modulo the length, so the index is always in range for a non-empty list.
+    return values[this.next() % values.length]!;
   }
 }
 
@@ -71,7 +72,7 @@ function identifier(random: Random, length: number, prefix: string): string {
     // A capital every few characters, so the name has word boundaries for the
     // COBOL name generator to hyphenate at — which is where abbreviation and
     // the 30-character limit interact.
-    const letter = letters[random.next() % letters.length];
+    const letter = letters[random.next() % letters.length]!;
     name +=
       name.length > prefix.length && random.next() % 4 === 0
         ? letter.toUpperCase()
@@ -83,7 +84,7 @@ function identifier(random: Random, length: number, prefix: string): string {
 /** An upper-case COBOL-shaped name, for a module or record. */
 function typeName(random: Random, length: number, prefix: string): string {
   const name = identifier(random, length, prefix);
-  return `${name[0].toUpperCase()}${name.slice(1)}`;
+  return `${name[0]!.toUpperCase()}${name.slice(1)}`;
 }
 
 export interface GeneratedProgram {

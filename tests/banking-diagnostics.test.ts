@@ -61,7 +61,7 @@ describe("banking diagnostics", () => {
 }`);
 
     expect(ids(result)).toEqual(["BANK-TXN-001"]);
-    expect(result.diagnostics[0].message).toContain(
+    expect(result.diagnostics[0]!.message).toContain(
       "Transaction postTransfer has no idempotency key.",
     );
   });
@@ -94,7 +94,7 @@ describe("banking diagnostics", () => {
 }`);
 
     expect(ids(result)).toEqual(["BANK-AUD-003"]);
-    expect(result.diagnostics[0].message).toContain(
+    expect(result.diagnostics[0]!.message).toContain(
       "compile-time string constant",
     );
   });
@@ -107,7 +107,7 @@ describe("banking diagnostics", () => {
 }`);
 
     expect(ids(result)).toEqual(["BANK-LED-001"]);
-    expect(result.diagnostics[0].message).toContain(
+    expect(result.diagnostics[0]!.message).toContain(
       "debited request.amount against credited request.otherAmount",
     );
   });
@@ -119,7 +119,7 @@ describe("banking diagnostics", () => {
 }`);
 
     expect(ids(result)).toEqual(["BANK-LED-001"]);
-    expect(result.diagnostics[0].message).toContain("credited nothing");
+    expect(result.diagnostics[0]!.message).toContain("credited nothing");
   });
 
   it("balances multiple postings regardless of statement order", () => {

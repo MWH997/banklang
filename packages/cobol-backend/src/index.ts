@@ -1671,7 +1671,7 @@ export function emitCobol(
 
   if (cicsTransactions.length > 0) {
     addLine(`       01  DFHCOMMAREA.`);
-    const commareaRecord = cicsTransactions[0].parameters.find(
+    const commareaRecord = cicsTransactions[0]!.parameters.find(
       (parameter) => parameter.type.kind === "record",
     );
     if (commareaRecord && commareaRecord.type.kind === "record") {
@@ -1852,6 +1852,10 @@ export function emitCobol(
   // file error declarative, an XML handler section. Emitted only when something
   // jumps to it, so a program with no such path does not carry a paragraph
   // nothing reaches.
+  // `failureExit` sets this, and TypeScript narrows a module-level `let` to
+  // the value it was last assigned in *this* function, which is `false` at the
+  // top of the emit. The flag is real; the narrowing is not.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (abendParagraphUsed) {
     addLine(`       ${ABEND_PARAGRAPH}.`);
     if (currentProgramIsCics) {
@@ -3409,7 +3413,7 @@ function emitRecursiveProgram(
   // Storage for the arguments of a nested call, per invocation.
   fn.parameters.forEach((parameter, index) => {
     addLine(
-      `       01  ${callArgs[index].padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      `       01  ${callArgs[index]!.padEnd(20)} ${formatCobolType(parameter.type)}.`,
     );
   });
   addLine(`       01  WS-SUB-RESULT        ${formatCobolType(fn.returnType)}.`);
@@ -3417,7 +3421,7 @@ function emitRecursiveProgram(
   addLine(`       LINKAGE SECTION.`);
   fn.parameters.forEach((parameter, index) => {
     addLine(
-      `       01  ${linkageNames[index].padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      `       01  ${linkageNames[index]!.padEnd(20)} ${formatCobolType(parameter.type)}.`,
     );
   });
   addLine(
@@ -6571,7 +6575,7 @@ function emitCallsIn(
       if (recursiveContext && expression.callee === recursiveContext.name) {
         expression.args.forEach((argument, index) => {
           emitArgumentInto(
-            recursiveContext!.args[index],
+            recursiveContext!.args[index]!,
             argument,
             addLine,
             indent,
@@ -7783,7 +7787,7 @@ function rowsetIndexName(cursorName: string): string {
 function rowsetFields(declaration: IRSql): string[] {
   return [
     ...(declaration.cursorInto ?? "").matchAll(/:([A-Za-z_][A-Za-z0-9_]*)/g),
-  ].map((match) => match[1]);
+  ].map((match) => match[1]!);
 }
 
 /** The `INTO` of a rowset FETCH: one host-variable array per column. */
@@ -8206,7 +8210,9 @@ function renderNumericCall(expression: IRNumericCallExpression): string {
 }
 
 function renderTemporalCall(expression: IRTemporalCallExpression): string {
-  const [first, second] = expression.args;
+  // Arity is settled by the typechecker: a temporal call that reached the
+  // emitter has the arguments its operation takes.
+  const [first, second] = expression.args as [IRExpression, IRExpression];
 
   switch (expression.operation) {
     case "today":
@@ -8231,7 +8237,13 @@ function renderTemporalCall(expression: IRTemporalCallExpression): string {
  * appear inline; `emitStringAssignment` handles those.
  */
 function renderStringCall(expression: IRStringCallExpression): string {
-  const [first, second, third] = expression.args;
+  // As in `renderTemporalCall`: the typechecker settles arity, so each
+  // operation below has the arguments it takes.
+  const [first, second, third] = expression.args as [
+    IRExpression,
+    IRExpression,
+    IRExpression,
+  ];
 
   switch (expression.operation) {
     case "trim":
@@ -8278,17 +8290,17 @@ function emitStringAssignment(
   if (expression.operation === "countOf") {
     addLine(`${indent}MOVE 0 TO ${target}`);
     addLine(
-      `${indent}INSPECT ${renderExpression(expression.args[0])} TALLYING ${target} FOR ALL ${renderExpression(expression.args[1])}`,
+      `${indent}INSPECT ${renderExpression(expression.args[0]!)} TALLYING ${target} FOR ALL ${renderExpression(expression.args[1]!)}`,
     );
     return;
   }
 
   if (expression.operation === "replaceChars") {
     addLine(
-      `${indent}MOVE ${renderExpression(expression.args[0])} TO ${target}`,
+      `${indent}MOVE ${renderExpression(expression.args[0]!)} TO ${target}`,
     );
     addLine(
-      `${indent}INSPECT ${target} CONVERTING ${renderExpression(expression.args[1])} TO ${renderExpression(expression.args[2])}`,
+      `${indent}INSPECT ${target} CONVERTING ${renderExpression(expression.args[1]!)} TO ${renderExpression(expression.args[2]!)}`,
     );
     return;
   }
@@ -8319,7 +8331,7 @@ function emitStringAssignment(
 
   addLine(`${indent}MOVE SPACES TO ${target}`);
   addLine(
-    `${indent}STRING ${renderExpression(expression.args[0])} DELIMITED BY SIZE`,
+    `${indent}STRING ${renderExpression(expression.args[0]!)} DELIMITED BY SIZE`,
   );
   for (const argument of expression.args.slice(1)) {
     addLine(`${indent}       ${renderExpression(argument)} DELIMITED BY SIZE`);
@@ -8559,7 +8571,7 @@ function cicsResponseTest(
     (side) => side.kind === "Identifier" && currentCicsRespNames.has(side.name),
   );
   const literal = sides.find((side) => side.kind === "DecimalLiteral");
-  if (!field || !literal || literal.kind !== "DecimalLiteral") {
+  if (!field || !literal) {
     return null;
   }
   if (Number(literal.text) !== 0) {

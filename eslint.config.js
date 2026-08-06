@@ -81,30 +81,18 @@ export default tseslint.config(
       ],
 
       /*
-       * The fourth, off, and this is the reason.
+       * The fourth. It spent one release off, and this is why it is back.
        *
-       * `no-unnecessary-condition` reported forty-two findings on its first run
-       * and not one of them was a defect. Thirty of them were guards against an
-       * index access: `line[7]`, `match[1]`, `MQ_STRUCTURE_LINES[name]`,
-       * `program.transactions[0]`. Without `noUncheckedIndexedAccess`,
-       * TypeScript types every one of those as present, so the `?? ""` and the
-       * `if (!entry)` that make them safe read to the rule as conditions that
-       * cannot fail. They can. `purposeLines` returns "A library of functions.
-       * Nothing here is an entry point." precisely when
-       * `program.transactions[0]` is undefined, which the rule calls dead.
-       *
-       * Acting on this rule as it stands would mean deleting correct guards, so
-       * a rule meant to find dead code would put live faults in. The remaining
-       * findings were of two other kinds, both also false: a module-level `let`
-       * that TypeScript narrows to `false` because the function that sets it is
-       * called through another function, and redundancy the inferred type
-       * predicates on `Array#find` made redundant only recently.
-       *
-       * Turning it on is worth doing and it is not a lint change: it needs
-       * `noUncheckedIndexedAccess`, which is roughly three hundred typecheck
-       * errors across the compiler. Ticketed as R7 in docs/launch-tickets.md.
+       * On its first run it reported forty-two findings and not one was a
+       * defect: thirty guarded an index access — `line[7]`, `match[1]`,
+       * `MQ_STRUCTURE_LINES[name]`, `program.transactions[0]` — which
+       * TypeScript typed as always present because `noUncheckedIndexedAccess`
+       * was off. Acting on it would have deleted the guards that make those
+       * safe. Turning the flag on made the types honest, at the cost of 366
+       * errors across the compiler, and this rule is the payoff: what it says
+       * now is true.
        */
-      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-unnecessary-condition": "error",
 
       // A compiler reads untyped text off disk and narrows it. `unknown` and a
       // cast at the boundary is the pattern used throughout, and warning on

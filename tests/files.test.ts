@@ -43,7 +43,7 @@ file accountInput sequential input record AccountRecord;`,
     );
 
     expect(parsed.diagnostics).toEqual([]);
-    expect(typechecked.files[0].statusName).toBeNull();
+    expect(typechecked.files[0]!.statusName).toBeNull();
   });
 
   it("rejects an unknown record type", () => {
@@ -95,7 +95,7 @@ file accountInput sequential input record AccountRecord;`,
     expect(result.diagnostics.map((entry) => entry.id)).toEqual([
       "BANK-FILE-001",
     ]);
-    expect(result.diagnostics[0].message).toContain(
+    expect(result.diagnostics[0]!.message).toContain(
       "File accountInput declares no file status field.",
     );
   });

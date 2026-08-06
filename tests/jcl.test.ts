@@ -202,7 +202,9 @@ describe("a plain batch job", () => {
   it("writes dataset names z/OS accepts", () => {
     for (const source of [PLAIN, WITH_FILES, WITH_SQL, WITH_CICS]) {
       const jcl = jclFor(source);
-      for (const [, dsn] of jcl.matchAll(/DSN(?:AME)?=([A-Z0-9.@#$&]+)/g)) {
+      for (const [, dsn = ""] of jcl.matchAll(
+        /DSN(?:AME)?=([A-Z0-9.@#$&]+)/g,
+      )) {
         // `&&NAME` is a temporary dataset, which the system names itself.
         if (dsn.startsWith("&&")) continue;
         const name = dsn.replace(/\(.*/, "");

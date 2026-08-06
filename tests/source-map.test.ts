@@ -30,7 +30,7 @@ describe("source map", () => {
     const { emit } = compileExample();
     const lines = emit.cobol.split("\n");
     const target = (index: number): string[] => {
-      const entry = emit.sourceMap.entries[index];
+      const entry = emit.sourceMap.entries[index]!;
       return lines.slice(entry.targetStartLine - 1, entry.targetEndLine);
     };
 

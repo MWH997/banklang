@@ -194,10 +194,10 @@ describe("JCL card images", () => {
     }
     // The comma at the break is what says the statement continues, and the
     // continuation resumes between columns 4 and 16 after `//` and a blank.
-    expect(cards[0].endsWith(",")).toBe(true);
-    expect(cards[1].startsWith("//")).toBe(true);
-    expect(cards[1][2]).toBe(" ");
-    const resumesAt = cards[1].slice(2).search(/\S/) + 3;
+    expect(cards[0]!.endsWith(",")).toBe(true);
+    expect(cards[1]!.startsWith("//")).toBe(true);
+    expect(cards[1]![2]).toBe(" ");
+    const resumesAt = cards[1]!.slice(2).search(/\S/) + 3;
     expect(resumesAt).toBeGreaterThanOrEqual(4);
     expect(resumesAt).toBeLessThanOrEqual(16);
   });
@@ -316,7 +316,7 @@ describe("across the corpus", () => {
           return;
         }
         expect(
-          lines[index + 1][6],
+          lines[index + 1]![6],
           `${example}:${index + 2} continues a literal without a hyphen in column 7.`,
         ).toBe("-");
       });

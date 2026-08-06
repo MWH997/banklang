@@ -4,6 +4,13 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
+    // Index access is not a promise. `line[7]`, `match[1]` and `table[name]`
+    // are all `T | undefined`, and this compiler reads untyped text off disk
+    // for a living. Without it, TypeScript claims every one of them is present
+    // and `@typescript-eslint/no-unnecessary-condition` reports the guards that
+    // make them safe as dead code — which is why that rule spent one release
+    // switched off. See docs/audit-2026-08-06.md, §8.
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true,
     "resolveJsonModule": true,

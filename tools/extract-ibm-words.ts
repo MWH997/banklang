@@ -74,11 +74,11 @@ export function extractReservedWords(text: string): string[] {
     const at = columns;
     const nearest = at.reduce(
       (best, column, index) =>
-        Math.abs(mark - column) < Math.abs(mark - at[best]) ? index : best,
+        Math.abs(mark - column) < Math.abs(mark - at[best]!) ? index : best,
       0,
     );
     if (nearest === 0) {
-      words.add(row[1]);
+      words.add(row[1]!);
     }
   }
 
@@ -101,7 +101,7 @@ export function extractFunctionNames(text: string): string[] {
     if (!row) {
       continue;
     }
-    const name = row[1];
+    const name = row[1]!;
     if (["FUNCTION", "TABLE", "TYPE", "ARGUMENT", "VALUE"].includes(name)) {
       continue;
     }

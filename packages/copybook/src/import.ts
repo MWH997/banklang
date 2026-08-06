@@ -96,8 +96,8 @@ function readEntries(text: string): Entry[] {
     }
     flat.push({
       level: Number(match[1]),
-      name: match[2].toUpperCase(),
-      clauses: match[3].trim(),
+      name: match[2]!.toUpperCase(),
+      clauses: match[3]!.trim(),
       children: [],
     });
   }
@@ -117,7 +117,7 @@ function nest(flat: Entry[]): Entry[] {
       (stack[stack.length - 1] ?? { children: roots }).children.push(entry);
       continue;
     }
-    while (stack.length > 0 && stack[stack.length - 1].level >= entry.level) {
+    while (stack.length > 0 && stack[stack.length - 1]!.level >= entry.level) {
       stack.pop();
     }
     (stack[stack.length - 1]?.children ?? roots).push(entry);
@@ -135,7 +135,7 @@ export function bankTsName(cobolName: string): string {
     .filter((part) => part.length > 0);
   return parts
     .map((part, index) =>
-      index === 0 ? part : `${part[0].toUpperCase()}${part.slice(1)}`,
+      index === 0 ? part : `${part[0]!.toUpperCase()}${part.slice(1)}`,
     )
     .join("");
 }
@@ -177,7 +177,7 @@ function fillerBytes(entry: Entry): number | null {
   if (!pictureMatch) {
     return null;
   }
-  const picture = pictureMatch[1].replace(/\.$/, "");
+  const picture = pictureMatch[1]!.replace(/\.$/, "");
 
   if (/[AXN]/.test(picture)) {
     const bytes =
@@ -226,7 +226,7 @@ export function typeFor(clauses: string): FieldType {
   if (!pictureMatch) {
     return { text: "", problem: "No PICTURE clause." };
   }
-  const picture = pictureMatch[1];
+  const picture = pictureMatch[1]!;
 
   if (/^S?[9SVP()0-9]*$/i.test(picture) === false && /[AXN]/i.test(picture)) {
     // Alphanumeric, alphabetic or national. `X` and `A` are one byte each and
@@ -396,12 +396,12 @@ export function importCopybook(
 
     const suffix = [
       occurs ? `[${occurs[2]}]` : "",
-      redefines ? ` redefines ${bankTsName(redefines[1])}` : "",
+      redefines ? ` redefines ${bankTsName(redefines[1]!)}` : "",
       /\bSYNCHRONIZED\b|\bSYNC\b/.test(clauses) ? " sync" : "",
       /\bJUSTIFIED\b|\bJUST\b/.test(clauses) ? " justified" : "",
       /\bBLANK\s+WHEN\s+ZERO\b/.test(clauses) ? " blankWhenZero" : "",
-      dependingOn ? ` depending on ${bankTsName(dependingOn[1])}` : "",
-      ascending ? ` ascending ${bankTsName(ascending[1])}` : "",
+      dependingOn ? ` depending on ${bankTsName(dependingOn[1]!)}` : "",
+      ascending ? ` ascending ${bankTsName(ascending[1]!)}` : "",
     ].join("");
 
     // A VALUE on an imported field is what the copybook says the field starts
@@ -410,7 +410,7 @@ export function importCopybook(
     const value = /\bVALUE\s+(?:IS\s+)?('[^']*'|"[^"]*"|[^\s.]+)/.exec(clauses);
     const initial =
       value && !/\bTHRU\b|\bTHROUGH\b/.test(clauses)
-        ? ` = ${value[1].replace(/^'(.*)'$/, '"$1"')}`
+        ? ` = ${value[1]!.replace(/^'(.*)'$/, '"$1"')}`
         : "";
 
     return `  ${name}: ${type}${suffix}${initial};`;
@@ -432,7 +432,7 @@ export function importCopybook(
           );
         if (renames) {
           fields.push(
-            `  ${bankTsName(child.name)} renames ${bankTsName(renames[1])}${
+            `  ${bankTsName(child.name)} renames ${bankTsName(renames[1]!)}${
               renames[2] ? ` through ${bankTsName(renames[2])}` : ""
             };`,
           );
