@@ -258,6 +258,64 @@ ${body}
     expect(ids(result)).not.toContain("BANK-FILE-010");
   });
 
+  /**
+   * The branch shapes the walk used to skip.
+   *
+   * This check walks the body, and until 2026-08-07 it walked it with a list of
+   * property names that did not include `otherwise` — a `switch`'s `else`
+   * branch. An update in one was never examined, so the check reported nothing
+   * and the program passed. That is the worse direction for a rule to be wrong
+   * in: a missing diagnostic looks exactly like a clean program.
+   *
+   * Both are `switch` branches with no read on the path, so both must be
+   * reported, in the same way the `if` above is.
+   */
+  it("sees an update inside a switch case", () => {
+    const result = program(
+      `enum EntryKind {
+  DEBIT,
+  CREDIT
+}
+
+file feed sequential update record AccountRecord status feedStatus;`,
+      `  open feed;
+  let kind: EntryKind = EntryKind.DEBIT;
+  switch kind {
+    case DEBIT {
+      rewrite feed from account;
+    }
+    case CREDIT {
+      close feed;
+    }
+  }`,
+    );
+
+    expect(ids(result)).toContain("BANK-FILE-010");
+  });
+
+  it("sees an update inside a switch else branch", () => {
+    const result = program(
+      `enum EntryKind {
+  DEBIT,
+  CREDIT
+}
+
+file feed sequential update record AccountRecord status feedStatus;`,
+      `  open feed;
+  let kind: EntryKind = EntryKind.DEBIT;
+  switch kind {
+    case DEBIT {
+      close feed;
+    }
+    else {
+      rewrite feed from account;
+    }
+  }`,
+    );
+
+    expect(ids(result)).toContain("BANK-FILE-010");
+  });
+
   /** An indexed file is addressed by key, so it needs no prior read. */
   it("says nothing about an indexed file", () => {
     const result = program(

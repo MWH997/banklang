@@ -69,6 +69,7 @@ import {
   type ForEachStatementNode,
   type RaiseStatementNode,
   type FailureHandlerNode,
+  childBlocksOf,
 } from "../../ast/src/index";
 import {
   describeTypeNode,
@@ -2921,21 +2922,6 @@ function validateForEachStatement(
 let sortInputRecord: string | null = null;
 
 /** Every block a statement encloses, for walks that do not care which is which. */
-function nestedBlocksOf(statement: StatementNode): BlockNode[] {
-  const candidates = [
-    (statement as { body?: BlockNode }).body,
-    (statement as { thenBranch?: BlockNode }).thenBranch,
-    (statement as { elseBranch?: BlockNode | null }).elseBranch,
-    (statement as { notFound?: BlockNode }).notFound,
-    (statement as { resumed?: BlockNode }).resumed,
-    (statement as { fresh?: BlockNode | null }).fresh,
-  ];
-  const cases = (statement as { cases?: { body: BlockNode }[] }).cases ?? [];
-  return [...candidates, ...cases.map((entry) => entry.body)].filter(
-    (block): block is BlockNode => Boolean(block),
-  );
-}
-
 /**
  * `checkpoint <file> from <record> every <n>;`
  *
@@ -3467,9 +3453,7 @@ function releasesSomething(block: BlockNode): boolean {
     if (statement.kind === "ReleaseStatement") {
       return true;
     }
-    return nestedBlocksOf(statement).some((nested) =>
-      releasesSomething(nested),
-    );
+    return childBlocksOf(statement).some((nested) => releasesSomething(nested));
   });
 }
 
@@ -7093,7 +7077,7 @@ function reportUnreadFileUpdates(
         }
       }
 
-      for (const nested of nestedBlocksOf(statement)) {
+      for (const nested of childBlocksOf(statement)) {
         walk(nested, read);
       }
     }
