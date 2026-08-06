@@ -43,6 +43,7 @@ Manuals, as extracted in `vendor-docs/`:
 | `reserved-word`     | A reserved word is not a data name or a paragraph name.                                                                | LR, Appendix E                      |
 | `vocabulary`        | Every word is a name the artifact declares or a word Enterprise COBOL reserves.                                        | LR, Appendix E                      |
 | `call-resolvable`   | Every `CALL "X"` names a program the run unit will hold.                                                               | PG, "Resolving external references" |
+| `duplicate-name`    | Two things in one program are not declared under the same name, compared under the path that qualifies them.           | LR, "User-defined words"            |
 
 ### The vocabulary rule
 
