@@ -54,6 +54,8 @@ importers:
 
   packages/language-server: {}
 
+  packages/migration-analysis: {}
+
   packages/parser: {}
 
   packages/playground:

@@ -25,6 +25,11 @@ const BROWSER_SAFE_PACKAGES = [
   // The conformance linter reads artifacts as text and knows nothing about
   // where they came from, so it runs wherever the compiler does.
   "conformance-lint",
+  // And the migration reader is the same shape from the other direction: it
+  // takes COBOL as a string and reports what is in it. Nothing about reading a
+  // program needs a file system, and keeping it out of one means the
+  // playground could show an inventory of a program somebody pastes in.
+  "migration-analysis",
 ];
 
 /** Packages allowed to touch the file system and process. */

@@ -1,7 +1,9 @@
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  statSync,
   watch,
   writeFileSync as writeArtifactBytes,
 } from "node:fs";
@@ -34,6 +36,11 @@ import {
 import { compareLayouts, importCopybook } from "../../copybook/src/import";
 import { importDclgen } from "../../copybook/src/dclgen";
 import { analyzeProgramSemantics } from "../../semantic-analyzer/src/index";
+import {
+  analyseCobol,
+  renderInventory,
+  renderParagraphGraph,
+} from "../../migration-analysis/src/index";
 import {
   lowerProgramToIR,
   type IRProgram,
@@ -215,6 +222,9 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
       return runBuild(rest, cwd);
     case "job":
       return runJob(rest, cwd);
+    case "analyse":
+    case "analyze":
+      return runAnalyse(rest, cwd);
     case "emit":
       return runEmit(rest, cwd);
     case "audit-report":
@@ -444,6 +454,86 @@ function runEmit(args: string[], cwd: string): CliResult {
     stdout: "",
     stderr: `Unknown emit target: ${profile}\n`,
   };
+}
+
+/**
+ * `bankc analyse <path...>` — read COBOL that already exists and say what is
+ * in it.
+ *
+ * The question a bank asks before any other: what happens to the two thousand
+ * programs we already have. The answer starts as a count — how many, how big,
+ * what they touch, which ones nobody can follow — and this is that count, with
+ * what it does not know printed underneath it.
+ *
+ * A path may be a file or a directory; a directory is read for `.cbl` and
+ * `.cob` members, one level deep and then recursively.
+ */
+function runAnalyse(args: string[], cwd: string): CliResult {
+  const paths = positionalArgs(args);
+  if (paths.length === 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: "Usage: bankc analyse <file-or-directory>...\n",
+    };
+  }
+
+  const members = paths.flatMap((path) => cobolMembers(resolve(cwd, path)));
+  if (members.length === 0) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `No .cbl or .cob members under ${paths.join(", ")}.\n`,
+    };
+  }
+
+  const analyses = members.map((member) =>
+    analyseCobol(readFileSync(member, "utf8"), relativeToCwd(member, cwd)),
+  );
+
+  const outIndex = args.indexOf("--out");
+  if (outIndex === -1) {
+    return {
+      exitCode: 0,
+      stdout: renderInventory(analyses),
+      stderr: "",
+    };
+  }
+
+  const outputRoot = resolveOutputRoot(cwd, args);
+  mkdirSync(outputRoot, { recursive: true });
+  const written = [join(outputRoot, "inventory.md")];
+  writeFileSync(written[0], renderInventory(analyses), "utf8");
+
+  for (const analysis of analyses) {
+    const name = analysis.programId ?? "PROGRAM";
+    const path = join(outputRoot, `${name}-paragraphs.md`);
+    writeFileSync(
+      path,
+      `# ${name} — paragraph graph\n\n${renderParagraphGraph(analysis)}\n`,
+      "utf8",
+    );
+    written.push(path);
+  }
+
+  return {
+    exitCode: 0,
+    stdout: written.map((path) => `Wrote ${path}`).join("\n") + "\n",
+    stderr: "",
+  };
+}
+
+/** Every COBOL member under a path, which may be one file. */
+function cobolMembers(path: string): string[] {
+  if (!existsSync(path)) {
+    return [];
+  }
+  if (!statSync(path).isDirectory()) {
+    return /\.(cbl|cob)$/i.test(path) ? [path] : [];
+  }
+  return readdirSync(path, { withFileTypes: true })
+    .flatMap((entry) => cobolMembers(join(path, entry.name)))
+    .sort();
 }
 
 export const JOB_FILE_NAME = "job.json";
@@ -1740,6 +1830,7 @@ function renderHelp(): string {
     "  check <project>",
     "  build <project>",
     "  job <directory>",
+    "  analyse <file-or-directory>...",
     "  emit cobol <project>",
     "  emit copybooks <project>",
     "  emit jcl <project>",

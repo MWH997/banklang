@@ -119,6 +119,7 @@ pnpm bankc test    examples/account-posting   # the above, plus cobc
 pnpm bankc job     examples/end-of-day-settlement  # several programs, one job
 pnpm bankc explain BANK-LED-001               # explain a diagnostic
 
+pnpm bankc analyse  legacy/                   # what your COBOL contains
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 pnpm bankc dclgen   import ACCOUNT.cpy        # your table, as BankTS
 ```
@@ -179,19 +180,11 @@ batch, hand-written banker's rounding, and a copybook with `REDEFINES`, `FILLER`
 and `OCCURS DEPENDING ON`. Each page prints generated measurements and says what
 the conversion changed about what the program does.
 
-`withdrawal-with-recovery` goes further: it is **run**, against the reference
-runtime in [`runtime/`](runtime/README.md), and the test asserts on the balances
-the ledger ends up holding. That is what catches a defect that compiles — the
-bounds guard once clamped an out-of-range subscript instead of refusing it, and
-every static check passed.
-
-## Programmatic use
-
-```ts
-import { compile } from "@banklang/compiler";
-
-const result = compile(source); // diagnostics, cobol, sourceMap
-```
+`withdrawal-with-recovery` is **run**, against the reference runtime in
+[`runtime/`](runtime/README.md), and the test asserts on the balances the ledger
+ends up holding. That is what catches a defect that compiles — the bounds guard
+once clamped an out-of-range subscript instead of refusing it, and every static
+check passed.
 
 ## Documentation
 
@@ -222,10 +215,11 @@ const result = compile(source); // diagnostics, cobol, sourceMap
 | ------------------------------------------------ | ------------------------------- |
 | [Language reference](docs/language-reference.md) | The BankTS subset               |
 | [Diagnostics](docs/diagnostics.md)               | The full catalogue              |
-| [Architecture](docs/architecture.md)             | Pipeline and package boundaries |
+| [Architecture](docs/architecture.md)             | Pipeline, packages, `compile()` |
 | [Verification](docs/verification.md)             | Testing and evidence strategy   |
 | [Security and data](docs/security-and-data.md)   | `sensitive`, PII, dumps         |
 | [Toolchain](docs/toolchain.md)                   | CLI, formatter, CI, editors     |
+| [Migration analysis](docs/migration-analysis.md) | Reading COBOL you already have  |
 | [Glossary](docs/glossary.md)                     | Compiler and mainframe terms    |
 | [Roadmap](docs/roadmap.md)                       | What is planned                 |
 | [ADRs](docs/adr/)                                | Architectural decisions         |
