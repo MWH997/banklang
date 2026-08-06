@@ -159,7 +159,13 @@ describe("what the README claims", () => {
   });
 
   it("says the limits out loud rather than only linking to them", () => {
-    expect(readme).toContain("not** with IBM");
+    // The claim, not one phrasing of it. This used to assert on the literal
+    // `not** with IBM`, which made a stronger sentence in a better place fail
+    // the check: the limit moved above the fold and gained "No IBM Enterprise
+    // COBOL validation has been performed", and the test wanted its markup
+    // back. `validated with GnuCOBOL, not IBM` is held across all three
+    // surfaces by the suite below.
+    expect(readme).toMatch(/GnuCOBOL, not IBM/i);
     expect(readme).toContain("never run against a real ledger");
   });
 

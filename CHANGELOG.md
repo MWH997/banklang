@@ -27,6 +27,10 @@ in order.
 
 ### Added
 
+- Add [for-decision-makers.md](docs/for-decision-makers.md), for whoever has to
+  accept the risk rather than the COBOL.
+- Add a conformance-finding issue template, for a divergence from what
+  Enterprise COBOL, CICS, Db2 or z/OS would accept.
 - Add ESLint on `typescript-eslint`'s recommended type-checked set as
   `pnpm lint`, with Prettier moving to `pnpm format:check` —
   [verification](docs/verification.md).

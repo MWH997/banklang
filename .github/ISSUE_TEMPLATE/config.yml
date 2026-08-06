@@ -6,3 +6,6 @@ contact_links:
   - name: Diagnostic reference
     url: https://github.com/MWH997/banklang/blob/main/docs/diagnostics.md
     about: Every diagnostic, with explanation and remediation.
+  - name: What this project does not claim
+    url: https://github.com/MWH997/banklang/blob/main/docs/status-and-limits.md
+    about: Validated with GnuCOBOL, not IBM. Read this before filing about the target.

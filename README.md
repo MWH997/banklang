@@ -182,9 +182,9 @@ and `OCCURS DEPENDING ON`. Each page says what the conversion changed.
 
 `withdrawal-with-recovery` is **run**, against the reference runtime in
 [`runtime/`](runtime/README.md), and the test asserts on the balances the ledger
-ends up holding. That is what catches a defect that compiles — the bounds guard
-once clamped an out-of-range subscript instead of refusing it, and every static
-check passed.
+ends with. That is what catches a defect that compiles: the bounds guard once
+clamped an out-of-range subscript instead of refusing it, and every static check
+passed.
 
 ## Documentation
 
@@ -194,6 +194,7 @@ check passed.
 | ---------------------------------------------------------- | -------------------------------------------- |
 | [Getting started](docs/getting-started.md)                 | Thirty minutes from clone to reading COBOL   |
 | [For mainframe engineers](docs/for-mainframe-engineers.md) | The generated COBOL, construct by construct  |
+| [For the person deciding](docs/for-decision-makers.md)     | The risk, and what it would cost to find out |
 | [Status and honest limits](docs/status-and-limits.md)      | What this is not                             |
 | [Comparison](docs/comparison.md)                           | Against converters, Micro Focus, and by hand |
 
@@ -219,7 +220,7 @@ check passed.
 | [Verification](docs/verification.md)             | Testing and evidence strategy   |
 | [Security and data](docs/security-and-data.md)   | `sensitive`, PII, dumps         |
 | [Toolchain](docs/toolchain.md)                   | CLI, formatter, CI, editors     |
-| [Migration analysis](docs/migration-analysis.md) | Reading COBOL you already have  |
+| [Migration analysis](docs/migration-analysis.md) | Reading COBOL you have          |
 | [Glossary](docs/glossary.md)                     | Compiler and mainframe terms    |
 | [Roadmap](docs/roadmap.md)                       | What is planned                 |
 | [ADRs](docs/adr/)                                | Architectural decisions         |
@@ -227,16 +228,15 @@ check passed.
 ## Status
 
 A working compiler for a **deliberately narrow subset**, not a production
-mainframe toolchain. It has been validated with GnuCOBOL and **not** with IBM
-Enterprise COBOL; it has never run against a real ledger; and no institution's
-money has moved through it.
+mainframe toolchain. It has never run against a real ledger, and no
+institution's money has moved through it.
 
 [The full list, with what each limit costs →](docs/status-and-limits.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: small changes, real
-tests, no silent golden updates, and never claim validation that did not happen.
+See [CONTRIBUTING.md](CONTRIBUTING.md): small changes, real tests, no silent
+golden updates, and never claim validation that did not happen.
 
 ## License
 

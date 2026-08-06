@@ -1,0 +1,91 @@
+name: Conformance finding
+description: Generated COBOL, copybook or JCL that Enterprise COBOL, CICS, Db2 or z/OS would not accept.
+labels: [conformance]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This is the most valuable report this project can receive.**
+
+        Everything here is validated with GnuCOBOL, under a dialect shaped to
+        Enterprise COBOL 6.4 and under GnuCOBOL's own default. No IBM Enterprise
+        COBOL validation has been performed, and none is claimed — so the gap
+        between what this compiler emits and what `IGYCRCTL` accepts is exactly
+        the thing the project cannot see for itself.
+
+        You do not need a reproduction, a fix, or a working system. A quoted
+        line and a sentence about why it is wrong is enough.
+
+  - type: textarea
+    id: emitted
+    attributes:
+      label: What was emitted
+      description: The lines as they appear in the artifact, columns intact.
+      render: cobol
+    validations:
+      required: true
+
+  - type: textarea
+    id: wrong
+    attributes:
+      label: Why it is wrong
+      description: |
+        What the target does with this. A compiler message, an abend code, a
+        run-time behaviour, or a rule that is being broken.
+    validations:
+      required: true
+
+  - type: input
+    id: citation
+    attributes:
+      label: Where it says so
+      description: |
+        The manual and section, if you have it to hand. A publication number is
+        ideal — SC27-8713-03 is the 6.4 Language Reference. "I have seen this
+        fail in production" is also an answer.
+      placeholder: LR, "FILE STATUS clause" / SC27-8713-03
+    validations:
+      required: false
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which artifact
+      multiple: true
+      options:
+        - COBOL program (.cbl)
+        - Copybook (.cpy)
+        - JCL (.jcl)
+        - zUnit case or configuration
+        - Something else
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where you saw it
+      options:
+        - Enterprise COBOL on z/OS
+        - CICS Transaction Server
+        - Db2 for z/OS
+        - IMS
+        - Reading it, not running it
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: The BankTS that produced it, if you have it
+      render: typescript
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        A finding that can be read off the emitted text usually becomes a rule
+        in `packages/conformance-lint`, so that every artifact in the repository
+        is checked against it from then on rather than just the one you found.
