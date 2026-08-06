@@ -38,6 +38,11 @@ GnuCOBOL configuration shaped to Enterprise COBOL 6.4 and under GnuCOBOL's own
 default. No IBM Enterprise COBOL validation has been performed, and none is
 claimed.
 
+**Built with AI assistance.** The design and the decisions are the author's;
+much of the implementation was written with an AI coding assistant under review.
+That is how the code was written, not what it does — nothing in the compiler is
+a model, and [verification](docs/verification.md) is how to check that.
+
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
 **[What it does not do →](docs/status-and-limits.md)**
@@ -50,16 +55,16 @@ claimed.
 pnpm install && pnpm playground:dev
 ```
 
-The **[playground](packages/playground/)** runs the entire compiler in your
+The **[playground](packages/playground/)** runs the whole compiler in your
 browser — no server, no network call. Click any line of BankTS and the COBOL it
-produced lights up, straight from the emitted source map: traceability you can
-click rather than a claim in the documentation.
+produced lights up, from the emitted source map: traceability you can click
+rather than a claim in the documentation.
 
 ## What it generates
 
 From one BankTS module, `bankc build` emits a COBOL program, a copybook per
-record, the JCL to build and run it, a source map covering every module, record,
-field, function and transaction, and an audit bundle.
+record, the JCL to build and run it, a source map over every construct, and an
+audit bundle.
 
 Interest accrual, in full:
 
@@ -88,9 +93,8 @@ zero. Banker's rounding is arithmetic this compiler writes out:
 ```
 
 That sequence is executed and compared against exact arithmetic over every
-boundary case, for a product and for a quotient, in all seven modes. See
-[the numeric model](docs/numeric-model.md) and
-[`rounding-conformance`](examples/rounding-conformance/).
+boundary case, for a product and a quotient, in all seven modes — see
+[the numeric model](docs/numeric-model.md).
 
 ## Safety rules the compiler enforces
 
@@ -131,8 +135,8 @@ Add `--watch` to any command to rerun on save.
 
 ## Examples
 
-Each with a checked-in [evidence bundle](evidence/) holding its generated
-artifacts and verification report.
+Each with a checked-in [evidence bundle](evidence/): its artifacts, and the
+verification report over them.
 
 **The language**
 
@@ -176,9 +180,7 @@ artifacts and verification report.
 
 **And five conversions** — [`conversions/`](conversions/) — existing COBOL on one
 side, the BankTS it becomes on the other, and what the compiler produced from
-that BankTS underneath: a sequential master update, a CICS enquiry, a Db2 cursor
-batch, hand-written banker's rounding, and a copybook with `REDEFINES`, `FILLER`
-and `OCCURS DEPENDING ON`. Each page says what the conversion changed.
+that BankTS underneath.
 
 `withdrawal-with-recovery` is **run**, against the reference runtime in
 [`runtime/`](runtime/README.md), and the test asserts on the balances the ledger

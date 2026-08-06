@@ -410,3 +410,55 @@ describe("the source the docs are built from", () => {
     expect(fingerprint(), "the docs build wrote into docs/").toBe(before);
   });
 });
+
+/**
+ * Working papers that stay in the repository and off the site.
+ *
+ * The audits are this project's criticism of itself and `launch-tickets.md` is
+ * the plan for answering it. Both belong in the repository, next to the commits
+ * that did the answering. Neither is written for somebody who arrived from a
+ * link — and the site rendered them anyway, put them in `sitemap.xml`, and
+ * pointed search engines at them, so a reader searching the site met the
+ * pre-publication security checklist and an author's address.
+ *
+ * Excluded, not hidden: GitHub renders every one of them, and the links now go
+ * there rather than to a page this site does not serve.
+ */
+describe("the documents the site does not publish", () => {
+  it("renders no audit and no ticket list", () => {
+    const published = docFiles();
+    expect(published.length).toBeGreaterThan(20);
+    expect(published.filter((file) => /^audit-/.test(file))).toEqual([]);
+    expect(published).not.toContain("launch-tickets.md");
+  });
+
+  it("still has them in the repository, which is the point", () => {
+    // Excluding a document from the site must not be a reason to delete it.
+    expect(existsSync("docs/launch-tickets.md")).toBe(true);
+    expect(existsSync("docs/audit-2026-08-06.md")).toBe(true);
+  });
+
+  it("sends a link to one of them to GitHub rather than to a 404", () => {
+    expect(rewriteLink("audit-2026-08-06.md", "for-decision-makers.md")).toBe(
+      "https://github.com/MWH997/banklang/blob/main/docs/audit-2026-08-06.md",
+    );
+    expect(rewriteLink("launch-tickets.md", "roadmap.md")).toBe(
+      "https://github.com/MWH997/banklang/blob/main/docs/launch-tickets.md",
+    );
+    // A published one still resolves on the site.
+    expect(rewriteLink("verification.md", "roadmap.md")).toBe(
+      "verification.html",
+    );
+  });
+
+  it("carries the author's address on no published page", () => {
+    // It is in CITATION.cff on purpose, which is a file rather than a page.
+    // It was on two rendered pages, in a paragraph about identity.
+    for (const file of docFiles()) {
+      const text = readFileSync(join("docs", file), "utf8");
+      expect(text, `${file} prints an email address`).not.toMatch(
+        /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+      );
+    }
+  });
+});
