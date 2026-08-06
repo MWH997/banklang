@@ -94,8 +94,13 @@ const cases: [string, string][] = [
     `module M;\n${R}\nnested function f(x: decimal<15,2>): decimal<15,2> { return x + 1.00; }\nentry transaction t(row: Row) { row.amount = f(row.amount); audit("A", row.idempotencyKey); }`,
   ],
   [
+    // The record is not called `V`. `RECORDING MODE IS V` is on the FD of
+    // every QSAM file, and GnuCOBOL will not then accept `V` as a data name in
+    // the same program — Enterprise COBOL will, `V` being nowhere in its
+    // reserved word table, so this is the local compiler being the stricter of
+    // the two rather than a construct the target refuses.
     "varying",
-    `module M;\nrecord V { text: string<80>; }\nfile f sequential output record V varying 1 to 80 length vlen status fs;\nentry transaction t(v: V, idempotencyKey: string<36>) { open f; vlen = 5; write f from v; close f; audit("A", idempotencyKey); }`,
+    `module M;\nrecord Vary { text: string<80>; }\nfile f sequential output record Vary varying 1 to 80 length vlen status fs;\nentry transaction t(v: Vary, idempotencyKey: string<36>) { open f; vlen = 5; write f from v; close f; audit("A", idempotencyKey); }`,
   ],
   [
     "dli",

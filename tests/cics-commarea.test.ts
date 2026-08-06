@@ -241,7 +241,7 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
   });
 
   it("tests the status the file declared", () => {
-    expect(result.cobol).toContain('IF FEED-STATUS(1:1) NOT = "0"');
+    expect(result.cobol).toContain("IF NOT FEED-STATUS-OK");
   });
 
   /** Named, because a job log saying only "open failed" starts an investigation. */
@@ -261,7 +261,7 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
    */
   it("stops with a non-zero return code", () => {
     const text = result.cobol ?? "";
-    const check = text.indexOf('IF FEED-STATUS(1:1) NOT = "0"');
+    const check = text.indexOf("IF NOT FEED-STATUS-OK");
 
     expect(text.slice(check)).toContain("MOVE 12 TO BANK-RETURN-CODE");
     expect(text.slice(check)).toMatch(/GO TO \S+-EXIT/);

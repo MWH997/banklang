@@ -449,9 +449,7 @@ export function precompile(cobol: string): PrecompileResult {
     // own flags, which is where the local build says the same thing.
     if (isCompilerOptionStatement(line)) {
       optionStatements += 1;
-      output.push(
-        `      *> ${trimmed} — removed by the BankLang precompiler.`,
-      );
+      output.push(`      *> ${trimmed} — removed by the BankLang precompiler.`);
       continue;
     }
 

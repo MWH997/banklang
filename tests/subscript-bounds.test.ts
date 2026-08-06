@@ -227,7 +227,11 @@ describe("executed", () => {
     // builds one the way the initiator would, which is also the only way to
     // choose the subscript from outside the program.
     const dir = mkdtempSync(join(tmpdir(), "bankc-bounds-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
     writeFileSync(
       join(dir, "driver.cbl"),
       parmDriver(result.program!, { at }),

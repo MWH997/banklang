@@ -157,12 +157,12 @@ entry transaction go(acct: Acct) {
 
   it("writes a comma in a literal under the comma convention", () => {
     expect(emitSource(LITERALS, { decimalPoint: "comma" })).toContain(
-      "= 1234,50",
+      "MOVE 1234,50 TO",
     );
   });
 
   it("leaves the literal alone under the default convention", () => {
-    expect(emitSource(LITERALS)).toContain("= 1234.50");
+    expect(emitSource(LITERALS)).toContain("MOVE 1234.50 TO");
   });
 
   /**

@@ -166,7 +166,7 @@ describe("file COBOL emission", () => {
   it("suffixes COBOL file names so they cannot collide with a record", () => {
     const { emit } = compileExample("examples/account-file-batch");
 
-    expect(emit.cobol).toContain("FD  ACCOUNT-INPUT-FILE.");
+    expect(emit.cobol).toContain("FD  ACCOUNT-INPUT-FILE\n");
     expect(emit.cobol).toContain("SELECT ACCOUNT-INPUT-FILE");
     // The record type keeps the unsuffixed name, so the two cannot collide.
     expect(emit.cobol).toContain("01  ACCOUNT-RECORD.");

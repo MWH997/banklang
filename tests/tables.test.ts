@@ -45,7 +45,7 @@ describe("writing into a table", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("COMPUTE RATES OF BOOK (1) = 0.0500");
+    expect(result.cobol).toContain("MOVE 0.0500 TO RATES OF BOOK (1)");
   });
 
   it("still assigns a field of an element", () => {
@@ -177,7 +177,11 @@ describe("executed", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-tables-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

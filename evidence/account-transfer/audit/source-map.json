@@ -15,8 +15,8 @@
         "column": 23
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 6,
-      "targetEndLine": 7,
+      "targetStartLine": 24,
+      "targetEndLine": 25,
       "category": "module",
       "symbol": "AccountTransfer"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 13,
-      "targetEndLine": 16,
+      "targetStartLine": 31,
+      "targetEndLine": 34,
       "category": "record",
       "symbol": "TransferRequest"
     },
@@ -47,8 +47,8 @@
         "column": 28
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 14,
-      "targetEndLine": 14,
+      "targetStartLine": 32,
+      "targetEndLine": 32,
       "category": "field",
       "symbol": "debitAccount"
     },
@@ -63,8 +63,8 @@
         "column": 29
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 15,
-      "targetEndLine": 15,
+      "targetStartLine": 33,
+      "targetEndLine": 33,
       "category": "field",
       "symbol": "creditAccount"
     },
@@ -79,8 +79,8 @@
         "column": 20
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 16,
-      "targetEndLine": 16,
+      "targetStartLine": 34,
+      "targetEndLine": 34,
       "category": "field",
       "symbol": "amount"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "/workspace/Code/banklang/evidence/account-transfer/cobol/ACCOUNTT.cbl",
-      "targetStartLine": 21,
-      "targetEndLine": 29,
+      "targetStartLine": 39,
+      "targetEndLine": 47,
       "category": "function",
       "symbol": "validateAmount"
     }

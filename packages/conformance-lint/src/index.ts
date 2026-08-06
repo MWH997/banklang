@@ -131,6 +131,10 @@ const PROGRAM_TEXT_WORDS = new Set([
   "COMP-3",
   "COMP-4",
   "COMP-5",
+  // `RECORDING MODE IS F` — the mode indicators are values of the clause
+  // rather than words of the language, and Appendix E does not list them.
+  "F",
+  "U",
   // SQLCA and SQLCODE are declared by the precompiler's own INCLUDE.
   "SQLCA",
   "SQLCODE",

@@ -150,7 +150,11 @@ entry transaction run(batch: Batch, n: binary<4>) {
     // `n` is an entry parameter, so it arrives in the job's PARM. The driver
     // builds one the way the initiator would.
     const dir = mkdtempSync(join(tmpdir(), "bankc-odo-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
     writeFileSync(
       join(dir, "driver.cbl"),
       parmDriver(result.program!, { n: count }),

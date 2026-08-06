@@ -376,7 +376,11 @@ describe("executed against the reference MQI", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-mq-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(precompile(result.cobol ?? "").cobol), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(precompile(result.cobol ?? "").cobol),
+      "utf8",
+    );
 
     const built = spawnSync(
       "cobc",

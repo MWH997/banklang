@@ -7,9 +7,9 @@
 | source-artifact | examples/interest-posting-batch/src/main.bank.ts |
 | source-artifact-sha256 | 35acc811cd349652b86bcdde8ee2355c97cf5f8a5b8434b79327ea599fc61049 |
 | generated-artifact | evidence/interest-posting-batch/gnucobol/cobol/INTEREST.cbl |
-| generated-artifact-sha256 | 1ace91e7f4bd242b99c133f1ea2fe5a883d73997f53d11248c88618797d2ab49 |
+| generated-artifact-sha256 | 12a106a3934fd0708350488261c932a55e4fcc8108c0a485eef456d613822250 |
 | source-map-artifact | evidence/interest-posting-batch/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 7ff961388d571544c7efe4f0d277bdf49517f4a25422fa4c9f112c61904fab94 |
+| source-map-artifact-sha256 | 807df9c58da0f0f79bc53ad1753864162cdeccd7f9dff159cdf090155ea4a63a |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/interest-posting-batch/gnucobol/copybooks evidence/interest-posting-batch/gnucobol/cobol/INTEREST-PRE.cbl -o evidence/interest-posting-batch/gnucobol/bin/interest |

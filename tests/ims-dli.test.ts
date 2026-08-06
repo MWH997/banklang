@@ -378,7 +378,11 @@ describe("executed against the reference DL/I runtime", () => {
     expect(result.diagnostics).toEqual([]);
 
     const dir = mkdtempSync(join(tmpdir(), "bankc-dli-"));
-    writeFileSync(join(dir, "program.cbl"), localCobol(result.cobol ?? ""), "utf8");
+    writeFileSync(
+      join(dir, "program.cbl"),
+      localCobol(result.cobol ?? ""),
+      "utf8",
+    );
     writeFileSync(join(dir, "driver.cob"), DRIVER, "utf8");
     if (script !== null) {
       writeFileSync(join(dir, "dli-outcomes.txt"), script, "utf8");
