@@ -860,6 +860,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-SQL-010",
+    title: "A cursor read from a position, without being declared scrollable",
+    explanation:
+      "`from` starts the loop at a given row and `backward` reads towards the first one, and Db2 can do neither on a forward-only cursor: the SQL Reference's `DECLARE CURSOR` gives `NO SCROLL` as the default, and the fetch orientations — `ABSOLUTE`, `RELATIVE`, `PRIOR`, `FIRST`, `LAST` — are only allowed on a cursor declared `SCROLL`. Without the keyword the precompiler accepts the DECLARE and rejects the FETCH, which is a bind-time failure in a program that read as though it worked.",
+    remediation:
+      "Declare the cursor `scroll` — `cursor statementPage(...) scroll : TxnRow { ... }` — or drop the `from` and `backward` and read it forward from the first row.",
+    specReference: "language/sql.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-SQL-011",
+    title: "A scrollable cursor asked for a rowset fetch",
+    explanation:
+      "Both are real Db2, and the combination is not one this compiler emits. A rowset fetch on a scrollable cursor is `FETCH NEXT ROWSET`, `FETCH PRIOR ROWSET` or `FETCH ROWSET STARTING AT ABSOLUTE n`, each of which positions a *rowset* rather than a row — so the loop's position arithmetic, its `SQLERRD(3)` row count and its bound would all have to mean something different from what they mean now. Emitting the single-row form against a `WITH ROWSET POSITIONING` cursor is what Db2 answers `-249` for.",
+    remediation:
+      "Drop one. `rowset` is for reading a whole result set with fewer crossings into Db2; `scroll` is for reading part of one from a chosen row.",
+    specReference: "language/sql.md",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-012",
     title: "Two files share one DD name",
     explanation:

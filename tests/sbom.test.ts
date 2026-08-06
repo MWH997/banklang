@@ -229,7 +229,7 @@ describe("the licence column, which is why the command is wrapped", () => {
   });
 
   it("repairs nothing when there is nothing on disk to read", () => {
-    const invented = {
+    const invented: Bom = {
       ...structuredClone(bom),
       components: [
         { type: "library", name: "left-pad", version: "1.3.0" },

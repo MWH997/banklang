@@ -218,6 +218,101 @@ array's `OCCURS` to be. Each column becomes an elementary item with its own
 which a multiple-row fetch does not take, and Db2 answers
 `UNDECLARED HOST VARIABLE ARRAY`.
 
+### Reading from somewhere other than the beginning
+
+A cursor goes forward, once. That is right for a batch and wrong for the other
+thing a bank does with a query: a statement screen showing rows 41 to 60, and
+the same program showing 21 to 40 when the user presses PF7. `scroll` is what
+makes that possible, and `from` and `backward` are what use it:
+
+```ts
+cursor statementPage(keyAccount: string<16>) scroll : TxnRow {
+  SELECT TXN_ID, AMOUNT
+  INTO :rowTxnId, :rowAmount
+  FROM TRANSACTION
+  WHERE ACCOUNT_ID = :keyAccount
+  ORDER BY POSTED_AT
+}
+
+// rows 41 to 60
+for each row in statementPage(request.accountId) from 41 limit 20 { }
+
+// the twenty most recent, newest first
+for each row in statementPage(request.accountId) backward limit 20 { }
+```
+
+Both need the cursor to be declared `scroll`; without it, `BANK-SQL-010`. That
+is an error rather than a warning because Db2 accepts the `DECLARE` of a
+forward-only cursor and rejects the `FETCH` against it — so a program without
+the keyword compiles here, precompiles, and fails at bind.
+
+**`INSENSITIVE` is written rather than left out.**
+
+```cobol
+       EXEC SQL
+           DECLARE STATEMENT-PAGE INSENSITIVE SCROLL CURSOR FOR
+           SELECT TXN_ID, AMOUNT
+           FROM TRANSACTION
+           WHERE ACCOUNT_ID = :STATEMENT-PAGE-H1
+           ORDER BY POSTED_AT
+       END-EXEC.
+```
+
+Db2's default is `ASENSITIVE`, which resolves to insensitive or to sensitive
+dynamic depending on the statement — so the same source could page over a fixed
+result set or over one changing underneath it, decided per query. A reader
+seeing the same transaction on two pages, or never seeing it because it moved
+between them, is not something the program can detect. `INSENSITIVE` fixes the
+result table at `OPEN`, which is the property a statement screen is already
+claiming to have. The cost is that Db2 materialises that table, which is why
+`scroll` is asked for rather than assumed.
+
+Note where the words go. Sensitivity and `SCROLL` come **before** `CURSOR`;
+`WITH HOLD` and `WITH ROWSET POSITIONING` come after it. `cursor x(...) hold
+scroll` is one line of BankTS and two clauses on opposite sides of one COBOL
+word.
+
+**How the loop walks.** It keeps its own position and fetches that row every
+time:
+
+```cobol
+           MOVE 41 TO STATEMENT-PAGE-POS
+           ...
+           PERFORM UNTIL STATEMENT-PAGE-ROWS >= 20
+               EXEC SQL
+                   FETCH ABSOLUTE :STATEMENT-PAGE-POS FROM
+                       STATEMENT-PAGE
+                   INTO :ROW-TXN-ID OF TXN-ROW, :ROW-AMOUNT OF TXN-ROW
+               END-EXEC
+```
+
+One `FETCH` rather than a first-iteration case and a steady-state case, and
+every way the loop ends is Db2's answer instead of arithmetic:
+
+- past the last row, `ABSOLUTE` beyond the end answers `+100`;
+- walking backward off the front, the position reaches 0, which the SQL
+  Reference defines as before the first row — also `+100`;
+- a negative position counts from the end, so `backward` with no `from` starts
+  at `-1`, the last row, without the program knowing or asking how many rows
+  there are.
+
+The position is a signed fullword (`PIC S9(9) COMP`, Db2's `INTEGER`) and it is
+a host variable, so unlike the row counter it sits inside the declare section.
+A start position that is not a whole number is `BANK-TYPE-003`: `FETCH ABSOLUTE`
+takes an integer, and a scaled decimal there is `-301` from the precompiler
+rather than a rounded row number.
+
+`scroll` and `rowset` together are `BANK-SQL-011`. Both are real Db2 and the
+combination is a third statement — `FETCH ROWSET STARTING AT ABSOLUTE n` — which
+positions a rowset rather than a row, so the loop's arithmetic, its `SQLERRD(3)`
+count and its bound would all mean something different. Pick the one that
+matches the job: `rowset` reads a whole result set with fewer crossings,
+`scroll` reads part of one from a chosen row.
+
+`scroll`, `from` and `backward` are contextual words rather than reserved ones,
+like `limit`. A record with a field called `from` still compiles, which for a
+transfer is the name that field wants.
+
 ### What SQL BankLang does not have words for
 
 BankLang does not parse SQL. It resolves the `:hostVariable` references and

@@ -73,13 +73,13 @@ sounding impressive:
 - **Db2's depth is now there, and three of the five were never missing.**
   BankLang does not parse SQL, so isolation levels, savepoints and `LOCK TABLE`
   always worked — what was missing was a test, a rule, and a page saying so.
-  `WITH HOLD` and multi-row `FETCH` are real additions (`cursor ... hold`,
-  `cursor ... rowset n`). `GET DIAGNOSTICS` was listed here as absent until
-  2026-08-07 and never was: it is an ordinary statement in a `sql` declaration,
-  host variables and all, for the same reason the isolation levels always
-  worked. What remains genuinely absent is **scrollable cursors** — the `DECLARE`
-  is written by the compiler, so there is nowhere to put `SCROLL`, and `for each`
-  fetches forward — and dynamic SQL, the last on purpose (`BANK-SQL-002`).
+  `WITH HOLD`, multi-row `FETCH` and scrollable cursors are real additions
+  (`cursor ... hold`, `cursor ... rowset n`, `cursor ... scroll` with
+  `for each ... from n backward`). `GET DIAGNOSTICS` was listed here as absent
+  until 2026-08-07 and never was: it is an ordinary statement in a `sql`
+  declaration, host variables and all, for the same reason the isolation levels
+  always worked. What remains absent is dynamic SQL, and that is on purpose
+  (`BANK-SQL-002`).
 - **`bankc analyse` reads rather than compiles.** It is a count of what is in
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.

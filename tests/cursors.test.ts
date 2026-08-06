@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { formatBankTs } from "../packages/formatter/src/index";
 import { flowed } from "./helpers";
 
 /**
@@ -675,5 +676,347 @@ entry transaction go(account: Account) {
     expect(
       withStatement("ROLLBACK").diagnostics.map((entry) => entry.id),
     ).toContain("BANK-SQL-009");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * Scrollable cursors.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Reading a result set from somewhere other than the beginning.
+ *
+ * A forward-only cursor goes one way, once, which is right for a batch and
+ * wrong for the other thing a bank does with a query: a statement screen
+ * showing rows 41 to 60, and the same program showing 21 to 40 when the user
+ * presses PF7. That needs `SCROLL` on the `DECLARE` and a fetch orientation on
+ * the `FETCH`, and the compiler writes both of those, so it needed syntax
+ * rather than something to pass through.
+ *
+ * None of this has been run against Db2. What is asserted is the text, against
+ * the SQL Reference — the same standard of evidence as everything else here
+ * that a precompiler would see before a compiler does.
+ */
+
+const SCROLL_PREAMBLE = `module Statement;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record TxnRow {
+  rowTxnId: string<20>;
+  rowAmount: BDT;
+}
+
+record Request {
+  accountId: string<16>;
+  firstRow: decimal<9, 0>;
+  idempotencyKey: string<36>;
+}
+`;
+
+/** A program with one scrollable cursor and one loop over it. */
+function scrolled(
+  header: string,
+  declaration = "scroll",
+): ReturnType<typeof compile> {
+  return compile(`${SCROLL_PREAMBLE}
+cursor statementPage(keyAccount: string<16>) ${declaration} : TxnRow {
+  SELECT TXN_ID, AMOUNT
+  INTO :rowTxnId, :rowAmount
+  FROM TRANSACTION
+  WHERE ACCOUNT_ID = :keyAccount
+  ORDER BY POSTED_AT
+}
+
+entry transaction showPage(request: Request, row: TxnRow) {
+  for each row in statementPage(request.accountId) ${header} {
+    audit("STMT-PAGE", row.rowTxnId);
+  }
+}`);
+}
+
+describe("a cursor declared scrollable", () => {
+  /**
+   * `INSENSITIVE` is written, not left to Db2.
+   *
+   * Db2's default is `ASENSITIVE`, which resolves to insensitive or to
+   * sensitive dynamic depending on the statement — so the same source could
+   * page over a fixed result set or over one changing underneath, decided per
+   * query. A reader seeing the same transaction on two pages, or never seeing
+   * it, is not detectable from inside the program.
+   */
+  it("fixes the result set at OPEN rather than taking Db2's default", () => {
+    const result = scrolled("from request.firstRow limit 20");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain(
+      "DECLARE STATEMENT-PAGE INSENSITIVE SCROLL CURSOR FOR",
+    );
+  });
+
+  it("writes SCROLL before CURSOR and WITH HOLD after it", () => {
+    // The SQL Reference's order, which is not the order the language reads
+    // them in: `cursor x(...) hold scroll` is one line of BankTS and two
+    // clauses on opposite sides of the word CURSOR.
+    const result = scrolled("from request.firstRow limit 20", "hold scroll");
+
+    expect(errors(result)).toEqual([]);
+    // Both clauses do not fit one fixed-format line, so the emitter continues
+    // it — which is why this compares the flowed text rather than the raw.
+    expect(flowed(result.cobol)).toContain(
+      flowed("DECLARE STATEMENT-PAGE INSENSITIVE SCROLL CURSOR WITH HOLD FOR"),
+    );
+  });
+
+  it("leaves an ordinary cursor exactly as it was", () => {
+    const result = txn(`    debit(row.rowAccountId, row.rowBalance);
+    credit("SUSPENSE", row.rowBalance);`);
+
+    expect(result.cobol).toContain("DECLARE ACCOUNTS-IN-BRANCH CURSOR FOR");
+    expect(result.cobol).not.toContain("SCROLL");
+    expect(result.cobol).not.toContain("-POS");
+  });
+
+  /**
+   * Declaring a cursor scrollable is not reading it scrollably. A `for each`
+   * with no `from` and no `backward` is still a forward scan, and `FETCH NEXT`
+   * is what a forward scan should emit whatever the cursor allows.
+   */
+  it("still fetches forward when the loop asks for nothing else", () => {
+    const result = scrolled("limit 20");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain("FETCH STATEMENT-PAGE");
+    expect(result.cobol).not.toContain("ABSOLUTE");
+  });
+
+  it("declares its position as a host variable Db2 can read", () => {
+    const result = scrolled("from request.firstRow limit 20");
+    const cobol = result.cobol ?? "";
+
+    // Signed fullword binary: Db2's INTEGER, and signed because a negative
+    // position counts back from the last row.
+    expect(cobol).toContain("01  STATEMENT-PAGE-POS   PIC S9(9) COMP.");
+
+    // Inside the declare section, unlike the row counter, which is the
+    // program's own and would be described to Db2 as a host variable if it
+    // were in there.
+    const open = cobol.indexOf("BEGIN DECLARE SECTION");
+    const close = cobol.indexOf("END DECLARE SECTION");
+    expect(cobol.indexOf("STATEMENT-PAGE-POS")).toBeGreaterThan(open);
+    expect(cobol.indexOf("STATEMENT-PAGE-POS")).toBeLessThan(close);
+    expect(cobol.indexOf("STATEMENT-PAGE-ROWS")).toBeGreaterThan(close);
+  });
+});
+
+describe("where a scrolled loop starts, and which way it goes", () => {
+  it("starts at the row `from` names and walks forward", () => {
+    const result = scrolled("from request.firstRow limit 20");
+    const cobol = flowed(result.cobol);
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain(
+      "MOVE FIRST-ROW OF REQUEST TO STATEMENT-PAGE-POS",
+    );
+    expect(cobol).toContain(
+      flowed("FETCH ABSOLUTE :STATEMENT-PAGE-POS FROM STATEMENT-PAGE"),
+    );
+    expect(result.cobol).toContain("ADD 1 TO STATEMENT-PAGE-POS");
+  });
+
+  /**
+   * `backward` with no `from` begins at -1.
+   *
+   * The SQL Reference counts a negative `ABSOLUTE` from the end, so -1 is the
+   * last row — which means the program reads the most recent rows without
+   * knowing, or asking Db2, how many there are.
+   */
+  it("starts at the last row when told to go backward from nowhere", () => {
+    const result = scrolled("backward limit 5");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain("MOVE -1 TO STATEMENT-PAGE-POS");
+    expect(result.cobol).toContain("SUBTRACT 1 FROM STATEMENT-PAGE-POS");
+    expect(result.cobol).not.toContain("ADD 1 TO STATEMENT-PAGE-POS");
+  });
+
+  it("takes both, which is a page read in reverse", () => {
+    const result = scrolled("from request.firstRow backward limit 20");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain(
+      "MOVE FIRST-ROW OF REQUEST TO STATEMENT-PAGE-POS",
+    );
+    expect(result.cobol).toContain("SUBTRACT 1 FROM STATEMENT-PAGE-POS");
+  });
+
+  /**
+   * Every way the loop ends is Db2's answer rather than arithmetic here.
+   *
+   * Past the last row, `ABSOLUTE` answers +100. Going backward off the front,
+   * the position reaches 0, which the SQL Reference defines as before the first
+   * row — also +100. So the existing exit on a non-zero SQLCODE covers both,
+   * and there is no row count to get wrong.
+   */
+  it("leaves on Db2's answer, not on a computed end", () => {
+    const result = scrolled("backward limit 5");
+    const cobol = result.cobol ?? "";
+    const loop = cobol.slice(
+      cobol.indexOf("PERFORM UNTIL STATEMENT-PAGE-ROWS"),
+      cobol.indexOf("END-PERFORM"),
+    );
+
+    expect(loop).toContain("IF SQLCODE NOT = 0");
+    expect(loop).toContain("EXIT PERFORM");
+    // Nothing in the loop compares the position against a count of rows.
+    expect(loop).not.toMatch(/STATEMENT-PAGE-POS\s*[<>]/);
+  });
+
+  it("steps the position before the body, not after it", () => {
+    // A `raise` in the body abandons the rest of it. Stepping afterwards would
+    // leave the position on the row that was just read, so a restart would
+    // process it twice.
+    const result = scrolled("from request.firstRow limit 20");
+    const cobol = result.cobol ?? "";
+
+    expect(cobol.indexOf("ADD 1 TO STATEMENT-PAGE-POS")).toBeLessThan(
+      cobol.indexOf('MOVE "STMT-PAGE"'),
+    );
+  });
+});
+
+describe("what a scrollable cursor refuses", () => {
+  it("refuses `from` on a cursor that is not scrollable", () => {
+    // Db2 takes the DECLARE and rejects the FETCH, so without this the program
+    // compiles here and fails at bind.
+    const result = scrolled("from request.firstRow limit 20", "");
+
+    expect(ids(result)).toContain("BANK-SQL-010");
+  });
+
+  it("refuses `backward` on a cursor that is not scrollable", () => {
+    expect(ids(scrolled("backward limit 5", ""))).toContain("BANK-SQL-010");
+  });
+
+  it("reports each of them, at the word that asked for it", () => {
+    const result = scrolled("from request.firstRow backward limit 20", "");
+    const reported = result.diagnostics.filter(
+      (entry) => entry.id === "BANK-SQL-010",
+    );
+
+    expect(reported).toHaveLength(2);
+    expect(reported.map((entry) => entry.message)).toEqual([
+      expect.stringContaining("`from`"),
+      expect.stringContaining("`backward`"),
+    ]);
+  });
+
+  /**
+   * A rowset fetch on a scrollable cursor is a real Db2 statement — `FETCH
+   * ROWSET STARTING AT ABSOLUTE n` — and a different one from what this emits.
+   * Refused on the declaration rather than at the loop, so a cursor declared
+   * both ways and never read is still caught.
+   */
+  it("refuses a cursor declared both scroll and rowset", () => {
+    const result = scrolled("limit 20", "scroll rowset 10");
+
+    expect(ids(result)).toContain("BANK-SQL-011");
+  });
+
+  it("refuses it even where nothing reads the cursor", () => {
+    const result = compile(`${SCROLL_PREAMBLE}
+cursor statementPage(keyAccount: string<16>) scroll rowset 10 : TxnRow {
+  SELECT TXN_ID, AMOUNT
+  INTO :rowTxnId, :rowAmount
+  FROM TRANSACTION
+  WHERE ACCOUNT_ID = :keyAccount
+}
+
+entry transaction showPage(request: Request) {
+  audit("STMT-PAGE", request.idempotencyKey);
+}`);
+
+    expect(ids(result)).toContain("BANK-SQL-011");
+  });
+
+  it("refuses a start position that is not a whole number", () => {
+    // `FETCH ABSOLUTE` takes an integer host variable. A scaled decimal there
+    // is -301 from the precompiler, not a rounded row number.
+    expect(ids(scrolled("from request.accountId limit 20"))).toContain(
+      "BANK-TYPE-003",
+    );
+  });
+
+  it("accepts an integer literal as the start", () => {
+    const result = scrolled("from 41 limit 20");
+
+    expect(errors(result)).toEqual([]);
+    expect(result.cobol).toContain("MOVE 41 TO STATEMENT-PAGE-POS");
+  });
+});
+
+describe("the words scroll, from and backward", () => {
+  /**
+   * Contextual, like `limit`. Making them reserved would break every existing
+   * program with a field called `from` — which for a transfer record is the
+   * obvious name for one.
+   */
+  it("stay usable as field names", () => {
+    const result = compile(`module Contextual;
+
+record Transfer {
+  from: string<16>;
+  backward: string<4>;
+  scroll: string<4>;
+}
+
+entry transaction move(transfer: Transfer, idempotencyKey: string<36>) {
+  audit("MOVED", transfer.from);
+}`);
+
+    expect(errors(result)).toEqual([]);
+  });
+});
+
+/**
+ * The formatter, which is the only thing here that has to write the syntax back
+ * out.
+ *
+ * A clause the printer does not know about is not a formatting bug — it is data
+ * loss. `pnpm fmt` rewrites every example in place, so a dropped `scroll` would
+ * turn a scrollable cursor into a forward-only one in the source, silently, and
+ * the next compile would be a `BANK-SQL-010` nobody wrote.
+ */
+describe("printing a scrollable cursor back out", () => {
+  it("keeps every clause, in the order the parser reads them", () => {
+    const source = `module Statement;
+
+record TxnRow {
+  rowTxnId: string<20>;
+}
+
+record Request {
+  accountId: string<16>;
+  firstRow: decimal<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+cursor statementPage(keyAccount: string<16>) hold scroll: TxnRow {
+  SELECT TXN_ID INTO :rowTxnId FROM TRANSACTION WHERE ACCOUNT_ID = :keyAccount
+}
+
+entry transaction showPage(request: Request, row: TxnRow) {
+  for each row in statementPage(request.accountId) from request.firstRow backward limit 20 {
+    audit("PAGE", row.rowTxnId);
+  }
+}
+`;
+
+    const formatted = formatBankTs(source);
+    expect(formatted.diagnostics).toEqual([]);
+    // Already formatted, so the printer reproduced it exactly — which is the
+    // whole assertion. Anything dropped would show as a change.
+    expect(formatted.unchanged).toBe(true);
+    expect(formatBankTs(formatted.text).text).toBe(formatted.text);
   });
 });

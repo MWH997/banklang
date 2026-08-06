@@ -51,6 +51,10 @@ in order.
 
 ### Added
 
+- Add scrollable cursors: `cursor ... scroll` and
+  `for each ... from <n> backward`, the last Db2 depth the roadmap named and the
+  one that needed syntax rather than pass-through —
+  [SQL](docs/language/sql.md).
 - Add `pnpm sbom:release`, producing a CycloneDX 1.7 bill of materials with a
   licence for every component, and attach it to the release —
   [launch tickets](docs/launch-tickets.md).

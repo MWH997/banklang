@@ -229,6 +229,28 @@ export interface SqlDeclarationNode extends NodeBase {
    * host-variable array's `OCCURS` to be.
    */
   rowset: number | null;
+  /**
+   * `scroll` — `INSENSITIVE SCROLL CURSOR`, which can be read from any row.
+   *
+   * An ordinary cursor goes forward, once. A scrollable one can start at a
+   * given row and can go backward, which is what paging is: a statement screen
+   * showing rows 41 to 60, and the same program showing 21 to 40 when the user
+   * presses PF7.
+   *
+   * **`INSENSITIVE` is not a default this leaves to Db2.** Without a
+   * sensitivity keyword Db2 chooses `ASENSITIVE`, which resolves to insensitive
+   * or to *sensitive dynamic* depending on the statement — and a sensitive
+   * cursor sees rows committed by other units of work after it opened. Paging
+   * over a result set that is changing underneath is how a reader sees the same
+   * transaction on two pages, or never sees it at all, and neither is
+   * detectable from inside the program. `INSENSITIVE` fixes the result table at
+   * `OPEN`; the pages then agree with each other, which is the property a
+   * statement screen is claiming to have.
+   *
+   * The cost is that Db2 materialises the result table into a declared
+   * temporary table, so this is asked for rather than assumed.
+   */
+  scroll: boolean;
   form: "statement" | "cursor";
   /** Raw SQL text as written. */
   text: string;
@@ -264,6 +286,26 @@ export interface CursorLoopStatementNode extends NodeBase {
   /** The most rows the loop may process. Mandatory, as for `while`. */
   limit: number;
   limitSpan: SourceSpan;
+  /**
+   * `from <expression>` — the row the loop starts at, counting from 1.
+   *
+   * Null for an ordinary loop, which starts at the first row. Requires the
+   * cursor to be declared `scroll`, because a forward-only cursor has no way to
+   * begin anywhere but the beginning.
+   *
+   * Db2 counts a negative position from the end, so `from -20` is "twenty rows
+   * from the last", which is the other thing a statement screen wants.
+   */
+  start: ExpressionNode | null;
+  startSpan: SourceSpan | null;
+  /**
+   * `backward` — read towards the first row rather than away from it.
+   *
+   * With no `from`, the loop starts at the last row. Requires `scroll` for the
+   * same reason.
+   */
+  backward: boolean;
+  backwardSpan: SourceSpan | null;
   body: BlockNode;
 }
 

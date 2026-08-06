@@ -1158,6 +1158,15 @@ export function emitCobol(
           `       01  ${sqlParameterName(statement.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
         );
       });
+      // A scrolled loop's position goes in the `FETCH ABSOLUTE :n`, so unlike
+      // the row counter below it *is* a host variable and belongs in here.
+      // `PIC S9(9) COMP` is the fullword binary Db2 maps to INTEGER, and it is
+      // signed because a negative position counts back from the last row.
+      if (statement.form === "cursor" && statement.scroll) {
+        addLine(
+          `       01  ${cursorPositionName(statement.name).padEnd(20)} PIC S9(9) COMP.`,
+        );
+      }
     }
     // Closed here rather than after every other declaration in the program. A
     // declare section holds host variables and nothing else, and the one this
@@ -7682,6 +7691,17 @@ function cursorRowCounter(cursorName: string): string {
   return cobolWord(toCobolName(cursorName), "ROWS");
 }
 
+/**
+ * Which row a scrolled loop is on, as a host variable Db2 reads.
+ *
+ * Signed, because Db2 counts a negative `ABSOLUTE` position from the last row —
+ * which is how a backward loop with no start position begins at the end without
+ * the program having to know how many rows there are.
+ */
+function cursorPositionName(cursorName: string): string {
+  return cobolWord(toCobolName(cursorName), "POS");
+}
+
 /** How many rows the last rowset FETCH returned, taken from `SQLERRD(3)`. */
 function rowsetCountName(cursorName: string): string {
   return cobolWord(toCobolName(cursorName), "SET-ROWS");
@@ -7834,7 +7854,17 @@ function emitCursorDeclarations(
     }
     emitExecSql(
       [
-        `DECLARE ${toCobolName(declaration.name)} CURSOR${declaration.hold ? " WITH HOLD" : ""}${declaration.rowset === null ? "" : " WITH ROWSET POSITIONING"} FOR`,
+        // The SQL Reference's order, which is not the order the clauses were
+        // added to the language: sensitivity and `SCROLL` come *before* the
+        // word CURSOR, holdability and rowset positioning after it.
+        //
+        // `INSENSITIVE` is written rather than left out. Db2's default is
+        // `ASENSITIVE`, which resolves to insensitive or to sensitive dynamic
+        // depending on the statement — so a scrollable cursor with no keyword
+        // may or may not see other units of work's committed changes, decided
+        // per query. A statement screen paging over a result set that moves
+        // underneath shows a row twice or never, and the program cannot tell.
+        `DECLARE ${toCobolName(declaration.name)}${declaration.scroll ? " INSENSITIVE SCROLL" : ""} CURSOR${declaration.hold ? " WITH HOLD" : ""}${declaration.rowset === null ? "" : " WITH ROWSET POSITIONING"} FOR`,
         ...rewriteHostVariables(declaration.cursorSelect, declaration, null)
           .split("\n")
           .map((line) => `    ${line.trim()}`),
@@ -7879,6 +7909,31 @@ function emitCursorLoopStatement(
     );
   });
 
+  /*
+   * A scrolled read: `from`, `backward`, or both.
+   *
+   * The loop keeps its own position and fetches `ABSOLUTE :position` every
+   * time, stepping the position by one in the direction asked for. That is one
+   * FETCH rather than a first-iteration case and a steady-state case, and it
+   * puts every end condition on Db2 rather than on arithmetic here:
+   *
+   *   - past the last row, `ABSOLUTE` beyond the end answers +100;
+   *   - going backward off the front, position reaches 0, which the SQL
+   *     Reference defines as before the first row — also +100;
+   *   - a negative start counts from the end, so `backward` with no `from`
+   *     begins at -1, the last row, without the program knowing the count.
+   *
+   * `ABSOLUTE` on an `INSENSITIVE SCROLL` cursor indexes the temporary result
+   * table Db2 materialised at OPEN, so this is not a rescan per row.
+   */
+  const scrolled = statement.start !== null || statement.backward;
+  const position = cursorPositionName(declaration.name);
+  if (scrolled) {
+    addLine(
+      `${indent}MOVE ${statement.start === null ? (statement.backward ? "-1" : "1") : renderExpression(statement.start)} TO ${position}`,
+    );
+  }
+
   emitExecSql([`OPEN ${cursor}`], addLine, indent);
   addLine(`${indent}MOVE 0 TO ${counter}`);
   addLine(`${indent}PERFORM UNTIL ${counter} >= ${statement.limit}`);
@@ -7895,7 +7950,9 @@ function emitCursorLoopStatement(
   if (rowset === null) {
     emitExecSql(
       [
-        `FETCH ${cursor}`,
+        scrolled
+          ? `FETCH ABSOLUTE :${position} FROM ${cursor}`
+          : `FETCH ${cursor}`,
         `INTO ${rewriteHostVariables(declaration.cursorInto ?? "", declaration, row)}`,
       ],
       addLine,
@@ -7936,6 +7993,13 @@ function emitCursorLoopStatement(
     addLine(`${indent}        EXIT PERFORM`);
     addLine(`${indent}    END-IF`);
     addLine(`${indent}    ADD 1 TO ${counter}`);
+    if (scrolled) {
+      // Stepped before the body rather than after it, so a `raise` inside the
+      // body cannot leave the position on the row that was just read.
+      addLine(
+        `${indent}    ${statement.backward ? "SUBTRACT 1 FROM" : "ADD 1 TO"} ${position}`,
+      );
+    }
     body(indentLevel + 4);
   } else {
     const rows = rowsetCountName(declaration.name);
