@@ -121,7 +121,11 @@ Db2, in the order a batch meets them:
 - ~~isolation level on a statement~~ — never missing: the SQL is passed through
 - ~~savepoints~~ — the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
 - ~~`LOCK TABLE`~~ — the same
-- scrollable cursors, and `GET DIAGNOSTICS`
+- ~~`GET DIAGNOSTICS`~~ — never missing either: an ordinary statement in a
+  `sql` declaration, with host variables resolved like any other
+- scrollable cursors — genuinely absent, and the one that needs syntax rather
+  than pass-through: the compiler writes the `DECLARE`, so there is nowhere for
+  `SCROLL` to go, and `for each` only fetches forward
 
 ~~zUnit test generation~~ — done, `test <name> for <entry transaction>` and
 `bankc zunit`. It was blocked on not having IBM's schema, and what unblocked it

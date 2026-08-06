@@ -266,3 +266,64 @@ entry transaction sweep(row: Row) {
     expect(ids(txn("  returnCode = 9999;"))).toContain("BANK-TYPE-003");
   });
 });
+
+/**
+ * `GET DIAGNOSTICS`, which was documented as absent and never was.
+ *
+ * Four documents listed it beside scrollable cursors as one of "the two Db2
+ * depths still absent". It is not absent: BankLang does not parse SQL, so the
+ * statement goes through exactly like the isolation levels and `LOCK TABLE`
+ * that the same page had already stopped claiming were missing. Writing it down
+ * as a limit the compiler has, when it does not, is the same defect as claiming
+ * a feature it lacks — it is just the one nobody checks.
+ *
+ * What makes it work rather than merely pass through is the host-variable
+ * resolution, which is the part a raw `EXEC SQL` in hand-written COBOL would
+ * have to get right itself: `:msgText` becomes `:MSG-TEXT OF DIAG`, qualified
+ * by the record that declares it.
+ */
+describe("GET DIAGNOSTICS", () => {
+  const diagnosticsProgram = `module Diag;
+
+record Diag {
+  msgText: string<128>;
+}
+
+record Request {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+sql lastMessage(): Diag {
+  GET DIAGNOSTICS CONDITION 1 :msgText = MESSAGE_TEXT
+}
+
+entry transaction showLastMessage(request: Request, diag: Diag) {
+  audit("REPORTING", request.idempotencyKey);
+  execute lastMessage() into diag;
+  if sqlcode < 0 {
+    audit("DIAGNOSTICS_FAILED", request.idempotencyKey);
+  } else {
+    audit("REPORTED", request.idempotencyKey);
+  }
+}
+`;
+
+  it("compiles with no diagnostic of its own", () => {
+    const result = compile(diagnosticsProgram, { sourceFile: "diag.bank.ts" });
+
+    expect(ids(result)).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("emits the statement inside EXEC SQL, host variable qualified", () => {
+    const result = compile(diagnosticsProgram, { sourceFile: "diag.bank.ts" });
+    const cobol = flowed(result.cobol ?? "");
+
+    expect(cobol).toContain("GET DIAGNOSTICS CONDITION 1");
+    expect(cobol).toContain("MESSAGE_TEXT");
+    // Qualified by its record, which is what makes it a resolved reference
+    // rather than text that happens to survive.
+    expect(cobol).toContain(":MSG-TEXT OF DIAG");
+  });
+});

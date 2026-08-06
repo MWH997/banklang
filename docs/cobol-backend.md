@@ -289,7 +289,10 @@ does not compile, because only the first reaches a reader who believes it.
 - Dynamic SQL, refused by `BANK-SQL-002` and refused on purpose: a statement
   built at run time cannot be checked at compile time, which is the whole basis
   of the SQL rules.
-- Scrollable cursors and `GET DIAGNOSTICS`, the two Db2 depths still absent.
+- Scrollable cursors, the one Db2 depth still absent: the `DECLARE` is written
+  by this backend, so a `SCROLL` clause has nowhere to go, and `for each`
+  fetches forward only. (`GET DIAGNOSTICS` was listed here too and is not
+  absent — the SQL text is passed through, so it has always been writable.)
 - A `REDEFINES` pattern the copybook importer cannot lay out, which is refused
   at import rather than imported at the wrong offsets.
 
