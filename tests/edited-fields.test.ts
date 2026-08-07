@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * `edited<T, "style">` — numeric-edited items, which is how a mainframe program
@@ -52,34 +52,36 @@ describe("generated pictures", () => {
    * defect.
    */
   it("suppresses leading zeros and groups thousands, with a trailing sign", () => {
-    expect(txn("").cobol).toContain(
-      "05  PRINTED-AMOUNT       PIC Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99-.",
+    expect(unpadded(txn("").cobol)).toContain(
+      "05 PRINTED-AMOUNT PIC Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99-.",
     );
   });
 
   /** `CR` rather than a minus is the accounting convention for a credit. */
   it("renders a credit balance with CR", () => {
-    expect(txn("").cobol).toContain(
-      "05  PRINTED-CREDIT       PIC Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99CR.",
+    expect(unpadded(txn("").cobol)).toContain(
+      "05 PRINTED-CREDIT PIC Z,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99CR.",
     );
   });
 
   /** Asterisk fill is cheque protection: it leaves no room to write digits in. */
   it("fills a protected amount with asterisks", () => {
-    expect(txn("").cobol).toContain(
-      "05  PRINTED-CHEQUE       PIC *,***,***,***,***,**9.99.",
+    expect(unpadded(txn("").cobol)).toContain(
+      "05 PRINTED-CHEQUE PIC *,***,***,***,***,**9.99.",
     );
   });
 
   it("groups an integer count and leaves a plain one ungrouped", () => {
     const cobol = txn("").cobol ?? "";
 
-    expect(cobol).toContain("05  PRINTED-COUNT        PIC Z,ZZZ,ZZ9.");
-    expect(cobol).toContain("05  PRINTED-PLAIN        PIC ZZZZZZ9.");
+    expect(unpadded(cobol)).toContain("05 PRINTED-COUNT PIC Z,ZZZ,ZZ9.");
+    expect(unpadded(cobol)).toContain("05 PRINTED-PLAIN PIC ZZZZZZ9.");
   });
 
   it("renders a date through a slashed picture", () => {
-    expect(txn("").cobol).toContain("05  PRINTED-DATE         PIC 9999/99/99.");
+    expect(unpadded(txn("").cobol)).toContain(
+      "05 PRINTED-DATE PIC 9999/99/99.",
+    );
   });
 
   it("reports the edited length in the layout", () => {

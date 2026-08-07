@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { unpadded } from "./helpers";
 
 /**
  * `redefines` and `depending on` — the two clauses a real copybook is built on.
@@ -48,8 +49,8 @@ describe("redefines", () => {
     const result = withRecord(VARIANT);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "05  COMPANY-NAME REDEFINES PERSONAL-NAME PIC X(40).",
+    expect(unpadded(result.cobol)).toContain(
+      "05 COMPANY-NAME REDEFINES PERSONAL-NAME PIC X(40).",
     );
   });
 
@@ -166,8 +167,8 @@ describe("occurs depending on", () => {
     const result = withRecord(VARIANT);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "05  LINES-FLD OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT",
+    expect(unpadded(result.cobol)).toContain(
+      "05 LINES-FLD OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT",
     );
   });
 

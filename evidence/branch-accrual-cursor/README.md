@@ -26,6 +26,7 @@ This example is also **executed**. See
 - `copybooks/ACCOUNTB.cpy`
 - `copybooks/ACCRUALR.cpy`
 - `copybooks/ACCRUALS.cpy`
+- `copybooks/RESTARTP.cpy`
 - `jcl/BRANCHAC.jcl`
 - `maps/source-map.json`
 - `source/main.bank.ts`

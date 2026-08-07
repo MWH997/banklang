@@ -1,7 +1,7 @@
 /**
  * Render `docs/` as part of the site.
  *
- * D1 in `docs/launch-tickets.md`. Forty-two documents, several of them the
+ * Forty-two documents, several of them the
  * strongest evidence this project has, readable until now only as raw Markdown
  * on github.com — where the tables are fine, the cross-references work, and
  * nobody arriving from a link ever reads the second one.
@@ -33,43 +33,90 @@ import { fileURLToPath } from "node:url";
 
 import MarkdownIt from "markdown-it";
 
+import { feedLink } from "./build-blog";
 import {
   escapeHtml,
   highlightBankTs,
   highlightCobol,
+  servedUrl,
   SITE_ORIGIN,
+  THEME_BUTTON,
+  THEME_SCRIPT,
 } from "./build-site";
 import { isRunnable, playgroundUrl } from "./playground-links";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DOCS = join(ROOT, "docs");
 
-/** Every markdown file under `docs/`, as a path relative to `docs/`. */
 /**
- * Documents that stay in the repository and off the site.
+ * Where a document that is not published goes.
  *
- * These are working papers. The audits are this project's own criticism of
- * itself and the ticket list is the plan for fixing it — both belong in the
- * repository, where somebody evaluating the engineering can read them in the
- * context of the commits that answered them, and neither is written for a
- * visitor who arrived from a link.
+ * These are working papers: the audits are this project's own criticism of
+ * itself and the ticket lists are the plans for fixing it. Neither is written
+ * for a visitor who arrived from a link, and neither is in the repository —
+ * `.gitignore` excludes this directory, so a clone does not contain them and
+ * no commit adds them. One of them records rewrites of this repository's own
+ * history, which settles the question: the reasoning that is worth publishing
+ * goes in a commit message, where it is attached to the change it explains.
  *
- * The site rendered them anyway, listed them in `sitemap.xml`, and pointed
- * search engines at them: `robots.txt` allows everything. So a reader searching
- * for a phrase met the pre-publication security checklist and a paragraph that,
- * read on its own, sounded like the resolution of a doubt about who owned the
- * repository. Found by the 2026-08-07 audit.
+ * This constant is therefore not about hiding a tracked file. It is what stops
+ * a paper that only exists on the author's disk from being rendered into the
+ * public site by a build that happens to run there.
  *
- * Excluded from the site, not hidden. Every one of them is a file in `docs/`
- * that GitHub renders, and the README links the audits by name.
+ * The site used to render them, list them in `sitemap.xml`, and point search
+ * engines at them: `robots.txt` allows everything. So a reader searching for a
+ * phrase met the pre-publication security checklist. The first answer was a
+ * list of two file-name patterns, which fixed the two files that existed and
+ * left the next working paper published by default under whatever it happened
+ * to be called — a denylist decides what to hide, and the thing you forgot to
+ * name is the thing that gets out.
+ *
+ * A directory decides instead. A document is published because it is in
+ * `docs/`, and a working paper is not because it is in `docs/working/`, which
+ * is a decision the author makes while writing it rather than one somebody has
+ * to remember to encode afterwards.
+ *
+ * **Nothing published may link to one.** They are not in the repository, so the
+ * GitHub fallback `rewriteLink` uses for a file outside `docs/` would be a dead
+ * link on somebody else's domain. `rewriteLink` refuses instead, which is the
+ * same fail-closed shape as the misfiling guard below: a red build rather than
+ * a 404 a reader finds first.
  */
-export const UNPUBLISHED = [
+export const WORKING_PAPERS = "working";
+
+/**
+ * The shapes a working paper comes in, used only to catch a misfiled one.
+ *
+ * Not what decides publication — that is the directory above, and this list
+ * existing again as the *rule* is what F22 was about. It is a guard: a document
+ * that is plainly a working paper and is not in `docs/working/` stops the build
+ * rather than being published, so the failure mode is a red build rather than
+ * an audit on the public site.
+ */
+const WORKING_PAPER_NAMES = [
   /^audit-\d{4}-\d{2}-\d{2}\.md$/,
+  /^tickets-\d{4}-\d{2}-\d{2}\.md$/i,
   /^launch-tickets\.md$/,
 ];
 
+/**
+ * True for a path under `docs/working/`, which the site does not render.
+ *
+ * Takes a path relative to `docs/` or to the repository root, because the two
+ * callers hold it each way and the alternative is what F22 also found: the
+ * builder's rule and `tests/documentation.test.ts`'s were two spellings of one
+ * idea, and the test's was the looser of them.
+ */
+export function isWorkingPaper(file: string): boolean {
+  const parts = file.split(/[\\/]/);
+  const at = parts[0] === "docs" ? 1 : 0;
+  return parts[at] === WORKING_PAPERS;
+}
+
+/** Every markdown file under `docs/`, as a path relative to `docs/`. */
 export function docFiles(): string[] {
   const found: string[] = [];
+  const misfiled: string[] = [];
   const walk = (directory: string): void => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
@@ -77,13 +124,24 @@ export function docFiles(): string[] {
         walk(path);
       } else if (entry.name.endsWith(".md")) {
         const file = relative(DOCS, path);
-        if (!UNPUBLISHED.some((pattern) => pattern.test(file))) {
-          found.push(file);
+        if (isWorkingPaper(file)) {
+          continue;
         }
+        if (WORKING_PAPER_NAMES.some((pattern) => pattern.test(entry.name))) {
+          misfiled.push(file);
+          continue;
+        }
+        found.push(file);
       }
     }
   };
   walk(DOCS);
+
+  if (misfiled.length > 0) {
+    throw new Error(
+      `These read as working papers and are not in docs/${WORKING_PAPERS}/, so the site would publish them: ${misfiled.join(", ")}. Move them, or rename them if they are meant for the site.`,
+    );
+  }
   return found.sort();
 }
 
@@ -121,8 +179,22 @@ export function navigation(): NavGroup[] {
     const row = /^\|\s*\[([^\]]+)\]\(docs\/([^)]+)\)/.exec(line);
     const group = groups[groups.length - 1];
     if (row?.[1] && row[2] && group) {
-      // `docs/adr/` is a directory link; the ADRs are listed individually.
+      // A row pointing at a directory means the set of pages in it.
+      //
+      // It used to mean nothing — the row was skipped, and every page under
+      // `docs/language/` and `docs/adr/` fell through to "Everything else",
+      // which is how nineteen of forty-three documents came to sit in the
+      // group named as a leftover (H5). Expanding it here rather than writing
+      // the nineteen rows out keeps the README the single list, which is the
+      // point of parsing it at all, and keeps a new page in either directory
+      // filed correctly without anybody remembering to add it.
       if (row[2].endsWith("/")) {
+        group.entries.push(
+          ...directoryPages(row[2]).map((file) => ({
+            title: titleOf(file),
+            file,
+          })),
+        );
         continue;
       }
       group.entries.push({ title: row[1], file: row[2] });
@@ -133,9 +205,25 @@ export function navigation(): NavGroup[] {
     throw new Error("No groups found in the README's documentation section.");
   }
 
+  // A page named twice is a page in two groups, and the second one is
+  // wherever the directory row happened to fall. The row-by-row order above is
+  // what decides, so the duplicate is dropped from the later group: `Grammar`
+  // and `Language stability` are named individually because they are read on
+  // their own, and they should not appear again under the directory that holds
+  // them.
+  const seen = new Set<string>();
+  for (const group of groups) {
+    group.entries = group.entries.filter((entry) => {
+      if (seen.has(entry.file)) {
+        return false;
+      }
+      seen.add(entry.file);
+      return true;
+    });
+  }
+
   // Everything the README does not name, so a new document is never orphaned.
-  const named = new Set(groups.flatMap((g) => g.entries.map((e) => e.file)));
-  const rest = docFiles().filter((file) => !named.has(file));
+  const rest = docFiles().filter((file) => !seen.has(file));
   if (rest.length > 0) {
     groups.push({
       title: "Everything else",
@@ -143,7 +231,19 @@ export function navigation(): NavGroup[] {
     });
   }
 
-  return groups;
+  return groups.filter((group) => group.entries.length > 0);
+}
+
+/** Every published document under one directory of `docs/`, in order. */
+function directoryPages(directory: string): string[] {
+  const prefix = directory.replace(/\/+$/, "");
+  const inside = docFiles().filter((file) => dirname(file) === prefix);
+  if (inside.length === 0) {
+    throw new Error(
+      `The README's documentation section links docs/${directory}, which holds no published page.`,
+    );
+  }
+  return inside;
 }
 
 /** A document's own `# ` heading, falling back to its filename. */
@@ -211,11 +311,19 @@ export function rewriteLink(href: string, fromFile: string): string {
   const inside = relative(DOCS, target);
   const escapes = inside.startsWith("..");
 
-  // Out of `docs/`, or in it and not published — either way the repository is
-  // the only place the reader can still open it. A link to a page the site does
-  // not render is a 404 on our own domain, which is a worse answer than sending
-  // somebody to the file on GitHub where it does exist.
-  if (escapes || UNPUBLISHED.some((pattern) => pattern.test(inside))) {
+  // A working paper is not in the repository, so neither this site nor GitHub
+  // can answer a link to one. Refusing is the only honest option: the
+  // alternatives are a 404 on our own domain and a 404 on somebody else's.
+  if (isWorkingPaper(inside)) {
+    throw new Error(
+      `${fromFile} links to ${href}, which is a working paper: not published, not in the repository, and not linkable from a page that is. Quote it or cite it by date instead.`,
+    );
+  }
+
+  // Out of `docs/` but in the repository — the file really is Markdown there,
+  // and sending somebody to GitHub is a better answer than a 404 on a page this
+  // site does not render.
+  if (escapes) {
     const fromRepoRoot = relative(ROOT, target);
     return `https://github.com/MWH997/banklang/blob/main/${fromRepoRoot}${suffix}`;
   }
@@ -350,13 +458,30 @@ function depthOf(file: string): string {
   return depth === 0 ? "." : "..".concat("/..".repeat(depth - 1));
 }
 
+/**
+ * The group labels are not headings.
+ *
+ * They were `h2`, and the sidebar precedes `<main>` in the document, so every
+ * documentation page opened with four level-two headings before its own `h1` —
+ * F17, and the reason `tests/site-layout.test.ts` asserting *one* `h1` passed
+ * throughout. A screen-reader user moving by heading met "Start here", "The
+ * output", "The language and the compiler" and "Everything else" before being
+ * told what page they were on.
+ *
+ * The other repair the ticket offered was to move the sidebar after `<main>`
+ * and place it back with grid. That fixes the order and leaves four headings in
+ * the document outline that are navigation rather than sections of the page,
+ * which is the deeper problem. `aria-labelledby` on the list gives the group
+ * its name without claiming to be a heading.
+ */
 function sidebar(groups: NavGroup[], current: string): string {
   const up = depthOf(current);
   return groups
-    .map(
-      (group) => `<section>
-  <h2>${escapeHtml(group.title)}</h2>
-  <ul>
+    .map((group, index) => {
+      const id = `side-${String(index)}-${slug(group.title)}`;
+      return `<div class="side__group">
+  <p class="side__title" id="${id}">${escapeHtml(group.title)}</p>
+  <ul aria-labelledby="${id}">
 ${group.entries
   .map((entry) => {
     const href = `${up}/${entry.file.replace(/\.md$/, ".html")}`;
@@ -365,8 +490,8 @@ ${group.entries
   })
   .join("\n")}
   </ul>
-</section>`,
-    )
+</div>`;
+    })
     .join("\n");
 }
 
@@ -389,20 +514,44 @@ ${doc.headings
 
 export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
   const up = depthOf(doc.file);
-  const canonical = `${SITE_ORIGIN}/docs/${doc.file.replace(/\.md$/, ".html")}`;
+  const canonical = servedUrl(`docs/${doc.file.replace(/\.md$/, ".html")}`);
   const description = doc.text.slice(0, 180).trim();
+  const title = `${doc.title} — BankLang`;
 
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(doc.title)} — BankLang</title>
+    <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
     <link rel="canonical" href="${canonical}" />
+    ${feedLink(`${up}/../`)}
     <link rel="icon" type="image/svg+xml" href="${up}/../favicon.svg" />
     <link rel="stylesheet" href="${up}/../assets/site.css" />
     <link rel="stylesheet" href="${up}/../assets/docs.css" />
+
+    <!--
+      D3. Every documentation page shared as a bare link, with nothing for the
+      receiving client to render: no card, no title beyond the URL, no image.
+      Forty-two pages, and the ones people link to are the technical ones.
+
+      Filled from what the page already has rather than from a second source:
+      the title is the document's own heading and the description is the first
+      180 characters of its text, which are the same two strings the title
+      element and meta description above use.
+    -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="${canonical}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:image" content="${SITE_ORIGIN}/og.png" />
+    <meta property="og:image:alt" content="BankTS source on the left, the IBM COBOL it compiles to on the right." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${SITE_ORIGIN}/og.png" />
+
     <script>
       // Before paint, so a reader who chose a theme never sees the other one.
       (() => {
@@ -421,14 +570,14 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
         <a href="${up}/../blog/">Writing</a>
         <a href="${up}/../playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
-        <button id="theme" type="button" class="ghost" aria-label="Switch between light and dark">Theme</button>
+        ${THEME_BUTTON}
         <button id="nav-toggle" type="button" class="ghost narrow-only" aria-expanded="false" aria-controls="side">Contents</button>
       </nav>
     </header>
 
     <div class="shell">
       <nav class="side" id="side" aria-label="Documentation">
-        <form class="search" role="search" onsubmit="return false">
+        <form class="search" role="search" id="search">
           <label class="visually-hidden" for="q">Search the documentation</label>
           <input id="q" type="search" placeholder="Search the documentation" autocomplete="off" />
         </form>
@@ -450,16 +599,7 @@ ${onThisPage(doc)}
     </div>
 
     <script src="${up}/../assets/docs.js" defer></script>
-    <script>
-      document.getElementById("theme").addEventListener("click", () => {
-        const root = document.documentElement;
-        const dark =
-          root.dataset.theme === "dark" ||
-          (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-        root.dataset.theme = dark ? "light" : "dark";
-        localStorage.setItem("banklang-theme", root.dataset.theme);
-      });
-    </script>
+${THEME_SCRIPT}
   </body>
 </html>
 `;

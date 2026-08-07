@@ -10,6 +10,7 @@ import {
   alignmentOf,
   slackBefore,
 } from "../../cobol-ir/src/index";
+import { BankcError } from "../../diagnostics/src/errors";
 
 export interface CopybookFieldLayout {
   name: string;
@@ -250,21 +251,32 @@ interface CopybookEntry {
   text: string;
 }
 
-function readCopybookEntries(lines: string[]): CopybookEntry[] {
+function readCopybookEntries(lines: CopybookSourceLine[]): CopybookEntry[] {
   const entries: CopybookEntry[] = [];
-  let pending: string[] = [];
+  let pending: CopybookSourceLine[] = [];
 
   for (const line of lines) {
-    pending.push(line.trim());
-    if (!line.trimEnd().endsWith(".")) {
+    pending.push(line);
+    if (!line.text.trimEnd().endsWith(".")) {
       continue;
     }
-    const text = pending.join(" ").replace(/\s+/g, " ").replace(/\.$/, "");
+    const text = pending
+      .map((entry) => entry.text.trim())
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .replace(/\.$/, "");
+    // The line the entry begins on, which is where a reader looks first — not
+    // the line the period happened to fall on after two continuations.
+    const at = pending[0]!.line;
     pending = [];
 
     const match = text.match(/^(\d{2})\s+([A-Z0-9-]+)\s*(.*)$/);
     if (!match) {
-      throw new Error(`Unable to parse copybook entry: ${text}`);
+      throw new BankcError(
+        "BANK-COPY-008",
+        `Not a data description entry: ${text}`,
+        `line ${String(at)}`,
+      );
     }
     entries.push({
       level: Number(match[1]),
@@ -289,27 +301,52 @@ function readCopybookEntries(lines: string[]): CopybookEntry[] {
  * that the generated-copybook reader tried to parse as an entry.
  */
 export function copybookLines(sourceText: string): string[] {
+  return copybookSourceLines(sourceText).map((line) => line.text);
+}
+
+/** One line of a copybook, with the line number it came from. */
+export interface CopybookSourceLine {
+  /** 1-based, so it matches what an editor and a compiler listing show. */
+  line: number;
+  text: string;
+}
+
+/**
+ * The same lines, still numbered.
+ *
+ * `copybookLines` filters comments and blanks out, so the index into what it
+ * returns is not the line anybody can find. A reader told "not a data
+ * description entry" has to be told where, and a copybook of six hundred lines
+ * is exactly the file where "somewhere in here" is no help at all.
+ */
+export function copybookSourceLines(sourceText: string): CopybookSourceLine[] {
   return sourceText
     .split(/\r?\n/)
-    .map((line) => (line.length > 72 ? line.slice(0, 72) : line).trimEnd())
+    .map((line, index) => ({
+      line: index + 1,
+      text: (line.length > 72 ? line.slice(0, 72) : line).trimEnd(),
+    }))
     .filter(
-      (line) =>
-        line.trim().length > 0 &&
-        !(line.length >= 7 && (line[6] === "*" || line[6] === "/")) &&
-        !line.trimStart().startsWith("*>") &&
-        !line.trimStart().startsWith("*"),
+      ({ text }) =>
+        text.trim().length > 0 &&
+        !(text.length >= 7 && (text[6] === "*" || text[6] === "/")) &&
+        !text.trimStart().startsWith("*>") &&
+        !text.trimStart().startsWith("*"),
     );
 }
 
 export function inspectGeneratedCopybook(
   sourceText: string,
 ): CopybookInspection {
-  const lines = copybookLines(sourceText);
+  const lines = copybookSourceLines(sourceText);
 
   const entries = readCopybookEntries(lines);
   const record = entries.find((entry) => entry.level === 1);
   if (!record) {
-    throw new Error("No generated 01-level record was found.");
+    throw new BankcError(
+      "BANK-COPY-009",
+      "The copybook declares no 01-level record, so there is no record to describe.",
+    );
   }
 
   const fields: CopybookInspectionField[] = [];
@@ -648,7 +685,10 @@ function inspectPictureLength(picture: string): number {
 
   const digits = digitsIn(body);
   if (digits === 0) {
-    throw new Error(`Unsupported generated picture clause: ${picture}`);
+    throw new BankcError(
+      "BANK-COPY-010",
+      `This reader does not understand the picture clause ${picture}, so it cannot say how many bytes the field takes.`,
+    );
   }
 
   if (body.endsWith("COMP-3")) {

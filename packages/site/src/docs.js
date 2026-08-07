@@ -17,6 +17,22 @@
     return;
   }
 
+  /*
+   * The form exists for `role="search"` and for the Enter key; it has nothing
+   * to submit to, and submitting it would navigate away from the results.
+   *
+   * This was an `onsubmit="return false"` attribute in the markup, which is an
+   * inline event handler — the one thing a hash-based Content-Security-Policy
+   * cannot allow, because hashes cover script *elements* and handlers are
+   * attributes. Dropping `unsafe-inline` from `script-src` with the attribute
+   * still there would have left Enter submitting the form on all forty-five
+   * documentation pages: search typed, results shown, and gone on the keypress
+   * that feels like asking for them.
+   */
+  document.getElementById("search")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+  });
+
   // `/docs/` deep or shallow: the index sits beside the stylesheet, and the
   // page already knows how to get there.
   const stylesheet = document.querySelector('link[href$="docs.css"]');

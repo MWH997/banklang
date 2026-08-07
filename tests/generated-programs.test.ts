@@ -12,7 +12,7 @@ import {
   lintJcl,
 } from "../packages/conformance-lint/src/index";
 import { generatePrograms } from "../tools/generate-programs";
-import { runtimePrograms } from "../tools/conformance-lint";
+import { runtimePrograms } from "../tools/generated-artifacts";
 import { localCobol } from "./helpers";
 
 /**

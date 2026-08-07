@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { localCobol } from "./helpers";
+import { localCobol, unpadded } from "./helpers";
 
 /**
  * Where a `let` ends up in the generated program.
@@ -87,8 +87,12 @@ entry transaction settle(account: Account) {
 
     expect(result.diagnostics).toEqual([]);
     const storage = storageOf(result.cobol ?? "");
-    expect(storage).toContain("01  FEE-ON-SCRATCH       PIC S9(16)V99 COMP-3.");
-    expect(storage).toContain("01  LEVY-ON-SCRATCH      PIC X(8).");
+    expect(unpadded(storage)).toContain(
+      "01 FEE-ON-SCRATCH PIC S9(16)V99 COMP-3 VALUE ZERO.",
+    );
+    expect(unpadded(storage)).toContain(
+      "01 LEVY-ON-SCRATCH PIC X(8) VALUE SPACES.",
+    );
     expect(storage).not.toContain("01  SCRATCH ");
 
     // The body has to read the qualified field, not the bare one.

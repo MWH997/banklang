@@ -1,7 +1,7 @@
 /**
  * Package the VS Code extension.
  *
- * R4 in `docs/launch-tickets.md`. The extension has been built and typechecked
+ * Publishing the extension, from the launch checklist. The extension has been built and typechecked
  * in CI since it was written and has never been packaged, which means the thing
  * a user would actually install has never existed. This produces it.
  *

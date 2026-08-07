@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * `binary<n>` and `zoned<p, s>` alongside packed `decimal<p, s>`.
@@ -47,9 +47,9 @@ describe("binary fields", () => {
   it("emits COMP for a binary field", () => {
     const cobol = txn("").cobol ?? "";
 
-    expect(cobol).toContain("05  RECORD-TYPE          PIC S9(4) COMP.");
-    expect(cobol).toContain("05  LINE-COUNT           PIC S9(9) COMP.");
-    expect(cobol).toContain("05  SEQUENCE-NO          PIC S9(18) COMP.");
+    expect(unpadded(cobol)).toContain("05 RECORD-TYPE PIC S9(4) COMP.");
+    expect(unpadded(cobol)).toContain("05 LINE-COUNT PIC S9(9) COMP.");
+    expect(unpadded(cobol)).toContain("05 SEQUENCE-NO PIC S9(18) COMP.");
   });
 
   /**

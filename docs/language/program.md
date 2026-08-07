@@ -6,9 +6,9 @@ Part of the [BankTS language reference](../language-reference.md).
 
 ## Design goal
 
-BankTS is a restricted TypeScript-like language for banking workloads that compiles to COBOL.
+BankTS is a small banking language that compiles to COBOL. Its type syntax is TypeScript's; its statements — `transaction`, `file`, `cursor`, `queue`, `on error` — are its own.
 
-It is intentionally less expressive than TypeScript. The goal is safety, auditability, and predictable COBOL generation.
+It is intentionally less expressive than TypeScript, and it is not a TypeScript dialect: `tsc` cannot read a BankTS module. The goal is safety, auditability, and predictable COBOL generation.
 
 ## Modules
 

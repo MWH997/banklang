@@ -2,6 +2,9 @@
 title: A compiler that refuses to build
 description: Some bugs are not mistakes in the code. They are things the code failed to say. A compiler can notice that, and refusing to build is a reasonable response.
 date: 2026-08-05
+author: Md Wahid Hassan
+related: why-banks-still-run-cobol, rounding-money-is-harder-than-it-looks
+reading: diagnostics.md
 ---
 
 Most compilers are permissive by design. They check that your program means
@@ -127,10 +130,3 @@ The trade is always the same. You give up expressiveness and you get back a
 category of bug that cannot reach production. Whether that is a good trade
 depends entirely on what the bugs cost, which is why it works better for a ledger
 than for a game.
-
----
-
-_BankLang has ninety-odd such rules, each with an explanation, a remediation and
-a test that fails if the rule stops working.
-[The catalogue is here](../docs/diagnostics.md), and you can watch one fire in
-[the playground](https://banklang.mwhassan.com/playground/)._

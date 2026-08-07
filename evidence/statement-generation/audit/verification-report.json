@@ -96,7 +96,7 @@
     "sourceArtifact": "examples/statement-generation/src/main.bank.ts",
     "sourceArtifactHash": "6c8de1f6aa35b7a864feee37005986d4f8a3021a97d4825c3d2f38021ba0f43c",
     "generatedArtifact": "evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl",
-    "generatedArtifactHash": "41747b037728b92b29e4dad3dc37e1aadf4e86767a19709ff43d85388cbff5c0",
+    "generatedArtifactHash": "3d5dbb5ee952fc16284379b24cea61ed7a6263daaf52d2606816aaac1efb1cfb",
     "sourceMapArtifact": "evidence/statement-generation/gnucobol/maps/source-map.json",
     "sourceMapArtifactHash": "ace2d7a5872aa646136a4f182fdc5f02df4596c627c2c2055008b28db963e085",
     "compilerExecutable": "cobc",

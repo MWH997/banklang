@@ -11,6 +11,7 @@ import { RUNTIME_INTERFACES } from "../packages/cobol-backend/src/index";
 import { emitZunit, zunitModuleName } from "../packages/zunit/src/index";
 import { runBankc } from "../packages/bankc-cli/src/index";
 import type { IRProgram } from "../packages/ir/src/index";
+import { unpadded } from "./helpers";
 
 /**
  * The zUnit generator.
@@ -125,7 +126,7 @@ describe("the configuration", () => {
     const cobol = emitCobol(programOf(PROGRAM)).cobol;
     for (const runtimeInterface of RUNTIME_INTERFACES) {
       for (const field of runtimeInterface.fields) {
-        expect(cobol).toContain(`${field.name.padEnd(24)} ${field.picture}.`);
+        expect(unpadded(cobol)).toContain(`${field.name} ${field.picture}.`);
       }
     }
   });

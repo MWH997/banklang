@@ -34,16 +34,18 @@ about how it was produced, or a test.
 
 ## 3. Data division
 
-| Rule                                                                                                                     | Checked by                         |
-| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| A picture describes at most 18 digits, which is `ARITH(COMPAT)`.                                                         | `digit-count`                      |
-| A PICTURE character-string is at most 50 characters; an alphanumeric literal at most 160.                                | `picture-length`, `literal-length` |
-| One literal delimiter. `"` everywhere, which is what the `CBL` statement's `QUOTE` says.                                 | `literal-delimiter`                |
-| One spelling per picture shape. `PIC X(1)` not `PIC X`, `V99` not `V9(2)` — either is legal, both in one program is not. | `tests/feature-coverage.test.ts`   |
-| A file status field carries condition names: `-OK` (`"00" THRU "09"`), `-EOF`, `-DUPKEY`, `-NOTFND`.                     | `tests/generated-style.test.ts`    |
-| An enum field carries one 88-level per member.                                                                           | `tests/enum-conditions.test.ts`    |
-| A QSAM `FD` carries `BLOCK CONTAINS 0 RECORDS` and `RECORDING MODE`. VSAM carries neither.                               | `tests/generated-style.test.ts`    |
-| An SQL declare section holds host variables and nothing else. Records an SQL statement names open sections of their own. | `tests/generated-style.test.ts`    |
+| Rule                                                                                                                                                                                                                                      | Checked by                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| A picture describes at most 18 digits, which is `ARITH(COMPAT)`.                                                                                                                                                                          | `digit-count`                      |
+| A PICTURE character-string is at most 50 characters; an alphanumeric literal at most 160.                                                                                                                                                 | `picture-length`, `literal-length` |
+| One literal delimiter. `"` everywhere, which is what the `CBL` statement's `QUOTE` says.                                                                                                                                                  | `literal-delimiter`                |
+| One spelling per picture shape. `PIC X(1)` not `PIC X`, `V99` not `V9(2)` — either is legal, both in one program is not.                                                                                                                  | `tests/feature-coverage.test.ts`   |
+| A file status field carries condition names: `-OK` (`"00" THRU "09"`), `-EOF`, `-DUPKEY`, `-NOTFND`.                                                                                                                                      | `tests/generated-style.test.ts`    |
+| An enum field carries one 88-level per member.                                                                                                                                                                                            | `tests/enum-conditions.test.ts`    |
+| A QSAM `FD` carries `BLOCK CONTAINS 0 RECORDS` and `RECORDING MODE`. VSAM carries neither.                                                                                                                                                | `tests/generated-style.test.ts`    |
+| An SQL declare section holds host variables and nothing else. Records an SQL statement names open sections of their own.                                                                                                                  | `tests/generated-style.test.ts`    |
+| Every generated work field carries an initial value. `LINKAGE` and the `FILE SECTION` cannot take one; an SQL declare section does not, because DCLGEN does not; a numeric-edited item does not, because its `VALUE` would not be edited. | `uninitialised-storage`            |
+| A `PIC` clause is aligned against the longest name among its siblings, not against a fixed column. An entry whose clause would then end past column 72 keeps one space.                                                                   | `pic-alignment`                    |
 
 ## 4. Procedure division
 
@@ -71,6 +73,16 @@ the source file it came from, what the program is entered at, how it is entered
 and with what, every file with its DD name and record length, the modules it
 calls, the copybooks it needs, what each return code means, and whether a rerun
 is safe.
+
+A module with no transaction says so — "None. This module is a library" —
+rather than repeating the batch sentence, and the job that builds it emits no
+run step. The two used to disagree inside one artifact: `PURPOSE` said "Nothing
+here is an entry point" and `ENTRY` four lines below said "started by EXEC PGM
+in a job".
+
+A wrapped entry continues under the text it continues, not under its label: a
+return code's meaning wraps under the meaning, and a plain sentence wraps flush
+and reads as a paragraph.
 
 Derived from the program rather than maintained by editing. A prologue that has
 to be kept in step by hand is one that stops being true.
@@ -122,7 +134,6 @@ rather than inside it.
 storage a program never uses: the ledger interface group in a program that only
 audits, the bounds and copy work fields in a program with neither, and a record
 declared in BankTS but only ever named as a parameter type. Twelve level-01
-items across the checked-in evidence, listed in
-[audit-2026-08-06.md](audit-2026-08-06.md). Making it a rule means making each
-of those emissions conditional first, because a linter rule that fails on every
+items across the checked-in evidence. Making it a rule means making each of
+those emissions conditional first, because a linter rule that fails on every
 artifact is one somebody turns off.

@@ -11,7 +11,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> FILES
       *>   CUSTOMER input   sequential CUSTOMER-RECORD (509 bytes)
@@ -22,7 +22,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
@@ -45,73 +45,73 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  CUSTOMER-MASTER-RECORD.
-           05  CM-CUST-NO           PIC X(10).
-           05  CM-NAME              PIC X(40).
-           05  CM-KIND              PIC X(1).
+           05  CM-CUST-NO     PIC X(10).
+           05  CM-NAME        PIC X(40).
+           05  CM-KIND        PIC X(1).
            05  CM-PARTY.
-               10  CM-PERSON            PIC X(30).
-               10  FILLER               PIC X(20).
-           05  CM-COMPANY REDEFINES CM-PARTY.
-               10  CM-REG-NO            PIC X(12).
-               10  CM-TRADING-NAME      PIC X(38).
-           05  CM-OPENED            PIC 9(8).
-           05  CM-BALANCE           PIC S9(13)V99 COMP-3.
-           05  CM-ADDR-COUNT        PIC 9(2).
-           05  CM-ADDRESSES OCCURS 1 TO 5 TIMES DEPENDING ON
+               10  CM-PERSON  PIC X(30).
+               10  FILLER     PIC X(20).
+           05  CM-COMPANY     REDEFINES CM-PARTY.
+               10  CM-REG-NO        PIC X(12).
+               10  CM-TRADING-NAME  PIC X(38).
+           05  CM-OPENED      PIC 9(8).
+           05  CM-BALANCE     PIC S9(13)V99 COMP-3.
+           05  CM-ADDR-COUNT  PIC 9(2).
+           05  CM-ADDRESSES   OCCURS 1 TO 5 TIMES DEPENDING ON
                CM-ADDR-COUNT OF CUSTOMER-MASTER-RECORD
                    INDEXED BY CUST-MASTER-RECORD-CM-ADDR-IDX.
-               10  CM-ADDR-LINE-1       PIC X(35).
-               10  CM-ADDR-LINE-2       PIC X(35).
-               10  CM-ADDR-POSTCODE     PIC X(8).
+               10  CM-ADDR-LINE-1    PIC X(35).
+               10  CM-ADDR-LINE-2    PIC X(35).
+               10  CM-ADDR-POSTCODE  PIC X(8).
        WORKING-STORAGE SECTION.
-       01  MASTER-STATUS        PIC X(2).
-           88  MASTER-STATUS-OK         VALUE "00" THRU "09".
-           88  MASTER-STATUS-EOF        VALUE "10".
-           88  MASTER-STATUS-DUPKEY     VALUE "22".
-           88  MASTER-STATUS-NOTFND     VALUE "23".
-       01  BANK-COPY-INDEX      PIC 9(9) COMP.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  MASTER-STATUS          PIC X(2) VALUE SPACES.
+           88  MASTER-STATUS-OK      VALUE "00" THRU "09".
+           88  MASTER-STATUS-EOF     VALUE "10".
+           88  MASTER-STATUS-DUPKEY  VALUE "22".
+           88  MASTER-STATUS-NOTFND  VALUE "23".
+       01  BANK-COPY-INDEX        PIC 9(9) COMP VALUE ZERO.
+       01  BANK-FAILURE-CODE      PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE       PIC S9(4) COMP EXTERNAL.
        01  CM-PARTY.
-           05  CM-PERSON            PIC X(30).
-           05  FILLER               PIC X(20).
+           05  CM-PERSON  PIC X(30).
+           05  FILLER     PIC X(20).
        01  CM-COMPANY.
-           05  CM-REG-NO            PIC X(12).
-           05  CM-TRADING-NAME      PIC X(38).
+           05  CM-REG-NO        PIC X(12).
+           05  CM-TRADING-NAME  PIC X(38).
        01  CM-ADDRESSES.
-           05  CM-ADDR-LINE-1       PIC X(35).
-           05  CM-ADDR-LINE-2       PIC X(35).
-           05  CM-ADDR-POSTCODE     PIC X(8).
+           05  CM-ADDR-LINE-1    PIC X(35).
+           05  CM-ADDR-LINE-2    PIC X(35).
+           05  CM-ADDR-POSTCODE  PIC X(8).
        01  CUSTOMER-RECORD.
-           05  CM-CUST-NO           PIC X(10).
-           05  CM-NAME              PIC X(40).
-           05  CM-KIND              PIC X(1).
+           05  CM-CUST-NO     PIC X(10).
+           05  CM-NAME        PIC X(40).
+           05  CM-KIND        PIC X(1).
            05  CM-PARTY.
-               10  CM-PERSON            PIC X(30).
-               10  FILLER               PIC X(20).
-           05  CM-COMPANY REDEFINES CM-PARTY.
-               10  CM-REG-NO            PIC X(12).
-               10  CM-TRADING-NAME      PIC X(38).
-           05  CM-OPENED            PIC 9(8).
-           05  CM-BALANCE           PIC S9(13)V99 COMP-3.
-           05  CM-ADDR-COUNT        PIC 9(2).
-           05  CM-ADDRESSES OCCURS 1 TO 5 TIMES DEPENDING ON
+               10  CM-PERSON  PIC X(30).
+               10  FILLER     PIC X(20).
+           05  CM-COMPANY     REDEFINES CM-PARTY.
+               10  CM-REG-NO        PIC X(12).
+               10  CM-TRADING-NAME  PIC X(38).
+           05  CM-OPENED      PIC 9(8).
+           05  CM-BALANCE     PIC S9(13)V99 COMP-3.
+           05  CM-ADDR-COUNT  PIC 9(2).
+           05  CM-ADDRESSES   OCCURS 1 TO 5 TIMES DEPENDING ON
                CM-ADDR-COUNT OF CUSTOMER-RECORD
                    INDEXED BY CUSTOMER-RECORD-CM-ADDR-IDX.
-               10  CM-ADDR-LINE-1       PIC X(35).
-               10  CM-ADDR-LINE-2       PIC X(35).
-               10  CM-ADDR-POSTCODE     PIC X(8).
+               10  CM-ADDR-LINE-1    PIC X(35).
+               10  CM-ADDR-LINE-2    PIC X(35).
+               10  CM-ADDR-POSTCODE  PIC X(8).
        01  READ-TOTALS.
-           05  CUSTOMERS-READ       PIC 9(7).
-           05  PERSONAL             PIC 9(7).
-           05  CORPORATE            PIC 9(7).
-           05  ADDRESS-LINES        PIC 9(7).
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  READ-CUSTOMERS-LOOP-1 PIC 9(9) COMP.
-       01  ADDR                 PIC 9(9) COMP.
+           05  CUSTOMERS-READ   PIC 9(7).
+           05  PERSONAL         PIC 9(7).
+           05  CORPORATE        PIC 9(7).
+           05  ADDRESS-LINES    PIC 9(7).
+           05  IDEMPOTENCY-KEY  PIC X(36).
+       01  READ-CUSTOMERS-LOOP-1  PIC 9(9) COMP VALUE ZERO.
+       01  ADDR                   PIC 9(9) COMP VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        DECLARATIVES.

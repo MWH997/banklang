@@ -17,10 +17,12 @@
       *> The completion and reason codes are the ones IBM's Application
       *> Programming Reference documents, so the branch the program
       *> takes locally is the branch it would take on z/OS: MQCC-OK is
-      *> 0, MQCC-FAILED is 2, and 2033 (MQRC-NO-MSG-AVAILABLE) really is
-      *> an empty queue. `mq-outcomes.txt`, if present, supplies a
-      *> reason code per call so a test can drive the failure paths;
-      *> without it every call succeeds and the queue drains once.
+      *> 0, MQCC-FAILED is 2, 2033 (MQRC-NO-MSG-AVAILABLE) really is an
+      *> empty queue, and 2002 (MQRC-ALREADY-CONNECTED) really is a
+      *> second MQCONN to a queue manager already connected. The failure
+      *> paths are reached by calling out of order — a get before an
+      *> open, a disconnect before a connect — which is how a generated
+      *> program reaches them too.
       *>
       *> What running against this proves: the MQI call sequence is the
       *> one MQ expects, every operand resolves and is the right type,
@@ -31,6 +33,23 @@
        PROGRAM-ID. MQCONN.
 
        DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *> The connection, remembered under the name it was made with, so
+      *> that a second MQCONN naming a queue manager this run unit is
+      *> already connected to answers the way MQ answers it. From IBM's
+      *> Application Programming Reference: "If the application is
+      *> already connected, the handle returned is the same as that
+      *> returned by the previous MQCONN call, but with completion code
+      *> MQCC_WARNING and reason code MQRC_ALREADY_CONNECTED."
+      *>
+      *> That is not a detail. MQCC_WARNING is 1 and not MQCC_OK, so a
+      *> generated program that connected once per queue rather than
+      *> once per queue manager would fail its own completion-code test
+      *> on the second queue and end the step before reading a message.
+      *> This is the local check that would see it.
+       01  WS-CONNECTED-MGR     PIC X(48)  VALUE SPACES  EXTERNAL.
+       01  WS-CONNECTED-HCONN   PIC S9(9) BINARY VALUE 0 EXTERNAL.
+
        LINKAGE SECTION.
        01  L-QMGR-NAME          PIC X(48).
        01  L-HCONN              PIC S9(9) BINARY.
@@ -39,11 +58,20 @@
 
        PROCEDURE DIVISION USING L-QMGR-NAME, L-HCONN, L-COMPCODE,
            L-REASON.
+           IF L-QMGR-NAME = WS-CONNECTED-MGR
+      *> 2002 is MQRC-ALREADY-CONNECTED, with the handle already held.
+               MOVE WS-CONNECTED-HCONN TO L-HCONN
+               MOVE 1 TO L-COMPCODE
+               MOVE 2002 TO L-REASON
+           ELSE
       *> A handle the program did not have before, so a disconnect that
       *> runs without a connect is distinguishable from one that does.
-           MOVE 1 TO L-HCONN
-           MOVE 0 TO L-COMPCODE
-           MOVE 0 TO L-REASON
+               MOVE L-QMGR-NAME TO WS-CONNECTED-MGR
+               MOVE 1 TO WS-CONNECTED-HCONN
+               MOVE 1 TO L-HCONN
+               MOVE 0 TO L-COMPCODE
+               MOVE 0 TO L-REASON
+           END-IF
            GOBACK.
        END PROGRAM MQCONN.
 
@@ -187,16 +215,27 @@
        PROGRAM-ID. MQDISC.
 
        DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-CONNECTED-MGR     PIC X(48)  VALUE SPACES  EXTERNAL.
+       01  WS-CONNECTED-HCONN   PIC S9(9) BINARY VALUE 0 EXTERNAL.
+
        LINKAGE SECTION.
        01  L-HCONN              PIC S9(9) BINARY.
        01  L-COMPCODE           PIC S9(9) BINARY.
        01  L-REASON             PIC S9(9) BINARY.
 
        PROCEDURE DIVISION USING L-HCONN, L-COMPCODE, L-REASON.
+      *> 2018 is MQRC-HCONN-ERROR: disconnecting a handle MQ never gave
+      *> out, which is what a `disconnect` with no `connect` is.
            IF L-HCONN = 0
                MOVE 2 TO L-COMPCODE
                MOVE 2018 TO L-REASON
            ELSE
+      *> One MQDISC ends the connection, whatever it cost to make: the
+      *> queue manager does not count MQCONN calls, so the next MQCONN
+      *> after this one is a first connect again.
+               MOVE SPACES TO WS-CONNECTED-MGR
+               MOVE 0 TO WS-CONNECTED-HCONN
                MOVE 0 TO L-HCONN
                MOVE 0 TO L-COMPCODE
                MOVE 0 TO L-REASON

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { localCobol } from "./helpers";
+import { localCobol, unpadded } from "./helpers";
 
 /**
  * `processed: binary<9> = 0;` — a COBOL `VALUE` clause.
@@ -74,7 +74,7 @@ describe("what a field can start as", () => {
     const result = withRecord("  active: bool = true;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain('ACTIVE               PIC X(1) VALUE "Y".');
+    expect(unpadded(result.cobol)).toContain('ACTIVE PIC X(1) VALUE "Y".');
     expect(result.cobol).not.toContain('VALUE "N" VALUE');
   });
 

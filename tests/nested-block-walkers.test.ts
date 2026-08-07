@@ -227,7 +227,12 @@ describe("nothing in the backend keeps its own list of block-carrying kinds", ()
   });
 
   it("calls childBlocks wherever it walks nested blocks", () => {
-    expect(source).toContain(`import { childBlocks }`);
+    // The import, not one spelling of it: this asserted the exact single
+    // -specifier form, so adding a second name to the same statement failed a
+    // test about where the enumeration lives.
+    expect(source).toMatch(
+      /import \{[^}]*\bchildBlocks\b[^}]*\} from "\.\.\/\.\.\/ir\/src\/index"/,
+    );
     expect(source.match(/childBlocks\(/g)?.length ?? 0).toBeGreaterThanOrEqual(
       5,
     );

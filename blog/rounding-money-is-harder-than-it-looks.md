@@ -2,6 +2,9 @@
 title: Rounding money is harder than it looks
 description: Half of one penny has to go somewhere, and the choice you make is worth real money. Here is why floating point is the wrong tool and what banks actually do instead.
 date: 2026-08-06
+author: Md Wahid Hassan
+related: a-compiler-that-refuses-to-build, testing-a-compiler-you-cannot-run
+reading: numeric-model.md
 ---
 
 Ask a room of developers to round 2.675 to two decimal places and most will say
@@ -150,10 +153,3 @@ much stronger position than a list of expected values somebody typed out, becaus
 the expected values were produced by a person who was thinking about the same
 thing in the same way, and a shared misunderstanding agrees with itself
 perfectly.
-
----
-
-_BankLang requires an explicit rounding mode on every division and writes out the
-arithmetic for all seven, then checks each against exact rational arithmetic over
-every boundary case.
-[The numeric model](../docs/numeric-model.md) is where the details are._

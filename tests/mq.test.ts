@@ -88,18 +88,53 @@ describe("the declaration", () => {
   });
 
   it("declares the handles and codes MQ writes back into", () => {
-    for (const part of [
-      "HCONN",
-      "HOBJ",
-      "OPTIONS",
-      "COMPCODE",
-      "REASON",
-      "BUFFLEN",
-    ]) {
+    for (const part of ["HOBJ", "OPTIONS", "COMPCODE", "REASON", "BUFFLEN"]) {
       expect(result.cobol).toContain(`01  PAYMENT-OUT-${part}`);
     }
+  });
+
+  /**
+   * The connection belongs to the queue manager, not to the queue, so the
+   * handle and the manager name are declared once for both queues on `CSQ1`
+   * and neither is qualified by a queue name.
+   */
+  it("declares one connection per queue manager", () => {
+    expect(result.cobol).toContain("*> Queue manager CSQ1.");
+    expect(flowed(result.cobol)).toContain(
+      "01 BANK-MQM-1-HCONN PIC S9(9) BINARY VALUE 0.",
+    );
     // MQ_Q_MGR_NAME_LENGTH is 48, which is what MQCONN's first parameter is.
-    expect(result.cobol).toContain("01  PAYMENT-OUT-MGRNAME  PIC X(48).");
+    expect(flowed(result.cobol)).toContain(
+      "01 BANK-MQM-1-MGRNAME PIC X(48) VALUE SPACES.",
+    );
+    expect(flowed(result.cobol)).toContain(
+      "01 BANK-MQM-1-OPENS PIC S9(4) BINARY VALUE 0.",
+    );
+    expect(result.cobol).not.toContain("PAYMENT-OUT-HCONN");
+    expect(result.cobol).not.toContain("PAYMENT-IN-HCONN");
+    expect(result.cobol).not.toContain("PAYMENT-OUT-MGRNAME");
+  });
+
+  /** A second manager is a second connection, and gets its own storage. */
+  it("declares one per manager, not one for all of them", () => {
+    const two = compile(`module M;
+record R { idempotencyKey: string<36>; }
+queue here manager "CSQ1" name "Q.HERE" output record R status hereReason;
+queue there manager "CSQ2" name "Q.THERE" output record R status thereReason;
+entry transaction t(r: R) {
+  connectQueue here;
+  connectQueue there;
+  disconnectQueue there;
+  disconnectQueue here;
+  audit("A", r.idempotencyKey);
+}`);
+    expect(two.diagnostics).toEqual([]);
+    expect(two.cobol).toContain("*> Queue manager CSQ1.");
+    expect(two.cobol).toContain("*> Queue manager CSQ2.");
+    expect(two.cobol).toContain("01  BANK-MQM-2-HCONN");
+    expect(flowed(two.cobol)).toContain(
+      flowed('MOVE "CSQ2" TO BANK-MQM-2-MGRNAME'),
+    );
   });
 });
 
@@ -117,14 +152,74 @@ describe("connecting and opening", () => {
   it("connects then opens, and closes then disconnects", () => {
     expect(text).toContain(
       flowed(
-        'CALL "MQCONN" USING PAYMENT-OUT-MGRNAME, PAYMENT-OUT-HCONN, PAYMENT-OUT-COMPCODE, PAYMENT-OUT-REASON',
+        'CALL "MQCONN" USING BANK-MQM-1-MGRNAME, BANK-MQM-1-HCONN, PAYMENT-OUT-COMPCODE, PAYMENT-OUT-REASON',
       ),
     );
-    expect(text).toContain('CALL "MQOPEN" USING PAYMENT-OUT-HCONN, MQOD OF');
-    expect(text).toContain('CALL "MQCLOSE" USING PAYMENT-OUT-HCONN');
-    expect(text).toContain('CALL "MQDISC" USING PAYMENT-OUT-HCONN');
+    expect(text).toContain('CALL "MQOPEN" USING BANK-MQM-1-HCONN, MQOD OF');
+    expect(text).toContain('CALL "MQCLOSE" USING BANK-MQM-1-HCONN');
+    expect(text).toContain('CALL "MQDISC" USING BANK-MQM-1-HCONN');
     expect(text.indexOf("MQCONN")).toBeLessThan(text.indexOf("MQOPEN"));
     expect(text.indexOf("MQCLOSE")).toBeLessThan(text.indexOf("MQDISC"));
+  });
+
+  /**
+   * The defect this replaced. `MQCONN` naming a queue manager the program is
+   * already connected to returns the handle it gave the first time with
+   * `MQCC-WARNING` and `MQRC-ALREADY-CONNECTED` — not `MQCC-OK` — so a program
+   * that connected once per queue failed its own completion-code test on the
+   * second queue and ended the step with RC 12 before reading a message.
+   * Nothing local could see it: the reference MQI returned a fresh handle and
+   * `MQCC-OK` every time, so the whole suite passed.
+   */
+  it("connects once per manager, however many queues are on it", () => {
+    const both = flowed(
+      txn(`  connectQueue paymentIn;
+  connectQueue paymentOut;
+  disconnectQueue paymentOut;
+  disconnectQueue paymentIn;`).cobol,
+    );
+    // Two queues, so two opens and two closes — and every MQCONN and MQDISC
+    // between them behind the count, so exactly one of each runs. The pairing
+    // is the assertion: an unguarded call site is the defect returning.
+    expect(both.match(/CALL "MQOPEN"/g)).toHaveLength(2);
+    expect(both.match(/CALL "MQCLOSE"/g)).toHaveLength(2);
+    expect(both.match(/IF BANK-MQM-1-OPENS = 0 MOVE "CSQ1"/g)).toHaveLength(
+      both.match(/CALL "MQCONN"/g)?.length ?? 0,
+    );
+    expect(
+      both.match(/IF BANK-MQM-1-OPENS < 1 MOVE 0 TO BANK-MQM-1-OPENS/g),
+    ).toHaveLength(both.match(/CALL "MQDISC"/g)?.length ?? 0);
+  });
+
+  /**
+   * The count is what carries that across the two statements. `connectQueue`
+   * cannot know statically whether an earlier one has already run — it may sit
+   * behind a condition or inside a loop — so the test is made at run time.
+   */
+  it("counts the open queues on a manager to decide", () => {
+    expect(text).toContain("IF BANK-MQM-1-OPENS = 0");
+    expect(text).toContain("ADD 1 TO BANK-MQM-1-OPENS");
+    expect(text).toContain("SUBTRACT 1 FROM BANK-MQM-1-OPENS");
+    expect(text).toContain("IF BANK-MQM-1-OPENS < 1");
+  });
+
+  /**
+   * IBM's Application Programming Reference, on MQCONN: "If the application is
+   * already connected, the handle returned is the same as that returned by the
+   * previous MQCONN call, but with completion code MQCC_WARNING and reason
+   * code MQRC_ALREADY_CONNECTED", and "Use the connection handle returned in
+   * this situation as normal." A generated program does not provoke this
+   * itself; a caller that connected before linking to it does.
+   */
+  it("does not treat an already-made connection as a failure", () => {
+    expect(text).toContain(
+      flowed(
+        "IF PAYMENT-OUT-COMPCODE NOT = MQCC-OK AND PAYMENT-OUT-REASON NOT = MQRC-ALREADY-CONNECTED",
+      ),
+    );
+    // Every other call keeps the plain test. A truncated message is still a
+    // failure, and this exemption is not a licence to ignore warnings.
+    expect(result.cobol).toContain("IF PAYMENT-OUT-COMPCODE NOT = MQCC-OK\n");
   });
 
   it("describes the object before opening it", () => {
@@ -170,7 +265,7 @@ describe("putting a message", () => {
     expect(text).toContain("MOVE LENGTH OF PAYMENT TO PAYMENT-OUT-BUFFLEN");
     expect(text).toContain(
       flowed(
-        'CALL "MQPUT" USING PAYMENT-OUT-HCONN, PAYMENT-OUT-HOBJ, MQMD OF PAYMENT-OUT-MQMD, MQPMO OF PAYMENT-OUT-MQPMO, PAYMENT-OUT-BUFFLEN, PAYMENT, PAYMENT-OUT-COMPCODE, PAYMENT-OUT-REASON',
+        'CALL "MQPUT" USING BANK-MQM-1-HCONN, PAYMENT-OUT-HOBJ, MQMD OF PAYMENT-OUT-MQMD, MQPMO OF PAYMENT-OUT-MQPMO, PAYMENT-OUT-BUFFLEN, PAYMENT, PAYMENT-OUT-COMPCODE, PAYMENT-OUT-REASON',
       ),
     );
   });
@@ -354,6 +449,58 @@ entry transaction t(r: R) { audit("A", r.idempotencyKey); }`,
 describe("executed against the reference MQI", () => {
   const available =
     spawnSync("cobc", ["--version"], { encoding: "utf8" }).status === 0;
+
+  /** Compile a generated program against the reference MQI and run it. */
+  function run(cobol: string): { status: number | null; stdout: string } {
+    const dir = mkdtempSync(join(tmpdir(), "bankc-mq-"));
+    writeFileSync(join(dir, "program.cbl"), localCobol(cobol), "utf8");
+
+    const built = spawnSync(
+      "cobc",
+      [
+        "-x",
+        "-fixed",
+        "program.cbl",
+        join(process.cwd(), "runtime/BANKMQ.cbl"),
+        join(process.cwd(), "runtime/BANKAUDT.cbl"),
+        "-o",
+        "program",
+      ],
+      { cwd: dir, encoding: "utf8" },
+    );
+    expect(built.status, built.stderr).toBe(0);
+
+    const ran = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
+    return { status: ran.status, stdout: ran.stdout };
+  }
+
+  /**
+   * Two queues on one manager, which is the shape `examples/mq-request-reply`
+   * has and the shape that was broken. The reference MQI answers a second
+   * MQCONN naming a manager it is already connected to the way IBM documents
+   * it — MQCC-WARNING with reason 2002 — so a program that connected per queue
+   * ends here with RC 12 and `MQCONN FAILED` on stdout rather than a message.
+   */
+  it.skipIf(!available)("drains a queue with a reply queue beside it", () => {
+    const result = txn(`  connectQueue paymentOut;
+  connectQueue paymentIn;
+  payment.accountId = "ACC0000000000001";
+  putMessage paymentOut from payment;
+  payment.accountId = "OVERWRITTEN";
+  getMessage paymentIn into payment {
+    log "RELAYED ", payment.accountId;
+  } else {
+    log "EMPTY";
+  };
+  disconnectQueue paymentIn;
+  disconnectQueue paymentOut;`);
+    expect(result.diagnostics).toEqual([]);
+
+    const ran = run(precompile(result.cobol ?? "").cobol);
+    expect(ran.stdout).not.toContain("MQCONN FAILED");
+    expect(ran.status).toBe(0);
+    expect(ran.stdout).toContain("RELAYED ACC0000000000001");
+  });
 
   it.skipIf(!available)("puts a message and gets it back, then drains", () => {
     const result = txn(`  connectQueue paymentOut;

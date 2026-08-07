@@ -19,7 +19,7 @@
 
 import { describeRecordLayout } from "../../copybook/src/index";
 import { toCobolName } from "../../cobol-ir/src/index";
-import type { IRProgram } from "../../ir/src/index";
+import { isLibraryModule, type IRProgram } from "../../ir/src/index";
 
 export interface PrologueFacts {
   /** COBOL name of the program, which is also its load module member. */
@@ -64,13 +64,20 @@ export function prologueLines(
   // column 72 is but not that the text is prose: it breaks at the last space
   // that fits, so a sentence ends up split across an indent it did not choose
   // and the block stops reading as one.
-  const section = (title: string, body: readonly string[]): void => {
+  //
+  // `hang` is the width of the entry's label column, where it has one. A
+  // continuation lines up under the text it continues, so `12  A failure the
+  // program named…` wraps under the meaning rather than under the `12`, and a
+  // plain sentence wraps flush and reads as a paragraph. It used to indent
+  // every continuation two spaces past its own first line, which lined up with
+  // nothing and made each wrapped sentence read as a further, deeper entry.
+  const section = (title: string, body: readonly string[], hang = 0): void => {
     if (body.length === 0) {
       return;
     }
     lines.push(COMMENT.trimEnd(), `${COMMENT}${title}`);
     for (const entry of body) {
-      lines.push(...fill(entry, `${COMMENT}  `));
+      lines.push(...fill(entry, `${COMMENT}  `, hang));
     }
   };
 
@@ -96,19 +103,24 @@ export function prologueLines(
     "FILES",
     facts.files.map(
       (file) =>
-        `${file.dd.padEnd(9)}${file.mode.padEnd(8)}${file.organization.padEnd(11)}${file.record} (${file.length} bytes)`,
+        `${file.dd.padEnd(DD_COLUMN)}${file.mode.padEnd(8)}${file.organization.padEnd(11)}${file.record} (${file.length} bytes)`,
     ),
+    DD_COLUMN,
   );
   section(
     "CALLS",
-    facts.calls.map((call) => `${call.name.padEnd(9)}${call.purpose}`),
+    facts.calls.map(
+      (call) => `${call.name.padEnd(MODULE_COLUMN)}${call.purpose}`,
+    ),
+    MODULE_COLUMN,
   );
   section("COPYBOOKS", options.copybookMode === "copy" ? facts.copybooks : []);
   section(
     "RETURN CODES",
     facts.returnCodes.map(
-      (entry) => `${String(entry.code).padEnd(4)}${entry.meaning}`,
+      (entry) => `${String(entry.code).padEnd(CODE_COLUMN)}${entry.meaning}`,
     ),
+    CODE_COLUMN,
   );
   section("RESTART", facts.restart);
 
@@ -121,20 +133,33 @@ const COMMENT = "      *> ";
 const WIDTH = 72;
 
 /**
+ * The label column of each tabular section, used twice: to pad the label and
+ * to indent a continuation under the text beside it. One constant, because the
+ * two drifting apart is how a wrapped line ends up lining up with nothing.
+ *
+ * A DD name and a load module name are both eight characters, so nine leaves
+ * one space; a return code is at most two digits, and four keeps `0` and `16`
+ * in one column with two spaces after the widest.
+ */
+const DD_COLUMN = 9;
+const MODULE_COLUMN = 9;
+const CODE_COLUMN = 4;
+
+/**
  * One entry filled into as many comment lines as it needs.
  *
- * A continuation is indented past the text it continues, so a wrapped sentence
- * reads as one entry rather than as two. A run with no space in it — a long
- * dataset name, a path — is written over the margin rather than cut, because
- * a comment that runs past column 72 loses its tail and nothing else.
+ * `hang` is the width of the entry's label column. A continuation is indented
+ * by it, so it starts under the text it continues rather than under the label:
+ * a return-code meaning wraps under the meaning, and an entry with no label
+ * wraps flush and reads as a paragraph.
  */
-function fill(text: string, prefix: string): string[] {
-  const room = WIDTH - prefix.length;
+function fill(text: string, prefix: string, hang = 0): string[] {
+  const continuation = `${prefix}${" ".repeat(hang)}`;
   const lines: string[] = [];
   let rest = text;
   let current = prefix;
 
-  while (rest.length > room - (current.length - prefix.length)) {
+  while (rest.length > WIDTH - current.length) {
     const available = WIDTH - current.length;
     // A run with no space in it is cut at the margin rather than written over
     // it: past column 72 the compiler does not see the text at all, so a
@@ -146,7 +171,7 @@ function fill(text: string, prefix: string): string[] {
     }
     lines.push(`${current}${rest.slice(0, at)}`);
     rest = rest.slice(cut > 0 ? at + 1 : at);
-    current = `${prefix}  `;
+    current = continuation;
   }
   lines.push(`${current}${rest}`);
 
@@ -237,6 +262,18 @@ function entryLines(
     parmFields: { source: string; picture: string; width: number }[];
   },
 ): string[] {
+  // A module of functions and nothing else. The batch sentence below was
+  // emitted here unconditionally, so the two library examples opened by saying
+  // "Nothing here is an entry point" under PURPOSE and "started by EXEC PGM in
+  // a job" under ENTRY, four lines apart. Said rather than left out: a section
+  // that is simply missing reads as one somebody forgot to fill in, and this
+  // is the first thing a reviewer reads.
+  if (isLibraryModule(program)) {
+    return [
+      "None. This module is a library: it is linked into a caller and entered at one of its paragraphs, not started as a job step.",
+    ];
+  }
+
   if (context.cics) {
     const record = program.transactions.find(
       (transaction) => transaction.isCics,

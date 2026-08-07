@@ -8,9 +8,16 @@
  * record, and every read and write goes through those numbers.
  *
  * That is also why `packages/copybook` can describe the same layout from the
- * other end. The two agree because both are derived from the same rules in the
- * *Enterprise COBOL Language Reference*, and `tests/cobol-runtime.test.ts`
- * checks a handful of layouts against the copybook reporter to keep it that way.
+ * other end. The two are derived from the same rules in the *Enterprise COBOL
+ * Language Reference*, and `tests/runtime-layout.test.ts` holds every field of
+ * every example to the offset and width the copybook reports for it.
+ *
+ * That test named a file that did not exist until the disagreement it was
+ * supposed to catch turned up: the `SIGN` clause below was parsed and thrown
+ * away, so a `zoned` field — `SIGN IS TRAILING SEPARATE`, one byte wider than
+ * its digits — was a byte narrower here than in the copybook, and every field
+ * after it in the record sat at the wrong offset. Two internally consistent
+ * implementations disagreeing quietly is exactly what the comparison is for.
  */
 
 import type { Cursor } from "./cursor";
@@ -18,6 +25,7 @@ import {
   parsePicture,
   storageLength,
   type Picture,
+  type SignMode,
   type Usage,
 } from "./picture";
 import { CobolSyntaxError, CobolUnsupportedError } from "./source";
@@ -219,6 +227,19 @@ export function parseDataEntries(
       field.offset =
         redefineTarget(field, parent.field)?.offset ?? parent.cursor;
     } else {
+      // An 01 REDEFINES names another 01 of the same section, and the machine
+      // binds the two to one area. A name that resolves to nothing would
+      // quietly get storage of its own, which is the failure this whole clause
+      // exists to avoid — so it is refused here rather than discovered as two
+      // records that will not agree.
+      if (
+        field.redefines !== null &&
+        !roots.some((root) => root.name === field.redefines)
+      ) {
+        throw new CobolSyntaxError(
+          `${field.name} REDEFINES ${field.redefines}, which is not an earlier record of this section.`,
+        );
+      }
       field.root = field;
       field.offset = 0;
       roots.push(field);
@@ -323,6 +344,7 @@ function parseEntry(cursor: Cursor, level: number, area: Area): Field {
   field.root = field;
 
   let explicitUsage: Usage | null = null;
+  let sign: SignMode | null = null;
 
   while (!cursor.acceptPeriod()) {
     if (cursor.done) {
@@ -398,8 +420,17 @@ function parseEntry(cursor: Cursor, level: number, area: Area): Field {
       explicitUsage = "display";
       continue;
     }
+    // `[SIGN IS] {LEADING | TRAILING} [SEPARATE CHARACTER]`. The clause was
+    // read and thrown away, which cost a byte of width on every item that had
+    // one: `PIC S9(16)V99 SIGN IS LEADING SEPARATE` is nineteen characters, not
+    // eighteen, and the fields after it in the group all moved.
     if (cursor.accept("SIGN")) {
-      cursor.skipNoise("IS", "LEADING", "TRAILING", "SEPARATE", "CHARACTER");
+      cursor.skipNoise("IS");
+      sign = readSignClause(cursor, sign);
+      continue;
+    }
+    if (cursor.peek().text === "LEADING" || cursor.peek().text === "TRAILING") {
+      sign = readSignClause(cursor, sign);
       continue;
     }
     if (cursor.accept("SYNCHRONIZED") || cursor.accept("SYNC")) {
@@ -434,7 +465,52 @@ function parseEntry(cursor: Cursor, level: number, area: Area): Field {
     );
   }
 
+  if (sign && field.picture) {
+    // The clause applies to a signed numeric DISPLAY item and to nothing else.
+    // Silently widening anything it is written on would move every field after
+    // it, so a clause that cannot mean what it says is refused instead.
+    if (!field.picture.signed || field.picture.category !== "numeric") {
+      throw new CobolSyntaxError(
+        `${field.name}: a SIGN clause needs a signed numeric picture, and PIC ${field.picture.mask} is not one.`,
+      );
+    }
+    if (field.usage !== "display") {
+      throw new CobolSyntaxError(
+        `${field.name}: a SIGN clause applies to a DISPLAY item, and this one is ${field.usage}.`,
+      );
+    }
+    field.picture = { ...field.picture, sign };
+  }
+
   return field;
+}
+
+/**
+ * `[SIGN IS] {LEADING | TRAILING} [SEPARATE CHARACTER]`.
+ *
+ * `SEPARATE` is what makes the sign a byte of its own; without it the sign is
+ * overpunched onto the leading or trailing digit, and the item is exactly as
+ * wide as its digits. Only the trailing overpunch is implemented — it is the
+ * default, and the only one this compiler emits — so a leading overpunch says
+ * so rather than reading the sign off the wrong end.
+ */
+function readSignClause(cursor: Cursor, current: SignMode | null): SignMode {
+  const leading = cursor.accept("LEADING");
+  if (!leading) {
+    cursor.accept("TRAILING");
+  }
+  const separate = cursor.accept("SEPARATE");
+  cursor.skipNoise("CHARACTER");
+
+  if (!separate) {
+    if (leading) {
+      throw new CobolUnsupportedError(
+        "SIGN IS LEADING without SEPARATE overpunches the first digit, which this interpreter does not implement.",
+      );
+    }
+    return current ?? "embedded";
+  }
+  return leading ? "leading-separate" : "trailing-separate";
 }
 
 /** Every field under a record, the record itself first. */

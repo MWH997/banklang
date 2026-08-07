@@ -66,7 +66,7 @@ import type {
  * kind added with a block and forgotten here is a type error rather than a
  * silent omission. That is the property none of the six had.
  */
-import { childBlocks } from "../../ir/src/index";
+import { childBlocks, isLibraryModule } from "../../ir/src/index";
 import {
   copybookMemberName,
   decimalPicture,
@@ -85,8 +85,10 @@ import {
   describeRecordLayout,
   type CopybookRecordLayout,
 } from "../../copybook/src/index";
+import { alignPictureColumns } from "./align";
 import { toJclStatement, toReferenceFormat } from "./reference-format";
 import { collectPrologueFacts, prologueLines } from "./prologue";
+import { BankcError, CompilerInvariant } from "../../diagnostics/src/errors";
 
 /**
  * BankLang ledger and audit calling convention. See ADR-0003. The field widths
@@ -700,7 +702,9 @@ function collectDataNames(program: IRProgram): Set<string> {
 function requireSqlDeclaration(name: string): IRSql {
   const declaration = currentSql.get(name);
   if (!declaration) {
-    throw new Error(`Unresolved SQL statement during emission: ${name}`);
+    throw new CompilerInvariant(
+      `Unresolved SQL statement during emission: ${name}`,
+    );
   }
   return declaration;
 }
@@ -893,6 +897,7 @@ export function emitCobol(
   currentProgramIsCics = program.transactions.some(
     (transaction) => transaction.isCics,
   );
+  mqManagerTable = mqManagerIndexes(program);
   abendParagraphUsed = false;
   currentLocalFields = planLocalFields(program);
   // The main program's rounding work fields cover every routine emitted into
@@ -987,10 +992,7 @@ export function emitCobol(
   if (program.files.length > 0) {
     addLine(`       INPUT-OUTPUT SECTION.`);
     addLine(`       FILE-CONTROL.`);
-    const restartFiles = new Set([
-      ...checkpointedFiles(program),
-      ...restartedFiles(program),
-    ]);
+    const restartFiles = restartControlFiles(program);
     for (const file of program.files) {
       emitFileControlEntry(file, addLine, restartFiles.has(file.name));
     }
@@ -1152,6 +1154,14 @@ export function emitCobol(
     // variable — and so does DECLARE CURSOR, which is a statement rather than a
     // declaration and is emitted after the section closes.
     addLine(`           EXEC SQL BEGIN DECLARE SECTION END-EXEC.`);
+    // The one place generated working storage carries no VALUE, and
+    // deliberately. IBM's syntax for a COBOL host variable does allow one, but
+    // DCLGEN — IBM's own generator for exactly these declarations — emits
+    // none, and a declare section is read by the Db2 precompiler before any
+    // compiler sees it. Every host variable here is loaded by a `MOVE`
+    // immediately above the `EXEC SQL` that reads it, so there is no path that
+    // reads one uninitialised. See `generatedStorage` for the rule everything
+    // else follows.
     for (const statement of program.sql) {
       statement.parameters.forEach((parameter, index) => {
         addLine(
@@ -1182,7 +1192,7 @@ export function emitCobol(
       // counter, not a host variable.
       if (statement.form === "cursor") {
         addLine(
-          `       01  ${cursorRowCounter(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+          `       01  ${cursorRowCounter(statement.name).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
         );
       }
       if (statement.form === "cursor" && statement.rowset !== null) {
@@ -1191,10 +1201,10 @@ export function emitCobol(
         // host variables, so they sit outside the declare section — but the
         // arrays the rows land in are host variables and go inside one.
         addLine(
-          `       01  ${rowsetCountName(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+          `       01  ${rowsetCountName(statement.name).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
         );
         addLine(
-          `       01  ${rowsetIndexName(statement.name).padEnd(20)} PIC 9(9) COMP.`,
+          `       01  ${rowsetIndexName(statement.name).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
         );
         emitRowsetArrays(statement, program, addLine);
       }
@@ -1204,7 +1214,9 @@ export function emitCobol(
   for (const file of program.files) {
     if (file.statusName) {
       const status = toCobolFieldName(file.statusName);
-      addLine(`       01  ${status.padEnd(20)} ${FILE_STATUS_PICTURE}.`);
+      addLine(
+        `       01  ${status.padEnd(20)} ${FILE_STATUS_PICTURE} VALUE SPACES.`,
+      );
       for (const [suffix, value] of FILE_STATUS_CONDITIONS) {
         addLine(
           `           88  ${cobolWord(status, suffix).padEnd(24)} VALUE ${value}.`,
@@ -1215,7 +1227,7 @@ export function emitCobol(
     // read. It is the program's, not the file's, which is why it lives here.
     if (file.recordVarying) {
       addLine(
-        `       01  ${toCobolFieldName(file.recordVarying.lengthName).padEnd(20)} PIC S9(4) COMP.`,
+        `       01  ${toCobolFieldName(file.recordVarying.lengthName).padEnd(20)} PIC S9(4) COMP VALUE ZERO.`,
       );
     }
   }
@@ -1229,14 +1241,14 @@ export function emitCobol(
       continue;
     }
     addLine(
-      `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
+      `       01  ${functionResultName(fn.name)} ${generatedStorage(fn.returnType)}.`,
     );
     fn.parameters.forEach((parameter, index) => {
       if (parameter.type.kind === "record") {
         return;
       }
       addLine(
-        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${generatedStorage(parameter.type)}.`,
       );
     });
   }
@@ -1244,7 +1256,7 @@ export function emitCobol(
   // only exists in a program that asks for the time.
   for (const file of checkpointedFiles(program)) {
     addLine(
-      `       01  ${checkpointCounterName(file).padEnd(20)} PIC 9(9) COMP.`,
+      `       01  ${checkpointCounterName(file).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
     );
   }
   // A restart's own flag rather than the file status, because "no position
@@ -1255,7 +1267,9 @@ export function emitCobol(
     );
   }
   if (programUsesNow(program)) {
-    addLine(`       01  ${CURRENT_DATE_FIELD.padEnd(20)} PIC X(21).`);
+    addLine(
+      `       01  ${CURRENT_DATE_FIELD.padEnd(20)} PIC X(21) VALUE SPACES.`,
+    );
   }
   if (programNeedsBoundsStatus(program)) {
     addLine(
@@ -1263,7 +1277,9 @@ export function emitCobol(
     );
   }
   if (programNeedsCopyIndex(program)) {
-    addLine(`       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP.`);
+    addLine(
+      `       01  ${COPY_INDEX_FIELD.padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
+    );
   }
   for (const line of FAILURE_REGISTERS) {
     addLine(line);
@@ -1285,35 +1301,51 @@ export function emitCobol(
     addLine(`       01  BANK-MQ-CONSTANTS.`);
     addLine(`           COPY CMQV SUPPRESS.`);
   }
-  for (const queue of program.queues) {
-    // Handles start at zero so a `disconnect` that runs before a `connect` asks
-    // MQ about a handle it never gave out, rather than about whatever storage
-    // happened to be there.
+  // One connection per queue manager, shared by every queue on it. A program
+  // is connected to a manager, not to a queue: the second MQCONN naming a
+  // manager this program has already connected to returns the handle it gave
+  // the first time with MQCC-WARNING and MQRC-ALREADY-CONNECTED, which is not
+  // MQCC-OK, so connecting once per queue fails the completion-code test on
+  // the second queue and stops a program that is in fact connected.
+  for (const [managerName, index] of mqManagerTable) {
+    addLine(`      *> Queue manager ${managerName}.`);
+    // The handle starts at zero so a `disconnect` that runs before a `connect`
+    // asks MQ about a handle it never gave out, rather than about whatever
+    // storage happened to be there.
     addLine(
-      `       01  ${mqName(queue.name, "HCONN").padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
+      `       01  ${mqManagerName(index, "HCONN").padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
     );
+    // MQ_Q_MGR_NAME_LENGTH is 48, which is what MQCONN's first parameter is.
+    addLine(
+      `       01  ${mqManagerName(index, "MGRNAME").padEnd(20)} PIC X(48) VALUE SPACES.`,
+    );
+    // How many queues on this manager are open. It is what makes MQDISC happen
+    // once, after the last of them is closed, in whatever order the program
+    // closes them — a second MQDISC would be issued against a handle the first
+    // one invalidated.
+    addLine(
+      `       01  ${mqManagerName(index, "OPENS").padEnd(20)} PIC S9(4) BINARY VALUE 0.`,
+    );
+  }
+  for (const queue of program.queues) {
     addLine(
       `       01  ${mqName(queue.name, "HOBJ").padEnd(20)} PIC S9(9) BINARY VALUE 0.`,
     );
     addLine(
-      `       01  ${mqName(queue.name, "OPTIONS").padEnd(20)} PIC S9(9) BINARY.`,
+      `       01  ${mqName(queue.name, "OPTIONS").padEnd(20)} PIC S9(9) BINARY VALUE ZERO.`,
     );
     addLine(
-      `       01  ${mqName(queue.name, "COMPCODE").padEnd(20)} PIC S9(9) BINARY.`,
+      `       01  ${mqName(queue.name, "COMPCODE").padEnd(20)} PIC S9(9) BINARY VALUE ZERO.`,
     );
     addLine(
-      `       01  ${mqName(queue.name, "REASON").padEnd(20)} PIC S9(9) BINARY.`,
+      `       01  ${mqName(queue.name, "REASON").padEnd(20)} PIC S9(9) BINARY VALUE ZERO.`,
     );
     addLine(
-      `       01  ${mqName(queue.name, "BUFFLEN").padEnd(20)} PIC S9(9) BINARY.`,
-    );
-    // MQ_Q_MGR_NAME_LENGTH is 48, which is what MQCONN's first parameter is.
-    addLine(
-      `       01  ${mqName(queue.name, "MGRNAME").padEnd(20)} PIC X(48).`,
+      `       01  ${mqName(queue.name, "BUFFLEN").padEnd(20)} PIC S9(9) BINARY VALUE ZERO.`,
     );
     if (queue.direction === "input") {
       addLine(
-        `       01  ${mqName(queue.name, "DATALEN").padEnd(20)} PIC S9(9) BINARY.`,
+        `       01  ${mqName(queue.name, "DATALEN").padEnd(20)} PIC S9(9) BINARY VALUE ZERO.`,
       );
     }
     // The control blocks themselves. Each copybook declares its structure at
@@ -1372,14 +1404,14 @@ export function emitCobol(
     // The element a start tag opened, so the content that follows can be filed
     // under it. XML-EVENT names the token; nothing carries the element itself.
     addLine(
-      `       01  ${`${xmlHandlerName(index)}-ELEM`.padEnd(20)} PIC X(30).`,
+      `       01  ${`${xmlHandlerName(index)}-ELEM`.padEnd(20)} PIC X(30) VALUE SPACES.`,
     );
     // Character content can be split across events at arbitrary points, so the
     // pieces are accumulated here and assigned only once the parser says the
     // value is complete. Moving each fragment straight to its field keeps the
     // last one and loses the rest, which reads as a short but plausible value.
     addLine(
-      `       01  ${`${xmlHandlerName(index)}-BUF`.padEnd(20)} PIC X(${XML_CONTENT_BUFFER}).`,
+      `       01  ${`${xmlHandlerName(index)}-BUF`.padEnd(20)} PIC X(${XML_CONTENT_BUFFER}) VALUE SPACES.`,
     );
     addLine(
       `       01  ${`${xmlHandlerName(index)}-PTR`.padEnd(20)} PIC S9(9) COMP VALUE 1.`,
@@ -1504,7 +1536,7 @@ export function emitCobol(
   const emitLocals = (owner: string): void => {
     for (const local of localsByOwner.get(owner) ?? []) {
       addLine(
-        `       01  ${localFieldName(owner, local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+        `       01  ${localFieldName(owner, local.name).padEnd(20)} ${generatedStorage(local.declaredType)}.`,
       );
     }
   };
@@ -1516,7 +1548,7 @@ export function emitCobol(
       continue;
     }
     addLine(
-      `       01  ${functionResultName(fn.name)} ${formatCobolType(fn.returnType)}.`,
+      `       01  ${functionResultName(fn.name)} ${generatedStorage(fn.returnType)}.`,
     );
     // Parameters get their own storage so a call can move arguments in.
     // Without this, a parameter reference only resolved by coinciding with a
@@ -1528,7 +1560,7 @@ export function emitCobol(
         return;
       }
       addLine(
-        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+        `       01  ${parameterFieldName(fn.name, index).padEnd(20)} ${generatedStorage(parameter.type)}.`,
       );
     });
     emitLocals(fn.name);
@@ -1540,7 +1572,7 @@ export function emitCobol(
         return;
       }
       addLine(
-        `       01  ${parameterFieldName(transaction.name, index).padEnd(20)} ${formatCobolType(parameter.type)}.`,
+        `       01  ${parameterFieldName(transaction.name, index).padEnd(20)} ${generatedStorage(parameter.type)}.`,
       );
     });
     emitLocals(transaction.name);
@@ -1552,7 +1584,9 @@ export function emitCobol(
     ...program.transactions.map((transaction) => transaction.body),
   ].flatMap((body) => collectLoops(body));
   for (const loop of counters) {
-    addLine(`       01  ${loopCounterName(loop).padEnd(20)} PIC 9(9) COMP.`);
+    addLine(
+      `       01  ${loopCounterName(loop).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
+    );
   }
 
   const forEachIndexes = [
@@ -1566,7 +1600,7 @@ export function emitCobol(
       continue;
     }
     declaredIndexes.add(name);
-    addLine(`       01  ${name.padEnd(20)} PIC 9(9) COMP.`);
+    addLine(`       01  ${name.padEnd(20)} PIC 9(9) COMP VALUE ZERO.`);
   }
   const usedInterfaces = new Set<string>();
   if (programCallsLedger(program)) {
@@ -1980,7 +2014,10 @@ export function emitCobol(
   }
 
   return {
-    cobol: `${lines.join("\n")}\n`,
+    // Aligned last, over the finished text. It rewrites lines in place and
+    // never adds or removes one, so the source map written above still points
+    // at the lines it names. See `alignPictureColumns`.
+    cobol: `${alignPictureColumns(lines).join("\n")}\n`,
     sourceMap: {
       version: 1,
       backendProfile,
@@ -2081,7 +2118,9 @@ export function emitJcl(
     "//             CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID,REGION=0M",
     needsCics
       ? "//* Build job for the generated CICS program. It is installed, not run."
-      : "//* Compile, link-edit, and run the generated COBOL program.",
+      : isLibraryModule(program)
+        ? "//* Compile and link-edit the generated library. It has no entry point."
+        : "//* Compile, link-edit, and run the generated COBOL program.",
     `//* Source member:   ${JCL_SOURCE_LIBRARY}(${moduleName})`,
     ...(usesCopyLibrary ? [`//* Copybooks:       ${JCL_COPY_LIBRARY}`] : []),
     `//* Load module:     ${JCL_LOAD_LIBRARY}(${moduleName})`,
@@ -2239,8 +2278,9 @@ export function emitJcl(
   // match the program rather than being decoration.
   //
   // A CICS program has no run step at all: it is started by a transaction
-  // identifier in a region, not by EXEC PGM in a job.
-  if (!needsCics) {
+  // identifier in a region, not by EXEC PGM in a job. Nor has a library, which
+  // is linked into a caller rather than started.
+  if (!needsCics && !isLibraryModule(program)) {
     lines.push(
       ...runStepLines(program, {
         stepName: "RUN",
@@ -2256,6 +2296,18 @@ export function emitJcl(
       "//* No run step: a CICS program is started by a transaction identifier",
       "//* in a region, not by EXEC PGM in a job. Install the load module and",
       "//* define the program and transaction to CICS instead.",
+    );
+  } else if (isLibraryModule(program)) {
+    // The job that produced this used to end with `EXEC PGM=` for a module the
+    // prologue three lines earlier described as having no entry point. It has
+    // no BANK-MAIN and no GOBACK: control would enter at the first paragraph,
+    // compare an uninitialised field, fall through the exit and run off the
+    // end of the program.
+    lines.push(
+      "//* No run step: this module declares no transaction, so nothing in it",
+      "//* is an entry point. It is compiled and link-edited into the load",
+      `//* library so a caller can be bound against ${moduleName}, and it is`,
+      "//* that caller's job step that runs.",
     );
   }
 
@@ -2358,7 +2410,8 @@ export function emitJobJcl(
     const module = toJclJobName(step.program.moduleName);
     const earlier = modules.get(module);
     if (earlier !== undefined && earlier !== step.program.moduleName) {
-      throw new Error(
+      throw new BankcError(
+        "BANK-JOB-005",
         `Steps running ${earlier} and ${step.program.moduleName} would both load ${module}. A load module name is eight characters with the hyphens removed, so the two modules have to differ within those eight.`,
       );
     }
@@ -2406,7 +2459,8 @@ export function emitJobJcl(
     const input = files.get(step.input);
     const output = files.get(step.output);
     if (!input || !output) {
-      throw new Error(
+      throw new BankcError(
+        "BANK-JOB-006",
         `Sort step ${step.name} names a file no program in the job declares: ${input ? step.output : step.input}`,
       );
     }
@@ -2867,7 +2921,7 @@ function emitCicsRespFields(
       }
       declared.add(name);
       addLine(
-        `       01  ${toCobolFieldName(name).padEnd(20)} PIC S9(8) COMP.`,
+        `       01  ${toCobolFieldName(name).padEnd(20)} PIC S9(8) COMP VALUE ZERO.`,
       );
     }
   }
@@ -2916,8 +2970,13 @@ function fileRecordName(file: IRFile): string {
 /**
  * z/OS DD names are at most eight characters, so the file name is folded to a
  * deterministic uppercase alphanumeric prefix.
+ *
+ * Exported because the playground's Input panel keys a seeded dataset by the
+ * name the generated `SELECT` assigns to, and a second spelling of this rule
+ * would put the reader's records under a DD the program never opens — which
+ * reads as a program that ignored its input.
  */
-function toDdName(fileName: string): string {
+export function toDdName(fileName: string): string {
   return toCobolName(fileName).replace(/-/g, "").slice(0, 8);
 }
 
@@ -3410,7 +3469,7 @@ function emitRecursiveProgram(
   addLine(`       LOCAL-STORAGE SECTION.`);
   for (const local of locals) {
     addLine(
-      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${generatedStorage(local.declaredType)}.`,
     );
   }
   for (const line of roundingFieldDeclarations(currentRoundingGroups)) {
@@ -3419,10 +3478,12 @@ function emitRecursiveProgram(
   // Storage for the arguments of a nested call, per invocation.
   fn.parameters.forEach((parameter, index) => {
     addLine(
-      `       01  ${callArgs[index]!.padEnd(20)} ${formatCobolType(parameter.type)}.`,
+      `       01  ${callArgs[index]!.padEnd(20)} ${generatedStorage(parameter.type)}.`,
     );
   });
-  addLine(`       01  WS-SUB-RESULT        ${formatCobolType(fn.returnType)}.`);
+  addLine(
+    `       01  WS-SUB-RESULT        ${generatedStorage(fn.returnType)}.`,
+  );
 
   addLine(`       LINKAGE SECTION.`);
   fn.parameters.forEach((parameter, index) => {
@@ -3546,7 +3607,7 @@ function emitNestedProgram(
   }
   for (const local of locals) {
     addLine(
-      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${formatCobolType(local.declaredType)}.`,
+      `       01  ${toCobolFieldName(local.name).padEnd(20)} ${generatedStorage(local.declaredType)}.`,
     );
   }
   for (const line of roundingFields) {
@@ -3811,7 +3872,7 @@ function emitStatement(
         emitRaiseStatement(statement, addLine, indent);
         break;
       default:
-        throw new Error(
+        throw new CompilerInvariant(
           `Unsupported statement in function body: ${statement.kind}`,
         );
     }
@@ -3849,6 +3910,12 @@ function emitFailingTransaction(
     `               PERFORM ${failure} THRU ${cobolWord(failure, "EXIT")}`,
   );
   addLine(`           END-IF`);
+  // After the handler, not before it, and on both paths. A transaction that
+  // failed still owes its caller an answer — the return code field the handler
+  // just set is the answer — and a writeback the failure path skipped would
+  // hand back the request unchanged, which is the outcome that reads as
+  // success. See `emitCommareaExit`.
+  emitCommareaExit(transaction, addLine);
   // No terminator here. BANK-MAIN is the only paragraph that ends the program,
   // so this one falls through to its own exit and returns to it.
   addLine(`           CONTINUE.`);
@@ -4037,7 +4104,7 @@ function emitTransactionBody(
         emitRaiseStatement(statement, addLine, indent);
         break;
       default:
-        throw new Error(
+        throw new CompilerInvariant(
           `Unsupported statement in transaction body: ${statement.kind}`,
         );
     }
@@ -4772,7 +4839,7 @@ function emitReleaseStatement(
   indent: string,
 ): void {
   if (!currentSortRelease) {
-    throw new Error("release outside a sort input procedure");
+    throw new CompilerInvariant("release outside a sort input procedure");
   }
   emitSortRecordMapping(
     resolveIdentifier(statement.recordName),
@@ -5119,10 +5186,24 @@ let databaseTable = new Map<string, IRDatabase>();
 /** Declared queues of the program being emitted, for resolving MQ statements. */
 let queueTable = new Map<string, IRQueue>();
 
+/** Queue managers of the program being emitted, by name, in declaration order. */
+let mqManagerTable = new Map<string, number>();
+
+/** The connection a queue's operations go through, shared with its siblings. */
+function mqManagerOf(queue: IRQueue, part: string): string {
+  const index = mqManagerTable.get(queue.managerName);
+  if (index === undefined) {
+    throw new CompilerInvariant(
+      `Unknown queue manager during emission: ${queue.managerName}`,
+    );
+  }
+  return mqManagerName(index, part);
+}
+
 function requireQueue(name: string): IRQueue {
   const queue = queueTable.get(name);
   if (!queue) {
-    throw new Error(`Unknown queue during emission: ${name}`);
+    throw new CompilerInvariant(`Unknown queue during emission: ${name}`);
   }
   return queue;
 }
@@ -5130,7 +5211,7 @@ function requireQueue(name: string): IRQueue {
 function requireDatabase(name: string): IRDatabase {
   const database = databaseTable.get(name);
   if (!database) {
-    throw new Error(`Unknown database during emission: ${name}`);
+    throw new CompilerInvariant(`Unknown database during emission: ${name}`);
   }
   return database;
 }
@@ -5486,6 +5567,37 @@ function mqName(queue: string, part: string): string {
 }
 
 /**
+ * Working-storage names for one queue manager's connection.
+ *
+ * Numbered rather than named after the manager, because a queue manager name
+ * may hold `.`, `_`, `/` and `%` — none of which is a COBOL word character —
+ * and because two names that differ past the 30th character would produce one
+ * COBOL word between them. The number is the manager's position in declaration
+ * order, and the `MOVE` that loads `MGRNAME` sits directly above the `MQCONN`
+ * that reads it, so the name a reader wants is on the same screen.
+ */
+function mqManagerName(index: number, part: string): string {
+  return cobolWord("BANK-MQM", String(index), part);
+}
+
+/**
+ * The distinct queue managers of a program, in declaration order.
+ *
+ * Declaration order rather than first-connect order: it is stable under a
+ * change to the procedure division, which is what keeps the same source
+ * producing the same bytes.
+ */
+function mqManagerIndexes(program: IRProgram): Map<string, number> {
+  const managers = new Map<string, number>();
+  for (const queue of program.queues) {
+    if (!managers.has(queue.managerName)) {
+      managers.set(queue.managerName, managers.size + 1);
+    }
+  }
+  return managers;
+}
+
+/**
  * A reference into one of the copybook structures, qualified by the group it
  * was copied into.
  *
@@ -5513,8 +5625,44 @@ function mqField(queue: string, structure: string, field?: string): string {
  * means the call did something other than what was asked — a truncated message,
  * a converted one — and a banking program that carries on with a message it
  * only partly received is the defect this whole check exists to prevent.
+ *
+ * `MQRC-ALREADY-CONNECTED` is the one warning that is not. IBM's Application
+ * Programming Reference says of `MQCONN`: "If the application is already
+ * connected, the handle returned is the same as that returned by the previous
+ * MQCONN call, but with completion code MQCC_WARNING and reason code
+ * MQRC_ALREADY_CONNECTED", and "Use the connection handle returned in this
+ * situation as normal." IBM's own sample writes the same exemption. The
+ * generated program connects once per manager, so it does not provoke this
+ * itself; a caller that has already connected does, and stopping a program
+ * because it is connected is not a failure worth having.
  */
 function emitMqCheck(
+  operation: string,
+  queue: IRQueue,
+  addLine: (line?: string) => void,
+  indent: string,
+  tolerating?: string,
+): void {
+  const compCode = mqName(queue.name, "COMPCODE");
+  const reason = mqName(queue.name, "REASON");
+  if (queue.statusName) {
+    addLine(`${indent}MOVE ${reason} TO ${toCobolFieldName(queue.statusName)}`);
+  }
+  if (tolerating) {
+    addLine(
+      `${indent}IF ${compCode} NOT = MQCC-OK AND ${reason} NOT = ${tolerating}`,
+    );
+    emitMqFailure(operation, queue, addLine, indent);
+    addLine(`${indent}END-IF`);
+    return;
+  }
+  addLine(`${indent}IF ${compCode} NOT = MQCC-OK`);
+  emitMqFailure(operation, queue, addLine, indent);
+  addLine(`${indent}END-IF`);
+}
+
+/** What an MQI call that failed reports, and how the step ends because of it. */
+function emitMqFailure(
   operation: string,
   queue: IRQueue,
   addLine: (line?: string) => void,
@@ -5522,10 +5670,6 @@ function emitMqCheck(
 ): void {
   const compCode = mqName(queue.name, "COMPCODE");
   const reason = mqName(queue.name, "REASON");
-  if (queue.statusName) {
-    addLine(`${indent}MOVE ${reason} TO ${toCobolFieldName(queue.statusName)}`);
-  }
-  addLine(`${indent}IF ${compCode} NOT = MQCC-OK`);
   addLine(
     `${indent}    DISPLAY "${operation} FAILED ${queue.name} COMPCODE " ${compCode} " REASON " ${reason} UPON SYSOUT`,
   );
@@ -5534,7 +5678,6 @@ function emitMqCheck(
   } else {
     emitStepFailure(addLine, `${indent}    `, 12, `MQ-${operation}-FAILED`);
   }
-  addLine(`${indent}END-IF`);
 }
 
 /**
@@ -5555,6 +5698,11 @@ function emitMqCheck(
  * `MQDISC`, because a connection with nothing open does no work and an open
  * object with no connection cannot exist. Splitting them into four statements
  * would only create the two orders that are wrong.
+ *
+ * The connection is per queue manager, not per queue, so the `MQCONN` and the
+ * `MQDISC` are conditional where the `MQOPEN` and the `MQCLOSE` are not: the
+ * first queue opened on a manager connects it and the last one closed
+ * disconnects it. See `mqManagerName`.
  */
 function emitQueueStatement(
   statement: IRQueueStatement,
@@ -5565,7 +5713,9 @@ function emitQueueStatement(
   inTransaction: boolean,
 ): void {
   const indent = " ".repeat(indentLevel);
-  const hconn = mqName(queue.name, "HCONN");
+  const hconn = mqManagerOf(queue, "HCONN");
+  const mgrName = mqManagerOf(queue, "MGRNAME");
+  const opens = mqManagerOf(queue, "OPENS");
   const hobj = mqName(queue.name, "HOBJ");
   const options = mqName(queue.name, "OPTIONS");
   const compCode = mqName(queue.name, "COMPCODE");
@@ -5574,13 +5724,23 @@ function emitQueueStatement(
 
   switch (statement.operation) {
     case "connect": {
+      // Only the first queue opened on this manager connects it. The second
+      // MQCONN would return MQRC-ALREADY-CONNECTED with MQCC-WARNING and the
+      // handle the first one gave, so it is not needed and its completion code
+      // is not MQCC-OK.
+      addLine(`${indent}IF ${opens} = 0`);
+      addLine(`${indent}    MOVE "${queue.managerName}" TO ${mgrName}`);
       addLine(
-        `${indent}MOVE "${queue.managerName}" TO ${mqName(queue.name, "MGRNAME")}`,
+        `${indent}    CALL "MQCONN" USING ${mgrName}, ${hconn}, ${compCode}, ${reason}`,
       );
-      addLine(
-        `${indent}CALL "MQCONN" USING ${mqName(queue.name, "MGRNAME")}, ${hconn}, ${compCode}, ${reason}`,
+      emitMqCheck(
+        "MQCONN",
+        queue,
+        addLine,
+        `${indent}    `,
+        "MQRC-ALREADY-CONNECTED",
       );
-      emitMqCheck("MQCONN", queue, addLine, indent);
+      addLine(`${indent}END-IF`);
 
       // The object descriptor says what is being opened. Only the type and the
       // name are set: the copybook initialises everything else, which is what
@@ -5598,6 +5758,7 @@ function emitQueueStatement(
         `${indent}CALL "MQOPEN" USING ${hconn}, ${mqField(queue.name, "MQOD")}, ${options}, ${hobj}, ${compCode}, ${reason}`,
       );
       emitMqCheck("MQOPEN", queue, addLine, indent);
+      addLine(`${indent}ADD 1 TO ${opens}`);
       return;
     }
 
@@ -5702,14 +5863,45 @@ function emitQueueStatement(
       return;
     }
 
+    /*
+     * There is no `MQCMIT` here, and that is not an omission.
+     *
+     * It looks like one to anybody who knows MQ, which is why this comment
+     * exists — the 2026-08-07 audit checked it and recorded it under "not a
+     * problem", and the next reviewer should not have to repeat the lookup.
+     *
+     * IBM MQ Application Programming Reference, MQDISC usage note 2a: where the
+     * unit of work is coordinated by the queue manager, "the queue manager
+     * issues the MQCMIT call on behalf of the application" when the connection
+     * ends normally. The generated program does call `MQDISC`, so its puts and
+     * gets commit there.
+     *
+     * On z/OS under CICS or IMS the unit of work is the transaction manager's,
+     * not the queue manager's, and `MQCMIT` is not merely unnecessary but
+     * rejected: the program syncpoints through `EXEC CICS SYNCPOINT` or the IMS
+     * equivalent. Emitting an unconditional `MQCMIT` would therefore be wrong on
+     * two of the three environments this compiler targets.
+     */
     case "disconnect": {
       addLine(`${indent}MOVE MQCO-NONE TO ${options}`);
       addLine(
         `${indent}CALL "MQCLOSE" USING ${hconn}, ${hobj}, ${options}, ${compCode}, ${reason}`,
       );
       emitMqCheck("MQCLOSE", queue, addLine, indent);
-      addLine(`${indent}CALL "MQDISC" USING ${hconn}, ${compCode}, ${reason}`);
-      emitMqCheck("MQDISC", queue, addLine, indent);
+      // The last queue closed on this manager is the one that disconnects it.
+      // A second MQDISC would be issued against the handle the first one
+      // invalidated, and MQ would report reason 2018 for a program that has
+      // done nothing wrong. The floor at zero is what keeps a `disconnect`
+      // with no matching `connect` from leaving a count a later `connect`
+      // would read as "already connected".
+      addLine(`${indent}SUBTRACT 1 FROM ${opens}`);
+      addLine(`${indent}IF ${opens} < 1`);
+      addLine(`${indent}    MOVE 0 TO ${opens}`);
+      addLine(
+        `${indent}    CALL "MQDISC" USING ${hconn}, ${compCode}, ${reason}`,
+      );
+      emitMqCheck("MQDISC", queue, addLine, `${indent}    `);
+      addLine(`${indent}END-IF`);
       return;
     }
   }
@@ -7244,7 +7436,17 @@ function emitCommareaExit(
   addLine(`           MOVE ${toCobolName(commarea.name)} TO DFHCOMMAREA`);
 }
 
-/** The record a CICS transaction receives through its commarea: the first one. */
+/**
+ * The record a CICS transaction communicates through: its first record
+ * parameter.
+ *
+ * CICS gives a program one communication area, not one in and one out, so this
+ * is both the input and the answer — moved in by `emitCommareaEntry` and back
+ * out by `emitCommareaExit`. Every other record parameter is working storage,
+ * which the region reclaims when the task ends, so a result computed into one
+ * of those never reaches the caller. `BANK-CICS-005` refuses that program;
+ * without it the choice made here is silent and positional.
+ */
 function commareaRecord(transaction: IRTransaction): { name: string } | null {
   if (!transaction.isCics) {
     return null;
@@ -7270,6 +7472,26 @@ function checkpointedFiles(program: IRProgram): string[] {
 /** Files a program restarts from, each needing a found flag. */
 function restartedFiles(program: IRProgram): string[] {
   return statementFileNames(program, "RestartStatement");
+}
+
+/**
+ * The files a program keeps its restart position in.
+ *
+ * Exported because the answer belongs here — it is the same set `SELECT
+ * OPTIONAL` is written for, since the first run of a job has no position yet —
+ * and a second spelling of it elsewhere is exactly how it went wrong.
+ *
+ * The playground decides whether to offer an entry record by asking whether
+ * anything else already fills it, and "the program opens a file it does not
+ * write to" was the test. A restart control file passes that test and fills
+ * nothing: it is written by the program's own checkpoint and read for one
+ * position. Adding one to `branch-accrual-cursor` for B4 silently took away the
+ * panel that supplies its branch and its rate, so the run accrued interest at
+ * zero per cent on every account and the corpus check that catches a surface
+ * doing nothing cannot see a surface that is not there.
+ */
+export function restartControlFiles(program: IRProgram): Set<string> {
+  return new Set([...checkpointedFiles(program), ...restartedFiles(program)]);
 }
 
 /**
@@ -8239,7 +8461,7 @@ function renderStringCall(expression: IRStringCallExpression): string {
     case "now":
     case "countOf":
     case "replaceChars":
-      throw new Error(
+      throw new CompilerInvariant(
         `${expression.operation} builds a value and is emitted as a statement.`,
       );
   }
@@ -8641,7 +8863,7 @@ function roundingSignature(shape: RoundingShape): string {
 function requireRoundingGroup(shape: RoundingShape): RoundingGroup {
   const group = currentRoundingGroups.get(roundingSignature(shape));
   if (!group) {
-    throw new Error(
+    throw new CompilerInvariant(
       `Unplanned rounding shape during emission: ${roundingSignature(shape)}`,
     );
   }
@@ -8715,9 +8937,14 @@ function roundingFieldDeclarations(
     (left, right) => left.ordinal - right.ordinal,
   )) {
     const { shape } = group;
+    // Every one of these is written by the sequence that reads it, but they
+    // are packed-decimal and an unset `COMP-3` field is not reliably a valid
+    // packed number: a program that ever reached one before writing it would
+    // abend on a data exception rather than compute the wrong answer, and it
+    // would do so in the rounding path.
     const declare = (part: string, picture: string): void => {
       lines.push(
-        `       01  ${roundingFieldName(group, part).padEnd(20)} ${picture}.`,
+        `       01  ${roundingFieldName(group, part).padEnd(20)} ${picture} VALUE ZERO.`,
       );
     };
     declare("VALUE", decimalPicture(shape.precision, shape.scale));
@@ -8759,7 +8986,7 @@ function roundingFieldDeclarations(
         `       01  ${roundingFieldName(group, "EXCESS").padEnd(20)} ${decimalPicture(
           shape.operandScale,
           shape.operandScale,
-        )}.`,
+        )} VALUE ZERO.`,
       );
     }
   }
@@ -8923,6 +9150,53 @@ function toJclJobName(moduleName: string): string {
   return toCobolProgramId(moduleName);
 }
 
+/**
+ * The same picture, with the initial value a generated 01 item should carry.
+ *
+ * Storage the compiler invents for itself — a routine's result, its parameters,
+ * its locals — is written before it is read on every path the emitter
+ * generates. It was still declared with no `VALUE`, and a reviewer reading
+ *
+ *     01  VALIDATE-AMOUNT-RESULT PIC X(1) VALUE "N".
+ *     01  VALIDATE-AMOUNT-P1   PIC S9(16)V99 COMP-3.
+ *
+ * cannot tell whether the second line is a considered decision or an
+ * oversight — the field beside it is initialised and this one is not. Under
+ * `WORKING-STORAGE` with no `VALUE` the item starts as whatever the compiler
+ * left there, and for a `COMP-3` field that is not reliably a valid packed
+ * number: a program that reads one before writing it can abend on a data
+ * exception rather than compute the wrong answer.
+ *
+ * A numeric-edited item is left alone. IBM allows only an alphanumeric literal
+ * in a `VALUE` on one, and the value is *not* edited on the way in, so
+ * `VALUE ZERO` there would store something other than the zero it reads as.
+ * Those are report fields, filled by a `MOVE` that does the editing.
+ */
+function generatedStorage(type: IRType): string {
+  const picture = formatCobolType(type);
+  if (/\bVALUE\b/.test(picture)) {
+    return picture;
+  }
+  switch (type.kind) {
+    case "decimal":
+    case "currency":
+      return `${picture} VALUE ZERO`;
+    case "temporal":
+      // A timestamp is `PIC X(26)`; a date and a time are numeric displays.
+      return `${picture} ${type.unit === "timestamp" ? "VALUE SPACES" : "VALUE ZERO"}`;
+    case "string":
+    case "enum":
+      return `${picture} VALUE SPACES`;
+    case "nullable":
+      return generatedStorage(type.inner);
+    case "edited":
+    case "record":
+    case "array":
+    case "bool":
+      return picture;
+  }
+}
+
 function formatCobolType(type: IRType): string {
   switch (type.kind) {
     case "edited":
@@ -8985,5 +9259,5 @@ export function renderCopybook(record: IRRecord): string {
   emitRecordFields(record.fields, 1, addLine, toCobolName(record.name));
   emitAllRenames(record, toCobolName(record.name), addLine, " ".repeat(11));
 
-  return `${lines.join("\n")}\n`;
+  return `${alignPictureColumns(lines).join("\n")}\n`;
 }

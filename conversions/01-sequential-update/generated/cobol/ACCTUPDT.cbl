@@ -11,7 +11,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> FILES
       *>   TRANSFIL input   sequential TRANS-RECORD (29 bytes)
@@ -25,14 +25,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
       *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it, so there is nothing for a second run to
-      *>     read as though it were complete.
+      *>   deletes a half-written output dataset rather than cataloguing
+      *>   it, so there is nothing for a second run to read as though it
+      *>   were complete.
       *> ---------------------------------------------------------------
        IDENTIFICATION DIVISION.
        PROGRAM-ID. ACCTUPDT.
@@ -63,97 +63,97 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  TRANS-FILE-RECORD.
-           05  TR-ACCT-NO           PIC X(16).
-           05  TR-AMOUNT            PIC S9(13)V99 COMP-3.
-           05  TR-TYPE              PIC X(1).
-           05  TR-FILLER            PIC X(4).
+           05  TR-ACCT-NO  PIC X(16).
+           05  TR-AMOUNT   PIC S9(13)V99 COMP-3.
+           05  TR-TYPE     PIC X(1).
+           05  TR-FILLER   PIC X(4).
        FD  MASTER-IN-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  MASTER-IN-RECORD.
-           05  MI-ACCT-NO           PIC X(16).
-           05  MI-BALANCE           PIC S9(13)V99 COMP-3.
-           05  MI-STATUS            PIC X(1).
+           05  MI-ACCT-NO  PIC X(16).
+           05  MI-BALANCE  PIC S9(13)V99 COMP-3.
+           05  MI-STATUS   PIC X(1).
        FD  MASTER-OUT-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  MASTER-OUT-RECORD.
-           05  MI-ACCT-NO           PIC X(16).
-           05  MI-BALANCE           PIC S9(13)V99 COMP-3.
-           05  MI-STATUS            PIC X(1).
+           05  MI-ACCT-NO  PIC X(16).
+           05  MI-BALANCE  PIC S9(13)V99 COMP-3.
+           05  MI-STATUS   PIC X(1).
        FD  REJECT-FILE-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  REJECT-FILE-RECORD.
-           05  REJECT-ACCT-NO       PIC X(16).
-           05  REJECT-FILLER        PIC X(24).
+           05  REJECT-ACCT-NO  PIC X(16).
+           05  REJECT-FILLER   PIC X(24).
        WORKING-STORAGE SECTION.
-       01  TRANS-STATUS         PIC X(2).
-           88  TRANS-STATUS-OK          VALUE "00" THRU "09".
-           88  TRANS-STATUS-EOF         VALUE "10".
-           88  TRANS-STATUS-DUPKEY      VALUE "22".
-           88  TRANS-STATUS-NOTFND      VALUE "23".
-       01  MASTER-IN-STATUS     PIC X(2).
+       01  TRANS-STATUS            PIC X(2) VALUE SPACES.
+           88  TRANS-STATUS-OK      VALUE "00" THRU "09".
+           88  TRANS-STATUS-EOF     VALUE "10".
+           88  TRANS-STATUS-DUPKEY  VALUE "22".
+           88  TRANS-STATUS-NOTFND  VALUE "23".
+       01  MASTER-IN-STATUS        PIC X(2) VALUE SPACES.
            88  MASTER-IN-STATUS-OK      VALUE "00" THRU "09".
            88  MASTER-IN-STATUS-EOF     VALUE "10".
            88  MASTER-IN-STATUS-DUPKEY  VALUE "22".
            88  MASTER-IN-STATUS-NOTFND  VALUE "23".
-       01  MASTER-OUT-STATUS    PIC X(2).
-           88  MASTER-OUT-STATUS-OK     VALUE "00" THRU "09".
-           88  MASTER-OUT-STATUS-EOF    VALUE "10".
-           88  MASTER-OUT-STATUS-DUPKEY VALUE "22".
-           88  MASTER-OUT-STATUS-NOTFND VALUE "23".
-       01  REJECT-STATUS        PIC X(2).
-           88  REJECT-STATUS-OK         VALUE "00" THRU "09".
-           88  REJECT-STATUS-EOF        VALUE "10".
-           88  REJECT-STATUS-DUPKEY     VALUE "22".
-           88  REJECT-STATUS-NOTFND     VALUE "23".
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  MASTER-OUT-STATUS       PIC X(2) VALUE SPACES.
+           88  MASTER-OUT-STATUS-OK      VALUE "00" THRU "09".
+           88  MASTER-OUT-STATUS-EOF     VALUE "10".
+           88  MASTER-OUT-STATUS-DUPKEY  VALUE "22".
+           88  MASTER-OUT-STATUS-NOTFND  VALUE "23".
+       01  REJECT-STATUS           PIC X(2) VALUE SPACES.
+           88  REJECT-STATUS-OK      VALUE "00" THRU "09".
+           88  REJECT-STATUS-EOF     VALUE "10".
+           88  REJECT-STATUS-DUPKEY  VALUE "22".
+           88  REJECT-STATUS-NOTFND  VALUE "23".
+       01  BANK-FAILURE-CODE       PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE        PIC S9(4) COMP EXTERNAL.
        01  TRANS-RECORD.
-           05  TR-ACCT-NO           PIC X(16).
-           05  TR-AMOUNT            PIC S9(13)V99 COMP-3.
-           05  TR-TYPE              PIC X(1).
-           05  TR-FILLER            PIC X(4).
+           05  TR-ACCT-NO  PIC X(16).
+           05  TR-AMOUNT   PIC S9(13)V99 COMP-3.
+           05  TR-TYPE     PIC X(1).
+           05  TR-FILLER   PIC X(4).
        01  MASTER-RECORD.
-           05  MI-ACCT-NO           PIC X(16).
-           05  MI-BALANCE           PIC S9(13)V99 COMP-3.
-           05  MI-STATUS            PIC X(1).
+           05  MI-ACCT-NO  PIC X(16).
+           05  MI-BALANCE  PIC S9(13)V99 COMP-3.
+           05  MI-STATUS   PIC X(1).
        01  REJECT-RECORD.
-           05  REJECT-ACCT-NO       PIC X(16).
-           05  REJECT-FILLER        PIC X(24).
+           05  REJECT-ACCT-NO  PIC X(16).
+           05  REJECT-FILLER   PIC X(24).
        01  RUN-COUNTS.
-           05  COUNT-READ           PIC 9(7).
-           05  COUNT-APPLIED        PIC 9(7).
-           05  COUNT-REJECTED       PIC 9(7).
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  SHOULD-REJECT-RESULT PIC X(1).
-       01  SHOULD-REJECT-P3     PIC S9(13)V99 COMP-3.
-       01  NEW-BALANCE-FOR-RESULT PIC S9(13)V99 COMP-3.
-       01  UPDATE-ACCOUNTS-LOOP-1 PIC 9(9) COMP.
+           05  COUNT-READ       PIC 9(7).
+           05  COUNT-APPLIED    PIC 9(7).
+           05  COUNT-REJECTED   PIC 9(7).
+           05  IDEMPOTENCY-KEY  PIC X(36).
+       01  SHOULD-REJECT-RESULT    PIC X(1) VALUE SPACES.
+       01  SHOULD-REJECT-P3        PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  NEW-BALANCE-FOR-RESULT  PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  UPDATE-ACCOUNTS-LOOP-1  PIC 9(9) COMP VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        LINKAGE SECTION.
        01  SHOULD-REJECT-P1.
-           05  TR-ACCT-NO           PIC X(16).
-           05  TR-AMOUNT            PIC S9(13)V99 COMP-3.
-           05  TR-TYPE              PIC X(1).
-           05  TR-FILLER            PIC X(4).
+           05  TR-ACCT-NO  PIC X(16).
+           05  TR-AMOUNT   PIC S9(13)V99 COMP-3.
+           05  TR-TYPE     PIC X(1).
+           05  TR-FILLER   PIC X(4).
        01  SHOULD-REJECT-P2.
-           05  MI-ACCT-NO           PIC X(16).
-           05  MI-BALANCE           PIC S9(13)V99 COMP-3.
-           05  MI-STATUS            PIC X(1).
+           05  MI-ACCT-NO  PIC X(16).
+           05  MI-BALANCE  PIC S9(13)V99 COMP-3.
+           05  MI-STATUS   PIC X(1).
        01  NEW-BALANCE-FOR-P1.
-           05  TR-ACCT-NO           PIC X(16).
-           05  TR-AMOUNT            PIC S9(13)V99 COMP-3.
-           05  TR-TYPE              PIC X(1).
-           05  TR-FILLER            PIC X(4).
+           05  TR-ACCT-NO  PIC X(16).
+           05  TR-AMOUNT   PIC S9(13)V99 COMP-3.
+           05  TR-TYPE     PIC X(1).
+           05  TR-FILLER   PIC X(4).
        01  NEW-BALANCE-FOR-P2.
-           05  MI-ACCT-NO           PIC X(16).
-           05  MI-BALANCE           PIC S9(13)V99 COMP-3.
-           05  MI-STATUS            PIC X(1).
+           05  MI-ACCT-NO  PIC X(16).
+           05  MI-BALANCE  PIC S9(13)V99 COMP-3.
+           05  MI-STATUS   PIC X(1).
 
        PROCEDURE DIVISION.
        DECLARATIVES.

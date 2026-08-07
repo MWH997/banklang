@@ -8,11 +8,11 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> PURPOSE
       *>   CALCULATE-INTEREST, the transaction this program is entered
-      *>     at.
+      *>   at.
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -20,7 +20,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -30,23 +30,23 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  BANK-RND-1-VALUE     PIC S9(13)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(13)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(15) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3.
+       01  BANK-FAILURE-CODE   PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE    PIC S9(4) COMP EXTERNAL.
+       01  BANK-RND-1-VALUE    PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP     PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS    PIC S9(15) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS   PIC SV9999 COMP-3 VALUE ZERO.
        01  INTEREST-REQUEST.
-           05  BALANCE              PIC S9(13)V99 COMP-3.
-           05  INTEREST             PIC S9(13)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  RATE-FOR-RESULT PIC S9(1)V9999 COMP-3.
-       01  RATE-FOR-P1          PIC S9(13)V99 COMP-3.
-       01  INTEREST-ON-RESULT PIC S9(13)V99 COMP-3.
-       01  INTEREST-ON-P1       PIC S9(13)V99 COMP-3.
+           05  BALANCE          PIC S9(13)V99 COMP-3.
+           05  INTEREST         PIC S9(13)V99 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
+       01  RATE-FOR-RESULT     PIC S9(1)V9999 COMP-3 VALUE ZERO.
+       01  RATE-FOR-P1         PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-RESULT  PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-P1      PIC S9(13)V99 COMP-3 VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        BANK-MAIN.

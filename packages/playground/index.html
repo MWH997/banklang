@@ -9,6 +9,53 @@
       name="description"
       content="Write BankTS and watch it compile to readable IBM Enterprise COBOL, with banking safety diagnostics and a clickable source map. The real compiler, running client-side."
     />
+
+    <!--
+      D3. This page is the landing page's primary call to action and the link
+      people send each other, and it emitted no share metadata at all: a bare
+      URL, with nothing for the receiving client to render.
+
+      Absolute, because Open Graph requires it and because a card is assembled
+      by somebody else's server from what is written here. The origin is
+      `SITE_ORIGIN` in `tools/build-site.ts`, and `tests/site.test.ts` holds
+      the two together — the playground is built by Vite rather than by that
+      file, so there is nothing else stopping them drifting apart.
+    -->
+    <link rel="canonical" href="https://banklang.mwhassan.com/playground/" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="BankLang — Writing"
+      href="/blog/feed.xml"
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://banklang.mwhassan.com/playground/"
+    />
+    <meta
+      property="og:title"
+      content="BankLang Playground — BankTS to COBOL, in your browser"
+    />
+    <meta
+      property="og:description"
+      content="The real compiler, running client-side. Edit a program, watch the COBOL change, then run it against the reference runtime."
+    />
+    <meta property="og:image" content="https://banklang.mwhassan.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="BankTS source on the left, the IBM COBOL it compiles to on the right."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BankLang Playground" />
+    <meta
+      name="twitter:description"
+      content="The real compiler, running client-side. Edit a program, watch the COBOL change, then run it."
+    />
+    <meta name="twitter:image" content="https://banklang.mwhassan.com/og.png" />
+
     <script>
       // Before paint, so a reader who chose a theme on another page of the
       // site does not see the other one here first.
@@ -34,137 +81,179 @@
         <a href="/docs/language-reference.html">Language</a>
         <a href="/docs/diagnostics.html">Diagnostics</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
-        <button
-          id="theme"
-          type="button"
-          class="ghost"
-          aria-label="Switch between light and dark"
-        >
-          Theme
+        <!--
+          A toggle button, not an action: the label names what is toggled and
+          `aria-pressed` says whether it is on. `src/main.ts` sets the state on
+          load and whenever the system preference changes.
+        -->
+        <button id="theme" type="button" class="ghost" aria-pressed="false">
+          Dark mode
         </button>
       </nav>
     </header>
 
     <!--
-      The page had no heading of any kind. A screen reader arriving here was
-      given a header, two panes and no statement of what the page is, and a
-      search engine had nothing above the fold to read. Visually hidden because
-      the lede below already says it in prose.
+      Everything below the site header is the page, so all of it is inside
+      `<main>`.
+
+      The heading and the lede used to sit between the header and `<main>`,
+      which is content in no landmark at all: a screen reader's landmark list
+      skipped straight from the banner to the editors, and "skip to main
+      content" jumped past the sentence saying what the page is. `.app` is the
+      two-column grid and stays a grid — the heading and the lede are not
+      columns of it.
     -->
-    <h1 class="sr-only">BankLang playground</h1>
+    <main class="page">
+      <!--
+        The page had no heading of any kind. A screen reader arriving here was
+        given a header, two panes and no statement of what the page is, and a
+        search engine had nothing above the fold to read. Visually hidden
+        because the lede below already says it in prose.
+      -->
+      <h1 class="sr-only">BankLang playground</h1>
 
-    <p class="lede">
-      A deterministic compiler from <strong>BankTS</strong>, a restricted
-      TypeScript-like language, to readable IBM COBOL. The real compiler runs
-      here in your browser — no server, no network call. Edit the program, watch
-      the COBOL change, then <strong>Run</strong> it.
-    </p>
+      <p class="lede">
+        A deterministic compiler from <strong>BankTS</strong>, a small banking
+        language with TypeScript's type syntax, to readable IBM COBOL. The real
+        compiler runs here in your browser — no server, no network call. Edit
+        the program, watch the COBOL change, then <strong>Run</strong> it.
+      </p>
 
-    <main class="app">
-      <p id="link-problem" class="link-problem" role="status" hidden></p>
+      <div class="app">
+        <p id="link-problem" class="link-problem" role="status" hidden></p>
 
-      <section class="pane pane--source">
-        <div class="pane__bar">
-          <label class="sr-only" for="example-picker">Example</label>
-          <select id="example-picker"></select>
-          <span id="status" class="status">Compiling…</span>
-          <button
-            id="format"
-            class="ghost"
-            type="button"
-            title="Rewrite this program in the house style"
-          >
-            Format
-          </button>
-        </div>
-        <p id="example-blurb" class="blurb"></p>
-        <p class="howto">
-          <strong>Edit this.</strong> It recompiles as you type. Click any line
-          to trace it into the COBOL beside it, or open <strong>Run</strong> to
-          execute the COBOL and see what it posts.
-        </p>
-        <div id="source-editor" class="editor"></div>
-        <div id="summary" class="summary"></div>
-      </section>
+        <!--
+          E2. The page had one heading and the two panes had none, so a screen
+          reader user moving by heading went from "BankLang playground" to the
+          end of the document: the editor, the artifact tabs and the summary
+          were three unlabelled regions of a page whose whole content they are.
+          The Run panel already emits h3s for SYSOUT, the ledger journal and
+          the audit log, so the pattern was there and simply had not been
+          applied to the frame around it.
 
-      <section class="pane pane--output">
-        <div class="pane__bar">
-          <div class="tabs" role="tablist" aria-label="Generated artifact">
+          Visually hidden, because the panes are obvious to anybody who can see
+          them and a visible heading over each would be noise.
+        -->
+        <section class="pane pane--source" aria-labelledby="h-source">
+          <h2 class="sr-only" id="h-source">Source</h2>
+          <div class="pane__bar">
+            <label class="sr-only" for="example-picker">Example</label>
+            <select id="example-picker"></select>
+            <span id="status" class="status">Compiling…</span>
             <button
-              class="tab tab--active"
-              role="tab"
-              aria-selected="true"
-              aria-controls="output-panel"
-              data-tab="cobol"
+              id="format"
+              class="ghost"
+              type="button"
+              title="Rewrite this program in the house style"
             >
-              COBOL
-            </button>
-            <button
-              class="tab"
-              role="tab"
-              aria-selected="false"
-              aria-controls="output-panel"
-              data-tab="run"
-            >
-              Run
-            </button>
-            <button
-              class="tab"
-              role="tab"
-              aria-selected="false"
-              aria-controls="output-panel"
-              data-tab="copybook"
-            >
-              Copybook
-            </button>
-            <button
-              class="tab"
-              role="tab"
-              aria-selected="false"
-              aria-controls="output-panel"
-              data-tab="diagnostics"
-            >
-              Diagnostics<span
-                id="tab-diagnostics-count"
-                class="badge"
-                hidden
-              ></span>
-            </button>
-            <button
-              class="tab"
-              role="tab"
-              aria-selected="false"
-              aria-controls="output-panel"
-              data-tab="sourcemap"
-            >
-              Source map
-            </button>
-            <button
-              class="tab"
-              role="tab"
-              aria-selected="false"
-              aria-controls="output-panel"
-              data-tab="analysis"
-            >
-              Analysis
+              Format
             </button>
           </div>
-          <label class="sr-only" for="copybook-picker">Copybook</label>
-          <select id="copybook-picker" hidden></select>
-          <button id="copy-output" class="ghost">Copy</button>
-          <button id="share" class="ghost" title="Copy a link to this program">
-            Copy link
-          </button>
-        </div>
-        <div id="output-panel" role="tabpanel" aria-live="polite">
-          <div id="output-editor" class="editor"></div>
-          <div id="diagnostics" class="diagnostics" hidden></div>
-          <div id="run" class="run" hidden></div>
-        </div>
-        <p id="trace" class="trace">
-          Click a line in either pane to trace it through the source map.
-        </p>
-      </section>
+          <p id="example-blurb" class="blurb"></p>
+          <p class="howto">
+            <strong>Edit this.</strong> It recompiles as you type. Click any
+            line to trace it into the COBOL beside it, or open
+            <strong>Run</strong> to execute the COBOL and see what it posts.
+          </p>
+          <div id="source-editor" class="editor"></div>
+          <h3 class="sr-only" id="h-summary">What this program contains</h3>
+          <div id="summary" class="summary" aria-labelledby="h-summary"></div>
+        </section>
+
+        <section class="pane pane--output" aria-labelledby="h-output">
+          <h2 class="sr-only" id="h-output">Generated artifacts</h2>
+          <div class="pane__bar">
+            <div class="tabs" role="tablist" aria-label="Generated artifact">
+              <button
+                class="tab tab--active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="output-panel"
+                data-tab="cobol"
+              >
+                COBOL
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="input"
+              >
+                Input
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="run"
+              >
+                Run
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="copybook"
+              >
+                Copybook
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="diagnostics"
+              >
+                Diagnostics<span
+                  id="tab-diagnostics-count"
+                  class="badge"
+                  hidden
+                ></span>
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="sourcemap"
+              >
+                Source map
+              </button>
+              <button
+                class="tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="output-panel"
+                data-tab="analysis"
+              >
+                Analysis
+              </button>
+            </div>
+            <label class="sr-only" for="copybook-picker">Copybook</label>
+            <select id="copybook-picker" hidden></select>
+            <button id="copy-output" class="ghost">Copy</button>
+            <button
+              id="share"
+              class="ghost"
+              title="Copy a link to this program"
+            >
+              Copy link
+            </button>
+          </div>
+          <div id="output-panel" role="tabpanel" aria-live="polite">
+            <div id="output-editor" class="editor"></div>
+            <div id="diagnostics" class="diagnostics" hidden></div>
+            <div id="input" class="run input" hidden></div>
+            <div id="run" class="run" hidden></div>
+          </div>
+          <p id="trace" class="trace">
+            Click a line in either pane to trace it through the source map.
+          </p>
+        </section>
+      </div>
     </main>
 
     <footer class="footer">

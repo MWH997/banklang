@@ -11,10 +11,11 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> FILES
       *>   SUMMARYO output  sequential ACCRUAL-SUMMARY (64 bytes)
+      *>   RESTARTF update  indexed    RESTART-POINT (24 bytes)
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -23,14 +24,13 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
-      *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it, so there is nothing for a second run to
-      *>     read as though it were complete.
+      *>   Restartable. The position is written to RESTART-FILE and
+      *>   committed after the work it covers, so a rerun resumes from
+      *>   the last checkpoint.
       *> ---------------------------------------------------------------
        IDENTIFICATION DIVISION.
        PROGRAM-ID. BRANCHAC.
@@ -42,6 +42,11 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                ORGANIZATION IS SEQUENTIAL
                ACCESS MODE IS SEQUENTIAL
                FILE STATUS IS SUMMARY-STATUS.
+           SELECT OPTIONAL RESTART-FILE-FILE ASSIGN TO RESTARTF
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS DYNAMIC
+               RECORD KEY IS JOB-NAME OF RESTART-FILE-RECORD
+               FILE STATUS IS RESTART-STATUS.
 
        DATA DIVISION.
        FILE SECTION.
@@ -49,60 +54,76 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  SUMMARY-OUTPUT-RECORD.
-           05  SUMMARY-BRANCH-ID    PIC X(8).
-           05  ACCOUNTS-READ        PIC S9(9) COMP-3.
-           05  ACCOUNTS-ACCRUED     PIC S9(9) COMP-3.
-           05  INTEREST-POSTED      PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  SUMMARY-BRANCH-ID  PIC X(8).
+           05  ACCOUNTS-READ      PIC S9(9) COMP-3.
+           05  ACCOUNTS-ACCRUED   PIC S9(9) COMP-3.
+           05  INTEREST-POSTED    PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY    PIC X(36).
+       FD  RESTART-FILE-FILE.
+       01  RESTART-FILE-RECORD.
+           05  JOB-NAME         PIC X(8).
+           05  LAST-ACCOUNT-ID  PIC X(16).
        WORKING-STORAGE SECTION.
            EXEC SQL INCLUDE SQLCA END-EXEC.
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
-       01  ACCOUNTS-IN-BRANCH-H1 PIC X(8).
+       01  ACCOUNTS-IN-BRANCH-H1    PIC X(8).
+       01  ACCOUNTS-IN-BRANCH-H2    PIC X(16).
            EXEC SQL END DECLARE SECTION END-EXEC.
-       01  ACCOUNTS-IN-BRANCH-ROWS PIC 9(9) COMP.
-       01  SUMMARY-STATUS       PIC X(2).
-           88  SUMMARY-STATUS-OK        VALUE "00" THRU "09".
-           88  SUMMARY-STATUS-EOF       VALUE "10".
-           88  SUMMARY-STATUS-DUPKEY    VALUE "22".
-           88  SUMMARY-STATUS-NOTFND    VALUE "23".
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  BANK-RND-1-VALUE     PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(18) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3.
+       01  ACCOUNTS-IN-BRANCH-ROWS  PIC 9(9) COMP VALUE ZERO.
+       01  SUMMARY-STATUS           PIC X(2) VALUE SPACES.
+           88  SUMMARY-STATUS-OK      VALUE "00" THRU "09".
+           88  SUMMARY-STATUS-EOF     VALUE "10".
+           88  SUMMARY-STATUS-DUPKEY  VALUE "22".
+           88  SUMMARY-STATUS-NOTFND  VALUE "23".
+       01  RESTART-STATUS           PIC X(2) VALUE SPACES.
+           88  RESTART-STATUS-OK      VALUE "00" THRU "09".
+           88  RESTART-STATUS-EOF     VALUE "10".
+           88  RESTART-STATUS-DUPKEY  VALUE "22".
+           88  RESTART-STATUS-NOTFND  VALUE "23".
+       01  RESTART-FILE-CP-COUNT    PIC 9(9) COMP VALUE ZERO.
+       01  RESTART-FILE-RS-FOUND    PIC X(1) VALUE "N".
+       01  BANK-FAILURE-CODE        PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE         PIC S9(4) COMP EXTERNAL.
+       01  BANK-RND-1-VALUE         PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP          PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS         PIC S9(18) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS        PIC SV9999 COMP-3 VALUE ZERO.
        01  ACCRUAL-REQUEST.
-           05  BRANCH-ID            PIC X(8).
-           05  ACCRUAL-RATE         PIC S9(1)V9999 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  BRANCH-ID        PIC X(8).
+           05  ACCRUAL-RATE     PIC S9(1)V9999 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
        01  ACCOUNT-BALANCE-ROW.
-           05  ROW-ACCOUNT-ID       PIC X(16).
-           05  ROW-BALANCE          PIC S9(16)V99 COMP-3.
-           05  ROW-STATUS           PIC X(8).
+           05  ROW-ACCOUNT-ID  PIC X(16).
+           05  ROW-BALANCE     PIC S9(16)V99 COMP-3.
+           05  ROW-STATUS      PIC X(8).
            EXEC SQL END DECLARE SECTION END-EXEC.
        01  ACCRUAL-SUMMARY.
-           05  SUMMARY-BRANCH-ID    PIC X(8).
-           05  ACCOUNTS-READ        PIC S9(9) COMP-3.
-           05  ACCOUNTS-ACCRUED     PIC S9(9) COMP-3.
-           05  INTEREST-POSTED      PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  INTEREST-ON-RESULT PIC S9(16)V99 COMP-3.
-       01  INTEREST-ON-P1       PIC S9(16)V99 COMP-3.
-       01  INTEREST-ON-P2       PIC S9(1)V9999 COMP-3.
-       01  INTEREST             PIC S9(16)V99 COMP-3.
+           05  SUMMARY-BRANCH-ID  PIC X(8).
+           05  ACCOUNTS-READ      PIC S9(9) COMP-3.
+           05  ACCOUNTS-ACCRUED   PIC S9(9) COMP-3.
+           05  INTEREST-POSTED    PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY    PIC X(36).
+       01  RESTART-POINT.
+           05  JOB-NAME         PIC X(8).
+           05  LAST-ACCOUNT-ID  PIC X(16).
+       01  INTEREST-ON-RESULT       PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-P1           PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-P2           PIC S9(1)V9999 COMP-3 VALUE ZERO.
+       01  INTEREST                 PIC S9(16)V99 COMP-3 VALUE ZERO.
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
            EXEC SQL
-               DECLARE ACCOUNTS-IN-BRANCH CURSOR FOR
+               DECLARE ACCOUNTS-IN-BRANCH CURSOR WITH HOLD FOR
                SELECT ACCOUNT_ID, BALANCE, STATUS
                FROM ACCOUNT
                WHERE BRANCH_ID = :ACCOUNTS-IN-BRANCH-H1
+               AND ACCOUNT_ID > :ACCOUNTS-IN-BRANCH-H2
                ORDER BY ACCOUNT_ID
            END-EXEC.
 
@@ -148,7 +169,35 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                ACCRUAL-SUMMARY
            MOVE IDEMPOTENCY-KEY OF ACCRUAL-REQUEST TO IDEMPOTENCY-KEY OF
                ACCRUAL-SUMMARY
+           OPEN I-O RESTART-FILE-FILE
+           IF NOT RESTART-STATUS-OK
+               DISPLAY "OPEN FAILED restartFile STATUS " RESTART-STATUS
+                   UPON SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "OPEN-FAILED" TO BANK-FAILURE-CODE
+               GO TO ACCRUE-BRANCH-EXIT
+           END-IF
+           MOVE "BRACCRUE" TO JOB-NAME OF RESTART-POINT
+           MOVE JOB-NAME OF RESTART-POINT TO JOB-NAME OF
+               RESTART-FILE-RECORD
+           MOVE "N" TO RESTART-FILE-RS-FOUND
+           READ RESTART-FILE-FILE
+               INVALID KEY CONTINUE
+               NOT INVALID KEY MOVE "Y" TO RESTART-FILE-RS-FOUND
+           END-READ
+           IF RESTART-FILE-RS-FOUND = "Y"
+               MOVE JOB-NAME OF RESTART-FILE-RECORD TO JOB-NAME OF
+                   RESTART-POINT
+               MOVE LAST-ACCOUNT-ID OF RESTART-FILE-RECORD TO
+                   LAST-ACCOUNT-ID OF RESTART-POINT
+               DISPLAY "RESUMING AFTER " LAST-ACCOUNT-ID OF
+                   RESTART-POINT UPON SYSOUT
+           ELSE
+               DISPLAY "STARTING FROM THE TOP" UPON SYSOUT
+           END-IF
            MOVE BRANCH-ID OF ACCRUAL-REQUEST TO ACCOUNTS-IN-BRANCH-H1
+           MOVE LAST-ACCOUNT-ID OF RESTART-POINT TO
+               ACCOUNTS-IN-BRANCH-H2
            EXEC SQL
                OPEN ACCOUNTS-IN-BRANCH
            END-EXEC
@@ -222,6 +271,20 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                            GO TO ACCRUE-BRANCH-EXIT
                    END-COMPUTE
                END-IF
+               MOVE ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW TO
+                   LAST-ACCOUNT-ID OF RESTART-POINT
+               ADD 1 TO RESTART-FILE-CP-COUNT
+               IF RESTART-FILE-CP-COUNT >= 100
+                   MOVE 0 TO RESTART-FILE-CP-COUNT
+                   MOVE JOB-NAME OF RESTART-POINT TO JOB-NAME OF
+                       RESTART-FILE-RECORD
+                   MOVE LAST-ACCOUNT-ID OF RESTART-POINT TO
+                       LAST-ACCOUNT-ID OF RESTART-FILE-RECORD
+                   WRITE RESTART-FILE-RECORD
+                       INVALID KEY REWRITE RESTART-FILE-RECORD
+                   END-WRITE
+                   EXEC SQL COMMIT END-EXEC
+               END-IF
            END-PERFORM
            IF ACCOUNTS-IN-BRANCH-ROWS >= 5000 AND SQLCODE = 0
                DISPLAY "CURSOR LIMIT 5000 REACHED, ROWS UNREAD" UPON
@@ -233,6 +296,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                CLOSE ACCOUNTS-IN-BRANCH
            END-EXEC
            IF BANK-FAILURE-CODE NOT = SPACES
+               GO TO ACCRUE-BRANCH-EXIT
+           END-IF
+           CLOSE RESTART-FILE-FILE
+           IF NOT RESTART-STATUS-OK
+               DISPLAY "CLOSE FAILED restartFile STATUS " RESTART-STATUS
+                   UPON SYSOUT
+               MOVE 12 TO BANK-RETURN-CODE
+               MOVE "CLOSE-FAILED" TO BANK-FAILURE-CODE
                GO TO ACCRUE-BRANCH-EXIT
            END-IF
            OPEN OUTPUT SUMMARY-OUTPUT-FILE

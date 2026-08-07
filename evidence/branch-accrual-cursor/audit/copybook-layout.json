@@ -144,6 +144,35 @@
           "sensitive": false
         }
       ]
+    },
+    {
+      "recordName": "RestartPoint",
+      "cobolName": "RESTART-POINT",
+      "totalLength": 24,
+      "entries": [
+        {
+          "order": 1,
+          "path": "RESTART-POINT.JOB-NAME",
+          "type": "string<8>",
+          "picture": "PIC X(8)",
+          "usage": "DISPLAY",
+          "offset": 0,
+          "length": 8,
+          "bytes": 8,
+          "sensitive": false
+        },
+        {
+          "order": 2,
+          "path": "RESTART-POINT.LAST-ACCOUNT-ID",
+          "type": "string<16>",
+          "picture": "PIC X(16)",
+          "usage": "DISPLAY",
+          "offset": 8,
+          "length": 16,
+          "bytes": 16,
+          "sensitive": false
+        }
+      ]
     }
   ]
 }

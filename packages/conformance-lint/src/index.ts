@@ -53,6 +53,8 @@ export const CONFORMANCE_RULES = [
   "picture-length",
   "digit-count",
   "literal-delimiter",
+  "uninitialised-storage",
+  "pic-alignment",
   // Whether the run unit will hold what the program calls.
   "call-resolvable",
   // JCL.
@@ -618,6 +620,8 @@ export function lintCobol(
   });
 
   findings.push(...mixedLiteralDelimiters(file, lines));
+  findings.push(...uninitialisedStorage(file, lines));
+  findings.push(...pictureAlignment(file, lines));
 
   if (!options.fragment) {
     findings.push(...unresolvedCalls(file, text, options.knownPrograms ?? []));
@@ -626,6 +630,275 @@ export function lintCobol(
   }
 
   return findings;
+}
+
+/**
+ * A `PIC` clause that does not sit in its group's column.
+ *
+ * The emitter pads to a column computed from the longest name among an
+ * entry's siblings; this reads the finished text and checks that the entries
+ * of one group agree about where their clauses start. A fixed column that a
+ * long name overran is what this replaced, and the failure was invisible —
+ * every artifact compiled, and the block simply stopped lining up.
+ *
+ * Only entries that *can* reach the column are compared. One whose clause is
+ * too wide to sit there and still end inside column 72 keeps a single space,
+ * because the margin is not negotiable; reporting that would be reporting the
+ * language.
+ */
+function pictureAlignment(file: string, lines: string[]): ConformanceFinding[] {
+  const findings: ConformanceFinding[] = [];
+
+  // Every entry, with where its clause starts. Read independently of the
+  // emitter: a check written from the same code would agree with it.
+  interface Item {
+    line: number;
+    indent: number;
+    level: string;
+    /** Where the clause starts, or null for a line that carries none. */
+    column: number | null;
+    /** How wide the clause is, which decides how far right it can be put. */
+    tail: number;
+    /** True for a line that closes any open group: a comment, a blank, an
+     * `FD`, a section header, a statement. */
+    breaks: boolean;
+  }
+
+  const items: Item[] = [];
+  let inReport = false;
+  for (const [index, line] of lines.entries()) {
+    const section = /^\s+([A-Z-]+)\s+SECTION\s*\.\s*$/.exec(line);
+    if (section) {
+      inReport = section[1] === "REPORT";
+      items.push({
+        line: index + 1,
+        indent: -1,
+        level: "",
+        column: null,
+        tail: 0,
+        breaks: true,
+      });
+      continue;
+    }
+    // A REPORT SECTION entry is not a data description: `TYPE IS PAGE
+    // HEADING` carries no name, and `COLUMN 1 PIC X(22)` puts a number where
+    // one goes.
+    if (inReport || isCommentLine(line) || line.trim() === "") {
+      items.push({
+        line: index + 1,
+        indent: -1,
+        level: "",
+        column: null,
+        tail: 0,
+        breaks: true,
+      });
+      continue;
+    }
+    const entry = /^(\s+)(\d{2})\s\s+([A-Z0-9][A-Z0-9-]*)(\s+)(\S.*)$/.exec(
+      line,
+    );
+    if (!entry) {
+      // A clause continued onto its own line stays inside the group; the
+      // indent is what says so, and anything shallower closes it.
+      const indent = /^(\s*)\S/.exec(line)?.[1]?.length;
+      items.push({
+        line: index + 1,
+        indent: indent ?? -1,
+        level: "",
+        column: null,
+        tail: 0,
+        breaks: indent === undefined,
+      });
+      continue;
+    }
+    const indent = entry[1]!.length;
+    const column = indent + 2 + 2 + entry[3]!.length + entry[4]!.length;
+    items.push({
+      line: index + 1,
+      indent,
+      level: entry[2]!,
+      column,
+      tail: entry[5]!.length,
+      breaks: false,
+    });
+  }
+
+  for (let start = 0; start < items.length; start += 1) {
+    const first = items[start]!;
+    if (first.breaks || first.level === "" || first.column === null) {
+      continue;
+    }
+    const group = [first];
+    for (let cursor = start + 1; cursor < items.length; cursor += 1) {
+      const next = items[cursor]!;
+      if (next.breaks) {
+        break;
+      }
+      // Subordinate to the group, or a continuation of one of its entries.
+      if (next.indent > first.indent) {
+        continue;
+      }
+      if (next.indent < first.indent || next.level !== first.level) {
+        break;
+      }
+      if (next.column !== null) {
+        group.push(next);
+      }
+    }
+    if (group.length < 2) {
+      continue;
+    }
+    const column = Math.max(...group.map((item) => item.column!));
+    for (const item of group) {
+      // An entry whose clause would end past column 72 at the group's column
+      // cannot be there. The margin decided its position, not the group, and
+      // reporting it would be reporting the reference format.
+      if (column + item.tail > COBOL_LAST_COLUMN) {
+        continue;
+      }
+      if (item.column !== column) {
+        findings.push({
+          file,
+          line: item.line,
+          rule: "pic-alignment",
+          message: `The clause here starts at column ${String(item.column! + 1)} and its siblings start at ${String(column + 1)}. One group, one column.`,
+          citation: 'PG, "Data division"',
+        });
+      }
+    }
+    // Every member is accounted for; the loop moves on rather than reporting
+    // the same group again from its second entry.
+    start = items.indexOf(group[group.length - 1]!);
+  }
+
+  return findings;
+}
+
+/**
+ * An elementary work field the program declares with no initial value.
+ *
+ * The Language Reference is plain about what that means: "If the initial value
+ * is not explicitly specified, the value is unpredictable." For a `COMP-3`
+ * field it is worse than unpredictable — unset storage is not reliably a valid
+ * packed number, so a program that reaches one before writing it abends on a
+ * data exception rather than computing something wrong.
+ *
+ * The rule exists because half of it was already being followed and the half
+ * that was not looked like a decision. `VALIDATE-AMOUNT-RESULT PIC X(1) VALUE
+ * "N"` sat directly above `VALIDATE-AMOUNT-P1 PIC S9(16)V99 COMP-3` with
+ * nothing, and a reviewer cannot tell an oversight from a considered exception
+ * unless the generator is consistent.
+ *
+ * Three exemptions, each for a reason the language or a manual gives:
+ *
+ * - **`LINKAGE SECTION`** describes the caller's storage. A `VALUE` there is
+ *   only legal on a condition-name.
+ * - **`FILE SECTION`** describes a record area the file fills, and the LR
+ *   forbids `VALUE` in it outright.
+ * - **An SQL declare section** holds host variables, and DCLGEN — IBM's own
+ *   generator for exactly those declarations — writes none.
+ *
+ * Elementary only, like `unreferenced-item`: a level-01 group is the program's
+ * data model, and its subordinate entries carry their own values.
+ */
+function uninitialisedStorage(
+  file: string,
+  lines: string[],
+): ConformanceFinding[] {
+  const findings: ConformanceFinding[] = [];
+  let section = "";
+  let inDeclareSection = false;
+  let inExec = false;
+  let pending: { name: string; text: string; line: number } | null = null;
+
+  lines.forEach((line, index) => {
+    if (isCommentLine(line) || line.trim() === "") {
+      return;
+    }
+    const content = line.slice(AREA_A_INDEX);
+    if (/\bEXEC\s+SQL\s+BEGIN\s+DECLARE\s+SECTION\b/.test(content)) {
+      inDeclareSection = true;
+    }
+    if (/\bEXEC\s+SQL\s+END\s+DECLARE\s+SECTION\b/.test(content)) {
+      inDeclareSection = false;
+    }
+    if (/\bEXEC\s+(SQL|CICS|DLI)\b/.test(content)) {
+      inExec = true;
+    }
+    if (inExec) {
+      if (/\bEND-EXEC\b/.test(content)) {
+        inExec = false;
+      }
+      return;
+    }
+    const sectionHeader = /^\s*([A-Z][A-Z0-9-]*)\s+SECTION\s*\./.exec(content);
+    if (sectionHeader) {
+      section = sectionHeader[1]!;
+      return;
+    }
+    if (/^\s*PROCEDURE\s+DIVISION/.test(content)) {
+      section = "PROCEDURE";
+      return;
+    }
+    if (
+      inDeclareSection ||
+      (section !== "WORKING-STORAGE" && section !== "LOCAL-STORAGE")
+    ) {
+      return;
+    }
+    // A data description entry ends at its period, not at the end of its
+    // line: `01 AZ-TESTCASE-ID PIC X(36)` carries its `VALUE` on the next one.
+    // Reading a line at a time reported that as uninitialised.
+    if (pending) {
+      pending.text += ` ${content.trim()}`;
+      if (content.trimEnd().endsWith(".")) {
+        report(pending);
+        pending = null;
+      }
+      return;
+    }
+    const entry = /^\s*01\s+([A-Z][A-Z0-9-]*)\s+(.*)$/.exec(content);
+    if (!entry) {
+      return;
+    }
+    const started = { name: entry[1]!, text: entry[2]!, line: index + 1 };
+    if (content.trimEnd().endsWith(".")) {
+      report(started);
+      return;
+    }
+    pending = started;
+  });
+
+  function report(entry: { name: string; text: string; line: number }): void {
+    if (!/\bPIC\b/.test(entry.text)) {
+      return;
+    }
+    // An EXTERNAL item is one piece of storage shared by every program in the
+    // run unit, and only one of them may initialise it.
+    if (/\bEXTERNAL\b/.test(entry.text) || /\bVALUE\b/.test(entry.text)) {
+      return;
+    }
+    // A numeric-edited item takes only an alphanumeric literal in a VALUE, and
+    // the value is not edited on the way in — so there is nothing safe to put
+    // there. Those are filled by the MOVE that does the editing.
+    if (/[ZB*+\-CR/,]/.test(pictureStringOf(entry.text) ?? "")) {
+      return;
+    }
+    findings.push({
+      file,
+      line: entry.line,
+      rule: "uninitialised-storage",
+      message: `${entry.name} is declared with no VALUE, so it starts as whatever storage held. Generated work fields carry an initial value; a field beside one that does reads as an oversight.`,
+      citation: 'LR, "VALUE clause"',
+    });
+  }
+
+  return findings;
+}
+
+/** The PICTURE character-string of a data description entry, if it has one. */
+function pictureStringOf(entry: string): string | null {
+  return /\bPIC(?:TURE)?\s+(?:IS\s+)?(\S+)/.exec(entry)?.[1] ?? null;
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
  * The CycloneDX Software Bill of Materials.
  *
- * R2 in `docs/launch-tickets.md`. The first thing a bank's security function
+ * Release hygiene, from the launch checklist. The first thing a bank's security function
  * asks for is an inventory of what is in the build, and the format they ask for
  * it in is CycloneDX — ratified as **ECMA-424**, 1st edition for 1.6 and 2nd
  * edition (December 2025) for 1.7, which is what this emits.
