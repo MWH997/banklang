@@ -15,7 +15,7 @@ Phase: verify
 | JCL emit | passed | evidence/online-enquiry/jcl/ONLINEEN.jcl |
 | Audit artifacts | passed | evidence/online-enquiry/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage | passed | 15/15 traced symbols, all entries anchored in the generated COBOL. |
+| Source map coverage | passed | 17/17 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed after precompiling (db2-precompiler and cics-translator). |
 | Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
@@ -27,8 +27,8 @@ Phase: verify
 
 ## Source Map Coverage
 
-- expected-symbols: 15
-- traced-symbols: 15
+- expected-symbols: 17
+- traced-symbols: 17
 - coverage-gaps: 0
 
 ## GnuCOBOL Validation

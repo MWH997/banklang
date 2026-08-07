@@ -8,11 +8,11 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> PURPOSE
       *>   GENERATE-STATEMENT, the transaction this program is entered
-      *>     at.
+      *>   at.
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> FILES
       *>   ACCOUNTM input   indexed    ACCOUNT-MASTER (33 bytes)
@@ -24,14 +24,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
       *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it, so there is nothing for a second run to
-      *>     read as though it were complete.
+      *>   deletes a half-written output dataset rather than cataloguing
+      *>   it, so there is nothing for a second run to read as though it
+      *>   were complete.
       *> ---------------------------------------------------------------
        IDENTIFICATION DIVISION.
        PROGRAM-ID. STATEMEN.
@@ -53,98 +53,98 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
        FILE SECTION.
        FD  ACCOUNT-MASTER-FILE.
        01  ACCOUNT-MASTER-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  STATUS-FLD           PIC X(7).
-               88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
-               88  STATUS-FLD-DORMANT           VALUE "DORMANT".
-               88  STATUS-FLD-FROZEN            VALUE "FROZEN".
-               88  STATUS-FLD-CLOSED            VALUE "CLOSED".
-           05  BALANCE              PIC S9(16)V99 COMP-3.
+           05  ACCOUNT-ID  PIC X(16).
+           05  STATUS-FLD  PIC X(7).
+               88  STATUS-FLD-ACTIVE   VALUE "ACTIVE".
+               88  STATUS-FLD-DORMANT  VALUE "DORMANT".
+               88  STATUS-FLD-FROZEN   VALUE "FROZEN".
+               88  STATUS-FLD-CLOSED   VALUE "CLOSED".
+           05  BALANCE     PIC S9(16)V99 COMP-3.
        FD  STATEMENT-OUTPUT-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  STATEMENT-OUTPUT-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  HOLDER-NAME          PIC X(40).
-           05  NATIONAL-ID          PIC X(20).
-           05  STATUS-FLD           PIC X(7).
-               88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
-               88  STATUS-FLD-DORMANT           VALUE "DORMANT".
-               88  STATUS-FLD-FROZEN            VALUE "FROZEN".
-               88  STATUS-FLD-CLOSED            VALUE "CLOSED".
-           05  OPENING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  CLOSING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  LINES-FLD OCCURS 100 TIMES
+           05  ACCOUNT-ID                PIC X(16).
+           05  HOLDER-NAME               PIC X(40).
+           05  NATIONAL-ID               PIC X(20).
+           05  STATUS-FLD                PIC X(7).
+               88  STATUS-FLD-ACTIVE   VALUE "ACTIVE".
+               88  STATUS-FLD-DORMANT  VALUE "DORMANT".
+               88  STATUS-FLD-FROZEN   VALUE "FROZEN".
+               88  STATUS-FLD-CLOSED   VALUE "CLOSED".
+           05  OPENING-BALANCE           PIC S9(16)V99 COMP-3.
+           05  CLOSING-BALANCE           PIC S9(16)V99 COMP-3.
+           05  LINES-FLD                 OCCURS 100 TIMES
                    INDEXED BY STAT-OUTP-RECORD-LINES-FLD-IDX.
-               10  ENTRY-KIND           PIC X(6).
-                   88  ENTRY-KIND-DEBIT             VALUE "DEBIT".
-                   88  ENTRY-KIND-CREDIT            VALUE "CREDIT".
-               10  NARRATIVE            PIC X(40).
-               10  AMOUNT               PIC S9(16)V99 COMP-3.
-           05  RELATIONSHIP-MANAGER PIC X(20).
-           05  RELATIONSHIP-MANAGER-IND PIC S9(4) COMP.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+               10  ENTRY-KIND  PIC X(6).
+                   88  ENTRY-KIND-DEBIT   VALUE "DEBIT".
+                   88  ENTRY-KIND-CREDIT  VALUE "CREDIT".
+               10  NARRATIVE   PIC X(40).
+               10  AMOUNT      PIC S9(16)V99 COMP-3.
+           05  RELATIONSHIP-MANAGER      PIC X(20).
+           05  RELATIONSHIP-MANAGER-IND  PIC S9(4) COMP.
+           05  IDEMPOTENCY-KEY           PIC X(36).
        WORKING-STORAGE SECTION.
-       01  ACCOUNT-MASTER-STATUS PIC X(2).
-           88  ACCOUNT-MASTER-STATUS-OK VALUE "00" THRU "09".
-           88  ACCOUNT-MASTER-STATUS-EOF VALUE "10".
-           88  ACCOUNT-MASTER-STATUS-DUPKEY VALUE "22".
-           88  ACCOUNT-MASTER-STATUS-NOTFND VALUE "23".
-       01  STATEMENT-OUTPUT-STATUS PIC X(2).
-           88  STATEMENT-OUTPUT-STATUS-OK VALUE "00" THRU "09".
-           88  STATEMENT-OUTPUT-STATUS-EOF VALUE "10".
-           88  STATEMENT-OUTPUT-STATUS-DUPKEY VALUE "22".
-           88  STATEMENT-OUTPUT-STATUS-NOTFND VALUE "23".
-       01  BANK-BOUNDS-STATUS   PIC X(2) VALUE "00".
-       01  BANK-COPY-INDEX      PIC 9(9) COMP.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  ACCOUNT-MASTER-STATUS      PIC X(2) VALUE SPACES.
+           88  ACCOUNT-MASTER-STATUS-OK      VALUE "00" THRU "09".
+           88  ACCOUNT-MASTER-STATUS-EOF     VALUE "10".
+           88  ACCOUNT-MASTER-STATUS-DUPKEY  VALUE "22".
+           88  ACCOUNT-MASTER-STATUS-NOTFND  VALUE "23".
+       01  STATEMENT-OUTPUT-STATUS    PIC X(2) VALUE SPACES.
+           88  STATEMENT-OUTPUT-STATUS-OK      VALUE "00" THRU "09".
+           88  STATEMENT-OUTPUT-STATUS-EOF     VALUE "10".
+           88  STATEMENT-OUTPUT-STATUS-DUPKEY  VALUE "22".
+           88  STATEMENT-OUTPUT-STATUS-NOTFND  VALUE "23".
+       01  BANK-BOUNDS-STATUS         PIC X(2) VALUE "00".
+       01  BANK-COPY-INDEX            PIC 9(9) COMP VALUE ZERO.
+       01  BANK-FAILURE-CODE          PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE           PIC S9(4) COMP EXTERNAL.
        01  LEDGER-ENTRY.
-           05  ENTRY-KIND           PIC X(6).
-               88  ENTRY-KIND-DEBIT             VALUE "DEBIT".
-               88  ENTRY-KIND-CREDIT            VALUE "CREDIT".
-           05  NARRATIVE            PIC X(40).
-           05  AMOUNT               PIC S9(16)V99 COMP-3.
+           05  ENTRY-KIND  PIC X(6).
+               88  ENTRY-KIND-DEBIT   VALUE "DEBIT".
+               88  ENTRY-KIND-CREDIT  VALUE "CREDIT".
+           05  NARRATIVE   PIC X(40).
+           05  AMOUNT      PIC S9(16)V99 COMP-3.
        01  STATEMENT.
-           05  ACCOUNT-ID           PIC X(16).
-           05  HOLDER-NAME          PIC X(40).
-           05  NATIONAL-ID          PIC X(20).
-           05  STATUS-FLD           PIC X(7).
-               88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
-               88  STATUS-FLD-DORMANT           VALUE "DORMANT".
-               88  STATUS-FLD-FROZEN            VALUE "FROZEN".
-               88  STATUS-FLD-CLOSED            VALUE "CLOSED".
-           05  OPENING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  CLOSING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  LINES-FLD OCCURS 100 TIMES
+           05  ACCOUNT-ID                PIC X(16).
+           05  HOLDER-NAME               PIC X(40).
+           05  NATIONAL-ID               PIC X(20).
+           05  STATUS-FLD                PIC X(7).
+               88  STATUS-FLD-ACTIVE   VALUE "ACTIVE".
+               88  STATUS-FLD-DORMANT  VALUE "DORMANT".
+               88  STATUS-FLD-FROZEN   VALUE "FROZEN".
+               88  STATUS-FLD-CLOSED   VALUE "CLOSED".
+           05  OPENING-BALANCE           PIC S9(16)V99 COMP-3.
+           05  CLOSING-BALANCE           PIC S9(16)V99 COMP-3.
+           05  LINES-FLD                 OCCURS 100 TIMES
                    INDEXED BY STATEMENT-LINES-FLD-IDX.
-               10  ENTRY-KIND           PIC X(6).
-                   88  ENTRY-KIND-DEBIT             VALUE "DEBIT".
-                   88  ENTRY-KIND-CREDIT            VALUE "CREDIT".
-               10  NARRATIVE            PIC X(40).
-               10  AMOUNT               PIC S9(16)V99 COMP-3.
-           05  RELATIONSHIP-MANAGER PIC X(20).
-           05  RELATIONSHIP-MANAGER-IND PIC S9(4) COMP.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+               10  ENTRY-KIND  PIC X(6).
+                   88  ENTRY-KIND-DEBIT   VALUE "DEBIT".
+                   88  ENTRY-KIND-CREDIT  VALUE "CREDIT".
+               10  NARRATIVE   PIC X(40).
+               10  AMOUNT      PIC S9(16)V99 COMP-3.
+           05  RELATIONSHIP-MANAGER      PIC X(20).
+           05  RELATIONSHIP-MANAGER-IND  PIC S9(4) COMP.
+           05  IDEMPOTENCY-KEY           PIC X(36).
        01  ACCOUNT-MASTER.
-           05  ACCOUNT-ID           PIC X(16).
-           05  STATUS-FLD           PIC X(7).
-               88  STATUS-FLD-ACTIVE            VALUE "ACTIVE".
-               88  STATUS-FLD-DORMANT           VALUE "DORMANT".
-               88  STATUS-FLD-FROZEN            VALUE "FROZEN".
-               88  STATUS-FLD-CLOSED            VALUE "CLOSED".
-           05  BALANCE              PIC S9(16)V99 COMP-3.
-       01  IS-STATEMENTABLE-RESULT PIC X(1) VALUE "N".
-       01  IS-STATEMENTABLE-P1  PIC X(7).
-       01  SUPPRESSION-REASON-RESULT PIC X(16).
-       01  SUPPRESSION-REASON-P1 PIC X(7).
-       01  LINE-INDEX           PIC S9(4) COMP-3.
-       01  RUNNING              PIC S9(16)V99 COMP-3.
-       01  MANAGER              PIC X(20).
-       01  GENERATE-STATEMENT-LOOP-1 PIC 9(9) COMP.
+           05  ACCOUNT-ID  PIC X(16).
+           05  STATUS-FLD  PIC X(7).
+               88  STATUS-FLD-ACTIVE   VALUE "ACTIVE".
+               88  STATUS-FLD-DORMANT  VALUE "DORMANT".
+               88  STATUS-FLD-FROZEN   VALUE "FROZEN".
+               88  STATUS-FLD-CLOSED   VALUE "CLOSED".
+           05  BALANCE     PIC S9(16)V99 COMP-3.
+       01  IS-STATEMENTABLE-RESULT    PIC X(1) VALUE "N".
+       01  IS-STATEMENTABLE-P1        PIC X(7) VALUE SPACES.
+       01  SUPPRESSION-REASON-RESULT  PIC X(16) VALUE SPACES.
+       01  SUPPRESSION-REASON-P1      PIC X(7) VALUE SPACES.
+       01  LINE-INDEX                 PIC S9(4) COMP-3 VALUE ZERO.
+       01  RUNNING                    PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  MANAGER                    PIC X(20) VALUE SPACES.
+       01  GENERATE-STATEMENT-LOOP-1  PIC 9(9) COMP VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        BANK-MAIN.

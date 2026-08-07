@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 const PREAMBLE = `module Loops;
 
@@ -62,7 +62,7 @@ transaction sum(ledger: Ledger) {
   audit("SUMMED", ledger.idempotencyKey);
 }`);
 
-    expect(result.cobol).toMatch(/01 {2}I\s+PIC 9\(9\) COMP\./);
+    expect(result.cobol).toMatch(/01 {2}I\s+PIC 9\(9\) COMP VALUE ZERO\./);
   });
 
   it("omits the runtime bounds check for a for-each index", () => {
@@ -124,7 +124,9 @@ transaction pick(ledger: Ledger, at: Count) {
   audit("PICKED", ledger.idempotencyKey);
 }`);
 
-    expect(result.cobol).toContain('BANK-BOUNDS-STATUS   PIC X(2) VALUE "00".');
+    expect(unpadded(result.cobol)).toContain(
+      'BANK-BOUNDS-STATUS PIC X(2) VALUE "00".',
+    );
   });
 });
 
@@ -178,9 +180,11 @@ function compound(balance: Amount, periods: Count): Amount {
       recursiveProgram.slice(recursiveProgram.indexOf("LOCAL-STORAGE")),
     ).toContain("01  GROWN");
     expect(working.match(/^ {7}01 {2}/gm) ?? []).toHaveLength(2);
-    expect(working).toContain("01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.");
-    expect(working).toContain(
-      "01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.",
+    expect(unpadded(working)).toContain(
+      "01 BANK-FAILURE-CODE PIC X(32) EXTERNAL.",
+    );
+    expect(unpadded(working)).toContain(
+      "01 BANK-RETURN-CODE PIC S9(4) COMP EXTERNAL.",
     );
   });
 

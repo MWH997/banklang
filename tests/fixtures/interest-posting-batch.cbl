@@ -12,7 +12,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> FILES
       *>   ACCOUNTF input   sequential ACCRUAL-FEED-ROW (80 bytes)
@@ -25,14 +25,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
       *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it, so there is nothing for a second run to
-      *>     read as though it were complete.
+      *>   deletes a half-written output dataset rather than cataloguing
+      *>   it, so there is nothing for a second run to read as though it
+      *>   were complete.
       *> ---------------------------------------------------------------
        IDENTIFICATION DIVISION.
        PROGRAM-ID. INTEREST.
@@ -55,70 +55,70 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  ACCOUNT-FEED-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  BRANCH-CODE          PIC X(8).
-           05  BALANCE              PIC S9(16)V99 COMP-3.
-           05  ACCRUED-INTEREST     PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  ACCOUNT-ID        PIC X(16).
+           05  BRANCH-CODE       PIC X(8).
+           05  BALANCE           PIC S9(16)V99 COMP-3.
+           05  ACCRUED-INTEREST  PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY   PIC X(36).
        FD  ADVICE-OUTPUT-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  ADVICE-OUTPUT-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  INTEREST-AMOUNT      PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  ACCOUNT-ID       PIC X(16).
+           05  INTEREST-AMOUNT  PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
        WORKING-STORAGE SECTION.
-       01  ACCOUNT-FEED-STATUS  PIC X(2).
-           88  ACCOUNT-FEED-STATUS-OK   VALUE "00" THRU "09".
-           88  ACCOUNT-FEED-STATUS-EOF  VALUE "10".
-           88  ACCOUNT-FEED-STATUS-DUPKEY VALUE "22".
-           88  ACCOUNT-FEED-STATUS-NOTFND VALUE "23".
-       01  ADVICE-OUTPUT-STATUS PIC X(2).
-           88  ADVICE-OUTPUT-STATUS-OK  VALUE "00" THRU "09".
-           88  ADVICE-OUTPUT-STATUS-EOF VALUE "10".
-           88  ADVICE-OUTPUT-STATUS-DUPKEY VALUE "22".
-           88  ADVICE-OUTPUT-STATUS-NOTFND VALUE "23".
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  BANK-RND-1-VALUE     PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(18) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV999999 COMP-3.
+       01  ACCOUNT-FEED-STATUS   PIC X(2) VALUE SPACES.
+           88  ACCOUNT-FEED-STATUS-OK      VALUE "00" THRU "09".
+           88  ACCOUNT-FEED-STATUS-EOF     VALUE "10".
+           88  ACCOUNT-FEED-STATUS-DUPKEY  VALUE "22".
+           88  ACCOUNT-FEED-STATUS-NOTFND  VALUE "23".
+       01  ADVICE-OUTPUT-STATUS  PIC X(2) VALUE SPACES.
+           88  ADVICE-OUTPUT-STATUS-OK      VALUE "00" THRU "09".
+           88  ADVICE-OUTPUT-STATUS-EOF     VALUE "10".
+           88  ADVICE-OUTPUT-STATUS-DUPKEY  VALUE "22".
+           88  ADVICE-OUTPUT-STATUS-NOTFND  VALUE "23".
+       01  BANK-FAILURE-CODE     PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE      PIC S9(4) COMP EXTERNAL.
+       01  BANK-RND-1-VALUE      PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP       PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS      PIC S9(18) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS     PIC SV999999 COMP-3 VALUE ZERO.
        01  ACCRUAL-FEED-ROW.
-           05  ACCOUNT-ID           PIC X(16).
-           05  BRANCH-CODE          PIC X(8).
-           05  BALANCE              PIC S9(16)V99 COMP-3.
-           05  ACCRUED-INTEREST     PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  ACCOUNT-ID        PIC X(16).
+           05  BRANCH-CODE       PIC X(8).
+           05  BALANCE           PIC S9(16)V99 COMP-3.
+           05  ACCRUED-INTEREST  PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY   PIC X(36).
        01  POSTING-ADVICE.
-           05  ACCOUNT-ID           PIC X(16).
-           05  INTEREST-AMOUNT      PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  IS-ELIGIBLE-RESULT PIC X(1) VALUE "N".
-       01  IS-ELIGIBLE-P1       PIC S9(16)V99 COMP-3.
-       01  IS-ELIGIBLE-P2       PIC S9(16)V99 COMP-3.
-       01  RATE-FOR-RESULT PIC S9(5)V9999 COMP-3.
-       01  RATE-FOR-P1          PIC S9(16)V99 COMP-3.
-       01  RATE-FOR-P2          PIC S9(16)V99 COMP-3.
-       01  ACCRUE-RESULT PIC S9(16)V99 COMP-3.
-       01  ACCRUE-P1            PIC S9(16)V99 COMP-3.
-       01  ACCRUE-P2            PIC S9(5)V9999 COMP-3.
-       01  FEE-FOR-RESULT PIC S9(16)V99 COMP-3.
-       01  FEE-FOR-P1           PIC S9(16)V99 COMP-3.
-       01  FEE-FOR-P2           PIC S9(16)V99 COMP-3.
-       01  MINIMUM-BALANCE      PIC S9(16)V99 COMP-3.
-       01  PREMIUM-THRESHOLD    PIC S9(16)V99 COMP-3.
-       01  MAINTENANCE-FEE      PIC S9(16)V99 COMP-3.
-       01  INTEREST             PIC S9(16)V99 COMP-3.
-       01  FEE                  PIC S9(16)V99 COMP-3.
-       01  RUN-BATCH-LOOP-1     PIC 9(9) COMP.
+           05  ACCOUNT-ID       PIC X(16).
+           05  INTEREST-AMOUNT  PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
+       01  IS-ELIGIBLE-RESULT    PIC X(1) VALUE "N".
+       01  IS-ELIGIBLE-P1        PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  IS-ELIGIBLE-P2        PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  RATE-FOR-RESULT       PIC S9(5)V9999 COMP-3 VALUE ZERO.
+       01  RATE-FOR-P1           PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  RATE-FOR-P2           PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  ACCRUE-RESULT         PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  ACCRUE-P1             PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  ACCRUE-P2             PIC S9(5)V9999 COMP-3 VALUE ZERO.
+       01  FEE-FOR-RESULT        PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  FEE-FOR-P1            PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  FEE-FOR-P2            PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  MINIMUM-BALANCE       PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  PREMIUM-THRESHOLD     PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  MAINTENANCE-FEE       PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  INTEREST              PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  FEE                   PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  RUN-BATCH-LOOP-1      PIC 9(9) COMP VALUE ZERO.
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        BANK-MAIN.

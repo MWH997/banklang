@@ -11,10 +11,10 @@ you will find that out anyway and finding it yourself is worse.
 
 ## What this is
 
-A compiler. You write a program in **BankTS** — a small, deliberately
-restricted language that looks like TypeScript — and it emits IBM Enterprise
-COBOL, a copybook for every record, the JCL to build and run it, and a source
-map tying every generated line back to the line that produced it.
+A compiler. You write a program in **BankTS** — a small banking language whose
+types are TypeScript's and whose statements are its own — and it emits IBM
+Enterprise COBOL, a copybook for every record, the JCL to build and run it, and
+a source map tying every generated line back to the line that produced it.
 
 **No model decides what is generated.** The same input produces byte-identical
 output, every time, on any machine. That is a test in the suite, not a claim on
@@ -147,12 +147,12 @@ the tell:
   invented for itself. That is a real integration, and it is where the work is.
 - **The mutation scores are higher than they are now**, particularly for the
   code that decides what the emitted text looks like.
-- **It has been audited against a real estate.** One external audit exists —
-  [2026-08-05](audit-2026-08-05.md), an adversarial read by a z/OS application
-  engineer looking for a reason to say no. It found three defects behind a green
-  test suite, including a rounding phrase Enterprise COBOL has never had. Every
-  audit since has been the project reading itself, which is worth something and
-  is not the same thing.
+- **It has been audited against a real estate.** One external audit exists, from
+  5 August 2026: an adversarial read by a z/OS application engineer looking for
+  a reason to say no. It found three defects behind a green test suite,
+  including a rounding phrase Enterprise COBOL has never had. Every audit since
+  has been the project reading itself, which is worth something and is not the
+  same thing.
 
 Until all five, this is a serious piece of engineering to evaluate and not a
 system to run money through. The project says so everywhere, including here.

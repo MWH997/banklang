@@ -56,9 +56,15 @@ entry transaction drainPayments(request: PaymentRequest, reply: ReplyMessage, to
   totals.messagesAccepted = 0;
   totals.messagesRejected = 0;
 
-  // Each of these is two MQI calls: MQCONN then MQOPEN, and MQCLOSE then
-  // MQDISC at the other end. Neither half is useful alone, which is why the
-  // language does not offer them separately.
+  // Each of these is MQOPEN, and MQCLOSE at the other end. Neither half is
+  // useful alone, which is why the language does not offer them separately.
+  //
+  // Both queues are on CSQ1, and a program connects to a queue manager rather
+  // than to a queue: the first of these two also does the MQCONN, the last
+  // disconnectQueue does the MQDISC, and the second MQCONN that a connect per
+  // queue would issue never happens. MQ answers that one with
+  // MQRC_ALREADY_CONNECTED and MQCC_WARNING, which is not MQCC_OK, so it would
+  // end the step here before a message was ever read.
   connectQueue paymentIn;
   connectQueue paymentOut;
 

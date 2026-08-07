@@ -2,6 +2,9 @@
 title: Reading code you did not write, and did not want
 description: Generated code arrives on somebody else's desk to be reviewed and supported. What makes it acceptable has almost nothing to do with whether it works.
 date: 2026-08-04
+author: Md Wahid Hassan
+related: why-banks-still-run-cobol, testing-a-compiler-you-cannot-run
+reading: generated-code-standards.md
 ---
 
 There is a moment that decides whether a code generator succeeds in an
@@ -124,10 +127,3 @@ The test is simple. Show the output to somebody who has never heard of the tool,
 and ask whether they would take a support rota for it.
 
 If they hesitate, the problem is not the compiler.
-
----
-
-_BankLang emits COBOL with a documented prologue, real paragraph names, and a
-source map over every construct, and holds itself to
-[a written standard](../docs/generated-code-standards.md) with a check behind
-each rule._

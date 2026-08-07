@@ -15,8 +15,8 @@
         "column": 23
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 24,
-      "targetEndLine": 25,
+      "targetStartLine": 25,
+      "targetEndLine": 26,
       "category": "module",
       "symbol": "AccountTransfer"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 31,
-      "targetEndLine": 34,
+      "targetStartLine": 32,
+      "targetEndLine": 35,
       "category": "record",
       "symbol": "TransferRequest"
     },
@@ -47,8 +47,8 @@
         "column": 28
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 32,
-      "targetEndLine": 32,
+      "targetStartLine": 33,
+      "targetEndLine": 33,
       "category": "field",
       "symbol": "debitAccount"
     },
@@ -63,8 +63,8 @@
         "column": 29
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 33,
-      "targetEndLine": 33,
+      "targetStartLine": 34,
+      "targetEndLine": 34,
       "category": "field",
       "symbol": "creditAccount"
     },
@@ -79,8 +79,8 @@
         "column": 20
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 34,
-      "targetEndLine": 34,
+      "targetStartLine": 35,
+      "targetEndLine": 35,
       "category": "field",
       "symbol": "amount"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCOUNTT.cbl",
-      "targetStartLine": 39,
-      "targetEndLine": 47,
+      "targetStartLine": 40,
+      "targetEndLine": 48,
       "category": "function",
       "symbol": "validateAmount"
     }

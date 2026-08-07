@@ -301,6 +301,13 @@ exists to prevent. One keyed record, rewritten in place by each checkpoint, has
 no such window, and it is what a restart control record on z/OS conventionally
 is: a small KSDS holding the last committed position.
 
+**Inside a cursor loop, the checkpoint's commit closes the cursor.** Db2 closes
+a cursor that is not declared `WITH HOLD` when the unit of work commits, so a
+loop that checkpoints over an unheld cursor fetches `-501` on the next row,
+having already posted and committed part of the result set. `BANK-SQL-008`
+refuses it, and the fix is `hold` on the declaration; see
+[the SQL page](sql.md#a-cursor-that-survives-a-commit).
+
 A restart file is generated with `SELECT OPTIONAL`, because the first run of a
 batch has never written a position and the dataset does not exist yet. Every
 other file stays required, and a missing one still stops the job.

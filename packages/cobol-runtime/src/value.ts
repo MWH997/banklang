@@ -14,7 +14,7 @@
  * that comparison meaningless.
  */
 
-import type { Picture, Usage } from "./picture";
+import { signIsSeparate, type Picture, type Usage } from "./picture";
 import { CobolUnsupportedError } from "./source";
 
 /** A fixed-point number: `units × 10^-scale`. */
@@ -169,12 +169,23 @@ const CODE_ZERO = 0x30;
  *
  * GnuCOBOL in its default ASCII configuration writes the EBCDIC overpunch
  * characters: `{` and `A`-`I` for `+0` to `+9`, `}` and `J`-`R` for `-0` to
- * `-9`. Nothing the compiler emits stores a signed `DISPLAY` item — money is
- * `COMP-3` and counters are `COMP` — so this exists for completeness and is
- * covered by a unit test rather than by the generated corpus.
+ * `-9`. Money the compiler emits is `COMP-3` and counters are `COMP`, so no
+ * generated record holds one of these; the unit tests cover it.
+ *
+ * A PARM is the exception, and the reason the separate sign below exists: the
+ * linkage group declares every numeric parameter `SIGN IS LEADING SEPARATE`,
+ * because a PARM is characters somebody types on an EXEC statement and `-1200`
+ * is what they type. `+` and `-` are the only two signs that form takes.
  */
 const POSITIVE_OVERPUNCH = "{ABCDEFGHI";
 const NEGATIVE_OVERPUNCH = "}JKLMNOPQR";
+const SIGN_PLUS = 0x2b;
+const SIGN_MINUS = 0x2d;
+
+/** True when a character is a digit carrying an overpunched sign. */
+export function isOverpunched(char: string): boolean {
+  return POSITIVE_OVERPUNCH.includes(char) || NEGATIVE_OVERPUNCH.includes(char);
+}
 
 export function encodeNumeric(
   bytes: Uint8Array,
@@ -189,8 +200,19 @@ export function encodeNumeric(
 
   switch (usage) {
     case "display": {
+      // A separate sign takes the first or last byte, and the digits take the
+      // rest — so where the digits start depends on which end it is at.
+      const separate = signIsSeparate(picture);
+      const leading = separate && picture.sign === "leading-separate";
+      const start = offset + (leading ? 1 : 0);
       for (let index = 0; index < digits.length; index += 1) {
-        bytes[offset + index] = CODE_ZERO + Number(digits[index]);
+        bytes[start + index] = CODE_ZERO + Number(digits[index]);
+      }
+      if (separate) {
+        bytes[leading ? offset : start + digits.length] = negative
+          ? SIGN_MINUS
+          : SIGN_PLUS;
+        return;
       }
       if (picture.signed) {
         const last = Number(digits[digits.length - 1]);
@@ -249,6 +271,25 @@ export function decodeNumeric(
     case "display": {
       let digits = "";
       let negative = false;
+      if (signIsSeparate(picture)) {
+        const at =
+          picture.sign === "leading-separate" ? offset : offset + length - 1;
+        negative = bytes[at] === SIGN_MINUS;
+        for (let index = 0; index < length; index += 1) {
+          if (offset + index === at) {
+            continue;
+          }
+          const byte = bytes[offset + index]!;
+          digits +=
+            byte >= CODE_ZERO && byte <= CODE_ZERO + 9
+              ? String(byte - CODE_ZERO)
+              : "0";
+        }
+        return {
+          units: BigInt(digits || "0") * (negative ? -1n : 1n),
+          scale: picture.scale,
+        };
+      }
       for (let index = 0; index < length; index += 1) {
         const byte = bytes[offset + index]!;
         const char = String.fromCharCode(byte);

@@ -15,8 +15,8 @@
         "column": 28
       },
       "artifact": "cobol/BATCHINT.cbl",
-      "targetStartLine": 24,
-      "targetEndLine": 25,
+      "targetStartLine": 25,
+      "targetEndLine": 26,
       "category": "module",
       "symbol": "BatchInterestAccrual"
     },
@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/BATCHINT.cbl",
-      "targetStartLine": 31,
-      "targetEndLine": 33,
+      "targetStartLine": 32,
+      "targetEndLine": 34,
       "category": "record",
       "symbol": "InterestAccount"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "cobol/BATCHINT.cbl",
-      "targetStartLine": 32,
-      "targetEndLine": 32,
+      "targetStartLine": 33,
+      "targetEndLine": 33,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 21
       },
       "artifact": "cobol/BATCHINT.cbl",
-      "targetStartLine": 33,
-      "targetEndLine": 33,
+      "targetStartLine": 34,
+      "targetEndLine": 34,
       "category": "field",
       "symbol": "balance"
     },
@@ -79,8 +79,8 @@
         "column": 2
       },
       "artifact": "cobol/BATCHINT.cbl",
-      "targetStartLine": 39,
-      "targetEndLine": 56,
+      "targetStartLine": 40,
+      "targetEndLine": 57,
       "category": "function",
       "symbol": "isEligibleForInterest"
     }

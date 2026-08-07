@@ -211,6 +211,13 @@ abend code `BKNC` — IBM's guidance is to verify the length "matches what the
 program expects", because a short one leaves the `MOVE` reading somebody else's
 storage.
 
+The commarea is written back on both paths, including the one where the
+transaction failed and its `on failure` handler ran: a return code the handler
+sets and the caller never sees leaves a failure looking like a success. And a
+transaction that computes its answer into a record parameter that is not the
+commarea is refused outright with `BANK-CICS-005`, because there is no path
+from working storage back to a caller once the task has ended.
+
 ---
 
 ## MQ

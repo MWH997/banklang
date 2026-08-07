@@ -1,8 +1,8 @@
 # Citation File Format 1.2.0 — https://citation-file-format.github.io
 #
 # GitHub reads this to offer a "Cite this repository" button, and Zenodo and
-# similar archives read it for author and licence metadata. R2 in
-# docs/launch-tickets.md asks for it so the work is citable.
+# similar archives read it for author and licence metadata. The launch
+# checklist asks for it so the work is citable.
 #
 # `version` is held to package.json and the changelog by
 # tests/documentation.test.ts: a citation naming a version that was never
@@ -23,8 +23,9 @@ authors:
 repository-code: "https://github.com/MWH997/banklang"
 url: "https://banklang.mwhassan.com"
 abstract: >-
-  BankLang compiles BankTS, a deliberately small TypeScript-like language for
-  banking logic, to readable IBM Enterprise COBOL, a copybook for every record,
+  BankLang compiles BankTS, a small banking language that takes its type syntax
+  from TypeScript and has statements of its own for transactions, files, cursors
+  and queues, to readable IBM Enterprise COBOL, a copybook for every record,
   and the JCL to build and run it. Compilation is deterministic: no model
   decides what is generated, and the same input always produces byte-identical
   output. The compiler refuses to compile financially unsafe programs —

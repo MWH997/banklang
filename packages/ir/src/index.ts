@@ -31,6 +31,7 @@ import type {
   ResolvedType,
   TypeCheckResult,
 } from "../../typechecker/src/index";
+import { CompilerInvariant } from "../../diagnostics/src/errors";
 
 export interface IRProgram {
   kind: "Program";
@@ -340,6 +341,20 @@ export type IRStatement =
   | IRResetStatement
   | IRSearchStatement
   | IRRaiseStatement;
+
+/**
+ * True when the program declares no transaction, so nothing enters it.
+ *
+ * A module of functions is linked into a caller and entered at one of its
+ * paragraphs; it has no `BANK-MAIN`, no `GOBACK` and nothing to start. Asked
+ * here rather than in each backend because two of them got a different answer:
+ * the prologue said "Nothing here is an entry point" while the same build's
+ * JCL wrote `EXEC PGM=` for it, and control would have entered at the first
+ * paragraph, fallen through the exit and run off the end of the program.
+ */
+export function isLibraryModule(program: IRProgram): boolean {
+  return program.transactions.length === 0;
+}
 
 /**
  * Every block nested inside one statement.
@@ -2104,7 +2119,7 @@ function lowerStatement(
         target.kind !== "MemberAccess" &&
         target.kind !== "IndexAccess"
       ) {
-        throw new Error(
+        throw new CompilerInvariant(
           "Assignment target must be an identifier, a field, or a table element.",
         );
       }
@@ -2298,7 +2313,9 @@ function lowerStatement(
           ? array.resolvedType
           : undefined;
       if (!arrayType || arrayType.kind !== "array") {
-        throw new Error("search requires a table during IR lowering.");
+        throw new CompilerInvariant(
+          "search requires a table during IR lowering.",
+        );
       }
 
       // The element is bound for the condition and the body, the way a loop
@@ -2343,7 +2360,7 @@ function lowerStatement(
     case "CursorLoopStatement": {
       const cursor = sqlTable.get(statement.cursorName);
       if (!cursor) {
-        throw new Error(
+        throw new CompilerInvariant(
           `Unresolved cursor during IR lowering: ${statement.cursorName}.`,
         );
       }
@@ -2371,7 +2388,9 @@ function lowerStatement(
           ? array.resolvedType
           : undefined;
       if (!arrayType || arrayType.kind !== "array") {
-        throw new Error("for each requires an array during IR lowering.");
+        throw new CompilerInvariant(
+          "for each requires an array during IR lowering.",
+        );
       }
 
       // The index is a loop-scoped local, so it must be visible to the body.
@@ -2433,7 +2452,9 @@ function lowerStatement(
     case "SwitchStatement": {
       const subject = lowerExpression(statement.subject, scopeTypes);
       if (subject.resolvedType.kind !== "enum") {
-        throw new Error("Switch subject must be an enum during IR lowering.");
+        throw new CompilerInvariant(
+          "Switch subject must be an enum during IR lowering.",
+        );
       }
       return {
         kind: "SwitchStatement",
@@ -2452,7 +2473,7 @@ function lowerStatement(
     case "FileStatement": {
       const file = fileTable.get(statement.fileName);
       if (!file) {
-        throw new Error(
+        throw new CompilerInvariant(
           `Unresolved file during IR lowering: ${statement.fileName}`,
         );
       }
@@ -2491,7 +2512,9 @@ function lowerLetStatement(
 ): IRLetStatement {
   const declaredType = scopeTypes.get(statement.name);
   if (!declaredType) {
-    throw new Error(`Unresolved local during IR lowering: ${statement.name}`);
+    throw new CompilerInvariant(
+      `Unresolved local during IR lowering: ${statement.name}`,
+    );
   }
 
   return {
@@ -2664,7 +2687,7 @@ function lowerExpression(
         target.kind !== "MemberAccess" &&
         target.kind !== "IndexAccess"
       ) {
-        throw new Error(
+        throw new CompilerInvariant(
           "Index target must be an identifier, a field, or a table element.",
         );
       }
@@ -2722,7 +2745,9 @@ function lowerExpression(
       const callee = callTargetTable.get(expression) ?? expression.callee;
       const signature = functionTable.get(callee);
       if (!signature) {
-        throw new Error(`Unresolved function during IR lowering: ${callee}`);
+        throw new CompilerInvariant(
+          `Unresolved function during IR lowering: ${callee}`,
+        );
       }
       return {
         kind: "Call",
@@ -2794,7 +2819,7 @@ function lowerMemberAccessExpression(
       arrayType && arrayType.kind === "array" ? arrayType.element : undefined;
 
     if (!elementType || elementType.kind !== "record") {
-      throw new Error(
+      throw new CompilerInvariant(
         `Indexed field access requires an array of records: ${holderName}`,
       );
     }
@@ -2803,7 +2828,7 @@ function lowerMemberAccessExpression(
       (candidate) => candidate.name === expression.member,
     );
     if (!field) {
-      throw new Error(
+      throw new CompilerInvariant(
         `Unresolved field during IR lowering: ${holderName}[..].${expression.member}`,
       );
     }
@@ -2825,14 +2850,16 @@ function lowerMemberAccessExpression(
   const targetName = expression.target.name;
   const targetType = scopeTypes.get(targetName);
   if (!targetType || targetType.kind !== "record") {
-    throw new Error(`Unresolved record during IR lowering: ${targetName}`);
+    throw new CompilerInvariant(
+      `Unresolved record during IR lowering: ${targetName}`,
+    );
   }
 
   const field = targetType.fields.find(
     (candidate) => candidate.name === expression.member,
   );
   if (!field) {
-    throw new Error(
+    throw new CompilerInvariant(
       `Unresolved field during IR lowering: ${targetName}.${expression.member}`,
     );
   }
@@ -2874,7 +2901,7 @@ function lowerIdentifierExpression(
 ): IRIdentifierExpression {
   const resolvedType = scopeTypes.get(expression.name);
   if (!resolvedType) {
-    throw new Error(
+    throw new CompilerInvariant(
       `Unresolved identifier during IR lowering: ${expression.name}`,
     );
   }

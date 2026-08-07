@@ -1,20 +1,23 @@
 # BankLang
 
-**A deterministic compiler from a restricted TypeScript-like language to
-readable IBM Enterprise COBOL — with banking safety rules enforced at compile
-time.**
+**[banklang.mwhassan.com](https://banklang.mwhassan.com)** — the compiler runs
+in your browser at [/playground/](https://banklang.mwhassan.com/playground/).
+
+**A deterministic compiler from a small banking language to readable IBM
+Enterprise COBOL — with banking safety rules enforced at compile time.**
 
 [![CI](https://github.com/MWH997/banklang/actions/workflows/ci.yml/badge.svg)](https://github.com/MWH997/banklang/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
-BankLang compiles **BankTS**, a deliberately small TypeScript-like language,
-into COBOL that a mainframe engineer can read and review. It is a compiler, not
-an AI converter: no model decides what code is generated, and the same input
-always produces byte-identical output.
+BankLang compiles **BankTS** into COBOL a mainframe engineer can read and
+review. Its types are TypeScript's; its statements — `transaction`, `file`,
+`cursor`, `queue` — are its own. It is a compiler, not an AI converter: no model
+decides what code is generated, and the same input always produces
+byte-identical output.
 
 The interesting part is not the translation. It is that the compiler **refuses
-to compile financially unsafe programs**.
+to build unsafe programs**.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -30,18 +33,16 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-Retries that post twice, money movement with no audit trail, and unbalanced
-ledger postings become compile errors instead of production incidents.
+Each is a compile error rather than a production incident.
 
 **Validated with GnuCOBOL, not IBM.** Every example compiles in CI under a
 GnuCOBOL configuration shaped to Enterprise COBOL 6.4 and under GnuCOBOL's own
-default. No IBM Enterprise COBOL validation has been performed, and none is
-claimed.
+default. No IBM Enterprise COBOL validation is claimed.
 
 **Built with AI assistance.** The design and the decisions are the author's;
 much of the implementation was written with an AI coding assistant under review.
-That is how the code was written, not what it does — nothing in the compiler is
-a model. [Verification](docs/verification.md) is how to check that.
+That is how it was written, not what it does — nothing in the compiler is a
+model.
 
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
@@ -57,15 +58,14 @@ pnpm install && pnpm playground:dev
 
 The **[playground](packages/playground/)** runs the whole compiler in your
 browser — no server, no network call. Click a line of BankTS and the COBOL it
-produced lights up, from the emitted source map. Open **Run** and the COBOL is
-executed against the reference runtime in [`runtime/`](runtime/README.md), so
-you can read the postings it made rather than take the compiler's word for them.
+produced lights up, from the emitted source map. Fill in the entry record or the
+dataset on **Input**, then **Run** executes it against the reference runtime in
+[`runtime/`](runtime/README.md) and shows what it posted.
 
 ## What it generates
 
 From one BankTS module, `bankc build` emits a COBOL program, a copybook per
-record, the JCL to build and run it, a source map over every construct, and an
-audit bundle.
+record, the JCL to build and run it, a source map, and an audit bundle.
 
 Interest accrual, in full:
 
@@ -76,8 +76,8 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 ```
 
 `MoneyBDT` is `decimal<18, 2>` and `Rate` is `decimal<9, 4>`, so the product has
-scale 6. Storing it as money discards four digits, and the compiler will not do
-that silently: `round` with an explicit mode is required.
+scale 6. Storing it as money discards four digits, which the compiler
+will not do silently: `round` with an explicit mode is required.
 
 Enterprise COBOL has **one** rounding phrase, and `ROUNDED` is half-up away from
 zero. Banker's rounding is arithmetic this compiler writes out:
@@ -93,21 +93,21 @@ zero. Banker's rounding is arithmetic this compiler writes out:
            END-EVALUATE
 ```
 
-That sequence is executed and compared against exact arithmetic over every
-boundary case, for a product and a quotient, in all seven modes — see
-[the numeric model](docs/numeric-model.md).
+That sequence is executed against exact arithmetic over every boundary case, for
+a product and a quotient, in all seven modes.
+[The numeric model →](docs/numeric-model.md)
 
 ## Safety rules the compiler enforces
 
-| Diagnostic      | Rule                                                          |
-| --------------- | ------------------------------------------------------------- |
-| `BANK-TXN-001`  | A transaction must carry an idempotency key                   |
-| `BANK-AUD-001`  | A transaction must emit at least one audit event              |
-| `BANK-LED-001`  | Debits and credits must balance                               |
-| `BANK-DEC-003`  | A division must state its rounding mode                       |
-| `BANK-SQL-007`  | A `SQLCODE` test must separate an error from a missing row    |
-| `BANK-CICS-004` | A CICS response must be tested against its condition name     |
-| `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or a ledger |
+| Diagnostic      | Rule                                                        |
+| --------------- | ----------------------------------------------------------- |
+| `BANK-TXN-001`  | A transaction must carry an idempotency key                 |
+| `BANK-AUD-001`  | A transaction must emit at least one audit event            |
+| `BANK-LED-001`  | Debits and credits must balance                             |
+| `BANK-DEC-003`  | A division must state its rounding mode                     |
+| `BANK-SQL-007`  | A `SQLCODE` test must separate an error from a missing row  |
+| `BANK-CICS-004` | A CICS response must be tested against its condition name   |
+| `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or ledger |
 
 `bankc explain BANK-LED-001` prints any of them, and no diagnostic can be
 emitted without a catalogue entry. [The full catalogue →](docs/diagnostics.md)
@@ -135,28 +135,28 @@ Add `--watch` to any command to rerun on save.
 ## Examples
 
 Each with a checked-in [evidence bundle](evidence/): its artifacts and the
-verification report over them.
+report over them.
 
 **The language**
 
-| Example                                                          | Demonstrates                                    |
-| ---------------------------------------------------------------- | ----------------------------------------------- |
-| [`account-transfer`](examples/account-transfer/)                 | Records, decimal aliases, a validation function |
-| [`account-posting`](examples/account-posting/)                   | Transactions, ledger postings, audit events     |
-| [`account-file-batch`](examples/account-file-batch/)             | Sequential files, `FILE-CONTROL` and `FD`       |
-| [`batch-interest-accrual`](examples/batch-interest-accrual/)     | Locals, exact decimal arithmetic, `if`/`else`   |
-| [`withdrawal-with-recovery`](examples/withdrawal-with-recovery/) | Inheritance, `raise` / `on failure`, **run**    |
-| [`statement-generation`](examples/statement-generation/)         | Indexed files, enums, tables, nullables         |
-| [`interest-posting-batch`](examples/interest-posting-batch/)     | Rounding, tiered rates, a fee that can refuse   |
-| [`amortisation-schedule`](examples/amortisation-schedule/)       | Recursion as a `RECURSIVE` program              |
-| [`rounding-conformance`](examples/rounding-conformance/)         | All seven rounding modes, both signs            |
+| Example                                                          | Demonstrates                                  |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| [`account-transfer`](examples/account-transfer/)                 | Records, decimal aliases, a validator         |
+| [`account-posting`](examples/account-posting/)                   | Transactions, ledger postings, audit events   |
+| [`account-file-batch`](examples/account-file-batch/)             | Sequential files, `FILE-CONTROL` and `FD`     |
+| [`batch-interest-accrual`](examples/batch-interest-accrual/)     | Locals, exact decimal arithmetic, `if`/`else` |
+| [`withdrawal-with-recovery`](examples/withdrawal-with-recovery/) | Inheritance, `raise` / `on failure`, **run**  |
+| [`statement-generation`](examples/statement-generation/)         | Indexed files, enums, tables, nullables       |
+| [`interest-posting-batch`](examples/interest-posting-batch/)     | Rounding, tiered rates, a fee that can refuse |
+| [`amortisation-schedule`](examples/amortisation-schedule/)       | Recursion as a `RECURSIVE` program            |
+| [`rounding-conformance`](examples/rounding-conformance/)         | All seven rounding modes, both signs          |
 
 **The subsystems**
 
 | Example                                                    | Demonstrates                                |
 | ---------------------------------------------------------- | ------------------------------------------- |
 | [`online-enquiry`](examples/online-enquiry/)               | CICS, commarea, Db2, three-outcome SQL      |
-| [`branch-accrual-cursor`](examples/branch-accrual-cursor/) | Db2 cursors, bounded row loops, **run**     |
+| [`branch-accrual-cursor`](examples/branch-accrual-cursor/) | `WITH HOLD`, checkpoint in a loop, **run**  |
 | [`vsam-browse`](examples/vsam-browse/)                     | `START` / `READ NEXT` on an alternate index |
 | [`mq-request-reply`](examples/mq-request-reply/)           | A queue drained under syncpoint             |
 | [`report-with-controls`](examples/report-with-controls/)   | Report Writer: control breaks and totals    |
@@ -172,15 +172,15 @@ verification report over them.
 | [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint    |
 | [`end-of-day-settlement`](examples/end-of-day-settlement/) | Four programs and a sort in **one JCL stream** |
 
-**And five conversions** — [`conversions/`](conversions/) — existing COBOL on
-one side and the BankTS it becomes on the other.
+**And five conversions** — [`conversions/`](conversions/) — existing COBOL
+beside the BankTS it becomes.
 
 Every example is **run**, not only compiled. Three have hand-written expected
-balances; the rest are executed twice — once by `cobc` and once by an
-interpreter written against the same output — and a test fails on any
-disagreement. That is what catches a defect that compiles: the bounds guard once
-clamped an out-of-range subscript instead of refusing it, and every static check
-passed. [The grades →](evidence/GRADES.md)
+balances; the rest are executed twice — by `cobc` and by an interpreter written
+against the same output — and a test fails on any disagreement. That is what
+catches a defect that compiles: the bounds guard once clamped an out-of-range
+subscript instead of refusing it, and every static check passed.
+[The grades →](evidence/GRADES.md)
 
 ## Documentation
 
@@ -210,7 +210,6 @@ passed. [The grades →](evidence/GRADES.md)
 
 | Document                                         | Contents                        |
 | ------------------------------------------------ | ------------------------------- |
-| [Language reference](docs/language-reference.md) | The BankTS subset               |
 | [Grammar](docs/language/grammar.md)              | Every production, in EBNF       |
 | [Language stability](docs/language/stability.md) | What is settled and what is not |
 | [Diagnostics](docs/diagnostics.md)               | The full catalogue              |
@@ -221,7 +220,19 @@ passed. [The grades →](evidence/GRADES.md)
 | [Migration analysis](docs/migration-analysis.md) | Reading COBOL you have          |
 | [Glossary](docs/glossary.md)                     | Compiler and mainframe terms    |
 | [Roadmap](docs/roadmap.md)                       | What is planned                 |
-| [ADRs](docs/adr/)                                | Architectural decisions         |
+
+**Language reference**
+
+| Document                               | Contents                      |
+| -------------------------------------- | ----------------------------- |
+| [Contents](docs/language-reference.md) | Which page holds which rule   |
+| [Every construct](docs/language/)      | Records, files, SQL, CICS, MQ |
+
+**Decisions**
+
+| Document          | Contents                     |
+| ----------------- | ---------------------------- |
+| [ADRs](docs/adr/) | Why the compiler is as it is |
 
 ## Status
 

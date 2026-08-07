@@ -11,12 +11,12 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program, started by EXEC PGM and entered with the
-      *>     job's PARM behind a halfword length: 44 characters,
-      *>     positional.
+      *>   job's PARM behind a halfword length: 44 characters,
+      *>   positional.
       *>   branchId            X(8) (8)
       *>   idempotencyKey      X(36) (36)
       *>   A PARM shorter than that ends the step with return code 12
-      *>     rather than reading past what was passed.
+      *>   rather than reading past what was passed.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -25,7 +25,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -37,38 +37,38 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
        WORKING-STORAGE SECTION.
            EXEC SQL INCLUDE SQLCA END-EXEC.
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
-       01  ACCOUNTS-IN-BRANCH-H1 PIC X(8).
+       01  ACCOUNTS-IN-BRANCH-H1    PIC X(8).
            EXEC SQL END DECLARE SECTION END-EXEC.
-       01  ACCOUNTS-IN-BRANCH-ROWS PIC 9(9) COMP.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  BANK-RND-1-VALUE     PIC S9(13)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(13)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(15) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3.
+       01  ACCOUNTS-IN-BRANCH-ROWS  PIC 9(9) COMP VALUE ZERO.
+       01  BANK-FAILURE-CODE        PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE         PIC S9(4) COMP EXTERNAL.
+       01  BANK-RND-1-VALUE         PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP          PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS         PIC S9(15) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS        PIC SV9999 COMP-3 VALUE ZERO.
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
        01  ACCOUNT-ROW.
-           05  ROW-ACCOUNT-ID       PIC X(16).
-           05  ROW-BALANCE          PIC S9(13)V99 COMP-3.
-           05  ROW-STATUS           PIC X(8).
+           05  ROW-ACCOUNT-ID  PIC X(16).
+           05  ROW-BALANCE     PIC S9(13)V99 COMP-3.
+           05  ROW-STATUS      PIC X(8).
            EXEC SQL END DECLARE SECTION END-EXEC.
        01  ACCRUAL-COUNTS.
-           05  ROWS-READ            PIC 9(7).
-           05  ROWS-POSTED          PIC 9(7).
-           05  INTEREST-POSTED      PIC S9(13)V99 COMP-3.
-       01  INTEREST-ON-RESULT PIC S9(13)V99 COMP-3.
-       01  INTEREST-ON-P1       PIC S9(13)V99 COMP-3.
-       01  INTEREST-ON-P2       PIC S9(1)V9999 COMP-3.
-       01  ACCRUE-BRANCH-P3     PIC X(8).
-       01  ACCRUE-BRANCH-P4     PIC X(36).
-       01  INTEREST             PIC S9(13)V99 COMP-3.
+           05  ROWS-READ        PIC 9(7).
+           05  ROWS-POSTED      PIC 9(7).
+           05  INTEREST-POSTED  PIC S9(13)V99 COMP-3.
+       01  INTEREST-ON-RESULT       PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-P1           PIC S9(13)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-ON-P2           PIC S9(1)V9999 COMP-3 VALUE ZERO.
+       01  ACCRUE-BRANCH-P3         PIC X(8) VALUE SPACES.
+       01  ACCRUE-BRANCH-P4         PIC X(36) VALUE SPACES.
+       01  INTEREST                 PIC S9(13)V99 COMP-3 VALUE ZERO.
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
            EXEC SQL
                DECLARE ACCOUNTS-IN-BRANCH CURSOR FOR
                SELECT ACCOUNT_ID, BALANCE, STATUS
@@ -79,10 +79,10 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        LINKAGE SECTION.
        01  BANK-PARM.
-           05  BANK-PARM-LENGTH         PIC S9(4) COMP.
+           05  BANK-PARM-LENGTH  PIC S9(4) COMP.
            05  BANK-PARM-DATA.
-               10  BANK-PARM-BRANCH-ID  PIC X(8).
-               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+               10  BANK-PARM-BRANCH-ID        PIC X(8).
+               10  BANK-PARM-IDEMPOTENCY-KEY  PIC X(36).
 
        PROCEDURE DIVISION USING BANK-PARM.
        BANK-MAIN.

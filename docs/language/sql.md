@@ -162,6 +162,13 @@ because there is no reading under which the program is right: either the commit
 does not belong in the loop, or the cursor needs `hold`, and the author knows
 which.
 
+**A `checkpoint` is a commit.** In a program with SQL it writes the restart
+position and then emits `EXEC SQL COMMIT`, so a cursor loop that checkpoints is
+a cursor loop that commits, and the same rule applies. This is the ordinary case
+rather than an edge one: a loop that posts to the ledger has to checkpoint
+(`BANK-FILE-003`), and a loop that checkpoints has to be held.
+`examples/branch-accrual-cursor` is both halves together.
+
 **A rollback is not a commit, and `hold` does not save it.** The same manual:
 "A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes
 cursors that are not declared WITH HOLD and leaves open those cursors that are

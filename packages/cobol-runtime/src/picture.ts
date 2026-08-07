@@ -25,6 +25,22 @@ export type Category =
   | "numeric-edited"
   | "alphanumeric-edited";
 
+/**
+ * Where a signed `DISPLAY` item keeps its sign.
+ *
+ * `embedded` is the default and the only one a picture string can express on
+ * its own: the sign is overpunched onto a digit. The other two come from the
+ * `SIGN IS [LEADING|TRAILING] SEPARATE` clause, which spends a whole byte on a
+ * `+` or `-` — and so makes the item one byte longer than its digits.
+ *
+ * This matters beyond arithmetic. The compiler declares every numeric PARM
+ * parameter `SIGN IS LEADING SEPARATE`, because a PARM is characters somebody
+ * types on an EXEC statement and nobody types an overpunch. Ignoring the clause
+ * sized those fields one byte short, so every parameter after the first
+ * amount in the linkage group was read from the wrong offset.
+ */
+export type SignMode = "embedded" | "leading-separate" | "trailing-separate";
+
 export interface Picture {
   category: Category;
   /** Digit positions, excluding the assumed decimal point. */
@@ -32,8 +48,15 @@ export interface Picture {
   /** Digit positions after the decimal point. */
   scale: number;
   signed: boolean;
+  /** Where the sign lives. Meaningful only when `signed`. */
+  sign: SignMode;
   /** The expanded symbol string, one character per position. */
   mask: string;
+}
+
+/** True when the sign occupies a byte of its own. */
+export function signIsSeparate(picture: Picture): boolean {
+  return picture.signed && picture.sign !== "embedded";
 }
 
 /**
@@ -89,6 +112,7 @@ export function parsePicture(text: string): Picture {
       digits: 0,
       scale: 0,
       signed: false,
+      sign: "embedded",
       mask,
     };
   }
@@ -100,6 +124,7 @@ export function parsePicture(text: string): Picture {
       digits: 0,
       scale: 0,
       signed: false,
+      sign: "embedded",
       mask,
     };
   }
@@ -109,6 +134,7 @@ export function parsePicture(text: string): Picture {
       digits: 0,
       scale: 0,
       signed: false,
+      sign: "embedded",
       mask,
     };
   }
@@ -124,6 +150,7 @@ export function parsePicture(text: string): Picture {
       digits: (whole ?? "").length + fraction.length,
       scale: fraction.length,
       signed,
+      sign: "embedded",
       mask,
     };
   }
@@ -153,6 +180,7 @@ export function parsePicture(text: string): Picture {
     digits: digitPositions + floatDigits,
     scale,
     signed: /[-+]|CR|DB/.test(body),
+    sign: "embedded",
     mask,
   };
 }
@@ -178,7 +206,9 @@ export function storageLength(picture: Picture, usage: Usage): number {
       );
     case "display":
       if (picture.category === "numeric") {
-        return picture.digits;
+        // A separate sign is a character of its own, so the item is one byte
+        // wider than the digits it holds.
+        return picture.digits + (signIsSeparate(picture) ? 1 : 0);
       }
       // Every symbol of an edited or character picture is one byte. `V` is the
       // assumed point and occupies none, and it cannot appear in either.

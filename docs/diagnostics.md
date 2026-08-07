@@ -33,7 +33,15 @@ BANK-FILE-*   VSAM/file IO
 BANK-COPY-*   copybook/layout
 BANK-GEN-*    code generation
 BANK-SEC-*    security
+BANK-JOB-*    job descriptor
 ```
+
+Two of these are not about a BankTS program at all. `BANK-COPY-008` through
+`BANK-COPY-012` are about a copybook or a DCLGEN member handed to the compiler,
+and `BANK-JOB-*` is about a `job.json`. They carry identifiers for the same
+reason everything else here does: before the 2026-08-07 audit's F3 they were
+`throw new Error`, and a message with no identifier is one nobody can look up,
+count or link to.
 
 ## 3. Syntax and type diagnostics
 
@@ -622,6 +630,47 @@ deleting it in place.
 GnuCOBOL compiles the statement, so local validation does not catch this one —
 the program passed every check here and would have been rejected by `IGYCRCTL`.
 
+### `BANK-COPY-008` not a data description entry
+
+A line in the copybook is not a level number followed by a name. Every entry in
+a copybook is, so this is either a file that is not a copybook, or a construct
+this reader does not have — a `COPY` of another member, a `REPLACING` phrase, or
+a compiler directive other than the `EJECT`, `SKIP` and `TITLE` it skips.
+
+It is refused rather than skipped. An entry that is passed over is a field
+missing from the record, and a missing field moves the offset of every field
+after it — which is a program reading somebody else's data at the right length
+in the wrong place. The message names the line.
+
+### `BANK-COPY-009` copybook declares no 01-level record
+
+A copybook describes a record, and a record begins at level 01. A file with
+entries but no 01 is a fragment: the subordinate half of a layout, or a copybook
+meant to be copied inside another record's group.
+
+### `BANK-COPY-010` picture clause not understood
+
+The layout reader cannot say how many bytes a field with this picture occupies,
+and every offset after it depends on that number. Guessing would describe a
+record that is wrong from that field onwards, which is worse than refusing
+because a wrong layout is one somebody acts on.
+
+A picture the compiler emits is always understood, so this on generated output
+is a defect worth reporting.
+
+### `BANK-COPY-011` no DECLARE TABLE block
+
+`bankc dclgen import` reads what DCLGEN produces, and what makes that file a
+DCLGEN output is the `EXEC SQL DECLARE ... TABLE` block: it names the table and
+gives every column its Db2 type. Without it there is nothing to derive host
+variables from.
+
+### `BANK-COPY-012` not a column definition
+
+Inside the `DECLARE ... TABLE` block each comma-separated part is a column name
+followed by its SQL type. One of them is not, so the block has been edited by
+hand or written by something other than DCLGEN.
+
 ## 11a. Security diagnostics
 
 ### `BANK-SEC-001` restricted data reclassified
@@ -714,6 +763,53 @@ The runner matches a test on the characters before the first space in an
 
 A configuration naming no test ends having done nothing, with a return code that
 reads as success.
+
+## 12b. Job descriptor diagnostics
+
+`job.json` describes a night: the programs, the sorts between them, and the
+order. These are about that file, and about how the steps in it sit together.
+
+### `BANK-JOB-001` job descriptor is incomplete
+
+A job needs a `name`, a `description` and at least one entry in `steps`. The
+first two both reach the JOB card, where the description is what an operator
+watching the queue sees; a job with no steps is a stream that runs nothing.
+
+### `BANK-JOB-002` step name is not a JCL name
+
+A step name becomes the name field of an `EXEC` statement, which JCL limits to
+one through eight alphanumeric or national characters beginning with a letter.
+It is also what a restart and every `COND` refer to, so a name JCL will not take
+is a job that cannot be restarted at a step.
+
+### `BANK-JOB-003` two steps share a name
+
+A `COND` and a restart both refer to a step by name. Two steps with one name
+means neither can be named unambiguously, and a restart at that name is a night
+rerun from a step nobody chose.
+
+### `BANK-JOB-004` step is neither a program nor a sort
+
+A step runs a BankLang project, named by `project`, or a sort, named by `input`,
+`output` and `fields`.
+
+### `BANK-JOB-005` two steps build the same load module
+
+A load module member name is eight characters with the hyphens removed, and that
+is all the binder and every `EXEC PGM=` see. Two programs in one job whose names
+agree over those eight characters are one member: the second build overwrites
+the first, and both steps run whichever was written last — a step that names one
+program and executes another, with a return code that looks fine.
+
+A program built on its own has nothing to collide with, so the job is where this
+appears.
+
+### `BANK-JOB-006` sort step names a file no program declares
+
+A sort step reads a file one program in the job wrote and writes one another
+program reads, and the job stream needs both datasets to give the step its
+SORTIN and SORTOUT. A name that belongs to no program's file declaration is a
+step with nothing to sort.
 
 ## 13. Severity levels
 

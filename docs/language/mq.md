@@ -36,7 +36,7 @@ a reason code coming back:
        01  PAYMENT-OUT-MQOD.
            COPY CMQODV.
            ...
-           CALL "MQOPEN" USING PAYMENT-OUT-HCONN, MQOD OF PAYMENT-OUT-MQOD,
+           CALL "MQOPEN" USING BANK-MQM-1-HCONN, MQOD OF PAYMENT-OUT-MQOD,
                PAYMENT-OUT-OPTIONS, PAYMENT-OUT-HOBJ,
                PAYMENT-OUT-COMPCODE, PAYMENT-OUT-REASON
 ```
@@ -52,6 +52,42 @@ then `MQDISC`.** Neither half is useful alone: a connection with nothing open
 does no work, an open object with no connection cannot exist. Emitting them as
 one statement each removes the two orderings that are wrong and the ending that
 leaves a handle behind.
+
+**The connection belongs to the queue manager, not to the queue.** Two queues on
+`CSQ1` share one `MQCONN`, one handle and one `MQDISC`, and the handle is
+declared once as `BANK-MQM-1-HCONN` rather than per queue. This is not a saving.
+IBM's Application Programming Reference is explicit about the second `MQCONN`
+naming a manager the program is already connected to: "the handle returned is
+the same as that returned by the previous MQCONN call, but with completion code
+MQCC_WARNING and reason code MQRC_ALREADY_CONNECTED". `MQCC-WARNING` is 1 and
+the generated check tests `NOT = MQCC-OK`, so connecting per queue would end the
+step with RC 12 on the second queue of a program that is, in fact, connected.
+One `MQDISC` matches, for the same reason in reverse: the queue manager does not
+count connections, so the second would be issued against a handle the first had
+already invalidated.
+
+Which of the two statements does it is decided at run time, by a count of the
+open queues on that manager:
+
+```cobol
+           IF BANK-MQM-1-OPENS = 0
+               MOVE "CSQ1" TO BANK-MQM-1-MGRNAME
+               CALL "MQCONN" USING BANK-MQM-1-MGRNAME, BANK-MQM-1-HCONN,
+                   PAYMENT-IN-COMPCODE, PAYMENT-IN-REASON
+               ...
+           END-IF
+```
+
+A `connectQueue` cannot know statically whether another has already run — it may
+sit behind a condition or inside a loop — so the first one to run connects and
+the last one to close disconnects, in whatever order the program does them.
+
+`MQRC-ALREADY-CONNECTED` is also the one warning the generated check forgives.
+A generated program no longer provokes it; a caller that connected before
+linking to this one does, and IBM's guidance for that case is to "use the
+connection handle returned in this situation as normal". Every other warning
+stays a failure: a truncated or converted message is exactly what the check
+exists to stop.
 
 **Every structure is copied into a group of its own.** `CMQODV` declares
 `10 MQOD.` with `15 MQOD-...` beneath it, and the other copybooks do the same, so
@@ -84,6 +120,21 @@ that blocks on an empty queue never ends. Both set `MQMI-NONE` and `MQCI-NONE`
 in the message descriptor — on a put that asks the queue manager for a new
 message identifier rather than reusing the last one, and on a get it means any
 message will do.
+
+#### What commits it, since no `MQCMIT` is emitted
+
+Nothing in the generated program calls `MQCMIT`, and that is deliberate. IBM MQ
+Application Programming Reference, MQDISC usage note 2a: where the unit of work
+is coordinated by the queue manager, "the queue manager issues the MQCMIT call
+on behalf of the application" when the connection ends normally. `disconnectQueue`
+is an `MQCLOSE` and, on the last queue open on that manager, an `MQDISC` — so the
+puts and gets above commit there.
+
+Under CICS or IMS the unit of work belongs to the transaction manager rather than
+to the queue manager, and `MQCMIT` is not merely unnecessary but rejected: the
+program syncpoints through `EXEC CICS SYNCPOINT` or its IMS equivalent. An
+unconditional `MQCMIT` would therefore be wrong on two of the three environments
+this compiler targets.
 
 The direction on the declaration decides which calls are allowed, because it is
 what the `MQOPEN` asked for. Reading a queue opened `MQOO-OUTPUT` fails at run

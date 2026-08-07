@@ -11,11 +11,11 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program, started by EXEC PGM and entered with the
-      *>     job's PARM behind a halfword length: 36 characters,
-      *>     positional.
+      *>   job's PARM behind a halfword length: 36 characters,
+      *>   positional.
       *>   idempotencyKey      X(36) (36)
       *>   A PARM shorter than that ends the step with return code 12
-      *>     rather than reading past what was passed.
+      *>   rather than reading past what was passed.
       *>
       *> FILES
       *>   ACCOUNTI input   sequential ACCOUNT-RECORD (26 bytes)
@@ -27,14 +27,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
       *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it, so there is nothing for a second run to
-      *>     read as though it were complete.
+      *>   deletes a half-written output dataset rather than cataloguing
+      *>   it, so there is nothing for a second run to read as though it
+      *>   were complete.
       *> ---------------------------------------------------------------
        IDENTIFICATION DIVISION.
        PROGRAM-ID. ACCOUNTF.
@@ -57,48 +57,48 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  ACCOUNT-INPUT-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  BALANCE              PIC S9(16)V99 COMP-3.
+           05  ACCOUNT-ID  PIC X(16).
+           05  BALANCE     PIC S9(16)V99 COMP-3.
        FD  POSTING-OUTPUT-FILE
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F.
        01  POSTING-OUTPUT-RECORD.
-           05  POSTING-ACCOUNT-ID   PIC X(16).
-           05  POSTING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  POSTING-FLAG         PIC X(1).
+           05  POSTING-ACCOUNT-ID  PIC X(16).
+           05  POSTING-BALANCE     PIC S9(16)V99 COMP-3.
+           05  POSTING-FLAG        PIC X(1).
        WORKING-STORAGE SECTION.
-       01  ACCOUNT-INPUT-STATUS PIC X(2).
-           88  ACCOUNT-INPUT-STATUS-OK  VALUE "00" THRU "09".
-           88  ACCOUNT-INPUT-STATUS-EOF VALUE "10".
-           88  ACCOUNT-INPUT-STATUS-DUPKEY VALUE "22".
-           88  ACCOUNT-INPUT-STATUS-NOTFND VALUE "23".
-       01  POSTING-OUTPUT-STATUS PIC X(2).
-           88  POSTING-OUTPUT-STATUS-OK VALUE "00" THRU "09".
-           88  POSTING-OUTPUT-STATUS-EOF VALUE "10".
-           88  POSTING-OUTPUT-STATUS-DUPKEY VALUE "22".
-           88  POSTING-OUTPUT-STATUS-NOTFND VALUE "23".
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  ACCOUNT-INPUT-STATUS   PIC X(2) VALUE SPACES.
+           88  ACCOUNT-INPUT-STATUS-OK      VALUE "00" THRU "09".
+           88  ACCOUNT-INPUT-STATUS-EOF     VALUE "10".
+           88  ACCOUNT-INPUT-STATUS-DUPKEY  VALUE "22".
+           88  ACCOUNT-INPUT-STATUS-NOTFND  VALUE "23".
+       01  POSTING-OUTPUT-STATUS  PIC X(2) VALUE SPACES.
+           88  POSTING-OUTPUT-STATUS-OK      VALUE "00" THRU "09".
+           88  POSTING-OUTPUT-STATUS-EOF     VALUE "10".
+           88  POSTING-OUTPUT-STATUS-DUPKEY  VALUE "22".
+           88  POSTING-OUTPUT-STATUS-NOTFND  VALUE "23".
+       01  BANK-FAILURE-CODE      PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE       PIC S9(4) COMP EXTERNAL.
        01  ACCOUNT-RECORD.
-           05  ACCOUNT-ID           PIC X(16).
-           05  BALANCE              PIC S9(16)V99 COMP-3.
+           05  ACCOUNT-ID  PIC X(16).
+           05  BALANCE     PIC S9(16)V99 COMP-3.
        01  POSTING-RECORD.
-           05  POSTING-ACCOUNT-ID   PIC X(16).
-           05  POSTING-BALANCE      PIC S9(16)V99 COMP-3.
-           05  POSTING-FLAG         PIC X(1).
-       01  IS-OVERDRAWN-RESULT PIC X(1) VALUE "N".
-       01  IS-OVERDRAWN-P1      PIC S9(16)V99 COMP-3.
-       01  POST-ACCOUNTS-P3     PIC X(36).
-       01  POST-ACCOUNTS-LOOP-1 PIC 9(9) COMP.
+           05  POSTING-ACCOUNT-ID  PIC X(16).
+           05  POSTING-BALANCE     PIC S9(16)V99 COMP-3.
+           05  POSTING-FLAG        PIC X(1).
+       01  IS-OVERDRAWN-RESULT    PIC X(1) VALUE "N".
+       01  IS-OVERDRAWN-P1        PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  POST-ACCOUNTS-P3       PIC X(36) VALUE SPACES.
+       01  POST-ACCOUNTS-LOOP-1   PIC 9(9) COMP VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        LINKAGE SECTION.
        01  BANK-PARM.
-           05  BANK-PARM-LENGTH         PIC S9(4) COMP.
+           05  BANK-PARM-LENGTH  PIC S9(4) COMP.
            05  BANK-PARM-DATA.
-               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+               10  BANK-PARM-IDEMPOTENCY-KEY  PIC X(36).
 
        PROCEDURE DIVISION USING BANK-PARM.
        BANK-MAIN.

@@ -26,6 +26,7 @@
 import { createDiagnostic, type Diagnostic } from "../../ast/src/index";
 import type { IRProgram, IRTest, IRTestLiteral } from "../../ir/src/index";
 import { toCobolProgramId } from "../../cobol-ir/src/index";
+import { alignPictureColumns } from "../../cobol-backend/src/align";
 import {
   RUNTIME_INTERFACES,
   batchParmFields,
@@ -367,7 +368,11 @@ function renderDriver(
     emitCounterProgram(stubbed.length, addLine);
   }
 
-  return `${lines.join("\n")}\n`;
+  // The same alignment the emitter's own output gets, from the same pass. The
+  // driver declares a commarea of its own and hand-padded it to a fixed
+  // column, so a name past that column left one unaligned line in the middle
+  // of an otherwise square record — the defect `pic-alignment` reports.
+  return `${alignPictureColumns(lines).join("\n")}\n`;
 }
 
 /** The storage every generated program needs to raise an assertion. */
@@ -501,12 +506,14 @@ function emitTestProgram(
   emitAssertionStorage(addLine);
   addLine(`       01  BZUGETEP                 PIC X(8) VALUE 'BZUGETEP'.`);
   addLine(`       01  AZ-EP-PTR                USAGE IS POINTER.`);
-  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5.`);
+  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5 VALUE ZERO.`);
   if (stubbed.length > 0) {
-    addLine(`       01  AZ-GRP-INDEX             PIC 9(8).`);
-    addLine(`       01  AZ-FLAG-IN               PIC 9(1).`);
+    addLine(`       01  AZ-GRP-INDEX             PIC 9(8) VALUE ZERO.`);
+    addLine(`       01  AZ-FLAG-IN               PIC 9(1) VALUE ZERO.`);
     addLine(`       01  AZ-RECORD-PTR            USAGE IS POINTER.`);
-    addLine(`       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY.`);
+    addLine(
+      `       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY VALUE ZERO.`,
+    );
     addLine(`       01  AZ-COUNT-SHOW            PIC Z(4)9.`);
   }
   if (parmFields.length > 0) {
@@ -521,7 +528,7 @@ function emitTestProgram(
   addLine(`           COPY EQAITERC.`);
   addLine(`       01  AZ-PROC-PTR              USAGE IS PROCEDURE-POINTER.`);
   if (stubbed.length > 0) {
-    addLine(`       01  AZ-CALL-COUNT            PIC 9(5) COMP-5.`);
+    addLine(`       01  AZ-CALL-COUNT            PIC 9(5) COMP-5 VALUE ZERO.`);
   }
   addLine(`       PROCEDURE DIVISION USING AZ-TEST AZ-ARG-LIST AZ-INFO-BLOCK.`);
   addLine(`           DISPLAY 'AZU0000I ${entry} STARTED...'`);
@@ -686,7 +693,7 @@ function emitInitProgram(
   addLine(`       PROGRAM-ID. 'BZU_INIT'.`);
   addLine(`       DATA DIVISION.`);
   addLine(`       WORKING-STORAGE SECTION.`);
-  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5.`);
+  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5 VALUE ZERO.`);
   addLine(`       01  AZ-TESTCASE-ID           PIC X(36)`);
   addLine(`           VALUE ${cobolText(testCaseId(programName, tests))}.`);
   addLine(`       LINKAGE SECTION.`);
@@ -718,7 +725,7 @@ function emitTermProgram(addLine: (line?: string) => void): void {
   addLine(`       PROGRAM-ID. 'BZU_TERM'.`);
   addLine(`       DATA DIVISION.`);
   addLine(`       WORKING-STORAGE SECTION.`);
-  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5.`);
+  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5 VALUE ZERO.`);
   addLine(`       LINKAGE SECTION.`);
   addLine(`       01  AZ-TEST                  PIC X(80).`);
   addLine(`       01  AZ-INFO-BLOCK.`);
@@ -764,12 +771,14 @@ function emitStubProgram(
   addLine(`       DATA DIVISION.`);
   addLine(`       WORKING-STORAGE SECTION.`);
   emitAssertionStorage(addLine);
-  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5.`);
-  addLine(`       01  AZ-GRP-INDEX             PIC 9(8).`);
-  addLine(`       01  AZ-FLAG-IN               PIC 9(1).`);
+  addLine(`       01  AZ-TEST-LEN              PIC S9(9) COMP-5 VALUE ZERO.`);
+  addLine(`       01  AZ-GRP-INDEX             PIC 9(8) VALUE ZERO.`);
+  addLine(`       01  AZ-FLAG-IN               PIC 9(1) VALUE ZERO.`);
   addLine(`       01  AZ-RECORD-PTR            USAGE IS POINTER.`);
-  addLine(`       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY.`);
-  addLine(`       01  AZ-CALL-NUMBER           PIC 9(5) COMP-5.`);
+  addLine(
+    `       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY VALUE ZERO.`,
+  );
+  addLine(`       01  AZ-CALL-NUMBER           PIC 9(5) COMP-5 VALUE ZERO.`);
   addLine(`       01  AZ-COUNT-SHOW            PIC Z(4)9.`);
   if (module === "BANKLEDG") {
     addLine(`       01  AZ-AMOUNT-SHOW           PIC -(16)9.99.`);
@@ -779,7 +788,7 @@ function emitStubProgram(
   addLine(`       01  AZ-INFO-BLOCK.`);
   addLine(`           COPY EQAITERC.`);
   emitInterfaceGroup(runtimeInterface, addLine);
-  addLine(`       01  AZ-CALL-COUNT            PIC 9(5) COMP-5.`);
+  addLine(`       01  AZ-CALL-COUNT            PIC 9(5) COMP-5 VALUE ZERO.`);
   addLine(`       PROCEDURE DIVISION.`);
   addLine(`       PGM-INPT.`);
   addLine(`           ENTRY 'PGM_INPT_${module}' USING ${using}`);
@@ -924,11 +933,11 @@ function emitCounterProgram(
   addLine(`       DATA DIVISION.`);
   addLine(`       WORKING-STORAGE SECTION.`);
   addLine(`       01  BZUGTMEM                 PIC X(8) VALUE 'BZUGTMEM'.`);
-  addLine(`       01  DATA-SIZE                PIC 9(8) COMP-4.`);
+  addLine(`       01  DATA-SIZE                PIC 9(8) COMP-4 VALUE ZERO.`);
   addLine(`       LINKAGE SECTION.`);
   addLine(`       01  AZ-TC-WORK-AREA          PIC X(256).`);
-  addLine(`       01  AZ-GRP-INDEX             PIC 9(8).`);
-  addLine(`       01  AZ-FLAG-IN               PIC 9(1).`);
+  addLine(`       01  AZ-GRP-INDEX             PIC 9(8) VALUE ZERO.`);
+  addLine(`       01  AZ-FLAG-IN               PIC 9(1) VALUE ZERO.`);
   addLine(`       01  AZ-RECORD-PTR            USAGE IS POINTER.`);
   addLine(`       01  AZ-RECORD-PTR-VALUE`);
   addLine(`           REDEFINES AZ-RECORD-PTR  PIC S9(9) COMP-5.`);

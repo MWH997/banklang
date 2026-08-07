@@ -68,9 +68,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### BankTS
 
-**Definition:** The restricted TypeScript-like source language designed for banking-safe programs that compile to COBOL.
+**Definition:** The source language BankLang compiles. A small banking language: its type syntax is TypeScript's, and its statements — `transaction`, `file`, `cursor`, `queue`, `on error` — are its own.
 
-**Why it matters to BankLang:** BankTS deliberately avoids arbitrary JavaScript semantics. It provides a modern syntax while keeping deterministic compilation, exact decimal semantics, fixed layouts, and auditability.
+**Why it matters to BankLang:** BankTS deliberately avoids arbitrary JavaScript semantics, and is not a TypeScript dialect — `tsc` cannot read a BankTS module. Borrowing the type syntax makes it approachable; keeping the statements bespoke is what allows deterministic compilation, exact decimal semantics, fixed layouts, and auditability.
 
 **References:**
 

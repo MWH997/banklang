@@ -2,6 +2,9 @@
 title: Why banks still run COBOL, and why rewriting it keeps failing
 description: The reasons a bank's core systems are still COBOL are not technical nostalgia. They are about risk, and they explain why the big rewrites stall.
 date: 2026-08-07
+author: Md Wahid Hassan
+related: a-compiler-that-refuses-to-build, reading-code-you-did-not-write
+reading: status-and-limits.md
 ---
 
 Every few years somebody announces that a bank is finally getting off COBOL.
@@ -123,10 +126,3 @@ in the middle of it, and the gap is where the surprises live.
 
 None of these are reasons not to try. They are the things that decide whether
 trying works.
-
----
-
-_BankLang is an experiment in exactly this: a small language for banking logic
-that compiles to readable IBM Enterprise COBOL, and refuses to compile programs
-that are financially unsafe. It has never run on z/OS, and
-[the limits are written down](../docs/status-and-limits.md)._

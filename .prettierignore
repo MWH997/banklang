@@ -37,8 +37,11 @@ evidence/**/maps/**
 evidence/**/source/**
 *.jcl
 
-# Documents received from outside, kept as they were written.
-docs/audit-*.md
+# Working papers. Not in the repository — `.gitignore` excludes the directory —
+# but they are on the author's disk, and `prettier --check .` reads the file
+# system rather than the index. Reformatting a document received from outside
+# would edit it away from what was written.
+docs/working/
 
 # Conversion sources are BankTS, and the generated output is the compiler's.
 conversions/**/banklang/**

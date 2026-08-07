@@ -6,6 +6,13 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import {
+  cursorRowsOf,
+  inputsFor,
+  parmText,
+} from "../packages/playground/src/inputs";
+import { sqlOutcomesFor, sqlRowRecords } from "../packages/playground/src/run";
+import { precompile } from "../packages/precompiler/src/index";
+import {
   buildRecord,
   decodePacked,
   encodePacked,
@@ -13,8 +20,15 @@ import {
   layoutOf,
   readField,
   runConformance,
+  type ConformanceOptions,
   type SqlOutcome,
 } from "../tools/conformance";
+import {
+  generatedCobol,
+  parmDriver,
+  programNameOf,
+  runInterpreted,
+} from "../tools/interpret";
 
 /**
  * Executes generated COBOL against the reference runtime in `runtime/`.
@@ -158,6 +172,14 @@ const runner = hasCobc() ? describe : describe.skip;
 
 function workDir(name: string): string {
   return join(tmpdir(), `banklang-conformance-${name}`);
+}
+
+/** DISPLAY output with trailing blanks removed, which GnuCOBOL adds. */
+function lines(text: string): string[] {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/\s+$/, ""))
+    .filter((line) => line !== "");
 }
 
 interface Request {
@@ -481,10 +503,113 @@ runner("executed against the reference Db2 and CICS runtimes", () => {
  * what makes the loop's own decisions observable: when it stops, whether it
  * closes, and whether the bound holds when the rows never run out.
  *
- * The runtime writes no host variables, so a fetched row arrives unchanged.
- * What is under test here is the shape the compiler generates, not the contents
- * of a row, which only a real Db2 could supply.
+ * These cases script the outcomes only, so a fetched row arrives unchanged and
+ * what is under test is the shape the compiler generates rather than the
+ * contents of a row. `sqlRows` scripts the contents too, which is what
+ * `tests/cobol-runtime-differential.test.ts` uses; neither is Db2 deciding
+ * anything.
  */
+/**
+ * A rowset fetch, executed — and the partial last set it must still process.
+ *
+ * This is what `docs/divergences.md` D19a said had never happened: "no rowset
+ * loop in this repository has been executed", because `runtime/DSNHLI.cbl`
+ * wrote no host variables and could not set `SQLERRD(3)`, so the loop saw no
+ * rows and left. It could — it is passed the SQLCA — and now does.
+ *
+ * Three rows over a rowset of two is one full set and one partial one. The
+ * Application Programming and SQL Guide: "when the last row has been
+ * retrieved, the program must still process the rows in the last rowset
+ * through that last row." Getting this wrong drops up to a rowset of work off
+ * the end of every run and nothing else shows it, which is why the count is
+ * asserted exactly.
+ */
+runner("a rowset fetch executed against the reference Db2 runtime", () => {
+  const ROWSET_SOURCE = `module RowsetRun;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record AccountRow {
+  rowAccountId: string<16>;
+  rowBalance: BDT;
+}
+
+record RunTotals {
+  rowsSeen: unsigned<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+cursor everyAccount(keyBranch: string<8>) rowset 2: AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+
+entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) {
+  for each row in everyAccount(branchId) limit 100000 {
+    totals.rowsSeen = totals.rowsSeen + 1;
+    log "ROW ", row.rowAccountId;
+  }
+  log "SEEN ", totals.rowsSeen;
+  audit("WALKED", totals.idempotencyKey);
+}
+`;
+
+  /** The panel's own rows and script, which is what the browser runs on. */
+  function options(): ConformanceOptions {
+    const result = compile(ROWSET_SOURCE, { sourceFile: "rowset.bank.ts" });
+    const surfaces = inputsFor(result.program!, result.layout!).surfaces;
+    const cursors = cursorRowsOf(surfaces, result.layout!, result.program!);
+    const translated = precompile(result.cobol!).cobol;
+    const decoder = new TextDecoder();
+    const parm = surfaces.find((each) => each.kind === "parm");
+    return {
+      source: ROWSET_SOURCE,
+      sourceFile: "rowset.bank.ts",
+      workDir: workDir("rowset-run"),
+      sqlOutcomes: sqlOutcomesFor(translated, cursors),
+      sqlRows: sqlRowRecords(translated, cursors).map((line) =>
+        decoder.decode(line),
+      ),
+      driver: parmDriver(
+        programNameOf(generatedCobol(ROWSET_SOURCE, "rowset.bank.ts")),
+        parm ? parmText(parm) : "",
+      ),
+    };
+  }
+
+  it("processes every row exactly once, partial last set included", () => {
+    const result = runConformance(options());
+
+    expect(result.exitCode).toBe(0);
+    expect(lines(result.stdout)).toEqual([
+      "ROW ACC-0000000001",
+      "ROW ACC-0000000002",
+      "ROW ACC-0000000003",
+      "SEEN 000000003",
+    ]);
+  });
+
+  /** Two fetches for three rows at two a time, then the one that ends it. */
+  it("crosses into Db2 once per rowset rather than once per row", () => {
+    expect(runConformance(options()).sqlCalls).toEqual([
+      "SQL 0001 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 0",
+      "SQL 0002 SQLCODE 100",
+      "SQL 0003 SQLCODE 0",
+    ]);
+  });
+
+  it("reads the same rows under the interpreter", () => {
+    const shared = options();
+    expect(lines(runInterpreted(shared).stdout)).toEqual(
+      lines(runConformance(shared).stdout),
+    );
+  });
+});
+
 runner("cursor loops executed against the reference Db2 runtime", () => {
   function runCursor(name: string, outcomes: SqlOutcome[]) {
     return runConformance({
@@ -496,6 +621,13 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
     });
   }
 
+  /*
+   * The statement numbers are the precompiler's, in source order: 1 is the
+   * OPEN, 2 the FETCH, 3 the COMMIT the checkpoint takes, and 4 the CLOSE. The
+   * COMMIT arrived with B4 — a cursor loop that posts to the ledger has to
+   * checkpoint, and a checkpoint in a program with SQL commits — and the CLOSE
+   * moved from 3 to 4 with it.
+   */
   it("opens, fetches until the rows run out, and closes", () => {
     const result = runCursor("cursor-rows", [
       { statement: 2, sqlcode: 0, times: 3 },
@@ -509,7 +641,7 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
       "SQL 0002 SQLCODE 0",
       "SQL 0002 SQLCODE 0",
       "SQL 0002 SQLCODE 100",
-      "SQL 0003 SQLCODE 0",
+      "SQL 0004 SQLCODE 0",
     ]);
   });
 
@@ -519,10 +651,52 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
     expect(result.sqlCalls).toEqual([
       "SQL 0001 SQLCODE 0",
       "SQL 0002 SQLCODE 100",
-      "SQL 0003 SQLCODE 0",
+      "SQL 0004 SQLCODE 0",
     ]);
     expect(result.journal).toEqual([]);
     expect(result.auditLog).toHaveLength(1);
+  });
+
+  /**
+   * B4. The checkpoint commits inside the loop, and the loop goes on fetching.
+   *
+   * This is the case the `hold` on the declaration is for, and the reason
+   * `BANK-SQL-008` now reads a checkpoint as a commit. Without `WITH HOLD` Db2
+   * closes the cursor at that commit and the next `FETCH` answers `-501` —
+   * after a hundred accounts have been accrued and committed. Nothing local
+   * models cursor invalidation, so what is executed here is the half that can
+   * be: that exactly one commit is taken at the hundredth row, that it is
+   * inside the loop rather than after it, and that the fetches continue past
+   * it to the end of the result set.
+   *
+   * `every 100` is the example's own figure, so the script runs 150 rows: one
+   * checkpoint falls, and the run ends between that and the next.
+   */
+  it("commits at the checkpoint and keeps fetching", () => {
+    const result = runCursor("cursor-checkpoint", [
+      { statement: 2, sqlcode: 0, times: 150 },
+      { statement: 2, sqlcode: 100 },
+    ]);
+
+    expect(result.exitCode).toBe(0);
+
+    const commits = result.sqlCalls.filter((call) =>
+      call.startsWith("SQL 0003"),
+    );
+    expect(commits, "one checkpoint in 150 rows at every 100").toEqual([
+      "SQL 0003 SQLCODE 0",
+    ]);
+
+    // Inside the loop: fetches on both sides of it, and the close last.
+    const order = result.sqlCalls.map((call) => call.slice(0, 8));
+    const at = order.indexOf("SQL 0003");
+    expect(order.slice(0, at)).toContain("SQL 0002");
+    expect(order.slice(at + 1)).toContain("SQL 0002");
+    expect(order.at(-1)).toBe("SQL 0004");
+    expect(
+      order.filter((call) => call === "SQL 0002"),
+      "150 rows and the one that reports end of data",
+    ).toHaveLength(151);
   });
 
   /**
@@ -543,7 +717,7 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
     expect(
       result.sqlCalls.filter((call) => call.startsWith("SQL 0002")),
     ).toHaveLength(4);
-    expect(result.sqlCalls.at(-1)).toBe("SQL 0003 SQLCODE 0");
+    expect(result.sqlCalls.at(-1)).toBe("SQL 0004 SQLCODE 0");
   });
 
   /**
@@ -562,7 +736,7 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
       "SQL 0002 SQLCODE 0",
       "SQL 0002 SQLCODE 0",
       "SQL 0002 SQLCODE -911",
-      "SQL 0003 SQLCODE 0",
+      "SQL 0004 SQLCODE 0",
     ]);
   });
 });

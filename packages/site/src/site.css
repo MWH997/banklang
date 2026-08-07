@@ -2,19 +2,34 @@
  * The landing page's stylesheet, and the only one it loads.
  *
  * The palette is the playground's, which is GitHub's, so the two pages read as
- * one site. Every pair here clears WCAG AA in both themes; the 2026-08-06 audit
- * measured the playground's and this reuses the same values rather than picking
- * new ones that would have to be measured again.
+ * one site. Every pair here clears WCAG AA in both themes — computed by
+ * `tests/contrast.test.ts` over every token in every theme, rather than
+ * measured by hand once. The hand measurement had drifted: three light-theme
+ * colours were below 4.5:1 on `--panel-2`, one of them `--accent`, which is
+ * what the theme toggle paints itself when it is on.
  *
  * Dark is the default and light is the media query, matching the playground.
  * `[data-theme]` on the root wins over both, which is what the toggle sets.
  */
 
+/*
+ * `--border` separates things; `--field` is the edge of a control.
+ *
+ * They are two tokens because WCAG 2.2 asks two different things of them.
+ * A rule between table cells is decoration and 1.4.11 does not reach it. The
+ * outline of a text input is the only thing that says a text input is there,
+ * and 1.4.11 requires 3:1 against what is behind it — `--border` is 1.45:1 in
+ * the light theme, so the documentation search read as a faint rectangle on
+ * forty-five pages. `--field` clears 3:1 on all three surfaces a control sits
+ * on, in both themes; `tests/contrast.test.ts` computes that rather than
+ * trusting this sentence.
+ */
 :root {
   --bg: #0d1117;
   --panel: #161b22;
   --panel-2: #1c2128;
   --border: #30363d;
+  --field: #6e7681;
   --text: #e6edf3;
   --muted: #8b949e;
   --accent: #58a6ff;
@@ -36,10 +51,11 @@
     --panel: #f6f8fa;
     --panel-2: #eaeef2;
     --border: #d0d7de;
+    --field: #7d8590;
     --text: #1f2328;
     --muted: #59636e;
-    --accent: #0969da;
-    --ok: #1a7f37;
+    --accent: #0860ca;
+    --ok: #116329;
     --error: #cf222e;
     --kw: #cf222e;
     --str: #0a3069;
@@ -53,10 +69,11 @@
   --panel: #f6f8fa;
   --panel-2: #eaeef2;
   --border: #d0d7de;
+  --field: #7d8590;
   --text: #1f2328;
   --muted: #59636e;
-  --accent: #0969da;
-  --ok: #1a7f37;
+  --accent: #0860ca;
+  --ok: #116329;
   --error: #cf222e;
   --kw: #cf222e;
   --str: #0a3069;
@@ -69,6 +86,7 @@
   --panel: #161b22;
   --panel-2: #1c2128;
   --border: #30363d;
+  --field: #6e7681;
   --text: #e6edf3;
   --muted: #8b949e;
   --accent: #58a6ff;
@@ -191,7 +209,7 @@ a {
 
 .ghost {
   background: none;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field);
   border-radius: 6px;
   color: var(--text);
   padding: 0.2rem 0.6rem;
@@ -202,6 +220,15 @@ a {
 
 .ghost:hover {
   background: var(--panel-2);
+}
+
+/* A toggle that is on looks on. `aria-pressed` tells a screen reader which
+   theme is active; this is the same fact for everybody else, and without it
+   the control is exactly as mute as the "Theme" label it replaced. */
+.ghost[aria-pressed="true"] {
+  background: var(--panel-2);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------------------ hero */
@@ -243,7 +270,7 @@ h1 {
   align-items: center;
   min-height: 44px;
   padding: 0 1.15rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field);
   border-radius: 8px;
   background: var(--panel);
   color: var(--text);
@@ -326,6 +353,26 @@ h2 {
   .split {
     grid-template-columns: 1fr;
   }
+}
+
+/*
+ * A split holding generated COBOL does not get a column. It gets the page.
+ *
+ * F13, measured: at 1280px each column is 470px and the rounding sample is
+ * 624px, so a quarter of the widest line sat behind an inner scrollbar — and
+ * the lines that were cut were `WHEN FUNCTION ABS (BANK-RND-1-EXCESS) > 0.005`
+ * and the `ADD` under it, which are the banker's-rounding arithmetic the
+ * section titled "The COBOL it produces" exists to show. An 80-column language
+ * in a 59-character box.
+ *
+ * Stacked rather than scrolled, because the reader who matters here is the
+ * mainframe engineer deciding whether the output is acceptable, and the first
+ * thing they do is read the whole line. Full width is 960px inside this
+ * container, which fits a 72-column line with room to spare. `overflow-x` on
+ * `pre` stays for the phone, where nothing fits.
+ */
+.split--code {
+  grid-template-columns: 1fr;
 }
 
 figure {

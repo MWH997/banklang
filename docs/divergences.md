@@ -153,6 +153,18 @@ sort product runs, and what it wants, is a site's.
 The two are close but not identical. BankLang mangles against the union, so a
 name acceptable to IBM may still be mangled here — which is safe but visible.
 
+## D22. `DISPLAY` of a bare intrinsic — **measured, between the local two**
+
+`DISPLAY FUNCTION ORD(X)` prints `000000109` under GnuCOBOL and `109` under
+`packages/cobol-runtime`. How wide the intermediate result of an integer
+function is, and so how a `DISPLAY` of one renders, is implementation-defined:
+neither is wrong and IBM's width is a third unknown.
+
+Nothing generated does this — the emitter moves a function result into a
+declared item before displaying it, which is defined — so no example is
+affected. `tests/runtime-semantics.test.ts` follows the same rule rather than
+pinning either width, and `runtime/*.cbl` should too.
+
 ---
 
 ## Deliberate differences
@@ -207,16 +219,33 @@ error and the subset has no address-of.
 
 What the local compile establishes is unchanged: that the operands resolve and
 are the types the statement needs, the first element being the same type as the
-rest. Nothing is read back either way — `runtime/DSNHLI` writes no host
-variables at all. What ships to z/OS keeps the `EXEC SQL FETCH NEXT ROWSET`
-exactly as written, and `DSNHPC` generates the real call.
+rest. What ships to z/OS keeps the `EXEC SQL FETCH NEXT ROWSET` exactly as
+written, and `DSNHPC` generates the real call.
 
-Its consequence is stated rather than hidden: **no rowset loop in this
-repository has been executed.** The local runtime cannot set `SQLERRD(3)`, so
-the loop sees no rows and leaves. `cursor ... rowset n` is proved by what the
-compiler emits, by the conformance linter, and by `cobc` accepting it — the
-"compiled" grade in [`evidence/GRADES.md`](../evidence/GRADES.md), not the
-"executed" one.
+`runtime/DSNHLI` writes host variables. A script beside the program gives the
+bytes of each one, keyed by the statement number, the call, the row within that
+call, and the variable's position in the generated `CALL`; the stub moves them
+into the storage the caller passed and sets `SQLERRD(3)` to the number of rows
+that call delivered. Passing the array by its first element turns out not to
+cost anything here: `CALL ... USING` passes by reference, so the first element's
+address is the array's, and each row lands one element further along.
+
+**A rowset loop is therefore executed**, including the property that makes the
+feature worth having — three rows over a rowset of two is one full set and one
+partial one, and every row is processed exactly once.
+`tests/conformance.test.ts` asserts the count under `cobc` and under the
+interpreter, and the `SQLERRD(3)` of the call that ends the cursor is zero
+rather than the previous call's count, which is what stops the last set being
+read twice.
+
+This paragraph previously read "no rowset loop in this repository has been
+executed", on the reasoning that the local runtime could not set `SQLERRD(3)`.
+It could: the SQLCA is its first parameter.
+
+What remains true is that it is a stub. It parses no SQL, binds no plan, and
+knows nothing about a row beyond the bytes the script names — so what is
+established is that the generated loop handles the rowset protocol correctly,
+not that Db2 would return these rows for this query.
 
 ### D19. No varying-length string
 

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { KEYWORDS } from "../packages/parser/src/index";
 import { CONFORMANCE_RULES } from "../packages/conformance-lint/src/index";
 import { DIAGNOSTICS } from "../packages/diagnostics/src/index";
+import { ZOS_RULES } from "../packages/zos-lint/src/index";
 import { gradeExamples } from "../tools/evidence-grades";
 import { checked, corpus } from "./helpers";
 
@@ -229,6 +230,9 @@ describe("evidence grades", () => {
  * So a test named here has to assert over the corpus rather than over one
  * program it wrote itself.
  */
+/** Every rule either linter can report, which is what a page may name. */
+const ALL_RULES: readonly string[] = [...CONFORMANCE_RULES, ...ZOS_RULES];
+
 describe("the generated-code standards", () => {
   const page = readFileSync("docs/generated-code-standards.md", "utf8");
   /** The `Checked by` cell of every table row, split on its commas. */
@@ -264,8 +268,8 @@ describe("the generated-code standards", () => {
         return;
       }
       expect(
-        (CONFORMANCE_RULES as readonly string[]).includes(check),
-        `"${check}" is neither a conformance rule nor a test file. A standard whose check is prose is not checked.`,
+        ALL_RULES.includes(check),
+        `"${check}" is neither a rule the linters can report nor a test file. A standard whose check is prose is not checked.`,
       ).toBe(true);
     });
   }
@@ -282,6 +286,50 @@ describe("the generated-code standards", () => {
       expect(
         source.includes("corpus("),
         `${file} is named as the check for a generated-code standard but never reads the corpus. One hand-written program proves one shape — which is how F13 survived.`,
+      ).toBe(true);
+    });
+  }
+});
+
+/**
+ * The conformance page, held to the rules that exist.
+ *
+ * `docs/target-conformance.md` is what a mainframe engineer is pointed at to
+ * find out what the generated artifacts are checked against, and it is the page
+ * with the least natural pressure to stay true: nothing reads it, nothing
+ * renders from it, and a rule added to the linter goes on working whether it is
+ * written down or not. It had drifted four rules behind before this test
+ * existed.
+ *
+ * Both directions. A rule missing from the page is a check nobody knows they
+ * have; a rule on the page that the linters cannot report is a check nobody
+ * has.
+ */
+describe("the target-conformance page", () => {
+  const page = readFileSync("docs/target-conformance.md", "utf8");
+  /** Every backticked word in a table row, which is where the rules are. */
+  const named = new Set(
+    [...page.matchAll(/^\|\s*`([a-z][a-z0-9-]*)`/gm)].map((row) => row[1]!),
+  );
+
+  it("has rules to check", () => {
+    expect(named.size).toBeGreaterThan(20);
+  });
+
+  for (const rule of ALL_RULES) {
+    it(`documents ${rule}`, () => {
+      expect(
+        named.has(rule),
+        `${rule} is enforced and is not on the page. A rule nobody can read about is a rule nobody can rely on.`,
+      ).toBe(true);
+    });
+  }
+
+  for (const rule of named) {
+    it(`names a rule that exists: ${rule}`, () => {
+      expect(
+        ALL_RULES.includes(rule),
+        `The page names ${rule} and neither linter can report it.`,
       ).toBe(true);
     });
   }

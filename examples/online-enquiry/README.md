@@ -11,10 +11,34 @@ program — the shape most real bank enquiry logic actually takes.
 | Host variables       | `:keyAccountId` in, `:rowBalance` out                     |
 | SQLCODE handling     | `if sqlcode == 0 { ... }`, required by `BANK-SQL-001`     |
 | CICS transaction     | `cics transaction accountEnquiry(...)`                    |
-| COMMAREA             | `DFHCOMMAREA` in the `LINKAGE SECTION`                    |
-| CICS LINK            | `link "AUDITLOG" commarea reply resp linkResp;`           |
+| COMMAREA             | `enquiry: EnquiryCommarea`, in and back out               |
+| CICS LINK            | `link "AUDITLOG" commarea auditEntry resp linkResp;`      |
 | Syncpoint / rollback | Committed only when the link succeeded                    |
 | Currency and enums   | `BDT` amounts, `EnquiryOutcome` result                    |
+
+## The answer goes back through the commarea
+
+CICS gives a program one communication area, not one in and one out.
+`DFHCOMMAREA` is the caller's own storage, so the request fields and the reply
+fields are the same block — and the first record parameter of a
+`cics transaction` is that block:
+
+```cobol
+           MOVE DFHCOMMAREA TO ENQUIRY-COMMAREA
+           ...
+           MOVE ENQUIRY-COMMAREA TO DFHCOMMAREA
+```
+
+Which is why `caBalance` and `caOutcome` are fields of `EnquiryCommarea` rather
+than of a reply record of their own. A reply record would be working storage,
+and working storage is gone when the task ends: the transaction would compute
+the right balance, return control, and hand the caller back the bytes it was
+sent. `BANK-CICS-005` refuses that program.
+
+`AuditEntry` is working storage and is meant to be. It leaves through the
+`link`, not through the commarea, and the transaction writes to the commarea as
+well — which is what tells `BANK-CICS-005` apart from a program with a
+legitimate scratch record.
 
 ## SQL is declared, not assembled
 
@@ -23,10 +47,10 @@ the declared parameters and result record, rewrites them to COBOL names, and
 emits the statement verbatim:
 
 ```cobol
-           MOVE ACCOUNT-ID OF ENQUIRY-REQUEST TO FETCH-ACCOUNT-H1
+           MOVE CA-ACCOUNT-ID OF ENQUIRY-COMMAREA TO FETCH-ACCOUNT-H1
            EXEC SQL
                SELECT ACCOUNT_ID, BALANCE, STATUS
-               INTO :ROW-ACCOUNT-ID OF ACCOUNT-ROW, ...
+               INTO :ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW, ...
                FROM ACCOUNT
                WHERE ACCOUNT_ID = :FETCH-ACCOUNT-H1
            END-EXEC
@@ -46,7 +70,7 @@ Two rules make the failure paths impossible to skip:
   otherwise looks like a successful one.
 
 ```cobol
-           EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(ENQUIRY-REPLY) RESP(LINK-RESP) END-EXEC
+           EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(AUDIT-ENTRY) RESP(LINK-RESP) END-EXEC
            IF LINK-RESP = 0
                EXEC CICS SYNCPOINT RESP(COMMIT-RESP) END-EXEC
            ELSE

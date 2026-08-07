@@ -11,7 +11,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -19,7 +19,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -29,37 +29,37 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  COMPOUND-RESULT PIC S9(16)V99 COMP-3.
-       01  COMPOUND-P1          PIC S9(16)V99 COMP-3.
-       01  COMPOUND-P2          PIC S9(5)V9999 COMP-3.
-       01  COMPOUND-P3          PIC S9(9) COMP-3.
+       01  COMPOUND-RESULT      PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  COMPOUND-P1          PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  COMPOUND-P2          PIC S9(5)V9999 COMP-3 VALUE ZERO.
+       01  COMPOUND-P3          PIC S9(9) COMP-3 VALUE ZERO.
        01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
        01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  BANK-RND-1-VALUE     PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(18) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3.
+       01  BANK-RND-1-VALUE     PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP      PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS     PIC S9(18) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3 VALUE ZERO.
        01  INSTALMENT.
-           05  DUE-BALANCE          PIC S9(16)V99 COMP-3.
-           05  INTEREST-DUE         PIC S9(16)V99 COMP-3.
+           05  DUE-BALANCE   PIC S9(16)V99 COMP-3.
+           05  INTEREST-DUE  PIC S9(16)V99 COMP-3.
        01  LOAN.
-           05  ACCOUNT-ID           PIC X(16).
-           05  PRINCIPAL            PIC S9(16)V99 COMP-3.
-           05  MONTHLY-RATE         PIC S9(5)V9999 COMP-3.
-           05  TERM-MONTHS          PIC S9(9) COMP-3.
-           05  SCHEDULE OCCURS 36 TIMES
+           05  ACCOUNT-ID       PIC X(16).
+           05  PRINCIPAL        PIC S9(16)V99 COMP-3.
+           05  MONTHLY-RATE     PIC S9(5)V9999 COMP-3.
+           05  TERM-MONTHS      PIC S9(9) COMP-3.
+           05  SCHEDULE         OCCURS 36 TIMES
                    INDEXED BY SCHEDULE-IDX.
-               10  DUE-BALANCE          PIC S9(16)V99 COMP-3.
-               10  INTEREST-DUE         PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
-       01  INTEREST-FOR-RESULT PIC S9(16)V99 COMP-3.
-       01  INTEREST-FOR-P1      PIC S9(16)V99 COMP-3.
-       01  INTEREST-FOR-P2      PIC S9(5)V9999 COMP-3.
-       01  RUNNING              PIC S9(16)V99 COMP-3.
-       01  MONTH                PIC 9(9) COMP.
+               10  DUE-BALANCE   PIC S9(16)V99 COMP-3.
+               10  INTEREST-DUE  PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
+       01  INTEREST-FOR-RESULT  PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-FOR-P1      PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  INTEREST-FOR-P2      PIC S9(5)V9999 COMP-3 VALUE ZERO.
+       01  RUNNING              PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  MONTH                PIC 9(9) COMP VALUE ZERO.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        BANK-MAIN.
@@ -133,23 +133,23 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  BANK-FAILURE-CODE  PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE   PIC S9(4) COMP EXTERNAL.
        LOCAL-STORAGE SECTION.
-       01  GROWN                PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-VALUE     PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-STEP      PIC S9(16)V99 COMP-3.
-       01  BANK-RND-1-UNITS     PIC S9(18) COMP-3.
-       01  BANK-RND-1-EXCESS    PIC SV9999 COMP-3.
-       01  WS-ARG-1             PIC S9(16)V99 COMP-3.
-       01  WS-ARG-2             PIC S9(5)V9999 COMP-3.
-       01  WS-ARG-3             PIC S9(9) COMP-3.
-       01  WS-SUB-RESULT        PIC S9(16)V99 COMP-3.
+       01  GROWN              PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-VALUE   PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-STEP    PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  BANK-RND-1-UNITS   PIC S9(18) COMP-3 VALUE ZERO.
+       01  BANK-RND-1-EXCESS  PIC SV9999 COMP-3 VALUE ZERO.
+       01  WS-ARG-1           PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  WS-ARG-2           PIC S9(5)V9999 COMP-3 VALUE ZERO.
+       01  WS-ARG-3           PIC S9(9) COMP-3 VALUE ZERO.
+       01  WS-SUB-RESULT      PIC S9(16)V99 COMP-3 VALUE ZERO.
        LINKAGE SECTION.
-       01  LK-P1                PIC S9(16)V99 COMP-3.
-       01  LK-P2                PIC S9(5)V9999 COMP-3.
-       01  LK-P3                PIC S9(9) COMP-3.
-       01  LK-RESULT            PIC S9(16)V99 COMP-3.
+       01  LK-P1      PIC S9(16)V99 COMP-3.
+       01  LK-P2      PIC S9(5)V9999 COMP-3.
+       01  LK-P3      PIC S9(9) COMP-3.
+       01  LK-RESULT  PIC S9(16)V99 COMP-3.
 
        PROCEDURE DIVISION USING LK-P1 LK-P2 LK-P3 LK-RESULT.
        COMPOUND-BODY.

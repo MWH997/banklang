@@ -292,7 +292,7 @@ describe("across the corpus", () => {
     }
 
     // One, across twenty-three examples. That is thin for a rule the audit
-    // raised as F8, and it is recorded in docs/audit-2026-08-06.md rather
+    // raised as F8, and it is recorded in the 2026-08-06 audit rather
     // than papered over with a floor the corpus does not meet.
     checked(responses, 1, "CICS response comparisons");
   });

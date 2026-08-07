@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { localCobol } from "./helpers";
+import { localCobol, unpadded } from "./helpers";
 
 /**
  * `nested function` — a COBOL contained program.
@@ -113,7 +113,7 @@ describe("the contained program", () => {
    * container's storage at all, and the record would have to be passed.
    */
   it("reads the module's records through GLOBAL", () => {
-    expect(result.cobol).toContain("01  POSITION-FLD GLOBAL.");
+    expect(unpadded(result.cobol)).toContain("01 POSITION-FLD GLOBAL.");
     expect(result.cobol).toContain("BALANCE OF POSITION-FLD");
   });
 

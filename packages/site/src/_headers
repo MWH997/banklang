@@ -1,0 +1,76 @@
+# Response headers for Cloudflare Pages. Read by `tools/build-site.ts`, which
+# fills in the script hashes and writes the result to the root of `dist/site`;
+# nothing renders it, so `tests/site.test.ts` holds it.
+#
+# **Rules match the request URL, not the file on disk.** That is the whole of
+# why the cache rules below look the way they do. Pages does not serve `.html`:
+# `/docs/glossary.html` is answered with a 308 to `/docs/glossary`, and
+# `/docs/index.html` with a 308 to `/docs/`. A rule written as `/*.html`
+# therefore matches only the redirect, never the page — it was here, and the
+# fifty-one pages it was written for never saw it.
+#
+# **Where two rules match one request and set the same header, the values are
+# joined with a comma.** So there is exactly one rule per request that sets
+# `Cache-Control`, and the `/*` block below deliberately sets none: a floor
+# there would comma-join with every asset rule under it.
+
+/*
+  # The site is one origin's worth of static files. It fetches nothing off-host
+  # — `tests/site.test.ts` asserts that — takes no input and sets no cookie, so
+  # everything below can be `self` and the ones that need nothing at all can be
+  # `none`.
+  #
+  # `script-src` has no `unsafe-inline`. Every page carries an inline script —
+  # the theme is read from `localStorage` and stamped on `<html>` before first
+  # paint, and moving it to a file makes it asynchronous and makes the page
+  # flash the wrong theme — so each one is allowed by the sha256 of its own
+  # body, filled into the placeholder on the policy line below by
+  # `tools/build-site.ts`, which reads them off the built pages. A hash covers a
+  # script *element* and not an event-handler attribute, which is why the
+  # documentation search no longer carries `onsubmit`.
+  #
+  # `style-src` keeps the exemption, and not by choice: CodeMirror injects its
+  # themes as `<style>` elements at run time, so the playground has no editor
+  # without it.
+  Content-Security-Policy: default-src 'self'; script-src 'self' __SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Nothing here reads a camera, a location or a payment handler, and saying so
+  # is what stops an embedded third party doing it on this origin's behalf.
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+
+# Pages already answers every cacheable request with
+# `Cache-Control: public, max-age=0, must-revalidate`, which is the right policy
+# for HTML and the reason there is no HTML rule here: the two blocks below exist
+# to raise that default for the two directories where it is safe to, and
+# everything else is left on it.
+
+# Vite writes a content hash into every playground bundle name, so a changed
+# file is a changed URL and this can be cached for as long as a browser will.
+/playground/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# These are copied under fixed names — `site.css` stays `site.css` — so
+# `immutable` here would pin a returning visitor to the stylesheet they first
+# saw. A day, revalidated, is the most that is safe.
+/assets/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# Preview deployments. Cloudflare serves every build on `<hash>.<project>.pages.dev`
+# as well as on the custom domain, and without this the same pages are indexed
+# twice under two hostnames — with the preview outranking the real one often
+# enough to matter. The launch checklist asked for it.
+#
+# The placeholder syntax is Cloudflare's: `:project` matches one label, because
+# a placeholder in the host stops at the first period. That is why there are two
+# rules and not one. The first covers the project alias, `banklang.pages.dev`;
+# every *actual* preview is `<hash>.<project>.pages.dev` or
+# `<branch>.<project>.pages.dev`, which has one more label and matches only the
+# second. With the first rule alone the production alias was excluded and every
+# per-build preview — the ones a pull request creates, which is what this is for
+# — was left indexable. Both patterns are Cloudflare's own documented pair.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex

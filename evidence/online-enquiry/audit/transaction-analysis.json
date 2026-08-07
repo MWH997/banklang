@@ -5,15 +5,15 @@
     {
       "name": "accountEnquiry",
       "parameters": [
-        "request",
+        "enquiry",
         "row",
-        "reply"
+        "auditEntry"
       ],
       "ledgerPostings": [],
       "auditEvents": [
         {
           "event": "ENQUIRY_COMPLETED",
-          "correlation": "request.idempotencyKey"
+          "correlation": "enquiry.idempotencyKey"
         }
       ]
     }

@@ -17,6 +17,27 @@ in order.
 
 ### Added
 
+- Compute every colour pair in both themes against WCAG AA on every build,
+  rather than recording a measurement.
+- Link the site from the top of the README, above the badges.
+- Refuse a program that would abend on z/OS, with a rule-based pass over emitted
+  COBOL — [target conformance](docs/target-conformance.md).
+- Refuse a CICS transaction whose computed record never reaches `DFHCOMMAREA`
+  (`BANK-CICS-005`) — [CICS](docs/language/cics.md).
+- Read a `checkpoint` as the commit it is, so a cursor loop that checkpoints
+  needs `hold` (`BANK-SQL-008`) — [SQL](docs/language/sql.md).
+- Supply the playground's Run tab with input: the entry record, the dataset, the
+  PARM, and the rows a cursor answers — [playground](packages/playground/).
+- Give reachable throws catalogue identifiers and locations, and print a stack
+  only where the defect is the compiler's — [toolchain](docs/toolchain.md).
+- Check the four page templates with `axe-core` on every build.
+- Fail the build when the playground bundle grows past its budget, and split the
+  runtime out of the first download — [playground](packages/playground/).
+- Emit `_headers`: a content security policy, cache lifetimes, and `noindex` on
+  the preview hostname.
+- Publish `/blog/feed.xml`, linked from every page.
+- Publish `/about/`, and a byline on every post, from `CITATION.cff`.
+- Emit share metadata on documentation pages and the playground, which had none.
 - Run the generated COBOL in the playground, against the same `runtime/*.cbl`
   programs CI compiles — [verification](docs/verification.md).
 - Compare every example under `cobc` and under the interpreter and fail on any
@@ -37,6 +58,38 @@ in order.
 
 ### Fixed
 
+- Allow each inline script by its sha256 rather than by `'unsafe-inline'`, and
+  drop the inline `onsubmit` a hash cannot cover.
+- Write the response headers as request paths, so the cache rules match the
+  pages Cloudflare serves rather than the redirects to them.
+- Exclude per-build preview hostnames from search indexing, which one
+  placeholder never reached.
+- Raise three light-theme colours and the edge of every control to WCAG AA,
+  including the documentation search box under SC 1.4.11.
+- Install the `--watch` watcher before the first build, so a change saved during
+  it is not lost — [toolchain](docs/toolchain.md).
+- Issue one `MQCONN` per queue manager rather than per queue, and forgive
+  `MQRC_ALREADY_CONNECTED` — [MQ](docs/language/mq.md).
+- Return the CICS reply through the commarea, on the failure path as well —
+  [error handling](docs/error-handling.md).
+- Count the banking safety rules for the sentence about banking safety rules,
+  rather than the whole catalogue.
+- Keep a `--watch` session alive when a rebuild throws, and watch the right
+  directory for a job — [toolchain](docs/toolchain.md).
+- Size an item with a `SIGN` clause a byte wider, and read `IS NUMERIC` from the
+  bytes rather than from the decoded value, in the interpreter.
+- Alias an 01 `REDEFINES` onto the record it names instead of giving it storage
+  of its own, in the interpreter.
+- Name the playground's two editors, its panes and its theme toggle, and put a
+  real space in a summary chip.
+- Put the documentation's `h1` before the sidebar's group labels, which were
+  headings and are not any more.
+- Declare the URL the host serves as canonical, and derive the sitemap from what
+  the build writes.
+- Give a figure holding generated COBOL the page's width, since a column clipped
+  the arithmetic it exists to show.
+- Exclude working papers from the site by the directory they are in rather than
+  by a list of names nobody updates.
 - Answer `bankc --version` with a version. It printed the help text and exited
   0, so nothing shelling out to the compiler could report which one it used.
 - Link `CBLTDLI` and `BANKMQ` into the reference runtime, which
@@ -71,8 +124,7 @@ in order.
 ### Security
 
 - Upgrade Vitest to 4 and pin `vite` and `qs`, clearing eight advisories in the
-  build and test tooling, one of them critical. `pnpm audit` now reports none —
-  [audit](docs/audit-2026-08-06.md).
+  build and test tooling, one of them critical. `pnpm audit` now reports none.
 
 ### Changed
 
@@ -98,26 +150,24 @@ in order.
   one that needed syntax rather than pass-through —
   [SQL](docs/language/sql.md).
 - Add `pnpm sbom:release`, producing a CycloneDX 1.7 bill of materials with a
-  licence for every component, and attach it to the release —
-  [launch tickets](docs/launch-tickets.md).
+  licence for every component, and attach it to the release.
 - Add `pnpm build:vsix`, packaging the VS Code extension and reading the archive
   back to check what is in it.
 - Add a release workflow that runs the whole of CI, refuses an unsigned tag,
   attests what it built through Sigstore, and publishes the changelog's own
   section as the release notes.
 - Give the playground the site's header, a one-line explanation of the panes,
-  and a versioned share link — [launch tickets](docs/launch-tickets.md).
+  and a versioned share link.
 - Link every example README and every runnable documentation block into the
   playground, by name where an example has one.
 - Render every document under `docs/` as part of the site, with the sidebar
-  grouped as the README groups it and a search index the browser scans —
-  [launch tickets](docs/launch-tickets.md).
+  grouped as the README groups it and a search index the browser scans.
 - Add a weekly `advisories` job, opening an issue when a dependency picks up a
-  published advisory — [audit](docs/audit-2026-08-06.md).
+  published advisory.
 - Add a JSON Schema for `banklang.json`, built from the constants the loader
   validates against and served by `pnpm build:site`.
 - Add `pnpm build:site`, producing the landing page, the playground and the
-  site's assets in one tree — [launch tickets](docs/launch-tickets.md).
+  site's assets in one tree.
 - Add a landing page whose every code block, diagnostic and count is generated
   from the compiler, and a test that fails when the page prints a line the
   compiler does not emit.
@@ -146,7 +196,7 @@ in order.
   [target conformance](docs/target-conformance.md).
 - Add `pnpm test:mutation:emitter`, running Stryker over the code that decides
   what emitted text looks like — [verification](docs/verification.md).
-- Add [launch-tickets.md](docs/launch-tickets.md), scoping the site at
+- Scope the site and the pre-public checklist at
   `banklang.mwhassan.com` and everything else before the repository is public.
 - Hold every fenced COBOL block in every document to what the compiler emits,
   rather than the README alone.
@@ -168,8 +218,7 @@ in order.
 - Stop `bankc analyse` reporting a file for every data name ending `-SELECT` and
   every message containing the word.
 - Write a licence into the bill of materials for the ten proprietary components
-  pnpm's generator drops, which were the only ten it said nothing about —
-  [launch tickets](docs/launch-tickets.md).
+  pnpm's generator drops, which were the only ten it said nothing about.
 - Number the VS Code extension `0.9.0` rather than `0.1.0`. It bundles the
   compiler, and two versions moving apart let the editor report a diagnostic the
   command line does not.
@@ -215,7 +264,7 @@ in order.
 ## [0.9.0] — 2026-08-06
 
 The response to the external audit in
-[docs/audit-2026-08-05.md](docs/audit-2026-08-05.md). It found a rounding phrase
+an external audit on 5 August 2026. It found a rounding phrase
 Enterprise COBOL does not have, a JCL stream that could not be submitted, and a
 COBOL word past the 30-character limit — each of them behind a green test suite,
 because the local validator was weaker than the target and every feature was

@@ -16,7 +16,7 @@ import {
   toJclStatement,
   toReferenceFormat,
 } from "../packages/cobol-backend/src/reference-format";
-import { checked, compileExample, corpus } from "./helpers";
+import { checked, compileExample, corpus, unpadded } from "./helpers";
 
 /**
  * COBOL reference format, which is the shape of the page rather than of the
@@ -101,7 +101,7 @@ describe("the margin", () => {
       "           05  LEGACY-BALANCE       PIC S9(9)V99 SIGN IS TRAILING SEPARATE.";
     const wrapped = toReferenceFormat(line);
 
-    expect(wrapped[0]).toContain("05  LEGACY-BALANCE       PIC");
+    expect(unpadded(wrapped[0])).toContain("05 LEGACY-BALANCE PIC");
   });
 
   it("continues a comment as a comment", () => {

@@ -80,11 +80,30 @@ every call succeeds. `tests/conformance.test.ts` writes these through
 Db2 or CICS.** A scripted `SQLCODE 100` shows the program handles a missing row;
 it does not show Db2 would return 100 for that query.
 
-`DSNHLI` never writes host variables. They are passed, so the COBOL compiler
-checks that each one resolves, but the program has no way to know their types or
-lengths and does not touch them. A fetched row therefore arrives unchanged: a
-test can assert how many rows a loop processed and that it opened, bounded, and
-closed correctly, but not what was in them.
+`DSNHLI` writes host variables when a script tells it what to write.
+`sql-rows.txt` beside the program gives the bytes of each one, keyed by the
+statement number, which call of it, which row of that call, and the variable's
+position in the generated `CALL`:
+
+```
+0002 0001 0001 01 0016 4143432D303030303030303030312020
+stmt call row  hv len  the bytes, in hex
+```
+
+Hex, because a row carries packed decimal as often as text and a byte of packed
+decimal is not something a line sequential file can hold. The bytes are the
+caller's business: the stub knows nothing about a row beyond its length and
+where to put it, and whoever writes the script has the copybook.
+
+A rowset `FETCH` delivers several rows in one call, each landing one element
+further along the host-variable array, and `SQLERRD(3)` is set to how many —
+zero on the call that ends the cursor, which is what stops the last set being
+processed twice. A statement with no script writes nothing, which is the
+ordinary case and what every test written before this did.
+
+This makes a cursor loop's rows observable; it makes nothing about Db2
+observable. A test can assert what the program did with the rows it was handed,
+not that Db2 would hand it those rows.
 
 ## What it does not establish
 

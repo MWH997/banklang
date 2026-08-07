@@ -10,13 +10,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>   A library of functions. Nothing here is an entry point.
       *>
       *> ENTRY
-      *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   None. This module is a library: it is linked into a caller
+      *>   and entered at one of its paragraphs, not started as a job
+      *>   step.
       *>
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -26,14 +27,14 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  BANK-FAILURE-CODE            PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE             PIC S9(4) COMP EXTERNAL.
        01  INTEREST-ACCOUNT.
-           05  ACCOUNT-ID           PIC X(16).
-           05  BALANCE              PIC S9(16)V99 COMP-3.
-       01  IS-ELIG-FOR-INTEREST-RESULT PIC X(1) VALUE "N".
-       01  IS-ELIGIBLE-FOR-INTEREST-P1 PIC S9(16)V99 COMP-3.
-       01  PROJECTED-BALANCE    PIC S9(16)V99 COMP-3.
+           05  ACCOUNT-ID  PIC X(16).
+           05  BALANCE     PIC S9(16)V99 COMP-3.
+       01  IS-ELIG-FOR-INTEREST-RESULT  PIC X(1) VALUE "N".
+       01  IS-ELIGIBLE-FOR-INTEREST-P1  PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  PROJECTED-BALANCE            PIC S9(16)V99 COMP-3 VALUE ZERO.
 
        PROCEDURE DIVISION.
        IS-ELIGIBLE-FOR-INTEREST.

@@ -23,15 +23,31 @@ import {
   type SourceMapEntry,
 } from "../../compiler/src/index";
 import { explainDiagnostic } from "../../diagnostics/src/index";
+import { CompilerInvariant } from "../../diagnostics/src/errors";
 import { formatBankTs } from "../../formatter/src/index";
 import { bankts } from "./bankts-language";
 import { cobol as cobolLanguage } from "./cobol-language";
 import { ALL_EXAMPLES, EXAMPLES } from "./examples";
-import { run as runProgram, type RunOutcome } from "./run";
+import { escapeHtml, statChip } from "./html";
+import {
+  encodeInputs,
+  inputsFor,
+  parmText,
+  cursorRowsOf,
+  type InputSurface,
+  type ProgramInputs,
+} from "./inputs";
+import type { RunOutcome } from "./run";
 import "./styles.css";
 
 type TabId =
-  "cobol" | "run" | "copybook" | "diagnostics" | "sourcemap" | "analysis";
+  | "cobol"
+  | "input"
+  | "run"
+  | "copybook"
+  | "diagnostics"
+  | "sourcemap"
+  | "analysis";
 
 /* ------------------------------------------------------------------ *
  * Cross-highlighting between BankTS source and generated COBOL.
@@ -95,7 +111,7 @@ function highlightLines(
 const $ = <T extends HTMLElement>(selector: string): T => {
   const element = document.querySelector<T>(selector);
   if (!element) {
-    throw new Error(`Missing element: ${selector}`);
+    throw new CompilerInvariant(`Missing element: ${selector}`);
   }
   return element;
 };
@@ -106,8 +122,32 @@ let latest: CompileResult | null = null;
 let activeTab: TabId = "cobol";
 let activeCopybook = 0;
 
+/**
+ * What the Input tab is holding, and the shape it was built for.
+ *
+ * Rebuilt when the program's input surfaces change — a renamed record, a file
+ * added — and kept across every other recompilation, because a panel that
+ * resets on each keystroke is one nobody can type into.
+ */
+let inputs: ProgramInputs | null = null;
+let inputShape = "";
+
 const readonlyLanguage = new Compartment();
 
+/**
+ * What a screen reader is told these two boxes are.
+ *
+ * CodeMirror renders its editable area as `role="textbox"` with no name at
+ * all, so both of them announced as "text box" — F15, WCAG 4.1.2, on the
+ * product's primary interactive surface and on the pane holding the output the
+ * whole page exists to show. `contentAttributes` is where a name goes: it is
+ * put on the contenteditable element itself rather than on a wrapper, which is
+ * the element with the role.
+ *
+ * The output editor's name says it is read only as well as what it holds,
+ * because a text box that refuses every keystroke and does not say why is the
+ * more confusing of the two.
+ */
 function makeSourceEditor(parent: HTMLElement, doc: string): EditorView {
   return new EditorView({
     parent,
@@ -120,6 +160,7 @@ function makeSourceEditor(parent: HTMLElement, doc: string): EditorView {
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         bankts,
         highlightField(),
+        EditorView.contentAttributes.of({ "aria-label": "BankTS source" }),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -145,6 +186,9 @@ function makeOutputEditor(parent: HTMLElement): EditorView {
         readonlyLanguage.of([]),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         highlightField(),
+        EditorView.contentAttributes.of({
+          "aria-label": "Generated COBOL, read only",
+        }),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.selectionSet) {
@@ -201,18 +245,14 @@ function renderStatus(result: CompileResult, elapsed: number): void {
   const analysis = result.analysis;
   summary.innerHTML = analysis
     ? [
-        stat("records", analysis.recordCount),
-        stat("functions", analysis.functionCount),
-        stat("transactions", analysis.transactionCount),
-        stat("postings", analysis.ledgerPostingCount),
-        stat("audit events", analysis.auditEventCount),
-        stat("files", analysis.fileCount),
+        statChip("record", analysis.recordCount),
+        statChip("function", analysis.functionCount),
+        statChip("transaction", analysis.transactionCount),
+        statChip("posting", analysis.ledgerPostingCount),
+        statChip("audit event", analysis.auditEventCount),
+        statChip("file", analysis.fileCount),
       ].join("")
     : "";
-}
-
-function stat(label: string, value: number): string {
-  return `<span class="stat"><b>${value}</b>${label}</span>`;
 }
 
 function renderTabs(result: CompileResult): void {
@@ -244,14 +284,22 @@ function renderOutput(): void {
 
   const diagnosticsPane = $("#diagnostics");
   const runPane = $("#run");
+  const inputPane = $("#input");
   const editorPane = $("#output-editor");
 
   diagnosticsPane.hidden = activeTab !== "diagnostics";
   runPane.hidden = activeTab !== "run";
-  editorPane.hidden = activeTab === "diagnostics" || activeTab === "run";
+  inputPane.hidden = activeTab !== "input";
+  editorPane.hidden = !["cobol", "copybook", "sourcemap", "analysis"].includes(
+    activeTab,
+  );
 
   if (activeTab === "diagnostics") {
     renderDiagnostics(latest);
+    return;
+  }
+  if (activeTab === "input") {
+    renderInput(latest);
     return;
   }
   if (activeTab === "run") {
@@ -272,6 +320,135 @@ function renderOutput(): void {
 }
 
 /* ------------------------------------------------------------------ *
+ * What the program is given.
+ *
+ * B2, closing the 2026-08-07 audit's F4. Every run used to start from
+ * zero-initialised storage, so `account-posting` — the example whose subject is
+ * a balanced transfer — posted 0.00 against 0.00 on the feature sold as "read
+ * the postings it made". This is the job around the program: the record a
+ * caller would have filled, the dataset a step would have allocated, the PARM
+ * on the EXEC card.
+ * ------------------------------------------------------------------ */
+
+/** The PARM the panel currently holds, as the characters a step passes. */
+function parmOf(program: ProgramInputs | null): string | undefined {
+  const surface = program?.surfaces.find((each) => each.kind === "parm");
+  return surface ? parmText(surface) : undefined;
+}
+
+/** The surfaces a program has, as a string, so a change to them is visible. */
+function shapeOf(program: ProgramInputs): string {
+  return program.surfaces
+    .map(
+      (surface) =>
+        `${surface.kind}:${surface.name}:${surface.fields.map((field) => field.name).join(",")}`,
+    )
+    .join("|");
+}
+
+/** The panel's current state, rebuilt only when the program's shape changes. */
+function currentInputs(result: CompileResult): ProgramInputs | null {
+  if (!result.program || !result.layout) {
+    return null;
+  }
+  const fresh = inputsFor(result.program, result.layout);
+  const shape = shapeOf(fresh);
+  if (!inputs || shape !== inputShape) {
+    inputs = fresh;
+    inputShape = shape;
+  }
+  return inputs;
+}
+
+function renderInput(result: CompileResult): void {
+  const pane = $("#input");
+  const program = currentInputs(result);
+
+  if (!program) {
+    pane.innerHTML = `<div class="empty"><strong>Nothing to fill in.</strong><p>The compiler produced no program. Open the Diagnostics tab to see why.</p></div>`;
+    return;
+  }
+
+  if (program.surfaces.length === 0) {
+    pane.innerHTML = `
+      <div class="empty">
+        <strong>This program takes no input.</strong>
+        <p>${escapeHtml(program.reason ?? "")}</p>
+      </div>`;
+    return;
+  }
+
+  pane.innerHTML = `
+    <p class="run__inputs">
+      <b>This is the job around the program.</b> On z/OS a step allocates the
+      datasets, the initiator passes the PARM, and a caller fills the record.
+      Here you do. Everything below is written at the offsets the copybook
+      reports, in the encoding it reports — packed decimal included.
+    </p>
+    ${program.surfaces.map(surfaceHtml).join("")}`;
+
+  for (const field of pane.querySelectorAll<HTMLInputElement>(
+    "input[data-surface]",
+  )) {
+    field.addEventListener("input", () => {
+      const surface = program.surfaces[Number(field.dataset.surface)];
+      const record = surface?.records[Number(field.dataset.record)];
+      if (record) {
+        record[field.dataset.field ?? ""] = field.value;
+        // The program has to run again: the value it was run on has changed.
+        lastRun = null;
+      }
+    });
+  }
+}
+
+function surfaceHtml(surface: InputSurface, index: number): string {
+  const title =
+    surface.kind === "entry"
+      ? `Entry record — <code>${escapeHtml(surface.name)}</code>`
+      : surface.kind === "parm"
+        ? "PARM"
+        : surface.kind === "sql"
+          ? `Db2 — rows for <code>${escapeHtml(surface.name)}</code>`
+          : `Dataset <code>${escapeHtml(surface.name)}</code>`;
+
+  return `
+    <section class="run__block input__surface">
+      <h3>${title}</h3>
+      <p class="input__note">${escapeHtml(surface.note)}</p>
+      ${surface.records
+        .map(
+          (record, row) => `
+        <div class="input__record">
+          ${
+            surface.records.length > 1
+              ? `<span class="input__row">Record ${String(row + 1)}</span>`
+              : ""
+          }
+          ${surface.fields
+            .map((field) => {
+              const id = `in-${String(index)}-${String(row)}-${field.name}`;
+              return `
+              <label class="input__field" for="${id}">
+                <span class="input__name">${escapeHtml(field.name)}${
+                  field.sensitive
+                    ? ' <b class="input__sensitive">sensitive</b>'
+                    : ""
+                }</span>
+                <input id="${id}" type="text" value="${escapeHtml(record[field.name] ?? "")}"
+                  data-surface="${String(index)}" data-record="${String(row)}"
+                  data-field="${escapeHtml(field.name)}" />
+                <span class="input__picture">${escapeHtml(field.picture)}</span>
+              </label>`;
+            })
+            .join("")}
+        </div>`,
+        )
+        .join("")}
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ *
  * Running the program.
  *
  * The COBOL in the pane beside this, executed. Nothing here is a summary of
@@ -282,6 +459,26 @@ function renderOutput(): void {
 
 let lastRun: { cobol: string; outcome: RunOutcome } | null = null;
 
+/**
+ * The interpreter and the reference runtime, fetched when Run is first opened.
+ *
+ * D4's other half. `./run` pulls in `@banklang/cobol-runtime`, the precompiler
+ * and eight `runtime/*.cbl` files as text, and every one of them was in the
+ * first download — including for a reader who opens the page, looks at the
+ * COBOL, and leaves. None of it is needed until somebody asks for a run, and
+ * `renderRun` is the only thing that asks.
+ *
+ * The module is cached by the browser's own module registry, so the second
+ * `import()` is a resolved promise rather than a second fetch. Held in a
+ * variable as well, so the first one is not started twice by two quick clicks.
+ */
+let runtimeModule: Promise<typeof import("./run")> | null = null;
+
+function loadRuntime(): Promise<typeof import("./run")> {
+  runtimeModule ??= import("./run");
+  return runtimeModule;
+}
+
 function renderRun(result: CompileResult): void {
   const pane = $("#run");
 
@@ -291,11 +488,48 @@ function renderRun(result: CompileResult): void {
   }
 
   // Cached on the COBOL rather than on the source, so an edit that changes no
-  // generated byte does not re-run the program.
-  if (lastRun?.cobol !== result.cobol) {
-    lastRun = { cobol: result.cobol, outcome: runProgram(result.cobol) };
+  // generated byte does not re-run the program. Editing the Input tab clears
+  // the cache, because the same COBOL on different input is a different run.
+  if (lastRun?.cobol === result.cobol) {
+    paintRun(result, lastRun.outcome, pane);
+    return;
   }
-  const outcome = lastRun.outcome;
+
+  const cobol = result.cobol;
+  pane.innerHTML = `<div class="empty"><strong>Running…</strong><p>Loading the reference runtime.</p></div>`;
+
+  void loadRuntime().then(({ run: runProgram }) => {
+    const program = currentInputs(result);
+    const given =
+      program && result.program && result.layout
+        ? {
+            ...encodeInputs(program.surfaces, result.layout, result.program),
+            cursorRows: cursorRowsOf(
+              program.surfaces,
+              result.layout,
+              result.program,
+            ),
+          }
+        : { storage: undefined, files: undefined, cursorRows: undefined };
+    lastRun = {
+      cobol,
+      outcome: runProgram(cobol, { ...given, parm: parmOf(program) }),
+    };
+    // The reader may have moved on while the chunk was in flight, and a later
+    // edit may have recompiled. Painting either would put one program's output
+    // under another program's tab.
+    if (activeTab === "run" && latest?.cobol === cobol) {
+      paintRun(result, lastRun.outcome, pane);
+    }
+  });
+}
+
+function paintRun(
+  result: CompileResult,
+  outcome: RunOutcome,
+  pane: HTMLElement,
+): void {
+  const program = currentInputs(result);
 
   if (!outcome.ok) {
     pane.innerHTML = `
@@ -309,10 +543,40 @@ function renderRun(result: CompileResult): void {
 
   const sections: string[] = [];
 
+  // Said before the results rather than after them, because the numbers below
+  // are only as meaningful as what the program was given, and a reader who has
+  // not opened the Input tab has no way to know what that was.
+  const supplied = program?.surfaces ?? [];
+  sections.push(
+    supplied.length > 0
+      ? `
+    <p class="run__inputs">
+      <b>Run on what the Input tab holds:</b>
+      ${supplied
+        .map(
+          (surface) =>
+            `<code>${escapeHtml(surface.name)}</code>${
+              surface.kind === "dataset"
+                ? ` (${String(surface.records.length)} records)`
+                : surface.kind === "sql"
+                  ? ` (${String(surface.records.length)} rows)`
+                  : ""
+            }`,
+        )
+        .join(", ")}. Change any of it there and this runs again.
+    </p>`
+      : `
+    <p class="run__inputs">
+      <b>Nothing was supplied as input.</b> ${escapeHtml(program?.reason ?? "")}
+      The amounts below are what this program does with empty storage — real
+      arithmetic on real storage, and not a worked example.
+    </p>`,
+  );
+
   if (outcome.missingInputs.length > 0) {
     sections.push(`
       <p class="run__inputs">
-        <b>No input dataset.</b> This program opens
+        <b>No input dataset either.</b> This program opens
         ${outcome.missingInputs.map((name) => `<code>${escapeHtml(name)}</code>`).join(", ")},
         and there is nothing behind ${outcome.missingInputs.length === 1 ? "it" : "them"} here.
         The <code>OPEN</code> returns file status 35 and what you are seeing
@@ -676,20 +940,6 @@ function readUrl(): SharedLink {
   }
 }
 
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (char) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[char] as string,
-  );
-}
-
 function boot(): void {
   const picker = $<HTMLSelectElement>("#example-picker");
   picker.innerHTML = ALL_EXAMPLES.map(
@@ -893,15 +1143,42 @@ function boot(): void {
     restore();
   });
 
-  // The theme, shared with the rest of the site through the same key.
-  $("#theme").addEventListener("click", () => {
-    const root = document.documentElement;
-    const dark =
-      root.dataset.theme === "dark" ||
-      (!root.dataset.theme &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
-    root.dataset.theme = dark ? "light" : "dark";
-    window.localStorage.setItem("banklang-theme", root.dataset.theme);
+  /*
+   * The theme, shared with the rest of the site through the same key.
+   *
+   * E5. The button said "Theme" whatever was on, with no `aria-pressed` and a
+   * constant label, so neither a sighted nor a screen-reader user could tell
+   * the current mode from the control.
+   *
+   * A toggle button, which is what it is: the label names the thing being
+   * toggled and `aria-pressed` says whether it is on. The ticket's other
+   * suggestion was a label naming the destination — "Dark" while light, "Light"
+   * while dark — and the two cannot both be right: a control whose label is
+   * where it takes you is an action, and `aria-pressed` on an action button
+   * announces a state the label contradicts.
+   *
+   * The dark preference is followed when nothing has been chosen, so the state
+   * can change without a click, and the listener is what keeps the button
+   * honest when it does.
+   */
+  const themeButton = $("#theme");
+  const dark = window.matchMedia("(prefers-color-scheme: dark)");
+  const isDark = (): boolean => {
+    const chosen = document.documentElement.dataset.theme;
+    return chosen === "dark" || (chosen === undefined && dark.matches);
+  };
+  const syncTheme = (): void => {
+    themeButton.setAttribute("aria-pressed", String(isDark()));
+  };
+  syncTheme();
+  dark.addEventListener("change", syncTheme);
+  themeButton.addEventListener("click", () => {
+    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
+    window.localStorage.setItem(
+      "banklang-theme",
+      document.documentElement.dataset.theme,
+    );
+    syncTheme();
   });
 
   runCompile();
