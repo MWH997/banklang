@@ -82,6 +82,34 @@ describe("the workflow that runs them", () => {
     expect(WORKFLOW).not.toContain("pnpm bankc test");
   });
 
+  /**
+   * A step that only runs on a cache miss cannot install anything the cached
+   * path needs.
+   *
+   * `apt-get install` sat inside the GnuCOBOL build step, which is guarded by
+   * `cache-hit != 'true'`. The first run built the compiler and installed its
+   * shared libraries; every run after it restored the compiler onto a machine
+   * that had neither, and `cobc` died on `libcjson.so.1`. The run that proved
+   * the step worked was the only one that ever could.
+   */
+  it("installs system packages outside the step a cache hit skips", () => {
+    const steps = WORKFLOW.split(/\n {6}- name: /).slice(1);
+    for (const step of steps) {
+      if (!/apt-get install/.test(step)) {
+        continue;
+      }
+      expect(
+        step,
+        `a step running apt-get is guarded by a cache hit: ${(step.split("\n")[0] ?? "").trim()}`,
+      ).not.toMatch(/if:\s*steps\.\w+\.outputs\.cache-hit/);
+    }
+    // And the guard is still on the step that does the building, or the cache
+    // is buying nothing.
+    expect(WORKFLOW).toMatch(
+      /Build GnuCOBOL[\s\S]{0,200}if: steps\.gnucobol\.outputs\.cache-hit != 'true'/,
+    );
+  });
+
   it("has a script for every command it runs", () => {
     const manifest = JSON.parse(readFileSync("package.json", "utf8")) as {
       scripts: Record<string, string>;
