@@ -97,14 +97,16 @@ jobs:
           # different build, or an apt cobc earlier on the path, fails here
           # rather than eight test files later.
           #
-          # Captured into a variable and matched with `case`, rather than piped
-          # into `grep`. The pipeline form failed against a `cobc` that prints
-          # exactly what it should — one more shell subtlety than a check this
-          # small can afford, and the failure said nothing about what it saw.
+          # `cobc --version` prints `cobc (GnuCOBOL) 3.2.0`. The closing
+          # parenthesis sits between the name and the number, so a pattern of
+          # `GnuCOBOL <version>` never matches — which is what failed twice,
+          # first through `grep -q` and then through `case`, against a compiler
+          # printing exactly the right string. Matched on `(GnuCOBOL) ` now, and
+          # the failure prints what it saw so the next one is one read.
           version="$(/opt/gnucobol/bin/cobc --version 2>&1 | head -1)"
           echo "$version"
           case "$version" in
-            *"GnuCOBOL ${GNUCOBOL_VERSION}"*) ;;
+            *"(GnuCOBOL) ${GNUCOBOL_VERSION}"*) ;;
             *)
               echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}: ${version}"
               exit 1
