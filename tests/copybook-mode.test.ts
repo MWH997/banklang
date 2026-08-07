@@ -4,6 +4,7 @@ import { emitCobol, emitJcl } from "../packages/cobol-backend/src/index";
 import { lowerProgramToIR } from "../packages/ir/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { typecheckProgram } from "../packages/typechecker/src/index";
+import { unpadded } from "./helpers";
 
 /**
  * Whether record layouts are written into the program or copied into it.
@@ -49,7 +50,7 @@ describe("inline mode", () => {
     const cobol = emitCobol(program()).cobol;
 
     expect(cobol).toContain("01  TRANSFER-REQUEST.");
-    expect(cobol).toContain("05  DEBIT-ACCOUNT        PIC X(16).");
+    expect(unpadded(cobol)).toContain("05 DEBIT-ACCOUNT PIC X(16).");
     expect(cobol).not.toContain("COPY TRANSFER.");
   });
 

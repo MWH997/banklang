@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { IRProgram } from "../packages/ir/src/index";
 import { analyzeProgramSemantics } from "../packages/semantic-analyzer/src/index";
 
-import { compileExample, compileSource } from "./helpers";
+import { compileExample, compileSource, unpadded } from "./helpers";
 
 const RECORD = `module Files;
 
@@ -159,8 +159,8 @@ describe("file COBOL emission", () => {
     const { emit } = compileExample("examples/account-file-batch");
 
     expect(emit.cobol).toContain("01  ACCOUNT-INPUT-RECORD.");
-    expect(emit.cobol).toContain("05  ACCOUNT-ID           PIC X(16).");
-    expect(emit.cobol).toContain("05  BALANCE              PIC S9(16)V99");
+    expect(unpadded(emit.cobol)).toContain("05 ACCOUNT-ID PIC X(16).");
+    expect(unpadded(emit.cobol)).toContain("05 BALANCE PIC S9(16)V99");
   });
 
   it("suffixes COBOL file names so they cannot collide with a record", () => {

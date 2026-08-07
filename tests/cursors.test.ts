@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { formatBankTs } from "../packages/formatter/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * Db2 cursors: a declaration that returns rows, and a bounded loop that reads
@@ -447,6 +447,99 @@ ${commit}
     ).toEqual([]);
   });
 
+  /**
+   * A checkpoint is a commit, and this rule could not see one.
+   *
+   * B4 asked for a checkpoint on `examples/branch-accrual-cursor`, which posts
+   * to the ledger inside a cursor loop and warned about having no restart
+   * position. Adding one produced `EXEC SQL COMMIT` inside a loop over a cursor
+   * with no `WITH HOLD`: a program that binds, processes and commits part of a
+   * result set, and then abends `-501` on the fetch after its first commit,
+   * with every local check green. That is the shape of A1 and A2 again, and
+   * this rule existed and was looking at the wrong statement.
+   *
+   * `emitCheckpointStatement` writes the `COMMIT` under `commitsSql`, and the
+   * rule reads the same flag. A checkpoint in a program with no SQL at all
+   * writes a position and commits nothing, which is why the flag rather than
+   * the statement kind is what decides.
+   */
+  const checkpointing = (hold: string): string => `module CheckpointedCursor;
+
+type BDT = currency<"BDT", 18, 2>;
+
+record AccountRow {
+  rowAccountId: string<16>;
+  rowBalance: BDT;
+}
+
+record RunTotals {
+  rowsSeen: unsigned<9, 0>;
+  idempotencyKey: string<36>;
+}
+
+record RestartPoint {
+  jobName: string<8>;
+  lastAccountId: string<16>;
+}
+
+cursor everyAccount(keyBranch: string<8>)${hold}: AccountRow {
+  SELECT ACCOUNT_ID, BALANCE
+  INTO :rowAccountId, :rowBalance
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+}
+
+file restartFile indexed update record RestartPoint key jobName status restartStatus;
+
+entry transaction walk(row: AccountRow, totals: RunTotals, point: RestartPoint, branchId: string<8>) {
+  open restartFile;
+  point.jobName = "WALK";
+
+  restart restartFile into point {
+    log "RESUMING";
+  } else {
+    log "TOP";
+  }
+
+  for each row in everyAccount(branchId) limit 100000 {
+    totals.rowsSeen = totals.rowsSeen + 1;
+    debit(row.rowAccountId, row.rowBalance);
+    credit("INTEREST-EXPENSE", row.rowBalance);
+    point.lastAccountId = row.rowAccountId;
+    checkpoint restartFile from point every 1000;
+  }
+
+  close restartFile;
+  audit("WALKED", totals.idempotencyKey);
+}
+`;
+
+  it("refuses a checkpoint inside a loop over a cursor that is not held", () => {
+    const found = compile(checkpointing(" ")).diagnostics.find(
+      (entry) => entry.id === "BANK-SQL-008",
+    );
+
+    expect(found).toBeDefined();
+    expect(found?.severity).toBe("error");
+    expect(found?.message).toContain("committed by a checkpoint");
+    expect(found?.hint).toContain("`hold`");
+  });
+
+  it("allows the same checkpoint when the cursor is held", () => {
+    const result = compile(checkpointing(" hold "));
+
+    expect(result.diagnostics.map((entry) => entry.id)).not.toContain(
+      "BANK-SQL-008",
+    );
+    // And the `COMMIT` really is inside the loop, which is what makes the
+    // absence of the diagnostic mean something.
+    const body = result.cobol!.slice(
+      result.cobol!.indexOf("PERFORM UNTIL EVERY-ACCOUNT-ROWS"),
+      result.cobol!.indexOf("END-PERFORM"),
+    );
+    expect(body).toContain("EXEC SQL COMMIT END-EXEC");
+  });
+
   /** A commit after the loop closes a cursor that is already closed. */
   it("allows a commit outside the loop either way", () => {
     const result = compile(`module Held2;
@@ -796,7 +889,7 @@ describe("a cursor declared scrollable", () => {
 
     // Signed fullword binary: Db2's INTEGER, and signed because a negative
     // position counts back from the last row.
-    expect(cobol).toContain("01  STATEMENT-PAGE-POS   PIC S9(9) COMP.");
+    expect(unpadded(cobol)).toContain("01 STATEMENT-PAGE-POS PIC S9(9) COMP.");
 
     // Inside the declare section, unlike the row counter, which is the
     // program's own and would be described to Db2 as a host variable if it

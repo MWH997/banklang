@@ -14,6 +14,7 @@ import type {
   TypeNode,
 } from "../../ast/src/index";
 import { parseBankTs } from "../../parser/src/index";
+import { CompilerInvariant } from "../../diagnostics/src/errors";
 
 const INDENT = "  ";
 
@@ -820,7 +821,7 @@ function printStatement(
  * and `on error` handler from a program, and the result still parsed.
  */
 function unprintable(node: never): never {
-  throw new Error(
+  throw new CompilerInvariant(
     `The formatter has no printer for ${(node as { kind: string }).kind}. Formatting would delete it.`,
   );
 }

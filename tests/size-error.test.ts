@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { checked, corpus, flowed, localCobol } from "./helpers";
+import { checked, corpus, flowed, localCobol, unpadded } from "./helpers";
 
 /**
  * `ON SIZE ERROR` — what COBOL does when a result does not fit.
@@ -120,7 +120,9 @@ entry transaction go(book: Book) {
     // The contained program describes the same two registers the container
     // does, and leaves through its own exit rather than jumping at a paragraph
     // of the container's that it cannot see.
-    expect(contained).toContain("01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.");
+    expect(unpadded(contained)).toContain(
+      "01 BANK-FAILURE-CODE PIC X(32) EXTERNAL.",
+    );
     expect(contained).toContain("MOVE 12 TO BANK-RETURN-CODE");
     expect(contained).toContain(
       'MOVE "ARITHMETIC-OVERFLOW" TO BANK-FAILURE-CODE',

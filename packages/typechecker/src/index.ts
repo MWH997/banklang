@@ -1835,6 +1835,7 @@ function resolveTransaction(
   }
 
   checkSqlCodeHandled(declaration.span, diagnostics);
+  checkCommareaAnswered(declaration, parameters, diagnostics);
 
   return {
     name: declaration.name,
@@ -1846,6 +1847,101 @@ function resolveTransaction(
     isEntry: declaration.isEntry,
     isCics: declaration.isCics,
   };
+}
+
+/**
+ * A CICS transaction that computes a result nothing carries back to its caller.
+ *
+ * CICS gives a program one communication area. `DFHCOMMAREA` is the caller's
+ * own storage, so the backend moves the first record parameter in on entry and
+ * back out before the task ends; every other record parameter is working
+ * storage, which the region reclaims when the task ends. A transaction that
+ * fills a record called `reply` and never touches its commarea therefore
+ * returns control having changed nothing the caller can see. The caller reads
+ * back the bytes it sent, which is a plausible-looking answer rather than a
+ * failure — an account enquiry that reports the balance it was asked with.
+ *
+ * The test is deliberately narrow, so that it fires on that shape and on
+ * nothing else. Only explicit assignment counts: `execute ... into row` fills a
+ * row from Db2, and a transaction that reads a row and writes it to a file
+ * answers through the file rather than through the commarea. A transaction
+ * that assigns to no record parameter at all is doing side-effecting work and
+ * has no result to lose. And `returnTransid` carries a commarea of its own to
+ * the next half of a pseudo-conversation, so the backend appends no writeback
+ * and there is nothing here to say.
+ */
+function checkCommareaAnswered(
+  declaration: TransactionDeclarationNode,
+  parameters: ResolvedParameter[],
+  diagnostics: Diagnostic[],
+): void {
+  if (!declaration.isCics || endsWithReturnTransid(declaration.body)) {
+    return;
+  }
+  const records = parameters.filter(
+    (parameter) => parameter.type.kind === "record",
+  );
+  const commarea = records[0];
+  if (!commarea || records.length < 2) {
+    return;
+  }
+
+  const assigned = new Set<string>();
+  collectAssignedRoots(declaration.body, assigned);
+  if (declaration.failureHandler) {
+    collectAssignedRoots(declaration.failureHandler.body, assigned);
+  }
+  if (assigned.has(commarea.name)) {
+    return;
+  }
+
+  const stranded = records.find((record) => assigned.has(record.name));
+  if (!stranded) {
+    return;
+  }
+
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-CICS-005",
+      severity: "error",
+      message: `${declaration.name} assigns to ${stranded.name} and never to ${commarea.name}, its commarea, so the result never reaches the caller.`,
+      span: stranded.span,
+      hint: `Put the fields the caller reads on ${commarea.name} and assign them there. A record that leaves through a \`link\` or a \`writeQueue\` is fine — assign the commarea as well.`,
+      backendProfile: null,
+    }),
+  );
+}
+
+/** The names assigned through anywhere in a block, at any nesting depth. */
+function collectAssignedRoots(block: BlockNode, into: Set<string>): void {
+  for (const statement of block.statements) {
+    if (statement.kind === "AssignStatement") {
+      const root = assignmentRoot(statement.target);
+      if (root) {
+        into.add(root);
+      }
+    }
+    for (const child of childBlocksOf(statement)) {
+      collectAssignedRoots(child, into);
+    }
+  }
+}
+
+/** The name at the base of an assignment target: `a.b[i].c` is `a`. */
+function assignmentRoot(target: AssignStatementNode["target"]): string | null {
+  let node = target;
+  for (;;) {
+    if (node.kind === "Identifier") {
+      return node.name;
+    }
+    node = node.target;
+  }
+}
+
+/** True when a body's last statement hands control back to CICS itself. */
+function endsWithReturnTransid(block: BlockNode): boolean {
+  const last = block.statements[block.statements.length - 1];
+  return last?.kind === "CicsStatement" && last.operation === "returnTransid";
 }
 
 /**

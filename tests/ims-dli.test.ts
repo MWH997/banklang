@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol } from "./helpers";
+import { flowed, localCobol, unpadded } from "./helpers";
 
 /**
  * IMS DL/I: `CALL "CBLTDLI"` with a function code.
@@ -63,7 +63,9 @@ describe("the program the region enters", () => {
       "PROCEDURE DIVISION USING IO-PCB ACCOUNT-DB-PCB.",
     );
     expect(result.cobol).toContain("01  ACCOUNT-DB-PCB.");
-    expect(result.cobol).toContain("05  ACCOUNT-DB-PCB-STATUS    PIC X(2).");
+    expect(unpadded(result.cobol)).toContain(
+      "05 ACCOUNT-DB-PCB-STATUS PIC X(2).",
+    );
   });
 
   /**
@@ -80,7 +82,7 @@ describe("the program the region enters", () => {
     const text = result.cobol ?? "";
 
     expect(text).toContain("01  IO-PCB.");
-    expect(text).toContain("05  IO-PCB-LTERM             PIC X(8).");
+    expect(unpadded(text)).toContain("05 IO-PCB-LTERM PIC X(8).");
     expect(text.indexOf("01  IO-PCB.")).toBeLessThan(
       text.indexOf("01  ACCOUNT-DB-PCB."),
     );
@@ -102,16 +104,16 @@ describe("the program the region enters", () => {
   it("describes the whole I/O PCB, not the part it reads", () => {
     const text = result.cobol ?? "";
 
-    expect(text).toContain("05  IO-PCB-GROUP-NAME        PIC X(8).");
-    expect(text).toContain("10  IO-PCB-TS-DATE       PIC S9(7) COMP-3.");
-    expect(text).toContain("10  IO-PCB-TS-TIME       PIC X(6).");
-    expect(text).toContain("10  IO-PCB-TS-UTC        PIC X(2).");
-    expect(text).toContain("05  IO-PCB-USER-IND          PIC X(1).");
+    expect(unpadded(text)).toContain("05 IO-PCB-GROUP-NAME PIC X(8).");
+    expect(unpadded(text)).toContain("10 IO-PCB-TS-DATE PIC S9(7) COMP-3.");
+    expect(unpadded(text)).toContain("10 IO-PCB-TS-TIME PIC X(6).");
+    expect(unpadded(text)).toContain("10 IO-PCB-TS-UTC PIC X(2).");
+    expect(unpadded(text)).toContain("05 IO-PCB-USER-IND PIC X(1).");
   });
 
   it("declares the function code it uses, and only that one", () => {
-    expect(result.cobol).toContain(
-      '01  DLI-GU               PIC X(4) VALUE "GU  ".',
+    expect(unpadded(result.cobol)).toContain(
+      '01 DLI-GU PIC X(4) VALUE "GU  ".',
     );
     expect(result.cobol).not.toContain("DLI-DLET");
   });
@@ -125,16 +127,12 @@ describe("the program the region enters", () => {
   it("builds the search argument to DL/I's layout", () => {
     const text = result.cobol ?? "";
 
-    expect(text).toContain(
-      '05  FILLER               PIC X(8) VALUE "ACCTSEG ".',
-    );
-    expect(text).toContain('05  FILLER               PIC X(1) VALUE "(".');
-    expect(text).toContain(
-      '05  FILLER               PIC X(8) VALUE "ACCTID  ".',
-    );
-    expect(text).toContain('05  FILLER               PIC X(2) VALUE " =".');
-    expect(text).toContain("05  ACCOUNT-DB-SSA-VALUE PIC X(10).");
-    expect(text).toContain('05  FILLER               PIC X(1) VALUE ")".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(8) VALUE "ACCTSEG ".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(1) VALUE "(".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(8) VALUE "ACCTID  ".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(2) VALUE " =".');
+    expect(unpadded(text)).toContain("05 ACCOUNT-DB-SSA-VALUE PIC X(10).");
+    expect(unpadded(text)).toContain('05 FILLER PIC X(1) VALUE ")".');
   });
 
   it("calls DL/I and reads the status back", () => {
@@ -210,10 +208,8 @@ describe("each operation is its own function code", () => {
     const text = program("  getNext accountDb into segment;").cobol ?? "";
 
     expect(text).toContain("01  ACCOUNT-DB-SSA-U.");
-    expect(text).toContain(
-      '05  FILLER               PIC X(8) VALUE "ACCTSEG ".',
-    );
-    expect(text).toContain('05  FILLER               PIC X(1) VALUE " ".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(8) VALUE "ACCTSEG ".');
+    expect(unpadded(text)).toContain('05 FILLER PIC X(1) VALUE " ".');
   });
 });
 

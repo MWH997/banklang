@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 describe("precompiler", () => {
   it("expands INCLUDE SQLCA into the SQLCA structure", () => {
@@ -10,7 +10,7 @@ describe("precompiler", () => {
     );
 
     expect(result.cobol).toContain("01  SQLCA.");
-    expect(result.cobol).toContain("05  SQLCODE       PIC S9(9) COMP-5.");
+    expect(unpadded(result.cobol)).toContain("05 SQLCODE PIC S9(9) COMP-5.");
     expect(result.cobol).not.toContain("INCLUDE SQLCA END-EXEC");
   });
 
@@ -44,7 +44,7 @@ describe("precompiler", () => {
            EXEC SQL SELECT B INTO :F2 END-EXEC
 `);
 
-    expect(result.cobol).toContain("01  SQL-STMT-NUMBER     PIC 9(4).");
+    expect(unpadded(result.cobol)).toContain("01 SQL-STMT-NUMBER PIC 9(4).");
     expect(result.cobol).toContain("MOVE 0001 TO SQL-STMT-NUMBER");
     expect(result.cobol).toContain("MOVE 0002 TO SQL-STMT-NUMBER");
   });
@@ -81,7 +81,7 @@ describe("precompiler", () => {
       "       WORKING-STORAGE SECTION.\n           EXEC CICS SYNCPOINT RESP(LINK-RESP) END-EXEC\n",
     );
 
-    expect(result.cobol).toContain("05  EIBRESP       PIC S9(8) COMP.");
+    expect(unpadded(result.cobol)).toContain("05 EIBRESP PIC S9(8) COMP.");
     expect(result.cobol).toContain("MOVE EIBRESP TO LINK-RESP");
     // The response field is not an operand: CICS never reads it.
     expect(result.cobol).not.toContain("DFHEIV-COMMAND, LINK-RESP");

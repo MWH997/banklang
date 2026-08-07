@@ -337,6 +337,55 @@ generated program executes, computes correctly, and takes the branch its own
 tests select. It establishes nothing about Db2, CICS, or any real ledger. See
 `runtime/README.md`.
 
+### 2.6b Target semantics
+
+```bash
+pnpm lint:zos
+```
+
+The category the 2026-08-07 audit added, because it found two programs that
+passed every category above and could not do what they claimed on z/OS.
+
+`examples/mq-request-reply` issued two `MQCONN` calls to one queue manager and
+abended the step with RC 12 on IBM's `MQRC_ALREADY_CONNECTED` warning before it
+read a message. `examples/online-enquiry` computed a balance into a second
+record and returned the caller its own request. Both compiled. Both bound. Both
+passed the conformance linter, `cobc` under the IBM-shaped dialect, the golden
+fixtures, `pnpm examples:verify` and the executed conformance suite — because
+every one of those asks whether the toolchain accepts the program, and neither
+program had anything wrong with it that a toolchain can see.
+
+`packages/zos-lint` reads the emitted artifacts and asks what the platform will
+do with them, citing the MQ and CICS manuals the way the conformance linter
+cites the Language Reference. `tests/zos-lint.test.ts` runs it over the whole
+corpus, and holds each rule against the program this compiler actually shipped —
+the emitter no longer produces either shape, and a rule whose failing case is
+hypothetical is a rule that might be inert.
+
+Three rules today. The lane is meant to grow: a rule arrives when something is
+found that runs, and is wrong. See
+[target-conformance.md](target-conformance.md#zos-semantics).
+
+### 2.6c Accessibility
+
+`tests/accessibility.test.ts` runs `axe-core` over all four page templates —
+home, a documentation page, a blog post, and the playground — at WCAG 2.2 AA
+plus axe's best-practice set.
+
+The 2026-08-07 audit found five defects by hand (F15–F19): two unlabelled
+editors, an `h1` outside `<main>`, a docs sidebar whose group labels came before
+the page heading, stat chips reading `1records`, and a theme toggle with no
+state. Fixing five defects fixes five defects. This is what makes the sixth fail
+a build.
+
+jsdom rather than a browser, which is a deliberate narrowing: Playwright in
+`devDependencies` means a browser download in CI and an install script, and
+`pnpm-workspace.yaml` takes those one decision at a time. Every defect the audit
+found is structural — a name, a role, a heading order, a state — and jsdom sees
+all of them. What it cannot see is `color-contrast`, which is switched off
+explicitly rather than left to report nothing, and the two CodeMirror editors,
+which do not exist until the page runs.
+
 ### 2.7 Mainframe smoke tests
 
 Roadmap only for public repo unless access exists.
@@ -402,6 +451,7 @@ CI should run:
 - typecheck
 - unit tests
 - golden tests
+- conformance and z/OS semantics over every artifact
 - determinism tests
 - parser fuzz smoke
 - dependency audit

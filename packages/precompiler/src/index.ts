@@ -97,6 +97,7 @@ const MQ_CONSTANT_LINES = [
   "           05  MQCC-FAILED          PIC S9(9) BINARY VALUE 2.",
   "           05  MQRC-NONE            PIC S9(9) BINARY VALUE 0.",
   "           05  MQRC-NO-MSG-AVAILABLE PIC S9(9) BINARY VALUE 2033.",
+  "           05  MQRC-ALREADY-CONNECTED PIC S9(9) BINARY VALUE 2002.",
   "           05  MQOT-Q               PIC S9(9) BINARY VALUE 1.",
   "           05  MQOO-INPUT-AS-Q-DEF  PIC S9(9) BINARY VALUE 1.",
   "           05  MQOO-OUTPUT          PIC S9(9) BINARY VALUE 16.",

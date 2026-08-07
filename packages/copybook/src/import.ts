@@ -22,6 +22,7 @@
  * differently from the one every other program on the estate is using.
  */
 
+import { BankcError } from "../../diagnostics/src/errors";
 import type { CopybookInspection } from "./index";
 
 export interface CopybookImportProblem {
@@ -59,10 +60,13 @@ interface Entry {
  * common case.
  */
 function readEntries(text: string): Entry[] {
-  const statements: string[] = [];
+  // Each statement carries the line it began on, because that is what a reader
+  // told the copybook has an entry this cannot read needs in order to look.
+  const statements: { line: number; text: string }[] = [];
   let pending: string[] = [];
+  let start = 1;
 
-  for (const raw of text.split(/\r?\n/)) {
+  for (const [index, raw] of text.split(/\r?\n/).entries()) {
     const line = raw.length > 72 ? raw.slice(0, 72) : raw;
     if (line.length >= 7 && (line[6] === "*" || line[6] === "/")) {
       continue;
@@ -71,20 +75,27 @@ function readEntries(text: string): Entry[] {
     if (body === "" || body.startsWith("*")) {
       continue;
     }
+    if (pending.length === 0) {
+      start = index + 1;
+    }
     pending.push(body);
     if (body.endsWith(".")) {
-      statements.push(
-        pending.join(" ").replace(/\s+/g, " ").replace(/\.$/, ""),
-      );
+      statements.push({
+        line: start,
+        text: pending.join(" ").replace(/\s+/g, " ").replace(/\.$/, ""),
+      });
       pending = [];
     }
   }
   if (pending.length > 0) {
-    statements.push(pending.join(" ").replace(/\s+/g, " "));
+    statements.push({
+      line: start,
+      text: pending.join(" ").replace(/\s+/g, " "),
+    });
   }
 
   const flat: Entry[] = [];
-  for (const statement of statements) {
+  for (const { line: at, text: statement } of statements) {
     // `EJECT`, `SKIP1` and their relatives are compiler directives that carry
     // no data, and a copybook may open with any of them.
     if (/^(EJECT|SKIP[123]|TITLE\b)/i.test(statement)) {
@@ -92,7 +103,11 @@ function readEntries(text: string): Entry[] {
     }
     const match = /^(\d{1,2})\s+([A-Z0-9$#@-]+)\s*(.*)$/i.exec(statement);
     if (!match) {
-      throw new Error(`Not a data description entry: ${statement}`);
+      throw new BankcError(
+        "BANK-COPY-008",
+        `Not a data description entry: ${statement}`,
+        `line ${String(at)}`,
+      );
     }
     flat.push({
       level: Number(match[1]),
@@ -334,7 +349,10 @@ export function importCopybook(
   const roots = readEntries(text);
   const record = roots.find((entry) => entry.level === 1);
   if (!record) {
-    throw new Error("The copybook declares no 01-level record.");
+    throw new BankcError(
+      "BANK-COPY-009",
+      "The copybook declares no 01-level record, so there is no record to import.",
+    );
   }
 
   const problems: CopybookImportProblem[] = [];

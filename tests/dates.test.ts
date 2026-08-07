@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * `date`, `time`, and `timestamp`, and the calendar arithmetic that goes with
@@ -53,16 +53,16 @@ describe("temporal storage", () => {
     const result = txn("");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain("05  OPENED-ON            PIC 9(8).");
+    expect(unpadded(result.cobol)).toContain("05 OPENED-ON PIC 9(8).");
   });
 
   it("stores a time as PIC 9(6)", () => {
-    expect(txn("").cobol).toContain("05  CUTOFF               PIC 9(6).");
+    expect(unpadded(txn("").cobol)).toContain("05 CUTOFF PIC 9(6).");
   });
 
   /** X(26) is the Db2 host variable format for a TIMESTAMP column. */
   it("stores a timestamp as PIC X(26)", () => {
-    expect(txn("").cobol).toContain("05  BOOKED-AT            PIC X(26).");
+    expect(unpadded(txn("").cobol)).toContain("05 BOOKED-AT PIC X(26).");
   });
 
   it("reports the temporal type and its length in the layout", () => {

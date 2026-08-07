@@ -25,6 +25,7 @@
  * particular SQL data type".
  */
 
+import { BankcError } from "../../diagnostics/src/errors";
 import { copybookLines } from "./index";
 import {
   bankTsName,
@@ -207,7 +208,10 @@ function readColumns(text: string): {
   const declare =
     /EXEC SQL DECLARE\s+(\S+)\s+TABLE\s*\((.*?)\)\s*END-EXEC/i.exec(flat);
   if (!declare) {
-    throw new Error("No EXEC SQL DECLARE ... TABLE block was found.");
+    throw new BankcError(
+      "BANK-COPY-011",
+      "This file has no `EXEC SQL DECLARE ... TABLE` block, which is what DCLGEN writes and what names the table and its columns.",
+    );
   }
 
   const columns: { column: string; sqlType: string; nullable: boolean }[] = [];
@@ -234,7 +238,10 @@ function readColumns(text: string): {
     }
     const match = /^"?([A-Za-z0-9_@#$]+)"?\s+(.+)$/.exec(trimmed);
     if (!match) {
-      throw new Error(`Not a column definition: ${trimmed}`);
+      throw new BankcError(
+        "BANK-COPY-012",
+        `Not a column definition: ${trimmed}`,
+      );
     }
     const rest = match[2]!.trim();
     const nullable = !/\bNOT\s+NULL\b/i.test(rest);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { unpadded } from "./helpers";
 
 const PREAMBLE = `module Generic;
 
@@ -58,8 +59,10 @@ transaction touch(savings: Savings) {
     const group = (result.cobol ?? "").slice(
       (result.cobol ?? "").indexOf("01  SAVINGS."),
     );
-    expect(group).toContain("05  ACCOUNT-ID           PIC X(16).");
-    expect(group).toContain("05  INTEREST-ACCRUED     PIC S9(16)V99 COMP-3.");
+    expect(unpadded(group)).toContain("05 ACCOUNT-ID PIC X(16).");
+    expect(unpadded(group)).toContain(
+      "05 INTEREST-ACCRUED PIC S9(16)V99 COMP-3.",
+    );
   });
 
   it("resolves a base declared later in the file", () => {

@@ -29,6 +29,7 @@ import {
   compare,
   decimalOf,
   digitsOf,
+  isOverpunched,
   decodeNumeric,
   decodeText,
   divide,
@@ -138,6 +139,22 @@ export interface RunOptions {
   /** Files present before the run, keyed by their `ASSIGN TO` name. */
   files?: Map<string, Uint8Array[]>;
   /**
+   * Bytes to place in named records of the entry program before it starts,
+   * keyed by the 01-level name.
+   *
+   * What a program's storage holds when it is entered is decided outside the
+   * program on every real system: a dataset it reads, the PARM the step was
+   * started with, a caller's communication area, a region. This is that, for a
+   * caller that has none of those — the playground's Input panel, and a test
+   * that wants a program to run on a particular request without writing a
+   * dataset for it.
+   *
+   * Applied after the `VALUE` clauses, so it overrides them, and truncated or
+   * padded to the record's declared length: a record area is a fixed number of
+   * bytes and a caller that miscounts must not move every field after it.
+   */
+  storage?: Map<string, Uint8Array>;
+  /**
    * Ceiling on executed statements.
    *
    * A browser tab is a hard place to stop a runaway `PERFORM UNTIL`, and a
@@ -150,6 +167,14 @@ const DEFAULT_STEP_LIMIT = 5_000_000;
 
 /** `RETURN-CODE`, which every program has and none declares. */
 const RETURN_CODE_PICTURE: Picture = parsePicture("S9(4)");
+
+/**
+ * Intrinsics whose result is characters rather than a number.
+ *
+ * `displayText` knows how to produce each; this is what stops the arithmetic
+ * path from being asked to.
+ */
+const TEXT_FUNCTIONS = new Set(["TRIM", "UPPER-CASE", "LOWER-CASE", "CHAR"]);
 
 /* ------------------------------------------------------------------ *
  * One loaded program, with its storage.
@@ -246,6 +271,21 @@ export class Machine {
       throw new CobolRuntimeError(`No program called ${entry} was loaded.`);
     }
 
+    // Before the first statement and after the `VALUE` clauses, which is where
+    // a dataset, a PARM or a caller would have put it.
+    for (const [name, bytes] of options.storage ?? []) {
+      const root = this.instanceOf(program).roots.get(name);
+      if (!root) {
+        throw new CobolRuntimeError(
+          `${program.name} declares no record called ${name}, so there is nowhere to put the ${String(bytes.length)} bytes given for it.`,
+        );
+      }
+      root.bytes.set(
+        bytes.subarray(0, root.bytes.length - root.base),
+        root.base,
+      );
+    }
+
     this.invoke(program, []);
 
     return {
@@ -288,6 +328,29 @@ export class Machine {
           };
           this.externals.set(record.name, shared);
           instance.roots.set(record.name, shared);
+          continue;
+        }
+        // An 01 with a REDEFINES describes the same bytes as the record it
+        // names, and every 01 used to get storage of its own instead — so
+        // writing through the redefinition and reading through the original
+        // returned whatever the original had been initialised to. The two
+        // agreeing is the whole reason a program writes one.
+        //
+        // The redefining record may be the longer of the two: the Language
+        // Reference constrains the size only when the redefined record is
+        // EXTERNAL. The shared area is therefore as long as the longest
+        // description of it, and the binding object is mutated rather than
+        // replaced so that records already sharing it see the same bytes.
+        const redefined = record.redefines
+          ? instance.roots.get(record.redefines)
+          : undefined;
+        if (redefined) {
+          if (redefined.bytes.length < record.length) {
+            const grown = new Uint8Array(record.length);
+            grown.set(redefined.bytes);
+            redefined.bytes = grown;
+          }
+          instance.roots.set(record.name, redefined);
           continue;
         }
         instance.roots.set(record.name, {
@@ -1687,8 +1750,16 @@ export class Machine {
         return { kind: "text", value: expr.value.repeat(256) };
       case "unary":
       case "binary":
-      case "function":
         return { kind: "number", value: this.arithmeticValue(instance, expr) };
+      case "function":
+        // The alphanumeric intrinsics return characters, so a `MOVE FUNCTION
+        // CHAR(n) TO item` has to produce text rather than be pushed through
+        // the arithmetic path — which threw "not implemented" for every one of
+        // them, including `TRIM`, outside the DISPLAY and STRING statements
+        // that happened to ask for their text directly.
+        return TEXT_FUNCTIONS.has(expr.name)
+          ? { kind: "text", value: this.displayText(instance, expr) }
+          : { kind: "number", value: this.arithmeticValue(instance, expr) };
     }
   }
 
@@ -1798,6 +1869,15 @@ export class Machine {
       }
       case "NUMVAL":
         return textToNumber(this.displayText(instance, args[0]!));
+      /**
+       * `ORD` is the position of a character in the collating sequence, and
+       * the Language Reference numbers that sequence from 1 — so the ordinal
+       * of a byte is the byte plus one, and `CHAR` below is its inverse.
+       */
+      case "ORD": {
+        const text = this.displayText(instance, args[0]!);
+        return { units: BigInt((text.charCodeAt(0) || 0) + 1), scale: 0 };
+      }
       case "MAX": {
         let best = number(0);
         for (let index = 1; index < args.length; index += 1) {
@@ -1835,11 +1915,96 @@ export class Machine {
           return this.displayText(instance, expr.args[0]!).toUpperCase();
         case "LOWER-CASE":
           return this.displayText(instance, expr.args[0]!).toLowerCase();
+        /**
+         * The character at a position in the collating sequence, counting from
+         * one — the inverse of `ORD`. It yields a character rather than a
+         * number, so it belongs here and not with the arithmetic functions.
+         */
+        case "CHAR": {
+          const position = Number(
+            rescale(this.arithmeticValue(instance, expr.args[0]!), 0).units,
+          );
+          return String.fromCharCode(Math.min(255, Math.max(1, position) - 1));
+        }
         default:
           break;
       }
     }
     return textOf(this.evaluate(instance, expr));
+  }
+
+  /**
+   * `IS NUMERIC`, as the Language Reference defines it.
+   *
+   * > NUMERIC — identifier-1 consists entirely of the characters 0 through 9,
+   * > with or without an operational sign. If its PICTURE does not contain an
+   * > operational sign, the identifier being tested is determined to be numeric
+   * > only if the contents are numeric and an operational sign is not present.
+   * > If its PICTURE does contain an operational sign, the identifier being
+   * > tested is determined to be numeric only if the item is an elementary
+   * > item, the contents are numeric, and a valid operational sign is present.
+   *
+   * — *Enterprise COBOL for z/OS Language Reference*, "Class condition".
+   *
+   * This was `/^[0-9]*$/` over the trimmed text, which is wrong in both
+   * directions and in the direction that matters. It rejected the `+` on a
+   * `SIGN IS LEADING SEPARATE` item — the shape every numeric PARM parameter
+   * has — so a program refused a PARM that z/OS would have accepted. Trimming
+   * also made an all-blank field test numeric, since the empty string matches:
+   * a PARM nobody filled in would pass the check written to catch it and be
+   * computed on as zero.
+   */
+  private isNumeric(
+    instance: Instance,
+    operand: Expr,
+    fallback: string,
+  ): boolean {
+    const located = this.locationOf(instance, operand);
+
+    // Without a field to consult — a literal, or an expression — the most that
+    // can be said is that the characters are digits.
+    if (!located) {
+      return /^[0-9]+$/.test(fallback);
+    }
+
+    // The raw bytes, not the decoded value. `IS NUMERIC` asks whether the
+    // characters in the field are digits at all, and decoding has already
+    // answered that question its own way: a field holding spaces decodes to
+    // zero, so testing the decoded text would report every blank field numeric.
+    const { field, bytes, offset, length } = located;
+    const text = decodeText(bytes, offset, length);
+    const picture = field.picture;
+
+    if (!picture?.signed) {
+      return /^[0-9]+$/.test(text);
+    }
+    if (picture.sign === "leading-separate") {
+      return /^[-+][0-9]+$/.test(text);
+    }
+    if (picture.sign === "trailing-separate") {
+      return /^[0-9]+[-+]$/.test(text);
+    }
+    // An embedded sign is overpunched onto the last digit, so every character
+    // but that one is a digit, and that one is either a digit or an overpunch.
+    const last = text[text.length - 1];
+    return (
+      text.length > 0 &&
+      /^[0-9]*$/.test(text.slice(0, -1)) &&
+      last !== undefined &&
+      (/[0-9]/.test(last) || isOverpunched(last))
+    );
+  }
+
+  /** Where an operand sits, when the operand names a field at all. */
+  private locationOf(instance: Instance, operand: Expr): Location | null {
+    if (operand.kind !== "ref") {
+      return null;
+    }
+    try {
+      return this.resolve(instance, operand.ref);
+    } catch {
+      return null;
+    }
   }
 
   /* -------------------------------------------------- conditions */
@@ -1870,7 +2035,7 @@ export class Machine {
       case "class": {
         const text = this.displayText(instance, condition.operand);
         return condition.test === "NUMERIC"
-          ? /^[0-9]*$/.test(text.trim())
+          ? this.isNumeric(instance, condition.operand, text)
           : /^[A-Za-z ]*$/.test(text);
       }
       case "sign": {

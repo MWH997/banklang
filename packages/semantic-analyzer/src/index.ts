@@ -156,6 +156,15 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
  * An error rather than a warning, because there is no reading under which the
  * program is right: either the statement does not belong in the loop or the
  * cursor needs `hold`, and for a rollback only the first is available.
+ *
+ * **A checkpoint is a commit.** It was not looked at here, and that was the
+ * whole of B4: `examples/branch-accrual-cursor` warned about having no
+ * checkpoint, and adding one produced `EXEC SQL COMMIT` inside a loop over a
+ * cursor with no `WITH HOLD` — a program that compiles, binds, processes and
+ * commits part of a result set, and then abends `-501` on the fetch after its
+ * first commit. Every local check passed on it, which is the shape of A1 and
+ * A2 again. `emitCheckpointStatement` writes that `COMMIT` under
+ * `commitsSql`, and this reads the same flag.
  */
 function checkHeldCursors(
   transaction: IRTransaction,
@@ -172,26 +181,36 @@ function checkHeldCursors(
       return [];
     }
     const isHeld = held.get(statement.cursorName) === true;
-    const closes = flattenStatements(statement.body.statements).find(
-      (inner) =>
-        inner.kind === "UnitOfWorkStatement" &&
-        // A rollback closes every cursor; a commit closes only the ones that
-        // are not held.
-        (inner.operation === "rollback" || !isHeld),
+    const closes = flattenStatements(statement.body.statements).find((inner) =>
+      inner.kind === "UnitOfWorkStatement"
+        ? // A rollback closes every cursor; a commit closes only the ones that
+          // are not held.
+          inner.operation === "rollback" || !isHeld
+        : inner.kind === "CheckpointStatement" && inner.commitsSql && !isHeld,
     );
-    if (!closes || closes.kind !== "UnitOfWorkStatement") {
+    if (!closes) {
       return [];
     }
+
+    const rolledBack =
+      closes.kind === "UnitOfWorkStatement" && closes.operation === "rollback";
+    const how =
+      closes.kind === "CheckpointStatement"
+        ? "committed by a checkpoint"
+        : rolledBack
+          ? "rolled back"
+          : "committed";
 
     return [
       createDiagnostic({
         id: "BANK-SQL-008",
         severity: "error",
-        message: `Cursor ${statement.cursorName} is ${closes.operation === "commit" ? "committed" : "rolled back"} inside its own loop, which closes it.`,
+        message: `Cursor ${statement.cursorName} is ${how} inside its own loop, which closes it.`,
         span: statement.span,
-        hint:
-          closes.operation === "rollback"
-            ? "A ROLLBACK closes every open cursor, held or not, so the next FETCH answers -501. Move the rollback out of the loop; `hold` does not help here."
+        hint: rolledBack
+          ? "A ROLLBACK closes every open cursor, held or not, so the next FETCH answers -501. Move the rollback out of the loop; `hold` does not help here."
+          : closes.kind === "CheckpointStatement"
+            ? "A checkpoint commits the work up to the position it writes, and Db2 closes a cursor that is not held when the unit of work commits. Declare the cursor `hold`, which is what a batch that checkpoints inside a cursor loop needs."
             : "Db2 closes a cursor that is not held when the unit of work commits, so the next FETCH answers -501. Declare the cursor `hold`, or move the commit out of the loop.",
         backendProfile: "ibm-enterprise-cobol-zos",
       }),

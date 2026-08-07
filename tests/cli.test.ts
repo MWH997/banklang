@@ -1,5 +1,7 @@
+import { spawnSync } from "node:child_process";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -309,5 +311,136 @@ describe("bankc cli", () => {
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * What a thrown error looks like from outside the process.
+ *
+ * Everything the compiler means to report comes back as a result with a
+ * message and an exit code, and every test above reads one. The rest are
+ * thrown, dozens of them across the packages, and `bin.ts` had no `try`/`catch`
+ * at all — so a job whose two steps collapse to one load module, which the
+ * backend detects and explains well, reached the user as a source excerpt, a
+ * caret, forty frames of `node:internal` and Node's own version banner. The
+ * message was the fifth line.
+ *
+ * F3 then split those throws in two. This collision is the reader's own — two
+ * project directories they can rename — so it now carries `BANK-JOB-005` and
+ * points at `bankc explain`, which is the path a typechecker diagnostic takes.
+ * The `--debug` stack is still there for the failures that have no identifier,
+ * and the second block below is one of those.
+ *
+ * Spawned rather than called, because the boundary being tested is `bin.ts`
+ * and calling `runBankc` walks straight past it.
+ */
+describe("an error that escapes the compiler", () => {
+  const BIN = join(process.cwd(), "packages/bankc-cli/src/bin.ts");
+  const TSX = join(process.cwd(), "node_modules/.bin/tsx");
+
+  /** A job whose two module names are the same within eight characters. */
+  function collidingJob(): string {
+    const dir = mkdtempSync(join(tmpdir(), "banklang-throw-"));
+    for (const [name, module, txn] of [
+      ["a", "SettlementAlpha", "runAlpha"],
+      ["b", "SettlementBeta", "runBeta"],
+    ]) {
+      mkdirSync(join(dir, name as string, "src"), { recursive: true });
+      writeFileSync(
+        join(dir, name as string, "bankc.json"),
+        '{ "source": "src/main.bank.ts" }\n',
+        "utf8",
+      );
+      writeFileSync(
+        join(dir, name as string, "src/main.bank.ts"),
+        `module ${module};\n\nrecord Row {\n  idempotencyKey: string<36>;\n}\n\nentry transaction ${txn}(row: Row) {\n  audit("RAN", row.idempotencyKey);\n}\n`,
+        "utf8",
+      );
+    }
+    writeFileSync(
+      join(dir, "job.json"),
+      JSON.stringify({
+        name: "COLLIDE",
+        description: "Two modules, one load module",
+        steps: [
+          { name: "ALPHA", project: "a" },
+          { name: "BETA", project: "b" },
+        ],
+      }),
+      "utf8",
+    );
+    return dir;
+  }
+
+  const dir = collidingJob();
+  const ran = spawnSync(TSX, [BIN, "job", dir], {
+    encoding: "utf8",
+    cwd: process.cwd(),
+  });
+
+  it("exits 1", () => {
+    expect(ran.status).toBe(1);
+  });
+
+  it("prints the message the compiler wrote, under its identifier", () => {
+    expect(ran.stderr).toContain("would both load SETTLEME");
+    expect(ran.stderr.split("\n")[0]).toMatch(/^bankc: BANK-JOB-005: /);
+  });
+
+  /**
+   * A stack is the right output for a bug in the compiler and the wrong output
+   * for a mistake in a program. This one is the reader's own, so instead of the
+   * stack they get the thing that says why the rule exists.
+   */
+  it("sends the reader to the catalogue rather than to a stack", () => {
+    expect(ran.stderr).not.toMatch(/^\s+at /m);
+    expect(ran.stderr).not.toContain("node:internal");
+    expect(ran.stderr).toContain("bankc explain BANK-JOB-005");
+  });
+
+  it("writes nothing to stdout", () => {
+    expect(ran.stdout).toBe("");
+  });
+
+  /**
+   * A failure with no identifier, which is what `--debug` is still for.
+   *
+   * F3 catalogued what the compiler knows about. What is left is the file
+   * system and Node — `ENOENT` on a project directory a `job.json` names and
+   * nobody created — and there is nothing to catalogue about those: the message
+   * is already the whole of what happened, and the interesting question is
+   * which of the compiler's own reads asked for it. So they keep the original
+   * behaviour: the message, and the stack one flag away.
+   */
+  describe("with no identifier", () => {
+    const bad = mkdtempSync(join(tmpdir(), "banklang-throw-missing-"));
+    writeFileSync(
+      join(bad, "job.json"),
+      JSON.stringify({
+        name: "NIGHT",
+        description: "A step whose project is not there",
+        steps: [{ name: "POST", project: "missing" }],
+      }),
+      "utf8",
+    );
+    const plain = spawnSync(TSX, [BIN, "job", bad], {
+      encoding: "utf8",
+      cwd: process.cwd(),
+    });
+
+    it("prints the message and offers the stack", () => {
+      expect(plain.status).toBe(1);
+      expect(plain.stderr).not.toMatch(/^\s+at /m);
+      expect(plain.stderr).toContain("--debug");
+    });
+
+    it("prints the stack when asked", () => {
+      const debugged = spawnSync(TSX, [BIN, "job", bad, "--debug"], {
+        encoding: "utf8",
+        cwd: process.cwd(),
+      });
+      expect(debugged.status).toBe(1);
+      expect(debugged.stderr).toMatch(/^\s+at /m);
+    });
   });
 });

@@ -7,7 +7,7 @@
 | source-artifact | examples/withdrawal-with-recovery/src/main.bank.ts |
 | source-artifact-sha256 | c144363d321a6586794c5600f8e8e4bd9a4966d0b7cac277d4edae2fbfe1e093 |
 | generated-artifact | evidence/withdrawal-with-recovery/gnucobol/cobol/WITHDRAW.cbl |
-| generated-artifact-sha256 | 705db52cf509356d2ae8eece0972a18100cc5cf098a9bbe0e944d5c4e55653c1 |
+| generated-artifact-sha256 | 9bdee035fb32941c4246bf0706900ed1de623e51ae0c1d993356d05a1b977e3a |
 | source-map-artifact | evidence/withdrawal-with-recovery/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 84072df875a12c5bc5b586563e57404c328062d262eb3f6ff923bfe24d1c5e69 |
 | compiler-executable | cobc |

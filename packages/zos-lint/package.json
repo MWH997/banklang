@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/zos-lint",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

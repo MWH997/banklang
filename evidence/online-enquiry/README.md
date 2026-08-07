@@ -42,8 +42,8 @@ all enforced, and `audit/diagnostics.json` is empty.
 - `audit/verification-report.md`
 - `cobol/ONLINEEN.cbl`
 - `copybooks/ACCOUNTB.cpy`
-- `copybooks/BALANCER.cpy`
-- `copybooks/ENQUIRYR.cpy`
+- `copybooks/AUDITENT.cpy`
+- `copybooks/ENQUIRYC.cpy`
 - `jcl/ONLINEEN.jcl`
 - `maps/source-map.json`
 - `source/main.bank.ts`

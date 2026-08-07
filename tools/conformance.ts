@@ -117,6 +117,8 @@ export interface ConformanceOptions {
    * "row not found" branch executable rather than merely inspectable.
    */
   sqlOutcomes?: SqlOutcome[];
+  /** Rows a cursor delivers, already formatted as DSNHLI's script lines. */
+  sqlRows?: string[];
   /** CICS responses to script. A command returns NORMAL unless listed. */
   cicsOutcomes?: CicsOutcome[];
   /**
@@ -205,6 +207,16 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
             `${String(outcome.statement).padStart(4, "0")} ${signedField(outcome.sqlcode, 3)} ${outcome.sqlstate ?? defaultSqlState(outcome.sqlcode)} ${String(outcome.times ?? 0).padStart(4, "0")}`,
         )
         .join("\n")}\n`,
+      "utf8",
+    );
+  }
+  // The rows a scripted cursor delivers, in the same file `runtime/DSNHLI.cbl`
+  // reads them from in the browser. Written here so `cobc` and the interpreter
+  // are answered by one script rather than two.
+  if (options.sqlRows?.length) {
+    writeFileSync(
+      join(workDir, "sql-rows.txt"),
+      `${options.sqlRows.join("\n")}\n`,
       "utf8",
     );
   }

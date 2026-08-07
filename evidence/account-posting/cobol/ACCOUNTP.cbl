@@ -11,7 +11,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program with no parameters, started by EXEC PGM in a
-      *>     job.
+      *>   job.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -20,7 +20,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -30,20 +30,20 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  BANK-FAILURE-CODE  PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE   PIC S9(4) COMP EXTERNAL.
        01  POST-TRANSFER-REQUEST.
-           05  DEBIT-ACCOUNT        PIC X(16).
-           05  CREDIT-ACCOUNT       PIC X(16).
-           05  AMOUNT               PIC S9(16)V99 COMP-3.
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  DEBIT-ACCOUNT    PIC X(16).
+           05  CREDIT-ACCOUNT   PIC X(16).
+           05  AMOUNT           PIC S9(16)V99 COMP-3.
+           05  IDEMPOTENCY-KEY  PIC X(36).
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        PROCEDURE DIVISION.
        BANK-MAIN.

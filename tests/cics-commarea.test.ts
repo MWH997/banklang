@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * The commarea a CICS transaction is passed, and the check that it is there.
@@ -134,7 +134,7 @@ describe("the EXEC interface block", () => {
    * is asserted against the generated source instead; on z/OS, CICS sets this.
    */
   it("presets EIBCALEN, because the block is simulated", () => {
-    expect(cobol).toContain("EIBCALEN      PIC S9(4) COMP VALUE 9999.");
+    expect(unpadded(cobol)).toContain("EIBCALEN PIC S9(4) COMP VALUE 9999.");
   });
 
   /** CICS establishes addressability before the program runs. Nothing here does. */
@@ -265,6 +265,198 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
 
     expect(text.slice(check)).toContain("MOVE 12 TO BANK-RETURN-CODE");
     expect(text.slice(check)).toMatch(/GO TO \S+-EXIT/);
+  });
+});
+
+/**
+ * The result that never leaves.
+ *
+ * CICS gives a program one communication area, and the fourth defect in this
+ * area was that nothing said so. The backend moves the *first* record parameter
+ * in and back out; every other record parameter is working storage, which the
+ * region reclaims when the task ends. So `accountEnquiry(request, row, reply)`
+ * — three records, the answer computed into the third — ended with
+ * `MOVE ENQUIRY-REQUEST TO DFHCOMMAREA` and handed the caller back the bytes it
+ * had sent. That is `examples/online-enquiry` as it shipped, and every test
+ * passed: the reference runtime supplies no commarea, so nothing read one.
+ */
+describe("a result that cannot reach the caller", () => {
+  const stranded = `module Enquiry;
+
+record Request {
+  accountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+record Reply {
+  replyBalance: decimal<15, 2>;
+}
+
+cics transaction enquire(request: Request, reply: Reply) {
+  reply.replyBalance = 1.00;
+  link "AUDITLOG" commarea reply resp linkResp;
+  audit("ENQUIRED", request.idempotencyKey);
+}`;
+
+  it("is refused", () => {
+    const result = compile(stranded);
+    const found = result.diagnostics.find(
+      (entry) => entry.id === "BANK-CICS-005",
+    );
+
+    expect(found?.message).toContain("reply");
+    expect(found?.message).toContain("request");
+  });
+
+  /**
+   * A `link` is not a way back. It passes the record *out* to another program;
+   * the caller of this transaction reads the commarea, and nothing wrote it.
+   * So being used as a source elsewhere does not make the assignment safe, and
+   * the rule does not look for one.
+   */
+  it("is refused even where the record goes somewhere", () => {
+    expect(compile(stranded).diagnostics.map((entry) => entry.id)).toContain(
+      "BANK-CICS-005",
+    );
+  });
+
+  /** Assign the commarea as well and the answer has a path back. */
+  it("accepts a scratch record beside a commarea that is written", () => {
+    expect(
+      compile(`module Enquiry;
+
+record Commarea {
+  caBalance: decimal<15, 2>;
+  idempotencyKey: string<36>;
+}
+
+record AuditEntry {
+  auditNote: string<8>;
+}
+
+cics transaction enquire(commarea: Commarea, auditEntry: AuditEntry) {
+  commarea.caBalance = 1.00;
+  auditEntry.auditNote = "OK";
+  link "AUDITLOG" commarea auditEntry resp linkResp;
+  audit("ENQUIRED", commarea.idempotencyKey);
+}`).diagnostics,
+    ).toEqual([]);
+  });
+
+  /**
+   * A transaction that assigns to no record parameter is doing side-effecting
+   * work — writing a queue, posting a ledger entry — and has no result to lose.
+   * `execute ... into row` is not an assignment for this purpose: it fills a
+   * row from Db2, and answering through a file or a queue is legitimate.
+   */
+  it("leaves a transaction with nothing to return alone", () => {
+    expect(
+      compile(`module Enquiry;
+
+record Commarea {
+  caAccountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+record Row {
+  rowBalance: decimal<15, 2>;
+}
+
+cics transaction enquire(commarea: Commarea, row: Row) {
+  writeQueue "CSMT" from row resp writeResp;
+  audit("ENQUIRED", commarea.idempotencyKey);
+}`).diagnostics,
+    ).toEqual([]);
+  });
+
+  /**
+   * `returnTransid` carries a commarea of its own to the next half of a
+   * pseudo-conversation, so the backend appends no writeback and there is
+   * nothing for this rule to say.
+   */
+  it("leaves a pseudo-conversation alone", () => {
+    expect(
+      compile(`module Enquiry;
+
+record Commarea {
+  caAccountId: string<16>;
+  idempotencyKey: string<36>;
+}
+
+record Next {
+  nextAccountId: string<16>;
+}
+
+cics transaction enquire(commarea: Commarea, next: Next) {
+  next.nextAccountId = commarea.caAccountId;
+  audit("ENQUIRED", commarea.idempotencyKey);
+  returnTransid "ENQ2" commarea next;
+}`).diagnostics,
+    ).toEqual([]);
+  });
+
+  /** One record parameter is the commarea, and there is nowhere else to write. */
+  it("leaves a transaction with a single record alone", () => {
+    expect(
+      compile(`module Enquiry;
+
+record Commarea {
+  caBalance: decimal<15, 2>;
+  idempotencyKey: string<36>;
+}
+
+cics transaction enquire(commarea: Commarea) {
+  commarea.caBalance = 1.00;
+  audit("ENQUIRED", commarea.idempotencyKey);
+}`).diagnostics,
+    ).toEqual([]);
+  });
+});
+
+/**
+ * The write-back on the path where the transaction failed.
+ *
+ * `emitFailingTransaction` is a separate path from the ordinary one, and it did
+ * not write the commarea back at all — so a transaction with an `on failure`
+ * handler returned the caller's own request no matter what either the body or
+ * the handler had set. The handler exists to record what went wrong; a return
+ * code it writes into the commarea and the caller never sees is the same defect
+ * one level down.
+ */
+describe("a transaction that can fail", () => {
+  const cobol =
+    compile(`module Enquiry;
+
+record Commarea {
+  caReturnCode: string<2>;
+  idempotencyKey: string<36>;
+}
+
+cics transaction enquire(commarea: Commarea) {
+  on failure {
+    commarea.caReturnCode = "09";
+  }
+
+  commarea.caReturnCode = "00";
+  audit("ENQUIRED", commarea.idempotencyKey);
+  raise "NO_ACCOUNT";
+}`).cobol ?? "";
+
+  it("writes the commarea back after the handler has run", () => {
+    const body = cobol.slice(
+      cobol.indexOf("\n       ENQUIRE.\n"),
+      cobol.indexOf("\n       ENQUIRE-EXIT.\n"),
+    );
+
+    expect(body).toContain("MOVE COMMAREA TO DFHCOMMAREA");
+    expect(body.indexOf("PERFORM ENQUIRE-ON-FAILURE")).toBeLessThan(
+      body.indexOf("MOVE COMMAREA TO DFHCOMMAREA"),
+    );
+  });
+
+  /** Once. The wrapper writes it; the body paragraph must not write it again. */
+  it("writes it once", () => {
+    expect(cobol.match(/MOVE COMMAREA TO DFHCOMMAREA/g)).toHaveLength(1);
   });
 });
 

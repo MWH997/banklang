@@ -244,3 +244,37 @@ export function checked(count: number, atLeast: number, what: string): void {
     );
   }
 }
+
+/**
+ * The generated COBOL with the padding inside a data description entry
+ * collapsed to one space.
+ *
+ * The column a `PIC` clause sits in is decided by `alignPictureColumns`, from
+ * the names of the fields around it. An assertion about *what* a field is
+ * declared as should therefore not also pin the width of the gap in front of
+ * the clause: renaming an unrelated field in the same record would fail it,
+ * which is a test breaking on something it was not written to watch. Forty of
+ * them did.
+ *
+ * The indent is kept, because Area A and Area B are structural and the level
+ * number is part of what is being asserted. Only the run of spaces after a
+ * non-space is collapsed.
+ *
+ * `tests/pic-alignment.test.ts` is where the column itself is asserted, once.
+ */
+export function unpadded(cobol: string | null | undefined): string {
+  return (cobol ?? "")
+    .split("\n")
+    .map((line) =>
+      line
+        // Odd elements are the quoted literals, which are data: `VALUE "GU  "`
+        // is IMS's four-character function code and collapsing it would assert
+        // the wrong string while still passing.
+        .split(/("(?:[^"]|"")*")/)
+        .map((part, index) =>
+          index % 2 === 1 ? part : part.replace(/(\S) {2,}/g, "$1 "),
+        )
+        .join(""),
+    )
+    .join("\n");
+}

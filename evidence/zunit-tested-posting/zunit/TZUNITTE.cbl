@@ -13,39 +13,39 @@
        PROGRAM-ID. 'TEST_POSTSBOTHLEGS'.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  PROGRAM-NAME             PIC X(8) VALUE 'ZUNITTES'.
-       01  AZ-CSECT                 PIC X(72) VALUE SPACES.
+       01  PROGRAM-NAME   PIC X(8) VALUE 'ZUNITTES'.
+       01  AZ-CSECT       PIC X(72) VALUE SPACES.
        01  BZ-ASSERT.
-           05  MESSAGE-LEN          PIC S9(4) COMP-4 VALUE 1.
-           05  MESSAGE-TXT          PIC X(254) VALUE SPACES.
-       01  BZ-P1                    PIC S9(9) COMP-4 VALUE 4.
-       01  BZ-P2                    PIC S9(9) COMP-4 VALUE 2001.
-       01  BZ-P3                    PIC X(3) VALUE 'AZU'.
-       01  BZUASSRT                 PIC X(8) VALUE 'BZUASSRT'.
-       01  BZUGETEP                 PIC X(8) VALUE 'BZUGETEP'.
-       01  AZ-EP-PTR                USAGE IS POINTER.
-       01  AZ-TEST-LEN              PIC S9(9) COMP-5.
-       01  AZ-GRP-INDEX             PIC 9(8).
-       01  AZ-FLAG-IN               PIC 9(1).
-       01  AZ-RECORD-PTR            USAGE IS POINTER.
-       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY.
-       01  AZ-COUNT-SHOW            PIC Z(4)9.
+           05  MESSAGE-LEN  PIC S9(4) COMP-4 VALUE 1.
+           05  MESSAGE-TXT  PIC X(254) VALUE SPACES.
+       01  BZ-P1          PIC S9(9) COMP-4 VALUE 4.
+       01  BZ-P2          PIC S9(9) COMP-4 VALUE 2001.
+       01  BZ-P3          PIC X(3) VALUE 'AZU'.
+       01  BZUASSRT       PIC X(8) VALUE 'BZUASSRT'.
+       01  BZUGETEP       PIC X(8) VALUE 'BZUGETEP'.
+       01  AZ-EP-PTR      USAGE IS POINTER.
+       01  AZ-TEST-LEN    PIC S9(9) COMP-5 VALUE ZERO.
+       01  AZ-GRP-INDEX   PIC 9(8) VALUE ZERO.
+       01  AZ-FLAG-IN     PIC 9(1) VALUE ZERO.
+       01  AZ-RECORD-PTR  USAGE IS POINTER.
+       01  AZ-RC-WORK     PIC S9(4) USAGE BINARY VALUE ZERO.
+       01  AZ-COUNT-SHOW  PIC Z(4)9.
        01  BANK-PARM.
-           05  BANK-PARM-LENGTH     PIC S9(4) COMP.
+           05  BANK-PARM-LENGTH  PIC S9(4) COMP.
            05  BANK-PARM-DATA.
-               10  BANK-PARM-ACCOUNT        PIC X(16).
-               10  BANK-PARM-AMOUNT         PIC S9(16)V99 SIGN IS
+               10  BANK-PARM-ACCOUNT          PIC X(16).
+               10  BANK-PARM-AMOUNT           PIC S9(16)V99 SIGN IS
                    LEADING SEPARATE.
-               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+               10  BANK-PARM-IDEMPOTENCY-KEY  PIC X(36).
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
+       01  AZ-TEST        PIC X(80).
        01  AZ-ARG-LIST.
-           05  ARG-LENGTH           PIC 9(4) COMP-4.
-           05  ARG-DATA             PIC X(256).
+           05  ARG-LENGTH  PIC 9(4) COMP-4.
+           05  ARG-DATA    PIC X(256).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
-       01  AZ-PROC-PTR              USAGE IS PROCEDURE-POINTER.
-       01  AZ-CALL-COUNT            PIC 9(5) COMP-5.
+       01  AZ-PROC-PTR    USAGE IS PROCEDURE-POINTER.
+       01  AZ-CALL-COUNT  PIC 9(5) COMP-5 VALUE ZERO.
        PROCEDURE DIVISION USING AZ-TEST AZ-ARG-LIST AZ-INFO-BLOCK.
            DISPLAY 'AZU0000I TEST_POSTSBOTHLEGS STARTED...'
            MOVE 0 TO AZ-TEST-LEN
@@ -154,16 +154,16 @@
        PROGRAM-ID. 'BZU_TEST'.
        DATA DIVISION.
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
+       01  AZ-TEST  PIC X(80).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
        01  BANK-PARM.
-           05  BANK-PARM-LENGTH     PIC S9(4) COMP.
+           05  BANK-PARM-LENGTH  PIC S9(4) COMP.
            05  BANK-PARM-DATA.
-               10  BANK-PARM-ACCOUNT        PIC X(16).
-               10  BANK-PARM-AMOUNT         PIC S9(16)V99 SIGN IS
+               10  BANK-PARM-ACCOUNT          PIC X(16).
+               10  BANK-PARM-AMOUNT           PIC S9(16)V99 SIGN IS
                    LEADING SEPARATE.
-               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+               10  BANK-PARM-IDEMPOTENCY-KEY  PIC X(36).
        PROCEDURE DIVISION.
        PGM-INPT.
            ENTRY 'PGM_INPT_ZUNITTES' USING AZ-TEST AZ-INFO-BLOCK
@@ -184,12 +184,12 @@
        PROGRAM-ID. 'BZU_INIT'.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  AZ-TEST-LEN              PIC S9(9) COMP-5.
-       01  AZ-TESTCASE-ID           PIC X(36)
+       01  AZ-TEST-LEN     PIC S9(9) COMP-5 VALUE ZERO.
+       01  AZ-TESTCASE-ID  PIC X(36)
            VALUE 'd012252c-2493-4992-8419-78b0a40d97ba'.
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
-       01  AZ-TEST-ID               PIC X(80).
+       01  AZ-TEST     PIC X(80).
+       01  AZ-TEST-ID  PIC X(80).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
        PROCEDURE DIVISION USING AZ-TEST AZ-TEST-ID AZ-INFO-BLOCK.
@@ -209,9 +209,9 @@
        PROGRAM-ID. 'BZU_TERM'.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  AZ-TEST-LEN              PIC S9(9) COMP-5.
+       01  AZ-TEST-LEN  PIC S9(9) COMP-5 VALUE ZERO.
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
+       01  AZ-TEST  PIC X(80).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
        PROCEDURE DIVISION USING AZ-TEST AZ-INFO-BLOCK.
@@ -231,29 +231,29 @@
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  BZ-ASSERT.
-           05  MESSAGE-LEN          PIC S9(4) COMP-4 VALUE 1.
-           05  MESSAGE-TXT          PIC X(254) VALUE SPACES.
-       01  BZ-P1                    PIC S9(9) COMP-4 VALUE 4.
-       01  BZ-P2                    PIC S9(9) COMP-4 VALUE 2001.
-       01  BZ-P3                    PIC X(3) VALUE 'AZU'.
-       01  BZUASSRT                 PIC X(8) VALUE 'BZUASSRT'.
-       01  AZ-TEST-LEN              PIC S9(9) COMP-5.
-       01  AZ-GRP-INDEX             PIC 9(8).
-       01  AZ-FLAG-IN               PIC 9(1).
-       01  AZ-RECORD-PTR            USAGE IS POINTER.
-       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY.
-       01  AZ-CALL-NUMBER           PIC 9(5) COMP-5.
-       01  AZ-COUNT-SHOW            PIC Z(4)9.
-       01  AZ-AMOUNT-SHOW           PIC -(16)9.99.
+           05  MESSAGE-LEN  PIC S9(4) COMP-4 VALUE 1.
+           05  MESSAGE-TXT  PIC X(254) VALUE SPACES.
+       01  BZ-P1           PIC S9(9) COMP-4 VALUE 4.
+       01  BZ-P2           PIC S9(9) COMP-4 VALUE 2001.
+       01  BZ-P3           PIC X(3) VALUE 'AZU'.
+       01  BZUASSRT        PIC X(8) VALUE 'BZUASSRT'.
+       01  AZ-TEST-LEN     PIC S9(9) COMP-5 VALUE ZERO.
+       01  AZ-GRP-INDEX    PIC 9(8) VALUE ZERO.
+       01  AZ-FLAG-IN      PIC 9(1) VALUE ZERO.
+       01  AZ-RECORD-PTR   USAGE IS POINTER.
+       01  AZ-RC-WORK      PIC S9(4) USAGE BINARY VALUE ZERO.
+       01  AZ-CALL-NUMBER  PIC 9(5) COMP-5 VALUE ZERO.
+       01  AZ-COUNT-SHOW   PIC Z(4)9.
+       01  AZ-AMOUNT-SHOW  PIC -(16)9.99.
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
+       01  AZ-TEST        PIC X(80).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
-       01  AZ-CALL-COUNT            PIC 9(5) COMP-5.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
+       01  AZ-CALL-COUNT  PIC 9(5) COMP-5 VALUE ZERO.
        PROCEDURE DIVISION.
        PGM-INPT.
            ENTRY 'PGM_INPT_BANKLEDG' USING AZ-TEST AZ-INFO-BLOCK
@@ -354,27 +354,27 @@
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  BZ-ASSERT.
-           05  MESSAGE-LEN          PIC S9(4) COMP-4 VALUE 1.
-           05  MESSAGE-TXT          PIC X(254) VALUE SPACES.
-       01  BZ-P1                    PIC S9(9) COMP-4 VALUE 4.
-       01  BZ-P2                    PIC S9(9) COMP-4 VALUE 2001.
-       01  BZ-P3                    PIC X(3) VALUE 'AZU'.
-       01  BZUASSRT                 PIC X(8) VALUE 'BZUASSRT'.
-       01  AZ-TEST-LEN              PIC S9(9) COMP-5.
-       01  AZ-GRP-INDEX             PIC 9(8).
-       01  AZ-FLAG-IN               PIC 9(1).
-       01  AZ-RECORD-PTR            USAGE IS POINTER.
-       01  AZ-RC-WORK               PIC S9(4) USAGE BINARY.
-       01  AZ-CALL-NUMBER           PIC 9(5) COMP-5.
-       01  AZ-COUNT-SHOW            PIC Z(4)9.
+           05  MESSAGE-LEN  PIC S9(4) COMP-4 VALUE 1.
+           05  MESSAGE-TXT  PIC X(254) VALUE SPACES.
+       01  BZ-P1           PIC S9(9) COMP-4 VALUE 4.
+       01  BZ-P2           PIC S9(9) COMP-4 VALUE 2001.
+       01  BZ-P3           PIC X(3) VALUE 'AZU'.
+       01  BZUASSRT        PIC X(8) VALUE 'BZUASSRT'.
+       01  AZ-TEST-LEN     PIC S9(9) COMP-5 VALUE ZERO.
+       01  AZ-GRP-INDEX    PIC 9(8) VALUE ZERO.
+       01  AZ-FLAG-IN      PIC 9(1) VALUE ZERO.
+       01  AZ-RECORD-PTR   USAGE IS POINTER.
+       01  AZ-RC-WORK      PIC S9(4) USAGE BINARY VALUE ZERO.
+       01  AZ-CALL-NUMBER  PIC 9(5) COMP-5 VALUE ZERO.
+       01  AZ-COUNT-SHOW   PIC Z(4)9.
        LINKAGE SECTION.
-       01  AZ-TEST                  PIC X(80).
+       01  AZ-TEST        PIC X(80).
        01  AZ-INFO-BLOCK.
            COPY EQAITERC.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
-       01  AZ-CALL-COUNT            PIC 9(5) COMP-5.
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
+       01  AZ-CALL-COUNT  PIC 9(5) COMP-5 VALUE ZERO.
        PROCEDURE DIVISION.
        PGM-INPT.
            ENTRY 'PGM_INPT_BANKAUDT' USING AZ-TEST AZ-INFO-BLOCK
@@ -452,23 +452,23 @@
        PROGRAM-ID. 'GTMEMRC'.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BZUGTMEM                 PIC X(8) VALUE 'BZUGTMEM'.
-       01  DATA-SIZE                PIC 9(8) COMP-4.
+       01  BZUGTMEM   PIC X(8) VALUE 'BZUGTMEM'.
+       01  DATA-SIZE  PIC 9(8) COMP-4 VALUE ZERO.
        LINKAGE SECTION.
-       01  AZ-TC-WORK-AREA          PIC X(256).
-       01  AZ-GRP-INDEX             PIC 9(8).
-       01  AZ-FLAG-IN               PIC 9(1).
-       01  AZ-RECORD-PTR            USAGE IS POINTER.
+       01  AZ-TC-WORK-AREA  PIC X(256).
+       01  AZ-GRP-INDEX     PIC 9(8) VALUE ZERO.
+       01  AZ-FLAG-IN       PIC 9(1) VALUE ZERO.
+       01  AZ-RECORD-PTR    USAGE IS POINTER.
        01  AZ-RECORD-PTR-VALUE
            REDEFINES AZ-RECORD-PTR  PIC S9(9) COMP-5.
-       01  DATA-PTR                 USAGE IS POINTER.
+       01  DATA-PTR         USAGE IS POINTER.
        01  DATA-PTR-VALUE
            REDEFINES DATA-PTR       PIC S9(9) COMP-5.
        01  DATA-AREA.
-           05  RECORD-COUNT-IO OCCURS 2.
+           05  RECORD-COUNT-IO  OCCURS 2.
                10  RECORD-COUNT-OT  PIC 9(5) COMP-5.
                10  RECORD-COUNT-IN  PIC 9(5) COMP-5.
-       01  WK-RECORD-COUNT          PIC 9(5) COMP-5.
+       01  WK-RECORD-COUNT  PIC 9(5) COMP-5.
        PROCEDURE DIVISION USING AZ-TC-WORK-AREA AZ-GRP-INDEX AZ-FLAG-IN
            AZ-RECORD-PTR.
        MAINPROC.
