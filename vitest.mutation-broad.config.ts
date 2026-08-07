@@ -46,6 +46,17 @@ export default mergeConfig(
         "tests/generated-programs.test.ts",
         "tests/cobol-runtime-differential.test.ts",
         "tests/determinism.test.ts",
+        // Builds the language server through `pnpm run build:server`, which
+        // cannot run inside Stryker's sandbox: `dist/` is an ignore pattern, so
+        // it is not copied, and the build has nowhere to write. A build step is
+        // not something a mutant in these packages changes.
+        "tests/language-server-session.test.ts",
+        // Scans `packages/*/src` for `throw new Error(`. Stryker instruments
+        // every mutated file with its own preamble, which contains exactly
+        // that, so the check reports the instrumentation as a compiler defect
+        // and the dry run fails before a single mutant is tried. It is a
+        // question about repository source, and no mutant changes the source.
+        "tests/errors.test.ts",
         // Repository hygiene: these read files, and no mutant changes a file.
         "tests/conversions.test.ts",
         "tests/documentation.test.ts",

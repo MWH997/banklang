@@ -360,3 +360,141 @@ describe("COBOL written by somebody else", () => {
     expect(analysis.files.every((file) => !file.statusChecked)).toBe(true);
   });
 });
+
+/**
+ * The reachability analysis, asked directly.
+ *
+ * Every test above runs against the conversions' originals, on the stated
+ * doctrine that a reader which works on a fragment and not on a program works
+ * on nothing. That doctrine is right and it is why this section exists: five
+ * real programs do not contain every shape, so the tools mutation lane found
+ * `packages/migration-analysis/src/index.ts` at **36.05%** with 202 surviving
+ * mutants, most of them on the branches below.
+ *
+ * These are fragments on purpose, and they do not replace the whole-program
+ * tests — they pin the individual decisions those programs happen not to make.
+ * The property that matters is the one the header names: a live paragraph must
+ * never be reported dead, because that is the defect that gets code deleted.
+ */
+describe("which paragraphs are unreachable", () => {
+  const program = (body: string) =>
+    analyseCobol(
+      `       IDENTIFICATION DIVISION.\n       PROGRAM-ID. T1.\n       PROCEDURE DIVISION.\n${body}`,
+      "T1.cbl",
+    );
+
+  it("reports a paragraph nothing reaches after a GO TO", () => {
+    const analysis = program(`       A-START.
+           GO TO C-END.
+       B-DEAD.
+           DISPLAY "B".
+       C-END.
+           DISPLAY "C".`);
+    expect(analysis.unreachable).toEqual(["B-DEAD"]);
+  });
+
+  it("does not report a paragraph reached by falling into it", () => {
+    // The paragraph above does not leave, so control arrives here.
+    const analysis = program(`       A-START.
+           DISPLAY "A".
+       B-LIVE.
+           DISPLAY "B".`);
+    expect(analysis.unreachable).toEqual([]);
+  });
+
+  it("never reports the entry point, which nothing performs", () => {
+    const analysis = program(`       A-START.
+           GO TO A-START.`);
+    expect(analysis.unreachable).toEqual([]);
+  });
+
+  /**
+   * `PERFORM x THRU y` reaches every paragraph between them, not just the two
+   * it names. Reading only the endpoints reports the middle as dead.
+   */
+  it("keeps the whole of a PERFORM THRU range live", () => {
+    const analysis = program(`       A-START.
+           PERFORM B-ONE THRU B-THREE.
+           GO TO Z-END.
+       B-ONE.
+           DISPLAY "1".
+       B-TWO.
+           DISPLAY "2".
+       B-THREE.
+           DISPLAY "3".
+       Z-END.
+           DISPLAY "Z".`);
+    expect(analysis.unreachable).toEqual([]);
+  });
+
+  it("says nothing rather than something wrong when THRU names a paragraph that is not there", () => {
+    // An unresolvable range is skipped: reporting the range dead on the
+    // strength of a name the program does not define is the deleting defect.
+    const analysis = program(`       A-START.
+           PERFORM B-ONE THRU NOWHERE.
+           GO TO Z-END.
+       B-ONE.
+           DISPLAY "1".
+       Z-END.
+           DISPLAY "Z".`);
+    expect(analysis.unreachable).toEqual([]);
+  });
+
+  it("does not report a declarative, which the runtime enters", () => {
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. T2.
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       ERR-SECTION SECTION.
+           USE AFTER STANDARD ERROR PROCEDURE ON MASTER.
+       ERR-HANDLER.
+           DISPLAY "E".
+       END DECLARATIVES.
+       MAIN-SECTION SECTION.
+       A-START.
+           GO TO C-END.
+       B-DEAD.
+           DISPLAY "B".
+       C-END.
+           DISPLAY "C".`,
+      "T2.cbl",
+    );
+    expect(analysis.unreachable).toEqual(["B-DEAD"]);
+    expect(analysis.unreachable).not.toContain("ERR-HANDLER");
+  });
+
+  /**
+   * A section header with no statements of its own falls into its first
+   * paragraph. Reading an empty paragraph as one that leaves had the entry
+   * point of every generated program reported as dead code.
+   */
+  it("does not report the first paragraph of a section as dead", () => {
+    const analysis = analyseCobol(
+      `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. T3.
+       PROCEDURE DIVISION.
+       FIRST-SECTION SECTION.
+       A-START.
+           DISPLAY "A".
+       SECOND-SECTION SECTION.
+       B-FIRST.
+           DISPLAY "B".`,
+      "T3.cbl",
+    );
+    expect(analysis.unreachable).toEqual([]);
+  });
+
+  it("counts the jumps it found", () => {
+    expect(
+      program(`       A-START.
+           GO TO C-END.
+       C-END.
+           DISPLAY "C".`).jumps,
+    ).toBe(1);
+    expect(
+      program(`       A-START.
+           DISPLAY "A".`).jumps,
+    ).toBe(0);
+  });
+});

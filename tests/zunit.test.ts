@@ -526,3 +526,70 @@ describe("GnuCOBOL", () => {
     }
   });
 });
+
+/**
+ * The other shape: a test that expects no call to anything.
+ *
+ * Every assertion above runs against one program, whose test expects a debit, a
+ * credit and an audit — so `stubbed` is never empty, and the tools mutation lane
+ * found the consequence: `if (stubbed.length > 0)` survives mutation at six
+ * places in the generator, because nothing ever took the other branch. The
+ * generator scored **40.83%** with 126 surviving mutants.
+ *
+ * `stubbed` is driven by what the *test* expects, not by what the program does.
+ * So this program audits — `BANK-AUD-001` requires it — while its test asserts
+ * only that the transaction runs. A generated case with no stubs must still be
+ * a valid case: a configuration, a driver that enters the program, and a job.
+ */
+describe("a test that stubs nothing", () => {
+  const NO_STUBS = `module PureCheck;
+
+function isPositive(amount: decimal<18, 2>): bool {
+  return amount > 0.00;
+}
+
+entry transaction check(amount: decimal<18, 2>, idempotencyKey: string<36>) {
+  let ok: bool = isPositive(amount);
+  audit("CHECKED", idempotencyKey);
+}
+
+test acceptsAPositiveAmount for check {
+  given amount = 10.00;
+  given idempotencyKey = "IDEM-1";
+}
+`;
+  const bare = emitZunit(programOf(NO_STUBS));
+
+  it("still produces every artifact a run needs", () => {
+    expect(bare.configuration).toContain("<?xml");
+    expect(bare.driver.length).toBeGreaterThan(0);
+    expect(bare.jcl.length).toBeGreaterThan(0);
+    expect(bare.programName).toBe("PURECHEC");
+  });
+
+  it("declares no stub, and no stub bookkeeping with it", () => {
+    // The counters and the call-position tables exist to check expectations
+    // against stubs. With no stub they are storage nothing reads.
+    expect(bare.driver).not.toContain("BANKLEDG");
+    expect(bare.driver).not.toContain("BANKAUDT");
+    expect(bare.configuration).not.toContain("BANKLEDG");
+  });
+
+  it("still enters the program under test", () => {
+    // The one thing that must survive having nothing to assert about.
+    expect(bare.driver).toContain("BZUGETEP");
+    expect(bare.driver).toContain("PURECHEC");
+  });
+
+  it("still fits reference format", () => {
+    const overlong = bare.driver.split("\n").filter((line) => line.length > 72);
+    expect(overlong).toEqual([]);
+  });
+
+  it("names its module and artifacts the same way the stubbed one does", () => {
+    expect(bare.moduleName).toBe(zunitModuleName(programOf(NO_STUBS)));
+    expect(bare.driverArtifactPath).toMatch(/\.cbl$/);
+    // IBM's own extension for a zUnit configuration, not `.xml`.
+    expect(bare.configurationArtifactPath).toMatch(/\.bzucfg$/);
+  });
+});

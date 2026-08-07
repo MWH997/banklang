@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { check, FILE_FLOOR, scoreFile, scores } from "../tools/mutation-floor";
+import {
+  check,
+  FILE_FLOOR,
+  measurable,
+  scoreFile,
+  scores,
+} from "../tools/mutation-floor";
 
 /**
  * The gate that stops one untested file hiding inside a passing average.
@@ -122,5 +128,33 @@ describe("the per-file floor", () => {
   it("does not score an unmutated file as perfect", () => {
     expect(scoreFile([])).toBe(0);
     expect(check({ files: { "never.ts": { mutants: [] } } })).toHaveLength(1);
+  });
+
+  /**
+   * But a file whose every mutant was *excluded by configuration* has nothing
+   * to measure, and failing on it reports a decision as a defect.
+   *
+   * `packages/config/src/schema.ts` is 38 mutants, all `Ignored`: it builds a
+   * JSON schema, so it is string literals, and the lanes exclude
+   * `StringLiteral` and `Regex` because changing a message is not a behaviour
+   * change worth a test. This gate failed the build on it — the mirror of the
+   * aggregate hiding a bad file, and just as wrong.
+   */
+  it("does not fail a file whose mutants were all excluded", () => {
+    const allIgnored = {
+      files: { "schema.ts": { mutants: mutants({ Ignored: 38 }) } },
+    };
+    expect(check(allIgnored)).toEqual([]);
+
+    const [entry] = scores(allIgnored);
+    expect(entry?.counted).toBe(0);
+    expect(measurable(entry!)).toBe(false);
+  });
+
+  it("still fails a file that has mutants and misses them", () => {
+    const uncovered = {
+      files: { "verifier.ts": { mutants: mutants({ NoCoverage: 12 }) } },
+    };
+    expect(check(uncovered).map((e) => e.file)).toEqual(["verifier.ts"]);
   });
 });

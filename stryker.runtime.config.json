@@ -31,6 +31,6 @@
   "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
   "ignoreStatic": true,
   "concurrency": 8,
-  "incremental": true,
-  "incrementalFile": "dist/mutation-runtime/incremental.json"
+  "incremental": false,
+  "_incremental": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and these lanes exist to measure whether the *tests* are worth anything \u2014 so a test-only change must re-measure. With it on, adding tests for packages/zunit left the score byte-identical at 126 survivors, which reads as 'the tests are useless' and was 'the run was reused'. CI is unaffected either way: a fresh runner has no dist/ and so no cache."
 }

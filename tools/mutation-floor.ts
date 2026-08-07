@@ -36,6 +36,8 @@ export interface FileScore {
   killed: number;
   survived: number;
   noCoverage: number;
+  /** Mutants the score is computed over: excludes Ignored and errors. */
+  counted: number;
   total: number;
 }
 
@@ -75,12 +77,38 @@ export function scores(report: MutationReport): FileScore[] {
     killed: entry.mutants.filter((m) => m.status === "Killed").length,
     survived: entry.mutants.filter((m) => m.status === "Survived").length,
     noCoverage: entry.mutants.filter((m) => m.status === "NoCoverage").length,
+    counted: entry.mutants.filter(
+      (m) =>
+        m.status === "Killed" ||
+        m.status === "Timeout" ||
+        m.status === "Survived" ||
+        m.status === "NoCoverage",
+    ).length,
     total: entry.mutants.length,
   }));
 }
 
+/**
+ * A file with nothing to measure is not a file that failed.
+ *
+ * `packages/config/src/schema.ts` has 38 mutants and every one is `Ignored`:
+ * it builds a JSON schema, so it is almost entirely string literals, and the
+ * lanes exclude `StringLiteral` and `Regex` mutations because changing a
+ * message is not a behaviour change worth a test. Scoring it 0% and failing
+ * the build was this gate reporting a configuration decision as an untested
+ * file — the same class of wrong as the aggregate hiding a bad one.
+ *
+ * A file with *no mutants at all* still counts against the floor. That is a
+ * file the lane's `mutate` globs never reached, which is a real gap.
+ */
+export function measurable(entry: FileScore): boolean {
+  return entry.counted > 0 || entry.total === 0;
+}
+
 export function check(report: MutationReport, floor = FILE_FLOOR): FileScore[] {
-  return scores(report).filter((entry) => entry.score < floor);
+  return scores(report).filter(
+    (entry) => measurable(entry) && entry.score < floor,
+  );
 }
 
 function main(): void {
@@ -97,7 +125,11 @@ function main(): void {
   const report = JSON.parse(readFileSync(path, "utf8")) as MutationReport;
   const all = scores(report).sort((a, b) => a.score - b.score);
   for (const entry of all) {
-    const mark = entry.score < FILE_FLOOR ? "FAIL" : "ok  ";
+    const mark = !measurable(entry)
+      ? "n/a "
+      : entry.score < FILE_FLOOR
+        ? "FAIL"
+        : "ok  ";
     console.log(
       `  ${mark} ${entry.score.toFixed(2).padStart(6)}%  ` +
         `${String(entry.survived).padStart(4)} survived  ` +
@@ -105,7 +137,9 @@ function main(): void {
     );
   }
 
-  const failing = all.filter((entry) => entry.score < FILE_FLOOR);
+  const failing = all.filter(
+    (entry) => measurable(entry) && entry.score < FILE_FLOOR,
+  );
   if (failing.length > 0) {
     throw new Error(
       `${String(failing.length)} file(s) below the ${String(FILE_FLOOR)}% mutation floor. ` +
