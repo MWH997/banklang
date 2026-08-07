@@ -42,6 +42,19 @@ export function fitCobolWord(
   // it came from: ACCT, INTR, ELIG. Below that the name stops being a name.
   const floor = 4;
   const segments = word.split("-");
+
+  // One segment is not an abbreviation problem, it is a length problem.
+  //
+  // The loop below shortens the longest segment to `floor` and goes round
+  // again, which is the right rule when there are several words to trade off.
+  // With one word there is nothing to trade: it was cut to four characters and
+  // the other twenty-six were thrown away. `settlementreconciliationthreshold`
+  // — a legal BankTS identifier, no camel humps for `rawCobolName` to split on
+  // — became `SETT`, and any other name sharing those four letters collided
+  // with it. Found by mutation testing: nothing exercised this branch.
+  if (segments.length === 1) {
+    return word.slice(0, limit);
+  }
   while (segments.join("-").length > limit) {
     let longest = -1;
     for (let index = 0; index < segments.length; index += 1) {

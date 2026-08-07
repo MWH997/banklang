@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The interpreter and the precompiler. `packages/cobol-runtime` is what the differential lane compares against `cobc`, so a defect here does not fail a test \u2014 it agrees with the wrong answer and reports a match. That is the shape worth mutating.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation-broad.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "packages/cobol-runtime/src/**/*.ts",
+    "packages/precompiler/src/**/*.ts"
+  ],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "htmlReporter": {
+    "fileName": "dist/mutation-runtime/index.html"
+  },
+  "jsonReporter": {
+    "fileName": "dist/mutation-runtime/mutation.json"
+  },
+  "timeoutMS": 120000,
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
+  "ignoreStatic": true,
+  "concurrency": 8,
+  "incremental": true,
+  "incrementalFile": "dist/mutation-runtime/incremental.json"
+}

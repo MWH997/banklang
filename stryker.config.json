@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "_comment": "The diagnostics are the product. A safety rule with no test that fails when you invert it is not a rule, it is a comment \u2014 so the two packages that decide whether a program is refused are the ones mutated. The emitter is deliberately out of scope: its output is held by golden fixtures, the conformance linter and cobc, which is a different and already-strong kind of evidence. See docs/verification.md.",
   "packageManager": "pnpm",
-  "reporters": ["html", "clear-text", "progress"],
+  "reporters": ["html", "clear-text", "progress", "json"],
   "testRunner": "vitest",
   "coverageAnalysis": "perTest",
   "mutate": [
@@ -29,5 +29,8 @@
   },
   "incremental": true,
   "incrementalFile": "dist/mutation/stryker-incremental.json",
-  "ignoreStatic": true
+  "ignoreStatic": true,
+  "jsonReporter": {
+    "fileName": "dist/mutation/mutation.json"
+  }
 }

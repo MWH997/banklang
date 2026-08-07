@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The checkers and readers: the z/OS semantics linter, the copybook and DCLGEN importers, the formatter, the zUnit generator, the verifier and the config loader. `zos-lint` exists specifically to catch what every other check is blind to, and a rule that cannot fail is worth nothing.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation-broad.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "packages/zos-lint/src/**/*.ts",
+    "packages/copybook/src/**/*.ts",
+    "packages/formatter/src/**/*.ts",
+    "packages/zunit/src/**/*.ts",
+    "packages/verifier/src/**/*.ts",
+    "packages/config/src/**/*.ts",
+    "packages/migration-analysis/src/**/*.ts"
+  ],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "htmlReporter": {
+    "fileName": "dist/mutation-tools/index.html"
+  },
+  "jsonReporter": {
+    "fileName": "dist/mutation-tools/mutation.json"
+  },
+  "timeoutMS": 120000,
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
+  "ignoreStatic": true,
+  "concurrency": 8,
+  "incremental": true,
+  "incrementalFile": "dist/mutation-tools/incremental.json"
+}

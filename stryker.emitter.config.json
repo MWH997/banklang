@@ -1,8 +1,8 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "The emitter's formatting, which stryker.config.json deliberately left out on the grounds that golden fixtures, the conformance linter and cobc already held it. The 2026-08-05 audit's F13 disproved that: the fixture contained the defect, the linter had no rule for it, and cobc accepts both delimiters. Scoped to the files that decide what emitted text looks like rather than what it says — the reference format, the prologue, and the name and picture builders — because a surviving mutant in those is a house-style rule nothing enforces. The 8,700-line backend index is out of scope: mutating it generates five figures of mutants and most of them are about semantics, which the corpus assertions and cobc already answer. See docs/verification.md.",
+  "_comment": "The emitter's formatting, which stryker.config.json deliberately left out on the grounds that golden fixtures, the conformance linter and cobc already held it. The 2026-08-05 audit's F13 disproved that: the fixture contained the defect, the linter had no rule for it, and cobc accepts both delimiters. Scoped to the files that decide what emitted text looks like rather than what it says \u2014 the reference format, the prologue, and the name and picture builders \u2014 because a surviving mutant in those is a house-style rule nothing enforces. The 8,700-line backend index is out of scope: mutating it generates five figures of mutants and most of them are about semantics, which the corpus assertions and cobc already answer. See docs/verification.md.",
   "packageManager": "pnpm",
-  "reporters": ["html", "clear-text", "progress"],
+  "reporters": ["html", "clear-text", "progress", "json"],
   "testRunner": "vitest",
   "coverageAnalysis": "perTest",
   "mutate": [
@@ -30,5 +30,8 @@
   },
   "incremental": true,
   "incrementalFile": "dist/mutation-emitter/stryker-incremental.json",
-  "ignoreStatic": true
+  "ignoreStatic": true,
+  "jsonReporter": {
+    "fileName": "dist/mutation-emitter/mutation.json"
+  }
 }

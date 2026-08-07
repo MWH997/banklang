@@ -36,6 +36,19 @@ jobs:
           - lane: conformance-lint
             script: test:mutation:lint
             report: dist/mutation-lint
+          # Added 2026-08-08. The emitter, the interpreter and the checkers had
+          # no lane at all: 9,263 lines deciding what COBOL a program becomes,
+          # 6,044 deciding what running it does, and the z/OS linter, which
+          # exists to catch what every other check is blind to.
+          - lane: backend
+            script: test:mutation:backend
+            report: dist/mutation-backend
+          - lane: runtime
+            script: test:mutation:runtime
+            report: dist/mutation-runtime
+          - lane: tools
+            script: test:mutation:tools
+            report: dist/mutation-tools
     steps:
       - uses: actions/checkout@v7
 
@@ -63,6 +76,22 @@ jobs:
         continue-on-error: true
         run: pnpm ${{ matrix.script }}
 
+      # Stryker's `break` threshold is applied to the aggregate, and an
+      # aggregate hides the file worth knowing about: the emitter lane scored
+      # 61.65 against a break of 60 and went green while
+      # `packages/cobol-ir/src/index.ts` inside it was at 44.12, with 81
+      # surviving mutants. Two healthier files carried it.
+      #
+      # `if: always()` because this has to run when the step above failed as
+      # well — a lane under its aggregate threshold is exactly when the
+      # per-file picture matters most. The outcome is folded into `run` below
+      # so either failure opens the issue.
+      - name: Hold every file to the mutation floor
+        id: floor
+        if: always()
+        continue-on-error: true
+        run: pnpm tsx tools/mutation-floor.ts ${{ matrix.report }}/mutation.json
+
       - name: Upload the HTML report
         if: always()
         uses: actions/upload-artifact@v7
@@ -74,7 +103,7 @@ jobs:
       # A silent drop is the failure mode worth preventing: these runs exist to
       # be read, and nobody reads a workflow that goes green whatever happens.
       - name: Open an issue when the score falls below its threshold
-        if: steps.run.outcome == 'failure'
+        if: steps.run.outcome == 'failure' || steps.floor.outcome == 'failure'
         uses: actions/github-script@v9
         with:
           script: |

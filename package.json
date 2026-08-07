@@ -72,7 +72,10 @@
     "test:mutation:lint": "stryker run stryker.lint.config.json",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "words:extract": "tsx tools/extract-ibm-words.ts",
-    "zos:kit": "tsx tools/zos-kit.ts"
+    "zos:kit": "tsx tools/zos-kit.ts",
+    "test:mutation:backend": "stryker run stryker.backend.config.json",
+    "test:mutation:runtime": "stryker run stryker.runtime.config.json",
+    "test:mutation:tools": "stryker run stryker.tools.config.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

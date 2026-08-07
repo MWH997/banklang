@@ -42,6 +42,11 @@ export default defineConfig({
       // Names: abbreviation to 30, reserved-word collision, qualification.
       "tests/reserved-words.test.ts",
       "tests/ir.test.ts",
+      // The same names and pictures asked directly rather than through a
+      // compile. Omitting this one cost nothing visible and everything real:
+      // the suite was written to kill `cobol-ir` mutants, ran green in CI, and
+      // moved the lane's score by -0.10 because Stryker never loaded it.
+      "tests/cobol-ir-names.test.ts",
       // The copybook is the record's own declaration through this emitter.
       "tests/copybook-emitter.test.ts",
       "tests/cobol-emitter.test.ts",
