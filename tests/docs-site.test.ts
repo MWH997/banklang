@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -6,6 +7,7 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -21,6 +23,14 @@ import {
   rewriteLink,
   type SearchEntry,
 } from "../tools/build-docs";
+import { buildAbout, buildBlog, buildFeed } from "../tools/build-blog";
+import {
+  builtPages,
+  renderLanding,
+  servedPath,
+  servedUrl,
+  siteContent,
+} from "../tools/build-site";
 
 /**
  * The documentation, rendered as part of the site.
@@ -153,6 +163,10 @@ describe("every link in the rendered site resolves", () => {
       "assets/docs.css",
       "assets/site.css",
       "blog",
+      // D5. Every page declares the feed, not only the blog: a reader who
+      // wants to follow this is as likely to be on a documentation page, and a
+      // feed reader looks at whatever page it was handed.
+      "blog/feed.xml",
       "favicon.svg",
       "playground",
     ]);
@@ -384,14 +398,54 @@ describe("the rendered pages keep the site's promises", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("gives every page a title, a description and a canonical URL", () => {
+  /**
+   * D2. The exact form, not a prefix.
+   *
+   * This asserted that the canonical *started with* `…/docs/`, which is why
+   * F11 survived it: the docs index declared `…/docs/index.html` canonical
+   * while its own sitemap entry said `…/docs/`, and both matched. Cloudflare
+   * Pages answers `/docs/index.html` with a 308 to `/docs/`, so the page had
+   * declared a redirect to be its own preferred URL.
+   */
+  it("gives every page a title, a description and the URL it is served at", () => {
     for (const page of pages) {
       const html = readFileSync(page, "utf8");
       expect(html, page).toMatch(/<title>[^<]+ — BankLang<\/title>/);
       expect(html, page).toMatch(/<meta name="description" content="[^"]+"/);
-      expect(html, page).toContain(
-        'rel="canonical" href="https://banklang.mwhassan.com/docs/',
+
+      const expected = servedUrl(relative(out, page));
+      expect(html, page).toContain(`rel="canonical" href="${expected}"`);
+      // And `og:url`, which is the same URL said again to a different reader.
+      // A card that points somewhere else from the canonical is the same
+      // defect wearing a different tag.
+      expect(html, page).toContain(`property="og:url" content="${expected}"`);
+      expect(html, page).not.toContain(
+        'href="https://banklang.mwhassan.com/docs/index.html"',
       );
+    }
+  });
+
+  /**
+   * D3. A documentation page shared as a bare link used to render as a bare
+   * link: no card, no title beyond the URL, no image.
+   */
+  it("carries the metadata a shared link needs", () => {
+    for (const page of pages) {
+      const html = readFileSync(page, "utf8");
+      for (const tag of [
+        'property="og:type"',
+        'property="og:title"',
+        'property="og:description"',
+        'property="og:image"',
+        'property="og:image:alt"',
+        'name="twitter:card" content="summary_large_image"',
+        'name="twitter:title"',
+        'name="twitter:description"',
+        'name="twitter:image"',
+        'rel="alternate" type="application/rss+xml"',
+      ]) {
+        expect(html, `${page}: ${tag}`).toContain(tag);
+      }
     }
   });
 
@@ -405,6 +459,86 @@ describe("the rendered pages keep the site's promises", () => {
       "utf8",
     );
     expect(page.match(/class="c-com"/g)?.length ?? 0).toBeGreaterThan(10);
+  });
+});
+
+/**
+ * D2. What the sitemap says the site contains.
+ *
+ * Two failures, one ticket. Forty-seven of fifty-one entries named the `.html`
+ * form, which Cloudflare Pages answers with a redirect rather than with the
+ * page — "Page with redirect, not indexed" in Search Console. And the list was
+ * written out by hand beside the build rather than derived from it, so the two
+ * documentation directory indexes, which `buildDocs` has rendered all along,
+ * were in no sitemap at all.
+ */
+describe("the sitemap", () => {
+  let root: string;
+
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), "banklang-site-"));
+    buildDocs(root);
+    const written = buildBlog(root);
+    buildFeed(root, written);
+    buildAbout(root);
+    // The landing page, which `build-site.ts` writes from the template rather
+    // than through a builder. Rendered here so the comparison below covers the
+    // one page a reader is most likely to arrive at.
+    writeFileSync(join(root, "index.html"), renderLanding(siteContent()));
+  });
+
+  afterAll(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it("names every page the build writes, and nothing else", () => {
+    // The playground is built by Vite rather than here, so it is the one entry
+    // this comparison cannot see and is asserted separately below.
+    const listed = new Set(
+      builtPages().filter((page) => page !== "playground/index.html"),
+    );
+    const written = new Set(
+      htmlUnder(root).map((page) => relative(root, page).replace(/\\/g, "/")),
+    );
+
+    expect(written.size).toBeGreaterThan(45);
+    expect(
+      [...written].filter((page) => !listed.has(page)).sort(),
+      "rendered, and in no sitemap",
+    ).toEqual([]);
+    expect(
+      [...listed].filter((page) => !written.has(page)).sort(),
+      "in the sitemap, and never rendered",
+    ).toEqual([]);
+  });
+
+  it("includes the playground, which is built elsewhere", () => {
+    expect(builtPages()).toContain("playground/index.html");
+  });
+
+  it("names the URL the host serves, not the file on disk", () => {
+    for (const page of builtPages()) {
+      const path = servedPath(page);
+      expect(path, page).not.toMatch(/\.html$/);
+      expect(path, page).toMatch(/^\//);
+    }
+    expect(servedPath("index.html")).toBe("/");
+    expect(servedPath("docs/index.html")).toBe("/docs/");
+    expect(servedPath("docs/language/sql.html")).toBe("/docs/language/sql");
+    expect(servedPath("blog/why.html")).toBe("/blog/why");
+  });
+
+  it("agrees with the canonical each of those pages declares", () => {
+    // The invariant that was broken: `/docs/index.html` as the canonical and
+    // `/docs/` in the sitemap, for one page.
+    for (const page of htmlUnder(root)) {
+      const html = readFileSync(page, "utf8");
+      const canonical = /rel="canonical" href="([^"]+)"/.exec(html)?.[1];
+      const built = relative(root, page).replace(/\\/g, "/");
+      expect(canonical, `${built} declares no canonical`).toBe(
+        servedUrl(built),
+      );
+    }
   });
 });
 
@@ -462,42 +596,139 @@ describe("the source the docs are built from", () => {
 });
 
 /**
- * Working papers that stay in the repository and off the site.
+ * Working papers, which are in neither the site nor the repository.
  *
- * The audits are this project's criticism of itself and `launch-tickets.md` is
- * the plan for answering it. Both belong in the repository, next to the commits
- * that did the answering. Neither is written for somebody who arrived from a
- * link — and the site rendered them anyway, put them in `sitemap.xml`, and
- * pointed search engines at them, so a reader searching the site met the
- * pre-publication security checklist and an author's address.
+ * The audits are this project's criticism of itself and the ticket lists are
+ * the plans for answering it. They were kept in the repository on the argument
+ * that somebody evaluating the engineering should be able to read them beside
+ * the commits that answered them. That argument loses to a simpler one: one of
+ * them records rewrites of this repository's own history, and a public repo is
+ * not where that goes. `.gitignore` excludes `docs/working/`, so a clone does
+ * not contain them and no commit adds them.
  *
- * Excluded, not hidden: GitHub renders every one of them, and the links now go
- * there rather than to a page this site does not serve.
+ * The reasoning worth publishing goes in the commit message for the change it
+ * explains, which is where somebody reading the history will actually find it.
+ *
+ * **A directory rather than a list of names.** The first answer to this was
+ * `UNPUBLISHED = [/^audit-\d{4}-\d{2}-\d{2}\.md$/, /^launch-tickets\.md$/]`,
+ * which fixed the two files that existed and left the next working paper
+ * published by default under whatever it happened to be called — the audit's
+ * F22. `docs/working/` is a decision the author makes while writing, and the
+ * guard below turns the old list into a check on where a file is rather than
+ * the rule for whether it ships. It still matters with the directory ignored:
+ * the papers exist on the author's disk, and a build that runs there must not
+ * render them into the public site.
  */
 describe("the documents the site does not publish", () => {
   it("renders no audit and no ticket list", () => {
     const published = docFiles();
     expect(published.length).toBeGreaterThan(20);
-    expect(published.filter((file) => /^audit-/.test(file))).toEqual([]);
-    expect(published).not.toContain("launch-tickets.md");
+    expect(
+      published.filter((file) =>
+        /(^|\/)audit-\d{4}-\d{2}-\d{2}\.md$/.test(file),
+      ),
+    ).toEqual([]);
+    expect(published.filter((file) => file.startsWith("working/"))).toEqual([]);
+    expect(published).not.toContain("working/launch-tickets.md");
   });
 
-  it("still has them in the repository, which is the point", () => {
-    // Excluding a document from the site must not be a reason to delete it.
-    expect(existsSync("docs/launch-tickets.md")).toBe(true);
-    expect(existsSync("docs/audit-2026-08-06.md")).toBe(true);
+  /**
+   * And the repository does not carry them either.
+   *
+   * Asserted against git rather than against the file system: they are on the
+   * author's disk and must stay off every commit, which `existsSync` cannot
+   * tell apart. `git ls-files` answers the question that matters — what a clone
+   * gets.
+   */
+  it("keeps them out of the repository as well as off the site", () => {
+    const tracked = execFileSync("git", ["ls-files", "docs/"], {
+      encoding: "utf8",
+    })
+      .split("\n")
+      .filter((line) => line !== "");
+
+    expect(tracked.length).toBeGreaterThan(20);
+    expect(tracked.filter((file) => file.startsWith("docs/working/"))).toEqual(
+      [],
+    );
+    expect(
+      tracked.filter((file) =>
+        /(^|\/)(audit-\d{4}-\d{2}-\d{2}|tickets-\d{4}-\d{2}-\d{2}|launch-tickets)\.md$/i.test(
+          file,
+        ),
+      ),
+    ).toEqual([]);
   });
 
-  it("sends a link to one of them to GitHub rather than to a 404", () => {
-    expect(rewriteLink("audit-2026-08-06.md", "for-decision-makers.md")).toBe(
-      "https://github.com/MWH997/banklang/blob/main/docs/audit-2026-08-06.md",
-    );
-    expect(rewriteLink("launch-tickets.md", "roadmap.md")).toBe(
-      "https://github.com/MWH997/banklang/blob/main/docs/launch-tickets.md",
-    );
-    // A published one still resolves on the site.
+  /**
+   * Nothing published may link to one.
+   *
+   * They are not in the repository, so the GitHub fallback that a link out of
+   * `docs/` gets would be a dead link on somebody else's domain. Refusing is
+   * the only honest answer, and it fails the build rather than the reader.
+   */
+  it("refuses to render a link from a published page to a working paper", () => {
+    expect(() =>
+      rewriteLink("working/audit-2026-08-06.md", "for-decision-makers.md"),
+    ).toThrow(/working paper/);
+  });
+
+  /**
+   * The half that fails closed.
+   *
+   * A denylist is only as good as the names somebody remembered to put in it,
+   * and the working paper written next year will have a name nobody predicted.
+   * What the old patterns are good for is noticing that a file which is plainly
+   * a working paper has been left where the site would publish it — so they
+   * stop the build instead of deciding what ships.
+   */
+  it("refuses to build when a working paper is filed outside the directory", () => {
+    const stray = "docs/audit-2999-01-01.md";
+    writeFileSync(stray, "# A working paper in the wrong place\n", "utf8");
+    try {
+      expect(() => docFiles()).toThrow(/docs\/working/);
+    } finally {
+      rmSync(stray);
+    }
+  });
+
+  /**
+   * F21 was that the builder's comment claimed the README linked the audits by
+   * name and `grep audit-2026 README.md` returned nothing. The links were added
+   * to make the claim true; they are gone again, because the papers are gone.
+   *
+   * This is the assertion that keeps the two consistent: no tracked file may
+   * name a path under `docs/working/`, in either direction. A link to a file a
+   * clone does not have is the same defect F21 was, pointing the other way.
+   */
+  it("is linked from nothing that ships", () => {
+    const tracked = execFileSync("git", ["ls-files"], { encoding: "utf8" })
+      .split("\n")
+      .filter((file) => file.endsWith(".md"));
+
+    // Naming the directory is fine and necessary — `WORKING_PAPERS` and the
+    // guard around it have to say what they exclude. A *link* is the defect:
+    // it is a path a clone does not have, offered to a reader as one it does.
+    const link = /\]\(([^)]*\b(?:docs\/)?working\/[^)]+)\)/g;
+    const offenders: string[] = [];
+    for (const file of tracked) {
+      if (!existsSync(file)) {
+        continue;
+      }
+      for (const [, target] of readFileSync(file, "utf8").matchAll(link)) {
+        offenders.push(`${file} → ${target ?? ""}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("still resolves a published link on the site", () => {
     expect(rewriteLink("verification.md", "roadmap.md")).toBe(
       "verification.html",
+    );
+    // And one that leaves `docs/` still goes to the repository, where it is.
+    expect(rewriteLink("../CONTRIBUTING.md", "roadmap.md")).toBe(
+      "https://github.com/MWH997/banklang/blob/main/CONTRIBUTING.md",
     );
   });
 

@@ -120,6 +120,7 @@ pnpm typecheck          # TypeScript
 pnpm test               # everything, including programs that are executed
 pnpm test:gnucobol      # every example, compiled under an IBM-shaped dialect
 pnpm lint:conformance   # every artifact, against the target's rules
+pnpm lint:zos           # every artifact, against what z/OS will do with it
 ```
 
 `pnpm test:gnucobol` is the one worth understanding. It compiles each example
@@ -134,7 +135,13 @@ both shipped.
 and every evidence bundle as text and asserts the target's rules — 30-character
 words, column 72, `ARITH(COMPAT)`'s eighteen digits, dataset qualifiers at
 eight, and that every word in the program is one Enterprise COBOL has heard of.
-See [target-conformance.md](target-conformance.md).
+
+`pnpm lint:zos` reads the same artifacts and asks the other question: not
+whether the toolchain will accept the program, but whether z/OS will do what it
+says. The 2026-08-07 audit found two shipped programs that compiled, bound and
+verified, and then aborted on their second `MQCONN` or returned the caller's own
+request unchanged — neither of which is a syntax error, a style violation or a
+wrong number. Both are in [target-conformance.md](target-conformance.md).
 
 ---
 
