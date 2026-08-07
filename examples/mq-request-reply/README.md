@@ -33,6 +33,16 @@ back on the queue and a committed one is gone, so the queue holds the position.
 **A rejection still gets a reply.** A request/reply partner that is told nothing
 waits forever.
 
+**One connection, two queues.** Both queues are on `CSQ1`, and a program
+connects to a queue manager rather than to a queue, so the two `connectQueue`
+statements produce one `MQCONN` between them and the two `disconnectQueue`
+statements produce one `MQDISC`. IBM's Application Programming Reference says a
+second `MQCONN` naming a manager already connected returns the same handle "with
+completion code MQCC_WARNING and reason code MQRC_ALREADY_CONNECTED" — and
+`MQCC-WARNING` is not `MQCC-OK`, so a connect per queue would end this step with
+RC 12 on the second queue, before reading a message. Nothing local sees that:
+the reference MQI now models it, but a queue manager is not there to disagree.
+
 ## What it costs on z/OS
 
 MQ needs no precompiler — the MQI is plain `CALL`s — but the generated job asks

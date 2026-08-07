@@ -11,9 +11,9 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A CICS transaction, started by a transaction identifier in a
-      *>     region rather than by EXEC PGM in a job.
-      *>   DFHCOMMAREA holds ENQUIRY-REQUEST, and EIBCALEN is tested
-      *>     against its length before anything reads it.
+      *>   region rather than by EXEC PGM in a job.
+      *>   DFHCOMMAREA holds ENQUIRY-COMMAREA, and EIBCALEN is tested
+      *>   against its length before anything reads it.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -21,7 +21,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  Not used under CICS. A failure abends the task with code
-      *>     BLNG.
+      *>       BLNG.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -35,40 +35,52 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
        01  FETCH-ACCOUNT-H1     PIC X(16).
            EXEC SQL END DECLARE SECTION END-EXEC.
-       01  LINK-RESP            PIC S9(8) COMP.
-       01  COMMIT-RESP          PIC S9(8) COMP.
-       01  ROLLBACK-RESP        PIC S9(8) COMP.
+       01  LINK-RESP            PIC S9(8) COMP VALUE ZERO.
+       01  COMMIT-RESP          PIC S9(8) COMP VALUE ZERO.
+       01  ROLLBACK-RESP        PIC S9(8) COMP VALUE ZERO.
        01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
        01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  ENQUIRY-REQUEST.
-           05  ACCOUNT-ID           PIC X(16).
-           05  REQUESTED-BY         PIC X(20).
-           05  IDEMPOTENCY-KEY      PIC X(36).
+       01  ENQUIRY-COMMAREA.
+           05  CA-ACCOUNT-ID    PIC X(16).
+           05  CA-REQUESTED-BY  PIC X(20).
+           05  CA-BALANCE       PIC S9(16)V99 COMP-3.
+           05  CA-OUTCOME       PIC X(14).
+               88  CA-OUTCOME-FOUND           VALUE "FOUND".
+               88  CA-OUTCOME-NOT-FOUND       VALUE "NOT_FOUND".
+               88  CA-OUTCOME-UNAVAILABLE     VALUE "UNAVAILABLE".
+               88  CA-OUTCOME-UNAVAILABLE-DB  VALUE "UNAVAILABLE_DB".
+           05  IDEMPOTENCY-KEY  PIC X(36).
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
        01  ACCOUNT-BALANCE-ROW.
-           05  ROW-ACCOUNT-ID       PIC X(16).
-           05  ROW-BALANCE          PIC S9(16)V99 COMP-3.
-           05  ROW-STATUS           PIC X(8).
+           05  ROW-ACCOUNT-ID  PIC X(16).
+           05  ROW-BALANCE     PIC S9(16)V99 COMP-3.
+           05  ROW-STATUS      PIC X(8).
            EXEC SQL END DECLARE SECTION END-EXEC.
-       01  BALANCE-REPLY.
-           05  REPLY-ACCOUNT-ID     PIC X(16).
-           05  REPLY-BALANCE        PIC S9(16)V99 COMP-3.
-           05  OUTCOME              PIC X(14).
-               88  OUTCOME-FOUND                VALUE "FOUND".
-               88  OUTCOME-NOT-FOUND            VALUE "NOT_FOUND".
-               88  OUTCOME-UNAVAILABLE          VALUE "UNAVAILABLE".
-               88  OUTCOME-UNAVAILABLE-DB       VALUE "UNAVAILABLE_DB".
-       01  IS-AVAILABLE-RESULT PIC X(1) VALUE "N".
-       01  IS-AVAILABLE-P1      PIC X(8).
+       01  AUDIT-ENTRY.
+           05  AUDIT-ACCOUNT-ID    PIC X(16).
+           05  AUDIT-REQUESTED-BY  PIC X(20).
+           05  AUDIT-OUTCOME       PIC X(14).
+               88  AUDIT-OUTCOME-FOUND           VALUE "FOUND".
+               88  AUDIT-OUTCOME-NOT-FOUND       VALUE "NOT_FOUND".
+               88  AUDIT-OUTCOME-UNAVAILABLE     VALUE "UNAVAILABLE".
+               88  AUDIT-OUTCOME-UNAVAILABLE-DB  VALUE "UNAVAILABLE_DB".
+       01  IS-AVAILABLE-RESULT  PIC X(1) VALUE "N".
+       01  IS-AVAILABLE-P1      PIC X(8) VALUE SPACES.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        LINKAGE SECTION.
        01  DFHCOMMAREA.
-           05  LK-ACCOUNT-ID        PIC X(16).
-           05  LK-REQUESTED-BY      PIC X(20).
-           05  LK-IDEMPOTENCY-KEY   PIC X(36).
+           05  LK-CA-ACCOUNT-ID    PIC X(16).
+           05  LK-CA-REQUESTED-BY  PIC X(20).
+           05  LK-CA-BALANCE       PIC S9(16)V99 COMP-3.
+           05  LK-CA-OUTCOME       PIC X(14).
+               88  LK-CA-OUTCOME-FOUND           VALUE "FOUND".
+               88  LK-CA-OUTCOME-NOT-FOUND       VALUE "NOT_FOUND".
+               88  LK-CA-OUTCOME-UNAVAILABLE     VALUE "UNAVAILABLE".
+               88  LK-CA-OUTCOME-UNAVAILABLE-DB  VALUE "UNAVAILABLE_DB".
+           05  LK-IDEMPOTENCY-KEY  PIC X(36).
 
        PROCEDURE DIVISION.
        BANK-MAIN.
@@ -93,8 +105,8 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
            IF EIBCALEN < LENGTH OF DFHCOMMAREA
                EXEC CICS ABEND ABCODE("BKNC") END-EXEC
            END-IF
-           MOVE DFHCOMMAREA TO ENQUIRY-REQUEST
-           MOVE ACCOUNT-ID OF ENQUIRY-REQUEST TO FETCH-ACCOUNT-H1
+           MOVE DFHCOMMAREA TO ENQUIRY-COMMAREA
+           MOVE CA-ACCOUNT-ID OF ENQUIRY-COMMAREA TO FETCH-ACCOUNT-H1
            EXEC SQL
                SELECT ACCOUNT_ID, BALANCE, STATUS
                INTO :ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW, :ROW-BALANCE
@@ -104,13 +116,12 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                WHERE ACCOUNT_ID = :FETCH-ACCOUNT-H1
            END-EXEC
            IF SQLCODE < 0
-               SET OUTCOME-UNAVAILABLE-DB OF BALANCE-REPLY TO TRUE
+               SET CA-OUTCOME-UNAVAILABLE-DB OF ENQUIRY-COMMAREA TO TRUE
+               MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA
            ELSE
                IF SQLCODE = 0
-                   MOVE ROW-ACCOUNT-ID OF ACCOUNT-BALANCE-ROW TO
-                       REPLY-ACCOUNT-ID OF BALANCE-REPLY
-                   MOVE ROW-BALANCE OF ACCOUNT-BALANCE-ROW TO
-                       REPLY-BALANCE OF BALANCE-REPLY
+                   MOVE ROW-BALANCE OF ACCOUNT-BALANCE-ROW TO CA-BALANCE
+                       OF ENQUIRY-COMMAREA
                    MOVE ROW-STATUS OF ACCOUNT-BALANCE-ROW TO
                        IS-AVAILABLE-P1
                    PERFORM IS-AVAILABLE THRU IS-AVAILABLE-EXIT
@@ -118,15 +129,23 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                        GO TO ACCOUNT-ENQUIRY-EXIT
                    END-IF
                    IF IS-AVAILABLE-RESULT = "Y"
-                       SET OUTCOME-FOUND OF BALANCE-REPLY TO TRUE
+                       SET CA-OUTCOME-FOUND OF ENQUIRY-COMMAREA TO TRUE
                    ELSE
-                       SET OUTCOME-UNAVAILABLE OF BALANCE-REPLY TO TRUE
+                       SET CA-OUTCOME-UNAVAILABLE OF ENQUIRY-COMMAREA TO
+                           TRUE
                    END-IF
                ELSE
-                   SET OUTCOME-NOT-FOUND OF BALANCE-REPLY TO TRUE
+                   SET CA-OUTCOME-NOT-FOUND OF ENQUIRY-COMMAREA TO TRUE
+                   MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA
                END-IF
            END-IF
-           EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(BALANCE-REPLY)
+           MOVE CA-ACCOUNT-ID OF ENQUIRY-COMMAREA TO AUDIT-ACCOUNT-ID OF
+               AUDIT-ENTRY
+           MOVE CA-REQUESTED-BY OF ENQUIRY-COMMAREA TO
+               AUDIT-REQUESTED-BY OF AUDIT-ENTRY
+           MOVE CA-OUTCOME OF ENQUIRY-COMMAREA TO AUDIT-OUTCOME OF
+               AUDIT-ENTRY
+           EXEC CICS LINK PROGRAM("AUDITLOG") COMMAREA(AUDIT-ENTRY)
                RESP(LINK-RESP) END-EXEC
            IF (LINK-RESP = DFHRESP(NORMAL)) AND (SQLCODE >= 0)
                EXEC CICS SYNCPOINT RESP(COMMIT-RESP) END-EXEC
@@ -134,10 +153,10 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                EXEC CICS SYNCPOINT ROLLBACK RESP(ROLLBACK-RESP) END-EXEC
            END-IF
            MOVE "ENQUIRY_COMPLETED" TO BANK-AUDIT-EVENT
-           MOVE IDEMPOTENCY-KEY OF ENQUIRY-REQUEST TO
+           MOVE IDEMPOTENCY-KEY OF ENQUIRY-COMMAREA TO
                BANK-AUDIT-CORRELATION
            CALL "BANKAUDT" USING BANK-AUDIT-INTERFACE
-           MOVE ENQUIRY-REQUEST TO DFHCOMMAREA
+           MOVE ENQUIRY-COMMAREA TO DFHCOMMAREA
            CONTINUE.
        ACCOUNT-ENQUIRY-EXIT.
            EXIT.

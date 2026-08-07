@@ -25,7 +25,8 @@ export type DiagnosticNamespace =
   | "COPY"
   | "GEN"
   | "SEC"
-  | "TEST";
+  | "TEST"
+  | "JOB";
 
 export interface DiagnosticDoc {
   id: string;
@@ -56,6 +57,7 @@ export const NAMESPACE_TITLES: Record<DiagnosticNamespace, string> = {
   GEN: "Code generation",
   SEC: "Security",
   TEST: "zUnit test cases",
+  JOB: "Job descriptor",
 };
 
 export const DIAGNOSTICS: DiagnosticDoc[] = [
@@ -645,6 +647,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-CICS-005",
+    title: "CICS result never reaches the commarea",
+    explanation:
+      "A CICS transaction assigns to a record parameter that is not its commarea, and assigns nothing to the commarea itself. CICS gives a program one communication area, and DFHCOMMAREA is the caller's own storage: the first record parameter is moved in on entry and back out before the task ends. Every other record parameter is working storage, which is gone when the task ends. So a transaction that computes its answer into a record named `reply` returns control having changed nothing the caller can see — the caller reads back the bytes it sent, and the enquiry looks like it worked.",
+    remediation:
+      "Put the fields the caller reads on the first record parameter and assign them there, as `examples/online-enquiry` does. A record that leaves through a `link` or a `writeQueue` rather than through the commarea is fine; assign the commarea as well, so the answer has a path back.",
+    specReference: "language/cics.md",
+    implemented: true,
+  },
+  {
     id: "BANK-COPY-001",
     title: "Unsupported PIC clause",
     explanation:
@@ -844,9 +856,9 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-SQL-008",
     title: "A unit of work ended inside a loop over the cursor it closes",
     explanation:
-      'Db2\'s Application Programming and SQL Guide draws the line exactly: "A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes cursors that are not declared WITH HOLD and leaves open those cursors that are declared WITH HOLD." A long batch has to commit inside its own cursor loop — otherwise the log fills and the locks accumulate until nothing else can read the table — and doing that over a cursor without `WITH HOLD` closes it. A rollback closes it whether it is held or not. Either way the next `FETCH` answers `-501`, cursor not open, having already processed and committed part of the result set.',
+      'Db2\'s Application Programming and SQL Guide draws the line exactly: "A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes cursors that are not declared WITH HOLD and leaves open those cursors that are declared WITH HOLD." A long batch has to commit inside its own cursor loop — otherwise the log fills and the locks accumulate until nothing else can read the table — and doing that over a cursor without `WITH HOLD` closes it. A rollback closes it whether it is held or not. Either way the next `FETCH` answers `-501`, cursor not open, having already processed and committed part of the result set. A `checkpoint` counts as a commit: in a program with SQL it emits `EXEC SQL COMMIT` after writing the restart position, so a loop that checkpoints is a loop that commits.',
     remediation:
-      "For a commit, declare the cursor `hold`, which emits `DECLARE ... CURSOR WITH HOLD FOR`, or move the commit out of the loop. For a rollback, only moving it out will do.",
+      "For a commit or a checkpoint, declare the cursor `hold`, which emits `DECLARE ... CURSOR WITH HOLD FOR`, or move the statement out of the loop. For a rollback, only moving it out will do. A cursor loop that posts to the ledger needs the checkpoint, so `hold` is usually the answer there.",
     specReference: "language/sql.md",
     implemented: true,
   },
@@ -1014,6 +1026,115 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     specReference: "language/transactions.md",
     implemented: true,
   },
+  {
+    id: "BANK-COPY-008",
+    title: "Not a data description entry",
+    explanation:
+      "A line in the copybook is not a level number followed by a name. Every entry in a copybook is, so this is either a file that is not a copybook, or a construct this reader does not have — a `COPY` of another member, a `REPLACING` phrase, or a compiler directive other than the `EJECT`, `SKIP` and `TITLE` it skips. It is refused rather than skipped: an entry that is passed over is a field missing from the record, and a missing field moves the offset of every field after it.",
+    remediation:
+      "Check the line the message names. If it is a construct the reader should support, the copybook is worth reporting; if the file is a listing or a program rather than a copybook, point the command at the copybook.",
+    specReference: "language/records.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-COPY-009",
+    title: "Copybook declares no 01-level record",
+    explanation:
+      "A copybook describes a record, and a record begins at level 01. A file with entries but no 01 is a fragment — the subordinate half of a layout, or a copybook meant to be copied inside another record's group.",
+    remediation:
+      "Import the copybook that declares the 01, or wrap the fragment in the record it belongs to.",
+    specReference: "language/records.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-COPY-010",
+    title: "Picture clause not understood",
+    explanation:
+      "The layout reader cannot say how many bytes a field with this picture occupies. Every offset after it depends on that number, so guessing would describe a record that is wrong from that field onwards — which is worse than refusing, because a wrong layout is one somebody acts on.",
+    remediation:
+      "Check the picture against the subset in `docs/language/records.md`. A picture the compiler emits is always understood, so a failure here on generated output is a defect worth reporting.",
+    specReference: "language/records.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-COPY-011",
+    title: "No DECLARE TABLE block",
+    explanation:
+      "`bankc dclgen import` reads what DCLGEN produces, and what makes that file a DCLGEN output is the `EXEC SQL DECLARE ... TABLE` block: it names the table and gives every column its Db2 type. Without it there is nothing to derive host variables from.",
+    remediation:
+      "Point the command at the DCLGEN member itself, which holds both the DECLARE TABLE block and the host variable structure.",
+    specReference: "language/sql.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-COPY-012",
+    title: "Not a column definition",
+    explanation:
+      "Inside the `DECLARE ... TABLE` block, each comma-separated part is a column name followed by its SQL type. One of them is not, so the block is either edited by hand or written by something other than DCLGEN.",
+    remediation:
+      "Regenerate the member with DCLGEN rather than editing the block, so the declaration matches what Db2 holds.",
+    specReference: "language/sql.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-001",
+    title: "Job descriptor is incomplete",
+    explanation:
+      "A `job.json` needs a name, a description and at least one step. The name and the description both reach the JOB card, where the description is what an operator watching the queue sees; a job with no steps is a stream that runs nothing.",
+    remediation:
+      "Fill in `name`, `description` and `steps` in the job directory's `job.json`.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-002",
+    title: "Step name is not a JCL name",
+    explanation:
+      "A step name becomes the name field of an `EXEC` statement, which JCL limits to one through eight alphanumeric or national characters beginning with a letter. It is also what a restart and every `COND` refer to, so a name JCL will not take is a job that cannot be restarted at a step.",
+    remediation:
+      "Give the step a name of one to eight characters starting with a letter, in upper case.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-003",
+    title: "Two steps share a name",
+    explanation:
+      "A `COND` and a restart both refer to a step by name. Two steps with one name means neither can be named unambiguously, and a restart at that name is a night rerun from a step nobody chose.",
+    remediation: "Rename one of the steps.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-004",
+    title: "Step is neither a program nor a sort",
+    explanation:
+      "A step runs a BankLang project, named by `project`, or a sort, named by `input`, `output` and `fields`. A step with neither describes nothing the job stream can execute.",
+    remediation:
+      "Give the step a `project`, or the three fields a sort step needs.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-005",
+    title: "Two steps build the same load module",
+    explanation:
+      "A load module member name is eight characters with the hyphens removed, and that is all the binder and every `EXEC PGM=` see. Two programs in one job whose names agree over those eight characters are one member: the second build overwrites the first, and both steps run whichever was written last — a step that names one program and executes another, with a return code that looks fine. A program built on its own has nothing to collide with, so the job is where this appears.",
+    remediation:
+      "Rename one of the programs so the two differ within the first eight characters once the hyphens are removed.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-JOB-006",
+    title: "Sort step names a file no program declares",
+    explanation:
+      "A sort step reads a file one program in the job wrote and writes one another program reads, and the job stream needs both datasets to give the step its SORTIN and SORTOUT. A name that belongs to no program's file declaration is a step with nothing to sort.",
+    remediation:
+      "Check `input` and `output` in `job.json` against the file names the programs declare.",
+    specReference: "jcl-model.md",
+    implemented: true,
+  },
 ];
 
 const BY_ID = new Map(DIAGNOSTICS.map((entry) => [entry.id, entry]));
@@ -1026,6 +1147,37 @@ export function namespaceOf(id: string): DiagnosticNamespace | null {
   const match = /^BANK-([A-Z]+)-\d+$/.exec(id.toUpperCase());
   const namespace = match?.[1] as DiagnosticNamespace | undefined;
   return namespace && namespace in NAMESPACE_TITLES ? namespace : null;
+}
+
+/**
+ * The namespaces that make a rule a *banking safety* rule.
+ *
+ * These are the ones the landing page's claim is about: a retry that posts
+ * twice, money moving with no audit trail, a ledger that does not balance,
+ * personal data reaching a log, a rounding the target cannot perform. They are
+ * rules about what the program does with money, and a person is what normally
+ * catches them.
+ *
+ * Everything else is a rule about writing a program that works at all. `TYPE`
+ * is the largest namespace in the catalogue by some way, and `SYN` is a parser
+ * that will not parse — real, useful, and not what "refuses to build
+ * financially unsafe programs" means. Counting all of them for that sentence
+ * inflated 16 into the whole catalogue.
+ *
+ * Derived from the namespace rather than stored per entry so that a new
+ * diagnostic is classified by where it is filed, with nothing to forget.
+ */
+const BANKING_SAFETY_NAMESPACES: ReadonlySet<DiagnosticNamespace> = new Set([
+  "TXN",
+  "LED",
+  "AUD",
+  "SEC",
+  "DEC",
+]);
+
+export function isBankingSafetyRule(id: string): boolean {
+  const namespace = namespaceOf(id);
+  return namespace !== null && BANKING_SAFETY_NAMESPACES.has(namespace);
 }
 
 export function renderDiagnosticDoc(doc: DiagnosticDoc): string {

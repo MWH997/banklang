@@ -65,6 +65,7 @@ import {
   namespaceOf,
   renderDiagnosticDoc,
 } from "../../diagnostics/src/index";
+import { BankcError } from "../../diagnostics/src/errors";
 import {
   DIAGNOSTIC_FORMATS,
   isDiagnosticFormat,
@@ -90,6 +91,31 @@ export interface CliResult {
   exitCode: number;
   stdout: string;
   stderr: string;
+}
+
+/**
+ * A thrown failure, as a result the caller can print.
+ *
+ * Five commands caught an error and rendered `error.message`, which threw away
+ * the identifier and the line before the reader ever saw them. F3 gave those
+ * failures both, so there is one place that spends them — and it says the same
+ * thing `bin.ts` says for a throw that gets past every command, so a reader
+ * cannot tell which route their error took.
+ */
+export function failureResult(error: unknown): CliResult {
+  if (error instanceof BankcError) {
+    const where = error.location ? ` (${error.location})` : "";
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `${error.id}${where}: ${error.message}\nRun \`bankc explain ${error.id}\` for why.\n`,
+    };
+  }
+  return {
+    exitCode: 1,
+    stdout: "",
+    stderr: `${error instanceof Error ? error.message : String(error)}\n`,
+  };
 }
 
 interface CompiledProject {
@@ -573,13 +599,19 @@ export function parseJobDescriptor(text: string): JobDescriptor {
   const steps = raw.steps;
 
   if (typeof name !== "string" || name.length === 0) {
-    throw new Error("A job needs a name.");
+    throw new BankcError("BANK-JOB-001", "A job needs a `name`.");
   }
   if (typeof description !== "string" || description.length === 0) {
-    throw new Error("A job needs a description; it goes on the JOB card.");
+    throw new BankcError(
+      "BANK-JOB-001",
+      "A job needs a `description`; it goes on the JOB card, where it is what an operator sees.",
+    );
   }
   if (!Array.isArray(steps) || steps.length === 0) {
-    throw new Error("A job needs at least one step.");
+    throw new BankcError(
+      "BANK-JOB-001",
+      "A job needs at least one entry in `steps`.",
+    );
   }
 
   const seen = new Set<string>();
@@ -590,12 +622,14 @@ export function parseJobDescriptor(text: string): JobDescriptor {
       typeof stepName !== "string" ||
       !/^[A-Z#$@][A-Z0-9#$@]{0,7}$/.test(stepName)
     ) {
-      throw new Error(
+      throw new BankcError(
+        "BANK-JOB-002",
         `Step ${index + 1} needs a name of one to eight characters, starting with a letter, as JCL requires.`,
       );
     }
     if (seen.has(stepName)) {
-      throw new Error(
+      throw new BankcError(
+        "BANK-JOB-003",
         `Two steps are named ${stepName}. A COND and a restart both refer to a step by name, so they have to differ.`,
       );
     }
@@ -621,7 +655,8 @@ export function parseJobDescriptor(text: string): JobDescriptor {
         fields: step.fields,
       };
     }
-    throw new Error(
+    throw new BankcError(
+      "BANK-JOB-004",
       `Step ${stepName} is neither a program (\`project\`) nor a sort (\`input\`, \`output\`, \`fields\`).`,
     );
   });
@@ -658,11 +693,11 @@ function runJob(args: string[], cwd: string): CliResult {
   try {
     descriptor = parseJobDescriptor(readFileSync(descriptorPath, "utf8"));
   } catch (error) {
-    return {
-      exitCode: 1,
-      stdout: "",
-      stderr: `${descriptorPath}: ${(error as Error).message}\n`,
-    };
+    // The file, then whatever the failure knows about itself. A `job.json`
+    // problem is always about that file, and a reader given only the message
+    // has to work out which of the job's directories it came from.
+    const failure = failureResult(error);
+    return { ...failure, stderr: `${descriptorPath}: ${failure.stderr}` };
   }
 
   const outputRoot = resolveOutputRoot(cwd, args);
@@ -1159,11 +1194,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
         stderr: "",
       };
     } catch (error) {
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: `${error instanceof Error ? error.message : String(error)}\n`,
-      };
+      return failureResult(error);
     }
   }
 
@@ -1189,11 +1220,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
         stderr: "",
       };
     } catch (error) {
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: `${error instanceof Error ? error.message : String(error)}\n`,
-      };
+      return failureResult(error);
     }
   }
 
@@ -1218,11 +1245,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
         stderr: "",
       };
     } catch (error) {
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: `${error instanceof Error ? error.message : String(error)}\n`,
-      };
+      return failureResult(error);
     }
   }
 
@@ -1239,11 +1262,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
         jsonMode,
       );
     } catch (error) {
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: `${error instanceof Error ? error.message : String(error)}\n`,
-      };
+      return failureResult(error);
     }
   }
 
@@ -1310,11 +1329,7 @@ function runDclgen(args: string[], cwd: string): CliResult {
     }
     return { exitCode: 0, stdout: `${imported.source}\n`, stderr: "" };
   } catch (error) {
-    return {
-      exitCode: 1,
-      stdout: "",
-      stderr: `${error instanceof Error ? error.message : String(error)}\n`,
-    };
+    return failureResult(error);
   }
 }
 
@@ -1854,11 +1869,24 @@ function toModuleName(target: string): string {
  *
  * Watching lives in the binary rather than in `runBankc`, which stays a pure
  * argv-to-result function so it remains directly testable.
+ *
+ * `report` is what a rebuild that throws is handed to, and it is required
+ * rather than optional. A watch session is the one place where a throw must not
+ * end the process: the caller is sitting in front of an editor, and the errors
+ * worth watching for are exactly the ones a save can fix. Leaving the caller to
+ * remember a `try` around a callback it does not own is how F2 happened.
+ *
+ * The `finally` matters as much as the `catch`. Without it a throw left
+ * `running` true for the life of the session, so every later change set
+ * `pending` and returned and the watcher went silent while still holding the
+ * directory open — a worse failure than the crash, because it looks like
+ * nothing is wrong.
  */
 export function watchProject(
   argv: string[],
   cwd: string,
   write: (result: CliResult) => void,
+  report: (error: unknown) => void,
 ): () => void {
   const args = argv.filter((arg) => arg !== "--watch");
   const projectPath = requireProjectPath(args.slice(1)) ?? ".";
@@ -1873,25 +1901,49 @@ export function watchProject(
       return;
     }
     running = true;
-    write(runBankc(args, cwd));
-    running = false;
+    try {
+      write(runBankc(args, cwd));
+    } catch (error) {
+      report(error);
+    } finally {
+      running = false;
+    }
     if (pending) {
       pending = false;
       run();
     }
   };
 
-  run();
+  /*
+   * `<project>/src` where there is one, and the named directory otherwise.
+   *
+   * `bankc job <directory> --watch` has no `src` of its own — its sources are
+   * one level down, in each step's project — so watching `dirname(sourceFile)`
+   * meant watching a path that is not there, and the session ended with a bare
+   * ENOENT naming a directory the caller never typed. Watching the directory
+   * itself covers every step, and the `.bank.ts` filter below is what keeps the
+   * generated output from triggering a rebuild of itself.
+   */
+  const watched = existsSync(dirname(sourceFile))
+    ? dirname(sourceFile)
+    : resolve(cwd, projectPath);
 
-  const watcher = watch(
-    dirname(sourceFile),
-    { recursive: true },
-    (_event, file) => {
-      if (!file || file.toString().endsWith(".bank.ts")) {
-        run();
-      }
-    },
-  );
+  const watcher = watch(watched, { recursive: true }, (_event, file) => {
+    if (!file || file.toString().endsWith(".bank.ts")) {
+      run();
+    }
+  });
+
+  /*
+   * Installed before the first build, not after it.
+   *
+   * The first build of a job compiles every step and takes seconds, and it used
+   * to run with nothing watching: a save during it was not queued, not late,
+   * just gone, and the session went on reporting the state of a file the reader
+   * had already fixed. The `running` guard is what makes this ordering safe —
+   * an event arriving mid-build sets `pending` and is served on the way out.
+   */
+  run();
 
   return () => watcher.close();
 }
@@ -1974,6 +2026,8 @@ function renderHelp(): string {
     "  --format text|json|sarif   diagnostic output format for `check`",
     "  --output <file>            write the machine-readable report to a file",
     "  --out <dir>                output root for generated artifacts",
+    "  --watch                    rebuild when a .bank.ts file changes",
+    "  --debug                    print the stack when the compiler itself fails",
     "",
   ].join("\n");
 }

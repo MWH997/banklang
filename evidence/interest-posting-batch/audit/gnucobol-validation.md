@@ -7,7 +7,7 @@
 | source-artifact | examples/interest-posting-batch/src/main.bank.ts |
 | source-artifact-sha256 | 35acc811cd349652b86bcdde8ee2355c97cf5f8a5b8434b79327ea599fc61049 |
 | generated-artifact | evidence/interest-posting-batch/gnucobol/cobol/INTEREST.cbl |
-| generated-artifact-sha256 | 9053b08aab19f658f55a30d58471f2831cb4c82a80471d59750a2d1377582c4b |
+| generated-artifact-sha256 | 69b11cd4ef5741851da6b4fc5f807021b495289dc47514c6135a11ff04f62d9d |
 | source-map-artifact | evidence/interest-posting-batch/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 807df9c58da0f0f79bc53ad1753864162cdeccd7f9dff159cdf090155ea4a63a |
 | compiler-executable | cobc |

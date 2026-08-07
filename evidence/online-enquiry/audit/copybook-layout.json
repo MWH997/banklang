@@ -4,13 +4,13 @@
   "artifact": "evidence/online-enquiry/audit/copybook-layout.md",
   "reports": [
     {
-      "recordName": "EnquiryRequest",
-      "cobolName": "ENQUIRY-REQUEST",
-      "totalLength": 72,
+      "recordName": "EnquiryCommarea",
+      "cobolName": "ENQUIRY-COMMAREA",
+      "totalLength": 96,
       "entries": [
         {
           "order": 1,
-          "path": "ENQUIRY-REQUEST.ACCOUNT-ID",
+          "path": "ENQUIRY-COMMAREA.CA-ACCOUNT-ID",
           "type": "string<16>",
           "picture": "PIC X(16)",
           "usage": "DISPLAY",
@@ -21,7 +21,7 @@
         },
         {
           "order": 2,
-          "path": "ENQUIRY-REQUEST.REQUESTED-BY",
+          "path": "ENQUIRY-COMMAREA.CA-REQUESTED-BY",
           "type": "string<20>",
           "picture": "PIC X(20)",
           "usage": "DISPLAY",
@@ -32,11 +32,33 @@
         },
         {
           "order": 3,
-          "path": "ENQUIRY-REQUEST.IDEMPOTENCY-KEY",
+          "path": "ENQUIRY-COMMAREA.CA-BALANCE",
+          "type": "currency<\"BDT\",18,2>",
+          "picture": "PIC S9(16)V99 COMP-3",
+          "usage": "COMP-3",
+          "offset": 36,
+          "length": 10,
+          "bytes": 10,
+          "sensitive": false
+        },
+        {
+          "order": 4,
+          "path": "ENQUIRY-COMMAREA.CA-OUTCOME",
+          "type": "enum<EnquiryOutcome>",
+          "picture": "PIC X(14)",
+          "usage": "DISPLAY",
+          "offset": 46,
+          "length": 14,
+          "bytes": 14,
+          "sensitive": false
+        },
+        {
+          "order": 5,
+          "path": "ENQUIRY-COMMAREA.IDEMPOTENCY-KEY",
           "type": "string<36>",
           "picture": "PIC X(36)",
           "usage": "DISPLAY",
-          "offset": 36,
+          "offset": 60,
           "length": 36,
           "bytes": 36,
           "sensitive": false
@@ -84,13 +106,13 @@
       ]
     },
     {
-      "recordName": "BalanceReply",
-      "cobolName": "BALANCE-REPLY",
-      "totalLength": 40,
+      "recordName": "AuditEntry",
+      "cobolName": "AUDIT-ENTRY",
+      "totalLength": 50,
       "entries": [
         {
           "order": 1,
-          "path": "BALANCE-REPLY.REPLY-ACCOUNT-ID",
+          "path": "AUDIT-ENTRY.AUDIT-ACCOUNT-ID",
           "type": "string<16>",
           "picture": "PIC X(16)",
           "usage": "DISPLAY",
@@ -101,22 +123,22 @@
         },
         {
           "order": 2,
-          "path": "BALANCE-REPLY.REPLY-BALANCE",
-          "type": "currency<\"BDT\",18,2>",
-          "picture": "PIC S9(16)V99 COMP-3",
-          "usage": "COMP-3",
+          "path": "AUDIT-ENTRY.AUDIT-REQUESTED-BY",
+          "type": "string<20>",
+          "picture": "PIC X(20)",
+          "usage": "DISPLAY",
           "offset": 16,
-          "length": 10,
-          "bytes": 10,
+          "length": 20,
+          "bytes": 20,
           "sensitive": false
         },
         {
           "order": 3,
-          "path": "BALANCE-REPLY.OUTCOME",
+          "path": "AUDIT-ENTRY.AUDIT-OUTCOME",
           "type": "enum<EnquiryOutcome>",
           "picture": "PIC X(14)",
           "usage": "DISPLAY",
-          "offset": 26,
+          "offset": 36,
           "length": 14,
           "bytes": 14,
           "sensitive": false

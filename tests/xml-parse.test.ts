@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol } from "./helpers";
+import { flowed, localCobol, unpadded } from "./helpers";
 
 /**
  * `xml <text> processing { element "ID" into account.id; }` — `XML PARSE`.
@@ -122,7 +122,9 @@ describe("the generated handler", () => {
     expect(result.cobol).toContain("EVALUATE XML-EVENT");
     expect(result.cobol).toContain('WHEN "START-OF-ELEMENT"');
     expect(result.cobol).toContain("MOVE XML-TEXT TO BANK-XML-1-ELEM");
-    expect(result.cobol).toContain("01  BANK-XML-1-ELEM      PIC X(30).");
+    expect(unpadded(result.cobol)).toContain(
+      "01 BANK-XML-1-ELEM PIC X(30) VALUE SPACES.",
+    );
   });
 
   /**
@@ -333,6 +335,8 @@ describe("content split across events", () => {
    * everything that was appended.
    */
   it("declares the buffer well past any field that can receive one", () => {
-    expect(cobol).toContain("01  BANK-XML-1-BUF       PIC X(4096).");
+    expect(unpadded(cobol)).toContain(
+      "01 BANK-XML-1-BUF PIC X(4096) VALUE SPACES.",
+    );
   });
 });

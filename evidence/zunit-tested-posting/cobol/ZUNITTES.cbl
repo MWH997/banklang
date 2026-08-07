@@ -11,13 +11,13 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A batch program, started by EXEC PGM and entered with the
-      *>     job's PARM behind a halfword length: 71 characters,
-      *>     positional.
+      *>   job's PARM behind a halfword length: 71 characters,
+      *>   positional.
       *>   account             X(16) (16)
       *>   amount              S9(16)V99 SIGN IS LEADING SEPARATE (19)
       *>   idempotencyKey      X(36) (36)
       *>   A PARM shorter than that ends the step with return code 12
-      *>     rather than reading past what was passed.
+      *>   rather than reading past what was passed.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -26,7 +26,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -36,27 +36,27 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
-       01  POST-ONE-P1          PIC X(16).
-       01  POST-ONE-P2          PIC S9(16)V99 COMP-3.
-       01  POST-ONE-P3          PIC X(36).
+       01  BANK-FAILURE-CODE  PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE   PIC S9(4) COMP EXTERNAL.
+       01  POST-ONE-P1        PIC X(16) VALUE SPACES.
+       01  POST-ONE-P2        PIC S9(16)V99 COMP-3 VALUE ZERO.
+       01  POST-ONE-P3        PIC X(36) VALUE SPACES.
        01  BANK-LEDGER-INTERFACE.
-           05  BANK-LEDGER-OPERATION    PIC X(6).
-           05  BANK-LEDGER-ACCOUNT      PIC X(32).
-           05  BANK-LEDGER-AMOUNT       PIC S9(16)V99 COMP-3.
+           05  BANK-LEDGER-OPERATION  PIC X(6).
+           05  BANK-LEDGER-ACCOUNT    PIC X(32).
+           05  BANK-LEDGER-AMOUNT     PIC S9(16)V99 COMP-3.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        LINKAGE SECTION.
        01  BANK-PARM.
-           05  BANK-PARM-LENGTH         PIC S9(4) COMP.
+           05  BANK-PARM-LENGTH  PIC S9(4) COMP.
            05  BANK-PARM-DATA.
-               10  BANK-PARM-ACCOUNT    PIC X(16).
-               10  BANK-PARM-AMOUNT     PIC S9(16)V99 SIGN IS LEADING
+               10  BANK-PARM-ACCOUNT          PIC X(16).
+               10  BANK-PARM-AMOUNT        PIC S9(16)V99 SIGN IS LEADING
                    SEPARATE.
-               10  BANK-PARM-IDEMPOTENCY-KEY PIC X(36).
+               10  BANK-PARM-IDEMPOTENCY-KEY  PIC X(36).
 
        PROCEDURE DIVISION USING BANK-PARM.
        BANK-MAIN.

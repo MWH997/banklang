@@ -11,9 +11,9 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *>
       *> ENTRY
       *>   A CICS transaction, started by a transaction identifier in a
-      *>     region rather than by EXEC PGM in a job.
+      *>   region rather than by EXEC PGM in a job.
       *>   DFHCOMMAREA holds COMMAREA-LAYOUT, and EIBCALEN is tested
-      *>     against its length before anything reads it.
+      *>   against its length before anything reads it.
       *>
       *> CALLS
       *>   BANKAUDT audit trail
@@ -21,7 +21,7 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  Not used under CICS. A failure abends the task with code
-      *>     BLNG.
+      *>       BLNG.
       *>
       *> RESTART
       *>   Rerunnable. The program writes no dataset.
@@ -33,31 +33,31 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
        WORKING-STORAGE SECTION.
            EXEC SQL INCLUDE SQLCA END-EXEC.
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
-       01  FETCH-ACCOUNT-H1     PIC X(16).
+       01  FETCH-ACCOUNT-H1   PIC X(16).
            EXEC SQL END DECLARE SECTION END-EXEC.
-       01  WRITE-RESP           PIC S9(8) COMP.
-       01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
-       01  BANK-RETURN-CODE     PIC S9(4) COMP EXTERNAL.
+       01  WRITE-RESP         PIC S9(8) COMP VALUE ZERO.
+       01  BANK-FAILURE-CODE  PIC X(32) EXTERNAL.
+       01  BANK-RETURN-CODE   PIC S9(4) COMP EXTERNAL.
        01  COMMAREA-LAYOUT.
-           05  CA-ACCT-NO           PIC X(16).
-           05  CA-BALANCE           PIC S9(13)V99 COMP-3.
-           05  CA-RETURN-CODE       PIC X(2).
-           05  IDEMPOTENCY-KEY      PIC X(36).
+           05  CA-ACCT-NO       PIC X(16).
+           05  CA-BALANCE       PIC S9(13)V99 COMP-3.
+           05  CA-RETURN-CODE   PIC X(2).
+           05  IDEMPOTENCY-KEY  PIC X(36).
            EXEC SQL BEGIN DECLARE SECTION END-EXEC.
        01  ACCOUNT-ROW.
-           05  ROW-BALANCE          PIC S9(13)V99 COMP-3.
-           05  ROW-STATUS           PIC X(1).
+           05  ROW-BALANCE  PIC S9(13)V99 COMP-3.
+           05  ROW-STATUS   PIC X(1).
            EXEC SQL END DECLARE SECTION END-EXEC.
        01  BANK-AUDIT-INTERFACE.
-           05  BANK-AUDIT-EVENT         PIC X(32).
-           05  BANK-AUDIT-CORRELATION   PIC X(64).
+           05  BANK-AUDIT-EVENT        PIC X(32).
+           05  BANK-AUDIT-CORRELATION  PIC X(64).
 
        LINKAGE SECTION.
        01  DFHCOMMAREA.
-           05  LK-CA-ACCT-NO        PIC X(16).
-           05  LK-CA-BALANCE        PIC S9(13)V99 COMP-3.
-           05  LK-CA-RETURN-CODE    PIC X(2).
-           05  LK-IDEMPOTENCY-KEY   PIC X(36).
+           05  LK-CA-ACCT-NO       PIC X(16).
+           05  LK-CA-BALANCE       PIC S9(13)V99 COMP-3.
+           05  LK-CA-RETURN-CODE   PIC X(2).
+           05  LK-IDEMPOTENCY-KEY  PIC X(36).
 
        PROCEDURE DIVISION.
        BANK-MAIN.

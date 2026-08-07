@@ -1,7 +1,7 @@
 # BankLang for VS Code
 
-Write banking logic in **BankTS** — a small, deliberately restricted
-TypeScript-like language — and get **IBM Enterprise COBOL** out. This extension
+Write banking logic in **BankTS** — a small banking language whose types are
+TypeScript's — and get **IBM Enterprise COBOL** out. This extension
 puts the compiler in the editor: the same diagnostics, the same formatter, and
 hover that tells you which COBOL lines a line of BankTS produces.
 

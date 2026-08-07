@@ -6,15 +6,17 @@ cursor is what most real mainframe batch actually does.
 
 ## What it demonstrates
 
-| Feature                | Where                                                     |
-| ---------------------- | --------------------------------------------------------- |
-| Cursor declaration     | `cursor accountsInBranch(...): AccountBalanceRow { ... }` |
-| Bounded cursor loop    | `for each row in accountsInBranch(...) limit 5000`        |
-| Generated OPEN / CLOSE | neither appears in the source                             |
-| Host variables         | `:keyBranch` in, `:rowBalance` out                        |
-| Explicit rounding      | `round(balance * rate, "HALF_EVEN")`                      |
-| Double-entry posting   | `credit` to the account, `debit` to interest expense      |
-| Sequential output file | `write summaryOutput from summary`                        |
+| Feature                | Where                                                           |
+| ---------------------- | --------------------------------------------------------------- |
+| Cursor declaration     | `cursor accountsInBranch(...) hold : AccountBalanceRow { ... }` |
+| `WITH HOLD`            | `hold`, so the cursor survives the checkpoint's commit          |
+| Bounded cursor loop    | `for each row in accountsInBranch(...) limit 5000`              |
+| Generated OPEN / CLOSE | neither appears in the source                                   |
+| Host variables         | `:keyBranch` and `:resumeAfter` in, `:rowBalance` out           |
+| Checkpoint and restart | `checkpoint restartFile from point every 100`, and `restart`    |
+| Explicit rounding      | `round(balance * rate, "HALF_EVEN")`                            |
+| Double-entry posting   | `credit` to the account, `debit` to interest expense            |
+| Sequential output file | `write summaryOutput from summary`                              |
 
 ## The loop is the whole point
 
@@ -56,6 +58,42 @@ The loop leaves on **any** non-zero `SQLCODE`, not only on 100. An error treated
 as end-of-data would process a partial result set as though it were the whole
 one, which is exactly how a batch silently under-posts.
 
+## Committing inside the loop, which is why it is held
+
+A batch that posts to a ledger inside a loop has to write down where it got to.
+Without that, a job that dies halfway is rerun from the beginning and every
+account already accrued is accrued a second time. `BANK-FILE-003` says so, and
+this example is the one it used to fire on.
+
+```ts
+point.lastAccountId = row.rowAccountId;
+checkpoint restartFile from point every 100;
+```
+
+The position first, the commit after. A commit that landed before the position
+was written would leave a rerun resuming from further back than the work that is
+already durable.
+
+That commit is what makes `hold` necessary rather than decorative. The
+Application Programming and SQL Guide: "A held cursor does not close after a
+commit operation. A cursor that is not held closes after a commit operation." So
+over an unheld cursor the `FETCH` after the first checkpoint answers `-501`,
+cursor not open, having already accrued and committed a hundred accounts.
+
+`BANK-SQL-008` refuses that combination, and it could not see it until this
+example was written: the rule looked for `commit;` and a checkpoint is a commit
+the compiler writes for you.
+
+The rerun resumes through the query rather than by counting rows:
+
+```sql
+WHERE BRANCH_ID = :keyBranch
+AND ACCOUNT_ID > :resumeAfter
+```
+
+On a first run the restart record is spaces, which sorts below every account
+number, so the cursor opens on the whole branch.
+
 ## Where the INTO moves to
 
 The declaration is written with its `INTO` where the query reads best:
@@ -87,6 +125,7 @@ scripting how many fetches succeed:
 | the first fetch reports `100`     | open, 1 fetch, close — no postings          |
 | every fetch succeeds, `limit 4`   | open, 4 fetches, close — the bound held     |
 | 2 succeed, then `-911` (deadlock) | open, 3 fetches, close — the error ended it |
+| 150 fetches succeed, then `100`   | one commit at row 100, and fetching goes on |
 
 The cursor is closed in every case, including the ones that ended early.
 
@@ -100,11 +139,15 @@ pnpm bankc test  examples/branch-accrual-cursor
 ## Notes
 
 The runtime this executes against is a reference implementation in this
-repository, not Db2. It writes no host variables, so a fetched row arrives
-unchanged: the test asserts how many rows the loop processed and that it opened,
-bounded, and closed correctly — not what was in them, which only a real Db2
-could supply. Every `SQLCODE` above was written down by the test. No IBM Db2 or
-Enterprise COBOL validation has been performed, and none is claimed.
+repository, not Db2. It writes the host variables it is scripted with, so a
+fetched row arrives with values in it and the postings above are real
+arithmetic over them — but the rows are the test's, not a query's. What is
+established is that the generated loop handles the protocol: how many rows it
+processed, that it opened, bounded and closed correctly, that it commits inside
+the loop and goes on fetching, and that an error is not treated as the end. What
+is not established is that Db2 would answer this `SELECT` with those rows, and
+nothing local can establish it. No IBM Db2 or Enterprise COBOL validation has
+been performed, and none is claimed.
 
 <!-- playground-link -->
 

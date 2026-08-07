@@ -4,9 +4,9 @@
   "artifacts": [
     "evidence/online-enquiry/cobol/ONLINEEN.cbl",
     "evidence/online-enquiry/maps/source-map.json",
-    "evidence/online-enquiry/copybooks/ENQUIRYR.cpy",
+    "evidence/online-enquiry/copybooks/ENQUIRYC.cpy",
     "evidence/online-enquiry/copybooks/ACCOUNTB.cpy",
-    "evidence/online-enquiry/copybooks/BALANCER.cpy",
+    "evidence/online-enquiry/copybooks/AUDITENT.cpy",
     "evidence/online-enquiry/jcl/ONLINEEN.jcl",
     "evidence/online-enquiry/audit/diagnostics.json",
     "evidence/online-enquiry/audit/source-map.json",

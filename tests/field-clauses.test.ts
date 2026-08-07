@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderCopybook } from "../packages/cobol-backend/src/index";
 import { compile } from "../packages/compiler/src/index";
 import { inspectGeneratedCopybook } from "../packages/copybook/src/index";
-import { flowed } from "./helpers";
+import { flowed, unpadded } from "./helpers";
 
 /**
  * `JUSTIFIED RIGHT` and `BLANK WHEN ZERO`, and the copybook that has to carry
@@ -46,8 +46,8 @@ describe("justified", () => {
     const result = withRecord("  reference: string<12> justified;");
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.cobol).toContain(
-      "05  REFERENCE-FLD        PIC X(12) JUSTIFIED RIGHT.",
+    expect(unpadded(result.cobol)).toContain(
+      "05 REFERENCE-FLD PIC X(12) JUSTIFIED RIGHT.",
     );
   });
 
@@ -126,7 +126,9 @@ describe("the copybook carries every clause", () => {
   }
 
   it("keeps REDEFINES", () => {
-    expect(copybook()).toContain("05  COMPANY REDEFINES PERSONAL PIC X(20).");
+    expect(unpadded(copybook())).toContain(
+      "05 COMPANY REDEFINES PERSONAL PIC X(20).",
+    );
   });
 
   it("keeps OCCURS and its index", () => {

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { localCobol, parmDriver } from "./helpers";
+import { localCobol, parmDriver, unpadded } from "./helpers";
 
 /**
  * `varying <min> to <max> length <field>` — `RECORD IS VARYING IN SIZE`.
@@ -66,7 +66,9 @@ describe("the declaration", () => {
 
   /** The used length is the program's to set and read, not the file's. */
   it("declares the length field in working storage", () => {
-    expect(result.cobol).toContain("01  FEED-LENGTH          PIC S9(4) COMP.");
+    expect(unpadded(result.cobol)).toContain(
+      "01 FEED-LENGTH PIC S9(4) COMP VALUE ZERO.",
+    );
   });
 
   it("leaves a fixed-length file alone", () => {

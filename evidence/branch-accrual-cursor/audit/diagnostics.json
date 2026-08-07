@@ -1,24 +1,5 @@
 {
   "version": 1,
   "backendProfile": "ibm-enterprise-cobol-zos",
-  "diagnostics": [
-    {
-      "id": "BANK-FILE-003",
-      "severity": "warning",
-      "message": "Transaction accrueBranch posts to the ledger inside a loop with no checkpoint.",
-      "span": {
-        "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
-        "start": {
-          "line": 42,
-          "column": 19
-        },
-        "end": {
-          "line": 68,
-          "column": 2
-        }
-      },
-      "hint": "A rerun after a mid-stream failure starts again from the beginning. Add `checkpoint <file> from <record> every <n>;` inside the loop and `restart <file> into <record> { ... }` before it, or confirm the job is rerunnable another way.",
-      "backendProfile": null
-    }
-  ]
+  "diagnostics": []
 }

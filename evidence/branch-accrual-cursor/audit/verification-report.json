@@ -22,7 +22,7 @@
     {
       "name": "Copybook emit",
       "status": "passed",
-      "details": "3 copybook file(s)"
+      "details": "4 copybook file(s)"
     },
     {
       "name": "Source map emit",
@@ -47,7 +47,7 @@
     {
       "name": "Source map coverage",
       "status": "passed",
-      "details": "17/17 traced symbols, all entries anchored in the generated COBOL."
+      "details": "20/20 traced symbols, all entries anchored in the generated COBOL."
     },
     {
       "name": "GnuCOBOL validation",
@@ -66,6 +66,7 @@
     "evidence/branch-accrual-cursor/copybooks/ACCRUALR.cpy",
     "evidence/branch-accrual-cursor/copybooks/ACCOUNTB.cpy",
     "evidence/branch-accrual-cursor/copybooks/ACCRUALS.cpy",
+    "evidence/branch-accrual-cursor/copybooks/RESTARTP.cpy",
     "evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl",
     "evidence/branch-accrual-cursor/audit/diagnostics.json",
     "evidence/branch-accrual-cursor/audit/source-map.json",
@@ -84,8 +85,8 @@
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
   },
   "sourceMapCoverage": {
-    "expectedSymbolCount": 17,
-    "coveredSymbolCount": 17,
+    "expectedSymbolCount": 20,
+    "coveredSymbolCount": 20,
     "diagnostics": []
   },
   "gnucobolValidation": {
@@ -96,11 +97,11 @@
     "precompiledArtifact": "evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl",
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/branch-accrual-cursor/src/main.bank.ts",
-    "sourceArtifactHash": "2da557dc9a311acc9b5820327100ca0050a66992ddd30ec490c6bb8b9769f04c",
+    "sourceArtifactHash": "7e7c3b9d3f567c5aaceaa31d0a618efcc171be1e1c11579bc119ae82f498faab",
     "generatedArtifact": "evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC.cbl",
-    "generatedArtifactHash": "91b59633dde2dca82f3e0fc8c65a0865ccf6831df1950632ba5c1517f91f1035",
+    "generatedArtifactHash": "ec2406e9e6c7029ee639c09c13abbe0085471f62c7accf05762da9cffb519ef9",
     "sourceMapArtifact": "evidence/branch-accrual-cursor/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "707fcf5d76599c536b46573ce49cafc72647f2581c4023ac42cd5b108fee38f1",
+    "sourceMapArtifactHash": "6d22a334091f9f1d77985de4bc78052877c5d76c516e1fa4c07b931cb0ffb4d9",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
     "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/branch-accrual-cursor/gnucobol/copybooks evidence/branch-accrual-cursor/gnucobol/cobol/BRANCHAC-PRE.cbl -o evidence/branch-accrual-cursor/gnucobol/bin/branchac",

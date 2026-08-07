@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { checked, corpus } from "./helpers";
+import { checked, corpus, unpadded } from "./helpers";
 
 const PREAMBLE = `module Failures;
 
@@ -61,8 +61,8 @@ transaction post(request: Request) {
   audit("POSTED", request.idempotencyKey);
 }`);
 
-    expect(result.cobol).toContain(
-      "01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.",
+    expect(unpadded(result.cobol)).toContain(
+      "01 BANK-FAILURE-CODE PIC X(32) EXTERNAL.",
     );
   });
 
@@ -87,7 +87,7 @@ transaction post(request: Request) {
 
     expect(result.cobol).not.toContain("POST-BODY");
     expect(result.cobol).not.toContain("POST-FAILURE");
-    expect(result.cobol).toContain("01  BANK-FAILURE-CODE    PIC X(32)");
+    expect(unpadded(result.cobol)).toContain("01 BANK-FAILURE-CODE PIC X(32)");
   });
 
   it("rejects an empty failure code", () => {

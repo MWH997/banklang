@@ -36,3 +36,12 @@ Total length: 64
 | 3 | ACCRUAL-SUMMARY.ACCOUNTS-ACCRUED | decimal<9,0> | PIC S9(9) COMP-3 | COMP-3 | 13 | 5 | 5 | no |
 | 4 | ACCRUAL-SUMMARY.INTEREST-POSTED | currency<"BDT",18,2> | PIC S9(16)V99 COMP-3 | COMP-3 | 18 | 10 | 10 | no |
 | 5 | ACCRUAL-SUMMARY.IDEMPOTENCY-KEY | string<36> | PIC X(36) | DISPLAY | 28 | 36 | 36 | no |
+
+## RESTART-POINT
+
+Total length: 24
+
+| Order | Path | Type | PIC | Usage | Offset | Length | Bytes | Sensitive |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | RESTART-POINT.JOB-NAME | string<8> | PIC X(8) | DISPLAY | 0 | 8 | 8 | no |
+| 2 | RESTART-POINT.LAST-ACCOUNT-ID | string<16> | PIC X(16) | DISPLAY | 8 | 16 | 16 | no |

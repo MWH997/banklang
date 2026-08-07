@@ -22,14 +22,28 @@ CI integration, and editor support.
 
 ### Global options
 
-| Option                       | Applies to | Meaning                                     |
-| ---------------------------- | ---------- | ------------------------------------------- |
-| `--format text\|json\|sarif` | `check`    | Diagnostic output format                    |
-| `--output <file>`            | `check`    | Write the machine-readable report to a file |
-| `--out <dir>`                | build-like | Output root for generated artifacts         |
-| `--watch`                    | any        | Rerun when a `.bank.ts` file changes        |
+| Option                       | Applies to | Meaning                                        |
+| ---------------------------- | ---------- | ---------------------------------------------- |
+| `--format text\|json\|sarif` | `check`    | Diagnostic output format                       |
+| `--output <file>`            | `check`    | Write the machine-readable report to a file    |
+| `--out <dir>`                | build-like | Output root for generated artifacts            |
+| `--watch`                    | any        | Rerun when a `.bank.ts` file changes           |
+| `--debug`                    | any        | Print the stack when the compiler itself fails |
 
 Positional arguments may appear before or after flags.
+
+Everything the compiler means to report — a diagnostic, a missing project, an
+unreadable copybook — comes back as a message and an exit code. A failure it did
+not anticipate is still a thrown error, and `bankc` prints its message on one
+line prefixed with `bankc:` and exits 1. `--debug` adds the stack, which is the
+right output for a bug in the compiler and the wrong output for a mistake in a
+program.
+
+Under `--watch` the same failure is printed and the session continues. A watch
+exists to shorten the loop on exactly the errors that end a build, so ending the
+watch on one is the wrong response: the exit code follows the last build, and
+saving a fix clears it. `bankc job <directory> --watch` watches the directory
+itself, since a job's sources are one level down in each step's project.
 
 ## Formatting
 

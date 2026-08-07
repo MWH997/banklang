@@ -7,7 +7,7 @@
 | source-artifact | examples/zunit-tested-posting/src/main.bank.ts |
 | source-artifact-sha256 | e956d5884443bb70dfa500e17a97bd9ebf5831f8cc29dd58d194ac7b75668902 |
 | generated-artifact | evidence/zunit-tested-posting/gnucobol/cobol/ZUNITTES.cbl |
-| generated-artifact-sha256 | 6ac967619b6098727c95b299f28777a12d91cd3040c455a8eb347f9855f7870e |
+| generated-artifact-sha256 | d24097129ab7d448de72acd908c8646a313fa4938857c2cf1fe7e80836222303 |
 | source-map-artifact | evidence/zunit-tested-posting/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 1c528b351eb781cc4ff734fd5d6d9f3d8e2291b1da868ebbbe162b4bf930ccef |
 | compiler-executable | cobc |

@@ -73,11 +73,11 @@
       "sourceSpan": {
         "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
         "start": {
-          "line": 38,
+          "line": 59,
           "column": 35
         },
         "end": {
-          "line": 38,
+          "line": 59,
           "column": 54
         }
       },

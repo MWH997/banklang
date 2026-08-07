@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { checked, corpus, localCobol } from "./helpers";
+import { checked, corpus, flowed, localCobol } from "./helpers";
 
 /**
  * `SET <condition> TO TRUE` — what the level-88 names are for.
@@ -236,13 +236,18 @@ describe("across the corpus", () => {
     for (const { example, cobol } of corpus()) {
       // `SET X TO TRUE` names a condition; every one of them has to be
       // declared as an 88 somewhere in the same program.
-      // Qualified, because the emitter writes `SET OUTCOME-FOUND OF
-      // BALANCE-REPLY TO TRUE` — a record is emitted in working storage and
+      // Qualified, because the emitter writes `SET CA-OUTCOME-FOUND OF
+      // ENQUIRY-COMMAREA TO TRUE` — a record is emitted in working storage and
       // again inside every FD that holds it, so the condition needs its group.
       // Without the `OF` the pattern matched nothing at all and this loop
       // asserted nothing, in every example, silently.
+      //
+      // Flowed, because a qualified `SET` is long enough to wrap at column 72
+      // and a wrapped one is not the same string. That silently dropped every
+      // statement whose group name pushed it over the margin, which is a
+      // pattern that gets weaker the longer the names in the corpus get.
       const set = [
-        ...cobol.matchAll(
+        ...flowed(cobol).matchAll(
           /SET ([A-Z][A-Z0-9-]*)(?: OF [A-Z][A-Z0-9-]*)* TO TRUE/g,
         ),
       ].map((match) => match[1]);

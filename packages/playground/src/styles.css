@@ -3,6 +3,7 @@
   --panel: #161b22;
   --panel-2: #1c2128;
   --border: #30363d;
+  --field: #6e7681;
   --text: #e6edf3;
   --muted: #8b949e;
   --accent: #58a6ff;
@@ -19,12 +20,13 @@
     --panel: #f6f8fa;
     --panel-2: #eaeef2;
     --border: #d0d7de;
+    --field: #7d8590;
     --text: #1f2328;
     --muted: #59636e;
-    --accent: #0969da;
-    --ok: #1a7f37;
+    --accent: #0860ca;
+    --ok: #116329;
     --error: #cf222e;
-    --warn: #9a6700;
+    --warn: #7d4e00;
     --link: #0550ae;
   }
 }
@@ -39,12 +41,13 @@
   --panel: #f6f8fa;
   --panel-2: #eaeef2;
   --border: #d0d7de;
+  --field: #7d8590;
   --text: #1f2328;
   --muted: #59636e;
-  --accent: #0969da;
-  --ok: #1a7f37;
+  --accent: #0860ca;
+  --ok: #116329;
   --error: #cf222e;
-  --warn: #9a6700;
+  --warn: #7d4e00;
   --link: #0550ae;
 }
 
@@ -53,6 +56,7 @@
   --panel: #161b22;
   --panel-2: #1c2128;
   --border: #30363d;
+  --field: #6e7681;
   --text: #e6edf3;
   --muted: #8b949e;
   --accent: #58a6ff;
@@ -198,6 +202,19 @@ body {
 
 /* ---------- layout ---------- */
 
+/*
+ * Everything below the site header, so that nothing on the page sits outside a
+ * landmark. It carries the flex column `body` used to give `.app` directly:
+ * the heading and the lede take their own height and the grid takes the rest,
+ * which is what the page did before `<main>` was put around them.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .app {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -271,7 +288,7 @@ select,
 .ghost {
   background: var(--panel-2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--field);
   border-radius: 6px;
   padding: 5px 9px;
   font-size: 13px;
@@ -281,6 +298,14 @@ select,
 
 .ghost:hover {
   border-color: var(--accent);
+}
+
+/* A toggle that is on looks on, which is the same fact `aria-pressed` gives a
+   screen reader. Without it the control is as mute as the "Theme" label it
+   replaced. */
+.ghost[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 #copy-output {
@@ -354,9 +379,12 @@ select,
   color: var(--muted);
 }
 
+/* No `margin-right`. It was how the gap between the number and the word was
+   made, which meant the gap was in the layout and not in the text: the chip
+   read "1records" to a screen reader and to a copy and paste. The space is a
+   real space now, and the word is pluralised. */
 .stat b {
   color: var(--text);
-  margin-right: 5px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -365,7 +393,7 @@ select,
 .tabs {
   display: flex;
   gap: 2px;
-  /* Five tabs do not fit a 390px phone. Scrolling the strip keeps them
+  /* Seven tabs do not fit a 390px phone. Scrolling the strip keeps them
      reachable; letting it push the page wide makes the whole document scroll
      sideways, which is the one thing a layout must never do. */
   overflow-x: auto;
@@ -730,4 +758,97 @@ select[hidden] {
   font-family: var(--mono);
   font-size: 12px;
   color: var(--text);
+}
+
+/* ---------- the input panel ---------- */
+
+/*
+ * What the program is given, before it runs. The 2026-08-07 audit's F4: the
+ * Run tab executed everything against zero-initialised storage, so the example
+ * about a balanced transfer posted 0.00 against 0.00.
+ *
+ * A form rather than a text area of bytes. The fields are the copybook's, in
+ * the copybook's order, with the picture beside each one — because the point
+ * being made is that this is a fixed-length record at fixed offsets, and a
+ * free-text blob would hide exactly that.
+ */
+.input__surface {
+  padding-bottom: 4px;
+}
+
+.input__note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.input__record {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.input__row {
+  color: var(--muted);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * Name, value, picture. The name column is wide enough for a qualified COBOL
+ * name and the picture column for `S9(16)V99 COMP-3`, so neither wraps and the
+ * fields stay in one column a reader can run an eye down.
+ */
+.input__field {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) minmax(0, 11rem);
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.input__name {
+  font-family: var(--mono);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.input__sensitive {
+  color: var(--warn);
+  font-family: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.input__picture {
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.input__field input {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--field);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  min-width: 0;
+  /* WCAG 2.5.8 asks for a 24px target, and a text field is one. */
+  min-height: 28px;
+}
+
+.input__field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Stacked, because three columns inside 390px is three columns of nothing. */
+@media (max-width: 40rem) {
+  .input__field {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
 }

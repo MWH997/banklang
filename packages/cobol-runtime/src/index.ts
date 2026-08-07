@@ -51,6 +51,7 @@ export type { Field } from "./data";
 
 import { Machine, type RunOptions, type RunResult } from "./machine";
 import { parseUnit } from "./program";
+import { CompilerInvariant } from "../../diagnostics/src/errors";
 
 export interface RunRequest extends RunOptions {
   /**
@@ -70,10 +71,11 @@ export function runCobol(request: RunRequest): RunResult {
   const units = request.sources.map((source) => parseUnit(source));
   const entry = request.entry ?? units[0]?.programs[0]?.name;
   if (!entry) {
-    throw new Error("No program to run.");
+    throw new CompilerInvariant("No program to run.");
   }
   return new Machine(units).run(entry, {
     files: request.files,
+    storage: request.storage,
     stepLimit: request.stepLimit,
   });
 }

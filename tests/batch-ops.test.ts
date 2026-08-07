@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { flowed, localCobol } from "./helpers";
+import { flowed, localCobol, unpadded } from "./helpers";
 
 /**
  * `sort`, `merge`, and `checkpoint` — ordering a batch's input and surviving its
@@ -304,7 +304,9 @@ describe("restart", () => {
       'NOT INVALID KEY MOVE "Y" TO RESTART-FILE-RS-FOUND',
     );
     expect(cobol).toContain('IF RESTART-FILE-RS-FOUND = "Y"');
-    expect(cobol).toContain('01  RESTART-FILE-RS-FOUND PIC X(1) VALUE "N".');
+    expect(unpadded(cobol)).toContain(
+      '01 RESTART-FILE-RS-FOUND PIC X(1) VALUE "N".',
+    );
   });
 
   it("fills the record from the position it found", () => {

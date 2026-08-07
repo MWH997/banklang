@@ -47,7 +47,7 @@
     {
       "name": "Source map coverage",
       "status": "passed",
-      "details": "15/15 traced symbols, all entries anchored in the generated COBOL."
+      "details": "17/17 traced symbols, all entries anchored in the generated COBOL."
     },
     {
       "name": "GnuCOBOL validation",
@@ -63,9 +63,9 @@
   "artifacts": [
     "evidence/online-enquiry/cobol/ONLINEEN.cbl",
     "evidence/online-enquiry/maps/source-map.json",
-    "evidence/online-enquiry/copybooks/ENQUIRYR.cpy",
+    "evidence/online-enquiry/copybooks/ENQUIRYC.cpy",
     "evidence/online-enquiry/copybooks/ACCOUNTB.cpy",
-    "evidence/online-enquiry/copybooks/BALANCER.cpy",
+    "evidence/online-enquiry/copybooks/AUDITENT.cpy",
     "evidence/online-enquiry/jcl/ONLINEEN.jcl",
     "evidence/online-enquiry/audit/diagnostics.json",
     "evidence/online-enquiry/audit/source-map.json",
@@ -84,8 +84,8 @@
     "details": "Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts."
   },
   "sourceMapCoverage": {
-    "expectedSymbolCount": 15,
-    "coveredSymbolCount": 15,
+    "expectedSymbolCount": 17,
+    "coveredSymbolCount": 17,
     "diagnostics": []
   },
   "gnucobolValidation": {
@@ -97,11 +97,11 @@
     "precompiledArtifact": "evidence/online-enquiry/gnucobol/cobol/ONLINEEN-PRE.cbl",
     "backendProfile": "gnucobol-local",
     "sourceArtifact": "examples/online-enquiry/src/main.bank.ts",
-    "sourceArtifactHash": "5b1f8ecf61fcd8d1b5ea8fd15ae6fa9092343285d1ead18fae8d6fd703c21382",
+    "sourceArtifactHash": "ae18dc58acab2d8521edaee85d0727e214a30c61302cf9ed7ea361c2c1708e89",
     "generatedArtifact": "evidence/online-enquiry/gnucobol/cobol/ONLINEEN.cbl",
-    "generatedArtifactHash": "b65e47f9268070da2541ce68ec30d5faae2e653f0114e6333d811e3018138b63",
+    "generatedArtifactHash": "a19d2481ba10901fd6aeae61ee2f2b4444c5ff3a940a9ea71b5cfb7a0e018f48",
     "sourceMapArtifact": "evidence/online-enquiry/gnucobol/maps/source-map.json",
-    "sourceMapArtifactHash": "25bf37f75f65d67a67c0f1b95adb152b78b7b564f4d4dd3c0a41769b851c19ed",
+    "sourceMapArtifactHash": "8cfc9a0492064325109069d1a826258e7ed8dd01589935146c2204e08f2b2fdf",
     "compilerExecutable": "cobc",
     "compilerVersion": "cobc (GnuCOBOL) 3.2.0",
     "compilerCommand": "cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/online-enquiry/gnucobol/copybooks evidence/online-enquiry/gnucobol/cobol/ONLINEEN-PRE.cbl -o evidence/online-enquiry/gnucobol/bin/onlineen",

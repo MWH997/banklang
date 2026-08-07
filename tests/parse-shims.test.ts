@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { precompile } from "../packages/precompiler/src/index";
-import { flowed, localCobol, parmDriver } from "./helpers";
+import { flowed, localCobol, parmDriver, unpadded } from "./helpers";
 
 /**
  * `JSON PARSE` and `XML PARSE`, executed.
@@ -185,7 +185,9 @@ describe("what the precompiler writes for an XML parse", () => {
     expect(translated).toContain("IF BANK-XML-INFO NOT = 2");
     // The length field holds the register's name as a substring, and rewriting
     // that would leave the expansion pointing at a field that does not exist.
-    expect(translated).toContain("BANK-XML-TEXT-LEN    PIC S9(9) COMP-5");
+    expect(unpadded(translated)).toContain(
+      "BANK-XML-TEXT-LEN PIC S9(9) COMP-5",
+    );
   });
 
   it("leaves the statement alone in the artifact itself", () => {

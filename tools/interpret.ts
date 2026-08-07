@@ -133,6 +133,13 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
       ),
     );
   }
+  // The same rows `runConformance` writes beside the compiled program. Both
+  // sides being answered from one script is the only thing that makes their
+  // agreement mean anything — two stubs told different stories would disagree
+  // about the program rather than about themselves.
+  if (options.sqlRows?.length) {
+    files.set("sql-rows.txt", lineRecords(`${options.sqlRows.join("\n")}\n`));
+  }
   if (options.cicsOutcomes?.length) {
     files.set(
       "cics-outcomes.txt",
@@ -281,17 +288,27 @@ export function parmDriver(program: string, parm = ""): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** A literal short enough for one reference-format line. */
+/**
+ * The PARM text, moved into the area in pieces that fit a COBOL line.
+ *
+ * This used to refuse anything past 40 characters, which was safe only because
+ * nothing ever asked: the differential lane supplied every PARM-driven example
+ * an empty PARM, so both sides took the length check's refusal path and agreed
+ * on return code 12. The parsing this compiler generates — the numeric class
+ * test, the separate sign, the offsets inside the linkage group — was never
+ * compared against a real compiler at all. Every real PARM in the corpus is
+ * longer than 40 characters.
+ */
 function chunkMove(text: string): string[] {
-  if (text.length > 40) {
-    throw new Error(
-      "A driver PARM longer than 40 characters would need literal continuation, which this helper does not write.",
+  const lines = ["           MOVE SPACES TO BANK-PARM-DATA"];
+  const CHUNK = 20;
+  for (let at = 0; at < text.length; at += CHUNK) {
+    const piece = text.slice(at, at + CHUNK);
+    lines.push(
+      `           MOVE "${piece.replace(/"/g, '""')}" TO BANK-PARM-DATA(${String(at + 1)}:${String(piece.length)})`,
     );
   }
-  return [
-    "           MOVE SPACES TO BANK-PARM-DATA",
-    `           MOVE "${text}" TO BANK-PARM-DATA`,
-  ];
+  return lines;
 }
 
 /** True when the generated program is entered with a parameter list. */

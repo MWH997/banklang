@@ -10,12 +10,12 @@ Phase: verify
 | Parse | passed | 0 diagnostics |
 | Typecheck | passed | 0 diagnostics |
 | COBOL emit | passed | evidence/branch-accrual-cursor/cobol/BRANCHAC.cbl |
-| Copybook emit | passed | 3 copybook file(s) |
+| Copybook emit | passed | 4 copybook file(s) |
 | Source map emit | passed | evidence/branch-accrual-cursor/maps/source-map.json |
 | JCL emit | passed | evidence/branch-accrual-cursor/jcl/BRANCHAC.jcl |
 | Audit artifacts | passed | evidence/branch-accrual-cursor/audit |
 | Deterministic regeneration | passed | Re-emitted COBOL, copybooks, source map, and JCL matched the written artifacts. |
-| Source map coverage | passed | 17/17 traced symbols, all entries anchored in the generated COBOL. |
+| Source map coverage | passed | 20/20 traced symbols, all entries anchored in the generated COBOL. |
 | GnuCOBOL validation | passed | Local cobc validation passed after precompiling (db2-precompiler). |
 | Audit schema | passed | version 1, backend profile ibm-enterprise-cobol-zos |
 
@@ -27,8 +27,8 @@ Phase: verify
 
 ## Source Map Coverage
 
-- expected-symbols: 17
-- traced-symbols: 17
+- expected-symbols: 20
+- traced-symbols: 20
 - coverage-gaps: 0
 
 ## GnuCOBOL Validation

@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
-import { checked, compileExample, corpus, flowed } from "./helpers";
+import { checked, compileExample, corpus, flowed, unpadded } from "./helpers";
 
 /**
  * What makes a generated program read as one.
@@ -65,6 +67,127 @@ describe("the program prologue", () => {
   });
 });
 
+/**
+ * A module that declares no transaction, and the two artifacts that used to
+ * disagree about it inside one build.
+ *
+ * `PURPOSE` read "A library of functions. Nothing here is an entry point" and
+ * `ENTRY` four lines below it read "started by EXEC PGM in a job", because the
+ * batch sentence was emitted unconditionally. The job agreed with the second:
+ * it wrote `EXEC PGM=` for a program with no `BANK-MAIN` and no `GOBACK`, so
+ * control would have entered at the first paragraph, compared an
+ * uninitialised field, fallen through the exit and run off the end.
+ *
+ * It affected `account-transfer` and `batch-interest-accrual` — the README's
+ * first and fourth rows, and the playground's default program.
+ */
+/** An example's generated job, which `compileExample` does not ask for. */
+function withJcl(examplePath: string): string {
+  return (
+    compile(readFileSync(`${examplePath}/src/main.bank.ts`, "utf8"), {
+      emitJcl: true,
+    }).jcl ?? ""
+  );
+}
+
+describe("a module with no entry point", () => {
+  const { emit } = compileExample("examples/account-transfer");
+  const prologue = emit.cobol.slice(0, emit.cobol.indexOf("IDENTIFICATION"));
+
+  it("says so under ENTRY rather than repeating the batch sentence", () => {
+    expect(prologue).toContain("A library of functions");
+    expect(prologue).toContain("None. This module is a library");
+    expect(prologue).not.toContain("started by EXEC PGM in a job");
+  });
+
+  it("gets a job that compiles and links it, and does not run it", () => {
+    const jcl = withJcl("examples/account-transfer");
+    expect(jcl).toContain("EXEC IGYWCL");
+    expect(jcl).not.toContain("EXEC PGM=ACCOUNTT");
+    expect(jcl).toContain("No run step: this module declares no transaction");
+    expect(jcl).toContain("Compile and link-edit the generated library");
+  });
+
+  /** A program that is entered still gets one, or the change went too far. */
+  it("leaves a program with a transaction alone", () => {
+    expect(withJcl("examples/account-file-batch")).toContain(
+      "EXEC PGM=ACCOUNTF",
+    );
+    expect(compileExample("examples/account-file-batch").emit.cobol).toContain(
+      "A batch program, started by EXEC PGM",
+    );
+  });
+});
+
+/**
+ * A wrapped prologue entry, and where its continuation lands.
+ *
+ * Continuations were indented two spaces past their own first line, which
+ * lined up with nothing: the entries of a section all start in the same
+ * column, so a wrapped sentence read as a further, deeper entry. A return
+ * code's meaning now wraps under the meaning, past the `12`, and a plain
+ * sentence wraps flush and reads as a paragraph.
+ */
+describe("a prologue entry too long for one line", () => {
+  const { emit } = compileExample("examples/account-file-batch");
+  const prologue = emit.cobol.slice(0, emit.cobol.indexOf("IDENTIFICATION"));
+
+  it("continues a labelled entry under its text", () => {
+    expect(prologue).toContain(
+      "      *>   12  A failure the program named. BANK-FAILURE-CODE says\n" +
+        "      *>       which.",
+    );
+  });
+
+  it("continues an unlabelled entry flush with it", () => {
+    const restart = prologue.slice(prologue.indexOf("RESTART"));
+    const [first, second] = restart.split("\n").slice(1, 3);
+    expect(first).toMatch(/^ {6}\*> {3}\S/);
+    expect(second).toMatch(/^ {6}\*> {3}\S/);
+  });
+});
+
+/**
+ * Storage the compiler invents for itself, and the value it starts at.
+ *
+ * The Language Reference: "If the initial value is not explicitly specified,
+ * the value is unpredictable." Half the rule was already followed — a boolean
+ * result got `VALUE "N"` — and the packed field declared directly beneath it
+ * got nothing, which is what makes an omission read as a decision. A `COMP-3`
+ * field is the worst case: unset storage is not reliably a valid packed
+ * number, so reaching one before writing it abends on a data exception.
+ *
+ * `uninitialised-storage` in `packages/conformance-lint` is what holds this
+ * across every artifact; these are the two exemptions and the reason for each.
+ */
+describe("generated work fields", () => {
+  const { emit } = compileExample("examples/account-transfer");
+
+  it("carry an initial value", () => {
+    expect(unpadded(emit.cobol)).toContain(
+      "01 VALIDATE-AMOUNT-P1 PIC S9(16)V99 COMP-3 VALUE ZERO.",
+    );
+    expect(unpadded(emit.cobol)).toContain(
+      '01 VALIDATE-AMOUNT-RESULT PIC X(1) VALUE "N".',
+    );
+  });
+
+  /**
+   * Not the host variables. DCLGEN, IBM's own generator for exactly those
+   * declarations, writes no `VALUE`, and each one is loaded by a `MOVE`
+   * immediately above the `EXEC SQL` that reads it.
+   */
+  it("except the host variables of an SQL declare section", () => {
+    const cobol = compileExample("examples/online-enquiry").emit.cobol;
+    const section = cobol.slice(
+      cobol.indexOf("BEGIN DECLARE SECTION"),
+      cobol.indexOf("END DECLARE SECTION"),
+    );
+    expect(unpadded(section)).toContain("01 FETCH-ACCOUNT-H1 PIC X(16).");
+    expect(section).not.toContain("VALUE");
+  });
+});
+
 describe("the statements a copy becomes", () => {
   /**
    * `COMPUTE X = Y` is legal and does the same thing as `MOVE Y TO X`. It reads
@@ -120,10 +243,10 @@ entry transaction go(account: Account) {
    * batch program's whole error model runs through.
    */
   it("is read through condition names rather than reference modification", () => {
-    expect(result.cobol).toContain(
-      '88  FEED-STATUS-OK           VALUE "00" THRU "09".',
+    expect(unpadded(result.cobol)).toContain(
+      '88 FEED-STATUS-OK VALUE "00" THRU "09".',
     );
-    expect(result.cobol).toContain('88  FEED-STATUS-EOF          VALUE "10".');
+    expect(unpadded(result.cobol)).toContain('88 FEED-STATUS-EOF VALUE "10".');
     expect(flowed(result.cobol)).toContain(
       "IF NOT FEED-STATUS-OK AND NOT FEED-STATUS-EOF",
     );

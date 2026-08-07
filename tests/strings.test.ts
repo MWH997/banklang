@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
+import { unpadded } from "./helpers";
 
 /**
  * String handling: `trim`, `upper`, `lower`, `substring`, `concat`, and `now`.
@@ -171,8 +172,8 @@ describe("now", () => {
 
   it("declares the clock field only in a program that reads the clock", () => {
     expect(txn("").cobol).not.toContain("BANK-CURRENT-DATE");
-    expect(txn("  card.bookedAt = now();").cobol).toContain(
-      "01  BANK-CURRENT-DATE    PIC X(21).",
+    expect(unpadded(txn("  card.bookedAt = now();").cobol)).toContain(
+      "01 BANK-CURRENT-DATE PIC X(21) VALUE SPACES.",
     );
   });
 
