@@ -25,3 +25,15 @@ packages/vscode-extension/server/
 AGENTS.md
 CLAUDE.md
 .claude/
+
+# Working papers: this project's audits of itself and its ticket lists.
+#
+# They are the record of how the work was decided and they stay out of the
+# public repository — one of them documents rewrites of this repository's own
+# history, which is not a thing to publish. Kept on disk, referenced by date in
+# commit messages where the reasoning matters, and never tracked.
+#
+# `tools/build-docs.ts` already refuses to publish a working paper left in
+# `docs/`; this is the second half of that, and the one that decides what a
+# clone contains.
+docs/working/
