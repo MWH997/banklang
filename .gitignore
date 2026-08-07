@@ -19,3 +19,9 @@ vendor-docs/
 
 # Bundled language server for the VS Code extension, built by its own script.
 packages/vscode-extension/server/
+
+# Agent instruction files are a local convenience, not part of the project.
+# CONTRIBUTING.md carries the rules that apply to everybody.
+AGENTS.md
+CLAUDE.md
+.claude/
