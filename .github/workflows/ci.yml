@@ -70,8 +70,12 @@ jobs:
           path: /opt/gnucobol
           key: gnucobol-${{ env.GNUCOBOL_VERSION }}-${{ runner.os }}
 
+      # Built in the runner's temp directory, not the workspace. The first
+      # attempt unpacked the tarball where it stood, and `prettier --check .`
+      # then reported style issues in GnuCOBOL's own README.
       - name: Build GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
         if: steps.gnucobol.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
         run: |
           sudo apt-get update
           # libcjson-dev is what gives `JSON GENERATE` and `JSON PARSE` a
