@@ -86,9 +86,15 @@ describe("the workflow that runs them", () => {
     const manifest = JSON.parse(readFileSync("package.json", "utf8")) as {
       scripts: Record<string, string>;
     };
-    const invoked = [...WORKFLOW.matchAll(/\bpnpm ([a-z][\w:]*)/g)].map(
-      (match) => match[1] ?? "",
-    );
+    // Command lines only. A comment that says "pnpm needs to be on PATH" is
+    // prose, and reading it as an invocation of a script called `on` is how
+    // this check first failed.
+    const invoked = WORKFLOW.split("\n")
+      .filter((line) => !/^\s*#/.test(line))
+      .flatMap((line) => [
+        ...line.matchAll(/(?:run:\s*|[|&;]\s*|^\s*)pnpm ([a-z][\w:]*)/g),
+      ])
+      .map((match) => match[1] ?? "");
 
     expect(invoked.length).toBeGreaterThan(5);
     for (const script of invoked) {

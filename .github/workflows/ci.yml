@@ -11,6 +11,13 @@ on:
   # does rather than from a second, shorter list that drifts from this one.
   workflow_call:
 
+# The compiler every claim in this repository is measured against.
+# `docs/divergences.md` opens with it and `tests/gnucobol-validation.test.ts`
+# records it as the one that produced the evidence, so CI builds exactly this
+# rather than taking whatever `apt` offers.
+env:
+  GNUCOBOL_VERSION: "3.2"
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -18,8 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # and through the action rather than `npm install -g`, which would run
+      # under whatever Node the runner image happens to ship rather than the
+      # version this repository pins. The version comes from `packageManager`
+      # in package.json, so there is one place to change it.
       - name: Install pnpm
-        run: npm install -g pnpm@11.7.0
+        uses: pnpm/action-setup@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -31,11 +43,54 @@ jobs:
       # cobc. Installing GnuCOBOL keeps both lanes running in CI, so neither
       # generated COBOL that no compiler accepts nor a program that compiles and
       # then computes the wrong balance can merge.
-      - name: Install GnuCOBOL
+      #
+      # **Built, not installed from apt.** `apt-get install gnucobol` on
+      # ubuntu-latest gives 3.1.2, and every version this project documents,
+      # measures and asserts is 3.2.0 — `docs/divergences.md` opens with it and
+      # `tests/gnucobol-validation.test.ts` records it as the compiler that
+      # produced the evidence. The gap is not cosmetic: 3.2 added the
+      # `JSON-STATUS` special register that Enterprise COBOL has and that this
+      # compiler emits, so on 3.1.2 six test files fail on COBOL that is correct
+      # for the target. CI was validating against a compiler nobody claimed.
+      #
+      # Cached on the version, so it is built once and restored after that.
+      - name: Cache GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
+        id: gnucobol
+        uses: actions/cache@v4
+        with:
+          path: /opt/gnucobol
+          key: gnucobol-${{ env.GNUCOBOL_VERSION }}-${{ runner.os }}
+
+      - name: Build GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
+        if: steps.gnucobol.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gnucobol
-          cobc --version
+          # libcjson-dev is what gives `JSON GENERATE` and `JSON PARSE` a
+          # backend; without it cobc builds and then refuses both at run time.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libgmp-dev libdb-dev libncurses-dev \
+            libxml2-dev libcjson-dev
+          curl -fsSL -o gnucobol.tar.xz \
+            "https://downloads.sourceforge.net/project/gnucobol/gnucobol/3.2/gnucobol-${GNUCOBOL_VERSION}.tar.xz"
+          tar xf gnucobol.tar.xz
+          cd "gnucobol-${GNUCOBOL_VERSION}"
+          ./configure --prefix=/opt/gnucobol
+          make -j"$(nproc)"
+          sudo make install
+
+      - name: Put GnuCOBOL on the path, and prove which one it is
+        run: |
+          echo "/opt/gnucobol/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=/opt/gnucobol/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "COB_CONFIG_DIR=/opt/gnucobol/share/gnucobol/config" >> "$GITHUB_ENV"
+          echo "COB_COPY_DIR=/opt/gnucobol/share/gnucobol/copy" >> "$GITHUB_ENV"
+          # The assertion, not a courtesy print: a cache restored from a
+          # different build, or an apt cobc earlier on the path, fails here
+          # rather than eight test files later.
+          /opt/gnucobol/bin/cobc --version | head -1
+          /opt/gnucobol/bin/cobc --version | head -1 \
+            | grep -q "GnuCOBOL ${GNUCOBOL_VERSION}" \
+            || { echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}"; exit 1; }
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -130,8 +185,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # and through the action rather than `npm install -g`, which would run
+      # under whatever Node the runner image happens to ship rather than the
+      # version this repository pins. The version comes from `packageManager`
+      # in package.json, so there is one place to change it.
       - name: Install pnpm
-        run: npm install -g pnpm@11.7.0
+        uses: pnpm/action-setup@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
