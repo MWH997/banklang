@@ -15,8 +15,50 @@ in order.
 
 ## [Unreleased]
 
+### Added
+
+- Run the generated COBOL in the playground, against the same `runtime/*.cbl`
+  programs CI compiles — [verification](docs/verification.md).
+- Compare every example under `cobc` and under the interpreter and fail on any
+  disagreement, which is what makes the interpreter's green mean something —
+  `tests/cobol-runtime-differential.test.ts`.
+- Publish the grammar as EBNF, held to the lexer's own keyword table in both
+  directions — [grammar](docs/language/grammar.md).
+- Say what is stable and what is not, rather than leaving "pre-1.0" to carry the
+  whole answer — [stability](docs/language/stability.md).
+- Record why a program is one module in one file —
+  [ADR-0004](docs/adr/0004-one-module-one-program.md).
+- Format COBOL with `bankc fmt program.cbl`, checked by executing the formatted
+  program and requiring the same output as the one it came from.
+- Highlight COBOL in the playground's output pane, which had none while every
+  other page of the site did.
+- Add a Format button to the playground, using the compiler's own formatter.
+- Add `blog/`, rendered to `/blog/` with structured data and a sitemap entry.
+
 ### Fixed
 
+- Answer `bankc --version` with a version. It printed the help text and exited
+  0, so nothing shelling out to the compiler could report which one it used.
+- Link `CBLTDLI` and `BANKMQ` into the reference runtime, which
+  `runtime/README.md` has documented and `RUNTIME_PROGRAMS` did not list.
+- Set `COB_PRE_LOAD`, so a runtime file holding several programs is reachable by
+  every name it exports. `examples/mq-request-reply` had never been executed.
+- Execute the examples that take a PARM, by supplying the driver a job step
+  would. `cobc -x` refuses a main program with a `USING` clause, and nothing
+  supplied one, so four examples had never been run.
+- Honour `SELECT OPTIONAL`: a missing dataset opens with file status 05 rather
+  than 35, which is the difference between "no checkpoint, start from the top"
+  and a failure — [files](docs/language/files.md).
+- Cap the playground's output pane on a narrow screen, where 1227px of COBOL
+  painted over the trace bar and the footer at 390px.
+- Stop the site scrolling sideways at 360px. `overflow-x: hidden` was on `body`,
+  which cannot suppress a scrollbar on the root element.
+- Give the glossary one level-one heading instead of twenty, and the playground
+  one instead of none.
+- Count the executed examples on the landing page rather than writing the number
+  in it.
+- Say which GnuCOBOL to install. Ubuntu ships 3.1.2 and this project measures
+  everything against 3.2 — [getting started](docs/getting-started.md).
 - Point the `$schema` in a generated `banklang.json` at a URL that resolves,
   rather than at a domain this project does not own —
   [toolchain](docs/toolchain.md).

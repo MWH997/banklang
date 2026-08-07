@@ -13,6 +13,13 @@ they belonged to. Each page is a topic, and each diagnostic cites the page.
 
 ---
 
+## The whole language, formally
+
+| Page                               | What is in it                                                         |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| [Grammar](language/grammar.md)     | Every production in EBNF, and every word the language reserves        |
+| [Stability](language/stability.md) | What is settled, what is not, and what a change to the language costs |
+
 ## The program
 
 | Page                                        | What is in it                                                                                                              |

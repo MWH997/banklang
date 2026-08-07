@@ -33,6 +33,11 @@ const BROWSER_SAFE_PACKAGES = [
   // The zUnit generator writes three artifacts as strings and leaves putting
   // them anywhere to its caller, so it runs wherever the compiler does.
   "zunit",
+  // The COBOL interpreter, which is the reason this rule matters most: it is
+  // what lets the playground run what it compiled. A file system read anywhere
+  // in it would not fail here — it would fail as a blank Run tab in somebody
+  // else's browser.
+  "cobol-runtime",
 ];
 
 /** Packages allowed to touch the file system and process. */

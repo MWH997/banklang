@@ -30,6 +30,7 @@
       <a class="wordmark" href="/">BankLang</a>
       <nav>
         <a href="/docs/">Docs</a>
+        <a href="/blog/">Writing</a>
         <a href="/docs/language-reference.html">Language</a>
         <a href="/docs/diagnostics.html">Diagnostics</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
@@ -44,10 +45,19 @@
       </nav>
     </header>
 
+    <!--
+      The page had no heading of any kind. A screen reader arriving here was
+      given a header, two panes and no statement of what the page is, and a
+      search engine had nothing above the fold to read. Visually hidden because
+      the lede below already says it in prose.
+    -->
+    <h1 class="sr-only">BankLang playground</h1>
+
     <p class="lede">
       A deterministic compiler from <strong>BankTS</strong>, a restricted
       TypeScript-like language, to readable IBM COBOL. The real compiler runs
-      here in your browser — no server, no network call.
+      here in your browser — no server, no network call. Edit the program, watch
+      the COBOL change, then <strong>Run</strong> it.
     </p>
 
     <main class="app">
@@ -58,11 +68,20 @@
           <label class="sr-only" for="example-picker">Example</label>
           <select id="example-picker"></select>
           <span id="status" class="status">Compiling…</span>
+          <button
+            id="format"
+            class="ghost"
+            type="button"
+            title="Rewrite this program in the house style"
+          >
+            Format
+          </button>
         </div>
         <p id="example-blurb" class="blurb"></p>
         <p class="howto">
           <strong>Edit this.</strong> It recompiles as you type. Click any line
-          to trace it into the COBOL beside it.
+          to trace it into the COBOL beside it, or open <strong>Run</strong> to
+          execute the COBOL and see what it posts.
         </p>
         <div id="source-editor" class="editor"></div>
         <div id="summary" class="summary"></div>
@@ -79,6 +98,15 @@
               data-tab="cobol"
             >
               COBOL
+            </button>
+            <button
+              class="tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="output-panel"
+              data-tab="run"
+            >
+              Run
             </button>
             <button
               class="tab"
@@ -131,6 +159,7 @@
         <div id="output-panel" role="tabpanel" aria-live="polite">
           <div id="output-editor" class="editor"></div>
           <div id="diagnostics" class="diagnostics" hidden></div>
+          <div id="run" class="run" hidden></div>
         </div>
         <p id="trace" class="trace">
           Click a line in either pane to trace it through the source map.

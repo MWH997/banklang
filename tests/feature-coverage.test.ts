@@ -148,13 +148,36 @@ describe("every implemented diagnostic", () => {
 describe("evidence grades", () => {
   const grades = gradeExamples();
 
-  it("still executes three examples against the reference runtime", () => {
-    const executed = grades.filter((entry) => entry.grade === "executed");
-    expect(executed.map((entry) => entry.example).sort()).toEqual([
+  /**
+   * The three with hand-written expectations, named.
+   *
+   * These are the strongest evidence the project has: somebody worked out the
+   * closing balances on paper and the test says what they must be. Everything
+   * else that is executed is executed differentially — the same program under
+   * `cobc` and under the interpreter, required to agree — which catches a
+   * defect that compiles but cannot catch one that is wrong the same way twice.
+   * Losing one of these three is a real regression and this is what says so.
+   */
+  it("still asserts hand-written expectations on three examples", () => {
+    const asserted = grades.filter(
+      (entry) => entry.grade === "executed" && entry.reason === "",
+    );
+    expect(asserted.map((entry) => entry.example).sort()).toEqual([
       "examples/branch-accrual-cursor",
       "examples/online-enquiry",
       "examples/withdrawal-with-recovery",
     ]);
+  });
+
+  /**
+   * Every other example is run, and compared against a second implementation.
+   *
+   * A floor rather than an equality: adding an example the interpreter cannot
+   * run should not fail here, and dropping one that was compared should.
+   */
+  it("runs the rest of the corpus both ways", () => {
+    const executed = grades.filter((entry) => entry.grade === "executed");
+    expect(executed.length).toBeGreaterThanOrEqual(grades.length - 2);
   });
 
   it("has a checked-in table matching what the suite does", () => {
