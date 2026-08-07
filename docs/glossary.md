@@ -29,9 +29,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ---
 
-# A
+## A
 
-## Audit event
+### Audit event
 
 **Definition:** A durable, named record that a business-significant action occurred, carrying a correlation value that ties it to the originating request.
 
@@ -42,9 +42,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Diagnostics](diagnostics.md)
 - [Language reference](language-reference.md)
 
-# B
+## B
 
-## Backend profile
+### Backend profile
 
 **Definition:** A named target configuration that controls how BankLang emits COBOL and related artifacts for a specific environment.
 
@@ -55,7 +55,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS product page](https://www.ibm.com/products/cobol-compiler-zos)
 - [GnuCOBOL official site](https://gnucobol.sourceforge.io/)
 
-## BankLang
+### BankLang
 
 **Definition:** The project name for the deterministic compiler/toolchain that compiles BankTS into readable, auditable COBOL-oriented artifacts.
 
@@ -66,7 +66,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS product page](https://www.ibm.com/products/cobol-compiler-zos)
 - [GnuCOBOL official site](https://gnucobol.sourceforge.io/)
 
-## BankTS
+### BankTS
 
 **Definition:** The restricted TypeScript-like source language designed for banking-safe programs that compile to COBOL.
 
@@ -77,7 +77,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [TypeScript official site](https://www.typescriptlang.org/)
 - [TypeScript Compiler API wiki](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
 
-## Bind
+### Bind
 
 **Definition:** In Db2 application preparation, bind is the process that creates executable database access structures such as packages or plans from precompiled SQL artifacts.
 
@@ -88,9 +88,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Db2 13 for z/OS: glossary](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=db2-glossary)
 - [Db2 13 for z/OS: processing SQL statements by using the Db2 precompiler](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=preparation-processing-sql-statements-by-using-db2-precompiler)
 
-# C
+## C
 
-## CICS
+### CICS
 
 **Definition:** IBM CICS is a transaction-processing environment commonly used on IBM Z systems for high-volume online applications.
 
@@ -101,7 +101,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS 6.4 Programming Guide (SC27-8714-03)](https://www.ibm.com/docs/en/SS6SG3_6.4.0/pdf/pgmvs.pdf)
 - [CICS Transaction Server 6.x: fundamentals](https://www.ibm.com/docs/en/cics-ts/6.x?topic=fundamentals)
 
-## CICS channel/container
+### CICS channel/container
 
 **Definition:** CICS channels and containers provide a modern mechanism for passing structured data between CICS programs, avoiding some limitations of COMMAREA-based exchange.
 
@@ -111,7 +111,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [CICS Transaction Server 6.x: sharing data in CICS applications](https://www.ibm.com/docs/en/cics-ts/6.x?topic=applications-sharing-data-in-cics)
 
-## CICS COMMAREA
+### CICS COMMAREA
 
 **Definition:** A communication area used by CICS programs to pass data between program invocations or transactions.
 
@@ -121,7 +121,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [CICS Transaction Server 6.x: passing data to other programs by using COMMAREA](https://www.ibm.com/docs/en/cics-ts/6.x?topic=programs-commarea)
 
-## COBOL
+### COBOL
 
 **Definition:** COBOL is a long-established business programming language used heavily in enterprise, government, banking, and mainframe systems.
 
@@ -132,7 +132,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS product page](https://www.ibm.com/products/cobol-compiler-zos)
 - [GnuCOBOL official site](https://gnucobol.sourceforge.io/)
 
-## COBOL copybook
+### COBOL copybook
 
 **Definition:** A COBOL source fragment, commonly included with the `COPY` statement, used to share record layouts, constants, or declarations across programs.
 
@@ -142,7 +142,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: COPY statement](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=statements-copy-statement)
 
-## COBOL division
+### COBOL division
 
 **Definition:** A major structural part of a COBOL program, such as `IDENTIFICATION DIVISION`, `ENVIRONMENT DIVISION`, `DATA DIVISION`, and `PROCEDURE DIVISION`.
 
@@ -153,7 +153,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS 6.4 Language Reference (SC27-8713-03)](https://www.ibm.com/docs/en/SS6SG3_6.4.0/pdf/lrmvs.pdf)
 - [GnuCOBOL documentation](https://gnucobol.sourceforge.io/guides.html)
 
-## COMP
+### COMP
 
 **Definition:** In COBOL, `COMP` generally refers to computational binary storage, depending on dialect and usage.
 
@@ -163,7 +163,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: computational items](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-computational-items)
 
-## COMP-3 / Packed decimal
+### COMP-3 / Packed decimal
 
 **Definition:** `COMP-3` is IBM COBOL packed-decimal storage, where decimal digits are packed into bytes with sign information.
 
@@ -173,7 +173,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: computational items](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-computational-items)
 
-## Copybook layout
+### Copybook layout
 
 **Definition:** The byte-level arrangement of fields defined by a COBOL copybook, including order, length, numeric representation, signedness, repetition, and overlapping definitions.
 
@@ -184,9 +184,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL 6.4: USAGE clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=entry-usage-clause)
 - [IBM Enterprise COBOL 6.4: computational items](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-computational-items)
 
-# D
+## D
 
-## Db2 for z/OS
+### Db2 for z/OS
 
 **Definition:** IBM Db2 for z/OS is IBM's relational database system for z/OS environments.
 
@@ -197,7 +197,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Db2 13 for z/OS: glossary](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=db2-glossary)
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 
-## DD name
+### DD name
 
 **Definition:** The data definition name that links a program's internal file reference to a dataset through JCL. On z/OS it is at most eight characters.
 
@@ -207,7 +207,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [z/OS 3.1: DD statement](https://www.ibm.com/docs/en/zos/3.1.0?topic=reference-dd-statement)
 
-## Decimal type
+### Decimal type
 
 **Definition:** A fixed-precision, fixed-scale numeric type used for exact arithmetic.
 
@@ -217,7 +217,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: computational items](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-computational-items)
 
-## Double-entry bookkeeping
+### Double-entry bookkeeping
 
 **Definition:** An accounting method in which every financial event is recorded as equal and opposite debit and credit entries, so total debits always equal total credits.
 
@@ -227,9 +227,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Diagnostics](diagnostics.md)
 
-# E
+## E
 
-## EBCDIC
+### EBCDIC
 
 **Definition:** Extended Binary Coded Decimal Interchange Code, a character encoding historically and currently used on IBM mainframe systems.
 
@@ -239,7 +239,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [z/OS 3.1: converting data to ASCII, EBCDIC and UTF-8](https://www.ibm.com/docs/en/zos/3.1.0?topic=zos-converting-data-ascii-ebcdic-utf-8)
 
-## EIBRESP
+### EIBRESP
 
 **Definition:** `EIBRESP` is a CICS EXEC Interface Block field used after EXEC CICS commands to indicate the response condition.
 
@@ -249,7 +249,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Response codes of EXEC CICS commands](https://www.ibm.com/docs/en/cics-ts/6.x?topic=codes-response-exec-cics-commands)
 
-## Embedded SQL
+### Embedded SQL
 
 **Definition:** SQL statements written inside a host-language program, processed by a precompiler before normal compilation.
 
@@ -260,9 +260,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 - [Db2 13 for z/OS: processing SQL statements by using the Db2 precompiler](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=preparation-processing-sql-statements-by-using-db2-precompiler)
 
-# F
+## F
 
-## File status
+### File status
 
 **Definition:** A two-character COBOL data item that receives the outcome of each I/O operation on a file, set through the `FILE STATUS` clause of a `SELECT` entry.
 
@@ -272,7 +272,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: FILE STATUS clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=section-file-status-clause)
 
-## Fixed-format COBOL
+### Fixed-format COBOL
 
 **Definition:** A COBOL source format where specific columns have special meaning, historically used in many COBOL environments.
 
@@ -282,7 +282,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: Area A or Area B](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=format-area-area-b)
 
-## Free-format COBOL
+### Free-format COBOL
 
 **Definition:** A COBOL source format with fewer column restrictions than traditional fixed format.
 
@@ -292,9 +292,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: COBOL compiler options](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=options-cobol-compiler)
 
-# G
+## G
 
-## GnuCOBOL
+### GnuCOBOL
 
 **Definition:** A free/libre COBOL compiler that produces native executables from COBOL source and is available across several operating systems.
 
@@ -305,9 +305,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [GnuCOBOL official site](https://gnucobol.sourceforge.io/)
 - [GnuCOBOL guides](https://gnucobol.sourceforge.io/guides.html)
 
-# H
+## H
 
-## Host variable
+### Host variable
 
 **Definition:** A variable in a host language, such as COBOL, that is referenced by embedded SQL statements.
 
@@ -317,9 +317,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 
-# I
+## I
 
-## IBM Enterprise COBOL for z/OS
+### IBM Enterprise COBOL for z/OS
 
 **Definition:** IBM's enterprise-class COBOL compiler for z/OS.
 
@@ -330,7 +330,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [IBM Enterprise COBOL for z/OS product page](https://www.ibm.com/products/cobol-compiler-zos)
 - [IBM Enterprise COBOL for z/OS 6.4 Language Reference (SC27-8713-03)](https://www.ibm.com/docs/en/SS6SG3_6.4.0/pdf/lrmvs.pdf)
 
-## Idempotency key
+### Idempotency key
 
 **Definition:** A caller-supplied value that uniquely identifies a request, so that repeating the request produces the same effect as performing it once.
 
@@ -340,7 +340,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Diagnostics](diagnostics.md)
 
-## IMS
+### IMS
 
 **Definition:** IBM Information Management System, a mainframe transaction and hierarchical database management system.
 
@@ -350,9 +350,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IMS 15.5: application programming](https://www.ibm.com/docs/en/ims/15.5.0?topic=ims-application-programming)
 
-# J
+## J
 
-## JCL / Job Control Language
+### JCL / Job Control Language
 
 **Definition:** Job Control Language is used on IBM mainframe systems to define and control batch jobs and their required resources.
 
@@ -363,9 +363,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [z/OS 3.1 MVS JCL Reference (SA23-1385-60)](https://www.ibm.com/docs/en/SSLTBW_3.1.0/pdf/ieab600_v3r1.pdf)
 - [z/OS 3.1: JOB statement](https://www.ibm.com/docs/en/zos/3.1.0?topic=reference-job-statement)
 
-# M
+## M
 
-## Money type
+### Money type
 
 **Definition:** A nominal type representing monetary values with currency, precision, scale, and rounding rules.
 
@@ -375,9 +375,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: computational items](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-computational-items)
 
-# O
+## O
 
-## OCCURS
+### OCCURS
 
 **Definition:** A COBOL clause used to define repeated data items, similar to fixed-size arrays.
 
@@ -387,7 +387,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: OCCURS clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=entry-occurs-clause)
 
-## OCCURS DEPENDING ON
+### OCCURS DEPENDING ON
 
 **Definition:** A COBOL construct for variable-occurrence tables whose effective number of elements depends on another data item.
 
@@ -397,9 +397,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: OCCURS DEPENDING ON clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=clause-occurs-depending)
 
-# P
+## P
 
-## PIC / PICTURE clause
+### PIC / PICTURE clause
 
 **Definition:** A COBOL clause that describes the format and size of a data item, including numeric and alphanumeric fields.
 
@@ -409,7 +409,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: PICTURE clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=entry-picture-clause)
 
-## Precompile
+### Precompile
 
 **Definition:** The process that scans source code containing embedded SQL and transforms it before normal compilation.
 
@@ -419,9 +419,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Db2 13 for z/OS: processing SQL statements by using the Db2 precompiler](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=preparation-processing-sql-statements-by-using-db2-precompiler)
 
-# R
+## R
 
-## REDEFINES
+### REDEFINES
 
 **Definition:** A COBOL clause that allows a data item to share storage with another data item, enabling different interpretations of the same bytes.
 
@@ -431,9 +431,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [IBM Enterprise COBOL 6.4: REDEFINES clause](https://www.ibm.com/docs/en/cobol-zos/6.4.0?topic=entry-redefines-clause)
 
-# S
+## S
 
-## Source map
+### Source map
 
 **Definition:** A mapping between source-language locations and generated artifact locations.
 
@@ -443,7 +443,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [ECMA-426: Source map format specification, 1st edition (December 2024)](https://ecma-international.org/publications-and-standards/standards/ecma-426/)
 
-## Source map coverage
+### Source map coverage
 
 **Definition:** The proportion of source-language symbols that have a source map entry resolving to a real location in the generated artifact, together with the set of symbols that do not.
 
@@ -453,7 +453,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [ECMA-426: Source map format specification, 1st edition (December 2024)](https://ecma-international.org/publications-and-standards/standards/ecma-426/)
 
-## SQLCA
+### SQLCA
 
 **Definition:** SQL Communication Area; a data structure used by embedded SQL programs to receive status and diagnostic information from SQL operations.
 
@@ -464,7 +464,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 - [Db2 13 for z/OS: glossary](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=db2-glossary)
 
-## SQLCODE
+### SQLCODE
 
 **Definition:** A status code produced by SQL execution that indicates success, warning, not-found, or error conditions.
 
@@ -475,7 +475,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 - [Db2 13 for z/OS: glossary](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=db2-glossary)
 
-## SQLSTATE
+### SQLSTATE
 
 **Definition:** SQLSTATE is a standard SQL status code value that can be used alongside or instead of SQLCODE for SQL diagnostics.
 
@@ -485,7 +485,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 
-## Syncpoint
+### Syncpoint
 
 **Definition:** In transaction processing, a syncpoint is a point where updates are committed or backed out as a consistent unit of work.
 
@@ -496,9 +496,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [CICS Transaction Server 6.x: units of work](https://www.ibm.com/docs/en/cics-ts/6.x?topic=recovery-units-work)
 - [Db2 13 for z/OS: embedded SQL programming](https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=zos-embedded-sql-programming)
 
-# T
+## T
 
-## Transaction (BankTS)
+### Transaction (BankTS)
 
 **Definition:** A first-class BankTS declaration that groups the effects of one business operation: ledger postings and audit events.
 
@@ -509,9 +509,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [Language reference](language-reference.md)
 - [ADR-0003](adr/0003-ledger-and-audit-calling-convention.md)
 
-# V
+## V
 
-## VSAM
+### VSAM
 
 **Definition:** Virtual Storage Access Method, an IBM mainframe data access method commonly used for record-oriented datasets.
 
@@ -521,9 +521,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [z/OS 3.1: introduction to VSAM programming](https://www.ibm.com/docs/en/zos/3.1.0?topic=instructions-introduction-vsam-programming)
 
-# Z
+## Z
 
-## z/OS
+### z/OS
 
 **Definition:** IBM's mainframe operating system for IBM Z systems.
 
@@ -534,7 +534,7 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 - [z/OS 3.1: introduction](https://www.ibm.com/docs/en/zos/3.1.0?topic=zos-introduction)
 - [z/OS 3.1 MVS JCL Reference (SA23-1385-60)](https://www.ibm.com/docs/en/SSLTBW_3.1.0/pdf/ieab600_v3r1.pdf)
 
-## ZUnit
+### ZUnit
 
 **Definition:** ZUnit is IBM's z/OS automated unit testing framework, adapting xUnit concepts for Enterprise COBOL and PL/I testing.
 
@@ -544,9 +544,9 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 - [ZUnit overview](https://www.ibm.com/docs/en/developer-for-zos/15.0.x?topic=applications-zos-automated-unit-testing-framework-zunit)
 
-# Numerals
+## Numerals
 
-## 88-level condition name
+### 88-level condition name
 
 **Definition:** A COBOL condition name declared with level number 88 to associate meaningful names with specific values of a data item.
 

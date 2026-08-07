@@ -30,6 +30,7 @@
   },
   "scripts": {
     "bankc": "tsx packages/bankc-cli/src/bin.ts",
+    "build:blog": "tsx tools/build-blog.ts",
     "build:docs": "tsx tools/build-docs.ts",
     "build:icon": "tsx tools/build-icon.ts",
     "build:og": "tsx tools/build-og.ts",

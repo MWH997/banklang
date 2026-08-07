@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 
 import { compile } from "../packages/compiler/src/index";
 import { exampleProjects } from "./example-projects";
+import { differentialProjects, NOT_INTERPRETED } from "./interpret";
 
 /**
  * What each example's evidence actually establishes, counted.
@@ -20,6 +21,14 @@ import { exampleProjects } from "./example-projects";
  *   runtime in `runtime/` and run, and a test asserts on the ledger it wrote,
  *   the balances it left, and the branches it took. This is the only grade that
  *   catches a defect that compiles.
+ *
+ *   Two kinds of test earn it, and the note column says which. A *hand-written*
+ *   one states the expected balances itself, which is the stronger evidence
+ *   because the expectation came from arithmetic somebody did on paper. A
+ *   *differential* one runs the same program under `cobc` and under
+ *   `packages/cobol-runtime` and requires the two to agree, which catches a
+ *   defect that compiles without anybody having to predict the answer — but
+ *   would not catch a program that is wrong in the same way twice.
  * - **compiled** — `cobc` accepts it under `tools/banklang-ibm.conf`, a
  *   GnuCOBOL dialect shaped to Enterprise COBOL 6.4. It rules out a program the
  *   target would reject; it says nothing about what the program computes.
@@ -45,7 +54,7 @@ export interface ExampleGrade {
  * second place to keep in step and the failure mode is a grade that claims more
  * than the suite does. A test that stops executing an example stops naming it.
  */
-export function executedExamples(cwd = process.cwd()): Set<string> {
+export function handAssertedExamples(cwd = process.cwd()): Set<string> {
   const executed = new Set<string>();
   const root = resolve(cwd, "tests");
 
@@ -72,14 +81,22 @@ export function executedExamples(cwd = process.cwd()): Set<string> {
 }
 
 export function gradeExamples(cwd = process.cwd()): ExampleGrade[] {
-  const executed = executedExamples(cwd);
+  const asserted = handAssertedExamples(cwd);
+  const differential = new Set(differentialProjects(cwd));
 
   return exampleProjects(cwd).map((example) => {
-    if (executed.has(example)) {
+    if (asserted.has(example)) {
       return {
         example,
         grade: "executed" as const,
         reason: "",
+      };
+    }
+    if (differential.has(example)) {
+      return {
+        example,
+        grade: "executed" as const,
+        reason: "differential: agrees with cobc, no hand-written expectation",
       };
     }
 
@@ -104,7 +121,9 @@ export function gradeExamples(cwd = process.cwd()): ExampleGrade[] {
     return {
       example,
       grade: "compiled" as const,
-      reason: "no test runs it against the reference runtime",
+      reason:
+        NOT_INTERPRETED[example] ??
+        "no test runs it against the reference runtime",
     };
   });
 }

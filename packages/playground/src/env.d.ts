@@ -20,3 +20,16 @@ interface ImportMeta {
 }
 
 declare module "*.css";
+
+/**
+ * `?raw` imports, which is how the reference runtime reaches the browser.
+ *
+ * The playground runs the same `runtime/*.cbl` files CI compiles and links, so
+ * they are bundled as text rather than reimplemented in JavaScript. A
+ * JavaScript ledger would be less work and would mean that what runs here and
+ * what runs in CI are two different programs.
+ */
+declare module "*?raw" {
+  const content: string;
+  export default content;
+}

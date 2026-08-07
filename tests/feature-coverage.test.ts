@@ -148,13 +148,55 @@ describe("every implemented diagnostic", () => {
 describe("evidence grades", () => {
   const grades = gradeExamples();
 
-  it("still executes three examples against the reference runtime", () => {
-    const executed = grades.filter((entry) => entry.grade === "executed");
-    expect(executed.map((entry) => entry.example).sort()).toEqual([
+  /**
+   * The three with hand-written expectations, named.
+   *
+   * These are the strongest evidence the project has: somebody worked out the
+   * closing balances on paper and the test says what they must be. Everything
+   * else that is executed is executed differentially — the same program under
+   * `cobc` and under the interpreter, required to agree — which catches a
+   * defect that compiles but cannot catch one that is wrong the same way twice.
+   * Losing one of these three is a real regression and this is what says so.
+   */
+  it("still asserts hand-written expectations on three examples", () => {
+    const asserted = grades.filter(
+      (entry) => entry.grade === "executed" && entry.reason === "",
+    );
+    expect(asserted.map((entry) => entry.example).sort()).toEqual([
       "examples/branch-accrual-cursor",
       "examples/online-enquiry",
       "examples/withdrawal-with-recovery",
     ]);
+  });
+
+  /**
+   * Every other example is run, and compared against a second implementation.
+   *
+   * A floor rather than an equality: adding an example the interpreter cannot
+   * run should not fail here, and dropping one that was compared should.
+   */
+  it("runs the rest of the corpus both ways", () => {
+    const executed = grades.filter((entry) => entry.grade === "executed");
+    expect(executed.length).toBeGreaterThanOrEqual(grades.length - 2);
+  });
+
+  /**
+   * The counts a decision maker reads, held to the counts the suite produces.
+   *
+   * `docs/for-decision-makers.md` opens its evidence section by saying the
+   * grades are generated rather than asserted, and then states them in a table
+   * somebody typed. It read 3 / 19 / 1 for a day after they became 21 / 2 / 0,
+   * which is the exact failure the sentence above it promises cannot happen.
+   */
+  it("matches the counts stated for the person deciding", () => {
+    const page = readFileSync("docs/for-decision-makers.md", "utf8");
+    for (const grade of ["executed", "compiled", "emitted"] as const) {
+      const count = grades.filter((entry) => entry.grade === grade).length;
+      expect(
+        page.replace(/[ \t]+/g, " "),
+        `docs/for-decision-makers.md does not say ${grade} is ${String(count)}`,
+      ).toContain(`| **${grade}** | ${String(count)} |`);
+    }
   });
 
   it("has a checked-in table matching what the suite does", () => {

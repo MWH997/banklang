@@ -41,7 +41,7 @@ claimed.
 **Built with AI assistance.** The design and the decisions are the author's;
 much of the implementation was written with an AI coding assistant under review.
 That is how the code was written, not what it does — nothing in the compiler is
-a model, and [verification](docs/verification.md) is how to check that.
+a model. [Verification](docs/verification.md) is how to check that.
 
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
@@ -56,9 +56,10 @@ pnpm install && pnpm playground:dev
 ```
 
 The **[playground](packages/playground/)** runs the whole compiler in your
-browser — no server, no network call. Click any line of BankTS and the COBOL it
-produced lights up, from the emitted source map: traceability you can click
-rather than a claim in the documentation.
+browser — no server, no network call. Click a line of BankTS and the COBOL it
+produced lights up, from the emitted source map. Open **Run** and the COBOL is
+executed against the reference runtime in [`runtime/`](runtime/README.md), so
+you can read the postings it made rather than take the compiler's word for them.
 
 ## What it generates
 
@@ -105,7 +106,6 @@ boundary case, for a product and a quotient, in all seven modes — see
 | `BANK-LED-001`  | Debits and credits must balance                               |
 | `BANK-DEC-003`  | A division must state its rounding mode                       |
 | `BANK-SQL-007`  | A `SQLCODE` test must separate an error from a missing row    |
-| `BANK-SQL-008`  | A commit inside a cursor loop needs a `hold` cursor           |
 | `BANK-CICS-004` | A CICS response must be tested against its condition name     |
 | `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or a ledger |
 
@@ -114,7 +114,7 @@ emitted without a catalogue entry. [The full catalogue →](docs/diagnostics.md)
 
 ## Quick start
 
-Requires **Node.js 24+** and pnpm 11.7.0. GnuCOBOL is optional locally.
+Node.js 24+ and pnpm 11.7.0. GnuCOBOL is optional locally.
 
 ```bash
 pnpm bankc init    my-service                 # scaffold a project
@@ -127,7 +127,6 @@ pnpm bankc explain BANK-LED-001               # explain a diagnostic
 
 pnpm bankc analyse  legacy/                   # what your COBOL contains
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
-pnpm bankc dclgen   import ACCOUNT.cpy        # your table, as BankTS
 ```
 
 Add `--watch` to any command to rerun on save.
@@ -135,7 +134,7 @@ Add `--watch` to any command to rerun on save.
 
 ## Examples
 
-Each with a checked-in [evidence bundle](evidence/): its artifacts, and the
+Each with a checked-in [evidence bundle](evidence/): its artifacts and the
 verification report over them.
 
 **The language**
@@ -162,31 +161,26 @@ verification report over them.
 | [`mq-request-reply`](examples/mq-request-reply/)           | A queue drained under syncpoint             |
 | [`report-with-controls`](examples/report-with-controls/)   | Report Writer: control breaks and totals    |
 
-**When it goes wrong**
-
-| Example                                              | Demonstrates                              |
-| ---------------------------------------------------- | ----------------------------------------- |
-| [`failed-open`](examples/failed-open/)               | File status 35, 37 and 39 named apart     |
-| [`full-disk`](examples/full-disk/)                   | A `WRITE` out of extents, halfway through |
-| [`deadlock-retry`](examples/deadlock-retry/)         | Db2 -911 and -913, bounded retry          |
-| [`high-volume-master`](examples/high-volume-master/) | A file bigger than the loop bound         |
-
-**A night**
+**When it goes wrong, and a night**
 
 | Example                                                    | Demonstrates                                   |
 | ---------------------------------------------------------- | ---------------------------------------------- |
+| [`failed-open`](examples/failed-open/)                     | File status 35, 37 and 39 named apart          |
+| [`full-disk`](examples/full-disk/)                         | A `WRITE` out of extents, halfway through      |
+| [`deadlock-retry`](examples/deadlock-retry/)               | Db2 -911 and -913, bounded retry               |
+| [`high-volume-master`](examples/high-volume-master/)       | A file bigger than the loop bound              |
 | [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint    |
 | [`end-of-day-settlement`](examples/end-of-day-settlement/) | Four programs and a sort in **one JCL stream** |
 
-**And five conversions** — [`conversions/`](conversions/) — existing COBOL on one
-side, the BankTS it becomes on the other, and what the compiler produced from
-that BankTS underneath.
+**And five conversions** — [`conversions/`](conversions/) — existing COBOL on
+one side and the BankTS it becomes on the other.
 
-`withdrawal-with-recovery` is **run**, against the reference runtime in
-[`runtime/`](runtime/README.md), and the test asserts on the balances the ledger
-ends with. That is what catches a defect that compiles: the bounds guard once
+Every example is **run**, not only compiled. Three have hand-written expected
+balances; the rest are executed twice — once by `cobc` and once by an
+interpreter written against the same output — and a test fails on any
+disagreement. That is what catches a defect that compiles: the bounds guard once
 clamped an out-of-range subscript instead of refusing it, and every static check
-passed.
+passed. [The grades →](evidence/GRADES.md)
 
 ## Documentation
 
@@ -217,6 +211,8 @@ passed.
 | Document                                         | Contents                        |
 | ------------------------------------------------ | ------------------------------- |
 | [Language reference](docs/language-reference.md) | The BankTS subset               |
+| [Grammar](docs/language/grammar.md)              | Every production, in EBNF       |
+| [Language stability](docs/language/stability.md) | What is settled and what is not |
 | [Diagnostics](docs/diagnostics.md)               | The full catalogue              |
 | [Architecture](docs/architecture.md)             | Pipeline, packages, `compile()` |
 | [Verification](docs/verification.md)             | Testing and evidence strategy   |
@@ -230,8 +226,7 @@ passed.
 ## Status
 
 A working compiler for a **deliberately narrow subset**, not a production
-mainframe toolchain. It has never run against a real ledger, and no
-institution's money has moved through it.
+mainframe toolchain. It has never run against a real ledger.
 
 [The full list, with what each limit costs →](docs/status-and-limits.md)
 
