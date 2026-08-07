@@ -46,11 +46,15 @@
   font-size: 0.92rem;
 }
 
-.side section {
+.side__group {
   margin-bottom: 1.5rem;
 }
 
-.side h2 {
+/* Not an `h2`, which is what these were. The sidebar precedes `<main>` in the
+   document, so every documentation page opened with four level-two headings
+   before its own `h1` — F17. The group name is still announced, through the
+   `aria-labelledby` on the list it labels, which is what it was doing here. */
+.side__title {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -100,7 +104,7 @@
   width: 100%;
   min-height: 36px;
   padding: 0.4rem 0.7rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field);
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);

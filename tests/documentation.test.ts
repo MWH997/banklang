@@ -3,6 +3,8 @@ import { dirname, join, normalize, relative, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { WORKING_PAPERS, isWorkingPaper } from "../tools/build-docs";
+
 /**
  * The documentation, checked rather than trusted.
  *
@@ -83,17 +85,21 @@ describe("every link in every document", () => {
     const yetToExist = new Set(["RESULTS.md"]);
 
     for (const file of FILES) {
-      // Two kinds of document name a file that is not there, and are right to.
+      // A working paper names files that are not there, and is right to.
       //
       // An audit is a record of what was written at the time, and it names
       // documents later renamed or removed — `integrations/numeric-semantics.md`
       // became `numeric-model.md` because the 2026-08-05 audit asked for it.
-      // Rewriting it would be rewriting the history it exists to hold.
+      // Rewriting it would be rewriting the history it exists to hold. A ticket
+      // names what it exists to have written: the launch checklist asks for
+      // `docs/for-decision-makers.md`, and the day that resolves is the day the
+      // ticket is done.
       //
-      // A ticket names what it exists to have written: `launch-tickets.md` asks
-      // for `docs/for-decision-makers.md`, and the day that resolves is the day
-      // the ticket is done.
-      if (/audit-\d{4}/.test(file) || file === "docs/launch-tickets.md") {
+      // Asked of the builder rather than matched here. This test had its own,
+      // looser pattern for the same idea, which is half of what the 2026-08-07
+      // audit's F22 was about: two spellings of one rule, and the site's was
+      // the one that decided what got published.
+      if (isWorkingPaper(file)) {
         continue;
       }
       const text = readFileSync(resolve(process.cwd(), file), "utf8");
@@ -110,6 +116,32 @@ describe("every link in every document", () => {
     }
 
     expect(missing).toEqual([]);
+  });
+
+  /**
+   * The README must not link a working paper.
+   *
+   * This assertion is the reverse of the one it replaces. G1 added links to
+   * `docs/working/` because `tools/build-docs.ts` claimed they existed and they
+   * did not — the 2026-08-07 audit's F21 — and that made the comment true while
+   * making the repository carry the papers. The papers are gitignored now, so a
+   * README link is a path a clone does not have: F21's defect again, pointing
+   * the other way.
+   *
+   * The directory, not a name pattern, for the reason `WORKING_PAPERS` itself
+   * exists: what is in `docs/working/` is the set, and the next paper is
+   * whatever somebody writes next.
+   */
+  it("links no working paper from the README, since a clone has none", () => {
+    const readme = readFileSync(resolve(process.cwd(), "README.md"), "utf8");
+    const linked = relativeLinks(readme)
+      .map((link) => link.replace(/\\/g, "/"))
+      .filter((link) => isWorkingPaper(link));
+
+    expect(
+      linked,
+      `the README links ${WORKING_PAPERS}/ papers, which are not in the repository`,
+    ).toEqual([]);
   });
 });
 
@@ -169,9 +201,45 @@ describe("what the README claims", () => {
     expect(readme).toContain("never run against a real ledger");
   });
 
-  /** A 16 KB README is one nobody reads to the end of. */
+  /**
+   * A 16 KB README is one nobody reads to the end of.
+   *
+   * The ceiling has moved once, from 13,000, and the reason is written here
+   * rather than left as a larger number. H5 gave the documentation section two
+   * more groups — "Language reference" and "Decisions" — because nineteen of
+   * forty-three documents were reaching the docs sidebar through a group called
+   * "Everything else", and this section is where that grouping is written. Two
+   * headings and two two-row tables is what they cost.
+   *
+   * G2's links to the working papers were paid for by tightening four
+   * paragraphs instead, which is the right answer when the growth is prose. It
+   * is the wrong answer here: the alternative was writing all nineteen rows
+   * out, which the README cannot afford and which would be a second list to
+   * keep in step with `docs/`.
+   *
+   * It has moved a second time, to 13,550, for R1: the site's address, above
+   * the badges, where somebody who arrives at GitHub first sees it before
+   * anything else. Two lines, and the same reasoning — a reader who wanted the
+   * live compiler and got a repository is the one visitor this project cannot
+   * afford to lose to a scroll.
+   */
   it("stays short enough to read", () => {
-    expect(readme.length).toBeLessThan(13_000);
+    expect(readme.length).toBeLessThan(13_550);
+  });
+
+  /**
+   * R1. The first link is the site, not a badge and not GitHub.
+   *
+   * Asserted rather than trusted to stay put: this line is the one thing in the
+   * README that a later edit tidying the header would move down, and the whole
+   * of its value is being above the fold.
+   */
+  it("opens with the address of the site", () => {
+    const firstLink = /\[([^\]]+)\]\(([^)]+)\)/.exec(readme);
+    expect(firstLink?.[2]).toBe("https://banklang.mwhassan.com");
+    expect(readme.indexOf("banklang.mwhassan.com")).toBeLessThan(
+      readme.indexOf("badge.svg"),
+    );
   });
 });
 
@@ -306,7 +374,7 @@ describe("COBOL printed in the documentation", () => {
 /**
  * The one sentence that must be wherever a reader can arrive.
  *
- * The pre-public checklist in `docs/launch-tickets.md` said this was "already
+ * The pre-public checklist said this was "already
  * in all three; keep it there". It was in two. The README implied it — "each
  * compiled in CI under a GnuCOBOL configuration shaped to Enterprise COBOL
  * 6.4" — and a reader who does not already know that GnuCOBOL is not IBM's
@@ -335,6 +403,75 @@ describe("validated with GnuCOBOL, not IBM", () => {
       ).toBe(true);
     });
   }
+});
+
+/**
+ * What the Run tab is run on, said where the numbers are.
+ *
+ * "Read the postings it made rather than take the compiler's word for them" was
+ * the claim, and for a while nothing filled the transaction's records before
+ * the program ran — `run.ts` passed `datasets: []` and no entry record at all,
+ * so the marquee example's ledger balanced 0.00 against 0.00. That was the
+ * 2026-08-07 audit's F4; B3 made the tab admit it and B2 gave it an Input
+ * panel.
+ *
+ * The claim now has to be the other one, and it has to be made in the same
+ * three places: the numbers came from something, and a reader is told what.
+ * Where a program has no input path at all — a CICS transaction whose commarea
+ * a region supplies — the tab still says so, because that is a fact about the
+ * program rather than about the browser and the two look identical from the
+ * outside.
+ */
+describe("what the Run tab was run on", () => {
+  const surfaces: [string, string][] = [
+    ["the Run panel itself", "packages/playground/src/main.ts"],
+    ["the README", "README.md"],
+    ["the playground's README", "packages/playground/README.md"],
+  ];
+
+  for (const [name, file] of surfaces) {
+    it(`says where the input comes from, in ${name}`, () => {
+      const text = readFileSync(resolve(process.cwd(), file), "utf8").replace(
+        /\s+/g,
+        " ",
+      );
+      expect(
+        /Input tab|Input panel|entry record|input dataset/i.test(text),
+        `${file} does not say what the Run tab is given.`,
+      ).toBe(true);
+    });
+  }
+
+  /**
+   * Before the results, not after them. A reader who reaches the journal
+   * without knowing what produced it has read the numbers already.
+   */
+  it("says it before the numbers", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "packages/playground/src/main.ts"),
+      "utf8",
+    );
+    const render = source.slice(
+      source.indexOf("function renderRun("),
+      source.indexOf("function block("),
+    );
+    const note = render.indexOf("Run on what the Input tab holds");
+    const journal = render.indexOf("Ledger journal");
+
+    expect(note).toBeGreaterThan(-1);
+    expect(journal).toBeGreaterThan(-1);
+    expect(note).toBeLessThan(journal);
+  });
+
+  /** And where there is nothing to be given, why there is nothing. */
+  it("still says so for a program with no input path", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "packages/playground/src/main.ts"),
+      "utf8",
+    );
+    expect(source).toContain("Nothing was supplied as input.");
+    expect(source).toContain("program?.reason");
+  });
 });
 
 /**

@@ -165,14 +165,26 @@ jobs:
 
       # Banking safety diagnostics as SARIF, so they appear as inline
       # annotations on a pull request rather than only in this log.
+      #
+      # Not `if: always()`, which is what this was. On a red run that re-invoked
+      # the compiler after the step that had just proved it was broken, and
+      # published its findings to the Security tab as though they were this
+      # commit's verdict — from a build that had already failed, possibly at
+      # `pnpm test`, possibly inside the checker itself. Findings uploaded from
+      # a run nobody trusts are worse than no findings.
+      #
+      # The default condition is `success()`, so both steps below run only when
+      # every check above passed.
       - name: Produce SARIF report
-        if: always()
+        id: sarif
         run: pnpm bankc check examples/account-posting --format sarif --output bankc.sarif
 
       # Requires a public repository or GitHub Advanced Security, so this does
-      # not fail the build while the repository is private.
+      # not fail the build while the repository is private. Conditioned on the
+      # step above rather than on the job, so an upload never runs without a
+      # file to upload.
       - name: Upload SARIF
-        if: always()
+        if: steps.sarif.outcome == 'success'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
