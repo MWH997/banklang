@@ -134,8 +134,12 @@ describe("the README's badges", () => {
 /** The glossary's entries, in the order they appear. */
 function entries(): { term: string; body: string }[] {
   // Everything after the entry template's own closing rule.
-  const body = GLOSSARY.slice(GLOSSARY.indexOf("\n---\n\n# "));
-  return [...body.matchAll(/\n## (.+)\n([\s\S]*?)(?=\n## |\n# |$)/g)].map(
+  const body = GLOSSARY.slice(GLOSSARY.indexOf("\n---\n\n## "));
+  // Entries are level three under a level-two letter section. They were level
+  // two under a level-one letter, which gave the rendered page twenty `h1`
+  // elements: a screen reader announced twenty page titles and a search engine
+  // had no single statement of what the page is.
+  return [...body.matchAll(/\n### (.+)\n([\s\S]*?)(?=\n### |\n## |$)/g)].map(
     (match) => ({ term: match[1]!.trim(), body: match[2]! }),
   );
 }

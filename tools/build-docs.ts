@@ -316,13 +316,26 @@ export function slug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
-/** Markdown with the syntax taken out, for searching over. */
+/**
+ * Markdown with the syntax taken out, for searching over.
+ *
+ * **An inline code span keeps its text.** It used to be replaced with a space
+ * along with the backticks, and the effect was that the search could not find
+ * the things it exists to find: `BANK-LED-001`, `COMP-3`, `EIBRESP` and `PIC`
+ * are all written in backticks everywhere they appear, so every one of them
+ * matched nothing. `docs.js` opens by saying a reader of a compiler's
+ * documentation is nearly always looking for a page by exactly such a name.
+ *
+ * A fenced block is still dropped. It is a listing rather than prose, and the
+ * words in it are the generated COBOL rather than anything a reader is
+ * searching for.
+ */
 function plainText(source: string): string {
   return source
     .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]*`/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/[#*_>|-]/g, " ")
+    .replace(/[#*_>|]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -405,6 +418,7 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
       <a class="wordmark" href="${up}/../">BankLang</a>
       <nav>
         <a href="${up}/../docs/">Docs</a>
+        <a href="${up}/../blog/">Writing</a>
         <a href="${up}/../playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
         <button id="theme" type="button" class="ghost" aria-label="Switch between light and dark">Theme</button>
@@ -549,7 +563,7 @@ export interface SearchEntry {
   t: string;
   /** Group it sits under, so a result can say where it came from. */
   g: string;
-  /** Lowercased text, truncated: enough to match on, small enough to ship. */
+  /** Lowercased text, in full, so a match late in a long page is findable. */
   b: string;
 }
 
@@ -559,8 +573,16 @@ export interface SearchEntry {
  * Forty-two documents is small enough that the whole corpus fits in a file the
  * browser can scan, which is the only design that keeps the promise the rest of
  * this site makes: nothing is fetched from another host, and there is no
- * runtime dependency to audit. The body is truncated because the point is to
- * find the page, not to rank inside it.
+ * runtime dependency to audit.
+ *
+ * **The body is no longer truncated.** It was cut at 4,000 characters on the
+ * reasoning that the point is to find the page rather than to rank inside it,
+ * and the effect was that most of the documentation could not be found at all:
+ * the numeric model is 6.6 KB, the diagnostics catalogue is 29 KB, and a reader
+ * searching for a term that appears past the first page of either got nothing.
+ * The whole corpus is 265 KB of text, fetched once on the first keystroke and
+ * never on a page that is only read — a quarter of a megabyte to make a
+ * documentation site searchable is a trade worth making.
  */
 export function searchIndex(groups: NavGroup[], docs: RenderedDoc[]): string {
   const groupOf = new Map<string, string>();
@@ -574,7 +596,7 @@ export function searchIndex(groups: NavGroup[], docs: RenderedDoc[]): string {
     u: doc.file.replace(/\.md$/, ".html"),
     t: doc.title,
     g: groupOf.get(doc.file) ?? "Everything else",
-    b: doc.text.slice(0, 4000).toLowerCase(),
+    b: doc.text.toLowerCase(),
   }));
 
   return JSON.stringify(entries);

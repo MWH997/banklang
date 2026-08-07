@@ -1,0 +1,159 @@
+/*
+ * The blog, which is a different reader from the documentation.
+ *
+ * Somebody arrives here from a search or a link and knows nothing about the
+ * project, so the page is one column of prose at a comfortable measure with no
+ * sidebar and nothing to navigate. The palette and the header come from
+ * `site.css`, so it reads as the same site.
+ */
+
+.post {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 5vw, 2rem) 3rem;
+}
+
+.post h1 {
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+  max-width: 20ch;
+}
+
+.post h2 {
+  font-size: clamp(1.25rem, 2.6vw, 1.5rem);
+  letter-spacing: -0.01em;
+  margin: 2.5rem 0 0.75rem;
+}
+
+.post h3 {
+  font-size: 1.05rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.post__body p,
+.post__body li {
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.post__body p {
+  margin: 0 0 1.15rem;
+}
+
+.post__body strong {
+  color: var(--text);
+}
+
+.post__body blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.post__body hr {
+  margin: 2.5rem 0 1.5rem;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.post__body em {
+  color: var(--muted);
+}
+
+.post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.post__back {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+}
+
+.post__back a,
+.post__list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.post__next {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* An inline link in prose is exempt from WCAG 2.5.8's 24px target, and the
+   padding costs nothing and makes it comfortable on a phone anyway. */
+.post__body a,
+.post__next a {
+  padding-block: 2px;
+}
+
+/* ---------------------------------------------------------------- index */
+
+.post__list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  display: grid;
+  gap: 1.75rem;
+}
+
+.post__list > li {
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.post__list > li:last-child {
+  border-bottom: 0;
+}
+
+.post__list > li > a {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.post__list > li > a:hover {
+  text-decoration: underline;
+}
+
+.post__list p {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+/* ----------------------------------------------------------------- code */
+
+.post .code {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  /* Code is the one thing allowed to scroll sideways, inside its own box. */
+  overflow-x: auto;
+  font: 13px/1.6 var(--mono);
+}
+
+.post__body code {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.post .code code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}

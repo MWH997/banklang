@@ -70,6 +70,30 @@ jobs:
           path: /opt/gnucobol
           key: gnucobol-${{ env.GNUCOBOL_VERSION }}-${{ runner.os }}
 
+      # **Always, cache hit or miss.** `/opt/gnucobol` is the compiler; these are
+      # the shared objects it links against, and they live in the runner image
+      # rather than in the cache. Installing them inside the build step meant a
+      # cache hit skipped them, so `cobc` was restored onto a machine with no
+      # `libcjson.so.1` and died on the version assertion before it compiled
+      # anything.
+      #
+      # That made the first run green and every run after it red, which is the
+      # worst shape a CI failure can take: the run that proved the step works is
+      # the only one that ever could. Splitting the install out is what makes
+      # the cached path and the built path the same machine.
+      #
+      # The `-dev` packages rather than the runtime ones: they pull in the
+      # runtime `.so` as a dependency and they are, by construction, the exact
+      # versions the build linked against.
+      - name: Install GnuCOBOL's dependencies
+        run: |
+          sudo apt-get update
+          # libcjson is what gives `JSON GENERATE` and `JSON PARSE` a backend;
+          # without it cobc builds and then refuses both at run time.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libgmp-dev libdb-dev libncurses-dev \
+            libxml2-dev libcjson-dev
+
       # Built in the runner's temp directory, not the workspace. The first
       # attempt unpacked the tarball where it stood, and `prettier --check .`
       # then reported style issues in GnuCOBOL's own README.
@@ -77,12 +101,6 @@ jobs:
         if: steps.gnucobol.outputs.cache-hit != 'true'
         working-directory: ${{ runner.temp }}
         run: |
-          sudo apt-get update
-          # libcjson-dev is what gives `JSON GENERATE` and `JSON PARSE` a
-          # backend; without it cobc builds and then refuses both at run time.
-          sudo apt-get install -y --no-install-recommends \
-            build-essential libgmp-dev libdb-dev libncurses-dev \
-            libxml2-dev libcjson-dev
           curl -fsSL -o gnucobol.tar.xz \
             "https://downloads.sourceforge.net/project/gnucobol/gnucobol/3.2/gnucobol-${GNUCOBOL_VERSION}.tar.xz"
           tar xf gnucobol.tar.xz

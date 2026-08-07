@@ -54,6 +54,7 @@
       <a class="wordmark" href="/">BankLang</a>
       <nav>
         <a href="/docs/">Docs</a>
+        <a href="/blog/">Writing</a>
         <a href="/playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang">GitHub</a>
         <button
@@ -219,9 +220,15 @@
             package.
           </li>
           <li>
-            <strong>Three of {{EXAMPLE_COUNT}} examples are executed</strong>,
-            against a reference runtime in the repository. The rest are compiled
-            and checked as text. The grades are generated, not asserted.
+            <strong
+              >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are
+              executed</strong
+            >
+            against a reference runtime in the repository, and
+            {{ASSERTED_COUNT}} of those have expected balances somebody worked
+            out by hand. The rest are run twice and compared against each other,
+            which catches a defect that compiles and would not catch one that is
+            wrong the same way twice. The grades are generated, not asserted.
           </li>
         </ul>
         <p class="more">
@@ -240,6 +247,7 @@
     <footer class="foot">
       <p>
         <a href="/docs/">Docs</a> ·
+        <a href="/blog/">Writing</a> ·
         <a href="/playground/">Playground</a> ·
         <a href="https://github.com/MWH997/banklang">GitHub</a> ·
         <a

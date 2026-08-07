@@ -94,14 +94,20 @@ html {
   }
 }
 
+/* The page must never scroll sideways. On `body` alone this does nothing when
+   the overflow comes from a flex row inside the header: the scrollbar appears
+   on the root element, which `body` cannot suppress. Measured on 2026-08-07 at
+   34px over on a 360px screen. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font: 16px/1.65 var(--sans);
-  /* The page must never scroll sideways, which is what the audit found the
-     playground doing at 390px. */
-  overflow-x: hidden;
 }
 
 a {
@@ -157,6 +163,30 @@ a {
   align-items: center;
   min-height: 24px;
   font-size: 0.95rem;
+}
+
+/*
+ * On a narrow screen the navigation gets a row of its own.
+ *
+ * `flex-wrap` alone keeps it beside the wordmark until it does not fit, and
+ * "does not fit" arrives as a horizontal scrollbar rather than as a wrap when
+ * one of the items cannot break. Adding a fifth link tipped the header over at
+ * 360px; giving the navigation the full width makes the behaviour the same at
+ * every size below the breakpoint instead of depending on where the items land.
+ */
+@media (max-width: 40rem) {
+  .top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .top nav {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    row-gap: 0.5rem;
+  }
 }
 
 .ghost {
