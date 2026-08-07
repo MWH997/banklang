@@ -28,6 +28,15 @@ pnpm playground:preview   # serve the built bundle locally
   `@banklang/diagnostics`.
 - **Every generated artifact.** COBOL, copybooks, source map JSON, and the
   analysis bundle including copybook byte layout and JCL.
+- **Running it.** The Run tab interprets the generated COBOL against the same
+  `runtime/*.cbl` reference programs CI compiles and links, so what it shows is
+  the postings `BANKLEDG` made, the events `BANKAUDT` recorded, and the return
+  code a job step would read. The interpreter is `@banklang/cobol-runtime`, and
+  `tests/cobol-runtime-differential.test.ts` runs every example both through it
+  and through GnuCOBOL and fails on any disagreement. It is not GnuCOBOL and it
+  is not IBM Enterprise COBOL.
+- **Formatting.** The Format button is the compiler's own formatter, so it
+  produces byte for byte what `pnpm bankc fmt` writes on the command line.
 - **Shareable links.** The editor contents are encoded into the URL hash.
 
 ## Deploying
