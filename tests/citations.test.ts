@@ -145,9 +145,9 @@ describe("the glossary", () => {
 
   it("still defines the mainframe terms it was cut down to", () => {
     // A floor, not a target, and it has moved once. The file held 98 entries
-    // and 48 KB. Seven went because they defined this project's own AI model
-    // delegation — "the assistant is the orchestrator", a model quota, a model as a
-    // workhorse — in the canonical glossary of a COBOL compiler. Forty-three
+    // and 48 KB. Seven went because they defined this project's own model
+    // tooling — which one supervised which, and what each one's free-tier quota
+    // was — in the canonical glossary of a COBOL compiler. Forty-three
     // more went under D3: how this repository is written, general computing a
     // reader of a compiler already knows, and adjacent IBM products that are
     // roadmap notes rather than terms. What is left is what a reader of the
