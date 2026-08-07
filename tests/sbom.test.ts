@@ -12,6 +12,7 @@ import {
   declaredLicence,
   generate,
   lockfileFacts,
+  mayBeAbsent,
   problems,
   repairLicences,
   supplier,
@@ -132,13 +133,35 @@ describe("the bill of materials this project hands out", () => {
 });
 
 describe("the licence column, which is why the command is wrapped", () => {
-  it("names a licence for everything that is not a prebuilt binary", () => {
-    const { platformConstrained } = lockfileFacts();
+  it("names a licence for everything that is installed here", () => {
+    const facts = lockfileFacts();
     const unlicensed = bom.components
       .filter((component) => (component.licenses ?? []).length === 0)
       .map(componentKey)
-      .filter((key) => !platformConstrained.has(key));
+      .filter((key) => !mayBeAbsent(facts, key));
     expect(unlicensed).toEqual([]);
+  });
+
+  /**
+   * The other reason a package is not on disk.
+   *
+   * CI found this on 2026-08-07: `@napi-rs/wasm-runtime` and the `@emnapi/*`
+   * packages beneath it are the WebAssembly fallback for the native bundlers.
+   * They carry no `os` and no `cpu` — they run anywhere — but they are optional,
+   * so a machine whose native binary resolved never downloads them. Five of them
+   * reached the BOM with no licence and the platform rule did not excuse them,
+   * on Linux, where every developer here had been running macOS.
+   */
+  it("treats an optional package as one that may be absent", () => {
+    const facts = lockfileFacts();
+    expect(facts.optional.size).toBeGreaterThan(50);
+    expect(facts.optional.has("@emnapi/core@1.11.1")).toBe(true);
+    expect(mayBeAbsent(facts, "@emnapi/core@1.11.1")).toBe(true);
+
+    // Not a blanket excuse: a package that is neither optional nor
+    // platform-specific still has to carry one.
+    expect(facts.optional.has("typescript@5.9.3")).toBe(false);
+    expect(mayBeAbsent(facts, "typescript@5.9.3")).toBe(false);
   });
 
   /**
@@ -335,7 +358,7 @@ describe("what problems() catches", () => {
       }
     });
     expect(found).toContainEqual(
-      expect.stringContaining("not a platform binary"),
+      expect.stringContaining("does not mark it optional or platform-specific"),
     );
   });
 
@@ -356,11 +379,11 @@ describe("what problems() catches", () => {
    */
   it("a whole cold store's worth of them, but only in strict mode", () => {
     const copy = structuredClone(bom);
-    const { platformConstrained } = lockfileFacts();
+    const facts = lockfileFacts();
 
     let stripped = 0;
     for (const component of copy.components) {
-      if (platformConstrained.has(componentKey(component))) {
+      if (mayBeAbsent(facts, componentKey(component))) {
         delete component.licenses;
         stripped += 1;
       }

@@ -39,8 +39,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # and through the action rather than `npm install -g`, which would run
+      # under whatever Node the runner image happens to ship rather than the
+      # version this repository pins. The version comes from `packageManager`
+      # in package.json, so there is one place to change it.
       - name: Install pnpm
-        run: npm install -g pnpm@11.7.0
+        uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v7
         with:
@@ -114,8 +119,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # and through the action rather than `npm install -g`, which would run
+      # under whatever Node the runner image happens to ship rather than the
+      # version this repository pins. The version comes from `packageManager`
+      # in package.json, so there is one place to change it.
       - name: Install pnpm
-        run: npm install -g pnpm@11.7.0
+        uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v7
         with:
@@ -188,8 +198,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # and through the action rather than `npm install -g`, which would run
+      # under whatever Node the runner image happens to ship rather than the
+      # version this repository pins. The version comes from `packageManager`
+      # in package.json, so there is one place to change it.
       - name: Install pnpm
-        run: npm install -g pnpm@11.7.0
+        uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v7
         with:

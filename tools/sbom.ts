@@ -160,8 +160,31 @@ export function architecturesBlock(): string {
 export interface LockfileFacts {
   /** `name@version` of every package the lockfile restricts to a platform. */
   platformConstrained: Set<string>;
+  /**
+   * `name@version` of every package the lockfile marks `optional: true`.
+   *
+   * A package can be absent for two reasons, and only one of them is a
+   * platform. `@napi-rs/wasm-runtime` and the `@emnapi/*` packages under it are
+   * the WebAssembly fallback for the native bundlers: no `os` or `cpu` — they
+   * run anywhere — but optional, so a machine that resolved the native binary
+   * never downloads them. Found by CI on 2026-08-07, where five of them arrived
+   * in the BOM with no licence and the platform rule did not excuse them.
+   */
+  optional: Set<string>;
   /** Every distinct `os`, `cpu` and `libc` value the lockfile names. */
   platforms: Record<"os" | "cpu" | "libc", Set<string>>;
+}
+
+/**
+ * Whether a package may legitimately be missing from this machine's store.
+ *
+ * Both reasons mean the same thing for a licence: there is nothing on disk to
+ * read one out of, so its absence is the store's doing rather than the BOM's.
+ * `--all-platforms` resolves both sets, which is why the strict run still
+ * demands a licence for every one of them.
+ */
+export function mayBeAbsent(facts: LockfileFacts, key: string): boolean {
+  return facts.platformConstrained.has(key) || facts.optional.has(key);
 }
 
 /**
@@ -176,6 +199,7 @@ export interface LockfileFacts {
 export function lockfileFacts(): LockfileFacts {
   const lockfile = readFileSync(join(ROOT, "pnpm-lock.yaml"), "utf8");
   const platformConstrained = new Set<string>();
+  const optional = new Set<string>();
   const platforms = {
     os: new Set<string>(),
     cpu: new Set<string>(),
@@ -192,6 +216,9 @@ export function lockfileFacts(): LockfileFacts {
         .replace(/\(.*$/, "");
       continue;
     }
+    if (/^ {4}optional: true$/.test(line) && current !== "") {
+      optional.add(current);
+    }
     const field = /^ {4}(os|cpu|libc): \[(.+)\]$/.exec(line);
     if (field && current !== "") {
       const key = field[1] as "os" | "cpu" | "libc";
@@ -202,7 +229,7 @@ export function lockfileFacts(): LockfileFacts {
     }
   }
 
-  return { platformConstrained, platforms };
+  return { platformConstrained, optional, platforms };
 }
 
 /* ------------------------------------------------------------------ *
@@ -500,14 +527,16 @@ export function problems(bom: Bom, options: Options): string[] {
     }
   }
 
-  const { platformConstrained } = lockfileFacts();
+  const facts = lockfileFacts();
   for (const component of bom.components) {
     if ((component.licenses ?? []).length > 0) {
       continue;
     }
     const key = componentKey(component);
-    if (!platformConstrained.has(key)) {
-      found.push(`${key} has no licence and is not a platform binary`);
+    if (!mayBeAbsent(facts, key)) {
+      found.push(
+        `${key} has no licence, and the lockfile does not mark it optional or platform-specific`,
+      );
     } else if (options.strict) {
       found.push(`${key} has no licence`);
     }
