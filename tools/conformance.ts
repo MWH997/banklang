@@ -41,6 +41,13 @@ export const RUNTIME_PROGRAMS = [
   "BANKAUDT",
   "DSNHLI",
   "DFHEI1",
+  // The IMS language interface and the MQ API stand-ins. `runtime/README.md`
+  // has listed both as part of the reference runtime since they were written,
+  // and this list did not — so a generated program calling `CBLTDLI` or
+  // `MQCONN` could be compiled but never linked, and no test noticed because
+  // no test ran one.
+  "CBLTDLI",
+  "BANKMQ",
   "BANKJSON",
   "BANKXML",
 ] as const;
@@ -112,6 +119,20 @@ export interface ConformanceOptions {
   sqlOutcomes?: SqlOutcome[];
   /** CICS responses to script. A command returns NORMAL unless listed. */
   cicsOutcomes?: CicsOutcome[];
+  /**
+   * A COBOL program to enter instead of the generated one, which calls it.
+   *
+   * A batch that takes entry parameters has `PROCEDURE DIVISION USING`, and
+   * `cobc -x` refuses to build an executable out of one: a Unix process has no
+   * parameter list. On z/OS the initiator builds one and the program is still a
+   * main program, so the local equivalent is a driver that supplies the area
+   * and calls it — which is what a job step does.
+   *
+   * Until this existed, no program taking a PARM had ever been executed by this
+   * repository. `tools/gnucobol-validation.ts` compiled them as modules and
+   * said so; nothing ran them.
+   */
+  driver?: string;
 }
 
 /** SQLSTATE for the codes with one obvious answer, so tests need not repeat it. */
@@ -161,6 +182,14 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
   const programPath = join(workDir, "program.cbl");
   writeFileSync(programPath, cobol, "utf8");
 
+  const sources = ["program.cbl"];
+  if (options.driver) {
+    writeFileSync(join(workDir, "driver.cbl"), options.driver, "utf8");
+    // First, because `cobc -x` makes the first program of the first file the
+    // main one.
+    sources.unshift("driver.cbl");
+  }
+
   for (const [ddName, bytes] of Object.entries(options.inputs ?? {})) {
     writeFileSync(join(workDir, ddName), bytes);
   }
@@ -196,7 +225,7 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
 
   const compileResult = spawnSync(
     "cobc",
-    ["-x", "-fixed", "program.cbl", "-o", "program"],
+    ["-x", "-fixed", ...sources, "-o", "program"],
     { cwd: workDir, encoding: "utf8" },
   );
   if (compileResult.status !== 0) {
@@ -212,6 +241,15 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     COB_LIBRARY_PATH: `${workDir}:${runtimeDir}`,
+    // GnuCOBOL resolves `CALL "NAME"` by looking for a module file called
+    // `NAME`, so a runtime file holding several programs is unreachable by
+    // every name but its own. `runtime/BANKMQ.cbl` is six programs — MQCONN,
+    // MQOPEN, MQPUT, MQGET, MQCLOSE, MQDISC — and building it produces one
+    // module exporting all six, which nothing then looked inside.
+    // `COB_PRE_LOAD` loads the modules up front so their entry points are
+    // found by name. Until this was set, `examples/mq-request-reply` compiled
+    // and could not be executed at all.
+    COB_PRE_LOAD: RUNTIME_PROGRAMS.join(":"),
   };
   for (const ddName of Object.keys(options.inputs ?? {})) {
     env[`DD_${ddName}`] = join(workDir, ddName);

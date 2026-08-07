@@ -152,6 +152,7 @@ describe("every link in the rendered site resolves", () => {
       "(the site root)",
       "assets/docs.css",
       "assets/site.css",
+      "blog",
       "favicon.svg",
       "playground",
     ]);

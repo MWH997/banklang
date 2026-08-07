@@ -405,6 +405,7 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
       <a class="wordmark" href="${up}/../">BankLang</a>
       <nav>
         <a href="${up}/../docs/">Docs</a>
+        <a href="${up}/../blog/">Writing</a>
         <a href="${up}/../playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
         <button id="theme" type="button" class="ghost" aria-label="Switch between light and dark">Theme</button>

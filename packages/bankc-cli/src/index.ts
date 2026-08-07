@@ -8,6 +8,7 @@ import {
   writeFileSync as writeArtifactBytes,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   formatDiagnostic,
@@ -24,6 +25,7 @@ import {
   type JobStep,
   renderCopybook,
 } from "../../cobol-backend/src/index";
+import { formatCobol } from "../../cobol-backend/src/format";
 import {
   buildCopybookLayoutDocument,
   diffGeneratedCopybooks,
@@ -189,6 +191,20 @@ export function portablePaths(text: string, cwd = commandCwd): string {
 
 export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
   commandCwd = cwd;
+
+  // `--version` before `--help`, and before the command switch. It used to fall
+  // through to the help text, so `bankc --version` printed a usage message and
+  // exited 0 — which is what every tool that shells out to a compiler reads as
+  // "this compiler has no version". A bug report about generated COBOL cannot
+  // say which compiler produced it without this.
+  if (
+    argv.includes("--version") ||
+    argv.includes("-v") ||
+    argv[0] === "version"
+  ) {
+    return { exitCode: 0, stdout: `bankc ${compilerVersion()}\n`, stderr: "" };
+  }
+
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
     return {
       exitCode: 0,
@@ -1661,6 +1677,38 @@ function requireCopybookPair(
  * `bankc fmt <project>` rewrites source files in place.
  * `--check` reports which files would change and exits non-zero, for CI.
  */
+/**
+ * `bankc fmt program.cbl`, which puts COBOL back into reference format.
+ *
+ * The rules are the ones in `docs/generated-code-standards.md`: Area A for the
+ * headers and the 01 levels, Area B for the statements, four spaces per level
+ * of nesting, and nothing past column 72. Comments and continuation lines are
+ * carried through untouched, because re-indenting a continuation moves where a
+ * literal resumes and that changes the program.
+ */
+function formatCobolFile(
+  path: string,
+  shown: string,
+  checkOnly: boolean,
+): CliResult {
+  if (!existsSync(path)) {
+    return { exitCode: 1, stdout: "", stderr: `No file at ${shown}\n` };
+  }
+  const result = formatCobol(readFileSync(path, "utf8"));
+  if (result.unchanged) {
+    return { exitCode: 0, stdout: `Already formatted: ${shown}\n`, stderr: "" };
+  }
+  if (checkOnly) {
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: `Would reformat: ${shown}\nRun \`bankc fmt ${shown}\` to fix.\n`,
+    };
+  }
+  writeArtifactBytes(path, result.text, "utf8");
+  return { exitCode: 0, stdout: `Formatted ${shown}\n`, stderr: "" };
+}
+
 function runFmt(args: string[], cwd: string): CliResult {
   const projectPath = requireProjectPath(args);
   if (!projectPath) {
@@ -1668,6 +1716,15 @@ function runFmt(args: string[], cwd: string): CliResult {
   }
 
   const checkOnly = args.includes("--check");
+
+  // A `.cbl` argument formats COBOL rather than BankTS. The compiler's own
+  // output is already in this shape, so this is for the other direction: a
+  // program somebody pasted, hand-edited during an incident, or lifted out of a
+  // listing with its columns disturbed.
+  if (/\.(cbl|cob|cpy)$/i.test(projectPath)) {
+    return formatCobolFile(resolve(cwd, projectPath), projectPath, checkOnly);
+  }
+
   const sourceFile = resolveSourceFile(projectPath, cwd);
 
   if (!existsSync(sourceFile)) {
@@ -1864,9 +1921,26 @@ transaction postTransfer(request: TransferRequest) {
 `;
 }
 
+/**
+ * The compiler's own version, read from the workspace manifest.
+ *
+ * One place, and it is the one `pnpm release:notes` and the tag already use.
+ * A second copy in this file would be a version that disagrees with the release
+ * the week after somebody bumps it.
+ */
+export function compilerVersion(): string {
+  const manifest = JSON.parse(
+    readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), "../../../package.json"),
+      "utf8",
+    ),
+  ) as { version?: string };
+  return manifest.version ?? "0.0.0";
+}
+
 function renderHelp(): string {
   return [
-    "BankLang compiler CLI",
+    `BankLang compiler CLI ${compilerVersion()}`,
     "",
     "Usage:",
     "  bankc <command> [args]",
@@ -1891,9 +1965,10 @@ function renderHelp(): string {
     "  copybook types <file>",
     "  copybook diff <left> <right>",
     "  explain [diagnostic-id]",
-    "  fmt <project> [--check]",
+    "  fmt <project|file.cbl> [--check]",
     "  init <directory>",
     "  config <project>",
+    "  version",
     "",
     "Options:",
     "  --format text|json|sarif   diagnostic output format for `check`",

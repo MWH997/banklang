@@ -17,9 +17,15 @@ pnpm install
 Installing GnuCOBOL is worth the two minutes if you want the whole picture:
 
 ```bash
-brew install gnu-cobol        # macOS
-apt-get install gnucobol      # Debian and Ubuntu
+brew install gnu-cobol        # macOS, currently 3.2.0
+apt-get install gnucobol      # Debian and Ubuntu, currently 3.1.2
 ```
+
+**Check what you got.** `cobc --version` should say 3.2. Ubuntu's package is
+still 3.1.2, which is missing the `JSON-STATUS` special register that Enterprise
+COBOL has and this compiler emits, so six test files fail on COBOL that is
+correct for the target. CI builds 3.2 from source for exactly that reason; if
+your distribution ships 3.1, either build 3.2 or expect those lanes to fail.
 
 ---
 

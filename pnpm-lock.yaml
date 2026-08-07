@@ -60,6 +60,8 @@ importers:
 
   packages/cobol-ir: {}
 
+  packages/cobol-runtime: {}
+
   packages/compiler: {}
 
   packages/config: {}
