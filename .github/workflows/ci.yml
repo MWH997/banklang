@@ -18,6 +18,15 @@ on:
 env:
   GNUCOBOL_VERSION: "3.2"
 
+# Read-only by default. `security-events: write` is what the SARIF upload needs
+# and `actions: read` is what its telemetry reads — without the second it still
+# uploads, then logs "Resource not accessible by integration" as an annotation
+# on an otherwise clean run, which is noise indistinguishable from a fault.
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -31,7 +40,7 @@ jobs:
       # version this repository pins. The version comes from `packageManager`
       # in package.json, so there is one place to change it.
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -56,7 +65,7 @@ jobs:
       # Cached on the version, so it is built once and restored after that.
       - name: Cache GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
         id: gnucobol
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: /opt/gnucobol
           key: gnucobol-${{ env.GNUCOBOL_VERSION }}-${{ runner.os }}
@@ -87,10 +96,20 @@ jobs:
           # The assertion, not a courtesy print: a cache restored from a
           # different build, or an apt cobc earlier on the path, fails here
           # rather than eight test files later.
-          /opt/gnucobol/bin/cobc --version | head -1
-          /opt/gnucobol/bin/cobc --version | head -1 \
-            | grep -q "GnuCOBOL ${GNUCOBOL_VERSION}" \
-            || { echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}"; exit 1; }
+          #
+          # Captured into a variable and matched with `case`, rather than piped
+          # into `grep`. The pipeline form failed against a `cobc` that prints
+          # exactly what it should — one more shell subtlety than a check this
+          # small can afford, and the failure said nothing about what it saw.
+          version="$(/opt/gnucobol/bin/cobc --version 2>&1 | head -1)"
+          echo "$version"
+          case "$version" in
+            *"GnuCOBOL ${GNUCOBOL_VERSION}"*) ;;
+            *)
+              echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}: ${version}"
+              exit 1
+              ;;
+          esac
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -131,7 +150,7 @@ jobs:
       - name: Upload SARIF
         if: always()
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bankc.sarif
           category: banklang
@@ -191,7 +210,7 @@ jobs:
       # version this repository pins. The version comes from `packageManager`
       # in package.json, so there is one place to change it.
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
