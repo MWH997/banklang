@@ -180,6 +180,25 @@ describe("evidence grades", () => {
     expect(executed.length).toBeGreaterThanOrEqual(grades.length - 2);
   });
 
+  /**
+   * The counts a decision maker reads, held to the counts the suite produces.
+   *
+   * `docs/for-decision-makers.md` opens its evidence section by saying the
+   * grades are generated rather than asserted, and then states them in a table
+   * somebody typed. It read 3 / 19 / 1 for a day after they became 21 / 2 / 0,
+   * which is the exact failure the sentence above it promises cannot happen.
+   */
+  it("matches the counts stated for the person deciding", () => {
+    const page = readFileSync("docs/for-decision-makers.md", "utf8");
+    for (const grade of ["executed", "compiled", "emitted"] as const) {
+      const count = grades.filter((entry) => entry.grade === grade).length;
+      expect(
+        page.replace(/[ \t]+/g, " "),
+        `docs/for-decision-makers.md does not say ${grade} is ${String(count)}`,
+      ).toContain(`| **${grade}** | ${String(count)} |`);
+    }
+  });
+
   it("has a checked-in table matching what the suite does", () => {
     const page = readFileSync("evidence/GRADES.md", "utf8");
     for (const entry of grades) {

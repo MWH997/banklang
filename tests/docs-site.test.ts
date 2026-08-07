@@ -307,6 +307,55 @@ describe("the search index", () => {
     const hits = index().filter((entry) => entry.b.includes("banker"));
     expect(hits.length).toBeGreaterThan(0);
   });
+
+  /**
+   * The whole page, not the first four thousand characters of it.
+   *
+   * The body used to be truncated, and the effect was that most of the
+   * documentation could not be searched: the diagnostics catalogue is 29 KB and
+   * everything past its opening was invisible. This was found when a paragraph
+   * added near the top of one page pushed the only occurrence of "banker" in
+   * the corpus past the cutoff and the check above started failing, which is a
+   * test passing for a reason nobody chose.
+   */
+  /**
+   * The names a reader of a compiler's documentation actually types.
+   *
+   * `docs.js` opens by saying that a reader is nearly always looking for a page
+   * by name — `EIBRESP`, `rounding`, `BANK-LED-001` — and the index stripped
+   * every inline code span, so all three of the code-shaped ones matched
+   * nothing. The search could not find the things it was built to find.
+   */
+  it("finds a diagnostic id, a picture clause and a CICS field", () => {
+    const body = index()
+      .map((entry) => entry.b)
+      .join(" ");
+    for (const term of [
+      "bank-led-001",
+      "comp-3",
+      "eibresp",
+      "sqlcode",
+      "file status",
+    ]) {
+      expect(body, `the search index cannot find ${term}`).toContain(term);
+    }
+  });
+
+  it("indexes every page in full, not only its opening", () => {
+    const entries = index();
+    const catalogue = entries.find((entry) => entry.u === "diagnostics.html");
+    expect(catalogue, "diagnostics.html is not in the index").toBeDefined();
+    // The last diagnostic in the catalogue, which sits well past 4,000
+    // characters into the page.
+    const last = readFileSync("docs/diagnostics.md", "utf8")
+      .match(/BANK-[A-Z]+-\d+/g)
+      ?.at(-1);
+    expect(last).toBeDefined();
+    expect(
+      catalogue?.b,
+      `the index does not reach ${last ?? ""}, so most of the catalogue cannot be searched`,
+    ).toContain(last!.toLowerCase());
+  });
 });
 
 describe("the rendered pages keep the site's promises", () => {
