@@ -177,14 +177,21 @@ describe("restricted data may not be reclassified", () => {
 });
 
 describe("restricted data may still be used", () => {
+  /**
+   * `cardExtract` rather than `customerOutput`, which folds to the DD name
+   * `CUSTOMER` — the same eight characters as the `Customer` record's COBOL
+   * group. `ASSIGN TO CUSTOMER` then takes the file name from that group's
+   * contents on both compilers, and the OPEN fails with file status 35.
+   * `BANK-FILE-016`.
+   */
   it("allows writing it to a file, which is where it lives", () => {
     const result = compile(`${PREAMBLE}
-file customerOutput sequential output record Customer status customerStatus;
+file cardExtract sequential output record Customer status cardExtractStatus;
 
 entry transaction settle(customer: Customer) {
-  open customerOutput;
-  write customerOutput from customer;
-  close customerOutput;
+  open cardExtract;
+  write cardExtract from customer;
+  close cardExtract;
 
   audit("SETTLED", customer.idempotencyKey);
 }`);

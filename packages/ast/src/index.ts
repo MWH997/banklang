@@ -930,6 +930,46 @@ export function childBlocksOf(statement: StatementNode): BlockNode[] {
   }
 }
 
+/**
+ * The expressions directly inside one, for a pass that has to look at all of
+ * them.
+ *
+ * The sibling of `childBlocksOf`, and it exists for the same reason: a check
+ * that walks the tree by hand grows a hole every time the tree gains a node,
+ * and the hole is silent. Written as a `switch` over the union so a new kind of
+ * expression is a compile error here rather than a case nobody visits.
+ */
+export function childExpressionsOf(
+  expression: ExpressionNode,
+): ExpressionNode[] {
+  switch (expression.kind) {
+    case "Identifier":
+    case "DecimalLiteral":
+    case "BooleanLiteral":
+    case "StringLiteral":
+    case "EnumMember":
+      return [];
+    case "MemberAccess":
+      return [expression.target];
+    case "BinaryExpression":
+      return [expression.left, expression.right];
+    case "UnaryExpression":
+      return [expression.operand];
+    case "RoundedExpression":
+      return [expression.operand];
+    case "IndexAccess":
+      return [expression.target, expression.index];
+    case "NullableCheck":
+      return [expression.operand];
+    case "CallExpression":
+      return expression.args;
+    case "TemporalCall":
+    case "NumericCall":
+    case "StringCall":
+      return expression.args;
+  }
+}
+
 export interface ReturnStatementNode extends NodeBase {
   kind: "ReturnStatement";
   expression: ExpressionNode;

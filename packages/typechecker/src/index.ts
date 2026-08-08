@@ -505,6 +505,10 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
     };
   }
 
+  // Before anything is inferred: which expressions may be a call that lowers
+  // to a COBOL statement rather than to something nestable.
+  collectStatementLoweredRoots(program);
+
   const diagnostics: Diagnostic[] = [];
   const aliases: Record<string, ResolvedType> = {};
   const records: ResolvedRecord[] = [];
@@ -5387,6 +5391,8 @@ function inferStringCall(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
+  checkStatementLoweredPosition(expression, expression.operation, diagnostics);
+
   const args = expression.args.map((argument) =>
     inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
   );
@@ -5555,6 +5561,8 @@ function inferNumericCall(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
+  checkStatementLoweredPosition(expression, expression.operation, diagnostics);
+
   const args = expression.args.map((argument) =>
     inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
   );
@@ -5735,6 +5743,8 @@ function inferTemporalCall(
   recordMap: Map<string, ResolvedRecord>,
   diagnostics: Diagnostic[],
 ): ResolvedType | null {
+  checkStatementLoweredPosition(expression, expression.operation, diagnostics);
+
   const args = expression.args.map((argument) =>
     inferExpressionType(argument, scope, aliases, recordMap, diagnostics),
   );
@@ -8708,6 +8718,84 @@ function checkDdNames(files: ResolvedFile[], diagnostics: Diagnostic[]): void {
       );
     }
   }
+}
+
+/**
+ * `concat`, `now`, `countOf` and `replaceChars` build a value rather than name
+ * one.
+ *
+ * Each lowers to a COBOL statement — `STRING`, `INSPECT`, a `CURRENT-DATE`
+ * sequence — into a field of its own, so it can be the whole right-hand side of
+ * an assignment, the whole initialiser of a local, or the whole returned
+ * expression, and nothing else. There is no COBOL expression to nest one in.
+ *
+ * The backend already knew that and raised a `CompilerInvariant` when it
+ * happened, which reaches the author as a stack trace rather than a diagnostic:
+ * `toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable thing to write
+ * — crashed `bankc`. An internal invariant is for something that cannot happen,
+ * and this can.
+ */
+const STATEMENT_LOWERED = new Set(["concat", "now", "countOf", "replaceChars"]);
+
+/**
+ * The expressions a statement-lowered call is allowed to be.
+ *
+ * Collected before inference rather than decided during it, because the
+ * inference functions see an expression and not where it sits. Anything not in
+ * this set is nested, which is the safe direction to be wrong in: a position
+ * nobody thought of is reported rather than passed to a backend that cannot
+ * emit it.
+ */
+let statementLoweredRoots = new Set<ExpressionNode>();
+
+function collectStatementLoweredRoots(program: ProgramNode): void {
+  statementLoweredRoots = new Set<ExpressionNode>();
+  const walk = (block: BlockNode): void => {
+    for (const statement of block.statements) {
+      if (
+        statement.kind === "AssignStatement" ||
+        statement.kind === "LetStatement" ||
+        statement.kind === "ReturnStatement"
+      ) {
+        statementLoweredRoots.add(statement.expression);
+      }
+      for (const child of childBlocksOf(statement)) {
+        walk(child);
+      }
+    }
+  };
+  for (const declaration of program.declarations) {
+    if (
+      declaration.kind === "FunctionDeclaration" ||
+      declaration.kind === "TransactionDeclaration"
+    ) {
+      walk(declaration.body);
+    }
+  }
+}
+
+/** Reports a statement-lowered call written where no COBOL statement can go. */
+function checkStatementLoweredPosition(
+  expression: ExpressionNode,
+  operation: string,
+  diagnostics: Diagnostic[],
+): void {
+  if (
+    !STATEMENT_LOWERED.has(operation) ||
+    statementLoweredRoots.has(expression)
+  ) {
+    return;
+  }
+  diagnostics.push(
+    createDiagnostic({
+      id: "BANK-TYPE-030",
+      severity: "error",
+      message: `${operation} builds a value and cannot be nested inside another expression.`,
+      span: expression.span,
+      hint: `Give it a field of its own first — \`let built = ${operation}(...);\` — and use \`built\` where the call was.`,
+      backendProfile: null,
+    }),
+  );
 }
 
 /**

@@ -511,6 +511,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-030",
+    title: "A value-building call nested in an expression",
+    explanation:
+      '`concat`, `now`, `countOf` and `replaceChars` build a value rather than name one: each lowers to a COBOL statement — STRING, INSPECT, a CURRENT-DATE sequence — writing into a field of its own. COBOL has no expression to nest that in, so the call can be the whole right-hand side of an assignment, the whole initialiser of a local, or the whole returned expression, and nothing else. Written anywhere else the backend has nothing to emit; before this diagnostic existed it raised an internal invariant, and `toNumber(concat("0.", substring(rate, 7, 3)))` reached the author as a stack trace.',
+    remediation:
+      "Give the call a field of its own — `let built = concat(...);` — and use that field where the call was.",
+    specReference: "language/functions.md",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-001",
     title: "File status not checked",
     explanation:
