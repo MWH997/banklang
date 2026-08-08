@@ -44,6 +44,10 @@ export default tseslint.config(
       "zos/**",
       // BankTS, which happens to end in .ts and is not TypeScript.
       "examples/**",
+      // The same, for the BankTS written against an external benchmark's
+      // specification. `validation/tasks/**` holds one `main.bank.ts` per task
+      // beside the `spec.json` it was written from.
+      "validation/tasks/**",
       "packages/vscode-extension/server/**",
     ],
   },

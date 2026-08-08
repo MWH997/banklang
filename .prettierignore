@@ -27,6 +27,9 @@ tests/fixtures/**
 # somebody else's text, kept as it was written.
 tests/inputs/**
 examples/**/*.bank.ts
+# BankTS written against an external benchmark's specification, formatted by
+# `pnpm fmt` rather than by Prettier for the same reason the examples are.
+validation/tasks/**/*.bank.ts
 # `pnpm evidence:grades` writes this whole file.
 evidence/GRADES.md
 evidence/**/audit/**

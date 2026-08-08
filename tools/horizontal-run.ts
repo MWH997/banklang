@@ -52,9 +52,15 @@ import {
   type TaskResult,
 } from "../packages/horizontal-validation/src/index";
 import { lintCobol } from "../packages/conformance-lint/src/index";
+import { runtimePrograms } from "./generated-artifacts";
 import { compile } from "../packages/compiler/src/index";
 import { hasCobc, runConformance, ConformanceError } from "./conformance";
-import { runInterpreted } from "./interpret";
+import {
+  parmDriver,
+  programNameOf,
+  runInterpreted,
+  takesParm,
+} from "./interpret";
 import { describeEnvironment } from "./horizontal-environment";
 import { TASKS_ROOT } from "./horizontal-materialise";
 
@@ -97,6 +103,32 @@ export function loadTasks(corpus: string, cwd = process.cwd()): LoadedTask[] {
         implementation: existsSync(implementation) ? implementation : null,
       };
     });
+}
+
+/**
+ * The DD name a benchmark's file is seeded under.
+ *
+ * A benchmark names its files the way a Unix program does — `input.txt`,
+ * `task_func03_out1` — and a COBOL file is reached through a DD name, which is
+ * one to eight alphanumeric characters. So the harness has to map between them,
+ * and the mapping has to be something a task's BankTS can be written against
+ * without knowing anything about this harness.
+ *
+ * The rule: strip the non-alphanumerics, uppercase, take the first eight. That
+ * is exactly what `toDdName` in the backend does to a BankTS file name, so an
+ * implementation declaring `file inputTxt ...` for the benchmark's `input.txt`
+ * lines up by construction and no per-task table exists.
+ *
+ * Two of a task's files can collide under the truncation —
+ * `task_func03_out1` and `task_func03_out2` both become `TASKFUNC`. Those tasks
+ * are reported as `infrastructure-failure` rather than run, because a run whose
+ * two files are the same file measures nothing.
+ */
+export function benchmarkDdName(fileName: string): string {
+  return fileName
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 8);
 }
 
 /**
@@ -173,7 +205,13 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   }
 
   // ---- conformance ---------------------------------------------------
-  const findings = lintCobol(sourceFile, compiled.cobol);
+  // With `knownPrograms`, exactly as `pnpm lint:conformance` runs it. Without
+  // it every generated program fails `call-resolvable` on its own `CALL
+  // "BANKAUDT"` — the audit module is part of the reference runtime and is
+  // supplied to the binder, not missing.
+  const findings = lintCobol(sourceFile, compiled.cobol, {
+    knownPrograms: runtimePrograms(cwd),
+  });
   if (findings.length > 0) {
     return finish(
       "applicable",
@@ -200,11 +238,44 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   );
   const inputs = Object.fromEntries(
     Object.entries(task.spec.inputs).map(([name, content]) => [
-      name,
+      benchmarkDdName(name),
       Buffer.from(content, "utf8"),
     ]),
   );
-  const outputs = Object.keys(task.spec.expectedOutputs);
+  const outputs = Object.keys(task.spec.expectedOutputs).map(benchmarkDdName);
+
+  // Two of the task's files reaching the same DD is not a result, so it is not
+  // reported as one.
+  const everyFile = [
+    ...Object.keys(task.spec.inputs),
+    ...Object.keys(task.spec.expectedOutputs),
+  ];
+  const dds = everyFile.map(benchmarkDdName);
+  if (new Set(dds).size !== dds.length) {
+    return finish(
+      "applicable",
+      "infrastructure-failure",
+      `Two of this task's files collide as DD names: ${everyFile.join(", ")} become ${dds.join(", ")}. A DD name is eight characters, and a run whose two files are one file measures nothing.`,
+    );
+  }
+
+  /*
+   * A program entered with a parameter list needs something to build one.
+   *
+   * A BankTS entry transaction takes its scalar parameters from the job's PARM,
+   * so it has `PROCEDURE DIVISION USING` — and `cobc -x` refuses to make an
+   * executable out of one, because a Unix process has no parameter list. On
+   * z/OS the initiator builds it; here the driver does, exactly as the
+   * differential lane already does for the examples.
+   *
+   * The key is the same for every task and every run, which is what makes the
+   * output reproducible: an idempotency key that changed per run would change
+   * the audit record and the evidence with it.
+   */
+  const emitted = compiled.cobol;
+  const driver = takesParm(emitted)
+    ? parmDriver(programNameOf(emitted), "HORIZONTAL".padEnd(36, "0"))
+    : undefined;
 
   let compiledRun;
   try {
@@ -214,6 +285,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
       workDir,
       inputs,
       outputs,
+      driver,
     });
   } catch (error) {
     rmSync(workDir, { recursive: true, force: true });
@@ -234,6 +306,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
       workDir,
       inputs,
       outputs,
+      driver,
     });
   } catch (error) {
     interpretedRun = null;
@@ -279,7 +352,12 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     task.spec.expectedOutputs,
   );
   const differences = compareRun(observed, {
-    expectedOutputs: task.spec.expectedOutputs,
+    expectedOutputs: Object.fromEntries(
+      Object.entries(task.spec.expectedOutputs).map(([name, content]) => [
+        benchmarkDdName(name),
+        content,
+      ]),
+    ),
     expectedStdout: task.spec.expectedStdout,
     expectedExitCode: task.spec.expectedExitCode,
   });
