@@ -2,14 +2,14 @@
   "corpus": "cobolcodebench",
   "discovered": 46,
   "imported": 46,
-  "applicable": 0,
-  "notYetAuthored": 0,
-  "unsupportedByDesign": 0,
-  "unsupportedNotYetImplemented": 46,
+  "applicable": 1,
+  "notYetAuthored": 41,
+  "unsupportedByDesign": 4,
+  "unsupportedNotYetImplemented": 0,
   "malformedUpstream": 0,
   "excludedLicence": 0,
-  "passed": 0,
+  "passed": 1,
   "failures": {},
-  "passOfApplicable": "0 / 0",
-  "passOfDiscovered": "0 / 46 (0.0%)"
+  "passOfApplicable": "1 / 1 (100.0%)",
+  "passOfDiscovered": "1 / 46 (2.2%)"
 }

@@ -5,9 +5,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_02",
@@ -15,9 +15,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_03",
@@ -25,9 +25,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_04",
@@ -35,9 +35,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_05",
@@ -45,9 +45,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_07",
@@ -55,9 +55,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_08",
@@ -65,9 +65,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_09",
@@ -75,9 +75,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_10",
@@ -85,9 +85,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_11",
@@ -95,9 +95,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_12",
@@ -105,9 +105,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_13",
@@ -115,9 +115,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_14",
@@ -125,9 +125,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_15",
@@ -135,9 +135,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_16",
@@ -145,9 +145,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_17",
@@ -155,9 +155,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_18",
@@ -165,9 +165,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_19",
@@ -175,9 +175,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_20",
@@ -185,9 +185,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_21",
@@ -195,9 +195,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "randomness: The compiler's central claim is byte-identical output for identical input, and a program whose behaviour depends on a random source cannot be part of a deterministic evidence bundle."
   },
   {
     "taskId": "cobolcodebench/task_func_22",
@@ -205,9 +205,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_23",
@@ -215,9 +215,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_24",
@@ -225,9 +225,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_25",
@@ -235,9 +235,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_26",
@@ -245,9 +245,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_27",
@@ -255,9 +255,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_28",
@@ -265,9 +265,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_29",
@@ -275,9 +275,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_30",
@@ -285,9 +285,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_31",
@@ -295,9 +295,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_32",
@@ -305,9 +305,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_33",
@@ -315,9 +315,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_34",
@@ -325,9 +325,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_35",
@@ -335,9 +335,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_36",
@@ -345,9 +345,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_37",
@@ -355,9 +355,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_38",
@@ -365,9 +365,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_39",
@@ -375,9 +375,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_40",
@@ -385,19 +385,19 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "randomness: The compiler's central claim is byte-identical output for identical input, and a program whose behaviour depends on a random source cannot be part of a deterministic evidence bundle."
   },
   {
     "taskId": "cobolcodebench/task_func_43",
     "corpus": "cobolcodebench",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
-    "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "differentialAgreement": true,
+    "applicability": "applicable",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_44",
@@ -405,9 +405,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_45",
@@ -415,9 +415,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_47",
@@ -425,9 +425,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   },
   {
     "taskId": "cobolcodebench/task_func_48",
@@ -435,9 +435,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "randomness: The compiler's central claim is byte-identical output for identical input, and a program whose behaviour depends on a random source cannot be part of a deterministic evidence bundle."
   },
   {
     "taskId": "cobolcodebench/task_func_49",
@@ -445,9 +445,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "randomness: The compiler's central claim is byte-identical output for identical input, and a program whose behaviour depends on a random source cannot be part of a deterministic evidence bundle."
   },
   {
     "taskId": "cobolcodebench/task_func_55",
@@ -455,8 +455,8 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "line-sequential text files: The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`."
+    "detail": "No BankTS implementation has been written for this task yet."
   }
 ]

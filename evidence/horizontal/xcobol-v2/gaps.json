@@ -30,12 +30,6 @@
     "share": "7.6%"
   },
   {
-    "feature": "file-line-sequential",
-    "support": "unsupported-not-yet-implemented",
-    "files": 309,
-    "share": "5.9%"
-  },
-  {
     "feature": "inspect",
     "support": "unsupported-not-yet-implemented",
     "files": 269,
