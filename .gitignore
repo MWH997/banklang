@@ -26,6 +26,26 @@ AGENTS.md
 CLAUDE.md
 .claude/
 
+# External validation corpora, downloaded by `tools/horizontal-fetch.ts`.
+#
+# Somebody else's COBOL, fetched at a pinned revision so this compiler can be
+# measured against programs nobody wrote for it. It stays out of git for two
+# separate reasons and either would be enough.
+#
+# Licensing. X-COBOL is 5,195 files gathered from 168 repositories, published
+# under a CC-BY licence that covers the *compilation* rather than the contents;
+# none of those 168 authors agreed to be vendored into an MIT repository. The
+# gate in `packages/horizontal-validation/src/licence.ts` is what decides per
+# corpus whether material may be committed, and `derived-only` means statistics
+# and hashes leave the cache and nothing else does.
+#
+# Size. The one archive is 50MB before it is unpacked.
+#
+# `validation/corpus-lock.json` is committed and pins exactly which bytes any
+# published number was measured against, so an ignored cache costs no
+# reproducibility.
+validation/cache/
+
 # Working papers: this project's audits of itself and its ticket lists.
 #
 # They are the record of how the work was decided and they stay out of the
@@ -37,3 +57,14 @@ CLAUDE.md
 # `docs/`; this is the second half of that, and the one that decides what a
 # clone contains.
 docs/working/
+
+# The benchmarks' own COBOL, held apart from the specifications.
+#
+# `tools/horizontal-materialise.ts` splits every semantic benchmark record into
+# a spec — prose, inputs, expected outputs — and the reference solution. The
+# spec is committed and is what a BankTS implementation is written from; this is
+# the other half, and it is derived from the ignored cache rather than authored,
+# so nothing is lost by keeping it out. Its absence from git is what makes the
+# contamination boundary checkable by a reader rather than promised by a
+# comment. See docs/validation/horizontal-validation.md.
+validation/sealed/
