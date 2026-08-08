@@ -39,6 +39,7 @@ import {
   type RunEnvironment,
 } from "../packages/horizontal-validation/src/index";
 import { corpusDir } from "./horizontal-fetch";
+import { snapshotIndex, snapshotRepresentability } from "./horizontal-snapshot";
 
 const EVIDENCE = "evidence/horizontal";
 
@@ -347,6 +348,48 @@ function renderResults(cwd: string): string {
   }
   if (!anyCoverage) {
     lines.push("_Not run on this checkout._", "");
+  }
+
+  // ---- what each language change moved --------------------------------
+  //
+  // Computed from `evidence/horizontal-history/`, which holds the counts as
+  // they stood before each feature landed. Written out rather than summarised,
+  // because "line-sequential moved 155 files" is exactly the kind of claim that
+  // gets rounded up in the retelling.
+  const history = snapshotIndex(cwd);
+  if (history.length > 0) {
+    const current = readJson<CoverageSummary>(
+      resolve(cwd, EVIDENCE, "xcobol-v2", "summary.json"),
+    );
+    lines.push(
+      "## What each language change moved",
+      "",
+      "X-COBOL representability before and after each feature, over the same",
+      "5,195 files. The before column is the measurement as it stood on the",
+      "commit named in `evidence/horizontal-history/index.json`.",
+      "",
+    );
+    for (const entry of history) {
+      const before = snapshotRepresentability(entry.label, "xcobol-v2", cwd);
+      if (!before || !current) {
+        continue;
+      }
+      lines.push(
+        `### \`${entry.label}\``,
+        "",
+        `Measured against \`${entry.gitCommit.slice(0, 12)}\`.`,
+        "",
+        "| Verdict | Before | After | Change |",
+        "| --- | --- | --- | --- |",
+        ...Object.keys(current.representability).map((verdict) => {
+          const was = before[verdict] ?? 0;
+          const now = current.representability[verdict] ?? 0;
+          const delta = now - was;
+          return `| ${verdict} | ${String(was)} | ${String(now)} | ${delta > 0 ? "+" : ""}${String(delta)} |`;
+        }),
+        "",
+      );
+    }
   }
 
   // ---- defects and conformance ---------------------------------------

@@ -1,0 +1,15 @@
+{
+  "corpus": "coboleval",
+  "discovered": 146,
+  "imported": 146,
+  "applicable": 0,
+  "notYetAuthored": 0,
+  "unsupportedByDesign": 146,
+  "unsupportedNotYetImplemented": 0,
+  "malformedUpstream": 0,
+  "excludedLicence": 0,
+  "passed": 0,
+  "failures": {},
+  "passOfApplicable": "0 / 0",
+  "passOfDiscovered": "0 / 146 (0.0%)"
+}

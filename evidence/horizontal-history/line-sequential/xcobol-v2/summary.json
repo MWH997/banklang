@@ -1,0 +1,14 @@
+{
+  "corpus": "xcobol-v2",
+  "discovered": 5195,
+  "analysed": 5195,
+  "analyserFailures": 0,
+  "representability": {
+    "fully-representable": 1388,
+    "representable-with-adaptation": 2478,
+    "unsupported-by-design": 533,
+    "unsupported-not-yet-implemented": 738,
+    "analyser-failure": 0,
+    "unknown": 58
+  }
+}

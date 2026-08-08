@@ -1,0 +1,14 @@
+{
+  "corpus": "opencbs",
+  "discovered": 53,
+  "analysed": 53,
+  "analyserFailures": 0,
+  "representability": {
+    "fully-representable": 22,
+    "representable-with-adaptation": 30,
+    "unsupported-by-design": 0,
+    "unsupported-not-yet-implemented": 0,
+    "analyser-failure": 0,
+    "unknown": 1
+  }
+}

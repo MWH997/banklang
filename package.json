@@ -55,6 +55,7 @@
     "horizontal:materialise": "tsx tools/horizontal-materialise.ts",
     "horizontal:report": "tsx tools/horizontal-report.ts",
     "horizontal:run": "tsx tools/horizontal-run.ts",
+    "horizontal:snapshot": "tsx tools/horizontal-snapshot.ts",
     "lint": "eslint .",
     "lint:conformance": "tsx tools/conformance-lint.ts",
     "lint:fix": "eslint . --fix",
