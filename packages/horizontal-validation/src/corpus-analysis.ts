@@ -53,6 +53,14 @@ export interface CorpusAnalysis {
   featureFiles: Record<string, number>;
   featureLines: Record<string, number>;
   files: FileAnalysis[];
+  /**
+   * Which forms of the string operations the corpus uses.
+   *
+   * Set by the caller after `summarise`, because it is accumulated while the
+   * files are read rather than derived from the per-file rows. Optional so a
+   * corpus nobody measured it for still summarises.
+   */
+  stringUsage?: unknown;
 }
 
 /** Extensions the corpora use for COBOL. `.cpy` is a copybook, not a program. */

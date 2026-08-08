@@ -27,6 +27,15 @@ export {
 } from "./features";
 export type { FeatureCounts, FeatureDefinition } from "./features";
 
+export { addStringUsage, emptyStringUsage } from "./string-usage";
+export type {
+  InspectUsage,
+  RefModUsage,
+  StringUsage,
+  StringUsageReport,
+  UnstringUsage,
+} from "./string-usage";
+
 /** Columns 8 through 72, which is where COBOL text lives. */
 const AREA_A_INDEX = 7;
 const LAST_COLUMN = 72;

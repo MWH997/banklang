@@ -31,6 +31,10 @@ import { join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  addStringUsage,
+  emptyStringUsage,
+} from "../packages/migration-analysis/src/index";
+import {
   analyseFile,
   corpus as corpusById,
   CORPORA,
@@ -90,6 +94,10 @@ export function analyseCorpus(
     return null;
   }
   const files: FileAnalysis[] = [];
+  // Which *forms* of the string operations a corpus uses, alongside which
+  // constructs it contains. `detectFeatures` says a file uses reference
+  // modification; this says whether the bounds are ones BankTS can check.
+  const usage = emptyStringUsage();
   for (const path of walk(root)) {
     if (!looksLikeCobol(path)) {
       continue;
@@ -101,8 +109,11 @@ export function analyseCorpus(
     // silently substituted.
     const text = readFileSync(join(root, path)).toString("latin1");
     files.push(analyseFile(path, text, provenanceOf(path)));
+    addStringUsage(text, usage);
   }
-  return summarise(id, files);
+  const analysis = summarise(id, files);
+  analysis.stringUsage = usage;
+  return analysis;
 }
 
 /** The report a person reads, generated from the analysis and nothing else. */
@@ -257,6 +268,15 @@ export function writeEvidence(
       2,
     )}\n`,
   );
+  // The form breakdown, which is what decides a representability rule for a
+  // construct that is really a family: `FIELD(1:4)` and `FIELD(WS-I:WS-LEN)`
+  // are the same syntax and a different language.
+  if (analysis.stringUsage) {
+    write(
+      "string-usage.json",
+      `${JSON.stringify(analysis.stringUsage, null, 2)}\n`,
+    );
+  }
   write("summary.md", renderAnalysis(analysis));
   return written;
 }
