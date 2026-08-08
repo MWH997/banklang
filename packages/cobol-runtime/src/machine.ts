@@ -767,6 +767,77 @@ export class Machine {
         return;
       }
 
+      case "inspect-tallying": {
+        const target = this.resolve(instance, statement.target);
+        const text = decodeText(target.bytes, target.offset, target.length);
+        let found = 0;
+        for (const count of statement.counts) {
+          if (count.what === "characters") {
+            found += text.length;
+            continue;
+          }
+          const of = this.displayText(instance, count.of!);
+          if (of.length === 0) {
+            // A zero-length operand would match everywhere and count forever.
+            throw new CobolRuntimeError(
+              "INSPECT TALLYING needs something to count.",
+            );
+          }
+          if (count.what === "leading") {
+            let at = 0;
+            while (text.startsWith(of, at)) {
+              found += 1;
+              at += of.length;
+            }
+            continue;
+          }
+          // Non-overlapping, left to right, which is what `split` counts.
+          found += text.split(of).length - 1;
+        }
+        // TALLYING adds to the counter rather than replacing it.
+        const counter = this.resolve(instance, statement.counter);
+        this.store(counter, {
+          kind: "number",
+          value: add(this.numberAt(counter), {
+            units: BigInt(found),
+            scale: 0,
+          }),
+        });
+        return;
+      }
+
+      case "inspect-converting": {
+        const target = this.resolve(instance, statement.target);
+        const from = this.displayText(instance, statement.from);
+        const to = this.displayText(instance, statement.to);
+        if (from.length !== to.length) {
+          throw new CobolRuntimeError(
+            `INSPECT CONVERTING needs both operands the same length; ${JSON.stringify(from)} and ${JSON.stringify(to)} are not.`,
+          );
+        }
+        // Character for character, and the leftmost mapping wins where an
+        // operand repeats a character — the Language Reference forbids the
+        // repeat rather than defining it, so this is a choice, made once and
+        // stated, instead of whatever the last write happened to leave.
+        const map = new Map<string, string>();
+        for (let index = 0; index < from.length; index += 1) {
+          const key = from[index] as string;
+          if (!map.has(key)) {
+            map.set(key, to[index] as string);
+          }
+        }
+        const text = decodeText(target.bytes, target.offset, target.length);
+        encodeText(
+          target.bytes,
+          target.offset,
+          target.length,
+          [...text]
+            .map((character) => map.get(character) ?? character)
+            .join(""),
+        );
+        return;
+      }
+
       case "string":
         this.executeString(instance, statement);
         return;
@@ -871,6 +942,8 @@ export class Machine {
       targets: { ref: Reference; rounded: boolean }[];
       value: Decimal;
     }[] = [];
+    /** The two operands a REMAINDER is worked out from, once one is divided. */
+    let division: { dividend: Decimal; divisor: Decimal } | null = null;
 
     switch (statement.verb) {
       case "ADD": {
@@ -927,12 +1000,14 @@ export class Machine {
           // `DIVIDE A BY B GIVING C` — A over B.
           const divisor = operands[1] ??
             rhs[0]?.value ?? { units: 1n, scale: 0 };
+          division = { dividend: left, divisor };
           results.push({ targets: giving, value: divide(left, divisor) });
           break;
         }
         // `DIVIDE A INTO B` — B over A.
         if (giving.length > 0) {
           const dividend = rhs[0]?.value ?? { units: 0n, scale: 0 };
+          division = { dividend, divisor: left };
           results.push({ targets: giving, value: divide(dividend, left) });
         } else {
           for (const item of rhs) {
@@ -951,6 +1026,36 @@ export class Machine {
         instance,
         result.targets,
         result.value,
+        statement.onSizeError,
+        null,
+      );
+    }
+
+    /*
+     * `REMAINDER`, which was parsed and then dropped.
+     *
+     * The Language Reference works it out from the quotient *as stored*:
+     * multiply the quotient by the divisor and subtract that product from the
+     * dividend. So it has to be read back out of the receiving field, after the
+     * assignment above has truncated it to that field's picture — computing it
+     * from the exact quotient would make it zero every time.
+     *
+     * Nothing here computed it at all, which left the field holding whatever it
+     * held before. Every generated rounding mode this compiler emits reads that
+     * field to decide its final step, so `HALF_EVEN` — the one this project
+     * calls the usual choice for money — silently truncated instead: 100000
+     * divided by 7 came back 14285.7142 where `cobc` gives 14285.7143.
+     */
+    const remainder = statement.remainder;
+    if (remainder && division) {
+      const quotient = giving[0];
+      const stored = quotient
+        ? this.numberAt(this.resolve(instance, quotient.ref))
+        : { units: 0n, scale: 0 };
+      this.assignArithmetic(
+        instance,
+        [{ ref: remainder, rounded: false }],
+        subtract(division.dividend, multiply(stored, division.divisor)),
         statement.onSizeError,
         null,
       );
@@ -1931,6 +2036,10 @@ export class Machine {
       }
       case "NUMVAL":
         return textToNumber(this.displayText(instance, args[0]!));
+      // `toNumber` lowers to NUMVAL-C, which is the same reading with a
+      // currency string and comma separators allowed in front of the digits.
+      case "NUMVAL-C":
+        return textToNumber(this.displayText(instance, args[0]!), true);
       /**
        * `ORD` is the position of a character in the collating sequence, and
        * the Language Reference numbers that sequence from 1 — so the ordinal
@@ -2253,19 +2362,64 @@ function displayNumber(value: Decimal): string {
   return `${negative ? "-" : ""}${digits}`;
 }
 
-function textToNumber(text: string): Decimal {
-  const trimmed = text.trim();
-  if (trimmed === "") {
+/**
+ * `FUNCTION NUMVAL` and `FUNCTION NUMVAL-C`, which read a number out of text.
+ *
+ * `toNumber` lowers to NUMVAL-C, so this is on the path of every BankTS program
+ * that parses a field, and it had no implementation here at all — the
+ * interpreter refused the statement and the differential comparison silently
+ * did not happen. The verb-level coverage matrix could not see it, because a
+ * missing intrinsic is not a missing verb.
+ *
+ * The Language Reference gives both functions the same argument format apart
+ * from two things NUMVAL-C also allows: a currency string in front of the
+ * digits, and commas separating them. Both accept a leading sign, and a
+ * trailing `+`, `-`, `CR` or `DB`. Anything else still raises: a character item
+ * used as a number is not something a COBOL compiler would accept, and guessing
+ * here would hide a program this interpreter should have refused.
+ */
+function textToNumber(text: string, currency = false): Decimal {
+  let rest = text.trim();
+  if (rest === "") {
     return { units: 0n, scale: 0 };
   }
-  const match = /^[+-]?\d*(?:\.\d+)?$/.exec(trimmed);
-  if (!match) {
-    // A character item used as a number is not something a COBOL compiler would
-    // accept, and guessing here would hide a program this interpreter should
-    // have refused.
+
+  let negative = false;
+  const leading = /^([+-])\s*/.exec(rest);
+  if (leading) {
+    negative = leading[1] === "-";
+    rest = rest.slice(leading[0].length);
+  }
+
+  if (currency) {
+    // The currency string is whatever precedes the digits, which is how the
+    // Language Reference describes it: `$`, `USD`, `£` are all one shape.
+    rest = rest.replace(/^[^\d.,]+/, "").trimStart();
+  }
+
+  const trailing = /\s*(CR|DB|[+-])$/i.exec(rest);
+  if (trailing) {
+    const mark = (trailing[1] as string).toUpperCase();
+    if (leading) {
+      throw new CobolRuntimeError(
+        `${JSON.stringify(text)} carries a sign at both ends.`,
+      );
+    }
+    negative = mark !== "+";
+    rest = rest.slice(0, rest.length - trailing[0].length);
+  }
+
+  if (currency) {
+    rest = rest.split(",").join("");
+  }
+  rest = rest.trim();
+
+  if (rest === "" || !/^\d*(?:\.\d*)?$/.test(rest)) {
     throw new CobolRuntimeError(`${JSON.stringify(text)} is not numeric.`);
   }
-  return decimalOf(trimmed);
+
+  const value = decimalOf(rest.startsWith(".") ? `0${rest}` : rest);
+  return negative ? negate(value) : value;
 }
 
 function compareValues(left: Value, right: Value): number {

@@ -71,6 +71,17 @@ export interface DisplayItem {
   value: Expr;
 }
 
+/**
+ * One `FOR` phrase of an `INSPECT ... TALLYING`.
+ *
+ * `characters` counts every position and takes no operand, which is why the
+ * operand is nullable rather than the three being separate shapes.
+ */
+export interface InspectTally {
+  what: "characters" | "all" | "leading";
+  of: Expr | null;
+}
+
 export type Statement =
   | { kind: "move"; from: Expr; to: Reference[]; line: number }
   | {
@@ -214,8 +225,30 @@ export type Statement =
   | {
       kind: "inspect";
       target: Reference;
-      /** `REPLACING ALL "_" BY "-"`, which is the only form implemented. */
+      /** `REPLACING ALL "_" BY "-"` and `REPLACING FIRST`. */
       replacements: { from: Expr; to: Expr }[];
+      line: number;
+    }
+  | {
+      /** `INSPECT x TALLYING n FOR ALL ","`, which is what `countOf` becomes. */
+      kind: "inspect-tallying";
+      target: Reference;
+      counter: Reference;
+      counts: InspectTally[];
+      line: number;
+    }
+  | {
+      /**
+       * `INSPECT x CONVERTING a TO b`, which is what `replaceChars` becomes.
+       *
+       * Character for character, so the two operands are the same length — the
+       * typechecker refuses a BankTS `replaceChars` where they are not, and the
+       * machine checks again because hand-written COBOL reaches here too.
+       */
+      kind: "inspect-converting";
+      target: Reference;
+      from: Expr;
+      to: Expr;
       line: number;
     }
   | { kind: "continue"; line: number }
@@ -677,11 +710,27 @@ export class StatementParser {
       operands.push(this.expression());
     }
 
+    /*
+     * `GIVING` and `REMAINDER` end a list of receiving fields.
+     *
+     * Neither is in `TERMINATORS`, so `startsReference` takes both for a data
+     * name — which made `DIVIDE A BY B GIVING Q REMAINDER R` parse as a divide
+     * into three fields called B, GIVING and Q, and then fail on a field named
+     * GIVING that no program declares. That shape is what every generated
+     * rounding mode emits, `HALF_EVEN` among them, so the interpreter refused
+     * the one rounding this project calls the usual choice and the differential
+     * comparison quietly did not happen.
+     */
+    const startsReceiver = (): boolean =>
+      this.startsReference() &&
+      !this.cursor.looksLike("GIVING") &&
+      !this.cursor.looksLike("REMAINDER");
+
     let joiner: "TO" | "FROM" | "BY" | "INTO" | null = null;
     const rhs: { ref: Reference; rounded: boolean }[] = [];
     if (isJoiner()) {
       joiner = this.cursor.word() as "TO" | "FROM" | "BY" | "INTO";
-      while (this.startsReference()) {
+      while (startsReceiver()) {
         const ref = this.reference();
         rhs.push({ ref, rounded: this.cursor.accept("ROUNDED") });
       }
@@ -689,7 +738,7 @@ export class StatementParser {
 
     const giving: { ref: Reference; rounded: boolean }[] = [];
     if (this.cursor.accept("GIVING")) {
-      while (this.startsReference()) {
+      while (startsReceiver()) {
         const ref = this.reference();
         giving.push({ ref, rounded: this.cursor.accept("ROUNDED") });
       }
@@ -1012,21 +1061,42 @@ export class StatementParser {
   }
 
   /**
-   * `INSPECT X REPLACING ALL a BY b`.
+   * `INSPECT`, in the three forms this compiler emits.
    *
-   * `runtime/BANKJSON.cbl` uses it to turn the underscores of a JSON name into
-   * the hyphens of a COBOL one, and that is the only form here. `TALLYING`,
-   * `CONVERTING`, and the `BEFORE`/`AFTER` phrases raise rather than being
-   * approximated: an INSPECT that silently does less than it says leaves a
-   * record half-translated and no error anywhere.
+   * `REPLACING` came first, for `runtime/BANKJSON.cbl` turning the underscores
+   * of a JSON name into the hyphens of a COBOL one. The other two arrived with
+   * the benchmark work and are the reason this comment is worth reading: the
+   * interpreter-coverage matrix reported `INSPECT` as *interpreted* while
+   * `TALLYING` and `CONVERTING` both raised, because the matrix counts verbs
+   * and a verb can be two thirds missing. `countOf` lowers to TALLYING and
+   * `replaceChars` to CONVERTING, so two BankTS builtins had no differential
+   * cover at all behind a green row.
+   *
+   * The `BEFORE`/`AFTER` phrases still raise, and so does any form not listed:
+   * an INSPECT that silently does less than it says leaves a record
+   * half-translated with no error anywhere, which is the failure this
+   * interpreter exists to catch rather than commit.
    */
   private inspect(): Statement {
     const line = this.cursor.line;
     this.cursor.expect("INSPECT");
     const target = this.reference();
+
+    if (this.cursor.accept("TALLYING")) {
+      return this.inspectTallying(target, line);
+    }
+
+    if (this.cursor.accept("CONVERTING")) {
+      const from = this.expression();
+      this.cursor.expect("TO");
+      const to = this.expression();
+      this.refuseBeforeAfter(line);
+      return { kind: "inspect-converting", target, from, to, line };
+    }
+
     if (!this.cursor.accept("REPLACING")) {
       throw new CobolUnsupportedError(
-        `Line ${String(line)}: only INSPECT ... REPLACING is implemented.`,
+        `Line ${String(line)}: only INSPECT ... TALLYING, REPLACING and CONVERTING are implemented.`,
       );
     }
     const replacements: { from: Expr; to: Expr }[] = [];
@@ -1034,11 +1104,7 @@ export class StatementParser {
       const from = this.expression();
       this.cursor.expect("BY");
       replacements.push({ from, to: this.expression() });
-      if (this.cursor.looksLike("BEFORE") || this.cursor.looksLike("AFTER")) {
-        throw new CobolUnsupportedError(
-          `Line ${String(line)}: INSPECT with BEFORE or AFTER is not implemented.`,
-        );
-      }
+      this.refuseBeforeAfter(line);
     }
     if (replacements.length === 0) {
       throw new CobolUnsupportedError(
@@ -1046,6 +1112,49 @@ export class StatementParser {
       );
     }
     return { kind: "inspect", target, replacements, line };
+  }
+
+  /**
+   * `INSPECT x TALLYING n FOR ALL "," ...`.
+   *
+   * The counter is *added to* rather than set, which is what the Language
+   * Reference specifies and is easy to get wrong from reading the generated
+   * code alone — this compiler always emits `MOVE 0` first, so a `SET`
+   * implementation would agree with `cobc` on every program it produces and
+   * disagree on hand-written COBOL the moment one arrived.
+   */
+  private inspectTallying(target: Reference, line: number): Statement {
+    const counter = this.reference();
+    const counts: InspectTally[] = [];
+    while (this.cursor.accept("FOR")) {
+      if (this.cursor.accept("CHARACTERS")) {
+        counts.push({ what: "characters", of: null });
+      } else if (this.cursor.accept("ALL")) {
+        counts.push({ what: "all", of: this.expression() });
+      } else if (this.cursor.accept("LEADING")) {
+        counts.push({ what: "leading", of: this.expression() });
+      } else {
+        throw new CobolUnsupportedError(
+          `Line ${String(line)}: INSPECT TALLYING takes CHARACTERS, ALL or LEADING.`,
+        );
+      }
+      this.refuseBeforeAfter(line);
+    }
+    if (counts.length === 0) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: INSPECT ... TALLYING needs a FOR phrase.`,
+      );
+    }
+    return { kind: "inspect-tallying", target, counter, counts, line };
+  }
+
+  /** The two phrases that restrict an INSPECT to part of the field. */
+  private refuseBeforeAfter(line: number): void {
+    if (this.cursor.looksLike("BEFORE") || this.cursor.looksLike("AFTER")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: INSPECT with BEFORE or AFTER is not implemented.`,
+      );
+    }
   }
 
   private write(): Statement {
