@@ -23,11 +23,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 6,
+        "line": 7,
         "column": 8
       },
       "sourceEnd": {
-        "line": 10,
+        "line": 11,
         "column": 2
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -39,11 +39,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 7,
+        "line": 8,
         "column": 3
       },
       "sourceEnd": {
-        "line": 7,
+        "line": 8,
         "column": 28
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -55,11 +55,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 8,
+        "line": 9,
         "column": 3
       },
       "sourceEnd": {
-        "line": 8,
+        "line": 9,
         "column": 24
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -71,11 +71,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 9,
+        "line": 10,
         "column": 3
       },
       "sourceEnd": {
-        "line": 9,
+        "line": 10,
         "column": 24
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -87,11 +87,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 12,
+        "line": 13,
         "column": 8
       },
       "sourceEnd": {
-        "line": 16,
+        "line": 17,
         "column": 2
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -103,11 +103,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 13,
+        "line": 14,
         "column": 3
       },
       "sourceEnd": {
-        "line": 13,
+        "line": 14,
         "column": 28
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -119,11 +119,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 14,
+        "line": 15,
         "column": 3
       },
       "sourceEnd": {
-        "line": 14,
+        "line": 15,
         "column": 30
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -135,11 +135,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 15,
+        "line": 16,
         "column": 3
       },
       "sourceEnd": {
-        "line": 15,
+        "line": 16,
         "column": 28
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -151,11 +151,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 30,
+        "line": 31,
         "column": 10
       },
       "sourceEnd": {
-        "line": 32,
+        "line": 33,
         "column": 2
       },
       "artifact": "cobol/BRACCR.cbl",
@@ -167,11 +167,11 @@
     {
       "sourceFile": "conversions/03-db2-cursor-batch/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 37,
+        "line": 38,
         "column": 19
       },
       "sourceEnd": {
-        "line": 70,
+        "line": 66,
         "column": 2
       },
       "artifact": "cobol/BRACCR.cbl",

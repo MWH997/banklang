@@ -38,8 +38,11 @@ record RunCounts {
 }
 
 file transFile sequential input record TransRecord status transStatus;
+
 file masterIn sequential input record MasterRecord status masterInStatus;
+
 file masterOut sequential output record MasterRecord status masterOutStatus;
+
 file rejectFile sequential output record RejectRecord status rejectStatus;
 
 on error transFile {
@@ -55,11 +58,7 @@ on error masterOut {
 // `2900-REJECT` was reached by two `GO TO`s from the middle of a paragraph and
 // fell through into `2999-EXIT`. Here it is a routine with one way in and one
 // way out, which is the same control flow written where a reader can see it.
-function shouldReject(
-  trans: TransRecord,
-  master: MasterRecord,
-  newBalance: MoneyBDT,
-): string<1> {
+function shouldReject(trans: TransRecord, master: MasterRecord, newBalance: MoneyBDT): string<1> {
   if master.miAcctNo != trans.trAcctNo {
     return "Y";
   } else {
@@ -83,12 +82,7 @@ function newBalanceFor(trans: TransRecord, master: MasterRecord): MoneyBDT {
   }
 }
 
-entry transaction updateAccounts(
-  trans: TransRecord,
-  master: MasterRecord,
-  reject: RejectRecord,
-  counts: RunCounts,
-) {
+entry transaction updateAccounts(trans: TransRecord, master: MasterRecord, reject: RejectRecord, counts: RunCounts) {
   on failure {
     audit("UPDATE_ABANDONED", counts.idempotencyKey);
   }

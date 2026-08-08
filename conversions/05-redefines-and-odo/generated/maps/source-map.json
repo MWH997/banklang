@@ -439,11 +439,11 @@
     {
       "sourceFile": "conversions/05-redefines-and-odo/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 55,
+        "line": 54,
         "column": 19
       },
       "sourceEnd": {
-        "line": 108,
+        "line": 104,
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",

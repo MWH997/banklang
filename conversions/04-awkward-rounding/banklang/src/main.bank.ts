@@ -1,6 +1,7 @@
 module IntCalc;
 
 type MoneyBDT = currency<"BDT", 15, 2>;
+
 type Rate = decimal<5, 4>;
 
 // The rates and the caps, which in the original were `VALUE` clauses on working

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -6,7 +6,23 @@ import { formatBankTs } from "../packages/formatter/src/index";
 import { parseBankTs } from "../packages/parser/src/index";
 import { exampleProjects } from "../tools/example-projects";
 
-const EXAMPLES = exampleProjects().map((path) => `${path}/src/main.bank.ts`);
+/**
+ * Every BankTS program in the repository, not only the examples.
+ *
+ * The formatter rewrites somebody's source, so "works on some programs" is not
+ * a property worth having. The corpus was `examples/` alone, and the tools
+ * mutation lane found 72 mutants in the formatter that no test reaches — the
+ * comment emitter, `reserved` slots, generic parameters, and five statement
+ * kinds among them. The conversions carry constructs the examples do not:
+ * a Db2 cursor, `REDEFINES`, an `OCCURS DEPENDING ON`.
+ */
+const EXAMPLES = [
+  ...exampleProjects().map((path) => `${path}/src/main.bank.ts`),
+  ...readdirSync("conversions", { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `conversions/${entry.name}/banklang/src/main.bank.ts`)
+    .filter((path) => existsSync(path)),
+];
 
 function format(source: string): string {
   return formatBankTs(source).text;

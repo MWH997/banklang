@@ -107,7 +107,7 @@ order, same pictures, same total length.
 | `GO TO` in total, single-exit returns included | 0        | 10          |
 | File operations whose result is tested         | 0 of 0   | 3 of 3      |
 
-The BankTS in between is 75 lines.
+The BankTS in between is 71 lines.
 
 <!-- /measurements -->
 

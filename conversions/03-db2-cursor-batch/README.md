@@ -82,7 +82,7 @@ it.
 | `GO TO` in total, single-exit returns included | 2        | 8           |
 | File operations whose result is tested         | 0 of 0   | 0 of 0      |
 
-The BankTS in between is 47 lines.
+The BankTS in between is 42 lines.
 
 <!-- /measurements -->
 

@@ -423,8 +423,29 @@ function printField(field: FieldDeclarationNode, printer: Printer): void {
   }
 
   const modifier = field.sensitive ? "sensitive " : "";
+
+  /*
+   * `redefines` and `depending on` are part of the declaration, not decoration.
+   *
+   * They were not printed, so `bankc fmt` deleted them — and the result parsed
+   * with no diagnostics, because a field without `redefines` is a perfectly
+   * good field. It is a different record: a redefinition is a second reading of
+   * storage that already exists, and dropping it makes the field new storage,
+   * moving every field after it. Dropping `depending on` fixes a table at its
+   * maximum, changing the record's length.
+   *
+   * Formatting somebody's source and silently changing what it lays out is the
+   * worst thing this tool can do. Found by widening the formatter's corpus from
+   * `examples/` to every BankTS program in the repository: no example uses
+   * either clause, and `conversions/05-redefines-and-odo` uses both.
+   */
+  const redefines = field.redefines ? ` redefines ${field.redefines}` : "";
+  const depending = field.dependingOn
+    ? ` depending on ${field.dependingOn}`
+    : "";
+
   printer.push(
-    `${INDENT}${modifier}${field.name}: ${printType(field.type)};${trailing}`,
+    `${INDENT}${modifier}${field.name}: ${printType(field.type)}${redefines}${depending};${trailing}`,
   );
 }
 

@@ -1,6 +1,7 @@
 module BrAccr;
 
 type MoneyBDT = currency<"BDT", 15, 2>;
+
 type Rate = decimal<5, 4>;
 
 record AccountRow {
@@ -34,12 +35,7 @@ function interestOn(balance: MoneyBDT, rate: Rate): MoneyBDT {
 // `PERFORM 2000-FETCH UNTIL SQLCODE = 100` is unbounded and, worse, exits on
 // exactly one value: a -911 deadlock leaves SQLCODE at -911 and the loop
 // fetches again, forever, against a cursor Db2 has closed under it.
-entry transaction accrueBranch(
-  row: AccountRow,
-  counts: AccrualCounts,
-  branchId: string<8>,
-  idempotencyKey: string<36>,
-) {
+entry transaction accrueBranch(row: AccountRow, counts: AccrualCounts, branchId: string<8>, idempotencyKey: string<36>) {
   counts.rowsRead = 0;
   counts.rowsPosted = 0;
   counts.interestPosted = 0.00;

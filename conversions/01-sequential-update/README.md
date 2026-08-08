@@ -72,7 +72,7 @@ own status, against `88`-level condition names rather than literals:
 | `GO TO` in total, single-exit returns included | 4        | 24          |
 | File operations whose result is tested         | 2 of 6   | 12 of 12    |
 
-The BankTS in between is 118 lines.
+The BankTS in between is 109 lines.
 
 <!-- /measurements -->
 

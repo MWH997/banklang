@@ -51,7 +51,7 @@ cics transaction enquireAccount(commarea: CommareaLayout, row: AccountRow) {
   // translator resolves `DFHRESP(NORMAL)` to whatever the release defines, and
   // a program that assumes zero is one whose comparison stops meaning what it
   // says the first time that changes. `BANK-CICS-004` refuses it.
-  writeQueue "CSMT" from commarea resp writeResp;
+  writeQueue "CSMT" commarea commarea resp writeResp;
 
   if writeResp != 0 {
     commarea.caReturnCode = "02";

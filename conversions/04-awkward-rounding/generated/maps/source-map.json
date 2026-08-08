@@ -23,11 +23,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 8,
+        "line": 9,
         "column": 8
       },
       "sourceEnd": {
-        "line": 12,
+        "line": 13,
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -39,11 +39,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 9,
+        "line": 10,
         "column": 3
       },
       "sourceEnd": {
-        "line": 9,
+        "line": 10,
         "column": 21
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -55,11 +55,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 10,
+        "line": 11,
         "column": 3
       },
       "sourceEnd": {
-        "line": 10,
+        "line": 11,
         "column": 22
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -71,11 +71,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 11,
+        "line": 12,
         "column": 3
       },
       "sourceEnd": {
-        "line": 11,
+        "line": 12,
         "column": 30
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -87,11 +87,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 14,
+        "line": 15,
         "column": 10
       },
       "sourceEnd": {
-        "line": 24,
+        "line": 25,
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -103,11 +103,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 46,
+        "line": 47,
         "column": 10
       },
       "sourceEnd": {
-        "line": 48,
+        "line": 49,
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",
@@ -119,11 +119,11 @@
     {
       "sourceFile": "conversions/04-awkward-rounding/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 50,
+        "line": 51,
         "column": 19
       },
       "sourceEnd": {
-        "line": 56,
+        "line": 57,
         "column": 2
       },
       "artifact": "cobol/INTCALC.cbl",

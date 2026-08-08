@@ -295,11 +295,11 @@
     {
       "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 58,
+        "line": 61,
         "column": 10
       },
       "sourceEnd": {
-        "line": 76,
+        "line": 75,
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
@@ -311,11 +311,11 @@
     {
       "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 78,
+        "line": 77,
         "column": 10
       },
       "sourceEnd": {
-        "line": 84,
+        "line": 83,
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
@@ -327,11 +327,11 @@
     {
       "sourceFile": "conversions/01-sequential-update/banklang/src/main.bank.ts",
       "sourceStart": {
-        "line": 86,
+        "line": 85,
         "column": 19
       },
       "sourceEnd": {
-        "line": 166,
+        "line": 160,
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",

@@ -41,8 +41,7 @@ record ReadTotals {
   idempotencyKey: string<36>;
 }
 
-file customerMaster sequential input record CustomerRecord
-  status masterStatus;
+file customerMaster sequential input record CustomerRecord status masterStatus;
 
 on error customerMaster {
   log "CUSTMAST FAILED, STATUS ", masterStatus;
@@ -52,10 +51,7 @@ on error customerMaster {
 // A program that reads the imported record, to show it is a record and not a
 // picture of one: the variant is chosen, the table is walked to the count the
 // record carries, and the reserved bytes are untouchable.
-entry transaction readCustomers(
-  customer: CustomerRecord,
-  totals: ReadTotals,
-) {
+entry transaction readCustomers(customer: CustomerRecord, totals: ReadTotals) {
   on failure {
     audit("CUSTOMER_READ_FAILED", totals.idempotencyKey);
   }
