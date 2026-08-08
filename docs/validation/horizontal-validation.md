@@ -198,6 +198,32 @@ measured COBOLEval would be indistinguishable from building it _for_ COBOLEval.
 The honest zero stands, and the evidence that would justify the work is recorded
 rather than spent.
 
+## Where the string operations actually stand
+
+The 2026-08-08 phase went looking for reference modification, STRING,
+UNSTRING and INSPECT as missing features. All four already existed:
+`substring`, `concat`, `split ... by ... into`, `countOf` and
+`replaceChars`, each lowering to the COBOL verb you would expect. What was
+missing was an accurate account of how much of the real usage they cover, so
+`string-usage.json` now measures the _forms_ rather than the keywords.
+
+| Construct              | Corpus                                                                         | BankTS covers                                                     | Verdict                                                  |
+| ---------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------------- |
+| reference modification | 661 files; 62,716 constant-bound occurrences, 8,875 with a computed bound      | constant bounds only, every out-of-range constant a compile error | `adaptation` — 194 of 661 files use only constant bounds |
+| STRING                 | 973 `DELIMITED BY SIZE`, 518 by a value, 470 `WITH POINTER`                    | `concat`, which is the SIZE form                                  | `adaptation`                                             |
+| UNSTRING               | 262 single-delimiter, 58 multiple, 95 `WITH POINTER`, 130 `TALLYING`           | `split`, one delimiter into fixed receivers                       | `adaptation`                                             |
+| INSPECT                | 1,007 `TALLYING`, 780 `REPLACING`, 105 `CONVERTING`, 625 with `BEFORE`/`AFTER` | `countOf` and `replaceChars`                                      | `adaptation`                                             |
+
+Only one rule was wrong: `inspect` said "No BankTS syntax", which moved 182
+files out of `not-yet-implemented` when corrected. The other three keep their
+verdicts and gain the measurement behind them.
+
+`substring` refusing a computed bound is the reason reference modification
+stays `adaptation`, and it is a deliberate trade rather than an omission. Every
+out-of-range constant is `BANK-TYPE-003` at compile time and there is no
+dynamic case to guard at run time — which is a stronger guarantee than a
+bounds check, and it costs the 451 files that compute an offset.
+
 ## What is next, on the same evidence
 
 The tasks CobolCodeBench still cannot express are not blocked on files any more.

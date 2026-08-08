@@ -27,6 +27,7 @@ Never downloaded and never redistributed by this repository.
 - `comp-binary`
 - `condition-names`
 - `continuation`
+- `declaratives`
 - `exec-cics`
 - `exec-sql`
 - `external-data`

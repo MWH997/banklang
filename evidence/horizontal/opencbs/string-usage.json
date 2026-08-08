@@ -1,0 +1,41 @@
+{
+  "filesScanned": 53,
+  "referenceModification": {
+    "constantBoth": 16,
+    "dynamicStart": 0,
+    "dynamicLength": 0,
+    "dynamicBoth": 0,
+    "openEnded": 0,
+    "total": 16,
+    "files": 1
+  },
+  "string": {
+    "delimitedBySize": 1,
+    "delimitedByValue": 0,
+    "withPointer": 0,
+    "onOverflow": 0,
+    "statements": 1,
+    "files": 1
+  },
+  "unstring": {
+    "singleDelimiter": 2,
+    "multipleDelimiters": 0,
+    "delimitedByAll": 1,
+    "withPointer": 0,
+    "tallying": 0,
+    "onOverflow": 0,
+    "statements": 3,
+    "files": 2
+  },
+  "inspect": {
+    "tallying": 0,
+    "replacing": 0,
+    "converting": 0,
+    "all": 0,
+    "leading": 0,
+    "first": 0,
+    "beforeAfter": 0,
+    "statements": 0,
+    "files": 0
+  }
+}
