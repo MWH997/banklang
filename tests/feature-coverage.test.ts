@@ -379,10 +379,27 @@ describe("every corpus assertion", () => {
    */
   const CALL = /\bchecked\([^)]/;
 
+  /*
+   * Files that read the *example* corpus, which is the one `checked()` guards.
+   *
+   * Matched on the import as well as the call. `corpus(` alone is a name, and
+   * `packages/horizontal-validation` exports a `corpus(id)` that looks up an
+   * external corpus definition — a different function with a different job, in
+   * a test that walks no collection at all. Requiring only the name meant that
+   * test was told to declare a floor for a loop it does not have, which is
+   * ceremony rather than a check, and the way those get satisfied is by adding
+   * a `checked()` that guards nothing.
+   */
   const readers = readdirSync("tests")
     .filter((name) => name.endsWith(".test.ts"))
     .map((name) => `tests/${name}`)
-    .filter((file) => /\bcorpus\(/.test(code(file)));
+    .filter(
+      (file) =>
+        /\bcorpus\(/.test(code(file)) &&
+        /import\s*\{[^}]*\bcorpus\b[^}]*\}\s*from\s*"\.\/helpers"/s.test(
+          code(file),
+        ),
+    );
 
   it("has files to check", () => {
     expect(readers.length).toBeGreaterThan(5);
