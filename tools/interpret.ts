@@ -22,9 +22,11 @@ import {
   auditOf,
   balancesOf,
   journalOf,
+  parseUnit,
   runCobol,
   type RunResult,
 } from "../packages/cobol-runtime/src/index";
+import type { Organization } from "../packages/cobol-runtime/src/program";
 import { precompile } from "../packages/precompiler/src/index";
 import { exampleProjects } from "./example-projects";
 import {
@@ -219,74 +221,55 @@ function linesOf(run: RunResult, file: string): string[] {
 }
 
 /**
- * The record length of the FD a DD name is assigned to.
+ * The `SELECT` and `FD` a DD name resolves to, as the interpreter reads them.
  *
- * Read from the generated `FD` rather than assumed, because splitting a fixed
- * dataset at the wrong boundary produces records that are individually
- * plausible and collectively wrong — the hardest kind of difference to find in
- * a comparison against another implementation.
+ * Through the interpreter's own parser rather than a regex over the generated
+ * text. The regex version summed the elementary `PICTURE`s under the FD and
+ * matched none whose clauses came between the picture and the period — so a
+ * record holding a `zoned` field, whose entry is `PIC S9(5) SIGN IS TRAILING
+ * SEPARATE.`, was measured six bytes short. A fixed dataset split at the wrong
+ * boundary produces records that are individually plausible and collectively
+ * wrong, which is the hardest kind of difference to find in a comparison
+ * against another implementation: the sort in `tests/sort-differential` read
+ * its input one field out of step and still produced three orderly records and
+ * a fourth of spaces.
+ *
+ * The parser is the same one that will execute the program, so the harness and
+ * the run can no longer disagree about what the file is.
  */
+function fileFor(
+  cobol: string,
+  ddName: string,
+): { organization: Organization; recordLength: number } | null {
+  for (const program of parseUnit(cobol).programs) {
+    const entry = program.files.find((file) => file.assign === ddName);
+    if (!entry) {
+      continue;
+    }
+    const description = program.descriptions.find(
+      (item) => item.name === entry.name,
+    );
+    return {
+      organization: entry.organization,
+      recordLength: description?.recordLength ?? 0,
+    };
+  }
+  return null;
+}
+
 /**
  * True when the DD names a file the program declared LINE SEQUENTIAL.
  *
- * Read out of the generated SELECT rather than passed in, for the same reason
- * `recordLength` is: the program is what decides, and a caller that had to
- * repeat the organization could disagree with the program about it.
+ * Read out of the program rather than passed in: the program is what decides,
+ * and a caller that had to repeat the organization could disagree with it.
  */
 export function isLineSequential(cobol: string, ddName: string): boolean {
-  const flat = cobol.replace(/\s+/g, " ");
-  const select = new RegExp(
-    `SELECT\\s+(?:OPTIONAL\\s+)?[A-Z0-9-]+\\s+ASSIGN\\s+TO\\s+${ddName}\\b([^.]*)`,
-    "i",
-  ).exec(flat);
-  return /ORGANIZATION\s+IS\s+LINE\s+SEQUENTIAL/i.test(select?.[1] ?? "");
+  return fileFor(cobol, ddName)?.organization === "line-sequential";
 }
 
+/** The record length of the FD a DD name is assigned to. */
 function recordLength(cobol: string, ddName: string): number {
-  const select = new RegExp(
-    `SELECT\\s+([A-Z0-9-]+)\\s+ASSIGN\\s+TO\\s+${ddName}\\b`,
-    "i",
-  ).exec(cobol.replace(/\s+/g, " "));
-  if (!select) {
-    return 0;
-  }
-  const fileName = select[1] ?? "";
-  const flat = cobol.replace(/\s+/g, " ");
-  const fd = new RegExp(
-    `FD ${fileName}\\b(.*?)(?= FD | WORKING-STORAGE| PROCEDURE)`,
-    "i",
-  ).exec(flat);
-  if (!fd) {
-    return 0;
-  }
-  // Sum the elementary PICTUREs of the first 01 under the FD.
-  return picturesLength(fd[1] ?? "");
-}
-
-function picturesLength(text: string): number {
-  let total = 0;
-  for (const match of text.matchAll(
-    /PIC\s+(\S+?)(?:\s+(COMP-3|COMP|COMP-4|BINARY|PACKED-DECIMAL))?\s*\./gi,
-  )) {
-    total += lengthOfPicture(match[1] ?? "", match[2]);
-  }
-  return total;
-}
-
-function lengthOfPicture(picture: string, usage: string | undefined): number {
-  const expanded = picture
-    .toUpperCase()
-    .replace(/([A-Z9])\((\d+)\)/g, (_, symbol: string, count: string) =>
-      symbol.repeat(Number(count)),
-    );
-  const digits = (expanded.match(/9/g) ?? []).length;
-  if (usage && /COMP-3|PACKED/i.test(usage)) {
-    return Math.floor(digits / 2) + 1;
-  }
-  if (usage && /COMP|BINARY/i.test(usage)) {
-    return digits <= 4 ? 2 : digits <= 9 ? 4 : 8;
-  }
-  return expanded.replace(/[SV]/g, "").length;
+  return fileFor(cobol, ddName)?.recordLength ?? 0;
 }
 
 /* ------------------------------------------------------------------ *
