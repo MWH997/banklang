@@ -61,6 +61,7 @@ export interface CorpusAnalysis {
    * corpus nobody measured it for still summarises.
    */
   stringUsage?: unknown;
+  recordUsage?: unknown;
 }
 
 /** Extensions the corpora use for COBOL. `.cpy` is a copybook, not a program. */

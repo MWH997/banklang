@@ -27,6 +27,13 @@ export {
 } from "./features";
 export type { FeatureCounts, FeatureDefinition } from "./features";
 
+export {
+  addRecordUsage,
+  emptyRecordUsage,
+  fileRecordShapes,
+} from "./record-usage";
+export type { FileRecordShape, RecordUsage } from "./record-usage";
+
 export { addStringUsage, emptyStringUsage } from "./string-usage";
 export type {
   InspectUsage,

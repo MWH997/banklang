@@ -31,7 +31,9 @@ import { join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  addRecordUsage,
   addStringUsage,
+  emptyRecordUsage,
   emptyStringUsage,
 } from "../packages/migration-analysis/src/index";
 import {
@@ -98,6 +100,11 @@ export function analyseCorpus(
   // constructs it contains. `detectFeatures` says a file uses reference
   // modification; this says whether the bounds are ones BankTS can check.
   const usage = emptyStringUsage();
+  // How many files carry more than one record description, and what the
+  // several records are for. `BANK-FILE-002` refuses the second one, and
+  // whether that is a safety property or a hole is a question about this
+  // number rather than about the two benchmark tasks that want it.
+  const records = emptyRecordUsage();
   for (const path of walk(root)) {
     if (!looksLikeCobol(path)) {
       continue;
@@ -108,11 +115,14 @@ export function analyseCorpus(
     // measured. Latin-1 is total: every byte maps to a character, so nothing is
     // silently substituted.
     const text = readFileSync(join(root, path)).toString("latin1");
-    files.push(analyseFile(path, text, provenanceOf(path)));
+    const provenance = provenanceOf(path);
+    files.push(analyseFile(path, text, provenance));
     addStringUsage(text, usage);
+    addRecordUsage(text, records, provenance);
   }
   const analysis = summarise(id, files);
   analysis.stringUsage = usage;
+  analysis.recordUsage = records;
   return analysis;
 }
 
@@ -275,6 +285,14 @@ export function writeEvidence(
     write(
       "string-usage.json",
       `${JSON.stringify(analysis.stringUsage, null, 2)}\n`,
+    );
+  }
+  // What the several records under one FD are for, which is what decides
+  // whether BANK-FILE-002 is protecting anything.
+  if (analysis.recordUsage) {
+    write(
+      "record-usage.json",
+      `${JSON.stringify(analysis.recordUsage, null, 2)}\n`,
     );
   }
   write("summary.md", renderAnalysis(analysis));

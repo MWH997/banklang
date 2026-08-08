@@ -1,0 +1,907 @@
+{
+  "files": 3041,
+  "filesWithMultiRecord": 2163,
+  "fileDescriptions": 6451,
+  "multiRecord": 2812,
+  "recordsPerFile": {
+    "0": 113,
+    "1": 3526,
+    "2": 2727,
+    "3": 76,
+    "4": 2,
+    "5+": 7
+  },
+  "overlay": 1,
+  "copybookDefined": 0,
+  "elementaryOnly": 2604,
+  "discriminated": 61,
+  "varyingLength": 147,
+  "sameLength": 2582,
+  "differentLength": 114,
+  "unmeasuredLength": 116,
+  "openedInput": 143,
+  "openedOutput": 2663,
+  "openedIo": 46,
+  "unclassified": 146,
+  "variantRepositories": [
+    "Apress@beg-cobol-for-programmers",
+    "BloopAI@tree-sitter-cobol",
+    "EstesE@COBOL",
+    "INFINITE-TECHNOLOGY@COBOL",
+    "Martinfx@Cobol",
+    "OCamlPro@gnucobol-contrib",
+    "avishek-sen-gupta@cobol-rekt",
+    "dscobol@Cobol-Projects",
+    "eclipse-che4z@che-che4z-lsp-for-cobol",
+    "eugyenoch@cobol",
+    "inthelamp@cobol-challenges",
+    "krisds@koopa",
+    "leandromoh@COBOL",
+    "marvinjason@cobol",
+    "neopragma@cobol-unit-test",
+    "opensourcecobol@opensourcecobol4j",
+    "tanto259@cobol-course",
+    "ttaulli@Modern-mainframe-development",
+    "uwol@proleap-cobol-parser"
+  ],
+  "inputVariantRepositories": [
+    "Apress@beg-cobol-for-programmers",
+    "BloopAI@tree-sitter-cobol",
+    "INFINITE-TECHNOLOGY@COBOL",
+    "OCamlPro@gnucobol-contrib",
+    "avishek-sen-gupta@cobol-rekt",
+    "dscobol@Cobol-Projects",
+    "eclipse-che4z@che-che4z-lsp-for-cobol",
+    "krisds@koopa",
+    "leandromoh@COBOL",
+    "neopragma@cobol-unit-test",
+    "opensourcecobol@opensourcecobol4j",
+    "tanto259@cobol-course",
+    "ttaulli@Modern-mainframe-development",
+    "uwol@proleap-cobol-parser"
+  ],
+  "readInto": 593,
+  "writeFrom": 2625,
+  "writeOfVariant": 3429,
+  "everyVariantWritten": 709,
+  "examples": [
+    {
+      "file": "TRANSACTIONFILE",
+      "records": [
+        "INSERTIONREC",
+        "DELETIONREC",
+        "PRICECHANGEREC"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": false,
+      "leadingFiller": true,
+      "conditionNames": true,
+      "lengths": [
+        52,
+        8,
+        15
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "TRANSACTIONFILE",
+      "records": [
+        "INSERTIONREC",
+        "DELETIONREC",
+        "PRICECHANGEREC"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": false,
+      "leadingFiller": true,
+      "conditionNames": true,
+      "lengths": [
+        null,
+        8,
+        15
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "TRANSACTIONFILE",
+      "records": [
+        "INSERTIONREC",
+        "DELETIONREC",
+        "PRICECHANGEREC",
+        "ADDTOSTOCK",
+        "SUBTRACTFROMSTOCK"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": false,
+      "leadingFiller": true,
+      "conditionNames": true,
+      "lengths": [
+        null,
+        8,
+        15,
+        13,
+        13
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "TRANSFILE",
+      "records": [
+        "INSERTIONREC",
+        "DELETIONREC",
+        "UPDATEREC"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": false,
+      "leadingFiller": true,
+      "conditionNames": true,
+      "lengths": [
+        54,
+        6,
+        32
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "TRANSFILE",
+      "records": [
+        "DELETIONREC-TF",
+        "INSERTIONREC-TF",
+        "UPDATEREC-TF"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": false,
+      "leadingFiller": true,
+      "conditionNames": true,
+      "lengths": [
+        10,
+        null,
+        50
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "SHOPRECEIPTSFILE",
+      "records": [
+        "SHOPDETAILS",
+        "SALERECEIPT"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": true,
+      "leadingFiller": false,
+      "conditionNames": true,
+      "lengths": [
+        39,
+        21
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "SHOPRECEIPTSFILE",
+      "records": [
+        "SHOPDETAILS",
+        "SALERECEIPT",
+        "SHOPSALESCOUNT"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": false,
+      "sharedLeadingField": true,
+      "leadingFiller": false,
+      "conditionNames": true,
+      "lengths": [
+        39,
+        21,
+        8
+      ],
+      "modes": [
+        "INPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": []
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    },
+    {
+      "file": "PRINT-FILE",
+      "records": [
+        "PRINT-REC",
+        "DUMMY-RECORD"
+      ],
+      "redefining": 0,
+      "copybook": false,
+      "varyingLength": false,
+      "elementaryOnly": true,
+      "sharedLeadingField": false,
+      "leadingFiller": false,
+      "conditionNames": false,
+      "lengths": [
+        121,
+        121
+      ],
+      "modes": [
+        "OUTPUT"
+      ]
+    }
+  ]
+}
