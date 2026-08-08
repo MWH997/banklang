@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "The checkers and readers: the z/OS semantics linter, the copybook and DCLGEN importers, the formatter, the zUnit generator, the verifier and the config loader. `zos-lint` exists specifically to catch what every other check is blind to, and a rule that cannot fail is worth nothing.",
+  "_comment": "The checkers and readers: the z/OS semantics linter, the copybook and DCLGEN importers, the formatter, the zUnit generator, the verifier and the config loader. `zos-lint` exists specifically to catch what every other check is blind to, and a rule that cannot fail is worth nothing. `horizontal-validation` joined 2026-08-08: its representability rules decide every number this project publishes about real-world coverage, and two of them have already been silently wrong in the flattering direction.",
   "packageManager": "pnpm",
   "reporters": ["html", "clear-text", "progress", "json"],
   "testRunner": "vitest",
@@ -15,7 +15,8 @@
     "packages/zunit/src/**/*.ts",
     "packages/verifier/src/**/*.ts",
     "packages/config/src/**/*.ts",
-    "packages/migration-analysis/src/**/*.ts"
+    "packages/migration-analysis/src/**/*.ts",
+    "packages/horizontal-validation/src/**/*.ts"
   ],
   "thresholds": {
     "high": 85,
