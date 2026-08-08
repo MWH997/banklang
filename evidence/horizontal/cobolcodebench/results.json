@@ -86,14 +86,14 @@
   {
     "taskId": "cobolcodebench/task_func_09",
     "corpus": "cobolcodebench",
-    "applicability": "unsupported-not-yet-implemented",
+    "applicability": "benchmark-ambiguous",
     "authoring": "unauthored",
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
     "execution": "not-executed",
     "outcome": "not-executed",
-    "detail": "language-gap: Each line holds a different number of comma-separated numbers — four on one, five on the next — and `split x by \",\" into a, b, c` writes into a fixed list of receivers named at compile time. A line whose field count is not known until it is read has no BankTS form. Evidence: Input lines carry 3 and 4 commas respectively. Still the only task in the corpus that genuinely needs it after all forty-six were classified: an earlier heuristic counted any variation in comma count as variable arity and so also flagged task_func_01 and task_func_24, whose variation is a header line rather than a variable record."
+    "detail": "benchmark-ambiguous: The specification asks for the minimum, maximum and sum of the numbers on each line; the expected output holds the *first* number, the *last* number and the sum. No correct implementation of the stated contract can produce it. Evidence: Line two of the input is `3,2,18,45,6`. Its minimum is 2 and its maximum is 45; the expected line is `0003.00     0006.00     000074.00` — first, last, and a correct sum. Line one, `1,3,4,5`, is the same rule and cannot tell the two apart because its first and last happen to be its minimum and maximum. The overall figures follow: minimum 1 is the first number of the file and maximum 6 is the last.\n\nThis task was previously recorded as the corpus’s one genuine case of a variable-arity split — four numbers on one line and five on the next, against a `split` whose receivers are named at compile time. That is still true of the input and is no longer the blocker: the oracle would be unreachable with any splitting mechanism.\n\nThe splitting question is now measured separately. `evidence/horizontal/xcobol-v2/string-usage.json` records 130 of 622 `UNSTRING` statements carrying `TALLYING`, which is COBOL’s way of saying how many receivers were filled — a bounded, deterministic count over a fixed set of receivers rather than an unbounded list. That is external justification for a `counting` clause on `split`, and it is the case for one; it is no longer entangled with this task."
   },
   {
     "taskId": "cobolcodebench/task_func_10",
@@ -138,10 +138,10 @@
     "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "gnucobol-only",
+    "differentialAgreement": true,
+    "execution": "both-engines",
     "outcome": "pass",
-    "detail": "Line 141: SORT is not a statement this interpreter implements."
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_14",
@@ -278,14 +278,14 @@
   {
     "taskId": "cobolcodebench/task_func_25",
     "corpus": "cobolcodebench",
-    "applicability": "unsupported-not-yet-implemented",
-    "authoring": "unauthored",
+    "applicability": "applicable",
+    "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "not-executed",
-    "outcome": "not-executed",
-    "detail": "language-gap: The output file holds a header line of text and a detail line of four right-justified numbers, and a BankTS file has one record description. An `edited` field renders a number and cannot be read back or assigned text, so no single record describes both lines. Evidence: `Sum,Mean,Min,Max` is 16 characters of text; the detail line is 49 characters of four `edited` columns. BANK-FILE-002 `File outFile carries Detail records, but head is Head` refuses writing a second shape to the file, and BANK-TYPE-003 refuses assigning a string to an edited field — which is also what Enterprise COBOL refuses. COBOL's answer is a second 01 under the FD. The group-redefines route is closed too: BankTS declares a record-typed field and accepts `redefines` on it, but member access is one level deep, so `line.cols.colSum` is BANK-SYN-001 `Expected = in assignment`."
+    "differentialAgreement": true,
+    "execution": "both-engines",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_26",
@@ -386,14 +386,14 @@
   {
     "taskId": "cobolcodebench/task_func_34",
     "corpus": "cobolcodebench",
-    "applicability": "unsupported-not-yet-implemented",
-    "authoring": "unauthored",
+    "applicability": "applicable",
+    "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "not-executed",
-    "outcome": "not-executed",
-    "detail": "language-gap: As task_func_25: a report file whose heading line and detail lines have different shapes, against one record description per file. Evidence: The 98-character heading `CUSTOMER  UNIT PRICE  QTY  SALES TAX  TOTAL` and the 93-character detail line of five numeric columns cannot share a record description, for the same reason as task_func_25 and with the same two diagnostics."
+    "differentialAgreement": true,
+    "execution": "both-engines",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_35",
@@ -426,10 +426,10 @@
     "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "gnucobol-only",
+    "differentialAgreement": true,
+    "execution": "both-engines",
     "outcome": "pass",
-    "detail": "Line 150: SORT is not a statement this interpreter implements."
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_38",
@@ -438,10 +438,10 @@
     "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "gnucobol-only",
+    "differentialAgreement": true,
+    "execution": "both-engines",
     "outcome": "pass",
-    "detail": "Line 152: MERGE is not a statement this interpreter implements."
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_39",

@@ -51,6 +51,26 @@ export interface Capability {
    * to look like an omission.
    */
   feature: string | null;
+  /**
+   * How far the claim has been executed, which is not the same as whether the
+   * compiler supports it.
+   *
+   * `differential` is the strong claim: both `cobc` and
+   * `packages/cobol-runtime` run the construct and agree. `gnucobol-only` says
+   * the compiled side runs it and the interpreter cannot, so nothing is being
+   * compared. `compile-only` says neither runs it here — Report Writer needs a
+   * precompiler this repository does not ship. `external-subsystem` says it
+   * needs Db2, a CICS region or IMS, and the reference modules under `runtime/`
+   * stand in for them rather than being them.
+   *
+   * The distinction is the point. Treating "the interpreter executes it" as
+   * "the language supports it" is how `SORT` came to be listed as a capability
+   * while three benchmark tasks passed under one engine with no comparison at
+   * all. `tests/capability-drift.test.ts` holds a `differential` row to the
+   * interpreter's own dispatch table.
+   */
+  execution:
+    "differential" | "gnucobol-only" | "compile-only" | "external-subsystem";
 }
 
 const RECORD_HEAD = `module Probe;
@@ -65,6 +85,7 @@ export const CAPABILITIES: Capability[] = [
   {
     bankts: "countOf",
     feature: "inspect",
+    execution: "differential",
     emits: "INSPECT",
     probe: `${RECORD_HEAD}
 function commas(text: string<20>): decimal<9, 0> {
@@ -75,6 +96,7 @@ function commas(text: string<20>): decimal<9, 0> {
   {
     bankts: "replaceChars",
     feature: "inspect",
+    execution: "differential",
     emits: "INSPECT",
     probe: `${RECORD_HEAD}
 function padded(text: string<20>): string<20> {
@@ -85,6 +107,7 @@ function padded(text: string<20>): string<20> {
   {
     bankts: "substring",
     feature: "reference-modification",
+    execution: "differential",
     emits: "(16:4)",
     probe: `module Probe;
 
@@ -96,6 +119,7 @@ function tail(pan: string<19>): string<4> {
   {
     bankts: "concat",
     feature: "string-unstring",
+    execution: "differential",
     emits: "STRING",
     probe: `module Probe;
 
@@ -107,6 +131,7 @@ function masked(pan: string<19>): string<16> {
   {
     bankts: "split",
     feature: "string-unstring",
+    execution: "differential",
     emits: "UNSTRING",
     probe: `module Probe;
 
@@ -125,6 +150,7 @@ entry transaction take(parts: Parts, idempotencyKey: string<36>) {
   {
     bankts: "lineSequential files",
     feature: "file-line-sequential",
+    execution: "differential",
     emits: "ORGANIZATION IS LINE SEQUENTIAL",
     probe: `module Probe;
 
@@ -146,6 +172,7 @@ function unused(): bool {
   {
     bankts: "indexed files",
     feature: "file-indexed",
+    execution: "differential",
     emits: "ORGANIZATION IS INDEXED",
     probe: `module Probe;
 
@@ -168,6 +195,7 @@ function unused(): bool {
   {
     bankts: "sort",
     feature: "sort-merge",
+    execution: "differential",
     emits: "SORT",
     probe: `module Probe;
 
@@ -205,6 +233,7 @@ entry transaction order(posting: Posting, idempotencyKey: string<36>) {
      */
     bankts: "sort with an output procedure that reformats",
     feature: "sort-merge",
+    execution: "differential",
     emits: "OUTPUT PROCEDURE IS",
     probe: `module Probe;
 
@@ -244,8 +273,94 @@ entry transaction order(detail: Detail, line: ReportLine, idempotencyKey: string
 `,
   },
   {
+    /*
+     * MERGE, which until this phase had no row at all: the statement existed,
+     * the backend emitted it, and nothing said so. It is the difference between
+     * a language the registry describes and one it partly describes.
+     */
+    bankts: "merge",
+    feature: "sort-merge",
+    execution: "differential",
+    emits: "MERGE",
+    probe: `module Probe;
+
+record Movement {
+  moveKey: string<8>;
+  moveAmount: decimal<18, 2>;
+}
+
+file feedOne sequential input record Movement status feedOneStatus;
+
+file feedTwo sequential input record Movement status feedTwoStatus;
+
+file mergedOut sequential output record Movement status mergedOutStatus;
+
+on error feedOne {
+  log "ONE FAILED ", feedOneStatus;
+}
+
+on error feedTwo {
+  log "TWO FAILED ", feedTwoStatus;
+}
+
+on error mergedOut {
+  log "OUT FAILED ", mergedOutStatus;
+}
+
+entry transaction combine(movement: Movement, idempotencyKey: string<36>) {
+  merge feedOne, feedTwo into mergedOut on moveKey;
+  audit("MERGED", idempotencyKey);
+}
+`,
+  },
+  {
+    /*
+     * Several 01 entries under one FD. Output only, and the row says which
+     * construct that is rather than which BankTS keyword: the claim is that the
+     * backend really does emit a second record description, not that the
+     * declaration parses.
+     */
+    bankts: "several record layouts on one output file",
+    feature: null,
+    execution: "differential",
+    emits: "01 BILLS-BILL-DETAIL-RECORD.",
+    probe: `module Probe;
+
+record BillHeading {
+  headingText: string<40>;
+}
+
+record BillDetail {
+  detailCustomer: string<5>;
+  detailAmount: edited<zoned<9, 2>, "plain">;
+}
+
+file bills lineSequential output record BillHeading, BillDetail status billsStatus;
+
+on error bills {
+  log "BILLS FAILED ", billsStatus;
+}
+
+entry transaction print1(
+  heading: BillHeading,
+  detail: BillDetail,
+  idempotencyKey: string<36>,
+) {
+  open bills;
+  heading.headingText = "CUSTOMER   AMOUNT DUE";
+  write bills from heading;
+  detail.detailCustomer = "A0001";
+  detail.detailAmount = 12.34;
+  write bills from detail;
+  close bills;
+  audit("PRINTED", idempotencyKey);
+}
+`,
+  },
+  {
     bankts: "search",
     feature: "search",
+    execution: "differential",
     emits: "SEARCH",
     probe: `module Probe;
 
@@ -274,6 +389,7 @@ entry transaction lookup(book: Book) {
   {
     bankts: "enum",
     feature: "condition-names",
+    execution: "differential",
     emits: "88",
     probe: `module Probe;
 

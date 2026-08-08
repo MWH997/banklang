@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { compile } from "../packages/compiler/src/index";
 import { FEATURES } from "../packages/migration-analysis/src/features";
+import { interpretedVerbs } from "../tools/interpreter-coverage";
 import {
   CAPABILITIES,
   SUPPORT_RULES,
@@ -179,5 +180,58 @@ describe("the validator against the compiler", () => {
     // whatever the last person assumed, and a regression would be silent.
     expect(supportFor("inspect")?.support).toBe("adaptation");
     expect(supportFor("file-line-sequential")?.support).toBe("supported");
+  });
+});
+
+/**
+ * "The compiler supports it" and "both engines agree about it" are different
+ * claims, and conflating them is how `SORT` came to be a registered capability
+ * while three benchmark tasks passed under `cobc` alone with no comparison at
+ * all.
+ *
+ * So each row says how far it has been executed, and a `differential` claim is
+ * held to the interpreter's own dispatch table — the same source
+ * `pnpm interpreter:coverage` reads, so a verb the interpreter loses stops
+ * being a differential claim without anybody editing this file.
+ */
+describe("how far each capability has been executed", () => {
+  const interpreted = interpretedVerbs();
+
+  it("reads the interpreter's dispatch rather than a list", () => {
+    expect(interpreted.size).toBeGreaterThan(20);
+    expect(interpreted.has("SORT")).toBe(true);
+  });
+
+  for (const capability of CAPABILITIES) {
+    it(`is honest for ${capability.bankts}`, () => {
+      const result = compile(capability.probe, { sourceFile: "probe.bank.ts" });
+      const cobol = (result.cobol ?? "").replace(/\s+/g, " ");
+
+      // Every COBOL verb the probe's own program emits. A `differential` row
+      // whose program emits a verb the interpreter cannot execute is a row
+      // claiming a comparison that cannot happen.
+      const emitted = new Set(
+        [...cobol.matchAll(/\b([A-Z][A-Z-]{2,})\b/g)].map(
+          (match) => match[1] as string,
+        ),
+      );
+      const unrunnable = ["SORT", "MERGE", "RELEASE", "RETURN", "GENERATE"]
+        .filter((verb) => emitted.has(verb))
+        .filter((verb) => !interpreted.has(verb));
+
+      if (capability.execution === "differential") {
+        expect(
+          unrunnable,
+          `${capability.bankts} claims a differential result and emits a verb the interpreter cannot execute`,
+        ).toEqual([]);
+      }
+    });
+  }
+
+  it("records SORT and MERGE as differentially validated", () => {
+    for (const name of ["sort", "merge"]) {
+      const row = CAPABILITIES.find((capability) => capability.bankts === name);
+      expect(row?.execution, name).toBe("differential");
+    }
   });
 });

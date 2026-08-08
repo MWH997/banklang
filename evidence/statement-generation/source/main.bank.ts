@@ -95,6 +95,15 @@ transaction generateStatement(statement: Statement, master: AccountMaster) {
 
   open accountMaster;
   read accountMaster into master key statement.accountId;
+  // A key that is not on the master file answers 23, which the generated check
+  // lets through: it says the request found nothing rather than that the file
+  // is broken. Without this the statement would be generated from whatever
+  // `master` held before the read. BANK-FILE-017.
+  if accountMasterStatus != "00" {
+    log "NO MASTER RECORD FOR ", statement.accountId;
+    close accountMaster;
+    raise "NO_ACCOUNT";
+  }
 
   // A relationship manager is optional, so it must be checked before use.
   if isPresent(statement.relationshipManager) {

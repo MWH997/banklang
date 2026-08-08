@@ -204,11 +204,11 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
    * ---------------------------------------------------------------- */
   {
     task: "task_func_09",
-    kind: "language-gap",
+    kind: "benchmark-ambiguous",
     reason:
-      'Each line holds a different number of comma-separated numbers — four on one, five on the next — and `split x by "," into a, b, c` writes into a fixed list of receivers named at compile time. A line whose field count is not known until it is read has no BankTS form.',
+      "The specification asks for the minimum, maximum and sum of the numbers on each line; the expected output holds the *first* number, the *last* number and the sum. No correct implementation of the stated contract can produce it.",
     evidence:
-      "Input lines carry 3 and 4 commas respectively. Still the only task in the corpus that genuinely needs it after all forty-six were classified: an earlier heuristic counted any variation in comma count as variable arity and so also flagged task_func_01 and task_func_24, whose variation is a header line rather than a variable record.",
+      "Line two of the input is `3,2,18,45,6`. Its minimum is 2 and its maximum is 45; the expected line is `0003.00     0006.00     000074.00` — first, last, and a correct sum. Line one, `1,3,4,5`, is the same rule and cannot tell the two apart because its first and last happen to be its minimum and maximum. The overall figures follow: minimum 1 is the first number of the file and maximum 6 is the last.\n\nThis task was previously recorded as the corpus\u2019s one genuine case of a variable-arity split — four numbers on one line and five on the next, against a `split` whose receivers are named at compile time. That is still true of the input and is no longer the blocker: the oracle would be unreachable with any splitting mechanism.\n\nThe splitting question is now measured separately. `evidence/horizontal/xcobol-v2/string-usage.json` records 130 of 622 `UNSTRING` statements carrying `TALLYING`, which is COBOL\u2019s way of saying how many receivers were filled — a bounded, deterministic count over a fixed set of receivers rather than an unbounded list. That is external justification for a `counting` clause on `split`, and it is the case for one; it is no longer entangled with this task.",
   },
   {
     task: "task_func_47",

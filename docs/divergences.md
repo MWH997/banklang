@@ -143,6 +143,16 @@ EBCDIC ordering is not ASCII ordering. Any comparison of alphanumerics, any
 `FEED-STATUS-OK VALUE "00" THRU "09"` is safe — digits are contiguous and in the
 same order in both — but a range over letters is not.
 
+The Language Reference is explicit for a sort: "When both the COLLATING SEQUENCE
+phrase and the PROGRAM COLLATING SEQUENCE clause are omitted, the EBCDIC
+collating sequence is used." BankLang emits neither, so an alphanumeric sort key
+is ordered in EBCDIC on the target and in ASCII by both local engines. Every
+alphanumeric ordering in `tests/sort-differential.test.ts` is therefore agreement
+about ASCII and says nothing about z/OS; digits and uppercase letters keep their
+relative order in both, and a key mixing them does not — digits sort before
+letters in ASCII and after them in EBCDIC. The numeric key cases are unaffected,
+because a numeric key is compared as a number on any target.
+
 ## D12. Sort work datasets and the sort product — **suspected**
 
 The generated job allocates three `SORTWK` datasets, which is customary. Which
@@ -185,6 +195,49 @@ safe end of the difference. A program must not depend on a feed whose last line
 lacks a delimiter.
 
 Found by `tests/line-sequential.test.ts`, which pins the measured behaviour.
+
+## D25. `DISPLAY` of `SORT-RETURN` — **measured, between the local two**
+
+The Language Reference gives the register as `01 SORT-RETURN GLOBAL PICTURE
+S9(4) USAGE BINARY VALUE ZERO`. GnuCOBOL 3.2.0 defines it wider: `DISPLAY
+SORT-RETURN` after a failed sort prints `+000000016` there and `0016` under
+`packages/cobol-runtime`, which holds the Reference's picture.
+
+How wide an undeclared special register renders is implementation-defined and
+IBM's answer is a third unknown, so neither local engine is wrong. The emitter
+moves the value into a declared `PIC 9(4)` item and displays that instead —
+the same rule it already follows for the result of an intrinsic (D22) — so no
+generated program depends on it.
+
+## D26. The order of records with equal sort keys — **deliberate**
+
+Language Reference, `SORT` format 1: "If the DUPLICATES phrase is not specified,
+the order of these records is undefined." A compiler whose claim is a
+deterministic build must not emit a statement whose _output_ order the target
+leaves open, so `WITH DUPLICATES IN ORDER` is emitted on every `SORT`. GnuCOBOL
+3.2.0 happens to be stable without it, which is exactly the kind of agreement
+that means nothing.
+
+`MERGE` has no such phrase and needs none: equal keys come back in `USING`
+order, which the Reference already fixes.
+
+## D27. A sort does not set the file status under GnuCOBOL — **measured**
+
+Under `NOFASTSRT` with a `FILE STATUS` clause and no `ERROR` declarative — which
+is every program this compiler emits — the Programming Guide's table 32 says to
+"test the `SORT-RETURN` special register after the format 1 `SORT` statement,
+and test the file status key". GnuCOBOL 3.2.0 does not set that key for a
+`USING` or `GIVING` file at all: probed directly, a successful sort leaves both
+keys at their `VALUE SPACES`, and a sort whose input dataset is missing sets
+`SORT-RETURN` to 16 and still leaves them at spaces.
+
+Spaces are not in `"00" THRU "09"`, so the emitted `IF NOT ...-STATUS-OK` fired
+on every successful sort: `task_func_13` and `task_func_38` were both recorded
+as benchmark passes while ending with return code 16 and printing `SORT FAILED`
+over correct output files. The check is now guarded by `NOT = SPACES` — the key
+is declared `VALUE SPACES` and only an I/O operation writes it, so spaces means
+the sort reported nothing through it. On a target that sets the key, `"00"` is
+not spaces and the guard changes nothing.
 
 ---
 

@@ -244,6 +244,24 @@ nature of a dynamic call, and it is why a `call` with no `on error` is warned
 about: a static call that cannot be resolved fails at link time where somebody
 sees it, and a dynamic one fails in the middle of a batch.
 
+### `BANK-TYPE-030` a value-building call nested in an expression
+
+`concat`, `now`, `countOf` and `replaceChars` build a value rather than name
+one: each lowers to a COBOL statement — `STRING`, `INSPECT`, a `CURRENT-DATE`
+sequence — writing into a field of its own. COBOL has no expression to nest that
+in, so the call can be the whole right-hand side of an assignment, the whole
+initialiser of a local, or the whole returned expression, and nothing else.
+
+Written anywhere else there is nothing for the backend to emit. Before this
+diagnostic existed it raised an internal invariant, so
+`toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable way to read a
+rate written in thousandths — reached the author as a stack trace.
+
+```ts
+let built: string<5> = concat("0.", substring(rate, 7, 3));
+work.rate = toNumber(built);
+```
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden
@@ -654,6 +672,76 @@ Declare the number `zoned` if it can be negative, which emits the `SIGN IS
 TRAILING SEPARATE` the same paragraph requires of a signed zoned field, or
 `unsigned` if it cannot. A `currency` amount is packed by construction, so an
 interchange record uses a `decimal` field with a `zoned` usage.
+
+### `BANK-FILE-015` several record layouts on a file that cannot choose between them
+
+COBOL puts several `01` entries under one `FD`: a report whose heading line and
+detail lines are different shapes, a feed of header, detail and trailer
+records. They share one record area, and each `WRITE` names the layout it is
+writing — so on an output file the variant is decided by the program and its
+type is known where it is chosen.
+
+A `READ` names nothing. Which layout arrived is decided by the data, and a value
+whose type is a guess is exactly what this language exists not to hand back. The
+same goes for a record key, which belongs to one layout, and for `RECORD IS
+VARYING`, which describes the length of one record rather than a choice between
+several.
+
+```ts
+file bills lineSequential output record BillHeading, BillDetail status billsStatus;
+```
+
+For a file that is read, declare one record and interpret the bytes yourself: a
+field saying which kind of record it is, and a `redefines` for the rest.
+
+### `BANK-FILE-016` a DD name that is also a data item
+
+The generated `SELECT` reads `ASSIGN TO <DD>`, and both Enterprise COBOL 6 and
+GnuCOBOL treat that word as a data item when one of that name exists — taking
+the file name from its _contents_ rather than from the environment. A `record
+Feed` becomes the group `FEED`, a `file feed` assigns to DD `FEED`, and the
+program compiles. At run time the `OPEN` looks for a dataset named by whatever
+the record happened to hold, and the job ends on file status 35 having processed
+nothing.
+
+Rename the file or the record so the two differ within the first eight
+characters once the hyphens are removed.
+
+### `BANK-FILE-017` a file operation whose outcome was never handled
+
+Every generated I/O statement is followed by a test of the file status, and a
+status outside class 0 stops the step. That covers the failures and deliberately
+does not cover the statuses a program is _written_ to produce: end of file on a
+read (`10`), no such record on a keyed read or a browse (`23`), a duplicate key
+on a write to a KSDS (`22`). Those say the request found nothing rather than
+that the file is broken.
+
+When the program does not look, the record area still holds the record before
+it. A read at end of file leaves the last transaction in place, and a program
+that carries on posts it twice — with a return code of zero. It is OpenCBS
+`DF01`.
+
+The check is flow-sensitive. An operation that can end with one of those
+statuses leaves an outstanding outcome, and it is an error to
+
+- use the record it filled,
+- operate on the file again — a `close` overwrites the status too, so a test
+  written after one reads the close's answer, or
+- reach the end of the routine
+
+with the outcome still outstanding.
+
+```ts
+read feedIn into line;
+if feedInStatus == "00" {
+  post(line);
+}
+```
+
+The comparison counts wherever it is written, including into a local, and a
+loop whose condition reads the status discharges it — the drain loop the
+language reference teaches stays legal. A `log` of the status does not:
+printing the answer is not reading it.
 
 ### `BANK-COPY-008` not a data description entry
 

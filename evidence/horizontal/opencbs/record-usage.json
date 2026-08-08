@@ -1,0 +1,28 @@
+{
+  "files": 17,
+  "filesWithMultiRecord": 0,
+  "fileDescriptions": 21,
+  "multiRecord": 0,
+  "recordsPerFile": {
+    "1": 21
+  },
+  "overlay": 0,
+  "copybookDefined": 0,
+  "elementaryOnly": 0,
+  "discriminated": 0,
+  "varyingLength": 0,
+  "sameLength": 0,
+  "differentLength": 0,
+  "unmeasuredLength": 0,
+  "openedInput": 0,
+  "openedOutput": 0,
+  "openedIo": 0,
+  "unclassified": 0,
+  "variantRepositories": [],
+  "inputVariantRepositories": [],
+  "readInto": 3,
+  "writeFrom": 38,
+  "writeOfVariant": 0,
+  "everyVariantWritten": 0,
+  "examples": []
+}

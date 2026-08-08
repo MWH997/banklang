@@ -5,11 +5,11 @@
 | validated-with-gnucobol | yes |
 | backend-profile | gnucobol-local |
 | source-artifact | examples/statement-generation/src/main.bank.ts |
-| source-artifact-sha256 | 4870b116ab4fef588e93139cd42eb0c6e5cc4e178f735c3446d24f0b30377cee |
+| source-artifact-sha256 | 0b053259461a1cb1635ffe6eac82121878423a50da4f58a1e94d0f8afd3cec83 |
 | generated-artifact | evidence/statement-generation/gnucobol/cobol/STATEMEN.cbl |
-| generated-artifact-sha256 | 177fb8815c5da55effbdb5a6ba655e128ba1b4f3ec9567d7def7c1c5299f2889 |
+| generated-artifact-sha256 | 1c82b7912a4aaa3c5c743e61c6fecb3902cbe90374a4a0d0d863cbc86f1fa623 |
 | source-map-artifact | evidence/statement-generation/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 1f7e28a1680a5ecc72c59fdc9a08bdfe35cdb4da10c9f35bf8c1963f7ac4722b |
+| source-map-artifact-sha256 | 1636e8247456278ee179433e5339e956d12c97f206c4198abfe79465a4941f0d |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/statement-generation/gnucobol/copybooks evidence/statement-generation/gnucobol/cobol/STATEMEN-PRE.cbl -o evidence/statement-generation/gnucobol/bin/statemen |

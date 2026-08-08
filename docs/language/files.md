@@ -136,6 +136,11 @@ The record variable's type must match the file's declared record type, or the
 bytes would not line up; a mismatch is `BANK-FILE-002`. Reading an output file
 or writing an input file is `BANK-FILE-001`.
 
+A file's name folds to a DD name of eight characters, and the generated `SELECT`
+reads `ASSIGN TO <DD>`. If a record or a field has that same COBOL name, both
+Enterprise COBOL 6 and GnuCOBOL take the file name from _its contents_ instead —
+the program compiles and the `OPEN` fails with status 35. `BANK-FILE-016`.
+
 A `read` sets the status field to `"10"` at end of file, so a batch loop can
 test it:
 
@@ -144,6 +149,61 @@ while accountFeedStatus == "00" limit 100000 {
   read accountFeed into account;
 }
 ```
+
+### Several record layouts on one file
+
+```ts
+record BillHeading { headingText: string<98>; }
+record BillDetail  { billCustomer: string<5>; billTotal: edited<zoned<9,2>, "plain">; }
+
+file bills lineSequential output record BillHeading, BillDetail status billsStatus;
+```
+
+COBOL's several `01` entries under one `FD`. They share a record area as long as
+the longest of them, and each `write` names the layout it is writing:
+
+```ts
+write bills from heading;
+write bills from detail;
+```
+
+The type chooses the variant, so a heading cannot reach a detail's fields and a
+short layout writes its own length rather than the area's. It is what a report
+file is: a heading line and detail lines are different shapes and always were.
+2,812 of the 6,451 file descriptions in the X-COBOL corpus declare more than one
+record, and 2,663 of those are opened `OUTPUT`.
+
+**Output only** (`BANK-FILE-015`). A `write` names a layout; a `read` does not.
+Which one arrived is decided by the data, and BankTS will not hand back a value
+whose type is a guess. A file that is read declares one record, and a feed
+carrying several kinds is read as one layout with a field saying which kind it
+is. The same rule covers a record key and a `varying` length, each of which
+describes one layout rather than a choice between several.
+
+### The outcome of an operation has to be looked at
+
+```ts
+read accountFeed into account;
+if accountFeedStatus == "00" {
+  post(account);
+}
+```
+
+End of file (`10`), no such record (`23`) and a duplicate key (`22`) are not
+failures: they are answers, and the generated check lets them through for the
+program to decide about. A program that does not decide carries on with the
+record area still holding the record before it — a read past the end of a feed
+posts the last transaction twice, with a return code of zero.
+
+So an operation that can end with one of those statuses leaves an outcome the
+program owes an answer to, and `BANK-FILE-017` is raised when it uses the record
+that operation filled, operates on the file again, or reaches the end of the
+routine without comparing the status. A `close` counts as operating on the file:
+it sets the status too, so a test written after one reads the close's answer.
+
+The comparison counts wherever it is written — in an `if`, in a loop condition,
+into a local — so the drain loop above stays exactly as it was. A `log` of the
+status does not count: printing the answer is not reading it.
 
 ### What the compiler checks for you
 
