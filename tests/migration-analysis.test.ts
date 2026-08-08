@@ -498,3 +498,113 @@ describe("which paragraphs are unreachable", () => {
     ).toBe(0);
   });
 });
+
+/**
+ * The risk report, at both extremes and on its one threshold.
+ *
+ * `describeRisks` is six guards over an analysis, reached through
+ * `renderInventory`, and the conversions' originals exercise some of them and
+ * never the others — so the mutation lane found each guard surviving in both
+ * directions. A guard that cannot be observed to fire is a risk the report may
+ * silently stop naming.
+ *
+ * The pairing is what makes these worth writing: a program that trips every one
+ * and a program that trips none. Asserting only the first would pass while the
+ * report named every risk unconditionally.
+ */
+describe("the risks a program is reported to carry", () => {
+  const CLEAN = `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CLEANP.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MASTER ASSIGN TO MASTER
+               FILE STATUS IS WS-MASTER-STATUS.
+       PROCEDURE DIVISION.
+       A-START.
+           DISPLAY "A".`;
+
+  const gotos = Array.from(
+    { length: 12 },
+    (_unused, index) => `           GO TO P-${String(index)}.`,
+  ).join("\n");
+  const paragraphs = Array.from(
+    { length: 12 },
+    (_unused, index) =>
+      `       P-${String(index)}.\n           DISPLAY "${String(index)}".`,
+  ).join("\n");
+
+  const RISKY = `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. RISKYP.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT LEDGER ASSIGN TO LEDGER.
+       PROCEDURE DIVISION.
+       A-START.
+           ALTER B-SWITCH TO PROCEED TO P-1.
+           CALL WS-PROGRAM-NAME.
+           EXEC CICS LINK PROGRAM('SUB') END-EXEC.
+${gotos}
+       B-SWITCH.
+           GO TO P-0.
+${paragraphs}`;
+
+  /**
+   * Risk lines only. Every report also carries `describeLimits()`, which is a
+   * bulleted list too — filtering on the bullet alone counted "what this tool
+   * does not know" as a risk the program carries.
+   */
+  const risksOf = (source: string, artifact: string) =>
+    renderInventory([analyseCobol(source, artifact)])
+      .split("\n")
+      .filter(
+        (line) =>
+          line.trimStart().startsWith("- `") && line.includes(`(${artifact})`),
+      );
+
+  it("names every risk the program actually carries", () => {
+    const reported = risksOf(RISKY, "risky.cbl").join("\n");
+    expect(reported).toContain("uses `ALTER`");
+    expect(reported).toContain("dynamic `CALL`");
+    expect(reported).toContain("`GO TO`s to somewhere that is not an exit");
+    expect(reported).toContain("paragraphs nothing reaches");
+    expect(reported).toContain("declares no `FILE STATUS`");
+    expect(reported).toContain("CICS command(s) with no `RESP`");
+  });
+
+  it("names none of them for a program that carries none", () => {
+    // A report that always warns is a report nobody reads.
+    expect(risksOf(CLEAN, "clean.cbl")).toEqual([]);
+  });
+
+  /**
+   * The one number in the report: more than ten `GO TO`s is called out, ten is
+   * not. A threshold nothing pins drifts, and `>=` reads the same as `>` on
+   * every program that is not sitting exactly on it.
+   */
+  it("calls out more than ten jumps, and not ten", () => {
+    const withJumps = (count: number) => {
+      const jumps = Array.from(
+        { length: count },
+        (_unused, index) => `           GO TO Q-${String(index)}.`,
+      ).join("\n");
+      const targets = Array.from(
+        { length: count },
+        (_unused, index) =>
+          `       Q-${String(index)}.\n           DISPLAY "x".`,
+      ).join("\n");
+      return `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. JUMPY.
+       PROCEDURE DIVISION.
+       A-START.
+${jumps}
+${targets}`;
+    };
+
+    const sentence = "`GO TO`s to somewhere that is not an exit";
+    expect(analyseCobol(withJumps(10), "j.cbl").jumps).toBe(10);
+    expect(risksOf(withJumps(10), "j.cbl").join("\n")).not.toContain(sentence);
+    expect(risksOf(withJumps(11), "j.cbl").join("\n")).toContain(sentence);
+  });
+});

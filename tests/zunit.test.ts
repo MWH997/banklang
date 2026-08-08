@@ -567,12 +567,40 @@ test acceptsAPositiveAmount for check {
     expect(bare.programName).toBe("PURECHEC");
   });
 
+  /**
+   * The nested programs the driver contains, exactly, for both shapes.
+   *
+   * Named as a list rather than as absences, because "does not contain
+   * BANKLEDG" is satisfied by a driver that emits a call counter for zero
+   * stubs — which is what flipping `if (stubbed.length > 0)` actually does,
+   * and why the first version of this test killed no mutants at all.
+   */
+  const programsIn = (driver: string) =>
+    [...driver.matchAll(/PROGRAM-ID\.\s+'?([A-Z0-9_-]+)'?\./g)].map(
+      (match) => match[1],
+    );
+
   it("declares no stub, and no stub bookkeeping with it", () => {
-    // The counters and the call-position tables exist to check expectations
-    // against stubs. With no stub they are storage nothing reads.
-    expect(bare.driver).not.toContain("BANKLEDG");
-    expect(bare.driver).not.toContain("BANKAUDT");
-    expect(bare.configuration).not.toContain("BANKLEDG");
+    expect(programsIn(bare.driver)).toEqual([
+      "TEST_ACCEPTSAPOSITIVEAMOUNT",
+      "BZU_TEST",
+      "BZU_INIT",
+      "BZU_TERM",
+    ]);
+  });
+
+  it("is the same driver plus stubs when the test expects calls", () => {
+    // The counter program exists to check call positions against stubs, so it
+    // arrives with them and not before.
+    expect(programsIn(GENERATED.driver)).toEqual([
+      "TEST_POSTSBOTHLEGS",
+      "BZU_TEST",
+      "BZU_INIT",
+      "BZU_TERM",
+      "PGM_BANKLEDG",
+      "PGM_BANKAUDT",
+      "GTMEMRC",
+    ]);
   });
 
   it("still enters the program under test", () => {

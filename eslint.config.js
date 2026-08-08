@@ -33,7 +33,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/node_modules/**",
-      ".stryker-tmp/**",
+      ".stryker-tmp*/**",
       "vendor-docs/**",
       "coverage/**",
       // Generated artifacts and inputs, which are not this project's source.
