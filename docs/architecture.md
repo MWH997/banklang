@@ -35,17 +35,35 @@ Responsibilities:
 - printing diagnostics
 - returning stable exit codes
 
-Commands:
+Commands, as `bankc` itself lists them:
 
-- `bankc check`
-- `bankc build`
-- `bankc emit cobol`
-- `bankc emit copybooks`
-- `bankc audit-report`
+- `bankc check <project>`
+- `bankc build <project>`
+- `bankc job <directory>`
+- `bankc analyse <file-or-directory>...`
+- `bankc emit cobol <project>`
+- `bankc emit copybooks <project>`
+- `bankc emit jcl <project>`
+- `bankc audit-report <project>`
+- `bankc verify <project>`
+- `bankc test <project>`
+- `bankc zunit <project>`
+- `bankc layout <project>`
 - `bankc doctor`
-- `bankc copybook inspect`
-- `bankc copybook types`
-- `bankc copybook diff`
+- `bankc copybook import <file>`
+- `bankc dclgen import <file>`
+- `bankc copybook inspect <file>`
+- `bankc copybook types <file>`
+- `bankc copybook diff <left> <right>`
+- `bankc explain [diagnostic-id]`
+- `bankc fmt <project|file.cbl> [--check]`
+- `bankc init <directory>`
+- `bankc config <project>`
+- `bankc version`
+
+`tests/architecture.test.ts` compares that list against the CLI's own help
+text in both directions, so a command this page omits fails the build and so
+does one it invents.
 
 ### `packages/parser`
 
@@ -132,68 +150,125 @@ Responsibilities:
 - source map output
 - golden-test compatibility
 
+### `packages/compiler`
+
+The pipeline as one call. `compile()` runs parse, typecheck, semantic
+analysis, lowering and emission, and returns the diagnostics, the COBOL, the
+copybooks, the JCL and the source map together. The CLI, the playground and
+the tests all enter here, so there is one order of phases rather than three.
+
 ### `packages/copybook`
 
 Responsibilities:
 
-- copybook AST
-- copybook parser
-- copybook generator
-- layout engine
-- field offset calculation
+- copybook parser, over the reference format
+- copybook import to BankTS records
+- DCLGEN import to BankTS records
+- layout engine: field offsets, byte lengths, alignment and slack
 - packed-decimal metadata
-- layout diffing
-- fixture generation
+- inspection and layout diffing of generated copybooks
 
-### `packages/db2`
+Db2, CICS and VSAM do not have packages of their own. Each is a set of
+constructs spread across the phases that have to agree about it: the syntax in
+`parser`, the types and host-variable rules in `typechecker`, the required
+error handling in `semantic-analyzer`, the shape in `ir`, and the emitted
+`EXEC SQL` / `EXEC CICS` blocks and `FILE-CONTROL` / `FD` entries in
+`cobol-backend`. A package per subsystem would have to reach into all five.
 
-Responsibilities:
-
-- embedded SQL model
-- host variable mapping
-- SQLCA generation
-- SQL diagnostics
-- precompile/bind metadata generation
-
-### `packages/cics`
+### `packages/precompiler`
 
 Responsibilities:
 
-- transaction model
-- COMMAREA/channel/container model
-- CICS command lowering
-- response-code diagnostics
-- syncpoint/rollback mapping
+- the Db2 and CICS precompile step over emitted COBOL
+- `CBL`/`PROCESS` compiler-option statement handling
+- what the translator leaves for the compiler to see
 
-### `packages/vsam`
+### `packages/cobol-runtime`
 
-Responsibilities:
+An interpreter for the COBOL this compiler emits: reference-format reader,
+tokenizer, statement parser, and a machine with the picture, packed-decimal
+and edited-field model behind it, plus files, cursors, the ledger and the
+audit log.
 
-- file declaration model
-- access mode model
-- file status checking
-- generated FILE-CONTROL and FD support
+It exists to disagree. Every example is executed twice, once by `cobc` and
+once here, and a test fails on any difference — which is what catches a defect
+that compiles and passes every static check.
 
 ### `packages/verifier`
 
 Responsibilities:
 
-- golden tests
-- source-vs-generated behavioural fixtures
-- decimal property tests
-- audit report validation
-- source-map validation
-- deterministic output validation
+- byte-for-byte comparison of two compilations
+- source-map coverage checking
 
-### `packages/lsp`
+The golden tests, decimal property tests and audit-schema checks are suites in
+`tests/`, not code in this package.
+
+### `packages/conformance-lint`
+
+Checks generated COBOL and JCL against the target's rules rather than against
+a style: reserved words, intrinsic function names, reference-format columns,
+and the constraints in [target conformance](target-conformance.md). This is
+what grades an example nothing local can compile.
+
+### `packages/zos-lint`
+
+Rules over emitted COBOL that only matter on z/OS — commarea writes, `CALL`
+operands, statement-level conventions the compiler is expected to honour.
+
+### `packages/zunit`
+
+Emits IBM zUnit test cases for a generated program, so the output can be
+tested by the target's own framework rather than only by this repository.
+
+### `packages/migration-analysis`
+
+Reads COBOL you already have: paragraph graph, file use, SQL use, CICS use,
+and an inventory. It states its own limits rather than guessing; see
+[migration analysis](migration-analysis.md).
+
+### `packages/formatter`
+
+Formats BankTS. One canonical form, printed from the AST, so `bankc fmt
+--check` is a build step rather than a preference.
+
+### `packages/diagnostics`
 
 Responsibilities:
 
-- editor integration
-- diagnostics
-- hover docs
-- go-to-definition
-- source-to-COBOL navigation
+- the diagnostic catalogue, keyed by stable ID
+- `explainDiagnostic`, behind `bankc explain`
+- reporters: text, JSON and SARIF
+- the compiler's own invariant failures, kept apart from user diagnostics
+
+No diagnostic can be emitted without a catalogue entry.
+
+### `packages/config`
+
+The `banklang.json` model, its JSON Schema, and the loader. The schema and the
+accepted values are generated from one table, so a profile cannot be offered
+by the schema and rejected by the loader.
+
+### `packages/language-server`
+
+An LSP server over stdio: diagnostics as you type, and the source-to-COBOL
+mapping the editor navigates by.
+
+### `packages/vscode-extension`
+
+The editor client: BankTS syntax, the language server above, and the COBOL a
+line produced.
+
+### `packages/playground`
+
+The whole compiler in a browser — no server and no network call. Editors for
+BankTS and the emitted COBOL, the source map as a click-through between them,
+and `Run` over `cobol-runtime`.
+
+### `packages/site`
+
+The static site: landing page, rendered documentation, blog, and the headers
+served with them.
 
 ## 3. Intermediate representation
 
@@ -261,14 +336,9 @@ Expected output:
 - no claim of production z/OS equivalence
 - useful for CI and local behavioural fixtures
 
-### `rocket-visual-cobol`
-
-Roadmap target.
-
-Expected output:
-
-- compatibility profile
-- useful for enterprise development environments
+There are two profiles and no others. `BACKEND_PROFILES` in
+`packages/config/src/index.ts` is the list, and the JSON Schema is generated
+from it.
 
 ## 5. Determinism requirements
 
@@ -331,8 +401,10 @@ dist/
   jcl/
   maps/
   audit/
-  tests/
+  zunit/
 ```
+
+`dist` is the default `outDir`; `banklang.json` and `--out` both move it.
 
 The audit folder must be machine-readable and human-readable.
 
