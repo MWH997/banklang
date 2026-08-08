@@ -170,6 +170,12 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "A line-sequential file from outside the mainframe, where every field has to be printable and a packed decimal is a compile error.",
     order: 24,
   },
+  "settlement-bill-file": {
+    title: "Settlement bill file",
+    blurb:
+      "One output file carrying a header, detail and trailer layout, chosen by the record's type at each write.",
+    order: 25,
+  },
 };
 
 function idFromPath(path: string): string {

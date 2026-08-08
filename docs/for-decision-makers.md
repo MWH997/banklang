@@ -78,13 +78,13 @@ a test fails if it drifts.
 
 | Grade        | Count | What it rules out                                                                   |
 | ------------ | ----- | ----------------------------------------------------------------------------------- |
-| **executed** | 22    | A defect that compiles. The program runs and its balances and branches are checked. |
+| **executed** | 23    | A defect that compiles. The program runs and its balances and branches are checked. |
 | **compiled** | 2     | A program the target would reject. Says nothing about what it computes.             |
 | **emitted**  | 0     | Nothing local compiles it; the conformance linter is what checks it.                |
 
 **"Executed" covers two strengths of evidence, and the difference matters.**
-Three of the twenty-one have expected balances somebody worked out by hand,
-which is the strongest thing this project has. The other eighteen are run twice
+Three of the twenty-three have expected balances somebody worked out by hand,
+which is the strongest thing this project has. The other twenty are run twice
 — once compiled by GnuCOBOL and once by a separate interpreter written against
 the same output — and required to agree. That catches a defect that compiles
 without anybody having to predict the answer, and it would not catch a program
