@@ -392,6 +392,36 @@ export function importCopybook(
     );
     const redefines = /\bREDEFINES\s+([A-Z0-9$#@-]+)/.exec(clauses);
 
+    /*
+     * An elementary item with no PICTURE, which is not a group.
+     *
+     * `05 RATE-FIELD COMP-1.` is a four-byte float and declares no picture,
+     * and reading "no PIC" as "group" imported it as an empty record: zero
+     * bytes, no problem reported, and every field after it at the wrong
+     * offset. `ACCOUNT-ID` following a `COMP-1` landed at offset 0 instead of
+     * 4. That is the one failure a copybook exists to prevent, and it was
+     * silent.
+     *
+     * None of these can be imported rather than refused. BankTS has no binary
+     * floating point — the reason is `docs/numeric-model.md`, and it is the
+     * same reason DCLGEN refuses `REAL` and `DOUBLE` — and an index or a
+     * pointer is a run-time address, not a value a record contract can carry.
+     */
+    const usageOnly =
+      /\bCOMP(?:UTATIONAL)?-[12]\b|\bINDEX\b|\b(?:PROCEDURE-|FUNCTION-)?POINTER\b|\bOBJECT\s+REFERENCE\b/.exec(
+        clauses,
+      );
+    if (usageOnly && !/\bPIC(?:TURE)?\b/.test(clauses)) {
+      const usage = usageOnly[0];
+      problems.push({
+        field: `${within}.${entry.name}`,
+        message: /COMP/.test(usage)
+          ? `${usage} is binary floating point, which BankTS does not have: a bank's arithmetic is decimal and exact. Importing it as a group would leave every field after it at the wrong offset.`
+          : `${usage} holds a run-time address rather than a value, so there is nothing to import. Reading it as a group would leave every field after it at the wrong offset.`,
+      });
+      return null;
+    }
+
     // A group item is a record of its own, declared before the one that holds
     // it so the reference resolves.
     const elementary = /\bPIC(?:TURE)?\b/.test(clauses);
