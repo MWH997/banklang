@@ -33,6 +33,8 @@ record Feed {
 record Master {
   masterAccount: string<16>;
   masterBalance: zoned<11, 2>;
+  masterOne: string<4>;
+  masterTwo: string<4>;
   idempotencyKey: string<36>;
 }
 
@@ -40,14 +42,16 @@ file feedIn sequential input record Feed status feedInStatus;
 file otherIn sequential input record Feed status otherInStatus;
 file store indexed update record Master key masterAccount status storeStatus;
 file trail sequential output record Feed status trailStatus;
+
+enum Kind { ONE, TWO }
 `;
 
 function ids(body: string, extra = ""): string[] {
   return compile(
     `${PREAMBLE}${extra}
-entry transaction handle(line: Feed, master: Master) {
+entry transaction handle(line: Feed, master: Master, chosen: Kind) {
 ${body}
-  audit("HANDLED", line.idempotencyKey);
+  audit("HANDLED", master.idempotencyKey);
 }`,
     { sourceFile: "outcomes.bank.ts" },
   ).diagnostics.map((entry) => entry.id);
@@ -359,5 +363,176 @@ entry transaction handle(line: Feed, master: Master) {
     expect(
       result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
     ).toHaveLength(1);
+  });
+});
+
+/**
+ * Which statements count as *using* what an operation left behind.
+ *
+ * Each of these was a surviving mutant: emptying the expression list for a
+ * ledger posting, an assignment, a split or a keyed read changed nothing that
+ * any test could see, which means the rule was not being checked there at all.
+ * A posting made from a record that was never read is the defect this exists
+ * for, so it is the one that most needed the test.
+ */
+describe("the statements that use a record", () => {
+  it("counts a ledger posting", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  debit(line.feedAccount, line.feedAmount);
+  credit("CASH", line.feedAmount);
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts an assignment out of the record", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  master.masterAccount = line.feedAccount;
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts an assignment into the record", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  line.feedAccount = "OVERWRITTEN";
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts a local declared from it", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  let taken: string<16> = line.feedAccount;
+  log "TAKEN ", taken;
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts a split of it", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  split line.feedAccount by "," into master.masterOne, master.masterTwo;
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts the key of another file's read", () => {
+    expect(
+      outcomes(`  open feedIn;
+  open store;
+  read feedIn into line;
+  read store into master key line.feedAccount;
+  if storeStatus == "00" {
+    log "FOUND ", master.masterAccount;
+  }
+  close store;
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts an audit correlation", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  audit("EARLY", line.idempotencyKey);
+  close feedIn;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+});
+
+/**
+ * A routine that ends with the outcome outstanding, and nothing having used the
+ * record at all. Every other fail case above reports through the record; this
+ * one reports through the end of the routine, and mutating that check away left
+ * every test still passing.
+ */
+describe("reaching the end with the outcome outstanding", () => {
+  it("reports a transaction that read and never looked", () => {
+    const result = compile(
+      `${PREAMBLE}
+entry transaction handle(line: Feed, master: Master) {
+  open feedIn;
+  read feedIn into line;
+  close feedIn;
+  audit("HANDLED", master.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+});
+
+/** The outcomes of the operations the earlier cases did not reach. */
+describe("every operation that leaves an outcome", () => {
+  it("reports a rewrite on an indexed file", () => {
+    expect(
+      outcomes(`  open store;
+  read store into master key line.feedAccount;
+  if storeStatus == "00" {
+    rewrite store from master;
+  }
+  close store;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("reports a delete on an indexed file", () => {
+    expect(
+      outcomes(`  open store;
+  read store into master key line.feedAccount;
+  if storeStatus == "00" {
+    delete store key master.masterAccount;
+  }
+  close store;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+});
+
+/**
+ * A fact is discharged after a branch only when every path through it
+ * discharged it, which is the whole reason this is a walk rather than a scan.
+ */
+describe("merging the state at a join", () => {
+  it("is clean when both branches test the status", () => {
+    expect(
+      clean(`  open feedIn;
+  read feedIn into line;
+  if master.masterBalance > 0.00 {
+    if feedInStatus == "00" {
+      log "POSITIVE ", line.feedAccount;
+    }
+  } else {
+    if feedInStatus == "00" {
+      log "OTHER ", line.feedAccount;
+    }
+  }
+  close feedIn;`),
+    ).toEqual([]);
+  });
+
+  it("reaches inside a switch", () => {
+    expect(
+      outcomes(
+        `  open feedIn;
+  read feedIn into line;
+  switch chosen {
+    case ONE {
+      log "ONE ", line.feedAccount;
+    }
+    case TWO {
+      log "TWO ", line.feedAccount;
+    }
+  }
+  close feedIn;`,
+      ).length,
+    ).toBe(1);
   });
 });
