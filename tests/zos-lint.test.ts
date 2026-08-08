@@ -407,3 +407,70 @@ ${body}
     expect(answered("           MOVE DFHCOMMAREA TO REPLY-REC.")).toBe(false);
   });
 });
+
+/**
+ * How a statement is put back together before any rule reads it.
+ *
+ * Every rule here asks a question that spans a wrap — `CALL "MQCONN" USING`
+ * carries four operands and the fourth is regularly on the next line — so the
+ * reconstruction in `statements.ts` is what all of them stand on. The mutation
+ * lane found its comment and blank-line skipping surviving, and the
+ * checked-in artifacts are all emitter output, which never wraps in the places
+ * a person would.
+ *
+ * The last case is the one that matters most: commented-out code must not
+ * satisfy a rule. A linter that reads a `*` line as a statement can be silenced
+ * by commenting out the thing it is asking for.
+ */
+describe("reconstructing a statement from reference format", () => {
+  const program = (procedure: string) => `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CICSP.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-A            PIC S9(9) COMP-3 VALUE ZERO.
+       01  REPLY-REC.
+           05  RP-RESULT   PIC S9(9) COMP-3.
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05  CA-RESULT   PIC S9(9) COMP-3.
+       PROCEDURE DIVISION.
+       A-MAIN.
+${procedure}
+           MOVE REPLY-REC TO DFHCOMMAREA.
+`;
+
+  const answered = (procedure: string) =>
+    lintZos("C.cbl", program(procedure)).filter(
+      (finding) => finding.rule === "cics-commarea-answered",
+    ).length === 0;
+
+  it("reads a statement written on one line", () => {
+    expect(answered("           MOVE WS-A TO RP-RESULT.")).toBe(true);
+  });
+
+  it("joins a statement continued on the next line", () => {
+    expect(answered("           MOVE WS-A\n               TO RP-RESULT.")).toBe(
+      true,
+    );
+  });
+
+  it("is not interrupted by a comment or a blank line", () => {
+    expect(
+      answered("      * a comment\n           MOVE WS-A TO RP-RESULT."),
+    ).toBe(true);
+    expect(answered("\n           MOVE WS-A TO RP-RESULT.")).toBe(true);
+  });
+
+  it("reads a write that happens inside an EXEC block", () => {
+    expect(
+      answered(
+        "           EXEC CICS READ FILE('F')\n               INTO(RP-RESULT) END-EXEC.",
+      ),
+    ).toBe(true);
+  });
+
+  it("does not accept commented-out code as the program doing it", () => {
+    // Otherwise the rule is silenced by commenting out what it asks for.
+    expect(answered("      *    MOVE WS-A TO RP-RESULT.")).toBe(false);
+  });
+});
