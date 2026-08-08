@@ -56,6 +56,7 @@
     "horizontal:report": "tsx tools/horizontal-report.ts",
     "horizontal:run": "tsx tools/horizontal-run.ts",
     "horizontal:snapshot": "tsx tools/horizontal-snapshot.ts",
+    "interpreter:coverage": "tsx tools/interpreter-coverage.ts",
     "lint": "eslint .",
     "lint:conformance": "tsx tools/conformance-lint.ts",
     "lint:fix": "eslint . --fix",

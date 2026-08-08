@@ -49,6 +49,7 @@ evidence/horizontal/**
 # whenever nothing had changed.
 docs/validation/horizontal-validation-results.md
 docs/validation/horizontal-defect-coverage.md
+docs/validation/interpreter-coverage.md
 *.jcl
 
 # Working papers. Not in the repository — `.gitignore` excludes the directory —
