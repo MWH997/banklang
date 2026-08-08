@@ -96,6 +96,9 @@ export {
   isLegalDdName,
 } from "./dd-names";
 
+export { CAPABILITIES } from "./capabilities";
+export type { Capability } from "./capabilities";
+
 export { blockerFor, TASK_BLOCKERS } from "./task-blockers";
 export type { BlockerKind, TaskBlocker } from "./task-blockers";
 
