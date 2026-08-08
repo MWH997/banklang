@@ -437,7 +437,7 @@ function unused(): bool {
     expect(classifyProgram({ move: 9, alter: 1 }).verdict).toBe(
       "unsupported-by-design",
     );
-    expect(classifyProgram({ move: 9, inspect: 1 }).verdict).toBe(
+    expect(classifyProgram({ move: 9, "file-relative": 1 }).verdict).toBe(
       "unsupported-not-yet-implemented",
     );
     expect(classifyProgram({ move: 9, "go-to": 1 }).verdict).toBe(

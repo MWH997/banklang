@@ -226,19 +226,36 @@ export const SUPPORT_RULES: SupportRule[] = [
   {
     feature: "string-unstring",
     support: "adaptation",
-    note: "`split` covers UNSTRING's common form and string building is by concatenation; STRING's full `POINTER`/`OVERFLOW` machinery has no direct equivalent.",
+    note: "`concat` lowers to STRING DELIMITED BY SIZE (973 corpus statements) and `split ... by ... into` to UNSTRING with one delimiter (262). The POINTER, OVERFLOW, multiple-delimiter and DELIMITED BY ALL forms have no BankTS equivalent.",
     desirable: true,
   },
   {
     feature: "inspect",
-    support: "unsupported-not-yet-implemented",
-    note: "INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.",
+    support: "adaptation",
+    /*
+     * This row said `unsupported-not-yet-implemented` and "No BankTS syntax",
+     * and both halves were wrong. `countOf(text, ch)` lowers to `INSPECT ...
+     * TALLYING ... FOR ALL` and `replaceChars(text, from, to)` lowers to
+     * `INSPECT ... CONVERTING`; both have been in the language and in
+     * `docs/language/functions.md` throughout.
+     *
+     * `adaptation` rather than `supported`, from the measured forms in
+     * `evidence/horizontal/xcobol-v2/string-usage.json`: 1,007 TALLYING and 105
+     * CONVERTING statements are covered, and 780 REPLACING and 625 with a
+     * BEFORE/AFTER range are not. A program using those has to be restructured
+     * rather than translated, which is what `adaptation` means.
+     *
+     * The same class of error as the line-sequential row, in the other
+     * direction: a rule written from the inside, understating the compiler
+     * instead of flattering it. Both distort a published number.
+     */
+    note: "`countOf` lowers to INSPECT TALLYING FOR ALL and `replaceChars` to INSPECT CONVERTING. REPLACING, and the BEFORE/AFTER ranges, have no BankTS form — 780 and 625 statements in the corpus respectively.",
     desirable: true,
   },
   {
     feature: "reference-modification",
     support: "adaptation",
-    note: "The backend emits `field(start:length)` where it needs a substring, and BankTS exposes the operation through string builtins rather than by offset arithmetic on a declared field.",
+    note: "`substring(text, start, length)` takes constant bounds only — every out-of-range constant is `BANK-TYPE-003` at compile time and a computed bound is refused outright. That covers 194 of the 661 corpus files using reference modification; the other 451 use at least one dynamic bound and have to be restructured.",
     desirable: true,
   },
   {
