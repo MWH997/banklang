@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { compile } from "../packages/compiler/src/index";
+
 import {
   APPLICABILITY_RULES,
   CORPORA,
@@ -389,18 +391,43 @@ describe("what BankTS can express", () => {
     expect(supportFor("usage-pointer")?.support).toBe("unsupported-by-design");
   });
 
-  it("does not claim line-sequential files, which the emitter cannot produce", () => {
+  it("claims line-sequential only because the emitter really produces it", () => {
     /*
-     * The regression this whole file is most for.
+     * The regression this file is most for, in its second form.
      *
-     * This rule said `supported` because `LINE SEQUENTIAL` appears in the
-     * repository — in five hand-written reference modules under `runtime/`,
-     * never from the emitter. Marking it supported raised the X-COBOL
-     * representability figure by 155 files against nothing.
+     * This rule said `supported` once on the strength of `LINE SEQUENTIAL`
+     * appearing in the repository — in five hand-written reference modules
+     * under `runtime/`, never from the emitter — and it inflated the X-COBOL
+     * figure by 155 files. It is `supported` again now, and the difference is
+     * that the compiler backs it.
+     *
+     * So the assertion is the fact rather than the string: ask the compiler for
+     * a line-sequential file and check what it emits. A rule that flips to
+     * `supported` without the emitter following fails here.
      */
-    expect(supportFor("file-line-sequential")?.support).toBe(
-      "unsupported-not-yet-implemented",
+    expect(supportFor("file-line-sequential")?.support).toBe("supported");
+
+    const emitted = compile(
+      `module Feed;
+
+record FeedLine {
+  feedAccount: string<10>;
+}
+
+file feedInput lineSequential input record FeedLine status feedInputStatus;
+
+function unused(): bool {
+  return true;
+}
+`,
+      { sourceFile: "feed.bank.ts" },
     );
+    expect(
+      emitted.diagnostics.filter(
+        (diagnostic) => diagnostic.severity === "error",
+      ),
+    ).toEqual([]);
+    expect(emitted.cobol).toContain("ORGANIZATION IS LINE SEQUENTIAL");
   });
 
   it("takes the pessimistic verdict when a program mixes support levels", () => {

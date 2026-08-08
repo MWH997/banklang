@@ -77,7 +77,6 @@ export {
   classifyTask,
   needsLineSequential,
   APPLICABILITY_RULES,
-  LINE_SEQUENTIAL_EXCLUSION,
 } from "./applicability";
 export type { ApplicabilityRule, ApplicabilityVerdict } from "./applicability";
 

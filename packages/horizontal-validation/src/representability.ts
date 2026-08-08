@@ -305,24 +305,23 @@ export const SUPPORT_RULES: SupportRule[] = [
   },
   {
     feature: "file-line-sequential",
-    support: "unsupported-not-yet-implemented",
+    support: "supported",
     /*
-     * This row said `supported` until somebody tried to use it.
+     * Implemented 2026-08-08, and this row is the record of both halves.
      *
-     * The claim was written from the fact that `LINE SEQUENTIAL` appears in
-     * this repository's COBOL — and it does, in the five hand-written reference
-     * modules under `runtime/`. The *emitter* has never produced it: BankTS
-     * offers `sequential`, `indexed` and `relative`, every generated FD carries
-     * `RECORDING MODE IS F`, and there is no syntax that asks for a
-     * newline-delimited file.
+     * It said `supported` first on the strength of `LINE SEQUENTIAL` appearing
+     * in this repository — in five hand-written reference modules under
+     * `runtime/`, never from the emitter. Horizontal validation caught that by
+     * trying to implement a CobolCodeBench task and finding nowhere to put the
+     * input, and the row was corrected to `unsupported-not-yet-implemented`.
      *
-     * It was caught by attempting a CobolCodeBench task, every one of which
-     * reads a text file, and finding there was no way to declare one. That is
-     * the whole argument for horizontal validation in one row: a rule written
-     * from the inside was wrong in the flattering direction, and only an
-     * outside program showed it.
+     * It is now genuinely supported: `file f lineSequential input record R`
+     * parses, typechecks under the restrictions Enterprise COBOL puts on the
+     * organization, emits `ORGANIZATION IS LINE SEQUENTIAL`, allocates a z/OS
+     * UNIX path in the generated JCL, and executes identically under `cobc` and
+     * the interpreter. See `tests/line-sequential.test.ts`.
      */
-    note: "The emitter has no line-sequential organization. `sequential` is `RECORDING MODE IS F` — fixed-length records with no terminator — so a newline-delimited text file cannot be declared or read.",
+    note: "`lineSequential`, for a newline-delimited text file. A record may hold only DISPLAY items, which Enterprise COBOL requires and BankTS enforces: `decimal` is packed by default and is a compile error here.",
     desirable: true,
   },
   {

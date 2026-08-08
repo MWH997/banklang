@@ -42,8 +42,6 @@ import { tmpdir } from "node:os";
 import {
   checkTallyIsComplete,
   classifyTask,
-  needsLineSequential,
-  LINE_SEQUENTIAL_EXCLUSION,
   compareEngines,
   compareRun,
   isOracleDerivable,
@@ -133,18 +131,10 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     ...extra,
   });
 
-  // The file organization is decided from the task's own data, before the
-  // prose rules run: a newline in any payload means a record separator BankTS
-  // cannot declare, whatever the file is called.
-  const verdict = needsLineSequential([
-    task.spec.inputs,
-    task.spec.expectedOutputs,
-  ])
-    ? {
-        applicability: "unsupported-not-yet-implemented" as const,
-        unsupported: LINE_SEQUENTIAL_EXCLUSION,
-      }
-    : classifyTask(task.spec.specification, task.implementation !== null);
+  const verdict = classifyTask(
+    task.spec.specification,
+    task.implementation !== null,
+  );
   if (verdict.applicability !== "applicable") {
     return finish(
       verdict.applicability,

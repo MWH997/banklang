@@ -116,34 +116,29 @@ export interface ApplicabilityVerdict {
 }
 
 /**
- * Whether a task's files are newline-delimited, which BankTS cannot declare.
+ * Whether a task's files are newline-delimited.
+ *
+ * Kept, and no longer an exclusion. This decided the whole of CobolCodeBench's
+ * applicability until 2026-08-08: every one of the 46 tasks reads a text file,
+ * BankTS had no line-sequential organization, and so nothing in that corpus was
+ * expressible. The evidence is what prompted the feature — see
+ * `docs/language/files.md` — and the organization now exists.
+ *
+ * The predicate stays because the *shape* of the finding is still worth
+ * measuring, and because a caller may want to know which tasks need it. What
+ * changed is the answer to "and can BankTS do that", which is now yes.
  *
  * Decided from the data rather than from the file name. The first version of
  * this rule matched `*.txt` in the specification and missed nineteen tasks
  * whose files are called `task_func23_inp` — extensionless, and every bit as
  * line-delimited. A rule that depends on somebody's naming habit is a rule that
- * silently under-reports, and under-reporting here moved real exclusions into
- * `not-yet-authored`, which reads as "somebody could write this".
- *
- * BankTS declares files as `sequential`, `indexed` or `relative`, and the
- * emitter writes `RECORDING MODE IS F` for all three: fixed-length records,
- * no terminator. So a file whose records are separated by newlines has no
- * BankTS declaration — which is what a `\n` anywhere in the payload means.
+ * silently under-reports.
  */
 export function needsLineSequential(files: Record<string, string>[]): boolean {
   return files.some((group) =>
     Object.values(group).some((content) => content.includes("\n")),
   );
 }
-
-/** The exclusion recorded for a task whose files are newline-delimited. */
-export const LINE_SEQUENTIAL_EXCLUSION: UnsupportedReason = {
-  construct: "line-sequential text files",
-  reason:
-    "The task's contract is a newline-delimited text file. BankTS declares files as `sequential`, `indexed` or `relative`, and the emitter writes `RECORDING MODE IS F` for all three — fixed-length records with no terminator — so there is no way to declare the file this task reads. Nothing about the language's aims forbids it; the organization simply does not exist yet, which is why this is `not-yet-implemented` rather than `by-design`.",
-  desirable: true,
-  fundamental: false,
-};
 
 /**
  * A task's verdict from its own text.
