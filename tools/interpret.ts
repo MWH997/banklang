@@ -112,11 +112,22 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
 
   // Input files, keyed by DD name exactly as `runConformance` writes them into
   // the working directory.
+  //
+  // How the bytes are split into records depends on the organization, and
+  // getting it wrong is not a small error. A LINE SEQUENTIAL file's records end
+  // at a newline; splitting one at a fixed width puts the newline inside record
+  // two and shifts every record after it by a byte. That is exactly what
+  // happened the first time a line-sequential program was run through here —
+  // `cobc` produced the right file and the interpreter produced a shifted one,
+  // and the difference was reported as a semantic divergence in the compiler
+  // rather than in this harness.
   const files = new Map<string, Uint8Array[]>();
   for (const [ddName, bytes] of Object.entries(options.inputs ?? {})) {
     files.set(
       ddName,
-      fixedRecords(new Uint8Array(bytes), recordLength(cobol, ddName)),
+      isLineSequential(cobol, ddName)
+        ? lineRecords(Buffer.from(bytes).toString("latin1"))
+        : fixedRecords(new Uint8Array(bytes), recordLength(cobol, ddName)),
     );
   }
 
@@ -164,9 +175,25 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
   const outputs = new Map<string, Buffer>();
   for (const ddName of options.outputs ?? []) {
     const records = run.files.get(ddName) ?? [];
+    const parts = records.map((record) => Buffer.from(record));
+    /*
+     * A line-sequential file is records *and* the delimiters between them.
+     *
+     * The interpreter holds a file as a list of records, which is right, and
+     * this used to flatten them by concatenation — correct for a fixed-length
+     * dataset, where the record length is the boundary, and wrong for a text
+     * file, where the newline is. Every record ran into the next one, and the
+     * comparison against `cobc` reported it as a semantic divergence in the
+     * compiler.
+     *
+     * Enterprise COBOL writes the delimiter after each record, including the
+     * last, so the file ends with one.
+     */
     outputs.set(
       ddName,
-      Buffer.concat(records.map((record) => Buffer.from(record))),
+      isLineSequential(cobol, ddName)
+        ? Buffer.concat(parts.flatMap((part) => [part, Buffer.from("\n")]))
+        : Buffer.concat(parts),
     );
   }
 
@@ -199,6 +226,22 @@ function linesOf(run: RunResult, file: string): string[] {
  * plausible and collectively wrong — the hardest kind of difference to find in
  * a comparison against another implementation.
  */
+/**
+ * True when the DD names a file the program declared LINE SEQUENTIAL.
+ *
+ * Read out of the generated SELECT rather than passed in, for the same reason
+ * `recordLength` is: the program is what decides, and a caller that had to
+ * repeat the organization could disagree with the program about it.
+ */
+export function isLineSequential(cobol: string, ddName: string): boolean {
+  const flat = cobol.replace(/\s+/g, " ");
+  const select = new RegExp(
+    `SELECT\\s+(?:OPTIONAL\\s+)?[A-Z0-9-]+\\s+ASSIGN\\s+TO\\s+${ddName}\\b([^.]*)`,
+    "i",
+  ).exec(flat);
+  return /ORGANIZATION\s+IS\s+LINE\s+SEQUENTIAL/i.test(select?.[1] ?? "");
+}
+
 function recordLength(cobol: string, ddName: string): number {
   const select = new RegExp(
     `SELECT\\s+([A-Z0-9-]+)\\s+ASSIGN\\s+TO\\s+${ddName}\\b`,
