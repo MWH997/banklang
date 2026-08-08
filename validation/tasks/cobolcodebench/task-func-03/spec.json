@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_03",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_03",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that follows the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION). Adhere to COBOL formatting conventions, using Area A (columns 8-11) for division headers and paragraph names, and Area B (columns 12-72) for statements. Apply standard COBOL indentation, especially within the PROCEDURE DIVISION, to enhance readability.\n\nThe program should read a line of input from a file named \"task_func03_inp\". This input line will contain three single-digit numbers separated by commas. The program should validate that the input numbers are unique, positive, and that all three numbers are provided. If the input is invalid, display an appropriate error message.\n\nFor valid input, the program should calculate the factorial of each input number and compute the sum of these factorials. Write this factorial sum to an output file named \"task_func03_out1\".\n\nAdditionally, the program should generate all possible permutations of the three input numbers, formatting each permutation as \"(X, Y, Z)\" where X, Y, and Z represent the numbers in a specific order. Write these formatted permutations, one per line, to a second output file named \"task_func03_out2\".\n\nAfter processing the input, the program should close all files and terminate gracefully. The program's purpose is to demonstrate basic input validation, mathematical calculations (factorials), and generation of permutations in COBOL, while adhering to COBOL coding standards and best practices.\n\nCode:\n",
+  "inputs": {
+    "task_func03_inp": "0,2,3"
+  },
+  "expectedOutputs": {
+    "task_func03_out1": "0000000009\n",
+    "task_func03_out2": "(0, 2, 3)\n(0, 3, 2)\n(2, 3, 0)\n(2, 0, 3)\n(3, 2, 0)\n(3, 0, 2)\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

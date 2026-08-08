@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_43",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_43",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads a file named 'input.txt' containing numbers, determines which numbers are prime, and writes the prime numbers to an output file named 'output.txt'. \n\nThe program should have an IDENTIFICATION DIVISION, ENVIRONMENT DIVISION, DATA DIVISION, and PROCEDURE DIVISION, adhering to standard COBOL structure. Use appropriate indentation, especially in the PROCEDURE DIVISION, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72).\n\nIn the ENVIRONMENT DIVISION, define SELECT statements for the input and output files. \n\nIn the DATA DIVISION, define the file and record formats for the input and output files in the FILE SECTION. Define any necessary working storage variables in the WORKING-STORAGE SECTION.\n\nIn the PROCEDURE DIVISION, include paragraphs to open input/output files, read the input file, check each number for primality, write prime numbers to the output file, and close files when done. The program should handle end-of-file conditions gracefully.\n\nFocus on creating a well-structured COBOL program that achieves the desired functionality of identifying and outputting prime numbers from an input file. Choose appropriate data types and an efficient algorithm for primality testing.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "00001\n00004\n00003\n00006\n00008\n00023\n00034\n00036\n00043\n00067\n00056"
+  },
+  "expectedOutputs": {
+    "output.txt": "00003\n00023\n00043\n00067\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

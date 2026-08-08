@@ -1,0 +1,19 @@
+{
+  "id": "cobolcodebench/task_func_44",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_44",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that analyzes an input article file ('article.ps') and generates an output file ('output.ps') containing unique words from the article along with their frequencies. The program should also write log messages to a separate log file ('logfile.ps').\n\nThe program should adhere to the following COBOL-specific requirements:\n1. Use the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION). \n2. Follow COBOL coding conventions for Area A (columns 8-11) and Area B (columns 12-72).\n3. Apply proper COBOL indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n4. Declare necessary variables, tables, and file definitions in the appropriate sections of the DATA DIVISION.\n\nThe program should perform these high-level steps:\n1. Open the input article file, output frequency file, and log file. \n2. Read the article title and content from the input file.\n3. Check if the title contains specific keywords. If found, process the article content.\n4. Remove punctuation from the content and count the frequency of each unique word.\n5. Write the unique words and their frequencies to the output file.\n6. Write informative log messages to the log file to track program progress.\n7. Close all files and stop the program.\n\nEnsure the program is a compilable COBOL program that efficiently processes the input article file and generates the word frequency output file and log file as described.\n\nCode:\n",
+  "inputs": {
+    "article.ps": "what an opportunity to convert python like codes to cobol based on the cobol instruction",
+    "temp.ps": "team,goals,penalties\nTeam A              005002\nTeam C              002002\nTeam F              001001\n\nTeam B              002000\nTeam D              000003\nTeam E              002001\n"
+  },
+  "expectedOutputs": {
+    "output.ps": "o                   0001\ncobol               0002\nbased               0001\non                  0001\nthe                 0001\ninstruction         0001\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n                    0000\n",
+    "logfile.ps": "Starting program initialization\nInitialization complete\nProcessing article\nFound keyword match in title\nProcessing content words\nCounting word frequency\nCounting word frequency\nCounting word frequency\nCounting word frequency\nCounting word frequency\nCounting word frequency\nCounting word frequency\nWriting output file\nPerforming cleanup\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

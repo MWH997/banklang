@@ -1,0 +1,32 @@
+[
+  {
+    "feature": "go-to",
+    "support": "adaptation",
+    "files": 25,
+    "share": "47.2%"
+  },
+  {
+    "feature": "usage-index",
+    "support": "adaptation",
+    "files": 4,
+    "share": "7.5%"
+  },
+  {
+    "feature": "string-unstring",
+    "support": "adaptation",
+    "files": 3,
+    "share": "5.7%"
+  },
+  {
+    "feature": "reference-modification",
+    "support": "adaptation",
+    "files": 1,
+    "share": "1.9%"
+  },
+  {
+    "feature": "perform-thru",
+    "support": "adaptation",
+    "files": 1,
+    "share": "1.9%"
+  }
+]

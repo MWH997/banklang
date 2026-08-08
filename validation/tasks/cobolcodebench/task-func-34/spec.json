@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_34",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_34",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that calculates customer bills based on sales data. The program should:\n\n1. Follow the standard COBOL division structure with IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISIONS. \n\n2. Adhere to COBOL formatting conventions, using Area A for division and paragraph headers and Area B for statements.\n\n3. Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to improve readability.\n\nThe program will:\n- Read a sales tax file ('task_func34_inp1') containing zip codes and tax rates. \n- Read a customer file ('task_func34_inp2') with customer number, unit price, quantity purchased, address, and zip code.\n- Calculate the subtotal (unit price * quantity), then look up the tax rate by the customer's zip code to calculate tax and total amount due.\n- Write a formatted bill file ('task_func34_out1') displaying the customer number, unit price, quantity, calculated sales tax amount, and total amount due.\n\nEnsure the program efficiently reads the input files, performs the tax and total calculations, and generates a properly formatted bill file as output, without any extraneous functionality beyond the core requirements.\n\nCode:\n",
+  "inputs": {
+    "task_func34_inp1": "99501,046\n85001,023",
+    "task_func34_inp2": "12345,01299,002,XYZ                 ,99501\n67890,05834,004,ABC                 ,85001"
+  },
+  "expectedOutputs": {
+    "task_func34_out1": "                  CUSTOMER       UNIT PRICE          QTY             SALES TAX               TOTAL\n\n\n                  12345          012.99            2               1.19                 27.17\n\n                  67890          058.34            4               5.36                238.72\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

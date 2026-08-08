@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_18",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_18",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads customer records from an input file named 'task_func18_inp', formats the data into mailing labels, and writes the formatted labels to an output file named 'task_func18_out'. \n\nThe program should follow the standard COBOL division structure with IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION. Adhere to COBOL coding conventions, placing division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72). Use consistent indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nThe input file contains records with customer name, street address, city, state, and zip code. The program should create mailing labels with the customer name, address, city, state and zip duplicated side-by-side. Separate the labels with a line of dashes. \n\nIn the DATA DIVISION, define the record layouts for reading the input file and writing the formatted labels to the output file. In the PROCEDURE DIVISION, include paragraphs to open the files, read and process each input record, format and write the mailing label lines, and close the files after processing.\n\nThe program should be complete, self-contained and ready to compile and execute, reading from the specified input file and producing the formatted mailing labels in the output file.\n\nCode:\n",
+  "inputs": {
+    "task_func18_inp": "CUSTOMER1           ,123 CROSS ST        ,NEW YORK  ,NY ,10158\nCUSTOMER2           ,456 MAIN ST         ,MIAMI     ,FL ,33431 "
+  },
+  "expectedOutputs": {
+    "task_func18_out": "--------------------------------------------------------------------------------\nCUSTOMER1                           CUSTOMER1\n123 CROSS ST                        123 CROSS ST\nNEW YORK  ,NY,10158                 NEW YORK  ,NY,10158\n--------------------------------------------------------------------------------\nCUSTOMER2                           CUSTOMER2\n456 MAIN ST                         456 MAIN ST\nMIAMI     ,FL,33431                 MIAMI     ,FL,33431\n--------------------------------------------------------------------------------\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

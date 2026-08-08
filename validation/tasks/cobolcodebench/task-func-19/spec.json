@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_19",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_19",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that calculates statistics (mean, median, and standard deviation) from employee salary data read from an input file. The program should follow standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION) and formatting conventions (Area A for division and paragraph headers, Area B for statements). Use appropriate indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nThe program should:\n1. Read employee records containing name, age, and salary from an input file named 'M3input.ps'. \n2. Store the salary values in a working storage array.\n3. Sort the salary array in ascending order.\n4. Calculate the mean, median, and standard deviation of the salaries.\n5. Write the calculated statistics to an output file named 'M3output.ps', with each statistic on a separate line preceded by its name.\n\nEnsure the program follows COBOL best practices for structure, naming, and data handling. The solution should be a complete, executable COBOL program that reads the input, processes the data, and produces the expected output file.\n\nCode:\n",
+  "inputs": {
+    "M3input.ps": "John                305000000   \nBob                 356000000\nDavid               325800000\nMichael             406500000\nChris               295400000\nKaren               366100000"
+  },
+  "expectedOutputs": {
+    "M3output.ps": "MEAN      497142857\nMEDIAN    540000000\nSTD DEV   000196847\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

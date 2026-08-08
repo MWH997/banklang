@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_30",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_30",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads text from an input file named \"input.txt\", counts the frequency of each unique word, and writes the words and their frequencies to an output file named \"output.txt\". \n\nThe program should follow the standard COBOL division structure:\n- IDENTIFICATION DIVISION with PROGRAM-ID and AUTHOR\n- ENVIRONMENT DIVISION to define input and output files \n- DATA DIVISION to define variables, tables, and file record layouts\n- PROCEDURE DIVISION containing the main program logic\n\nAdhere to COBOL coding conventions:\n- Division headers and paragraph names in Area A (columns 8-11) \n- Statements in Area B (columns 12-72)\n- Use consistent indentation, especially in PROCEDURE DIVISION, to improve readability\n\nThe program should:\n1. Open the input file, read it line by line, and break each line into individual words\n2. Build a table to store each unique word and a count of its occurrences \n3. Write each unique word and its final frequency count to the output file\n4. Close the files and stop the program\n\nHandle potential errors with input and output files gracefully. Use descriptive variable and paragraph names to make the code self-documenting.\n\nThe input will be plain text. The output should list each unique word in the input along with the number of times it occurred, one word per line, in the format:\nword - frequency\n\nCode:\n",
+  "inputs": {
+    "input.txt": "I am a IT resource working in IT company in Bangalore . Bangalore is a beautiful city."
+  },
+  "expectedOutputs": {
+    "output.txt": " IT                            - 00002\n Bangalore                     - 00002\n a                             - 00002\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

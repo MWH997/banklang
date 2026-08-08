@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-85",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/85",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: add\n\nBehaviour, as the benchmark states it:\n\nGiven a non-empty list of integers lst. add the even elements that are at odd indices..\n\n\n Examples:\n add([4, 2, 6, 7]) ==> 2\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-LST OCCURS 4 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

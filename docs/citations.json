@@ -1,5 +1,5 @@
 {
-  "checked": "2026-08-06",
+  "checked": "2026-08-08",
   "citations": {
     "https://common-changelog.org/": "Common Changelog",
     "https://ecma-international.org/publications-and-standards/standards/ecma-426/": "ECMA-426 - Ecma International",
@@ -9,11 +9,14 @@
     "https://github.com/nlopez59/myapp": "GitHub - nlopez59/myapp: a simple mainframe app repo · GitHub",
     "https://github.com/openmainframeproject/cobol-check": "GitHub - openmainframeproject/cobol-check: A testing framework for Cobol applications · GitHub",
     "https://github.com/openmainframeproject/cobol-programming-course": "GitHub - openmainframeproject/cobol-programming-course: Training materials and labs for a \"Getting Started\" level course on COBOL · GitHub",
+    "https://github.com/PhaseChangeSoftware/cobol-defects-suite": "GitHub - PhaseChangeSoftware/cobol-defects-suite: An open-source collection of COBOL programs containing real-world defects and their fixes, designed to support tool development, testing, and developer training. · GitHub",
     "https://github.com/rbsmall/retirementCalculator": "GitHub - rbsmall/retirementCalculator: Sample retirement calculator project · GitHub",
     "https://github.com/Vijayalakshmie/SampleMortgage": "GitHub - Vijayalakshmie/SampleMortgage · GitHub",
     "https://github.com/wfezzani/genapp-demo": "GitHub - wfezzani/genapp-demo · GitHub",
+    "https://github.com/zorse-project/COBOLEval": "GitHub - zorse-project/COBOLEval: Evaluate LLM-generated COBOL · GitHub",
     "https://gnucobol.sourceforge.io/": "GnuCOBOL - GNU Project",
     "https://gnucobol.sourceforge.io/guides.html": "GnuCOBOL Guides",
+    "https://huggingface.co/datasets/harshini-kumar/CobolCodeBench": "harshini-kumar/CobolCodeBench · Datasets at Hugging Face",
     "https://ibm.github.io/zopeneditor-about/Docs/introduction.html": "Introduction | IBM Z® Open Editor",
     "https://img.shields.io/badge/license-MIT-blue.svg": "license: MIT",
     "https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg": "node: ≥24",
@@ -60,6 +63,7 @@
     "https://www.ibm.com/docs/en/zos/3.1.0?topic=zos-introduction": "Introduction",
     "https://www.ibm.com/products/cobol-compiler-zos": "IBM Enterprise COBOL for z/OS",
     "https://www.ibm.com/support/pages/system/files/inline-files/Integrating%20IBM%20zUnit%20Testing%20into%20an%20open%20and%20modern%20CICD%20pipeline%20-%20v1.2_0.pdf": "(PDF)",
-    "https://www.typescriptlang.org/": "TypeScript: JavaScript With Syntax For Types."
+    "https://www.typescriptlang.org/": "TypeScript: JavaScript With Syntax For Types.",
+    "https://zenodo.org/records/14269462": "X-COBOL: A Dataset of Open-Source COBOL repositories | Zenodo"
   }
 }

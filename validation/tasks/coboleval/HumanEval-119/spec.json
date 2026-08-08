@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-119",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/119",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: match_parens\n\nBehaviour, as the benchmark states it:\n\n'''\n You are given a list of two strings, both strings consist of open\n parentheses '(' or close parentheses ')' only.\n Your job is to check if it is possible to concatenate the two strings in\n some order, that the resulting string will be good.\n A string S is considered to be good if and only if all parentheses in S\n are balanced. For example: the string '(())()' is good, while the string\n '())' is not.\n Return 'Yes' if there's a way to make a good string, and return 'No' otherwise.\n\n Examples:\n match_parens(['()(', ')']) == 'Yes'\n match_parens([')', ')']) == 'No'\n '''\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-LST OCCURS 2 TIMES INDEXED BY NI PIC X(2).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

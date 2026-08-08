@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-106",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/106",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: f\n\nBehaviour, as the benchmark states it:\n\nImplement the function f that takes n as a parameter,\n and returns a list of size n, such that the value of the element at index i is the factorial of i if i is even\n or the sum of numbers from 1 to i otherwise.\n i starts from 1.\n the factorial of i is the multiplication of the numbers from 1 to i (1 * 2 * ... * i).\n Example:\n f(5) == [1, 2, 6, 24, 15]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-N PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NI PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

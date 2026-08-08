@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_24",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_24",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that compares two CSV files line by line and generates a report file showing the differences between them. The program should:\n\n1. Read input from two files: 'task_func24_inp1' and 'task_func24_inp2'. \n2. Compare each line from the two files. If the lines are identical, write the line to the output file 'task_func24_out' with a blank status. If the lines differ, write both lines to the output file with '-' and '+' status indicators respectively.\n3. If one file has more lines than the other, write the extra lines to the output file with the appropriate '-' or '+' status.\n4. The output file should have this CSV format: Line Number, Status (' ', '-' or '+'), Line Content.\n\nEnsure the program follows standard COBOL structure:  \n- IDENTIFICATION DIVISION with PROGRAM-ID\n- ENVIRONMENT DIVISION with INPUT-OUTPUT SECTION for file handling \n- DATA DIVISION with FILE SECTION and WORKING-STORAGE SECTION for data definitions\n- PROCEDURE DIVISION with main processing logic\n\nAdhere to COBOL coding conventions:\n- Division headers and paragraph names in Area A (columns 8-11) \n- Statements in Area B (columns 12-72)\n- Use consistent indentation, especially in PROCEDURE DIVISION\n\nHandle file open/close and any errors appropriately. The program should be a complete, executable COBOL program.\n\nCode:\n",
+  "inputs": {
+    "task_func24_inp1": "Name,Age\nAlice,30\nAvantika,23\nBob,25\nAnubhav 41",
+    "task_func24_inp2": "Name,Age\nAlice,31\nArun,32\nBob,25\n\n"
+  },
+  "expectedOutputs": {
+    "task_func24_out": "Line Number,Status,Content\n000001, ,Name,Age\n000002,-,Alice,30\n000002,+,Alice,31\n000003,-,Avantika,23\n000003,+,Arun,32\n000004, ,Bob,25\n000005,-,Anubhav 41\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_05",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_05",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads an input file named 'input.txt' containing records with a filename and status, and writes the filename to an output file named 'output.txt' if the status is 'processed'. The program should follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION), adhere to Area A and Area B conventions for division headers, paragraph names, and statements, and use standard COBOL indentation to improve readability. \n\nIn the IDENTIFICATION DIVISION, assign the program a name. \n\nIn the ENVIRONMENT DIVISION, define the INPUT-OUTPUT SECTION to specify the input and output files as LINE SEQUENTIAL organization and assign them to 'input.txt' and 'output.txt' respectively.\n\nIn the DATA DIVISION, define the FILE SECTION with descriptions of the input and output record structures, and the WORKING-STORAGE SECTION to define flags, counters, and work areas needed by the program.\n\nIn the PROCEDURE DIVISION, define the main process that initializes the files, reads and processes records from the input file until end-of-file, checking each record's status, writing 'processed' records to the output file, counting the records written, and closing the files after processing. Display the count of processed records.\n\nThe program should handle errors gracefully and display appropriate messages. Aim for clean, readable, maintainable code.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "document1.txt       processed\nreport.doc          not processed\nnotes.docx          processed\nimage.png           not processed"
+  },
+  "expectedOutputs": {
+    "output.txt": "document1.txt\nnotes.docx\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

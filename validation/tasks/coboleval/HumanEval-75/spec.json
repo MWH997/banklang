@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-75",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/75",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: is_multiply_prime\n\nBehaviour, as the benchmark states it:\n\nWrite a function that returns true if the given number is the multiplication of 3 prime numbers\n and false otherwise.\n Knowing that (a) is less then 100.\n Example:\n is_multiply_prime(30) == True\n 30 = 2 * 3 * 5\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-A PIC S9(10).\n           05 RESULT PIC 9.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

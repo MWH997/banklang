@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_08",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_08",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that converts the file extensions of filenames listed in an input file to '.csv' and writes the converted filenames to an output file. The program should adhere to the following requirements:\n\n1. Be a valid COBOL program with proper IDENTIFICATION DIVISION, ENVIRONMENT DIVISION, DATA DIVISION, and PROCEDURE DIVISION sections.\n\n2. Follow standard COBOL formatting conventions, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72). \n\n3. Use appropriate indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\n4. Read filenames from an input file named 'input.txt', convert those ending in '.txt', '.docx' or '.xlsx' to '.csv', and write the converted filenames to an output file named 'output.txt'.\n\n5. Display the total count of filenames converted after processing.\n\nThe program should efficiently process the list of filenames, performing the extension conversion and writing out the updated filenames line by line. Aim to minimize complexity while ensuring the program is well-structured and follows COBOL best practices.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "Mytest.xlsx\nabc.docx\npicture.jpg\nmyimage.png\ntest2file.txt"
+  },
+  "expectedOutputs": {
+    "output.txt": "Mytest.csv\nabc.csv\ntest2fil.csv\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

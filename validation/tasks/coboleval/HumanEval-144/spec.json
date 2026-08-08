@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-144",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/144",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: simplify\n\nBehaviour, as the benchmark states it:\n\nYour task is to implement a function that will simplify the expression\n x * n. The function returns True if x * n evaluates to a whole number and False\n otherwise. Both x and n, are string representation of a fraction, and have the following format,\n <numerator>/<denominator> where both numerator and denominator are positive whole numbers.\n\n You can assume that x, and n are valid fractions, and do not have zero as denominator.\n\n simplify(\"1/5\", \"5/1\") = True\n simplify(\"1/6\", \"2/1\") = False\n simplify(\"7/10\", \"10/2\") = False\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-X PIC X(100).\n           05 L-N PIC X(100).\n           05 RESULT PIC 9.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

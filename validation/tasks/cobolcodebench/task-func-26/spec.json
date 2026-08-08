@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_26",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_26",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that generates a monthly sales report. The program should:\n\n1. Read sales data from an input file named 'task_func26_inp'. Each record contains the department number, salesperson ID, and sales amount. \n\n2. Process the sales data, keeping a running total of sales for each department.\n\n3. Whenever the department number changes, print the total sales for the previous department.\n\n4. Generate a report that is written to an output file named 'task_func26_out'. The report should include a heading with a page number, detail lines showing each salesperson's sales, and a summary line for each department's total sales.\n\nEnsure the COBOL program follows these guidelines:\n\n1. It must be a valid COBOL program.\n\n2. Use the standard COBOL division structure: IDENTIFICATION DIVISION, ENVIRONMENT DIVISION, DATA DIVISION, and PROCEDURE DIVISION. \n\n3. Follow COBOL coding conventions for Area A (columns 8-11) and Area B (columns 12-72).\n\n4. Use standard COBOL indentation to improve readability, especially in the PROCEDURE DIVISION.\n\nHandle any file errors gracefully. The program should keep track of variables like end-of-file condition, current department, page count, line count, etc. as needed to control the flow and format the report properly.\n\nCode:\n",
+  "inputs": {
+    "task_func26_inp": "Dept_No,Sales_Id,Sales_Amount\n01,1234,00100000\n01,4567,00010000\n01,8901,00010000\n02,1894,00024260\n02,2461,50093200"
+  },
+  "expectedOutputs": {
+    "task_func26_out": "\f                                                 MONTHLY STATUS REPORT         01\n\n          DEPT      SALESPERSON NO      AMT OF SALES\n\n           01         1234              $  1000.00\n\n           01         4567              $   100.00\n\n           01         8901              $   100.00\n\n                                                            Total Sales for Department 01 is $   1200.00\n\n           02         1894              $   242.60\n\n           02         2461              $500932.00\n\n                                                            Total Sales for Department 02 is $ 501174.60\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

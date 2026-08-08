@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_47",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_47",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that reads person names from an input file named 'task_func47_inp', converts certain non-English characters in the names to their English equivalents or removes non-alphabetic characters, and writes the converted names to an output file named 'task_func47_out'. \n\nThe program should follow the standard COBOL division structure with IDENTIFICATION DIVISION, ENVIRONMENT DIVISION, DATA DIVISION, and PROCEDURE DIVISION. Use appropriate COBOL syntax, indentation, and formatting conventions.\n\nIn the ENVIRONMENT DIVISION, define the input and output files as line sequential. \n\nIn the DATA DIVISION, define the file and record structures for the input and output files. Also define any necessary working storage variables.\n\nIn the PROCEDURE DIVISION, include paragraphs to open the files, read and process each input record until end-of-file, and close the files when done. The main processing should convert the input name, replacing certain non-English characters with English equivalents (e.g. 'ä' to 'a', 'Ö' to 'O', 'æ' to 'ae', etc.) and removing any remaining non-alphabetic characters except spaces. Write each converted name to the output file.\n\nThe program should be a complete, executable COBOL program that reads the input file, converts the names as described, and writes the results to the output file.\n\nCode:\n",
+  "inputs": {
+    "task_func47_inp": "Téa\nVáquéz\nGarciá\nZöe\nEleña\n"
+  },
+  "expectedOutputs": {
+    "task_func47_out": "Tea\nVaquez\nGarcia\nZoe\nElena\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

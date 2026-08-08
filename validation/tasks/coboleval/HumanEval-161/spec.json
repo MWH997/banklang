@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-161",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/161",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: solve\n\nBehaviour, as the benchmark states it:\n\nYou are given a string s.\n if s[i] is a letter, reverse its case from lower to upper or vise versa,\n otherwise keep it as it is.\n If the string contains no letters, reverse the string.\n The function should return the resulted string.\n Examples\n solve(\"1234\") = \"4321\"\n solve(\"ab\") = \"AB\"\n solve(\"#a@C\") = \"#A@c\"\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

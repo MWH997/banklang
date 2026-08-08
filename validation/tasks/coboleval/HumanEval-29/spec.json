@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-29",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/29",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: filter_by_prefix\n\nBehaviour, as the benchmark states it:\n\nFilter an input list of strings only for ones that start with a given prefix.\n >>> filter_by_prefix(['abc', 'bcd', 'cde', 'array'], 'ab')\n ['abc']\n >>> filter_by_prefix(['abc', 'bcd', 'cde', 'array'], 'a')\n ['abc', 'array']\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-STRINGS OCCURS 4 TIMES INDEXED BY NI PIC X(4).\n           05 L-PREFIX PIC X(100).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

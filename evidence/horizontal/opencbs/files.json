@@ -1,0 +1,925 @@
+[
+  {
+    "path": "COBOL_Programs/DF01DATA.CBL",
+    "sha256": "377929b521de698844bfba7bf7a84f670ae3ed323df40b815dcc1937ef4571f6",
+    "bytes": 3118,
+    "provenance": null,
+    "programId": "DF01DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF01TEST.CBL",
+    "sha256": "857ddf332c1dcd3c1ad73f3e7505a79289faec34b323b2707b33ee83d247203a",
+    "bytes": 2778,
+    "provenance": null,
+    "programId": "DF01TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "condition-names",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF02TEST.CBL",
+    "sha256": "1b5dacdfd41a8cbca2da3a072edd499729e67dcc4201fe045586947a98bef68f",
+    "bytes": 3440,
+    "provenance": null,
+    "programId": "DF02TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "move",
+      "occurs",
+      "perform-varying"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF03DATA.CBL",
+    "sha256": "732648871622e523f0a98b691230194d5d330f265716d3fa5d02916bbf662ce7",
+    "bytes": 3413,
+    "provenance": null,
+    "programId": "DF03DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-indexed",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF03TEST.CBL",
+    "sha256": "11026d7954499527c0ccc022285881a17de9b8e005a61bfa861b929e9ef4cf0e",
+    "bytes": 2858,
+    "provenance": null,
+    "programId": "DF03TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-indexed",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF04TEST.CBL",
+    "sha256": "75a456a8d092217e74a98953b9f53a6cca276d405031bb62ded9934ccec95d6e",
+    "bytes": 3256,
+    "provenance": null,
+    "programId": "DF04TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "move",
+      "reference-modification"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF05DATA.CBL",
+    "sha256": "52afdf3dfb277a72bff90f589cc7ad4f0e14c15e0fe8a9ec5e48a0b11a7975d7",
+    "bytes": 3129,
+    "provenance": null,
+    "programId": "DF05DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF05TEST.CBL",
+    "sha256": "45250f317bf04b7d2b274b3dac08bbcb4f7874080a807e35e1c27a9d60e5ec49",
+    "bytes": 3758,
+    "provenance": null,
+    "programId": "DF05TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF06TEST.CBL",
+    "sha256": "e287e33398c410cdc4c6fd3f01c7f25b76e6c53ebe7f93792628f1e4af42e4cb",
+    "bytes": 1763,
+    "provenance": null,
+    "programId": "DF06TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "compute",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF07TEST.CBL",
+    "sha256": "23036428ca8efae826fa270709a2a96a911f1e12206aba50b4d1591834cfc2f3",
+    "bytes": 1810,
+    "provenance": null,
+    "programId": "DF07TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "condition-names",
+      "conditional",
+      "continuation",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF08TEST.CBL",
+    "sha256": "04e92976138b3c476a98bec7ec90538336c6a787b9407a3464cc27ec7a8b7867",
+    "bytes": 2540,
+    "provenance": null,
+    "programId": "DF08TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "go-to",
+      "move",
+      "occurs",
+      "redefines",
+      "search",
+      "usage-index"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF09TEST.CBL",
+    "sha256": "de1ff7b389595dc3f1ad187da163d7800f3949ddbc4b4c2cc0c6112cf8f5b26e",
+    "bytes": 3073,
+    "provenance": null,
+    "programId": "DF09TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "move",
+      "string-unstring"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF10TEST.CBL",
+    "sha256": "225aebc5102b905556b141d64150b9bde5dff518b089a5330c0859c30bc126c7",
+    "bytes": 1699,
+    "provenance": null,
+    "programId": "DF10TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "condition-names",
+      "conditional",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF11TEST.CBL",
+    "sha256": "dae3d75091e6326a83df05ae6fcbc367e56e9c3ecc398ed5c5f5d686755b9915",
+    "bytes": 1776,
+    "provenance": null,
+    "programId": "DF11TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "string-unstring"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF12TEST.CBL",
+    "sha256": "df270ea79fbc97616f0c544a3536985cb022cb52c1a0cca7c7e4d1afd2164088",
+    "bytes": 2949,
+    "provenance": null,
+    "programId": "DF12TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-3",
+      "compute",
+      "continuation",
+      "intrinsic-function"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF13TEST.CBL",
+    "sha256": "2440288e5dc0b7a359f32fa6be6b781c30595a4845f9d367cb9519c7f70f98ff",
+    "bytes": 2465,
+    "provenance": null,
+    "programId": "DF13TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "go-to",
+      "move",
+      "occurs",
+      "perform-thru",
+      "redefines"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF14TEST.CBL",
+    "sha256": "bb745182cacf24b1e1bae0cb4fbb50f7bb519f11683fcc02aece112bdfc6a3d9",
+    "bytes": 1709,
+    "provenance": null,
+    "programId": "DF14TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-3",
+      "continuation",
+      "exec-sql",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF15TEST.CBL",
+    "sha256": "26657e1d429290fa30e978b29031b5285e0489c72f9e583ae95d81c45f44b94a",
+    "bytes": 1908,
+    "provenance": null,
+    "programId": "DF15TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "compute",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF16TEST.CBL",
+    "sha256": "b8afb6c287cbd1c90e4a7cd8c0b4d660e145b7818fccb9aa0e4462dab5203079",
+    "bytes": 2045,
+    "provenance": null,
+    "programId": "DF16TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-3",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF17DATA.CBL",
+    "sha256": "8862249b1cfc76e4b25914e6490bcdd25e56c61090f0697be047da36d153c0e4",
+    "bytes": 3173,
+    "provenance": null,
+    "programId": "DF17DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF17TEST.CBL",
+    "sha256": "baed021551ae9781847cce31df4c498300f1986fd4be6063ceef592c9971d2c6",
+    "bytes": 3794,
+    "provenance": null,
+    "programId": "DF17TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-indexed",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF18CALL.CBL",
+    "sha256": "a55a4f9d072d15dcf2ad95ec927ee3dbfafc67fe6ae09ccc7651c6eb063f09cb",
+    "bytes": 1290,
+    "provenance": null,
+    "programId": "DF18CALL",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "call-static",
+      "comp-binary",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF18TEST.CBL",
+    "sha256": "46f95b841d960b056e77b79c99a9db49f169b638ef3ebc1188c3254c0456b746",
+    "bytes": 2062,
+    "provenance": null,
+    "programId": "DF18TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "arithmetic-verbs",
+      "comp-binary",
+      "continuation",
+      "linkage-section"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF19TEST.CBL",
+    "sha256": "5369601f6f2481eaf2c8de5b58b629f2131df77ab3cea4f297d019546eb19ec3",
+    "bytes": 3865,
+    "provenance": null,
+    "programId": "DF19TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "go-to",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF20TEST.CBL",
+    "sha256": "90a512a5b8a107065c11e103aad9c4a9d9bc5f8b92ac4d962c42dcc1010f9ddb",
+    "bytes": 7,
+    "provenance": null,
+    "programId": null,
+    "analysed": true,
+    "failure": null,
+    "representability": "unknown",
+    "features": []
+  },
+  {
+    "path": "COBOL_Programs/DF21DATA.CBL",
+    "sha256": "60966c55493d9eb3c208666b05884ae158bd8bc277fbea78ab77c2c34c07c996",
+    "bytes": 3118,
+    "provenance": null,
+    "programId": "DF21DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF21TEST.CBL",
+    "sha256": "913be539626e11a2ffd46aa04bdd820760be739bf6182ca319313dd82f3deb3e",
+    "bytes": 3807,
+    "provenance": null,
+    "programId": "DF21TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-indexed",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF22DATA.CBL",
+    "sha256": "fa0eae2cb1df8d41d010d8af9e9b8d4f27b303b429be8689db89435da37f1f34",
+    "bytes": 3383,
+    "provenance": null,
+    "programId": "DF22DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "move",
+      "occurs"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF22TEST.CBL",
+    "sha256": "764f8c8dfb8241aff75865b2db31b0065de01cf0cff44f87dd843c36ddeb9403",
+    "bytes": 3187,
+    "provenance": null,
+    "programId": "DF22TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "occurs"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF23TEST.CBL",
+    "sha256": "4c5f017f8c5505f7451d2f47602cb79275492a62415fefbb2dc642fa1da93af3",
+    "bytes": 2638,
+    "provenance": null,
+    "programId": "DF23TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "go-to",
+      "move",
+      "occurs",
+      "redefines",
+      "search",
+      "usage-index"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF24TEST.CBL",
+    "sha256": "44d7380295e198a1588576434f52a00036ddebbfac653e36c32a96003bfee9a0",
+    "bytes": 2014,
+    "provenance": null,
+    "programId": "DF24TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-3",
+      "conditional",
+      "continuation",
+      "redefines"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF25DATA.CBL",
+    "sha256": "ac56c849f8db4c287bd0dddf33b29156c723528207702eb30b11703b0de5296d",
+    "bytes": 3310,
+    "provenance": null,
+    "programId": "DF25DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "move",
+      "occurs"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF25TEST.CBL",
+    "sha256": "bd81dade9cc687cb7add6ab9cd1609ea5a42b4116fa7974ef9cc3e01218dd799",
+    "bytes": 5033,
+    "provenance": null,
+    "programId": "DF25TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "move",
+      "occurs"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF26TEST.CBL",
+    "sha256": "b660a6c5ecf7f2cab600768338e88d66e67476abd26b1d79792253ed7f66ded8",
+    "bytes": 3577,
+    "provenance": null,
+    "programId": "DF26TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "go-to",
+      "move",
+      "occurs",
+      "redefines",
+      "search",
+      "usage-index"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF27TEST.CBL",
+    "sha256": "7c30a98bebff0f60b48c515fce8dc5a737f21ee26a9213aef89cbb8b653122d7",
+    "bytes": 5016,
+    "provenance": null,
+    "programId": "DF27TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "move",
+      "occurs",
+      "perform-varying",
+      "redefines",
+      "usage-index"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF28TEST.CBL",
+    "sha256": "d63a3859bf08c93dd19c849ef99a2374cafc072bbcd63916b0135f46865b6d5e",
+    "bytes": 2164,
+    "provenance": null,
+    "programId": "DF28TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "compute",
+      "conditional",
+      "continuation",
+      "go-to",
+      "intrinsic-function"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF29TEST.CBL",
+    "sha256": "ecd668897067192791b4d6841c2fe32188e26a12a6e3e01d205f13a05ba5ad06",
+    "bytes": 3403,
+    "provenance": null,
+    "programId": "DF29TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF30TEST.CBL",
+    "sha256": "ae63a9dcff49c39b87a9cee4fd757047eb64bb2c293e1a34c9180f27253c5665",
+    "bytes": 1413,
+    "provenance": null,
+    "programId": "DF30TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF31CALL.CBL",
+    "sha256": "931aa95f75e3ccec92cbe6e23ea1ca09264babaa90ff179cb4b0cb84db4f3962",
+    "bytes": 1461,
+    "provenance": null,
+    "programId": "DF31CALL",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "call-static",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF31TEST.CBL",
+    "sha256": "21d4c84c51577ddca3cdad9de4c4b27f0da57e7d052750531cea76fe54e2cafd",
+    "bytes": 1649,
+    "provenance": null,
+    "programId": "DF31TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "continuation",
+      "linkage-section",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF34TEST.CBL",
+    "sha256": "1971313e2e172c63b862220e56e3efd319258945f051e39dcb4d195d03156b08",
+    "bytes": 2416,
+    "provenance": null,
+    "programId": "DF34TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "conditional",
+      "continuation",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF35TEST.CBL",
+    "sha256": "fcf563018d4db9451627194bfee8ed106ce257f0f251ce8a4642c46731049b1e",
+    "bytes": 2463,
+    "provenance": null,
+    "programId": "DF35TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "initialize",
+      "string-unstring"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF36TEST.CBL",
+    "sha256": "709a24d95080150cdb5c283b3e296def08d2d3d4a2b61ee3cab5ebd33497c446",
+    "bytes": 1721,
+    "provenance": null,
+    "programId": "DF36TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-3",
+      "compute",
+      "continuation",
+      "rounded"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF39TEST.CBL",
+    "sha256": "102b7963402858ef7e5c0b43eec80066588c6d25ac10994943aad00569d31c78",
+    "bytes": 2236,
+    "provenance": null,
+    "programId": "DF39TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "comp-binary",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF40TEST.CBL",
+    "sha256": "615fe10d74ab2724d1d96a99a26f754674912b55533bf059a10b0d5ae8a01e66",
+    "bytes": 3575,
+    "provenance": null,
+    "programId": "DF40TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "evaluate",
+      "exec-sql",
+      "file-verbs",
+      "go-to",
+      "initialize",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF41TEST.CBL",
+    "sha256": "d9d7e59fec45ad6f501e13a8bc94625cacf44d374d2b8f0a0620ea0e5be05631",
+    "bytes": 1543,
+    "provenance": null,
+    "programId": "DF41TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "compute",
+      "continuation",
+      "intrinsic-function"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF42TEST.CBL",
+    "sha256": "2ac0fb15e128a5040d9d26c2191998e91d2552e3e23708195dc5df3ba6c5b6ae",
+    "bytes": 6307,
+    "provenance": null,
+    "programId": "DF42TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "continuation",
+      "evaluate",
+      "exec-sql",
+      "file-verbs",
+      "go-to",
+      "initialize",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF44TEST.CBL",
+    "sha256": "c506863149837b4f8bd8dfff8c2b7188ab61ec0d8faaf766c9fc9461834397a7",
+    "bytes": 1970,
+    "provenance": null,
+    "programId": "DF44TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "arithmetic-verbs",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF45CALL.CBL",
+    "sha256": "c892032a6b971b58acdde6fa75b6d54912405ccfe0f29755b3562cd629dc86ee",
+    "bytes": 1417,
+    "provenance": null,
+    "programId": "DF45CALL",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "call-static",
+      "continuation"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF45TEST.CBL",
+    "sha256": "6fbe2717c7d6692de9f2b09bfc8f177a1121ff3b54c0cea89b53ca1526fa7579",
+    "bytes": 1635,
+    "provenance": null,
+    "programId": "DF45TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "continuation",
+      "linkage-section",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF46DATA.CBL",
+    "sha256": "d0f3447ab228530aa2623f192ae3b4e0aebbb576a9eb3408b1c150d567486e0c",
+    "bytes": 1818,
+    "provenance": null,
+    "programId": "DF46DATA",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF46TEST.CBL",
+    "sha256": "8c73d0452395213769d1641b02f67a794c824f08cd9e755a613c3b52f29a3c52",
+    "bytes": 3259,
+    "provenance": null,
+    "programId": "DF46TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "representable-with-adaptation",
+    "features": [
+      "accept-display",
+      "conditional",
+      "continuation",
+      "file-status",
+      "file-verbs",
+      "go-to",
+      "move"
+    ]
+  },
+  {
+    "path": "COBOL_Programs/DF47TEST.CBL",
+    "sha256": "42691fd6459879d452e8e6125b7fbfd8431d8c75eed3e2977e3a68d2b8fedc69",
+    "bytes": 1752,
+    "provenance": null,
+    "programId": "DF47TEST",
+    "analysed": true,
+    "failure": null,
+    "representability": "fully-representable",
+    "features": [
+      "accept-display",
+      "condition-names",
+      "continuation"
+    ]
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_12",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_12",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads patient billing data from an input file called 'input.txt', processes the data, and writes a summary report to an output file called 'output.txt'. The program should follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION) and adhere to COBOL coding conventions for Area A, Area B, and indentation.\n\nThe input file contains records with patient name, age, service date, and surgery cost. The program should sort the input records by patient name, then calculate the total cost of surgeries for each unique patient.\n\nThe output file should contain one record per patient, including their name, age, and total surgery cost. Records should only be written for patients with a non-blank name.\n\nUse a sort file for the intermediate sorting step. Declare all necessary file descriptions, record layouts, and working storage items in the DATA DIVISION. \n\nIn the PROCEDURE DIVISION, include paragraphs to initialize files, perform the sort, process the sorted records to accumulate costs per patient, write output records, and close the files when processing is complete.\n\nAim to produce clean, readable COBOL code, but focus on the overall program structure and functionality rather than implementation specifics. The generated program should achieve the same end result as the provided example when given equivalent input data.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "Palekit   3211-02-202321600\nPalekit   3212-02-202302600\nNikhil    4213-02-202302650\nNikhil    4214-02-202311400\nNikhil    4215-02-202302780\nSomesh    3516-02-202302610\nSomesh    3517-02-202313650\nSomesh    3518-02-202331600\nSomesh    3519-02-202302600\nPanit     3220-02-202301650"
+  },
+  "expectedOutputs": {
+    "output.txt": "Palekit     32  024200\nNikhil      42  016830\nSomesh      35  050460\nPanit       32  001650\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

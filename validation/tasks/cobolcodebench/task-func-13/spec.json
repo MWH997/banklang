@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_13",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_13",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads customer names from an input file called 'input.txt', sorts the names in ascending order, validates that each name contains only alphabetic characters (no numbers), and writes the sorted valid names to an output file called 'output.txt'. The program should follow standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION), adhere to COBOL Area A and B formatting conventions, and use proper COBOL indentation, especially in the PROCEDURE DIVISION. \n\nThe program should open the input file, read customer names one at a time, check if each name is valid (contains no numeric characters), and if valid, release the name record to a temporary sort file. After reading all records, close the input file. Then sort the temporary file by customer name in ascending sequence.\n\nNext, the sorted records should be returned one at a time from the sort file, moved to an output record, and written to the output file. After all sorted records are written, close the output file. \n\nFinally, display the total records read, number of invalid name records encountered, and a message indicating processing is complete.\n\nRemember, this is a high-level description of the program's functionality and requirements. Implement this specification using proper COBOL syntax, but do not worry about matching the provided 'Expected Program' exactly. The goal is to create a COBOL program that produces the same result, while adhering to the specified COBOL formatting and structural requirements.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "PaulamiSaha\nTester1name\nJoseph\nKetlyn"
+  },
+  "expectedOutputs": {
+    "output.txt": "Joseph\nKetlyn\nPaulamiSaha\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

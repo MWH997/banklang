@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-65",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/65",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: circular_shift\n\nBehaviour, as the benchmark states it:\n\nCircular shift the digits of the integer x, shift the digits right by shift\n and return the result as a string.\n If shift > number of digits, return digits reversed.\n >>> circular_shift(12, 1)\n \"21\"\n >>> circular_shift(12, 2)\n \"12\"\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-X PIC S9(10).\n           05 L-SHIFT PIC S9(10).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

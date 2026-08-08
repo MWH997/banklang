@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-162",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/162",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: string_to_md5\n\nBehaviour, as the benchmark states it:\n\nGiven a string 'text', return its md5 hash equivalent string.\n If 'text' is an empty string, return 'None'.\n\n >>> string_to_md5('Hello world') == '3e25960a79dbc69b674cd4ec67a72c62'\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-TEXT PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

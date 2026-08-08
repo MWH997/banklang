@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_22",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_22",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that reads student data from an input file named \"input.txt\", processes the data to find the student with the highest marks and the student with the maximum height, and writes the results to two separate output files named \"output-marks.txt\" and \"output-height.txt\".\n\nThe program should follow these COBOL-specific requirements:\n1. Be a valid COBOL program with proper syntax. \n2. Include the standard IDENTIFICATION DIVISION, ENVIRONMENT DIVISION, DATA DIVISION, and PROCEDURE DIVISION in the proper order.\n3. Adhere to COBOL's Area A (columns 8-11) and Area B (columns 12-72) conventions for division headers, paragraph names, and statements.\n4. Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nThe input file contains records with each student's name, marks, and height. The program should validate the input data, ensuring the name is alphabetic and the marks and height are numeric. For valid records, it determines the student with the highest marks and the student with the maximum height. \n\nThe output files should contain the name and corresponding value (marks or height) of the student with the highest marks and maximum height respectively.\n\nStructure the program appropriately in the PROCEDURE DIVISION with paragraphs to initialize, process the data, validate the records, update the current maxima, write the output, and close the files. Use suitable data structures in WORKING-STORAGE to hold the data being processed.\n\nFocus on clearly describing the program's purpose, inputs, outputs, and key functionality without specifying detailed COBOL syntax or algorithms. The LLM should be able to understand the requirements and create a COBOL program that meets the specified functionality and formatting constraints.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "Rajesh              094151\nRashan              065160\nIndranil            092140\nChrist              085155\nJohn                098160\n"
+  },
+  "expectedOutputs": {
+    "output-height.txt": "Rashan              160\n",
+    "output-marks.txt": "John                098\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

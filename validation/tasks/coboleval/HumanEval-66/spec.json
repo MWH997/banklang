@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-66",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/66",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: digitSum\n\nBehaviour, as the benchmark states it:\n\nTask\n Write a function that takes a string as input and returns the sum of the upper characters only'\n ASCII codes.\n\n Examples:\n digitSum(\"\") => 0\n digitSum(\"abAB\") => 131\n digitSum(\"abcCd\") => 67\n digitSum(\"helloE\") => 69\n digitSum(\"woArBld\") => 131\n digitSum(\"aAaaaXa\") => 153\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

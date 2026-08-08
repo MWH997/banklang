@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_29",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_29",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that analyzes an input file containing records with a person's name and age, identifies duplicate names, and outputs the number of duplicates found for each age. \n\nThe program should:\n- Follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions)\n- Use proper COBOL formatting conventions for Area A (columns 8-11) and Area B (columns 12-72) \n- Apply standard COBOL indentation, especially in the PROCEDURE DIVISION, to enhance readability\n\nThe program will:  \n- Read records from an input file named \"input.ps\" containing an ID, name, and age for each person\n- Track and count the number of duplicate names found for each age\n- Write an output file \"output.ps\" listing each age and the count of name duplicates for that age\n- Handle empty input files and invalid age values (e.g. negative ages)\n\nFocus on clearly describing the program's purpose and functionality without implementation specifics. Adhere to the provided COBOL structural and formatting requirements to produce a readable, properly organized COBOL program.\n\nCode:\n",
+  "inputs": {
+    "input.ps": "00001AliceJohnson        25 \n00002BobBuilder          26 \n00003AliceJohnson        25 \n00004JacobBrunos         36\n00005AgelasJames         29\n00006AgelasJames         29\n00007AgelasJames         29\n00008SteffetGary         33.9\n00009SteffetGary         33.9\t\t"
+  },
+  "expectedOutputs": {
+    "output.ps": "AGE CNT\n25  002\n29  006\n34  002\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

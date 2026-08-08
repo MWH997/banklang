@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-47",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/47",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: median\n\nBehaviour, as the benchmark states it:\n\nReturn median of elements in the list l.\n >>> median([3, 1, 2, 4, 5])\n 3\n >>> median([-10, 4, 6, 1000, 10])\n 6\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-L OCCURS 5 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT COMP-2.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_32",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_32",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Create a valid COBOL program that reads vehicle speed data from an input file named 'input.txt', calculates the average speed for each vehicle type, and writes the results to an output file named 'output.txt'. The program should adhere to the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION) and follow COBOL formatting conventions for Area A (columns 8-11) and Area B (columns 12-72). Use standard COBOL indentation to improve readability.\n\nThe input file contains records with the vehicle type and speed. The program should accumulate the total speed and count for each vehicle type while reading the file. After processing all records, calculate the average speed for each vehicle type that has at least one entry. Write output records containing the vehicle type and its average speed.\n\nIn the DATA DIVISION, define the necessary file and record structures for input and output, as well as any working storage variables needed for processing. In the PROCEDURE DIVISION, use appropriate COBOL statements to implement the program logic, including opening and closing files, reading input records, updating totals, calculating averages, and writing output records.\n\nEnsure the program is well-structured, readable, and follows COBOL best practices. The goal is to efficiently process the vehicle speed data and generate accurate average speed results for each vehicle type present in the input file.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "Car                 355\nBus                 471\nCar                 260\nTruck               307\nBus                 607\nBike                701\nBike                504"
+  },
+  "expectedOutputs": {
+    "output.txt": "Car                 30.75\nBus                 53.90\nTruck               30.70\nBike                60.25\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

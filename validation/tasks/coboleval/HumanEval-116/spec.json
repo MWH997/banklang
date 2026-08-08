@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-116",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/116",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: sort_array\n\nBehaviour, as the benchmark states it:\n\nIn this Kata, you have to sort an array of non-negative integers according to\n number of ones in their binary representation in ascending order.\n For similar number of ones, sort based on decimal value.\n\n It must be implemented like this:\n >>> sort_array([1, 5, 2, 3, 4]) == [1, 2, 3, 4, 5]\n >>> sort_array([-2, -3, -4, -5, -6]) == [-6, -5, -4, -3, -2]\n >>> sort_array([1, 0, 2, 3, 4]) [0, 1, 2, 3, 4]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-ARR OCCURS 5 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_38",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_38",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that merges two input files ('task_func38_inp1' and 'task_func38_inp2') into a single output file ('task_func38_out1') while also generating a separate output file ('task_func38_out2') that lists any duplicate transaction numbers and their count.\n\nThe program should:\n1. Be a valid COBOL program, adhering to the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION). \n2. Follow COBOL Area A (columns 8-11) and Area B (columns 12-72) conventions for division headers, paragraph names, and statements.\n3. Use standard COBOL indentation to improve readability, especially within the PROCEDURE DIVISION.\n\nThe input files contain records with a 5-character transaction number, a purchase amount with 2 decimal places, and other filler data. The program should merge the records from the input files, sort them by ascending transaction number, and write them to the first output file.\n\nSimultaneously, it should track duplicate transaction numbers and their occurrence count. If a transaction number appears more than once, write a record to the second output file containing the transaction number and the duplicate count.\n\nEnsure the program opens, processes, and closes files correctly, and uses appropriate COBOL syntax for file handling, data manipulation, and program flow control.\n\nCode:\n",
+  "inputs": {
+    "task_func38_inp1": "00001,0100230\n00002,0001805",
+    "task_func38_inp2": "00002,0100230\n00003,0145600"
+  },
+  "expectedOutputs": {
+    "task_func38_out1": "00001,0100230\n00002,0001805\n00002,0100230\n00003,0145600\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

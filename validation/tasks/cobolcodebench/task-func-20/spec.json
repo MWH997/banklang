@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_20",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_20",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that calculates home loan amounts for customers based on their age, salary, and credit score. The program should:\n\n1. Read customer data from an input file named 'input.txt', with each record containing the customer's name, age, annual salary, and credit score. \n\n2. Calculate the maximum loan amount for each customer using the following criteria:\n   - The base loan amount is 4 times the annual salary\n   - The loan amount is adjusted by an age factor:\n     - 1.0 for age 30 or below \n     - 1.2 for age 31-40\n     - 1.1 for age 41-50\n     - 0.9 for age above 50\n   - The loan amount is further adjusted by a credit score factor:  \n     - 1.3 for score 750 or above\n     - 1.2 for score 700-749\n     - 1.1 for score 650-699\n     - 1.0 for score below 650\n\n3. Write each customer's name and their calculated maximum loan amount to an output file named 'output.txt'.\n\nEnsure the program follows standard COBOL structure:  \n- IDENTIFICATION DIVISION with PROGRAM-ID\n- ENVIRONMENT DIVISION with INPUT-OUTPUT SECTION for file handling \n- DATA DIVISION with FILE SECTION and WORKING-STORAGE SECTION for data definitions\n- PROCEDURE DIVISION with main processing logic  \n\nAdhere to COBOL coding conventions:\n- Division headers and paragraph names in Area A (columns 8-11)\n- Statements in Area B (columns 12-72)  \n- Use consistent indentation, especially in PROCEDURE DIVISION\n\nThe generated COBOL program must be syntactically valid.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "JohnSmith           28055000720\nAliceBrown          38077000680\nWilliamButch        29155677600\t "
+  },
+  "expectedOutputs": {
+    "output.txt": "JohnSmith                0264000\nAliceBrown               0406560\nWilliamButch             0622708\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

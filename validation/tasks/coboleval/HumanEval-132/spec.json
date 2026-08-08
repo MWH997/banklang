@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-132",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/132",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: is_nested\n\nBehaviour, as the benchmark states it:\n\n'''\n Create a function that takes a string as input which contains only square brackets.\n The function should return True if and only if there is a valid subsequence of brackets\n where at least one bracket in the subsequence is nested.\n\n is_nested('[[]]') ➞ True\n is_nested('[]]]]]]][[[[[]') ➞ False\n is_nested('[][]') ➞ False\n is_nested('[]') ➞ False\n is_nested('[[][]]') ➞ True\n is_nested('[[]][[') ➞ True\n '''\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-STRING PIC X(100).\n           05 RESULT PIC 9.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

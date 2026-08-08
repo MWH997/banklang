@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_25",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_25",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that calculates statistics from employee data. The program should:\n\n1. Read a column name from the file 'task_func25_inp1'. The column name will be one of: Age, Salary, or Experience. \n\n2. Read employee records from the file 'task_func25_inp2'. Each record contains an employee's age, salary, and years of experience.\n\n3. Extract the values from the specified column for each employee record. \n\n4. Calculate the sum, mean, minimum, and maximum of the values from the specified column.\n\n5. Write the calculated statistics to the output file 'task_func25_out' in CSV format.\n\nEnsure the program follows the standard COBOL division structure:\n\n- IDENTIFICATION DIVISION with PROGRAM-ID\n- ENVIRONMENT DIVISION with INPUT-OUTPUT SECTION and FILE-CONTROL \n- DATA DIVISION with FILE SECTION, FD entries, and WORKING-STORAGE SECTION\n- PROCEDURE DIVISION with main processing logic\n\nUse proper COBOL coding conventions:\n\n- Division headers and paragraph names in Area A (columns 8-11)  \n- Statements in Area B (columns 12-72)\n- Consistent indentation, especially in PROCEDURE DIVISION\n\nHandle potential errors, such as:\n\n- Invalid column name specified\n- Issues opening/reading/writing files\n- No employee records found\n\nThe program should be well-structured, readable, and modular, with separate paragraphs or sections for distinct processing steps.\n\nCode:\n",
+  "inputs": {
+    "task_func25_inp1": "Experience",
+    "task_func25_inp2": "Age,Salary,Experience\n025,0000050000,02\n030,0000075000,05\n035,0000100000,07\n040,0000125000,10\n045,0000150000,12"
+  },
+  "expectedOutputs": {
+    "task_func25_out": "Sum,Mean,Min,Max\n        36.00,         7.20,         2,        12\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

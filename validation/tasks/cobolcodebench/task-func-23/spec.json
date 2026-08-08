@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_23",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_23",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that generates historical stock price data for a specified number of days in the past. The program should:\n\n1. Read an input file named 'task_func23_inp' containing the number of days to generate stock prices for. \n\n2. Generate randomized stock prices for 4 companies (AMZN, GOOGL, MSFT, FB) for each date going back the specified number of days from the current date.\n\n3. Write the generated stock price data to an output file named 'task_func23_out' with fields for the date and each company's stock price, separated by commas.\n\nEnsure the program follows standard COBOL structure with IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions. Use appropriate indentation, especially in the PROCEDURE DIVISION, and follow Area A/B conventions for division headers, paragraph names, and statements.\n\nHandle errors for issues like the input file being empty or containing invalid data. Include a header row in the output file.\n\nFocus on what the program needs to accomplish functionally, rather than specific implementation details or algorithms. The generated program should produce the same end result as the original.\n\nCode:\n",
+  "inputs": {
+    "task_func23_inp": "0010"
+  },
+  "expectedOutputs": {
+    "task_func23_out": "STOCK DATE,AMZN,GOOGL,MSFT,FB\n2025-02-07, 74.88, 70.90, 77.16, 69.76\n2025-02-08, 73.88, 69.90, 76.16, 68.76\n2025-02-09, 72.88, 68.90, 75.16, 67.76\n2025-02-10, 71.88, 67.90, 74.16, 66.76\n2025-02-11, 70.88, 66.90, 73.16, 65.76\n2025-02-12, 69.88, 65.90, 72.16, 64.76\n2025-02-13, 68.88, 64.90, 71.16, 63.76\n2025-02-14, 67.88, 63.90, 70.16, 62.76\n2025-02-15, 66.88, 62.90, 69.16, 61.76\n2025-02-16, 65.88, 61.90, 68.16, 60.76\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

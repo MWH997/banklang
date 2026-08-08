@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-52",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/52",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: below_threshold\n\nBehaviour, as the benchmark states it:\n\nReturn True if all numbers in the list l are below threshold t.\n >>> below_threshold([1, 2, 4, 10], 100)\n True\n >>> below_threshold([1, 20, 4, 10], 5)\n False\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-L OCCURS 4 TIMES INDEXED BY NI PIC S9(10).\n           05 L-T PIC S9(10).\n           05 RESULT PIC 9.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

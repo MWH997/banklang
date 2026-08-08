@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_16",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_16",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that calculates the average time difference between timestamps read from an input file. The program should follow standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION), adhere to Area A and B coding conventions, and use proper indentation, especially in the PROCEDURE DIVISION.\n\nThe program should:\n1. Read timestamp strings in 'YYYY-MM-DDThh:mm:ss.sss' format from a line sequential input file named 'task_func16_inp'. \n2. Parse and store the valid timestamps.\n3. Calculate the average difference in seconds between consecutive timestamps, ignoring the date portion.\n4. Write the formatted average difference to a line sequential output file named 'task_func16_out'.\n\nHandle cases where the input file contains less than 2 valid timestamps. The program should execute cleanly and produce the expected output file given a properly formatted input file.\n\nFocus on clearly describing the program's purpose, inputs, outputs, and key functionality without specifying detailed COBOL syntax or algorithms. Allow the LLM to determine the specific implementation while adhering to the provided COBOL coding style and structural requirements.\n\nCode:\n",
+  "inputs": {
+    "task_func16_inp": "2009-03-30T16:31:32.123\n2009-03-30T17:33:34.123\n2009-03-30T18:33:34.123\n"
+  },
+  "expectedOutputs": {
+    "task_func16_out": "       3661.000\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-84",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/84",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: solve\n\nBehaviour, as the benchmark states it:\n\nGiven a positive integer N, return the total sum of its digits in binary.\n\n Example\n For N = 1000, the sum of digits will be 1 the output should be \"1\".\n For N = 150, the sum of digits will be 6 the output should be \"110\".\n For N = 147, the sum of digits will be 12 the output should be \"1100\".\n\n Variables:\n @N integer\n Constraints: 0 ≤ N ≤ 10000.\n Output:\n a string of binary number\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-N PIC S9(10).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

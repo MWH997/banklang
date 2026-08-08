@@ -1,0 +1,177 @@
+# Horizontal validation
+
+How this compiler is measured against COBOL that was not written for it.
+
+The results are in
+[horizontal-validation-results.md](horizontal-validation-results.md) and the
+defect matrix in
+[horizontal-defect-coverage.md](horizontal-defect-coverage.md). Both are
+generated from `evidence/horizontal/` by `pnpm horizontal:report`; neither is
+edited by hand.
+
+## Why
+
+Everything else in this repository is **vertical** validation: thousands of
+tests written for BankLang, run against BankLang, passing because the compiler
+does what the person who wrote the test expected. That includes the strongest
+checks here — the differential lane that executes every example twice, once
+through `cobc` and once through an independently written interpreter, and the
+mutation lanes that ask whether the tests would notice if the code changed.
+
+They share one blind spot. A misunderstanding shared between a test and the
+code it tests agrees with itself perfectly. No amount of internal testing can
+tell you what happens when the compiler meets a program nobody wrote for it, or
+whether the subset of COBOL the language covers is the subset the world
+actually uses.
+
+So this axis asks a different question:
+
+> What happens when BankLang is confronted with independent COBOL programs,
+> specifications and behaviours that were not designed around it?
+
+## The corpora
+
+| Corpus                                                                          | What it is                                                    | What it can establish                                                      |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [CobolCodeBench](https://huggingface.co/datasets/harshini-kumar/CobolCodeBench) | 46 tasks specified in prose, with inputs and expected outputs | Whether BankTS can independently express a program somebody else specified |
+| [COBOLEval](https://github.com/zorse-project/COBOLEval)                         | 146 HumanEval tasks transpiled to a fixed COBOL interface     | Whether BankTS can meet a calling contract it did not choose               |
+| [X-COBOL v2](https://zenodo.org/records/14269462)                               | 5,195 files from 168 open-source repositories                 | What real COBOL contains, and how much of it BankTS can represent          |
+| [OpenCBS](https://github.com/PhaseChangeSoftware/cobol-defects-suite)           | 43 defects reconstructed from developer forum posts           | Which real defects BankLang refuses at compile time                        |
+| NIST COBOL-85                                                                   | The standard's own validation suite                           | Whether the COBOL compiler _underneath_ BankLang conforms                  |
+
+Every corpus is pinned in `validation/corpus-lock.json` by revision and by the
+sha256 of every file. A cache whose bytes do not match the lock is refused
+rather than measured, so a number cannot change because upstream did.
+
+### Licensing
+
+"Open source" is not "public domain", and a dataset that gathers other people's
+repositories does not relicense them by gathering them. X-COBOL is published
+CC-BY-4.0 and contains files from 168 repositories, none of which agreed to
+that; the licence covers the compilation. So it is marked `derived-only`: the
+source stays in an ignored cache and only measurements, hashes and provenance
+are published. `packages/horizontal-validation/src/licence.ts` is the gate, and
+an unrecognised licence is recorded as `excluded-license-unknown` rather than
+guessed at.
+
+NIST's suite is never downloaded and never redistributed. An operator points
+`BANKLANG_CCVS85_DIR` at their own copy or the lane reports unavailable — which
+is not the same as passing.
+
+## Rules the measurement is held to
+
+**No model in the validation path.** Development here is AI-assisted and says
+so. Once a fixture is checked in, the path from benchmark to result —
+BankTS, `bankc`, COBOL, execution, comparison — is deterministic code. No API
+call, no LLM judge, no "the programs look equivalent".
+
+**Execution beats text similarity.** Generated COBOL is never scored against
+reference COBOL by resemblance. Two programs can differ in every line and
+compute the same thing, and BankLang's output differs from a hand-written
+solution by construction. What is compared is observable behaviour: the bytes in
+the output files, what was displayed, the return code.
+
+**Denominators are never gamed.** Every rate is reported twice — against the
+tasks BankTS can express, and against every task the corpus contains. A
+difficult case is never removed; it is classified, and the classification is
+reported. `checkTallyIsComplete` fails the run if the categories do not
+partition the corpus.
+
+**Unsupported is neither pass nor fail.** `unsupported-by-design` is BankTS
+working as intended; `unsupported-not-yet-implemented` is a to-do list;
+`not-yet-authored` means the task is expressible and nobody has written it, and
+it counts against the pass rate exactly as a failure would. Collapsing these
+would let every missing feature be relabelled a principle.
+
+**No benchmark-specific compiler paths.** Nothing in the compiler knows a
+benchmark's name. A fix found this way must generalise and must arrive with a
+minimal regression test.
+
+**External code is untrusted.** No script shipped by a corpus is ever executed —
+not a setup script, not a makefile. Archives are unpacked and read. Paths from a
+corpus go through `safeJoin`, which refuses absolute paths, traversal and NUL
+bytes; runs happen in a scratch directory with an environment built from
+scratch rather than inherited, so a benchmark never sees a CI token.
+
+## Contamination control
+
+Both semantic corpora ship the answer beside the question. CobolCodeBench
+carries the full reference COBOL and a COBOL skeleton; COBOLEval carries a COBOL
+prompt and its test drivers. A BankTS implementation written with those on
+screen would measure transliteration.
+
+So `pnpm horizontal:materialise` splits every record in two:
+
+```
+validation/tasks/<corpus>/<id>/spec.json   prose, inputs, expected outputs
+validation/sealed/<corpus>/<id>/…          the benchmark's own COBOL
+```
+
+The spec is committed and is what an implementation is written from. The sealed
+half is derived from the ignored cache, is itself ignored, and is read by the
+evaluator — never by the author. `SpecOnlyTask` cannot carry reference COBOL
+because the type has no field for it.
+
+**What that does and does not guarantee.** It guarantees the normal path to
+writing an implementation does not show the reference, that no committed file
+contains it, and that a reader can see exactly which bytes sat on the authoring
+side of the line. It does not guarantee that the agent which wrote the BankTS
+never read the sealed file — no repository layout can. That limit is stated
+here rather than glossed.
+
+## What it found
+
+Three things, and the second and third are the argument for doing this at all.
+
+**A representability boundary nobody had measured.** Of 5,195 real COBOL files,
+the reader handled every one without error, and the constructs BankTS cannot
+express turn out to be led by `go-to` and `perform-thru` — present in roughly
+half the corpus — with `inspect`, `file-relative` and line-sequential files as
+the largest genuinely missing features. That is a to-do list ordered by evidence
+instead of by whoever asked most recently.
+
+**A support rule that was wrong in the flattering direction.**
+`file-line-sequential` was marked `supported` because `LINE SEQUENTIAL` appears
+in this repository — in five hand-written reference modules under `runtime/`,
+never from the emitter. BankTS has `sequential`, `indexed` and `relative`, and
+every generated FD is `RECORDING MODE IS F`. The error was found by trying to
+implement a CobolCodeBench task and having nowhere to put the input, and it had
+been inflating the representability figure by 155 files.
+
+**A compiler defect.** Writing COBOLEval's `is_prime` from its specification
+needs a conditional inside a trial-division loop, in a function. That was
+refused with `BANK-TYPE-007` while a `switch` in exactly the same position
+compiled — the inconsistency this repository had already identified as "an
+oversight rather than a rule" and fixed _for transactions only_. Nothing
+internal noticed, because every example that branches inside a loop is a
+transaction. Fixed, with the regression in
+`tests/horizontal-defects.test.ts`.
+
+## Running it
+
+```sh
+pnpm horizontal:fetch          # once, into an ignored cache, pinned by the lock
+pnpm horizontal:materialise    # split specs from reference solutions
+pnpm horizontal:analyse        # X-COBOL and OpenCBS: what real COBOL contains
+pnpm horizontal:run            # the semantic corpora, executed
+pnpm horizontal:ccvs85         # local-only, reports unavailable without a copy
+pnpm horizontal:report         # regenerate the two published pages
+```
+
+The ordinary suite runs none of this. `tests/horizontal-validation.test.ts` and
+`tests/horizontal-defects.test.ts` check the framework and the compiler's
+refusals from checked-in fixtures, and read no corpus at all — a validation lane
+that depended on somebody else's server being up would report a compiler defect
+whenever the network was slow.
+
+## What none of this establishes
+
+BankLang targets **IBM Enterprise COBOL 6.4** and is runtime-validated with
+**GnuCOBOL**. Every executed result here was produced by GnuCOBOL. **Native IBM
+Enterprise COBOL validation has not been performed**, and nothing on these pages
+should be read as evidence about behaviour under IBM's compiler. See
+[divergences.md](../divergences.md) for where the two are known to differ.
+
+A representability figure is a statement about language scope, not about
+correctness: X-COBOL ships no expected output, so nothing measured against it
+can establish that any program computes the right answer.

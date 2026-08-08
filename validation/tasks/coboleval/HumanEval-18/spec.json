@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-18",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/18",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: how_many_times\n\nBehaviour, as the benchmark states it:\n\nFind how many times a given substring can be found in the original string. Count overlaping cases.\n >>> how_many_times('', 'a')\n 0\n >>> how_many_times('aaa', 'a')\n 3\n >>> how_many_times('aaaa', 'aa')\n 3\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-STRING PIC X(100).\n           05 L-SUBSTRING PIC X(100).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

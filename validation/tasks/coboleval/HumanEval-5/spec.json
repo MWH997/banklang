@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-5",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/5",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: intersperse\n\nBehaviour, as the benchmark states it:\n\nInsert a number 'delimeter' between every two consecutive elements of input list `numbers'\n >>> intersperse([2, 2, 2], 4)\n [2, 4, 2, 4, 2]\n >>> intersperse([1, 2, 3], 4)\n [1, 4, 2, 4, 3]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-NUMBERS OCCURS 3 TIMES INDEXED BY NI PIC S9(10).\n           05 L-DELIMETER PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

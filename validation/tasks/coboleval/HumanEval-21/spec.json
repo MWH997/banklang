@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-21",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/21",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: rescale_to_unit\n\nBehaviour, as the benchmark states it:\n\nGiven list of numbers (of at least two elements), apply a linear transform to that list,\n such that the smallest number will become 0 and the largest will become 1\n >>> rescale_to_unit([1.0, 2.0, 3.0, 4.0, 5.0])\n [0.0, 0.25, 0.5, 0.75, 1.0]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-NUMBERS OCCURS 5 TIMES INDEXED BY NI COMP-2.\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ COMP-2.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

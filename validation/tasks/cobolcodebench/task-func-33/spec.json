@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_33",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_33",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that merges weather data from two input files ('weather1.txt' and 'weather2.txt') into a single output file ('weather-merged.txt'). The program should adhere to the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION) and follow COBOL formatting conventions for Area A and Area B. Use standard COBOL indentation to improve readability.\n\nThe input files contain records with a timestamp, followed by the weather condition at that time. The program should read the records from both input files and write them to the output file, preserving the original format. Include a header record in the output file indicating the structure of the data.\n\nThe program should handle reaching the end of either input file gracefully and continue processing records from the other file until both are exhausted. After processing, it should close the files and display a message indicating successful completion.\n\nFocus on describing the program's functionality and the data it handles, without specifying detailed COBOL syntax or implementation details. The generated COBOL program should achieve the same result as the provided example, based on this high-level description.\n\nCode:\n",
+  "inputs": {
+    "weather1.txt": "15:00   Sunny\n16:00   Sunny\n17:00   Cloudy\n18:00   Cloudy\n19:00   Stormy",
+    "weather2.txt": "09:00   Sunny\n10:00   Sunny'\n11:00   Cloudy\n12:00   Snowy"
+  },
+  "expectedOutputs": {
+    "weather-merged.txt": "Time    Weather\n15:00   Sunny\n09:00   Sunny\n16:00   Sunny\n10:00   Sunny'\n17:00   Cloudy\n11:00   Cloudy\n18:00   Cloudy\n12:00   Snowy\n19:00   Stormy\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

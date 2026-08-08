@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-67",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/67",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: fruit_distribution\n\nBehaviour, as the benchmark states it:\n\nIn this task, you will be given a string that represents a number of apples and oranges\n that are distributed in a basket of fruit this basket contains\n apples, oranges, and mango fruits. Given the string that represents the total number of\n the oranges and apples and an integer that represent the total number of the fruits\n in the basket return the number of the mango fruits in the basket.\n for examble:\n fruit_distribution(\"5 apples and 6 oranges\", 19) ->19 - 5 - 6 = 8\n fruit_distribution(\"0 apples and 1 oranges\",3) -> 3 - 0 - 1 = 2\n fruit_distribution(\"2 apples and 3 oranges\", 100) -> 100 - 2 - 3 = 95\n fruit_distribution(\"100 apples and 1 oranges\",120) -> 120 - 100 - 1 = 19\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 L-N PIC S9(10).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

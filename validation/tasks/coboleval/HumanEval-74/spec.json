@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-74",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/74",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: total_match\n\nBehaviour, as the benchmark states it:\n\n'''\n Write a function that accepts two lists of strings and returns the list that has\n total number of chars in the all strings of the list less than the other list.\n\n if the two lists have the same number of chars, return the first list.\n\n Examples\n total_match(['hi', 'admin'], ['hI', 'Hi', 'hi', 'hi']) ➞ ['hI', 'Hi', 'hi', 'hi']\n total_match(['hi', 'admin'], ['hi', 'hi', 'admin', 'project']) ➞ ['hi', 'admin']\n '''\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-LST1 OCCURS 2 TIMES INDEXED BY NI PIC X(2).\n           05 L-LST2 OCCURS 2 TIMES INDEXED BY NJ PIC X(2).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NK PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-92",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/92",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: any_int\n\nBehaviour, as the benchmark states it:\n\n'''\n Create a function that takes 3 numbers.\n Returns true if one of the numbers is equal to the sum of the other two, and all numbers are integers.\n Returns false in any other cases.\n\n Examples\n any_int(5, 2, 7) ➞ True\n\n any_int(3, 2, 2) ➞ False\n\n any_int(3, -2, 1) ➞ True\n\n any_int(3.6, -2.2, 2) ➞ False\n\n\n\n '''\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-X COMP-2.\n           05 L-Y COMP-2.\n           05 L-Z COMP-2.\n           05 RESULT PIC 9.",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

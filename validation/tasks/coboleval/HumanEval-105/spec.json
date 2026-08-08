@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-105",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/105",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: by_length\n\nBehaviour, as the benchmark states it:\n\nGiven an array of integers, sort the integers that are between 1 and 9 inclusive,\n reverse the resulting array, and then replace each digit by its corresponding name from\n \"One\", \"Two\", \"Three\", \"Four\", \"Five\", \"Six\", \"Seven\", \"Eight\", \"Nine\".\n\n For example:\n arr = [2, 1, 1, 4, 5, 8, 2, 3]\n -> sort arr -> [1, 1, 2, 2, 3, 4, 5, 8]\n -> reverse arr -> [8, 5, 4, 3, 2, 2, 1, 1]\n return [\"Eight\", \"Five\", \"Four\", \"Three\", \"Two\", \"Two\", \"One\", \"One\"]\n\n\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-ARR OCCURS 8 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_10",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_10",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that reads population data from an input file named 'input.txt', validates the country names against a predefined list, and writes the country name and population to an output file named 'output.txt' if the country is valid and has a positive population.\n\nThe program should follow the standard COBOL division structure:\n- IDENTIFICATION DIVISION with PROGRAM-ID \n- ENVIRONMENT DIVISION defining input and output files\n- DATA DIVISION with FILE SECTION and WORKING-STORAGE SECTION\n- PROCEDURE DIVISION containing the program logic\n\nAdhere to COBOL coding conventions:\n- Division headers and paragraph names in Area A (columns 8-11) \n- Statements in Area B (columns 12-72)\n- Use consistent indentation, especially in PROCEDURE DIVISION\n\nThe input file contains records with the country name and population. The program should check if each country name exists in a table of valid countries defined in WORKING-STORAGE. If the country is valid and its population is greater than zero, write the country name and population to the output file.\n\nInclude appropriate error handling, such as checking for the end of the input file. Open the files, process the records, and close the files in separate paragraphs in the PROCEDURE DIVISION.\n\nThe output file should have a header line indicating the columns, and each detail line should show the country name and population separated by a colon and space.\n\nFocus on the overall functionality and flow of the program. The specific algorithms and detailed COBOL syntax are left to the implementer.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "India               331002651\nChina               67886011\nAfghanistan         755898\nSri Lanka           78854678\nJapan               145278"
+  },
+  "expectedOutputs": {
+    "output.txt": "Country   Population\n--------------------\nIndia                 31002651\nChina                 7886011\nSri Lanka             8854678\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

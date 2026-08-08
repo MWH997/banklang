@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-11",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/11",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: string_xor\n\nBehaviour, as the benchmark states it:\n\nInput are two strings a and b consisting only of 1s and 0s.\n Perform binary XOR on these inputs and return result also as a string.\n >>> string_xor('010', '110')\n '100'\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-A PIC X(100).\n           05 L-B PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

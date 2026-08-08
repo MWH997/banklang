@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-97",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/97",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: multiply\n\nBehaviour, as the benchmark states it:\n\nComplete the function that takes two integers and returns\n the product of their unit digits.\n Assume the input is always valid.\n Examples:\n multiply(148, 412) should return 16.\n multiply(19, 28) should return 72.\n multiply(2020, 1851) should return 0.\n multiply(14,-15) should return 20.\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-A PIC S9(10).\n           05 L-B PIC S9(10).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_11",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_11",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads a file named 'input.txt' containing filenames (one per line), analyzes each filename, and writes the results to an output file named 'output.txt'. For each input filename, determine and output the following:\n\n1. Whether the filename contains a '.' character, indicating it is a file \n2. Whether the filename contains any special characters besides letters, numbers, '_' or '.'\n3. Whether the filename contains any numeric characters\n\nThe program should follow standard COBOL structure with IDENTIFICATION, ENVIRONMENT, DATA and PROCEDURE divisions. Use proper COBOL formatting conventions, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72). Indent and structure the code, especially in the PROCEDURE DIVISION, to enhance readability.\n\nIn the output file, include both the original filename and the analysis results on each line. The results should indicate \"is_file: Y/N\", \"has_special: Y/N\", and \"has_numbers: Y/N\" based on the criteria above.\n\nEnsure the program can handle input files with multiple filenames, processing each one and writing out the analysis until the end of the input file is reached. Include appropriate error handling.\n\nFocus on the overall functionality and flow of the program. The specific implementation details are left to your discretion, but the program must be syntactically valid COBOL code.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "filename1.txt\ntestingfile.txt\nanthertest@file.docx\nnotafile\n"
+  },
+  "expectedOutputs": {
+    "output.txt": "filename1.txt       is_file: Y, has_special: N, has_numbers: Y\ntestingfile.txt     is_file: Y, has_special: N, has_numbers: N\nanthertest@file.docxis_file: Y, has_special: Y, has_numbers: N\nnotafile            is_file: N, has_special: N, has_numbers: N\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

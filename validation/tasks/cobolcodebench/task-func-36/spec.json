@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_36",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_36",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that calculates the mean and median of a set of numbers read from an input file named \"input.txt\". The program should output the calculated mean and median values to an output file named \"output.txt\".\n\nEnsure the generated COBOL program adheres to the following requirements:\n\n1. The program must be a valid COBOL program.\n2. Use the standard COBOL division structure: IDENTIFICATION DIVISION, DATA DIVISION (including FILE SECTION and WORKING-STORAGE SECTION), and PROCEDURE DIVISION. \n3. Follow COBOL coding conventions for Area A (columns 8-11 for division headers and paragraph names) and Area B (columns 12-72 for statements).\n4. Apply standard COBOL indentation to enhance readability, especially within the PROCEDURE DIVISION.\n\nThe program should read numbers from the input file, store them in memory, perform the necessary calculations to determine the mean and median values, sort the numbers if required for the median calculation, and write the results to the output file. Handle end-of-file conditions and close files after processing.\n\nFocus on clearly describing the program's functionality and data handling without providing detailed implementation instructions or COBOL syntax specifics beyond the basic structural and formatting requirements outlined above. The LLM should determine the most appropriate algorithms and COBOL statements to achieve the desired outcome based on this high-level description.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "07488\n00033\n00377\n00234\n00036\n00007\n00373\n09282\n00023\n00078\n00736"
+  },
+  "expectedOutputs": {
+    "output.txt": "Mean = 07151\nMedian = 00019\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

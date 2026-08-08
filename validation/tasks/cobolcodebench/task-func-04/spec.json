@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_04",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_04",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that processes a file containing filenames (input.txt), moves files with valid extensions (.txt, .csv, .xlsx) to an output file (output.txt), and records invalid filenames and their reason for rejection in an error file (error.txt). \n\nThe program should follow this structure:\n- IDENTIFICATION DIVISION with PROGRAM-ID\n- ENVIRONMENT DIVISION \n  - INPUT-OUTPUT SECTION\n    - FILE-CONTROL paragraph to ASSIGN input, output and error files\n- DATA DIVISION\n  - FILE SECTION to define record layouts of files\n  - WORKING-STORAGE SECTION for internal data items  \n- PROCEDURE DIVISION with paragraphs to:\n  - PERFORM initialization \n  - PERFORM file processing until end-of-file\n    - READ input record\n    - CHECK filename extension \n    - IF valid, WRITE record to output file\n    - ELSE WRITE error message to error file\n  - PERFORM wrap-up\n  - STOP RUN\n\nUse proper COBOL coding conventions:  \n- Area A (columns 8-11) for division headers, section names, paragraph names\n- Area B (columns 12-72) for statements\n- Consistent indentation, especially in PROCEDURE DIVISION\n\nDisplay counts of successfully moved files and rejected files at the end.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "ABC.txt\nMyfiletest.csv\nMyfilecobol.pdf",
+    "error.txt": "Invalid extension for file: Myfilecobol.pdf  Expected txt, csv, or xlsx\n"
+  },
+  "expectedOutputs": {
+    "output.txt": "ABC.txt\nMyfiletest.csv\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

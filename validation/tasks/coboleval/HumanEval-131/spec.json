@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-131",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/131",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: digits\n\nBehaviour, as the benchmark states it:\n\nGiven a positive integer n, return the product of the odd digits.\n Return 0 if all digits are even.\n For example:\n digits(1)  == 1\n digits(4)  == 0\n digits(235) == 15\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-N PIC S9(10).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

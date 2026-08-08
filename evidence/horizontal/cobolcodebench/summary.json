@@ -1,0 +1,15 @@
+{
+  "corpus": "cobolcodebench",
+  "discovered": 46,
+  "imported": 46,
+  "applicable": 0,
+  "notYetAuthored": 0,
+  "unsupportedByDesign": 0,
+  "unsupportedNotYetImplemented": 46,
+  "malformedUpstream": 0,
+  "excludedLicence": 0,
+  "passed": 0,
+  "failures": {},
+  "passOfApplicable": "0 / 0",
+  "passOfDiscovered": "0 / 46 (0.0%)"
+}

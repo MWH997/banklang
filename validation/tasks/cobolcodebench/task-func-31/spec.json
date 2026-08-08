@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_31",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_31",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Create a valid COBOL program that reads weather data from an input file named 'weather-input.txt', processes the data to calculate weather statistics, and writes the results to an output file named 'weather-output.txt'. The program should adhere to the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION) and follow COBOL formatting conventions for Area A and Area B. Use standard COBOL indentation to improve readability.\n\nThe input file contains records with temperature, humidity, and pressure values. The program should calculate the maximum, minimum, and average temperature from the input data. \n\nIn the output file, write the calculated maximum temperature, minimum temperature, and average temperature, each on a separate line with an appropriate label.\n\nEnsure the program handles file opening, reading input records, processing data, writing output records, and closing files properly within the PROCEDURE DIVISION.\n\nCode:\n",
+  "inputs": {
+    "weather-input.txt": "225      60     1012\n182\t 65\t1013\n250\t 58\t1010\n201\t 70\t1011\n193\t 55\t1009\n218\t 63\t1014\n237\t 61\t1013\n243\t 62\t1012\n261\t 68\t1015\n220\t 64\t1011\n197      66\t1010\n188\t 72\t1008\n210\t 59\t1013\n274\t 75\t1012\n293\t 80\t1010\n235\t 67\t1015\n249\t 62\t1011\n202\t 71\t1009\n211\t 64\t1013\n190\t 65\t1010\n223\t 60\t1014\n257\t 62\t1012\n280\t 74\t1007\n234\t 66\t1011\n248\t 63\t1013\n221\t 58\t1010\n209\t 60\t1012\n215\t 59\t1014\n227\t 62\t1011\n194\t 64\t1010"
+  },
+  "expectedOutputs": {
+    "weather-output.txt": "MAXIMAM TEMP:       029.3\nMINIMAM TEMP:       018.2\nAVERGE TEMP:        022.5\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

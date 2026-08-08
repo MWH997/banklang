@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_39",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_39",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads an input file containing employee records, validates the data in each record against a set of business rules, and writes any records with invalid data to an error report file. The program should follow standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE DIVISION), adhere to COBOL Area A and B conventions, and use standard COBOL indentation to improve readability.\n\nThe input file (task_func39_inp1) contains these fields for each employee record:\n- Social Security Number (PIC 9(9)) \n- Employee Name (PIC X(20))\n- Employee Address (PIC X(20))\n- Transaction Code (PIC 9)\n- Annual Salary (PIC 9(5)) \n- Marital Status (PIC X)\n- Job Level (PIC 9)\n- Department (PIC 99)\n\nThe program should validate each record and write the employee name, an error message, and the invalid value to the error report file (task_func39_out1) if any of these conditions are found:\n- Employee Name is blank\n- Employee Address is blank \n- Transaction Code is not between 1-9\n- Annual Salary is not between 15000-87000\n- Marital Status is not M, S, D or W\n- Job Level is not between 1-6\n- Department is not 10, 20 or 30\n\nThe error report should contain a header with the column names, a row of dashes under the header, and then error records formatted with the employee name, error message, and invalid value.\n\nCode:\n",
+  "inputs": {
+    "task_func39_inp1": "080243567,ANT MAN             ,11 MAIN ST          ,0,21000,M,5,20\n070235826,SUBWAYSURFER        ,13 CROSS ST         ,9,43000,R,7,10\n023478911,JUNIORSON           ,53 AVENUE ROAD      ,6,12000,S,6,30\n424724472,STUTON              ,92 PARK STREET      ,8,15000,M,6,35\n"
+  },
+  "expectedOutputs": {
+    "task_func39_out1": "NAME                    ERROR DESCRIPTION                 ERR VALUE\n------------------------------------------------------------------------------------------------------------------------------------\nANT MAN             TRANS CODE IS INVALID                             0\nSUBWAYSURFER        MARITAL STATUS IS INVALID                         R\nSUBWAYSURFER        JOB LEVEL IS INVALID                              7\nJUNIORSON           SALARY OUT OF RANGE                               12000\nSTUTON              DEPARTMENT IS INVALID                             35\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

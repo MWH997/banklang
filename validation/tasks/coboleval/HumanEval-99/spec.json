@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-99",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/99",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: closest_integer\n\nBehaviour, as the benchmark states it:\n\n'''\n Create a function that takes a value (string) representing a number\n and returns the closest integer to it. If the number is equidistant\n from two integers, round it away from zero.\n\n Examples\n >>> closest_integer(\"10\")\n 10\n >>> closest_integer(\"15.3\")\n 15\n\n Note:\n Rounding away from zero means that if the given number is equidistant\n from two integers, the one you should return is the one that is the\n farthest from zero. For example closest_integer(\"14.5\") should\n return 15 and closest_integer(\"-14.5\") should return -15.\n '''\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-VALUE COMP-2.\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

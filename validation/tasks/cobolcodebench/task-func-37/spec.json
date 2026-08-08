@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_37",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_37",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads data records from an input file named 'task_func37_inp', sorts the records in ascending order based on a department field, filters out records with non-positive quantity values, reformats the records, and writes the sorted and filtered records to an output file named 'task_func37_out'. \n\nThe program should follow standard COBOL structure with IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions. Use a SORT statement to perform the record sorting. Adhere to COBOL coding conventions, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72). Apply consistent indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nDefine the necessary file and record descriptions in the FILE and WORKING-STORAGE SECTIONs of the DATA DIVISION. In the PROCEDURE DIVISION, include an INPUT PROCEDURE to read the input file, check quantity values, and release qualifying records to a work file. After sorting, use an OUTPUT PROCEDURE to retrieve the sorted records, reformat them, and write them to the output file.\n\nThroughout the process, handle end-of-file conditions appropriately. The input and output record formats should include part number, quantity, and department fields, along with any necessary filler.\n\nCode:\n",
+  "inputs": {
+    "task_func37_inp": "12345,00000,02\n45789,00023,01\n12456,00018,05\n11111,00018,04"
+  },
+  "expectedOutputs": {
+    "task_func37_out": "01,45789,00023\n04,11111,00018\n05,12456,00018\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

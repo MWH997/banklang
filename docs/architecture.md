@@ -238,7 +238,8 @@ the arithmetic that reports the answer with its denominator attached.
 
 It reaches no network and fetches nothing. Corpora arrive in an ignored cache
 through `tools/horizontal-fetch.ts`, pinned by `validation/corpus-lock.json`;
-this package reads what is on disk.
+this package reads what is on disk. See
+[horizontal validation](validation/horizontal-validation.md).
 
 ### `packages/formatter`
 

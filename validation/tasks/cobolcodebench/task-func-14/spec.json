@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_14",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_14",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that processes a CSV file containing dates and values. The program should:\n\n1. Read the CSV file specified by the input filename 'task_func14_inp'. \n2. Extract records where the date matches the current date.\n3. Sort the extracted records by value in ascending order.\n4. Write the sorted records to a new CSV file specified by the output filename 'task_func14_out'.\n5. Handle any file I/O errors and empty input files gracefully.\n\nEnsure the generated COBOL program adheres to the following requirements:\n\n1. Use valid COBOL syntax throughout the program.\n2. Structure the program using the standard COBOL division headers (IDENTIFICATION DIVISION, DATA DIVISION, PROCEDURE DIVISION). \n3. Follow COBOL formatting conventions, placing division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72).\n4. Improve code readability by applying consistent indentation, especially within the PROCEDURE DIVISION.\n\nThe program should be efficient, maintainable, and follow best practices for COBOL programming. Focus on clearly describing the program's functionality and purpose without providing detailed implementation instructions or algorithms.\n\nCode:\n",
+  "inputs": {
+    "task_func14_inp": "DateColumn,Value\n2024-12-25,150\n2024-12-25,100\n2023-12-25,200\n"
+  },
+  "expectedOutputs": {
+    "task_func14_out": "DateColumn,Value\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

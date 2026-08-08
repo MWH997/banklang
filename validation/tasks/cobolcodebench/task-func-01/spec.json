@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_01",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_01",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that processes soccer match statistics. The program should:\n\n1. Read match data from an input file named 'match_data.ps', which contains records with team name, goals scored, and penalties received. \n\n2. Update the match data by adding additional goals and penalties for each team based on data stored in the program. This additional data should be stored in two separate tables, one for goals and one for penalties.\n\n3. Write the updated records to a temporary file named 'temp.ps'. \n\n4. After processing all records from the input file, add any new teams from the additional data tables to the temporary file if they don't already exist in the input data.\n\n5. Copy the updated data from the temporary file to the output file named 'updated_match_data.ps'.\n\n6. Display the total goals and total penalties from the updated data.\n\nEnsure the generated COBOL program adheres to the following requirements:\n\n1. The program must be a valid COBOL program.\n\n2. Use the standard COBOL division structure (IDENTIFICATION DIVISION, DATA DIVISION, and PROCEDURE DIVISION). \n\n3. Follow COBOL Area A and Area B conventions for division headers, paragraph names, and statements.\n\n4. Apply standard COBOL indentation to improve readability, especially in the PROCEDURE DIVISION.\n\nThe input file is 'match_data.ps', and the output file should be 'updated_match_data.ps'. A temporary file 'temp.ps' should be used for intermediate processing.\n\nCode:\n",
+  "inputs": {
+    "match_data.ps": "Team A              002001\nTeam C              001000\nTeam F              001001 ",
+    "temp.ps": "team,goals,penalties\nTeam A              005002\nTeam C              002002\nTeam F              001001\n\nTeam B              002000\nTeam D              000003\nTeam E              002001\n"
+  },
+  "expectedOutputs": {
+    "updated_match_data.ps": "team,goals,penalties\nTeam A              005002\nTeam C              002002\nTeam F              001001\n\nTeam B              002000\nTeam D              000003\nTeam E              002001\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_55",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_55",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that reads data values from an input file named 'original_data.txt', identifies and removes outlier values, and writes the cleaned data to an output file named 'data_without_outliers.txt'. The program should also output the indices of the removed outlier values to a separate file named 'outlier_indices.txt'.\n\nThe program should consist of the standard COBOL divisions:\n- IDENTIFICATION DIVISION with an appropriate PROGRAM-ID \n- ENVIRONMENT DIVISION to define the input and output files\n- DATA DIVISION to define the file and working storage data structures\n- PROCEDURE DIVISION containing the main program logic\n\nWithin the PROCEDURE DIVISION, organize the code into paragraphs and sections as needed. Use COBOL's Area A (columns 8-11) for division headers and paragraph names, and Area B (columns 12-72) for statements. Apply consistent indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nThe program should perform the following key steps:\n1. Read the data values from 'original_data.txt' \n2. Calculate the mean and standard deviation of the data\n3. Identify outliers based on each value's Z-score exceeding a defined threshold\n4. Write the outlier indices to 'outlier_indices.txt'\n5. Write the cleaned data without the outliers to 'data_without_outliers.txt'\n\nEnsure the program handles opening and closing the files properly and uses appropriate COBOL syntax throughout. The specific algorithms for calculating statistics and identifying outliers are left to your discretion.\n\nCode:\n",
+  "inputs": {
+    "original_data.txt": "04679\n20976\n23467\n00233\n01673",
+    "outlier_indices.txt": ""
+  },
+  "expectedOutputs": {
+    "data_without_outliers.txt": "04679\n20976\n23467\n00233\n016730"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

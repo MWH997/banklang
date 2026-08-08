@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-88",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/88",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: sort_array\n\nBehaviour, as the benchmark states it:\n\nGiven an array of non-negative integers, return a copy of the given array after sorting,\n you will sort the given array in ascending order if the sum( first index value, last index value) is odd,\n or sort it in descending order if the sum( first index value, last index value) is even.\n\n Note:\n * don't change the given array.\n\n Examples:\n * sort_array([2, 4, 3, 0, 1, 5, 7]) => [0, 1, 2, 3, 4, 5, 7]\n * sort_array([2, 4, 3, 0, 1, 5, 6]) => [6, 5, 4, 3, 2, 1, 0]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-ARRAY OCCURS 7 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

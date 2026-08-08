@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-110",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/110",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: exchange\n\nBehaviour, as the benchmark states it:\n\nIn this problem, you will implement a function that takes two lists of numbers,\n and determines whether it is possible to perform an exchange of elements\n between them to make lst1 a list of only even numbers.\n There is no limit on the number of exchanged elements between lst1 and lst2.\n If it is possible to exchange elements between the lst1 and lst2 to make\n all the elements of lst1 to be even, return \"YES\".\n Otherwise, return \"NO\".\n For example:\n exchange([1, 2, 3, 4], [1, 2, 3, 4]) => \"YES\"\n exchange([1, 2, 3, 4], [1, 5, 3, 4]) => \"NO\"\n It is assumed that the input lists will be non-empty.\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-LST1 OCCURS 4 TIMES INDEXED BY NI PIC S9(10).\n           05 L-LST2 OCCURS 4 TIMES INDEXED BY NJ PIC S9(10).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

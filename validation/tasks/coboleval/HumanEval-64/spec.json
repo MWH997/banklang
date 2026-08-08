@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-64",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/64",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: vowels_count\n\nBehaviour, as the benchmark states it:\n\nWrite a function vowels_count which takes a string representing\n a word as input and returns the number of vowels in the string.\n Vowels in this case are 'a', 'e', 'i', 'o', 'u'. Here, 'y' is also a\n vowel, but only when it is at the end of the given word.\n\n Example:\n >>> vowels_count(\"abcde\")\n 2\n >>> vowels_count(\"ACEDY\")\n 3\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 RESULT PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

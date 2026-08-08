@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-86",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/86",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: anti_shuffle\n\nBehaviour, as the benchmark states it:\n\nWrite a function that takes a string and returns an ordered version of it.\n Ordered version of string, is a string where all words (separated by space)\n are replaced by a new word where all the characters arranged in\n ascending order based on ascii value.\n Note: You should keep the order of words and blank spaces in the sentence.\n\n For example:\n anti_shuffle('Hi') returns 'Hi'\n anti_shuffle('hello') returns 'ehllo'\n anti_shuffle('Hello World!!!') returns 'Hello !!!Wdlor'\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

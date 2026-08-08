@@ -141,6 +141,79 @@ jobs:
               });
             }
 
+  # Horizontal validation: this compiler against COBOL nobody wrote for it.
+  #
+  # Here rather than in `ci.yml` because it downloads about 500MB from three
+  # hosts and none of it can be caused by a pull request. The framework itself
+  # *is* checked on every push — `tests/horizontal-validation.test.ts` and
+  # `tests/horizontal-defects.test.ts` run in the ordinary suite from
+  # checked-in fixtures and read no corpus — so what runs here is the part that
+  # needs the corpora.
+  #
+  # `workflow_dispatch` and the weekly schedule only. The corpora are pinned by
+  # `validation/corpus-lock.json`, so a run that disagrees with the lock fails
+  # rather than quietly reporting a different score.
+  horizontal:
+    name: horizontal validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Keyed on the lock, so a re-pin fetches afresh and an unchanged lock
+      # restores the same bytes that produced the last published numbers.
+      - name: Cache the external corpora
+        uses: actions/cache@v6
+        with:
+          path: validation/cache
+          key: horizontal-corpora-${{ hashFiles('validation/corpus-lock.json') }}
+
+      # Without `--update`, the lock is authority: anything that does not match
+      # what was pinned fails here rather than becoming a new measurement.
+      - name: Fetch the corpora
+        run: pnpm horizontal:fetch
+
+      - name: Split specifications from reference solutions
+        run: pnpm horizontal:materialise
+
+      - name: Read the real-world corpora
+        run: pnpm horizontal:analyse
+
+      - name: Run the semantic corpora
+        run: pnpm horizontal:run
+
+      # No copy is supplied and none is downloaded, so this reports unavailable
+      # and records which emitted constructs nothing local covers.
+      - name: Report COBOL-85 conformance coverage
+        run: pnpm horizontal:ccvs85
+
+      - name: Regenerate the published pages
+        run: pnpm horizontal:report
+
+      # The published pages are generated from the evidence, so a diff here
+      # means the numbers in git no longer match what the corpora produce.
+      - name: Fail if the committed results are stale
+        run: git diff --exit-code docs/validation evidence/horizontal
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: horizontal-evidence
+          path: evidence/horizontal
+          retention-days: 90
+
   advisories:
     name: advisories
     runs-on: ubuntu-latest

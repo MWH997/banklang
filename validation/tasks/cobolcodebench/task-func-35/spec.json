@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_35",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_35",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that updates a master file with transaction data. The program should:\n\n- Follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions) \n- Adhere to COBOL Area A and Area B coding conventions\n- Use standard COBOL indentation, especially in PROCEDURE DIVISION, to improve readability\n\nThe program will read an old master file (task_func35_inp1) and a transaction file (task_func35_inp2). For each record, it should:\n\n- If the account numbers match, add the transaction amount to the master record amount and write the updated record to a new master file (task_func35_out)\n- If only the master record exists, write it to the new master file unchanged  \n- If only the transaction record exists, write a new record with the transaction data to the new master file\n\nAt the end, close all files. The records use the following format:\n\nMaster:  05 account-no PIC X(5), 05 amount PIC 9(4)V99. \nTransaction: 05 account-no PIC X(5), 05 amount PIC 9(4)V99.\nOutput: 05 account-no PIC X(5), 05 amount PIC 9(5)V99.\n\nEnsure the program handles reaching the end of either input file gracefully. The output file should contain the updated master records in account number order.\n\nCode:\n",
+  "inputs": {
+    "task_func35_inp1": "11111,009967\n22222,007666\n44444,076566",
+    "task_func35_inp2": "11111,009899\n22222,087778\n33333,092828\n44444,092828"
+  },
+  "expectedOutputs": {
+    "task_func35_out": "11111,0019866\n22222,0095444\n33333,0092828\n44444,0169394\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-19",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/19",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: sort_numbers\n\nBehaviour, as the benchmark states it:\n\nInput is a space-delimited string of numberals from 'zero' to 'nine'.\n Valid choices are 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight' and 'nine'.\n Return the string with numbers sorted from smallest to largest\n >>> sort_numbers('three one five')\n 'one three five'\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-NUMBERS PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,29 @@
+{
+  "available": false,
+  "location": "not supplied — set BANKLANG_CCVS85_DIR to a local copy",
+  "corpusFingerprint": null,
+  "discovered": 0,
+  "applicable": 0,
+  "notEmittedByBanklang": 0,
+  "unrecognised": 0,
+  "byModule": [],
+  "uncovered": [
+    "accept-display",
+    "comp-3",
+    "comp-binary",
+    "condition-names",
+    "continuation",
+    "exec-cics",
+    "exec-sql",
+    "external-data",
+    "go-to",
+    "intrinsic-function",
+    "local-storage",
+    "nested-program",
+    "occurs",
+    "on-size-error",
+    "perform-thru",
+    "sign-separate",
+    "usage-index"
+  ]
+}

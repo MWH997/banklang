@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_15",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_15",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that generates all possible combinations of animals and foods. The program should:\n\n1. Read a list of animals from an input file named 'task_func15_inp1'. If the file is empty, use a default list of 10 animals.\n\n2. Read a list of foods from an input file named 'task_func15_inp2'. If the file is empty, use a default list of 10 foods. \n\n3. Generate all possible animal-food combinations in the format \"Animal:Food|\" and write each combination to an output file named 'task_func15_out', with one combination per line.\n\n4. Handle up to a maximum of 10 animals and 10 foods. If either input file contains more than 10 items, display an error message and stop the program.\n\nThe COBOL program should follow this structure:\n- IDENTIFICATION DIVISION with the program name\n- ENVIRONMENT DIVISION to define the input and output files \n- DATA DIVISION to define the file layouts, working storage, and any tables or counters needed\n- PROCEDURE DIVISION containing the main program logic and any necessary paragraphs\n\nEnsure the COBOL code follows proper formatting conventions, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72). Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nFocus on clearly describing the program's functionality and purpose without providing detailed COBOL syntax or revealing the specific algorithms to use. The LLM should determine the best way to implement the program based on these requirements.\n\nCode:\n",
+  "inputs": {
+    "task_func15_inp1": "",
+    "task_func15_inp2": ""
+  },
+  "expectedOutputs": {
+    "task_func15_out": "Dog:Meat|Dog:Fish|Dog:Grass|Dog:Fruits|Dog:Insects|Dog:Seeds|Dog:Leaves|Dog:Vegetables|Dog:Sugarcane|Dog:Hay|\nCat:Meat|Cat:Fish|Cat:Grass|Cat:Fruits|Cat:Insects|Cat:Seeds|Cat:Leaves|Cat:Vegetables|Cat:Sugarcane|Cat:Hay|\nElephant:Meat|Elephant:Fish|Elephant:Grass|Elephant:Fruits|Elephant:Insects|Elephant:Seeds|Elephant:Leaves|Elephant:Vegetables|Elephant:Sugarcane|Elephant:Hay|\nTiger:Meat|Tiger:Fish|Tiger:Grass|Tiger:Fruits|Tiger:Insects|Tiger:Seeds|Tiger:Leaves|Tiger:Vegetables|Tiger:Sugarcane|Tiger:Hay|\nLion:Meat|Lion:Fish|Lion:Grass|Lion:Fruits|Lion:Insects|Lion:Seeds|Lion:Leaves|Lion:Vegetables|Lion:Sugarcane|Lion:Hay|\nZebra:Meat|Zebra:Fish|Zebra:Grass|Zebra:Fruits|Zebra:Insects|Zebra:Seeds|Zebra:Leaves|Zebra:Vegetables|Zebra:Sugarcane|Zebra:Hay|\nGiraffe:Meat|Giraffe:Fish|Giraffe:Grass|Giraffe:Fruits|Giraffe:Insects|Giraffe:Seeds|Giraffe:Leaves|Giraffe:Vegetables|Giraffe:Sugarcane|Giraffe:Hay|\nBear:Meat|Bear:Fish|Bear:Grass|Bear:Fruits|Bear:Insects|Bear:Seeds|Bear:Leaves|Bear:Vegetables|Bear:Sugarcane|Bear:Hay|\nMonkey:Meat|Monkey:Fish|Monkey:Grass|Monkey:Fruits|Monkey:Insects|Monkey:Seeds|Monkey:Leaves|Monkey:Vegetables|Monkey:Sugarcane|Monkey:Hay|\nKangaroo:Meat|Kangaroo:Fish|Kangaroo:Grass|Kangaroo:Fruits|Kangaroo:Insects|Kangaroo:Seeds|Kangaroo:Leaves|Kangaroo:Vegetables|Kangaroo:Sugarcane|Kangaroo:Hay|\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

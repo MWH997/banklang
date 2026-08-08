@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_17",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_17",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that extracts phone numbers from an input file named 'input.ps', formats them with country codes, and writes the formatted numbers to an output file named 'output.ps'. The program should adhere to the following requirements:\n\n1. Be a valid COBOL program with the standard COBOL division structure:\n   - IDENTIFICATION DIVISION \n   - ENVIRONMENT DIVISION\n   - DATA DIVISION\n   - PROCEDURE DIVISION\n2. Follow COBOL coding conventions:\n   - Division headers and paragraph names in Area A (columns 8-11)\n   - Statements in Area B (columns 12-72) \n3. Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to improve readability\n4. In the PROCEDURE DIVISION:\n   - Open the input and output files\n   - Read records from the input file\n   - Extract 10-digit phone numbers from each record \n   - Determine the country code based on the first digit of the phone number\n   - Format the phone number with the country code, parentheses, and spaces\n   - Write each formatted number to the output file\n   - Close the files after processing\n5. Include a counter in WORKING-STORAGE to track the number of phone numbers processed\n\nThe input file contains records with phone numbers embedded within other text. The phone numbers are always 10 consecutive digits. The first digit indicates the country: '2' for India (country code +91) and '1' for the UK (country code +44).\n\nThe output file should contain one formatted phone number per record in this format: \n+XX (XXX) XXX XXXX\n\nFocus on the program's functionality and adhere to COBOL's structure and formatting conventions. Implementation details are left to the discretion of the programmer.\n\nCode:\n",
+  "inputs": {
+    "input.ps": "2341677829\n1552778719\n2556366762"
+  },
+  "expectedOutputs": {
+    "output.ps": "+91 (234) 167 7829\n+44 (155) 277 8719\n+91 (255) 636 6762\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

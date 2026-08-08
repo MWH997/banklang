@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_21",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_21",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Create a valid COBOL program that generates sales data records based on input parameters. The program should:\n\n1. Follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions). \n\n2. Adhere to COBOL formatting conventions, using Area A for division and paragraph headers and Area B for statements.\n\n3. Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to improve readability.\n\nThe program will:\n- Read an input file named \"input.txt\" containing an epoch timestamp, random seed, and list of product names\n- Validate the epoch timestamp is before the current date/time  \n- Generate a random sales quantity between 10-50 for each product\n- Write an output record for each product to a file named \"sales.txt\" containing:\n  - Product name\n  - Sale date (epoch date + time of sale generation) \n  - Sale quantity\n- Convert the epoch timestamp to a date and increment it by 1 day after each product's record is written\n- Handle invalid input data and file errors gracefully\n\nAim to create clean, readable COBOL code that achieves this sales data generation functionality. Let me know if you have any other questions!\n\nCode:\n",
+  "inputs": {
+    "input.txt": "2021172051807 24  product1"
+  },
+  "expectedOutputs": {
+    "sales.txt": "Product1            2021172014160725       042\nProduct2            2021172114160725       010\nProduct3            2021172214160725       018\nProduct4            2021172314160725       025\nProduct5            2021172414160725       016\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

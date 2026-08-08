@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-145",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/145",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: order_by_points\n\nBehaviour, as the benchmark states it:\n\nWrite a function which sorts the given list of integers\n in ascending order according to the sum of their digits.\n Note: if there are several items with similar sum of their digits,\n order them based on their index in original list.\n\n For example:\n >>> order_by_points([1, 11, -1, -11, -12]) == [-1, -11, 1, -12, 11]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-NUMS OCCURS 5 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

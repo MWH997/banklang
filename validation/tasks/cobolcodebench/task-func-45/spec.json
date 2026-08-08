@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_45",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_45",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that generates a weather report for 5 cities given a UTC date and time. The program should:\n\n- Follow the standard COBOL division structure (IDENTIFICATION, ENVIRONMENT, DATA, PROCEDURE)\n- Use proper COBOL formatting conventions for Area A (columns 8-11) and Area B (columns 12-72) \n- Apply standard COBOL indentation, especially in PROCEDURE DIVISION, for readability\n\nThe program will:\n1. Read a UTC datetime (YYYY MM DD HH MM SS format) from an input file named 'task_func45_inp'  \n2. For each of 5 hardcoded cities (New York, London, Beijing, Tokyo, Sydney), calculate the local datetime by applying the city's UTC offset\n3. Randomly generate a weather condition (Sunny, Cloudy, Rainy, Snowy, Stormy) for each city\n4. Write the city name, local datetime, and weather to an output file named 'task_func45_out'\n\nInclude all necessary data definitions, file handling, and procedural logic to accomplish this. The input file will contain one UTC datetime per record. The output should have one line per city showing the city, local datetime, and weather.\n\nFocus on clearly expressing what the program needs to do rather than providing detailed COBOL syntax or algorithms. Ensure the program compiles and produces the expected output.\n\nCode:\n",
+  "inputs": {
+    "task_func45_inp": "2024-12-18 14:12:00"
+  },
+  "expectedOutputs": {
+    "task_func45_out": "New York    2024-12-18 09:12:00        Rainy\nLondon      2024-12-18 14:12:00        Rainy\nBeijing     2024-12-18 22:12:00        Rainy\nTokyo       2024-12-18 23:12:00        Rainy\nSydney      2024-12-19 01:12:00        Rainy\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

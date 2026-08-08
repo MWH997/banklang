@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-25",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/25",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: factorize\n\nBehaviour, as the benchmark states it:\n\nReturn list of prime factors of given integer in the order from smallest to largest.\n Each of the factors should be listed number of times corresponding to how many times it appeares in factorization.\n Input number should be equal to the product of all factors\n >>> factorize(8)\n [2, 2, 2]\n >>> factorize(25)\n [5, 5]\n >>> factorize(70)\n [2, 5, 7]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-N PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NI PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

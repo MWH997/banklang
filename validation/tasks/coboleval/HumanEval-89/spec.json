@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-89",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/89",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: encrypt\n\nBehaviour, as the benchmark states it:\n\nCreate a function encrypt that takes a string as an argument and\n returns a string encrypted with the alphabet being rotated.\n The alphabet should be rotated in a manner such that the letters\n shift down by two multiplied to two places.\n For example:\n encrypt('hi') returns 'lm'\n encrypt('asdfghjkl') returns 'ewhjklnop'\n encrypt('gf') returns 'kj'\n encrypt('et') returns 'ix'\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-S PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

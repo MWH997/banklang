@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-104",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/104",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: unique_digits\n\nBehaviour, as the benchmark states it:\n\nGiven a list of positive integers x. return a sorted list of all\n elements that hasn't any even digit.\n\n Note: Returned list should be sorted in increasing order.\n\n For example:\n >>> unique_digits([15, 33, 1422, 1])\n [1, 15, 33]\n >>> unique_digits([152, 323, 1422, 10])\n []\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-X OCCURS 4 TIMES INDEXED BY NI PIC S9(10).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC S9(10).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

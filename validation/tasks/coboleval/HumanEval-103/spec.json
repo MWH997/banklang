@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-103",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/103",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: rounded_avg\n\nBehaviour, as the benchmark states it:\n\nYou are given two positive integers n and m, and your task is to compute the\n average of the integers from n through m (including n and m).\n Round the answer to the nearest integer and convert that to binary.\n If n is greater than m, return -1.\n Example:\n rounded_avg(1, 5) => \"0b11\"\n rounded_avg(7, 5) => -1\n rounded_avg(10, 20) => \"0b1111\"\n rounded_avg(20, 33) => \"0b11010\"\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-N PIC S9(10).\n           05 L-M PIC S9(10).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

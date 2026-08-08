@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_02",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_02",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a COBOL program that reads a file named 'input.txt' containing filenames, checks if each filename has an extension of 'txt', 'doc', or 'docx', and if so, writes that filename to an output file named 'output.txt'. At the end, display the count of filenames that were moved to the output file.\n\nEnsure the COBOL program follows these requirements:\n1. It must be a valid COBOL program. \n2. Use the standard COBOL division structure:\n   IDENTIFICATION DIVISION. \n   ENVIRONMENT DIVISION.\n   DATA DIVISION.\n   PROCEDURE DIVISION.\n3. Follow COBOL coding conventions:\n   - Division headers and paragraph names in Area A (columns 8-11)  \n   - Statements in Area B (columns 12-72)\n4. Use standard COBOL indentation, especially in the PROCEDURE DIVISION, to enhance readability.\n\nThe program should open the input file, read filenames one at a time, check each filename's extension pattern, write matching filenames to the output file, keep count of the moved filenames, close both files when done, and display the final count of moved filenames.\n\nCode:\n",
+  "inputs": {
+    "input.txt": "ABC.txt\nDetailsofprogramming.pdf\nCOBOLDocument.docx\n"
+  },
+  "expectedOutputs": {
+    "output.txt": "ABC.txt\nCOBOLDocument.docx\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

@@ -1,0 +1,18 @@
+{
+  "id": "cobolcodebench/task_func_07",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_07",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Write a valid COBOL program that assigns tasks to employees and generates an output file with the task assignments. The program should:\n\n1. Follow the standard COBOL division structure with IDENTIFICATION, ENVIRONMENT, DATA, and PROCEDURE divisions. \n\n2. Use proper COBOL formatting conventions, with division headers and paragraph names in Area A (columns 8-11) and statements in Area B (columns 12-72).\n\n3. Indent code appropriately, especially in the PROCEDURE DIVISION, to improve readability.\n\nThe program will:\n\n- Read a number of tasks to assign from the command line \n- Read task descriptions from an input file named 'task_func_07_inp1'\n- Read employee names from an input file named 'task_func_07_inp2' \n- If no employees are provided, use a default list of 5 employees\n- Randomly assign each task to an employee\n- Format the task description by replacing spaces with underscores\n- Get the current date and format it as YYYY-MM-DD \n- Write each task assignment to an output file named 'task_func07_out' with the formatted task name, assigned employee, and due date\n- Include error handling if the number of tasks is negative or exceeds the number of tasks in the input file\n- Close all files after processing\n\nThe output file should have a header row labeling the columns. Each detail row should have the formatted task name, employee assigned, and due date, with columns separated by two spaces.\n\nCode:\n",
+  "inputs": {
+    "task_func_07_inp1": "Create POC for IBM WatsonX AI\ncomparison study Github copilot vs Amazon Q\nCode cobol programs for eval (1-25)\ncode cobol programs for eval (26-50)\ntechnical paper on Legacy transformation\n",
+    "task_func_07_inp2": "Rama\nJohn\nSai\nAfreen\nAngela\nPavan"
+  },
+  "expectedOutputs": {
+    "task_func07_out": "Task Name             Assigned To           Due Date\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

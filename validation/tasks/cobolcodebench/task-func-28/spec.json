@@ -1,0 +1,17 @@
+{
+  "id": "cobolcodebench/task_func_28",
+  "corpus": "cobolcodebench",
+  "upstreamId": "task_func_28",
+  "upstreamVersion": "9d02534b7d1aabcbac1a1ec21c5a5e80c50323a8",
+  "licence": "Apache-2.0",
+  "specification": "Create a valid COBOL program that reads data records from an input file named 'task_func28_inp', identifies duplicate records, counts the number of occurrences of each duplicate record, and writes the duplicate records and their counts to an output file named 'task_func28_out'. \n\nEnsure the program follows the standard COBOL division structure:\n- IDENTIFICATION DIVISION with PROGRAM-ID \n- ENVIRONMENT DIVISION with INPUT-OUTPUT SECTION for file assignments\n- DATA DIVISION with FILE SECTION and WORKING-STORAGE SECTION for data definitions\n- PROCEDURE DIVISION containing the program logic\n\nOrganize the PROCEDURE DIVISION into logical paragraphs for improved readability. Use COBOL best practices for indentation and adhere to Area A (columns 8-11) for division headers and paragraph names, and Area B (columns 12-72) for statements.\n\nThe program should handle up to a maximum of 100 input records, and gracefully terminate with an error message if this limit is exceeded. Records are a maximum of 80 characters wide.\n\nThe output file should contain one line per duplicate record found, with each line consisting of the duplicate record data followed by ': ' and then the count of occurrences, e.g. \"DUPLICATE-RECORD: 9999\" where 9999 is the number of times that record appears in the input file.\n\nCode:\n",
+  "inputs": {
+    "task_func28_inp": "Name,Age,City\nAlice,25,Newyork\nBob,30,London\nAlice,25,Newyork\nAlice,25,Newyork\nBob,30,London\nCharlie,35,Paris"
+  },
+  "expectedOutputs": {
+    "task_func28_out": "Alice,25,Newyork                                                                :     3\nBob,30,London                                                                   :     2\n"
+  },
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

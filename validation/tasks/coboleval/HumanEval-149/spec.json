@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-149",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/149",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: sorted_list_sum\n\nBehaviour, as the benchmark states it:\n\nWrite a function that accepts a list of strings as a parameter,\n deletes the strings that have odd lengths from it,\n and returns the resulted list with a sorted order,\n The list is always a list of strings and never an array of numbers,\n and it may contain duplicates.\n The order of the list should be ascending by length of each word, and you\n should return the list sorted by that rule.\n If two words have the same length, sort the list alphabetically.\n The function should return a list of strings in sorted order.\n You may assume that all words will have the same length.\n For example:\n assert list_sort([\"ab\", \"a\", \"aaa\", \"cd\"]) => [\"ab\", \"cd\"]\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-LST OCCURS 4 TIMES INDEXED BY NI PIC X(4).\n           05 RESULT OCCURS 100 TIMES INDEXED BY NJ PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}

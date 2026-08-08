@@ -1,0 +1,13 @@
+{
+  "id": "coboleval/HumanEval-143",
+  "corpus": "coboleval",
+  "upstreamId": "HumanEval/143",
+  "upstreamVersion": "0bb96c3114bb2bb28e221e9d6000614781f8609d",
+  "licence": "MIT",
+  "specification": "Entry point: words_in_sentence\n\nBehaviour, as the benchmark states it:\n\nYou are given a string representing a sentence,\n the sentence contains some words separated by a space,\n and you have to return a string that contains the words from the original sentence,\n whose lengths are prime numbers,\n the order of the words in the new string should be the same as the original one.\n\n Example 1:\n Input: sentence = \"This is a test\"\n Output: \"is\"\n\n Example 2:\n Input: sentence = \"lets go for swimming\"\n Output: \"go for\"\n\n Constraints:\n * 1 <= len(sentence) <= 100\n * sentence contains only letters\n\n Complete the WORKING-STORAGE SECTION and the PROCEDURE DIVISION\n Store the result in the RESULT variable and mark the end of your program with END PROGRAM\n\nThe calling interface the benchmark fixes:\n\n       LINKAGE SECTION.\n       01 LINKED-ITEMS.\n           05 L-SENTENCE PIC X(100).\n           05 RESULT PIC X(100).",
+  "inputs": {},
+  "expectedOutputs": {},
+  "expectedStdout": null,
+  "expectedExitCode": null,
+  "timeoutMs": 30000
+}
