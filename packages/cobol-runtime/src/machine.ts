@@ -1986,10 +1986,24 @@ export class Machine {
       });
     }
 
-    const area = this.recordArea(instance, open);
+    /*
+     * The length written is the *named record's*, not the record area's.
+     *
+     * Several 01 entries under one FD share an area as long as the longest of
+     * them, and `WRITE HEADING-RECORD` writes the heading's length — not the
+     * area's, and not whatever the last, longer record left in the bytes past
+     * its end. Writing the area instead produced `A0001   123.45 DUE`, where
+     * ` DUE` is the tail of a heading written three statements earlier, and
+     * `cobc` produced `A0001   123.45`. Found by running the first
+     * multi-record program through both engines.
+     *
+     * For a file with one record description the two lengths are equal, which
+     * is why this went unnoticed until there was a second one.
+     */
+    const written = this.resolveField(instance, field, []);
     const bytes = trimmedForOrganization(
       open,
-      area.bytes.subarray(area.offset, area.offset + area.length),
+      written.bytes.subarray(written.offset, written.offset + written.length),
     );
     const records = this.recordsOf(open);
 

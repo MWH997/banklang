@@ -167,6 +167,15 @@ export interface IRFile {
   organization: "sequential" | "lineSequential" | "indexed" | "relative";
   mode: "input" | "output" | "update";
   record: IRRecord;
+  /**
+   * Further `01` layouts under the same `FD`, sharing one record area.
+   *
+   * Output files only; the typechecker refuses the rest. The record area is as
+   * long as the longest of them, which is what COBOL does and what makes a
+   * short variant write fewer bytes to a line-sequential file rather than a
+   * padded record.
+   */
+  alternateRecords: IRRecord[];
   statusName: string | null;
   /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
   recordVarying: { min: number; max: number; lengthName: string } | null;
@@ -798,6 +807,14 @@ export interface IRFileStatement {
     | "close";
   fileName: string;
   recordName: string | null;
+  /**
+   * The record *type* the statement works through, where it has one.
+   *
+   * A file carrying several layouts is written through whichever `01` the
+   * record variable's type names, so the backend needs the type and not only
+   * the variable. Null for `open`, `close` and the rest.
+   */
+  recordTypeName: string | null;
   /** Mode of the declared file, needed to emit OPEN INPUT vs OPEN OUTPUT. */
   fileMode: "input" | "output" | "update";
   fileOrganization: "sequential" | "lineSequential" | "indexed" | "relative";
@@ -1196,6 +1213,17 @@ export function lowerProgramToIR(
     }
   }
   for (const file of typechecked.files) {
+    // A renames overlaps the run it names, so mapping it too would move the
+    // same bytes twice; a reserved slot is `FILLER`, which has no name to
+    // move through and whose bytes are nobody's to copy.
+    const mapped = (record: ResolvedRecord): IRMappedField[] =>
+      record.fields
+        .filter((field) => !field.renames && !field.reserved)
+        .map((field) => ({
+          name: field.name,
+          arrayLength: field.type.kind === "array" ? field.type.length : null,
+          dependingOn: field.dependingOn,
+        }));
     fileTable.set(file.name, {
       mode: file.mode,
       organization: file.organization,
@@ -1203,16 +1231,13 @@ export function lowerProgramToIR(
       recordVarying: file.recordVarying,
       keyFieldName: file.keyField?.name ?? null,
       alternateKeyNames: file.alternateKeys.map((field) => field.name),
-      // A renames overlaps the run it names, so mapping it too would move the
-      // same bytes twice; a reserved slot is `FILLER`, which has no name to
-      // move through and whose bytes are nobody's to copy.
-      recordFields: file.record.fields
-        .filter((field) => !field.renames && !field.reserved)
-        .map((field) => ({
-          name: field.name,
-          arrayLength: field.type.kind === "array" ? field.type.length : null,
-          dependingOn: field.dependingOn,
-        })),
+      recordFields: mapped(file.record),
+      layouts: new Map(
+        [file.record, ...file.alternateRecords].map((record) => [
+          record.name,
+          mapped(record),
+        ]),
+      ),
     });
   }
 
@@ -1284,6 +1309,9 @@ export function lowerProgramToIR(
     organization: file.organization,
     mode: file.mode,
     record: lowerRecord(file.record, recordTypeMap),
+    alternateRecords: file.alternateRecords.map((record) =>
+      lowerRecord(record, recordTypeMap),
+    ),
     statusName: file.statusName,
     recordVarying: file.recordVarying,
     keyFieldName: file.keyField?.name ?? null,
@@ -1404,6 +1432,16 @@ const fileTable = new Map<
     /** The other indexes a browse may walk, by field name. */
     alternateKeyNames: string[];
     recordFields: IRMappedField[];
+    /**
+     * Every layout the file carries, by record type name.
+     *
+     * One entry for almost every file. A file declared `record Heading, Detail`
+     * has one per layout, and a `write` is lowered against the layout its
+     * record variable's type names rather than against the file's first one —
+     * otherwise the generated moves would copy the heading's fields out of a
+     * detail record.
+     */
+    layouts: Map<string, IRMappedField[]>;
   }
 >();
 const functionTable = new Map<string, IRType>();
@@ -2490,6 +2528,16 @@ function lowerStatement(
           `Unresolved file during IR lowering: ${statement.fileName}`,
         );
       }
+      // Which layout this statement moves through. The record variable's type
+      // is the answer, and on a file with one record it is the only answer.
+      const recordType =
+        statement.recordName === null
+          ? undefined
+          : scopeTypes.get(statement.recordName);
+      const layout =
+        recordType?.kind === "record" && file.layouts.has(recordType.name)
+          ? recordType.name
+          : null;
       return {
         kind: "FileStatement",
         span: statement.span,
@@ -2509,7 +2557,10 @@ function lowerStatement(
             ? statement.key.member
             : null) ?? file.keyFieldName,
         key: statement.key ? lowerExpression(statement.key, scopeTypes) : null,
-        recordFields: file.recordFields,
+        recordTypeName: layout,
+        recordFields:
+          (layout === null ? undefined : file.layouts.get(layout)) ??
+          file.recordFields,
         advancing: statement.advancing,
         atEndOfPage: statement.atEndOfPage
           ? lowerBlock(statement.atEndOfPage, scopeTypes)

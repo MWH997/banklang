@@ -922,6 +922,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-015",
+    title: "Several record layouts on a file that cannot choose between them",
+    explanation:
+      "COBOL puts several 01 entries under one FD: a report whose heading line and detail lines are different shapes, a feed of header, detail and trailer records. They share one record area, and each WRITE names the layout it is writing — so on an output file the variant is decided by the program and its type is known where it is chosen. A READ names nothing. Which layout arrived is decided by the data, and a value whose type is a guess is exactly what this language exists not to hand back. The same goes for a record key, which belongs to one layout, and for RECORD IS VARYING, which describes the length of one record rather than a choice between several.",
+    remediation:
+      "Declare the several layouts on an output file, where a write chooses between them by the record's type. For a file that is read, declare one record and interpret the bytes yourself — a field that says which kind of record it is, and a `redefines` for the rest.",
+    specReference: "language/files.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-FILE-016",
+    title: "A DD name that is also a data item",
+    explanation:
+      "The generated SELECT reads `ASSIGN TO <DD>`, and both Enterprise COBOL 6 and GnuCOBOL treat that word as a data item when one of that name exists — taking the file name from its *contents* rather than from the environment. A `record Feed` becomes the group `FEED`, a `file feed` assigns to DD `FEED`, and the program compiles. At run time the OPEN looks for a dataset named by whatever the record happened to hold and the job ends on file status 35 having processed nothing.",
+    remediation:
+      "Rename the file or the record so the two differ within the first eight characters once the hyphens are removed.",
+    specReference: "language/files.md",
+    implemented: true,
+  },
+  {
     id: "BANK-TEST-001",
     title: "A test naming something it cannot start",
     explanation:

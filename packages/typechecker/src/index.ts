@@ -1,6 +1,7 @@
 import {
   copybookMemberName,
   EDIT_STYLES,
+  toCobolName,
   type EditStyle,
   type NumericUsage,
 } from "../../cobol-ir/src/index";
@@ -309,6 +310,16 @@ export interface ResolvedFile {
   linage: ResolvedFileLinage | null;
   mode: "input" | "output" | "update";
   record: ResolvedRecord;
+  /**
+   * Further layouts the same file carries, sharing one record area.
+   *
+   * Empty for almost every file. Non-empty only for an output file, because
+   * that is the one case where the variant is decided by the program: a `write`
+   * names the record it is writing and its type says which layout that is. A
+   * `read` has no such name — the variant is decided by the data — so a file
+   * that is read declares one record and `BANK-FILE-015` says why.
+   */
+  alternateRecords: ResolvedRecord[];
   statusName: string | null;
   /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
   recordVarying: { min: number; max: number; lengthName: string } | null;
@@ -738,6 +749,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   checkSingleEntryPoint(transactions, diagnostics);
   checkCopybookMemberNames(records, diagnostics);
   checkDdNames(files, diagnostics);
+  checkDdNamesAgainstData(files, records, diagnostics);
 
   const tests = resolveTests(
     program,
@@ -1726,6 +1738,13 @@ function resolveFile(
     validateLineSequential(declaration, record, diagnostics);
   }
 
+  const alternateRecords = resolveAlternateRecords(
+    declaration,
+    record,
+    recordMap,
+    diagnostics,
+  );
+
   return {
     name: declaration.name,
     span: declaration.span,
@@ -1734,6 +1753,7 @@ function resolveFile(
     alternateKeys,
     mode: declaration.mode,
     record,
+    alternateRecords,
     statusName: declaration.statusName,
     recordVarying: validateRecordVarying(declaration, recordMap, diagnostics),
     linage: linage
@@ -1745,6 +1765,110 @@ function resolveFile(
         }
       : null,
   };
+}
+
+/**
+ * `record Heading, Detail` — the further layouts one file carries.
+ *
+ * COBOL puts several `01` entries under one `FD`; they share one record area
+ * whose length is the longest of them, and each `WRITE` names the one it is
+ * writing. The pattern is everywhere: 2,812 of the 6,451 file descriptions in
+ * the X-COBOL corpus declare more than one record and 2,663 of those are opened
+ * `OUTPUT` — a report whose heading line and detail lines are different shapes,
+ * which is exactly what `task_func_25` and `task_func_34` describe.
+ *
+ * Three rules keep it safe, and each of them is a thing COBOL will let you do
+ * and BankTS will not:
+ *
+ * 1. **Output only.** A `write` names the record it writes, so the variant is
+ *    known at the write and its fields are the fields of that type. A `read`
+ *    names nothing: which layout arrived is decided by the data, and handing
+ *    back a value whose type is a guess is the whole failure mode this
+ *    restriction exists to prevent. Narrowing a record read from a file would
+ *    need a discriminator field, and the corpus does not justify it — 143 of
+ *    6,451 file descriptions read a multi-record file, across fourteen
+ *    repositories of which six are parser test suites.
+ * 2. **Distinct types.** Two layouts of the same type are one layout written
+ *    twice, and the generated `WRITE` could not tell them apart.
+ * 3. **Not indexed, not varying.** A record key belongs to one layout, and
+ *    `RECORD IS VARYING` describes the length of one record rather than a
+ *    choice between several.
+ */
+function resolveAlternateRecords(
+  declaration: FileDeclarationNode,
+  primary: ResolvedRecord,
+  recordMap: Map<string, ResolvedRecord>,
+  diagnostics: Diagnostic[],
+): ResolvedRecord[] {
+  const alternates: ResolvedRecord[] = [];
+  if (declaration.alternateRecordTypeNames.length === 0) {
+    return alternates;
+  }
+
+  if (declaration.mode !== "output") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-015",
+        severity: "error",
+        message: `File ${declaration.name} is ${declaration.mode} and carries ${String(declaration.alternateRecordTypeNames.length + 1)} record layouts.`,
+        span: declaration.alternateRecordTypeNames[0]?.span ?? declaration.span,
+        hint: "A read cannot know which layout arrived, so only an output file carries more than one. Read it as one record and interpret the bytes yourself.",
+        backendProfile: null,
+      }),
+    );
+    return alternates;
+  }
+
+  if (declaration.organization === "indexed" || declaration.recordVarying) {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-015",
+        severity: "error",
+        message: `File ${declaration.name} carries several record layouts and is ${declaration.organization === "indexed" ? "indexed" : "declared with varying record length"}.`,
+        span: declaration.alternateRecordTypeNames[0]?.span ?? declaration.span,
+        hint: "A record key and a varying length each describe one layout. Declare one record.",
+        backendProfile: null,
+      }),
+    );
+    return alternates;
+  }
+
+  const seen = new Set([primary.name]);
+  for (const alternate of declaration.alternateRecordTypeNames) {
+    const resolved = recordMap.get(alternate.name);
+    if (!resolved) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-001",
+          severity: "error",
+          message: `Unresolved record type for file ${declaration.name}: ${alternate.name}.`,
+          span: alternate.span,
+          hint: "Declare the record before the file that uses it.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    if (seen.has(alternate.name)) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-015",
+          severity: "error",
+          message: `File ${declaration.name} carries ${alternate.name} twice.`,
+          span: alternate.span,
+          hint: "Each layout appears once; a write chooses between them by the record's type.",
+          backendProfile: null,
+        }),
+      );
+      continue;
+    }
+    seen.add(alternate.name);
+    if (declaration.organization === "lineSequential") {
+      validateLineSequential(declaration, resolved, diagnostics);
+    }
+    alternates.push(resolved);
+  }
+  return alternates;
 }
 
 function resolveTransaction(
@@ -5057,14 +5181,27 @@ function validateFileStatement(
     return;
   }
 
-  if (recordType.kind !== "record" || recordType.name !== file.record.name) {
+  // The layouts the file carries, and the one being written has to be one of
+  // them. With several, the record variable's *type* is what chooses the
+  // variant — a `write bills from heading` writes the heading layout and a
+  // `write bills from detail` writes the detail one, and neither can reach the
+  // other's fields. That is the whole narrowing mechanism, and it holds because
+  // the choice is made where the type is known.
+  const layouts = [file.record, ...file.alternateRecords];
+  if (
+    recordType.kind !== "record" ||
+    !layouts.some((layout) => layout.name === recordType.name)
+  ) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-FILE-002",
         severity: "error",
-        message: `File ${file.name} carries ${file.record.name} records, but ${statement.recordName} is ${describeType(recordType)}.`,
+        message: `File ${file.name} carries ${layouts.map((layout) => layout.name).join(" or ")} records, but ${statement.recordName} is ${describeType(recordType)}.`,
         span: statement.span,
-        hint: "The record layout must match the file declaration.",
+        hint:
+          layouts.length > 1
+            ? "The record layout must be one the file declaration names."
+            : "The record layout must match the file declaration.",
         backendProfile: null,
       }),
     );
@@ -8570,6 +8707,53 @@ function checkDdNames(files: ResolvedFile[], diagnostics: Diagnostic[]): void {
         }),
       );
     }
+  }
+}
+
+/**
+ * A DD name that is also the name of a data item.
+ *
+ * `ASSIGN TO FEED` names an environment variable — unless a data item called
+ * `FEED` exists, in which case both Enterprise COBOL 6 and GnuCOBOL read the
+ * *contents* of that item as the file name. The program compiles. At run time
+ * the item holds whatever the program put in it, the OPEN looks for a dataset
+ * of that name, and the job ends on file status 35 having processed nothing.
+ *
+ * A record type is the collision that happens: `record Feed` becomes the
+ * working-storage group `FEED`, and `file feed` assigns to DD `FEED`. Found by
+ * running a program that had both — the interpreter, which resolves the DD by
+ * name, read the file correctly while `cobc` reported 35, so the two engines
+ * disagreed about whether the input existed.
+ */
+function checkDdNamesAgainstData(
+  files: ResolvedFile[],
+  records: ResolvedRecord[],
+  diagnostics: Diagnostic[],
+): void {
+  const dataNames = new Map<string, string>();
+  for (const record of records) {
+    dataNames.set(toCobolName(record.name), record.name);
+    for (const field of record.fields) {
+      dataNames.set(toCobolName(field.name), field.name);
+    }
+  }
+
+  for (const file of files) {
+    const dd = copybookMemberName(file.name);
+    const clash = dataNames.get(dd);
+    if (clash === undefined) {
+      continue;
+    }
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-016",
+        severity: "error",
+        message: `File ${file.name} assigns to DD name ${dd}, which is also the data item ${clash}.`,
+        span: file.span,
+        hint: "The compiler emits `ASSIGN TO <DD>`, and a compiler that finds a data item of that name takes the file name from its contents instead. Rename the file or the record so the two differ within the first eight characters once the hyphens are removed.",
+        backendProfile: null,
+      }),
+    );
   }
 }
 

@@ -239,6 +239,11 @@ function printDeclaration(
     }
 
     case "FileDeclaration": {
+      // `record Heading, Detail` — the several 01 entries one FD carries.
+      const layouts = [
+        declaration.recordTypeName,
+        ...declaration.alternateRecordTypeNames.map((entry) => entry.name),
+      ].join(", ");
       const key = declaration.keyField ? ` key ${declaration.keyField}` : "";
       const alternates =
         declaration.alternateKeys.length > 0
@@ -265,7 +270,7 @@ function printDeclaration(
         ? ` status ${declaration.statusName}`
         : "";
       printer.push(
-        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${declaration.recordTypeName}${key}${alternates}${varying}${linage}${status};${trailing}`,
+        `file ${declaration.name} ${declaration.organization} ${declaration.mode} record ${layouts}${key}${alternates}${varying}${linage}${status};${trailing}`,
       );
       return;
     }

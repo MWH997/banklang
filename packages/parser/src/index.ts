@@ -1834,6 +1834,23 @@ class Parser {
       "Expected the record type name.",
     );
 
+    // `record Heading, Detail` — COBOL's several 01 entries under one FD. The
+    // comma cannot be confused with the one in `alternate a, b`: that list is
+    // introduced by its own word.
+    const alternateRecordTypeNames: { name: string; span: SourceSpan }[] = [];
+    while (this.matchPunctuation(",")) {
+      const alternate = this.expectIdentifier(
+        "Expected another record type name.",
+      );
+      if (!alternate) {
+        return null;
+      }
+      alternateRecordTypeNames.push({
+        name: alternate.text,
+        span: alternate.span,
+      });
+    }
+
     let keyField: string | null = null;
     if (
       this.current.kind === "identifier" &&
@@ -1974,6 +1991,7 @@ class Parser {
       organization: organizationToken.text as FileOrganization,
       mode: modeToken.text as "input" | "output" | "update",
       recordTypeName: recordTypeToken.text,
+      alternateRecordTypeNames,
       statusName,
       keyField,
       alternateKeys,

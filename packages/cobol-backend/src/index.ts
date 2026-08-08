@@ -1112,6 +1112,19 @@ export function emitCobol(
       suppressInitialValues = true;
       emitRecordFields(file.record.fields, 1, addLine, fileRecordName(file));
       suppressInitialValues = false;
+      // Every further layout is another 01 under the same FD, which is how
+      // COBOL says "this file carries records of several shapes". They share
+      // one record area as long as the longest of them; a WRITE names the one
+      // it is writing, and on a line-sequential file a shorter layout writes
+      // fewer bytes rather than a padded record.
+      for (const alternate of file.alternateRecords) {
+        const name = fileAlternateRecordName(file, alternate);
+        addLine(`       01  ${name}.`);
+        suppressInitialValues = true;
+        emitRecordFields(alternate.fields, 1, addLine, name);
+        suppressInitialValues = false;
+        emitAllRenames(alternate, name, addLine, " ".repeat(11));
+      }
       emitAllRenames(
         file.record,
         fileRecordName(file),
@@ -1408,6 +1421,7 @@ export function emitCobol(
       .filter((file) => file.statusName)
       .map((file) => [file.name, toCobolFieldName(file.statusName as string)]),
   );
+  fileLayouts = new Map(program.files.map((file) => [file.name, file]));
   const xmlParses = xmlParseStatements(program);
   xmlHandlerIndexes = new Map(
     xmlParses.map((owned, index) => [owned.statement, index]),
@@ -3036,6 +3050,33 @@ function fileCobolName(fileName: string): string {
 
 function fileRecordName(file: IRFile): string {
   return cobolWord(toCobolName(file.name), "RECORD");
+}
+
+/**
+ * The `01` name of a layout other than the file's first.
+ *
+ * The record type's own name is in it, so a reader of the generated COBOL can
+ * see which BankTS record each `01` came from — and so two files carrying the
+ * same layout do not collide on one name.
+ */
+function fileAlternateRecordName(file: IRFile, record: IRRecord): string {
+  return cobolWord(
+    `${toCobolName(file.name)}-${toCobolName(record.name)}`,
+    "RECORD",
+  );
+}
+
+/** The `01` a statement writes through: the layout its record type names. */
+function fileLayoutRecordName(
+  file: IRFile,
+  recordTypeName: string | null,
+): string {
+  const alternate = file.alternateRecords.find(
+    (record) => record.name === recordTypeName,
+  );
+  return alternate
+    ? fileAlternateRecordName(file, alternate)
+    : fileRecordName(file);
 }
 
 /**
@@ -5199,6 +5240,8 @@ let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
  * has to test the one that file declared rather than any other.
  */
 let fileStatusNames = new Map<string, string>();
+/** Declared files by name, for resolving which `01` a statement writes. */
+let fileLayouts = new Map<string, IRFile>();
 
 /**
  * True while a sort's input or output procedure is being emitted.
@@ -6378,7 +6421,7 @@ function emitFileStatement(
             ? " AFTER ADVANCING PAGE"
             : ` AFTER ADVANCING ${statement.advancing} LINES`;
       addLine(
-        `${indent}WRITE ${fileRecordNameFor(statement.fileName)}${advancing}`,
+        `${indent}WRITE ${layoutRecordNameFor(statement.fileName, statement.recordTypeName)}${advancing}`,
       );
       if (status && statement.fileOrganization === "indexed") {
         // A duplicate key is the failure a WRITE to a KSDS actually has, and
@@ -6494,7 +6537,10 @@ function emitRecordFieldMapping(
     return;
   }
 
-  const fileRecord = fileRecordNameFor(statement.fileName);
+  const fileRecord = layoutRecordNameFor(
+    statement.fileName,
+    statement.recordTypeName,
+  );
   const target = resolveIdentifier(statement.recordName);
   const counts = occursCounts(statement.recordFields);
 
@@ -6592,6 +6638,24 @@ function emitOccursCountGuard(
 
 function fileRecordNameFor(fileName: string): string {
   return cobolWord(toCobolName(fileName), "RECORD");
+}
+
+/**
+ * The `01` a statement moves through, on a file carrying several layouts.
+ *
+ * The file's first record for everything else, which is every file in every
+ * example. A `write` on a file declared `record Heading, Detail` names the
+ * layout its record variable's type chose, and moving the detail's fields into
+ * the heading's `01` would put them at the heading's offsets.
+ */
+function layoutRecordNameFor(
+  fileName: string,
+  recordTypeName: string | null,
+): string {
+  const file = fileLayouts.get(fileName);
+  return file && recordTypeName !== null
+    ? fileLayoutRecordName(file, recordTypeName)
+    : fileRecordNameFor(fileName);
 }
 
 /**

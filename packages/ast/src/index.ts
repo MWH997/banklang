@@ -1023,6 +1023,18 @@ export interface FileDeclarationNode extends NodeBase {
   organization: FileOrganization;
   mode: "input" | "output" | "update";
   recordTypeName: string;
+  /**
+   * Further record layouts the same file carries: `record Head, Detail`.
+   *
+   * COBOL's several `01` entries under one `FD`, which share one record area
+   * and are chosen by name at each `WRITE`. 2,812 of the 6,451 file
+   * descriptions in the X-COBOL corpus declare more than one, and 2,663 of
+   * those are opened `OUTPUT`: a report or a feed whose heading line and detail
+   * lines are different shapes. That is what this is for, and it is the whole
+   * of what it is for — a file read with more than one layout is refused, since
+   * a `read` cannot know which of them arrived.
+   */
+  alternateRecordTypeNames: { name: string; span: SourceSpan }[];
   statusName: string | null;
   /** Record key field, required for an indexed file. */
   keyField: string | null;
