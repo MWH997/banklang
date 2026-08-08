@@ -10,62 +10,71 @@ green its meaning does not happen.
 
 Measured over the 148 programs the compiler produces from the examples and the benchmark tasks.
 
+The denominator is **locally executable** emitted verbs, not all of them.
+A verb whose only home is a zUnit test case or a Report Writer section has
+nowhere local to run whatever the interpreter implements, and counting it
+as a gap made the real one look half its size: of eight blind spots
+reported before `SORT` and `MERGE` were built, four were those two and
+their `RELEASE` and `RETURN`, and four were exempt. Each exemption carries
+its reason below and is held to a named program by
+`tests/interpreter-coverage.test.ts`.
+
 | | |
 | --- | --- |
 | verbs emitted | 31 |
-| of those, interpreted | 23 |
-| differential blind spots | 8 |
+| of those, locally executable | 27 |
+| of those, interpreted | 27 |
+| differential blind spots | 0 |
+| exempt, with a recorded reason | 4 |
 
-## Blind spots, by how much emitted COBOL uses them
-
-| Verb | Emitted statements | In |
-| --- | --- | --- |
-| `ENTRY` | 6 | TZUNITTE.cbl |
-| `RELEASE` | 2 | task-func-13.cbl, task-func-37.cbl |
-| `SORT` | 2 | task-func-13.cbl, task-func-37.cbl |
-| `GENERATE` | 1 | (generated).cbl |
-| `INITIATE` | 1 | (generated).cbl |
-| `MERGE` | 1 | task-func-38.cbl |
-| `RETURN` | 1 | task-func-37.cbl |
-| `TERMINATE` | 1 | (generated).cbl |
+Every locally executable verb the backend emits can be executed by both engines.
 
 ## Every emitted verb
 
-| Verb | Emitted | Interpreted |
-| --- | --- | --- |
-| `MOVE` | 2053 | yes |
-| `IF` | 629 | yes |
-| `DISPLAY` | 583 | yes |
-| `PERFORM` | 186 | yes |
-| `COMPUTE` | 177 | yes |
-| `CONTINUE` | 153 | yes |
-| `EXIT` | 136 | yes |
-| `CALL` | 100 | yes |
-| `ADD` | 78 | yes |
-| `CLOSE` | 67 | yes |
-| `OPEN` | 67 | yes |
-| `GOBACK` | 52 | yes |
-| `WRITE` | 46 | yes |
-| `READ` | 41 | yes |
-| `SET` | 23 | yes |
-| `EVALUATE` | 18 | yes |
-| `STRING` | 12 | yes |
-| `SUBTRACT` | 10 | yes |
-| `ENTRY` | 6 | **no** |
-| `INITIALIZE` | 6 | yes |
-| `INSPECT` | 6 | yes |
-| `DIVIDE` | 4 | yes |
-| `UNSTRING` | 3 | yes |
-| `RELEASE` | 2 | **no** |
-| `SORT` | 2 | **no** |
-| `GENERATE` | 1 | **no** |
-| `INITIATE` | 1 | **no** |
-| `MERGE` | 1 | **no** |
-| `RETURN` | 1 | **no** |
-| `START` | 1 | yes |
-| `TERMINATE` | 1 | **no** |
+| Verb | Emitted | Locally executable | Interpreted |
+| --- | --- | --- | --- |
+| `MOVE` | 2056 | yes | yes |
+| `IF` | 629 | yes | yes |
+| `DISPLAY` | 583 | yes | yes |
+| `PERFORM` | 186 | yes | yes |
+| `COMPUTE` | 177 | yes | yes |
+| `CONTINUE` | 153 | yes | yes |
+| `EXIT` | 136 | yes | yes |
+| `CALL` | 100 | yes | yes |
+| `ADD` | 78 | yes | yes |
+| `CLOSE` | 67 | yes | yes |
+| `OPEN` | 67 | yes | yes |
+| `GOBACK` | 52 | yes | yes |
+| `WRITE` | 46 | yes | yes |
+| `READ` | 41 | yes | yes |
+| `SET` | 23 | yes | yes |
+| `EVALUATE` | 18 | yes | yes |
+| `STRING` | 12 | yes | yes |
+| `SUBTRACT` | 10 | yes | yes |
+| `ENTRY` | 6 | no | n/a |
+| `INITIALIZE` | 6 | yes | yes |
+| `INSPECT` | 6 | yes | yes |
+| `DIVIDE` | 4 | yes | yes |
+| `UNSTRING` | 3 | yes | yes |
+| `RELEASE` | 2 | yes | yes |
+| `SORT` | 2 | yes | yes |
+| `GENERATE` | 1 | no | n/a |
+| `INITIATE` | 1 | no | n/a |
+| `MERGE` | 1 | yes | yes |
+| `RETURN` | 1 | yes | yes |
+| `START` | 1 | yes | yes |
+| `TERMINATE` | 1 | no | n/a |
 
-## Not executable locally
+## Emitted, and outside local execution
+
+| Verb | In | Why no local run reaches it |
+| --- | --- | --- |
+| `ENTRY` | (generated)/TZUNITTE.cbl | an alternate entry point in a generated zUnit test case. It is called by IBM's zUnit runner, which is not on this machine, and never by a job step. |
+| `GENERATE` | examples/report-with-controls | Report Writer, as INITIATE. |
+| `INITIATE` | examples/report-with-controls | Report Writer, expanded by IBM's Report Writer precompiler. `packages/cobol-runtime` refuses a REPORT SECTION by name rather than implementing page fitting, control breaks and sum counters a second time. |
+| `TERMINATE` | examples/report-with-controls | Report Writer, as INITIATE. |
+
+## Not executable locally, as whole statements
 
 `EXEC CICS`, `EXEC SQL` — these need Db2, a CICS region or IMS. The reference modules under `runtime/` stand in well enough to run a program, and that is not the same as executing SQL. They are not counted as gaps because no interpreter change would close them.
 

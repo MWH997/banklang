@@ -96,11 +96,37 @@ const VERBS = [
  */
 const EXTERNAL = new Set(["EXEC SQL", "EXEC CICS", "EXEC DLI"]);
 
+/**
+ * Verbs no local execution would reach, whatever the interpreter implements.
+ *
+ * The distinction this file exists to draw is between a verb the interpreter is
+ * *missing* and a verb that has nowhere local to run. Eight blind spots read as
+ * eight things to build; four of them were `SORT`, `MERGE`, `RELEASE` and
+ * `RETURN`, and the other four are these — one driven by a runner that is not
+ * on this machine, three expanded by a precompiler this repository does not
+ * ship. Counting them together made the real gap look half the size it was.
+ *
+ * A reason rather than a bare list, because an exemption nobody re-reads
+ * becomes a permanent hole. `tests/interpreter-coverage.test.ts` holds each one
+ * to a program the repository already records as not locally runnable, so an
+ * exemption cannot outlive the thing it excuses.
+ */
+const EXEMPT: Record<string, string> = {
+  ENTRY:
+    "an alternate entry point in a generated zUnit test case. It is called by IBM's zUnit runner, which is not on this machine, and never by a job step.",
+  INITIATE:
+    "Report Writer, expanded by IBM's Report Writer precompiler. `packages/cobol-runtime` refuses a REPORT SECTION by name rather than implementing page fitting, control breaks and sum counters a second time.",
+  GENERATE: "Report Writer, as INITIATE.",
+  TERMINATE: "Report Writer, as INITIATE.",
+};
+
 export interface VerbCoverage {
   verb: string;
   /** How many emitted statements start with it, across every generated program. */
   emitted: number;
   interpreted: boolean;
+  /** Why no local run reaches it, or null when one could. */
+  exempt: string | null;
   /** Which generated programs contain it, so a gap can be attributed. */
   artifacts: string[];
 }
@@ -108,8 +134,12 @@ export interface VerbCoverage {
 export interface CoverageReport {
   artifacts: number;
   verbs: VerbCoverage[];
-  /** Emitted, not interpreted, ordered by how much COBOL depends on them. */
+  /** Emitted and reachable by a local run: the denominator that matters. */
+  local: VerbCoverage[];
+  /** Emitted, not interpreted, not exempt — ordered by how much COBOL uses them. */
   gaps: VerbCoverage[];
+  /** Emitted, and outside local execution for a recorded reason. */
+  exempt: VerbCoverage[];
   external: string[];
 }
 
@@ -176,6 +206,23 @@ function emittedArtifacts(cwd: string): { file: string; text: string }[] {
   return artifacts;
 }
 
+/**
+ * What to call an artifact when attributing a verb to it.
+ *
+ * The basename alone is not enough: every example's main program is
+ * `(generated).cbl`, so a blind spot in one of them was reported as being in
+ * `(generated).cbl` and could not be traced to a project. The project directory
+ * is what a reader needs, and it is what the exemption check compares against.
+ */
+function artifactName(file: string): string {
+  const parts = file.split("/");
+  const base = parts[parts.length - 1] ?? file;
+  if (!base.startsWith("(generated)")) {
+    return `${parts[parts.length - 2] ?? ""}/${base}`.replace(/^\//, "");
+  }
+  return parts.slice(0, -1).join("/");
+}
+
 export function measureCoverage(cwd = process.cwd()): CoverageReport {
   const interpreted = interpretedVerbs(cwd);
   const counts = new Map<string, number>(VERBS.map((verb) => [verb, 0]));
@@ -196,7 +243,7 @@ export function measureCoverage(cwd = process.cwd()): CoverageReport {
       const verb = /^([A-Z-]+)\b/.exec(trimmed)?.[1];
       if (verb && counts.has(verb)) {
         counts.set(verb, (counts.get(verb) ?? 0) + 1);
-        where.get(verb)?.add(artifact.file.split("/").pop() ?? artifact.file);
+        where.get(verb)?.add(artifactName(artifact.file));
       }
     }
   }
@@ -206,21 +253,26 @@ export function measureCoverage(cwd = process.cwd()): CoverageReport {
       verb,
       emitted,
       interpreted: interpreted.has(verb),
+      exempt: EXEMPT[verb] ?? null,
       artifacts: [...(where.get(verb) ?? [])].sort(),
     }))
     .sort((a, b) => b.emitted - a.emitted || a.verb.localeCompare(b.verb));
 
+  const emitted = verbs.filter((entry) => entry.emitted > 0);
+  const local = emitted.filter((entry) => entry.exempt === null);
   return {
     artifacts: artifacts.length,
     verbs,
-    gaps: verbs.filter((entry) => entry.emitted > 0 && !entry.interpreted),
+    local,
+    gaps: local.filter((entry) => !entry.interpreted),
+    exempt: emitted.filter((entry) => entry.exempt !== null),
     external: [...external].sort(),
   };
 }
 
 export function renderCoverage(report: CoverageReport): string {
   const emitted = report.verbs.filter((entry) => entry.emitted > 0);
-  const covered = emitted.filter((entry) => entry.interpreted);
+  const covered = report.local.filter((entry) => entry.interpreted);
   return `${[
     "# Interpreter coverage",
     "",
@@ -234,14 +286,28 @@ export function renderCoverage(report: CoverageReport): string {
     "",
     `Measured over the ${String(report.artifacts)} programs the compiler produces from the examples and the benchmark tasks.`,
     "",
+    "The denominator is **locally executable** emitted verbs, not all of them.",
+    "A verb whose only home is a zUnit test case or a Report Writer section has",
+    "nowhere local to run whatever the interpreter implements, and counting it",
+    "as a gap made the real one look half its size: of eight blind spots",
+    "reported before `SORT` and `MERGE` were built, four were those two and",
+    "their `RELEASE` and `RETURN`, and four were exempt. Each exemption carries",
+    "its reason below and is held to a named program by",
+    "`tests/interpreter-coverage.test.ts`.",
+    "",
     "| | |",
     "| --- | --- |",
     `| verbs emitted | ${String(emitted.length)} |`,
+    `| of those, locally executable | ${String(report.local.length)} |`,
     `| of those, interpreted | ${String(covered.length)} |`,
     `| differential blind spots | ${String(report.gaps.length)} |`,
+    `| exempt, with a recorded reason | ${String(report.exempt.length)} |`,
     "",
     ...(report.gaps.length === 0
-      ? ["Every verb the backend emits can be executed by both engines.", ""]
+      ? [
+          "Every locally executable verb the backend emits can be executed by both engines.",
+          "",
+        ]
       : [
           "## Blind spots, by how much emitted COBOL uses them",
           "",
@@ -255,14 +321,27 @@ export function renderCoverage(report: CoverageReport): string {
         ]),
     "## Every emitted verb",
     "",
-    "| Verb | Emitted | Interpreted |",
-    "| --- | --- | --- |",
+    "| Verb | Emitted | Locally executable | Interpreted |",
+    "| --- | --- | --- | --- |",
     ...emitted.map(
       (entry) =>
-        `| \`${entry.verb}\` | ${String(entry.emitted)} | ${entry.interpreted ? "yes" : "**no**"} |`,
+        `| \`${entry.verb}\` | ${String(entry.emitted)} | ${entry.exempt ? "no" : "yes"} | ${entry.interpreted ? "yes" : entry.exempt ? "n/a" : "**no**"} |`,
     ),
     "",
-    "## Not executable locally",
+    "## Emitted, and outside local execution",
+    "",
+    ...(report.exempt.length === 0
+      ? ["_None._", ""]
+      : [
+          "| Verb | In | Why no local run reaches it |",
+          "| --- | --- | --- |",
+          ...report.exempt.map(
+            (entry) =>
+              `| \`${entry.verb}\` | ${entry.artifacts.join(", ")} | ${entry.exempt ?? ""} |`,
+          ),
+          "",
+        ]),
+    "## Not executable locally, as whole statements",
     "",
     report.external.length === 0
       ? "_None emitted._"
@@ -278,12 +357,15 @@ function main(): number {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, renderCoverage(report), "utf8");
   process.stdout.write(
-    `${String(report.artifacts)} artifacts | ${String(report.verbs.filter((entry) => entry.emitted > 0).length)} verbs emitted | ${String(report.gaps.length)} blind spots\n`,
+    `${String(report.artifacts)} artifacts | ${String(report.verbs.filter((entry) => entry.emitted > 0).length)} verbs emitted | ${String(report.local.length)} locally executable | ${String(report.gaps.length)} blind spots | ${String(report.exempt.length)} exempt\n`,
   );
   for (const gap of report.gaps) {
     process.stdout.write(`  ${gap.verb.padEnd(12)} ${String(gap.emitted)}\n`);
   }
-  return 0;
+  // Non-zero on a blind spot, so this is a gate and not a readout. A backend
+  // that starts emitting a locally executable verb the runtime cannot execute
+  // has reopened the hole this file was built to keep shut.
+  return report.gaps.length === 0 ? 0 : 1;
 }
 
 if (
