@@ -274,8 +274,23 @@ function printDeclaration(
       const status = declaration.statusName
         ? ` status ${declaration.statusName}`
         : "";
+      /*
+       * `pcb`, and the key as the string literal it is.
+       *
+       * This printed neither: it dropped the `pcb` keyword and wrote
+       * `key ACCTID` where the source said `key "ACCTID"`. The result was not
+       * a program that meant something else — it was a file that no longer
+       * parsed, failing with `Expected \`pcb\` after the database name` on the
+       * next build. `bankc fmt` destroying the source it was handed is the
+       * worst outcome available to it.
+       *
+       * A DL/I database is reached through a PCB the region passes in, so the
+       * keyword is not decoration, and the segment and key are DBD names —
+       * quoted, because they are the database's spelling and not BankTS
+       * identifiers.
+       */
       printer.push(
-        `database ${declaration.name} segment "${declaration.segmentName}" key ${declaration.keyName} record ${declaration.recordTypeName}${status};${trailing}`,
+        `database ${declaration.name} pcb segment "${declaration.segmentName}" key "${declaration.keyName}" record ${declaration.recordTypeName}${status};${trailing}`,
       );
       return;
     }

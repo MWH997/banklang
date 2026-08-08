@@ -216,3 +216,116 @@ function f(a: M): bool {
     expect(formatBankTs("module    A;\n").unchanged).toBe(false);
   });
 });
+
+/**
+ * Constructs no checked-in program uses.
+ *
+ * The corpus is every BankTS project in the repository, and it still does not
+ * contain a DL/I `database`, a `json`/`xml` payload statement, a `split`, or a
+ * generic record — the mutation lane reported 68 mutants in this file that no
+ * test reaches, most of them the `case` arms for those.
+ *
+ * The property is the one the corpus tests assert, applied to sources written
+ * for the purpose: formatting must not change what the program means, and
+ * formatting twice must equal formatting once. Round-tripping through the
+ * parser is what catches a printer that emits something the parser cannot read
+ * back — which is exactly what `database` did.
+ */
+describe("formatting a construct no example contains", () => {
+  const withoutSpans = (value: unknown): string =>
+    JSON.stringify(value, (key, node) =>
+      key === "span" || key.endsWith("Span") ? undefined : node,
+    );
+
+  const roundTrips = (name: string, source: string) => {
+    it(`keeps the program the same: ${name}`, () => {
+      const before = parseBankTs(source, "m.bank.ts");
+      expect(
+        before.diagnostics.map((entry) => entry.id),
+        "the fixture itself does not parse",
+      ).toEqual([]);
+
+      const formatted = format(source);
+      const after = parseBankTs(formatted, "m.bank.ts");
+
+      expect(
+        after.diagnostics.map((entry) => entry.id),
+        "the formatter emitted source the parser cannot read",
+      ).toEqual([]);
+      expect(withoutSpans(after.program)).toBe(withoutSpans(before.program));
+      expect(format(formatted), "formatting is not idempotent").toBe(formatted);
+    });
+  };
+
+  const ROW = `record Row {
+  branch: string<8>;
+  account: string<16>;
+  reference: string<32>;
+  idempotencyKey: string<36>;
+}`;
+
+  /**
+   * `pcb` and a quoted key. The printer dropped the keyword and unquoted the
+   * key, so `bankc fmt` turned a working program into one that failed with
+   * "Expected `pcb` after the database name" on the next build.
+   */
+  roundTrips(
+    "a DL/I database declaration",
+    `module M;
+
+record Seg {
+  acctId: string<10>;
+}
+
+${ROW}
+
+database accountDb pcb segment "ACCTSEG" key "ACCTID" record Seg status dbStatus;
+
+entry transaction go(row: Row) {
+  audit("X", row.idempotencyKey);
+}
+`,
+  );
+
+  roundTrips(
+    "a JSON payload statement",
+    `module M;
+
+${ROW}
+
+entry transaction go(row: Row, doc: string<200>) {
+  json doc from row;
+  audit("X", row.idempotencyKey);
+}
+`,
+  );
+
+  roundTrips(
+    "a split into two targets",
+    `module M;
+
+${ROW}
+
+entry transaction go(row: Row) {
+  split row.reference by "-" into row.branch, row.account;
+  audit("X", row.idempotencyKey);
+}
+`,
+  );
+
+  roundTrips(
+    "a generic record",
+    `module M;
+
+record Box<T> {
+  value: T;
+}
+
+${ROW}
+
+entry transaction go(row: Row) {
+  audit("X", row.idempotencyKey);
+}
+`,
+  );
+});
