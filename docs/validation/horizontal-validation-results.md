@@ -12,11 +12,13 @@ measurement, and every number on it is read out of `evidence/horizontal/`.
 | | |
 | --- | --- |
 | BankLang | 0.9.0 |
-| commit | `8abf3da6ebc5` |
 | Node | v24.18.0 |
 | COBOL compiler | cobc (GnuCOBOL) 3.2.0 |
 | platform | darwin/arm64 |
 | corpus lock | `90aaebe2d5cb` |
+
+The exact commit each lane ran on is in
+`evidence/horizontal/<corpus>/environment.json`.
 
 **Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL. Native IBM
 Enterprise COBOL execution: not yet performed.** Nothing on this page was

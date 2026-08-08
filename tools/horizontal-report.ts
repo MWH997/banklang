@@ -207,11 +207,24 @@ function renderResults(cwd: string): string {
       "| | |",
       "| --- | --- |",
       `| BankLang | ${environment.banklangVersion} |`,
-      `| commit | \`${environment.gitCommit.slice(0, 12)}\` |`,
       `| Node | ${environment.nodeVersion} |`,
       `| COBOL compiler | ${environment.gnucobolVersion ?? "not available — nothing was executed"} |`,
       `| platform | ${environment.platform}/${environment.arch} |`,
       `| corpus lock | \`${environment.corpusLockHash.slice(0, 12)}\` |`,
+      "",
+      /*
+       * The commit is deliberately not on this page.
+       *
+       * It changes with every commit, including the one that publishes this
+       * page, so printing it here means the page is stale the moment it is
+       * committed — and the workflow that compares generated output against
+       * git would fail on every run for a reason that is about bookkeeping
+       * rather than about the measurement. It is recorded per lane in
+       * `evidence/horizontal/<corpus>/environment.json`, which is where the
+       * provenance of a specific run belongs.
+       */
+      "The exact commit each lane ran on is in",
+      "`evidence/horizontal/<corpus>/environment.json`.",
       "",
     );
   } else {
