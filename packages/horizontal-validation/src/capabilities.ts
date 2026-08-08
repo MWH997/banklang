@@ -195,6 +195,55 @@ entry transaction order(posting: Posting, idempotencyKey: string<36>) {
 `,
   },
   {
+    /*
+     * Ordering a file into a differently shaped one, which is most of what a
+     * batch sort is for. Registered separately from `sort` because the two are
+     * different claims: `sort` says the statement exists, and this says the
+     * destination need not hold the record the sort moves — which was refused
+     * until 2026-08-09 and is why `task_func_37` was recorded as a language
+     * gap.
+     */
+    bankts: "sort with an output procedure that reformats",
+    feature: "sort-merge",
+    emits: "OUTPUT PROCEDURE IS",
+    probe: `module Probe;
+
+record Detail {
+  detailBranch: string<8>;
+  detailAmount: decimal<18, 2>;
+}
+
+record ReportLine {
+  reportAmount: decimal<18, 2>;
+  reportBranch: string<8>;
+}
+
+file rawDetails sequential input record Detail status rawDetailsStatus;
+
+file branchReport sequential output record ReportLine status branchReportStatus;
+
+on error rawDetails {
+  log "RAW FAILED ", rawDetailsStatus;
+}
+
+on error branchReport {
+  log "REPORT FAILED ", branchReportStatus;
+}
+
+entry transaction order(detail: Detail, line: ReportLine, idempotencyKey: string<36>) {
+  sort rawDetails into branchReport on detailBranch input detail {
+    release detail;
+  } output detail {
+    line.reportBranch = detail.detailBranch;
+    line.reportAmount = detail.detailAmount;
+    write branchReport from line;
+  };
+
+  audit("ORDERED", idempotencyKey);
+}
+`,
+  },
+  {
     bankts: "search",
     feature: "search",
     emits: "SEARCH",
