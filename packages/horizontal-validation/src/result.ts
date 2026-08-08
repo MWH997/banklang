@@ -4,8 +4,17 @@
  * The temptation this file exists to remove: BankTS expresses 20 of 46 tasks
  * and 18 of those pass, so the headline reads 90%. Both numbers are true and
  * the sentence is a lie, because the reader supplies the missing denominator
- * themselves and supplies 46. So `tally` below computes both rates, always, and
+ * themselves and supplies 46. So `tally` below computes every rate, always, and
  * `formatRate` refuses to render one without its denominator attached.
+ *
+ * There are four rates rather than two, and the extra pair is the harder
+ * lesson. `pass / applicable` was 4/4 for a phase — while `applicable` meant
+ * "somebody has written one", so the rate could not have been anything else,
+ * and twenty-eight tasks sat in a bucket that carried no verdict at all. A
+ * denominator computed from its own numerator is not a denominator, so
+ * applicability and authorship are separate axes now and `authored /
+ * applicable` travels beside `pass / authored` because the second conceals the
+ * first.
  *
  * The failure taxonomy is deliberately fine-grained for the same reason. "It
  * failed" invites a single number; "the generated COBOL compiled, ran, and

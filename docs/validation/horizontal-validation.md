@@ -71,17 +71,37 @@ compute the same thing, and BankLang's output differs from a hand-written
 solution by construction. What is compared is observable behaviour: the bytes in
 the output files, what was displayed, the return code.
 
-**Denominators are never gamed.** Every rate is reported twice — against the
-tasks BankTS can express, and against every task the corpus contains. A
-difficult case is never removed; it is classified, and the classification is
-reported. `checkTallyIsComplete` fails the run if the categories do not
-partition the corpus.
+**Applicability is not authorship.** Whether BankTS _could_ express a task and
+whether somebody _has_ are separate axes, decided separately and reported
+separately. They were one field until 2026-08-09, and the field answered
+`applicable` exactly when a `main.bank.ts` existed — so `pass / applicable`
+could not have been anything but 100%, and it read as a score while
+twenty-eight of CobolCodeBench's forty-six tasks had no verdict at all.
+`applicable + unauthored` is the state that says there is work left, and the
+model can now say it.
+
+**Denominators are never gamed.** Four rates, always: `authored / applicable`,
+`pass / authored`, `pass / applicable`, and `pass / everything the corpus
+contains`. The first is there because the second conceals it. A difficult case
+is never removed; it is classified, and the classification is reported.
+`checkTallyIsComplete` fails the run if the categories do not partition the
+corpus, and fails it again if a task classified as one BankTS could not have
+matched turns out to pass — which is what stops a hard task being relabelled
+into a smaller denominator.
 
 **Unsupported is neither pass nor fail.** `unsupported-by-design` is BankTS
-working as intended; `unsupported-not-yet-implemented` is a to-do list;
-`not-yet-authored` means the task is expressible and nobody has written it, and
-it counts against the pass rate exactly as a failure would. Collapsing these
-would let every missing feature be relabelled a principle.
+working as intended; `unsupported-not-yet-implemented` is a to-do list; and
+`benchmark-ambiguous` is a statement about the benchmark that needs evidence to
+the standard `task-blockers.ts` sets — a constant in the expected output that is
+in neither the specification nor the input, an expectation that contradicts the
+specification, or an arithmetic the supplied data cannot produce. Difficulty is
+not ambiguity. Collapsing these would let every missing feature be relabelled a
+principle.
+
+There is no "nobody has attempted it" category. There was, and it held
+twenty-eight tasks whose own description was that nothing was known about them.
+Every task now carries a verdict and every non-applicable task carries the
+observation that produced it.
 
 **No benchmark-specific compiler paths.** Nothing in the compiler knows a
 benchmark's name. A fix found this way must generalise and must arrive with a
@@ -226,17 +246,41 @@ bounds check, and it costs the 451 files that compute an offset.
 
 ## What is next, on the same evidence
 
-The tasks CobolCodeBench still cannot express are not blocked on files any more.
-They are blocked on strings: picking a delimited field out of a line, testing
-whether a name contains a digit, replacing an extension. In corpus terms that is
-`reference-modification` (11.5%), `string-unstring` (7.6%) and `inspect` (5.2%)
-— the next three by frequency after the two control-flow constructs that are
-deliberately excluded, and the three the benchmark independently demands.
+The tasks CobolCodeBench cannot express are no longer blocked on files, and no
+longer blocked on strings either — `substring`, `split`, `countOf` and
+`replaceChars` all exist, and the tasks that needed them pass. What is left is
+four things, each with the task that demands it:
 
-They are not implemented here. Reference modification in particular needs its
-bounds semantics settled before any syntax is chosen — one-based offsets,
-dynamic lengths, and what happens at a bad bound, on a compiler that has already
-had one bounds defect found by differential testing.
+**`SORT` and `MERGE` in the interpreter.** Three tasks run under `cobc` and not
+under `packages/cobol-runtime`, so they have a semantic result and no
+differential one. They are reported as `gnucobol-only` and never counted as
+differential passes. This is the largest remaining hole in the second
+implementation and `docs/validation/interpreter-coverage.md` measures it.
+
+**More than one record description per file.** `task_func_25` and `task_func_34`
+write a report whose heading line and detail lines have different shapes.
+COBOL's answer is a second `01` under the `FD`; `file … record R` names exactly
+one, and `BANK-FILE-002` refuses the second shape. The group-redefines route is
+closed too — BankTS accepts a record-typed field and `redefines` on it, but
+member access is one level deep.
+
+**Bounded variable-arity parsing.** `task_func_09` reads lines with a different
+number of comma-separated numbers on each. `split x by "," into a, b, c` names
+its receivers at compile time. Still one task in the corpus, which is why it is
+still not implemented; see below.
+
+**A character model for text that is not one byte per character.**
+`task_func_47` transliterates accented names out of a UTF-8 file.
+[ADR-0006](../adr/0006-single-byte-character-model.md) settles what `string<n>`
+is and why this is a to-do rather than a principle.
+
+The other eighteen tasks are not blocked on BankLang. Their expected output is
+not derivable from their own contract — a constant that appears in neither the
+specification nor the input, an expectation that contradicts the specification,
+or an arithmetic the supplied data does not produce. Each is named with its
+evidence in `packages/horizontal-validation/src/task-blockers.ts`, and the bar
+for that claim is deliberately high because "the benchmark is wrong" is the
+conclusion a tired implementer reaches about a task they have not understood.
 
 ## Running it
 

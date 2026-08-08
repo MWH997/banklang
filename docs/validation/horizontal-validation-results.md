@@ -45,21 +45,32 @@ Whether BankTS can independently express a program specified by somebody else in
 | --- | --- |
 | tasks discovered | 46 |
 | imported into the harness | 46 |
-| applicable — BankTS can express it *and* an implementation exists | 4 |
-| expressible, not yet written | 38 |
-| unsupported by design | 4 |
-| unsupported, not yet implemented | 0 |
-| **passed, of applicable** | **4 / 4 (100.0%)** |
-| **passed, of all discovered** | **4 / 46 (8.7%)** |
+| applicable — BankTS can express it | 17 |
+| unsupported by design | 7 |
+| unsupported, not yet implemented | 4 |
+| the benchmark's own expectation is not derivable | 18 |
+| implementations written | 18 |
+| executed | 18 |
+| both engines ran it | 15 |
+| they agreed | 15 |
+| they diverged | 0 |
+| ran under `cobc` only — never a differential pass | 3 |
+| **authored, of applicable** | **17 / 17 (100.0%)** |
+| **passed, of authored** | **17 / 18 (94.4%)** |
+| **passed, of applicable** | **17 / 17 (100.0%)** |
+| **passed, of all discovered** | **17 / 46 (37.0%)** |
 
-Why the rest are not authored:
+Why the rest are not applicable:
 
 | Reason | Tasks | |
 | --- | --- | --- |
-| unattempted | 28 | task_func_01, task_func_03, task_func_04, task_func_07, task_func_08, task_func_10, task_func_12, task_func_13, task_func_14, task_func_16, task_func_17, task_func_18, task_func_19, task_func_20, task_func_23, task_func_24, task_func_25, task_func_28, task_func_29, task_func_30, task_func_32, task_func_33, task_func_34, task_func_35, task_func_36, task_func_38, task_func_45, task_func_55 |
-| benchmark-ambiguous | 7 | task_func_11, task_func_15, task_func_26, task_func_27, task_func_31, task_func_39, task_func_44 |
-| randomness | 4 | task_func_21, task_func_40, task_func_48, task_func_49 |
-| language-gap | 3 | task_func_09, task_func_37, task_func_47 |
+| benchmark-ambiguous | 18 | task_func_01, task_func_03, task_func_08, task_func_10, task_func_11, task_func_12, task_func_15, task_func_19, task_func_24, task_func_26, task_func_27, task_func_29, task_func_30, task_func_31, task_func_36, task_func_39, task_func_44, task_func_55 |
+| randomness | 7 | task_func_07, task_func_21, task_func_23, task_func_40, task_func_45, task_func_48, task_func_49 |
+| language-gap | 4 | task_func_09, task_func_25, task_func_34, task_func_47 |
+
+| Failure | Tasks |
+| --- | --- |
+| semantic-mismatch | 1 |
 
 ### COBOLEval
 
@@ -69,14 +80,22 @@ Whether BankTS can express general algorithmic tasks against a fixed calling int
 | --- | --- |
 | tasks discovered | 146 |
 | imported into the harness | 146 |
-| applicable — BankTS can express it *and* an implementation exists | 0 |
-| expressible, not yet written | 0 |
+| applicable — BankTS can express it | 0 |
 | unsupported by design | 146 |
 | unsupported, not yet implemented | 0 |
+| the benchmark's own expectation is not derivable | 0 |
+| implementations written | 0 |
+| executed | 0 |
+| both engines ran it | 0 |
+| they agreed | 0 |
+| they diverged | 0 |
+| ran under `cobc` only — never a differential pass | 0 |
+| **authored, of applicable** | **0 / 0** |
+| **passed, of authored** | **0 / 0** |
 | **passed, of applicable** | **0 / 0** |
 | **passed, of all discovered** | **0 / 146 (0.0%)** |
 
-Why the rest are not authored:
+Why the rest are not applicable:
 
 | Reason | Tasks | |
 | --- | --- | --- |

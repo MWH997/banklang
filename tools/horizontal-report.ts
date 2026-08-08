@@ -28,6 +28,7 @@ import {
   CORPORA,
   DEFECT_DEMONSTRATIONS,
   DEFECT_FAMILIES,
+  blockerFor,
   corpus,
   familyOf,
   formatRate,
@@ -286,24 +287,43 @@ function renderResults(cwd: string): string {
       `| **passed, of all discovered** | **${summary.passOfDiscovered}** |`,
       "",
     );
-    // Why the unauthored tasks are unauthored, from the recorded blockers
-    // rather than from a number a reader has to interpret.
+    /*
+     * Why each non-applicable task is non-applicable, from the recorded
+     * blockers rather than from a number a reader has to interpret.
+     *
+     * Keyed on applicability rather than on whether the task ran. Some
+     * non-applicable tasks are authored and executed — a benchmark whose
+     * expected output is not derivable is best evidenced by running against it
+     * and reading the byte that differs — so listing only what never ran gave
+     * a table whose count did not reconcile with the summary above it.
+     */
     const results = readJson<
-      { taskId: string; outcome: string; detail: string | null }[]
+      {
+        taskId: string;
+        applicability: string;
+        outcome: string;
+        detail: string | null;
+      }[]
     >(resolve(cwd, EVIDENCE, id, "results.json"));
     if (results) {
       const kinds = new Map<string, string[]>();
       for (const row of results) {
-        if (row.outcome !== "not-executed") {
+        if (row.applicability === "applicable") {
           continue;
         }
-        const kind = (row.detail ?? "").split(":")[0]?.trim() || "unclassified";
         const task = row.taskId.split("/").pop() ?? row.taskId;
+        // The recorded blocker where there is one, and the applicability
+        // otherwise — the rules produce no blocker entry, so `randomness` and
+        // the like still come from the detail the run wrote.
+        const kind =
+          blockerFor(task)?.kind ??
+          (row.detail ?? "").split(":")[0]?.trim() ??
+          row.applicability;
         kinds.set(kind, [...(kinds.get(kind) ?? []), task]);
       }
       if (kinds.size > 0) {
         lines.push(
-          "Why the rest are not authored:",
+          "Why the rest are not applicable:",
           "",
           "| Reason | Tasks | |",
           "| --- | --- | --- |",
