@@ -330,6 +330,75 @@ describe("the arithmetic that reports a run", () => {
     expect(problems.join("\n")).toMatch(/with no implementation cannot pass/);
   });
 
+  it("pins every counter and every rate the report publishes", () => {
+    /*
+     * The whole tally from a known set, because these numbers are published.
+     * Mutation testing found `result.ts` the thinnest file in the package at
+     * the point this phase changed what it computes — and a counter nothing
+     * asserts is a counter that can be quietly wrong in the flattering
+     * direction, which is the specific failure this package exists to prevent.
+     */
+    const counted = tally("c", 46, [
+      { ...result("applicable", "pass"), differentialAgreement: true },
+      { ...result("applicable", "pass"), differentialAgreement: true },
+      {
+        ...result("applicable", "pass"),
+        execution: "gnucobol-only",
+        differentialAgreement: null,
+      },
+      {
+        ...result("applicable", "execution-divergence"),
+        differentialAgreement: false,
+      },
+      result("applicable", "not-executed"),
+      result("unsupported-by-design", "not-executed"),
+      result("unsupported-not-yet-implemented", "not-executed"),
+      {
+        ...result("benchmark-ambiguous", "semantic-mismatch"),
+        differentialAgreement: true,
+      },
+    ]);
+
+    expect(counted.discovered).toBe(46);
+    expect(counted.imported).toBe(8);
+    expect(counted.applicable).toBe(5);
+    expect(counted.unsupportedByDesign).toBe(1);
+    expect(counted.unsupportedNotYetImplemented).toBe(1);
+    expect(counted.benchmarkAmbiguous).toBe(1);
+    expect(counted.authored).toBe(5);
+    expect(counted.authoredOfApplicable).toBe(4);
+    expect(counted.executed).toBe(5);
+    expect(counted.bothEngines).toBe(4);
+    expect(counted.agreements).toBe(3);
+    expect(counted.divergences).toBe(1);
+    expect(counted.interpreterUnavailable).toBe(1);
+    expect(counted.passed).toBe(3);
+    expect(counted.passedNotApplicable).toBe(0);
+
+    expect(counted.authoringCoverage).toBe("4 / 5 (80.0%)");
+    expect(counted.passOfAuthored).toBe("3 / 5 (60.0%)");
+    expect(counted.passOfApplicable).toBe("3 / 5 (60.0%)");
+    expect(counted.passOfDiscovered).toBe("3 / 46 (6.5%)");
+
+    // A task that never ran is not a failure with a name; everything else is.
+    expect(counted.failures).toEqual({
+      "execution-divergence": 1,
+      "semantic-mismatch": 1,
+    });
+    expect(checkTallyIsComplete(counted)).toEqual([]);
+  });
+
+  it("refuses more differential verdicts than engines that ran", () => {
+    // A verdict needs two engines. A tally claiming otherwise is measuring
+    // something else and says so rather than publishing it.
+    const counted = tally("c", 46, [result("applicable", "pass")]);
+    expect(
+      checkTallyIsComplete({ ...counted, bothEngines: 0, agreements: 1 }).join(
+        "\n",
+      ),
+    ).toMatch(/A verdict needs two engines/);
+  });
+
   it("counts every non-passing outcome by name", () => {
     const counted = tally("c", 3, [
       result("applicable", "semantic-mismatch"),
