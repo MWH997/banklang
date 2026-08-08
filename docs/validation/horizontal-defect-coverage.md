@@ -20,10 +20,10 @@ would fail to catch the defect, but that this repository has not shown it.
 
 | Coverage | Defects |
 | --- | --- |
-| prevented at compile time | 5 / 41 (12.2%) |
+| prevented at compile time | 8 / 41 (19.5%) |
 | not expressible in BankTS at all | 1 / 41 (2.4%) |
 | outside BankLang's model | 0 / 41 (0.0%) |
-| not demonstrated | 35 / 41 (85.4%) |
+| not demonstrated | 32 / 41 (78.0%) |
 
 ## Every defect
 
@@ -34,7 +34,7 @@ would fail to catch the defect, but that this repository has not shown it.
 | DF03 | file-status | error in in reading data records from vsam file | not-demonstrated | — |
 | DF04 | group-item-semantics | problem with move statement to right-adjust field | not-demonstrated | — |
 | DF05 | compiler-and-environment | system error message in fastsrt compiler option | not-demonstrated | — |
-| DF06 | name-resolution | error in cobol compute, not uniquely defined name | not-demonstrated | — |
+| DF06 | name-resolution | error in cobol compute, not uniquely defined name | prevented-at-compile-time | `BANK-TYPE-001` |
 | DF07 | control-flow | error in evaluate statement, in place of nested if | not-demonstrated | — |
 | DF08 | table-bounds | error in search statement on use of table index | not-demonstrated | — |
 | DF09 | numeric-class | soc7 system abend when executing unstring statement | not-demonstrated | — |
@@ -43,7 +43,7 @@ would fail to catch the defect, but that this repository has not shown it.
 | DF12 | numeric-class | alphanumeric field not convertd to packed decimal | not-demonstrated | — |
 | DF13 | table-bounds | compile error when value coded for occurs statement | not-demonstrated | — |
 | DF14 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
-| DF15 | date-handling | eror converting gregorian date to integer-of-date | not-demonstrated | — |
+| DF15 | date-handling | eror converting gregorian date to integer-of-date | prevented-at-compile-time | `BANK-TYPE-003` |
 | DF16 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
 | DF17 | file-status | problem in records not being written to ksds file | not-demonstrated | — |
 | DF18 | pointer-and-linkage | set statement for ws-pointer discarded by compiler | not-expressible-in-bankts | `BANK-TYPE-001` |
@@ -52,7 +52,7 @@ would fail to catch the defect, but that this repository has not shown it.
 | DF22 | pointer-and-linkage | soc-4 abend when reading variable-length records | not-demonstrated | — |
 | DF23 | table-bounds | error in search on use of index arithmetic expression | not-demonstrated | — |
 | DF24 | numeric-class | error in redefinition of a numeric field data format | not-demonstrated | — |
-| DF25 | record-lifetime | variable initialization using output record data | not-demonstrated | — |
+| DF25 | record-lifetime | variable initialization using output record data | prevented-at-compile-time | `BANK-FILE-001` |
 | DF26 | table-bounds | error in not finding search entry using search all | prevented-at-compile-time | `BANK-TYPE-009` |
 | DF27 | table-bounds | error moving value from arrays in working storage | not-demonstrated | — |
 | DF28 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | — |
@@ -87,9 +87,9 @@ A `string<n>` and a `decimal<p,s>` are different types and neither moves into th
 
 ### file-status
 
-**Mechanism** required file status handling
+**Mechanism** a declared file status, and a mode the operation has to match
 
-A file operation whose status is not examined is a compile error, and the status field is generated rather than declared by hand.
+A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. What BankLang does *not* yet do is require the declared status to be examined after each operation: a program that reads and never tests the status compiles today. That is the largest family here, five of the 41 defects, and it is recorded as a gap rather than claimed.
 
 ### table-bounds
 

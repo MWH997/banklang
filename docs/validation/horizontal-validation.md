@@ -147,6 +147,71 @@ internal noticed, because every example that branches inside a loop is a
 transaction. Fixed, with the regression in
 `tests/horizontal-defects.test.ts`.
 
+## What was decided against the evidence
+
+The point of measuring a corpus is to let it choose what gets built. Four
+decisions came out of this one, and two of them are decisions _not_ to build
+something.
+
+**Line-sequential files: implemented.** 309 of 5,195 real files use the
+organisation, and all 46 CobolCodeBench tasks read newline-delimited text — the
+single construct that made an entire independent benchmark inexpressible. It is
+also a legitimate banking feature rather than a benchmark artefact: a payment
+feed, a reconciliation extract, an import from a counterparty. Implemented with
+the restrictions Enterprise COBOL puts on it, which turned out to be the
+valuable part — a text record may hold only DISPLAY items, and BankTS's default
+`decimal` is packed, so `BANK-FILE-014` catches a class of silently-wrong file
+nobody would have found until they opened one.
+
+**`GO TO` and `PERFORM THRU`: deliberately not implemented.** The two most
+common constructs BankTS does not offer — 47.6% and 46.1% of the corpus — and
+frequency is the whole of the argument for them. They are legacy control flow;
+reproducing them would mean a source language whose control flow cannot be read
+from its text, which is the property ADR-0001 exists to protect. Both stay
+classified `adaptation`: a program built on them is expressible in BankTS and
+has to be restructured into functions and conditionals. See D16 in
+[divergences](../divergences.md).
+
+**`USAGE INDEX`: deliberately not exposed.** 8.7% of files declare one, which is
+enough to look. Looking is what settled it: 11,499 `INDEXED BY` clauses attached
+to an `OCCURS` against **98** standalone index items — less than one percent. An
+index is machinery for walking and searching a table, and BankTS already has
+`for each` and `search`, which the backend compiles into exactly that machinery.
+Handing the programmer a raw offset with no bounds attached would reintroduce
+the OpenCBS `table-bounds` family that `BANK-TYPE-009` currently refuses.
+[ADR-0005](../adr/0005-no-index-type.md) records the decision and the numbers to
+reverse it on.
+
+**A callable-program ABI: justified, and not built in this phase.** COBOLEval
+stays at 0/146, and the reason is worth separating from the benchmark. 688 files
+— 13.3% of the corpus — are genuine called subprograms with both a `LINKAGE
+SECTION` and `PROCEDURE DIVISION USING`, and 774 issue a static `CALL`. That is
+real integration evidence: a shared subroutine called by many programs is
+ordinary on an estate, and BankLang can call out today but cannot be called in
+except through `entry transaction`, which requires an idempotency key and an
+audit event in the caller's own record.
+
+So a callable program is a shape BankLang plausibly needs. It is not built here,
+for two reasons. It is a whole programme shape — parser, entry contract, ABI,
+JCL, zUnit — rather than a feature, and building it in the same phase that
+measured COBOLEval would be indistinguishable from building it _for_ COBOLEval.
+The honest zero stands, and the evidence that would justify the work is recorded
+rather than spent.
+
+## What is next, on the same evidence
+
+The tasks CobolCodeBench still cannot express are not blocked on files any more.
+They are blocked on strings: picking a delimited field out of a line, testing
+whether a name contains a digit, replacing an extension. In corpus terms that is
+`reference-modification` (11.5%), `string-unstring` (7.6%) and `inspect` (5.2%)
+— the next three by frequency after the two control-flow constructs that are
+deliberately excluded, and the three the benchmark independently demands.
+
+They are not implemented here. Reference modification in particular needs its
+bounds semantics settled before any syntax is chosen — one-based offsets,
+dynamic lengths, and what happens at a bad bound, on a compiler that has already
+had one bounds defect found by differential testing.
+
 ## Running it
 
 ```sh

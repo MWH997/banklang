@@ -171,6 +171,69 @@ function reopen(account: Account): bool {
     expectDiagnostic: "BANK-TYPE-003",
   },
   {
+    defect: "DF06",
+    summary:
+      "A COMPUTE naming a field that two records both define, which the compiler resolved to the wrong one because the reference was not qualified.",
+    coverage: "prevented-at-compile-time",
+    source: `module Df06;
+
+record Debits {
+  total: decimal<9, 2>;
+}
+
+record Credits {
+  total: decimal<9, 2>;
+}
+
+function difference(debits: Debits, credits: Credits): decimal<9, 2> {
+  return total;
+}
+`,
+    // A field is reached through the record that holds it, so a bare `total`
+    // is not a name in scope at all rather than an ambiguous one.
+    expectDiagnostic: "BANK-TYPE-001",
+  },
+  {
+    defect: "DF15",
+    summary:
+      "A Gregorian date passed to INTEGER-OF-DATE that was a group with subordinate fields, so the conversion read bytes that were not the number it expected.",
+    coverage: "prevented-at-compile-time",
+    source: `module Df15;
+
+function nextDay(when: date): decimal<9, 0> {
+  return when + 1;
+}
+`,
+    // `date` is its own type. It orders and compares against another date, and
+    // it is not an integer that happens to have eight digits.
+    expectDiagnostic: "BANK-TYPE-003",
+  },
+  {
+    defect: "DF25",
+    summary:
+      "A variable initialised from an output record's data after the record had been written, when COBOL leaves that record area undefined.",
+    coverage: "prevented-at-compile-time",
+    source: `module Df25;
+
+record Posting {
+  postingId: string<10>;
+}
+
+file postingOutput sequential output record Posting status postingOutputStatus;
+
+entry transaction run(posting: Posting, idempotencyKey: string<36>) {
+  open postingOutput;
+  write postingOutput from posting;
+  read postingOutput into posting;
+  close postingOutput;
+  audit("RUN", idempotencyKey);
+}
+`,
+    // The mode is the answer: an output file is not readable, so the record
+    // area cannot be read back whatever COBOL leaves in it.
+    expectDiagnostic: "BANK-FILE-001",
+  },
+  {
     defect: "DF18",
     summary:
       "A SET on a POINTER that the compiler discarded, leaving the address unset and the program reading storage it did not own.",

@@ -45,12 +45,12 @@ Whether BankTS can independently express a program specified by somebody else in
 | --- | --- |
 | tasks discovered | 46 |
 | imported into the harness | 46 |
-| applicable — BankTS can express it *and* an implementation exists | 0 |
-| expressible, not yet written | 0 |
-| unsupported by design | 0 |
-| unsupported, not yet implemented | 46 |
-| **passed, of applicable** | **0 / 0** |
-| **passed, of all discovered** | **0 / 46 (0.0%)** |
+| applicable — BankTS can express it *and* an implementation exists | 1 |
+| expressible, not yet written | 41 |
+| unsupported by design | 4 |
+| unsupported, not yet implemented | 0 |
+| **passed, of applicable** | **1 / 1 (100.0%)** |
+| **passed, of all discovered** | **1 / 46 (2.2%)** |
 
 ### COBOLEval
 
@@ -81,10 +81,10 @@ No behavioural oracle. These are files, not tests: nothing here can establish th
 
 | Representability | Files |
 | --- | --- |
-| fully-representable | 1388 / 5195 (26.7%) |
-| representable-with-adaptation | 2478 / 5195 (47.7%) |
+| fully-representable | 1543 / 5195 (29.7%) |
+| representable-with-adaptation | 2548 / 5195 (49.0%) |
 | unsupported-by-design | 533 / 5195 (10.3%) |
-| unsupported-not-yet-implemented | 738 / 5195 (14.2%) |
+| unsupported-not-yet-implemented | 513 / 5195 (9.9%) |
 | analyser-failure | 0 / 5195 (0.0%) |
 | unknown | 58 / 5195 (1.1%) |
 
@@ -97,7 +97,6 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `reference-modification` | adaptation | 600 | 11.5% |
 | `usage-index` | adaptation | 452 | 8.7% |
 | `string-unstring` | adaptation | 393 | 7.6% |
-| `file-line-sequential` | unsupported-not-yet-implemented | 309 | 5.9% |
 | `inspect` | unsupported-not-yet-implemented | 269 | 5.2% |
 | `usage-pointer` | unsupported-by-design | 244 | 4.7% |
 | `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
@@ -107,6 +106,7 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `entry-point` | unsupported-by-design | 79 | 1.5% |
 | `alter` | unsupported-by-design | 70 | 1.3% |
 | `comp-float` | unsupported-by-design | 37 | 0.7% |
+| `go-to-depending` | unsupported-by-design | 28 | 0.5% |
 
 The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
 
@@ -141,9 +141,28 @@ Constructs BankTS cannot express, ranked by how often they occur:
 
 The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
 
+## What each language change moved
+
+X-COBOL representability before and after each feature, over the same
+5,195 files. The before column is the measurement as it stood on the
+commit named in `evidence/horizontal-history/index.json`.
+
+### `line-sequential`
+
+Measured against `8abf3da6ebc5`.
+
+| Verdict | Before | After | Change |
+| --- | --- | --- | --- |
+| fully-representable | 1388 | 1543 | +155 |
+| representable-with-adaptation | 2478 | 2548 | +70 |
+| unsupported-by-design | 533 | 533 | 0 |
+| unsupported-not-yet-implemented | 738 | 513 | -225 |
+| analyser-failure | 0 | 0 | 0 |
+| unknown | 58 | 58 | 0 |
+
 ## Defect benchmark
 
-41 reconstructed defects. 5 are prevented at compile time by a BankTS program the compiler refuses; see [the matrix](horizontal-defect-coverage.md).
+41 reconstructed defects. 8 are prevented at compile time by a BankTS program the compiler refuses; see [the matrix](horizontal-defect-coverage.md).
 
 ## COBOL conformance
 

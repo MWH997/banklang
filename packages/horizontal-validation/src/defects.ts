@@ -162,9 +162,9 @@ export const DEFECT_FAMILIES: DefectFamily[] = [
     family: "file-status",
     pattern:
       /VSAM STATUS|FILE STATUS|STATUS 92|END OF FILE CHECK|KSDS|REWRITE|RECORD SIZE CONFLICT/i,
-    mechanism: "required file status handling",
+    mechanism: "a declared file status, and a mode the operation has to match",
     banklangPosition:
-      "A file operation whose status is not examined is a compile error, and the status field is generated rather than declared by hand.",
+      "A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. What BankLang does *not* yet do is require the declared status to be examined after each operation: a program that reads and never tests the status compiles today. That is the largest family here, five of the 41 defects, and it is recorded as a gap rather than claimed.",
   },
   {
     family: "table-bounds",
