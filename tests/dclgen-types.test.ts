@@ -143,3 +143,61 @@ describe("a copybook field with a usage and no picture", () => {
     expect(result.problems).toEqual([]);
   });
 });
+
+/**
+ * A copybook arrives in reference format, written by somebody else.
+ *
+ * Columns 1-6 are the sequence area, column 7 is the indicator, and anything
+ * past 72 is not part of the program. Reading any of those as code puts a field
+ * in the record that is not in the copybook, or drops one that is — and either
+ * moves every offset after it.
+ *
+ * The importer handles all of this, and nothing asserted it: the mutation lane
+ * found the column-72 slice, the indicator test and the blank-line skip all
+ * surviving. These are the shapes a customer's copybook actually arrives in.
+ */
+describe("a copybook in reference format", () => {
+  const oneField = (source: string) => {
+    const result = importCopybook(source);
+    expect(result.problems).toEqual([]);
+    expect(result.recordName).toBe("R");
+    return (result.source.match(/^\s+\w+: /gm) ?? []).length;
+  };
+
+  it("reads a plain one", () => {
+    expect(oneField("       01  R.\n           05  A  PIC X(4).\n")).toBe(1);
+  });
+
+  it("skips a comment marked in column 7", () => {
+    expect(
+      oneField(
+        "       01  R.\n      * this is a comment\n           05  A  PIC X(4).\n",
+      ),
+    ).toBe(1);
+  });
+
+  it("skips a page eject, which is also an indicator", () => {
+    expect(
+      oneField(
+        "       01  R.\n      / page eject\n           05  A  PIC X(4).\n",
+      ),
+    ).toBe(1);
+  });
+
+  it("ignores anything past column 72", () => {
+    // The identification area holds a change tag, not a field.
+    const withTag =
+      "       01  R.\n" +
+      "           05  A  PIC X(4).".padEnd(72, " ") +
+      "IGNORED-SEQ\n";
+    expect(oneField(withTag)).toBe(1);
+  });
+
+  it("ignores the sequence area", () => {
+    expect(oneField("000100 01  R.\n000200     05  A  PIC X(4).\n")).toBe(1);
+  });
+
+  it("skips a blank line between entries", () => {
+    expect(oneField("       01  R.\n\n           05  A  PIC X(4).\n")).toBe(1);
+  });
+});
