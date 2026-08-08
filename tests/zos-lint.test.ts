@@ -317,3 +317,93 @@ describe("the rule list", () => {
     );
   });
 });
+
+/**
+ * Where a statement stores its result, for every verb the rule reads.
+ *
+ * `cics-commarea-answered` asks whether anything in the program writes into the
+ * record it hands back. That question is answered by `receiving()`, a switch
+ * over COBOL's storing verbs, and the tools mutation lane found the arithmetic
+ * arms surviving in both directions: `ADD ... GIVING x` and `ADD ... TO x` store
+ * into different operands, and nothing distinguished them.
+ *
+ * The pairing is the point. Each case here writes into a field of the reply
+ * record, so the rule must stay quiet; the last writes nowhere near it, so the
+ * rule must fire. A version that always fired and a version that never fired
+ * would each pass half of this.
+ */
+describe("which operand a statement stores into", () => {
+  const program = (body: string) => `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CICSP.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-A            PIC S9(9) COMP-3 VALUE ZERO.
+       01  WS-B            PIC S9(9) COMP-3 VALUE ZERO.
+       01  REPLY-REC.
+           05  RP-RESULT   PIC S9(9) COMP-3.
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05  CA-RESULT   PIC S9(9) COMP-3.
+       PROCEDURE DIVISION.
+       A-MAIN.
+${body}
+           MOVE REPLY-REC TO DFHCOMMAREA.
+           EXEC CICS RETURN END-EXEC.
+`;
+
+  const answered = (body: string) =>
+    lintZos("CICSP.cbl", program(body)).filter(
+      (finding) => finding.rule === "cics-commarea-answered",
+    ).length === 0;
+
+  const storing: [string, string][] = [
+    ["ADD ... GIVING", "           ADD WS-A TO WS-B GIVING RP-RESULT."],
+    ["ADD ... TO", "           ADD WS-A TO RP-RESULT."],
+    [
+      "SUBTRACT ... GIVING",
+      "           SUBTRACT WS-A FROM WS-B GIVING RP-RESULT.",
+    ],
+    ["SUBTRACT ... FROM", "           SUBTRACT WS-A FROM RP-RESULT."],
+    [
+      "MULTIPLY ... GIVING",
+      "           MULTIPLY WS-A BY WS-B GIVING RP-RESULT.",
+    ],
+    ["MULTIPLY ... BY", "           MULTIPLY WS-A BY RP-RESULT."],
+    ["DIVIDE ... GIVING", "           DIVIDE WS-A BY WS-B GIVING RP-RESULT."],
+    ["DIVIDE ... INTO", "           DIVIDE WS-A INTO RP-RESULT."],
+    ["COMPUTE", "           COMPUTE RP-RESULT = WS-A + WS-B."],
+    ["MOVE", "           MOVE WS-A TO RP-RESULT."],
+  ];
+
+  for (const [name, body] of storing) {
+    it(`counts ${name} as answering the caller`, () => {
+      expect(answered(body)).toBe(true);
+    });
+  }
+
+  it("still reports a transaction that writes nowhere near the reply", () => {
+    expect(answered("           ADD WS-A TO WS-B.")).toBe(false);
+  });
+
+  /**
+   * A write to a *field* counts, qualified or not.
+   *
+   * Everything this linter reads is generated, and the emitter qualifies every
+   * reference — `MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA` — so matching the
+   * record name alone worked by accident. An unqualified `MOVE WS-A TO
+   * RP-RESULT` is legal COBOL that fills the reply, and the rule reported it as
+   * never answering: a linter whose false positive is "you did the thing you
+   * were supposed to do" is one people learn to ignore.
+   */
+  it("counts a qualified write the same as an unqualified one", () => {
+    expect(answered("           MOVE WS-A TO RP-RESULT OF REPLY-REC.")).toBe(
+      true,
+    );
+    expect(answered("           MOVE WS-A TO RP-RESULT.")).toBe(true);
+  });
+
+  it("does not count the inbound copy as the transaction answering", () => {
+    // How the record got its value in the first place, not a reply.
+    expect(answered("           MOVE DFHCOMMAREA TO REPLY-REC.")).toBe(false);
+  });
+});

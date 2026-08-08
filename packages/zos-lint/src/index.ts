@@ -287,7 +287,7 @@ function cicsCommareaAnswered(
       continue;
     }
     const record = back[1]!;
-    if (statements.some((other) => writes(other, record))) {
+    if (statements.some((other) => writes(other, record, text))) {
       continue;
     }
     findings.push({
@@ -301,8 +301,38 @@ function cicsCommareaAnswered(
   return findings;
 }
 
+/**
+ * The names subordinate to `01 <record>`, so a write to a field counts.
+ *
+ * Everything this linter reads is generated, and the emitter qualifies every
+ * reference — `MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA` — so matching the
+ * record name alone happens to work today. It is the wrong thing to depend on.
+ * An unqualified `MOVE WS-A TO CA-BALANCE` is legal COBOL that fills the reply
+ * record, and matching only the record name reports that program as never
+ * answering its caller. A linter whose false positive is "you did the thing
+ * you were supposed to do" is one people learn to ignore, and this one exists
+ * to be believed the day it fires.
+ */
+function fieldsOf(text: string, record: string): string[] {
+  const declaration = new RegExp(
+    `^\\s+01\\s+${escape(record)}\\b[\\s\\S]*?(?=^\\s+01\\s|\\Z)`,
+    "m",
+  ).exec(text);
+  if (!declaration) {
+    return [];
+  }
+  return [
+    ...new Set(
+      [...declaration[0].matchAll(/^\s+(?:0[2-9]|[1-4][0-9])\s+([A-Z0-9-]+)/gm)]
+        .map((match) => match[1]!)
+        // `FILLER` is not a name and may repeat; a write to it answers nothing.
+        .filter((name) => name !== "FILLER"),
+    ),
+  ];
+}
+
 /** True where a statement stores into `record` or into a field of it. */
-function writes(statement: Statement, record: string): boolean {
+function writes(statement: Statement, record: string, text = ""): boolean {
   // The inbound copy, which is how the record got its value in the first place
   // and is not the transaction answering.
   if (
@@ -312,7 +342,9 @@ function writes(statement: Statement, record: string): boolean {
   ) {
     return false;
   }
-  return new RegExp(`\\b${escape(record)}\\b`).test(receiving(statement));
+  const target = receiving(statement);
+  const names = [record, ...fieldsOf(text, record)];
+  return names.some((name) => new RegExp(`\\b${escape(name)}\\b`).test(target));
 }
 
 /**
