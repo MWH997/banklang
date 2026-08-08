@@ -771,6 +771,10 @@ export class Machine {
         this.executeString(instance, statement);
         return;
 
+      case "unstring":
+        this.executeUnstring(instance, statement);
+        return;
+
       case "open":
         for (const file of statement.files) {
           this.openFile(instance, file.name, file.mode);
@@ -1096,6 +1100,64 @@ export class Machine {
   }
 
   /* -------------------------------------------------- string */
+
+  /**
+   * `UNSTRING source DELIMITED BY d INTO a b c`.
+   *
+   * The sending field is scanned left to right. For each receiver in turn, the
+   * characters up to the next delimiter — or to the end of the field, when
+   * there is no next delimiter — are the one it gets; the delimiter itself is
+   * discarded and the scan resumes after it. A receiver the scan never reaches
+   * is left as it was, which is why the emitter writes `MOVE SPACES TO` in
+   * front of every one of these.
+   *
+   * Adjacent delimiters therefore produce an empty field rather than being
+   * collapsed. `A--B` into three receivers gives `A`, empty, `B`: collapsing
+   * runs is what `DELIMITED BY ALL` asks for, and this parser refuses that
+   * form rather than guessing which was meant.
+   *
+   * The overflow condition is IBM's third case, which is the only one reachable
+   * here because the emitted statement has no pointer: "All data receiving
+   * fields have been acted upon and the sending field still contains unexamined
+   * character positions." A source with exactly as many fields as receivers
+   * does not overflow; one with more does.
+   */
+  private executeUnstring(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "unstring" }>,
+  ): void {
+    const source = this.displayText(instance, statement.source);
+    const delimiter = this.displayText(instance, statement.delimiter);
+
+    let at = 0;
+    let filled = 0;
+    for (const reference of statement.into) {
+      if (at > source.length) {
+        break;
+      }
+      // A zero-length delimiter would never advance the scan, so the whole
+      // remaining field goes into this receiver and the scan ends. COBOL has no
+      // way to write one; a runtime value can still be all spaces after a
+      // `MOVE`, and a loop that never terminates is worse than a short answer.
+      const cut = delimiter === "" ? -1 : source.indexOf(delimiter, at);
+      const field = cut === -1 ? source.slice(at) : source.slice(at, cut);
+      this.store(this.resolve(instance, reference), {
+        kind: "text",
+        value: field,
+      });
+      filled += 1;
+      if (cut === -1) {
+        at = source.length + 1;
+        break;
+      }
+      at = cut + delimiter.length;
+    }
+
+    const unexamined = at <= source.length;
+    if (unexamined && filled === statement.into.length && statement.overflow) {
+      this.execute(instance, statement.overflow);
+    }
+  }
 
   private executeString(
     instance: Instance,

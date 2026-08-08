@@ -192,6 +192,24 @@ export type Statement =
       overflow: Statement[] | null;
       line: number;
     }
+  | {
+      /**
+       * `UNSTRING source DELIMITED BY d INTO a b c ON OVERFLOW ... END-UNSTRING`.
+       *
+       * The form BankLang's `split` lowers to, and only that form. One
+       * delimiter, several receivers, an optional overflow block. `WITH
+       * POINTER`, `TALLYING`, `DELIMITED BY ALL` and multiple delimiters raise
+       * rather than being approximated — an UNSTRING that silently does less
+       * than it says leaves a record half-parsed with no error anywhere, which
+       * is the failure this interpreter exists to catch rather than commit.
+       */
+      kind: "unstring";
+      source: Expr;
+      delimiter: Expr;
+      into: Reference[];
+      overflow: Statement[] | null;
+      line: number;
+    }
   | { kind: "initialize"; targets: Reference[]; line: number }
   | {
       kind: "inspect";
@@ -526,6 +544,8 @@ export class StatementParser {
         return this.set();
       case "STRING":
         return this.stringStatement();
+      case "UNSTRING":
+        return this.unstring();
       case "INSPECT":
         return this.inspect();
       case "INITIALIZE": {
@@ -1163,6 +1183,68 @@ export class StatementParser {
     }
     this.cursor.accept("END-STRING");
     return { kind: "string", sources, into, pointer, overflow, line };
+  }
+
+  /**
+   * `UNSTRING source DELIMITED BY d INTO a b c`.
+   *
+   * Enterprise COBOL allows a great deal more than this — several delimiters
+   * joined by OR, `ALL` to collapse runs, `WITH POINTER` to start part way in,
+   * `TALLYING` to count the fields found. None of it is accepted here, because
+   * none of it is emitted: `packages/cobol-backend` lowers BankTS's `split` to
+   * exactly one delimiter and a list of receivers. Accepting a form and
+   * approximating it would make this interpreter agree with `cobc` about
+   * programs it does not really understand, which is worth less than nothing.
+   */
+  private unstring(): Statement {
+    const line = this.cursor.line;
+    this.cursor.expect("UNSTRING");
+    const source = this.expression();
+
+    this.cursor.expect("DELIMITED");
+    this.cursor.skipNoise("BY");
+    if (this.cursor.looksLike("ALL")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: UNSTRING ... DELIMITED BY ALL is not implemented.`,
+      );
+    }
+    const delimiter = this.expression();
+    if (this.cursor.looksLike("OR")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: UNSTRING with more than one delimiter is not implemented.`,
+      );
+    }
+
+    this.cursor.expect("INTO");
+    const into = [this.reference()];
+    while (this.startsReference()) {
+      into.push(this.reference());
+    }
+    if (this.cursor.looksLike("DELIMITER") || this.cursor.looksLike("COUNT")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: UNSTRING with DELIMITER IN or COUNT IN is not implemented.`,
+      );
+    }
+    if (this.cursor.looksLike("WITH") || this.cursor.looksLike("POINTER")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: UNSTRING ... WITH POINTER is not implemented.`,
+      );
+    }
+    if (this.cursor.looksLike("TALLYING")) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: UNSTRING ... TALLYING is not implemented.`,
+      );
+    }
+
+    let overflow: Statement[] | null = null;
+    if (
+      this.cursor.accept("ON", "OVERFLOW") ||
+      this.cursor.accept("OVERFLOW")
+    ) {
+      overflow = this.statements();
+    }
+    this.cursor.accept("END-UNSTRING");
+    return { kind: "unstring", source, delimiter, into, overflow, line };
   }
 
   /* -------------------------------------------------- conditions */
