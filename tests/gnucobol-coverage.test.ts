@@ -37,11 +37,11 @@ const cases: [string, string][] = [
   ],
   [
     "files",
-    `module M;\n${R}\nfile f sequential input record Row status fs;\nentry transaction t(row: Row) { open f; read f into row; close f; audit("A", row.idempotencyKey); }`,
+    `module M;\n${R}\nfile f sequential input record Row status fs;\nentry transaction t(row: Row) { open f; read f into row; if fs != "00" { log "E", fs; } close f; audit("A", row.idempotencyKey); }`,
   ],
   [
     "indexed",
-    `module M;\n${R}\nfile f indexed update record Row key rowId status fs;\nentry transaction t(row: Row) { open f; read f into row key "K"; rewrite f from row; close f; audit("A", row.idempotencyKey); }`,
+    `module M;\n${R}\nfile f indexed update record Row key rowId status fs;\nentry transaction t(row: Row) { open f; read f into row key "K"; if fs == "00" { rewrite f from row; } if fs != "00" { log "E", fs; } close f; audit("A", row.idempotencyKey); }`,
   ],
   [
     "sort",

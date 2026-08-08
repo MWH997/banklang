@@ -315,6 +315,9 @@ file feedInput lineSequential input record FeedLine status feedInputStatus;
 entry transaction run(line: FeedLine, idempotencyKey: string<36>) {
   open feedInput;
   read feedInput into line;
+  if feedInputStatus != "00" {
+    log "NOTHING READ ", feedInputStatus;
+  }
   close feedInput;
   audit("RUN", idempotencyKey);
 }

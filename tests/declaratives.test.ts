@@ -27,6 +27,12 @@ file postingOutput sequential output record Account status outStatus;
 const BODY = `entry transaction run1(account: Account) {
   open accountInput;
   read accountInput into account;
+  // An error declarative handles the *failures*. End of file is not one: the
+  // generated check lets 10 through for the program to decide about, and the
+  // declarative never sees it. BANK-FILE-017.
+  if inStatus != "00" {
+    log "NOTHING READ ", inStatus;
+  }
   close accountInput;
 
   debit(account.accountId, account.balance);

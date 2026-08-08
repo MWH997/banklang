@@ -54,6 +54,64 @@ export interface DefectDemonstration {
 
 export const DEFECT_DEMONSTRATIONS: DefectDemonstration[] = [
   {
+    defect: "DF01",
+    summary:
+      "A read whose end-of-file outcome was only handled inside the AT END branch, so the record area was used again after the file ran out — the last record processed twice, with a return code of zero.",
+    coverage: "prevented-at-compile-time",
+    source: `module Df01;
+
+record Trans {
+  trAccount: string<16>;
+  trAmount: zoned<11, 2>;
+  idempotencyKey: string<36>;
+}
+
+file transIn sequential input record Trans status transInStatus;
+
+entry transaction applyOne(trans: Trans) {
+  open transIn;
+  read transIn into trans;
+  // No test of transInStatus. At end of file the record area still holds the
+  // record before it, and this posts it a second time.
+  debit(trans.trAccount, trans.trAmount);
+  credit("SUSPENSE", trans.trAmount);
+  close transIn;
+  audit("APPLIED", trans.idempotencyKey);
+}
+`,
+    // The outcome the generated status check deliberately lets through — 10 is
+    // the answer to "was there another record", not a failure — has to be
+    // looked at before the record it left behind is used.
+    expectDiagnostic: "BANK-FILE-017",
+  },
+  {
+    defect: "DF01",
+    summary:
+      "The same read with the status printed rather than branched on, which is how the defect survives a code review: the answer is in the job log and the program carried on regardless.",
+    coverage: "prevented-at-compile-time",
+    source: `module Df01Logged;
+
+record Trans {
+  trAccount: string<16>;
+  trAmount: zoned<11, 2>;
+  idempotencyKey: string<36>;
+}
+
+file transIn sequential input record Trans status transInStatus;
+
+entry transaction applyOne(trans: Trans) {
+  open transIn;
+  read transIn into trans;
+  log "TRANSIN STATUS ", transInStatus;
+  debit(trans.trAccount, trans.trAmount);
+  credit("SUSPENSE", trans.trAmount);
+  close transIn;
+  audit("APPLIED", trans.idempotencyKey);
+}
+`,
+    expectDiagnostic: "BANK-FILE-017",
+  },
+  {
     defect: "DF36",
     summary:
       "An average rate computed as (a / b) * 100 rather than (a * 100) / b, so the division truncated before the multiply could restore the magnitude, and the stored rate was wrong.",

@@ -19,6 +19,9 @@ import {
   divisionRemainderShape,
   MAX_COMPAT_DIGITS,
 } from "../../cobol-ir/src/index";
+import { checkFileOutcomes } from "./file-outcomes";
+
+export { checkFileOutcomes, programHandledStatuses } from "./file-outcomes";
 
 const IDEMPOTENCY_KEY_FIELD = "idempotencyKey";
 
@@ -76,6 +79,9 @@ export function analyzeProgramSemantics(
   }
 
   diagnostics.push(...checkRoundingIsGeneratable(program));
+  // Flow-sensitive: which operations left an outcome the program never looked
+  // at. Not part of `checkFileStatus`, which is a property of the declaration.
+  diagnostics.push(...checkFileOutcomes(program));
 
   return {
     diagnostics,

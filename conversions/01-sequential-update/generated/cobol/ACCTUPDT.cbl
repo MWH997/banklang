@@ -334,6 +334,12 @@ CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
                        MOVE "READ-FAILED" TO BANK-FAILURE-CODE
                        GO TO UPDATE-ACCOUNTS-BODY-EXIT
                    END-IF
+                   IF MASTER-IN-STATUS NOT = "00"
+                       DISPLAY "MASTIN READ FAILED, STATUS "
+                           MASTER-IN-STATUS UPON SYSOUT
+                       MOVE "MASTIN_READ_FAILED" TO BANK-FAILURE-CODE
+                       GO TO UPDATE-ACCOUNTS-BODY-EXIT
+                   END-IF
                    SET ADDRESS OF NEW-BALANCE-FOR-P1 TO ADDRESS OF
                        TRANS-RECORD
                    SET ADDRESS OF NEW-BALANCE-FOR-P2 TO ADDRESS OF

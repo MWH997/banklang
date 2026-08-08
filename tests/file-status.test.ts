@@ -84,6 +84,9 @@ describe("the condition each check tests", () => {
       `file feed sequential input record Master status feedStatus;`,
       `  open feed;
   read feed into master;
+  if feedStatus == "00" {
+    log "READ ", master.accountId;
+  }
   close feed;`,
     );
 
@@ -97,6 +100,9 @@ describe("the condition each check tests", () => {
       INDEXED,
       `  open store;
   read store into master key master.accountId;
+  if storeStatus == "00" {
+    log "READ ", master.accountId;
+  }
   close store;`,
     );
 
@@ -110,6 +116,9 @@ describe("the condition each check tests", () => {
       INDEXED,
       `  open store;
   write store from master;
+  if storeStatus != "00" {
+    log "DUPLICATE ", storeStatus;
+  }
   close store;`,
     );
 
@@ -136,25 +145,25 @@ describe("which statements are checked", () => {
     [
       "REWRITE",
       INDEXED,
-      "  open store;\n  read store into master key master.accountId;\n  rewrite store from master;\n  close store;",
+      '  open store;\n  read store into master key master.accountId;\n  if storeStatus == "00" {\n    rewrite store from master;\n  }\n  if storeStatus == "00" {\n    log "OK ", storeStatus;\n  }\n  close store;',
       'DISPLAY "REWRITE FAILED store STATUS " STORE-STATUS UPON SYSOUT',
     ],
     [
       "DELETE",
       INDEXED,
-      "  open store;\n  read store into master key master.accountId;\n  delete store key master.accountId;\n  close store;",
+      '  open store;\n  read store into master key master.accountId;\n  if storeStatus == "00" {\n    delete store key master.accountId;\n  }\n  if storeStatus == "00" {\n    log "OK ", storeStatus;\n  }\n  close store;',
       'DISPLAY "DELETE FAILED store STATUS " STORE-STATUS UPON SYSOUT',
     ],
     [
       "START",
       INDEXED,
-      "  open store;\n  start store key master.accountId;\n  close store;",
+      '  open store;\n  start store key master.accountId;\n  if storeStatus == "00" {\n    log "POSITIONED ", storeStatus;\n  }\n  close store;',
       'DISPLAY "START FAILED store STATUS " STORE-STATUS UPON SYSOUT',
     ],
     [
       "READ NEXT",
       INDEXED,
-      "  open store;\n  start store key master.accountId;\n  readNext store into master;\n  close store;",
+      '  open store;\n  start store key master.accountId;\n  if storeStatus == "00" {\n    readNext store into master;\n  }\n  if storeStatus == "00" {\n    log "READ ", master.accountId;\n  }\n  close store;',
       'DISPLAY "READ NEXT FAILED store STATUS " STORE-STATUS UPON SYSOUT',
     ],
   ];

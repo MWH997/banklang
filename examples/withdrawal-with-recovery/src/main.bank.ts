@@ -76,6 +76,15 @@ entry transaction withdraw(account: SavingsAccount, result: WithdrawalResult) {
 
   open requestInput;
   read requestInput into account;
+  // End of file is not a failure — the generated status check lets 10 through
+  // for the program to decide about — so it has to be decided about here. An
+  // empty request dataset otherwise leaves `account` holding whatever working
+  // storage was initialised to, and the withdrawal below debits an account id
+  // of spaces for nothing and reports success. BANK-FILE-017.
+  if requestStatus != "00" {
+    log "NO WITHDRAWAL REQUEST TO PROCESS, STATUS ", requestStatus;
+    raise "NO_REQUEST";
+  }
   close requestInput;
 
   let allowed: MoneyBDT = permittedAmount(account, account.requested);

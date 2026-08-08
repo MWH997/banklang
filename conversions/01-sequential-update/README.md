@@ -67,12 +67,12 @@ own status, against `88`-level condition names rather than literals:
 
 |                                                | Original | Regenerated |
 | ---------------------------------------------- | -------- | ----------- |
-| Lines of code, comments and blanks excluded    | 92       | 447         |
+| Lines of code, comments and blanks excluded    | 92       | 453         |
 | `GO TO` a paragraph that is not an exit        | 3        | 0           |
-| `GO TO` in total, single-exit returns included | 4        | 24          |
+| `GO TO` in total, single-exit returns included | 4        | 25          |
 | File operations whose result is tested         | 2 of 6   | 12 of 12    |
 
-The BankTS in between is 109 lines.
+The BankTS in between is 113 lines.
 
 <!-- /measurements -->
 

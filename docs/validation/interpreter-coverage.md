@@ -8,7 +8,7 @@ second is a differential blind spot: the compiled side runs, the
 interpreted side refuses, and the comparison that gives this project's
 green its meaning does not happen.
 
-Measured over the 148 programs the compiler produces from the examples and the benchmark tasks.
+Measured over the 150 programs the compiler produces from the examples and the benchmark tasks.
 
 The denominator is **locally executable** emitted verbs, not all of them.
 A verb whose only home is a zUnit test case or a Report Writer section has
@@ -33,23 +33,23 @@ Every locally executable verb the backend emits can be executed by both engines.
 
 | Verb | Emitted | Locally executable | Interpreted |
 | --- | --- | --- | --- |
-| `MOVE` | 2056 | yes | yes |
-| `IF` | 629 | yes | yes |
-| `DISPLAY` | 583 | yes | yes |
-| `PERFORM` | 186 | yes | yes |
-| `COMPUTE` | 177 | yes | yes |
-| `CONTINUE` | 153 | yes | yes |
-| `EXIT` | 136 | yes | yes |
-| `CALL` | 100 | yes | yes |
-| `ADD` | 78 | yes | yes |
-| `CLOSE` | 67 | yes | yes |
-| `OPEN` | 67 | yes | yes |
-| `GOBACK` | 52 | yes | yes |
-| `WRITE` | 46 | yes | yes |
-| `READ` | 41 | yes | yes |
+| `MOVE` | 2254 | yes | yes |
+| `IF` | 689 | yes | yes |
+| `DISPLAY` | 644 | yes | yes |
+| `PERFORM` | 199 | yes | yes |
+| `COMPUTE` | 195 | yes | yes |
+| `CONTINUE` | 162 | yes | yes |
+| `EXIT` | 145 | yes | yes |
+| `CALL` | 102 | yes | yes |
+| `ADD` | 82 | yes | yes |
+| `CLOSE` | 74 | yes | yes |
+| `OPEN` | 73 | yes | yes |
+| `GOBACK` | 54 | yes | yes |
+| `WRITE` | 52 | yes | yes |
+| `READ` | 45 | yes | yes |
 | `SET` | 23 | yes | yes |
 | `EVALUATE` | 18 | yes | yes |
-| `STRING` | 12 | yes | yes |
+| `STRING` | 14 | yes | yes |
 | `SUBTRACT` | 10 | yes | yes |
 | `ENTRY` | 6 | no | n/a |
 | `INITIALIZE` | 6 | yes | yes |

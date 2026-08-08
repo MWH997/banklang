@@ -300,6 +300,9 @@ file master indexed input record Holder key accountId status masterStatus;
     const result = compile(`${KSDS}
 transaction t(holder: Holder) {
   read master into holder key holder.accountId;
+  if masterStatus != "00" {
+    log "NO SUCH KEY ", masterStatus;
+  }
   audit("DONE", holder.idempotencyKey);
 }`);
 
@@ -313,6 +316,9 @@ transaction t(holder: Holder) {
     const result = compile(`${KSDS}
 transaction t(holder: Holder) {
   read master into holder key holder.accountId;
+  if masterStatus != "00" {
+    log "NO SUCH KEY ", masterStatus;
+  }
   audit("DONE", holder.idempotencyKey);
 }`);
 

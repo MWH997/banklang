@@ -260,10 +260,12 @@ describe("checkpoint and restart", () => {
 
   while seen < 1000 limit 1000 {
     read rawPostings into posting;
-    debit(posting.accountId, posting.amount);
-    credit("CASH", posting.amount);
-    point.lastAccountId = posting.accountId;
+    if rawStatus == "00" {
+      debit(posting.accountId, posting.amount);
+      credit("CASH", posting.amount);
+      point.lastAccountId = posting.accountId;
 CHECKPOINT
+    }
     seen = seen + 1;
   }
 

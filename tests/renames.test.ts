@@ -136,6 +136,9 @@ file legacyFeed sequential input record LegacyDate status feedStatus;
 entry transaction load(legacy: LegacyDate) {
   open legacyFeed;
   read legacyFeed into legacy;
+  if feedStatus != "00" {
+    log "OUTCOME ", feedStatus;
+  }
   close legacyFeed;
   audit("LOADED", legacy.idempotencyKey);
 }`);

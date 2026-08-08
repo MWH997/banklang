@@ -942,6 +942,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-017",
+    title: "A file operation whose outcome was never handled",
+    explanation:
+      "Every generated I/O statement is followed by a test of the file status, and a status outside class 0 stops the step. That covers the failures and deliberately does not cover the statuses a program is written to produce: end of file on a read (10), no such record on a keyed read or a browse (23), a duplicate key on a write to a KSDS (22). Those say the request found nothing rather than that the file is broken, so they are let through for the program to branch on. When it does not, the record area still holds the record before it: a read at end of file leaves the last transaction in place, and a program that carries on posts it twice with a return code of zero. The check is flow-sensitive. An operation that can end with one of those statuses leaves an outstanding outcome, and using the record it filled, operating on the file again — a close overwrites the status too — or reaching the end of the routine with it outstanding is the defect.",
+    remediation:
+      'Compare the status before using what the operation left behind: `if feedStatus == "00" { ... }`, or a loop whose condition reads it. The comparison counts wherever it is written, including into a local. A `log` of the status is a mention rather than a test.',
+    specReference: "language/files.md",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-016",
     title: "A DD name that is also a data item",
     explanation:

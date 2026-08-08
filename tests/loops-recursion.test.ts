@@ -266,6 +266,9 @@ file feed sequential input record Ledger status feedStatus;
     const result = compile(`${FILES}
 transaction load(ledger: Ledger) {
   read feed into ledger;
+  if feedStatus != "00" {
+    log "NOTHING READ ", feedStatus;
+  }
   audit("LOADED", ledger.idempotencyKey);
 }`);
 
@@ -285,6 +288,9 @@ transaction load(ledger: Ledger) {
     const result = compile(`${FILES}
 transaction load(ledger: Ledger) {
   read feed into ledger;
+  if feedStatus != "00" {
+    log "NOTHING READ ", feedStatus;
+  }
   audit("LOADED", ledger.idempotencyKey);
 }`);
 

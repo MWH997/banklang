@@ -45,20 +45,20 @@ Whether BankTS can independently express a program specified by somebody else in
 | --- | --- |
 | tasks discovered | 46 |
 | imported into the harness | 46 |
-| applicable — BankTS can express it | 17 |
+| applicable — BankTS can express it | 19 |
 | unsupported by design | 7 |
-| unsupported, not yet implemented | 4 |
+| unsupported, not yet implemented | 2 |
 | the benchmark's own expectation is not derivable | 18 |
-| implementations written | 18 |
-| executed | 18 |
-| both engines ran it | 15 |
-| they agreed | 15 |
+| implementations written | 20 |
+| executed | 20 |
+| both engines ran it | 20 |
+| they agreed | 20 |
 | they diverged | 0 |
-| ran under `cobc` only — never a differential pass | 3 |
-| **authored, of applicable** | **17 / 17 (100.0%)** |
-| **passed, of authored** | **17 / 18 (94.4%)** |
-| **passed, of applicable** | **17 / 17 (100.0%)** |
-| **passed, of all discovered** | **17 / 46 (37.0%)** |
+| ran under `cobc` only — never a differential pass | 0 |
+| **authored, of applicable** | **19 / 19 (100.0%)** |
+| **passed, of authored** | **19 / 20 (95.0%)** |
+| **passed, of applicable** | **19 / 19 (100.0%)** |
+| **passed, of all discovered** | **19 / 46 (41.3%)** |
 
 Why the rest are not applicable:
 
@@ -66,7 +66,7 @@ Why the rest are not applicable:
 | --- | --- | --- |
 | benchmark-ambiguous | 18 | task_func_01, task_func_03, task_func_08, task_func_10, task_func_11, task_func_12, task_func_15, task_func_19, task_func_24, task_func_26, task_func_27, task_func_29, task_func_30, task_func_31, task_func_36, task_func_39, task_func_44, task_func_55 |
 | randomness | 7 | task_func_07, task_func_21, task_func_23, task_func_40, task_func_45, task_func_48, task_func_49 |
-| language-gap | 4 | task_func_09, task_func_25, task_func_34, task_func_47 |
+| language-gap | 2 | task_func_09, task_func_47 |
 
 | Failure | Tasks |
 | --- | --- |
@@ -210,7 +210,7 @@ Measured against `8abf3da6ebc5`.
 
 ## Defect benchmark
 
-41 reconstructed defects. 8 are prevented at compile time by a BankTS program the compiler refuses; see [the matrix](horizontal-defect-coverage.md).
+41 reconstructed defects. 9 are prevented at compile time by a BankTS program the compiler refuses; see [the matrix](horizontal-defect-coverage.md).
 
 ## COBOL conformance
 

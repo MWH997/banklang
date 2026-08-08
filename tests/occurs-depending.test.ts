@@ -64,6 +64,9 @@ file batches sequential input record Batch status batchStatus;
 entry transaction run(batch: Batch) {
   open batches;
   read batches into batch;
+  if batchStatus != "00" {
+    log "OUTCOME ", batchStatus;
+  }
   close batches;
   audit("RAN", batch.idempotencyKey);
 }`);
@@ -117,6 +120,9 @@ file batches sequential input record Batch status batchStatus;
 entry transaction run(batch: Batch) {
   open batches;
   read batches into batch;
+  if batchStatus != "00" {
+    log "OUTCOME ", batchStatus;
+  }
   close batches;
   audit("RAN", batch.idempotencyKey);
 }`);

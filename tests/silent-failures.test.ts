@@ -90,6 +90,9 @@ file accountInput sequential input record Account status accountInputStatus;
 entry transaction post(account: Account) {
   open accountInput;
   read accountInput into account;
+  if accountInputStatus != "00" {
+    log "OUTCOME ", accountInputStatus;
+  }
   close accountInput;
   audit("POSTED", account.idempotencyKey);
 }`);
@@ -110,6 +113,9 @@ file master indexed input record Account key accountId status masterStatus;
 entry transaction post(account: Account) {
   open master;
   read master into account key "ACC-1";
+  if masterStatus != "00" {
+    log "OUTCOME ", masterStatus;
+  }
   close master;
   audit("POSTED", account.idempotencyKey);
 }`);

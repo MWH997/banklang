@@ -435,7 +435,9 @@ file sink sequential output record Account status sinkStatus;
 transaction t(account: Account) {
   open feed;
   read feed into account;
-  write sink from account;
+  if feedStatus == "00" {
+    write sink from account;
+  }
   close feed;
   audit("DONE", account.idempotencyKey);
 }`,
@@ -463,6 +465,9 @@ transaction t(account: Account) {
       `${FILES}
 transaction t(account: Account) {
   read feed into account;
+  if feedStatus == "00" {
+    log "READ ", account.accountId;
+  }
   audit("DONE", account.idempotencyKey);
 }`,
     );

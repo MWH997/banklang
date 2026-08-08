@@ -39,6 +39,13 @@ file accountMaster ${declaration} record AccountMaster key accountId status mast
 entry transaction apply1(master: AccountMaster, amount: BDT) {
   open accountMaster;
 ${body}
+  // Every fixture here ends by testing the status, because BANK-FILE-017
+  // requires the outcome of a keyed operation to be looked at before the file
+  // is closed — a close overwrites the status, and 23 means the record the
+  // program is about to use is the one before it.
+  if masterStatus == "00" {
+    log "APPLIED ", masterStatus;
+  }
   close accountMaster;
 
   debit(master.accountId, amount);
@@ -69,6 +76,13 @@ file accountMaster sequential ${mode} record AccountMaster status masterStatus;
 entry transaction apply1(master: AccountMaster, amount: BDT) {
   open accountMaster;
 ${body}
+  // Every fixture here ends by testing the status, because BANK-FILE-017
+  // requires the outcome of a keyed operation to be looked at before the file
+  // is closed — a close overwrites the status, and 23 means the record the
+  // program is about to use is the one before it.
+  if masterStatus == "00" {
+    log "APPLIED ", masterStatus;
+  }
   close accountMaster;
 
   debit(master.accountId, amount);
@@ -88,7 +102,9 @@ ${body}
 describe("rewrite and delete", () => {
   it("rewrites a record in place", () => {
     const result = txn(`  read accountMaster into master key master.accountId;
-  rewrite accountMaster from master;`);
+  if masterStatus == "00" {
+    rewrite accountMaster from master;
+  }`);
 
     expect(result.diagnostics).toEqual([]);
     expect(result.cobol).toContain("REWRITE ACCOUNT-MASTER-RECORD");
@@ -129,6 +145,9 @@ describe("browsing with start and readNext", () => {
 
   it("walks the browse and reports end of data", () => {
     const result = txn(`  start accountMaster key master.accountId;
+  if masterStatus != "00" {
+    raise "NO_SUCH_KEY";
+  }
   readNext accountMaster into master;`);
 
     expect(result.diagnostics).toEqual([]);
@@ -167,8 +186,10 @@ entry transaction apply1(master: AccountMaster, amount: BDT) {
 describe("the whole master file update", () => {
   it("compiles read, change, and put back", () => {
     const result = txn(`  read accountMaster into master key master.accountId;
-  master.balance = master.balance + amount;
-  rewrite accountMaster from master;`);
+  if masterStatus == "00" {
+    master.balance = master.balance + amount;
+    rewrite accountMaster from master;
+  }`);
 
     expect(result.diagnostics).toEqual([]);
     const cobol = result.cobol ?? "";

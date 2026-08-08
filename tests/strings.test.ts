@@ -183,3 +183,50 @@ describe("now", () => {
     );
   });
 });
+
+/**
+ * `concat`, `now`, `countOf` and `replaceChars` lower to a COBOL statement
+ * writing into a field of their own, so there is no expression to nest one in.
+ *
+ * The backend knew and raised an internal invariant, which reaches the author
+ * as a stack trace rather than a diagnostic:
+ * `toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable way to parse a
+ * rate written in thousandths — crashed `bankc` while a benchmark task was
+ * being written. An internal invariant is for what cannot happen.
+ */
+describe("a value-building call written where no statement can go", () => {
+  it("is refused inside another call rather than crashing the backend", () => {
+    expect(
+      ids(
+        txn(
+          '  card.maskedCard = upper(concat("**", substring(card.cardNumber, 16, 4)));',
+        ),
+      ),
+    ).toContain("BANK-TYPE-030");
+  });
+
+  it("is refused in a condition", () => {
+    expect(
+      ids(
+        txn(`  if concat(card.holderName, "!") == "X" {
+    card.narrative = "MATCHED";
+  }`),
+      ),
+    ).toContain("BANK-TYPE-030");
+  });
+
+  it("is allowed as the whole right-hand side", () => {
+    expect(
+      txn(
+        '  card.maskedCard = concat("************", substring(card.cardNumber, 16, 4));',
+      ).diagnostics,
+    ).toEqual([]);
+  });
+
+  it("is allowed as the initialiser of a local", () => {
+    expect(
+      txn(`  let built: string<16> = concat("************", substring(card.cardNumber, 16, 4));
+  card.maskedCard = built;`).diagnostics,
+    ).toEqual([]);
+  });
+});

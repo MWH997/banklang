@@ -233,6 +233,9 @@ file feed sequential input record Account status feedStatus;
 entry transaction go(account: Account) {
   open feed;
   read feed into account;
+  if feedStatus != "00" {
+    log "OUTCOME ", feedStatus;
+  }
   close feed;
   audit("DONE", account.idempotencyKey);
 }`);

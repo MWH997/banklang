@@ -20,16 +20,16 @@ would fail to catch the defect, but that this repository has not shown it.
 
 | Coverage | Defects |
 | --- | --- |
-| prevented at compile time | 8 / 41 (19.5%) |
+| prevented at compile time | 9 / 41 (22.0%) |
 | not expressible in BankTS at all | 1 / 41 (2.4%) |
 | outside BankLang's model | 0 / 41 (0.0%) |
-| not demonstrated | 32 / 41 (78.0%) |
+| not demonstrated | 31 / 41 (75.6%) |
 
 ## Every defect
 
 | Defect | Family | What went wrong | Coverage | Diagnostic |
 | --- | --- | --- | --- | --- |
-| DF01 | file-status | inner if statement going to outer if statement | not-demonstrated | — |
+| DF01 | file-status | inner if statement going to outer if statement | prevented-at-compile-time | `BANK-FILE-017` |
 | DF02 | table-bounds | error in array search, not uniquely defined name | not-demonstrated | — |
 | DF03 | file-status | error in in reading data records from vsam file | not-demonstrated | — |
 | DF04 | group-item-semantics | problem with move statement to right-adjust field | not-demonstrated | — |
@@ -87,13 +87,15 @@ A `string<n>` and a `decimal<p,s>` are different types and neither moves into th
 
 ### file-status
 
-**Mechanism** a declared file status, and a mode the operation has to match
+**Mechanism** a declared file status, a mode the operation has to match, and a flow-sensitive check that its outcome was handled
 
-A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. What BankLang does *not* yet do is require the declared status to be examined: a program that reads and never tests it compiles today. That is the largest family here, five of the 41 defects.
+A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. Since this phase it also has to be *looked at*.
 
-The rule was built and measured twice and is not shipped. Read as `a declared status must be read somewhere by a program that operates on the file` — deliberately not `tested after every operation`, which would reject the idiomatic read loop — it fired on 13 files across nine of this repository’s own examples, which were genuinely wrong and are fixed.
+Every generated I/O statement is followed by a test of the status, and anything outside class 0 stops the step. That covers the failures and deliberately does not cover the statuses a program is written to produce: end of file on a read, no such record on a keyed read or a browse, a duplicate key on a write to a KSDS. Those are the program's business, and a program that ignores one carries on with the record area still holding the record before it. `BANK-FILE-017` is the rule that says so: an operation that can end with one of those statuses leaves an outstanding outcome, and using the record it filled, operating on the file again — a close overwrites the status too — or reaching the end of the routine with it outstanding is an error. Comparing the status discharges it, wherever the comparison is written; a `log` of the status does not, because printing the answer is not reading it.
 
-The second measurement is why it is still unshipped. Of 117 file declarations carrying a status across the test fixtures, 4 are covered by an `on error` declarative and 18 have the status drive a loop condition; 95 have neither. Those are mostly unit tests of unrelated constructs, and correcting them well is a phase of its own — a regex sweep over them was tried and broke the declaratives tests, which is the evidence that it needs doing by hand. Shipping the rule before that work would mean either 95 failing fixtures or a rule weakened until it caught nothing.
+The rule is flow-sensitive, which is what the two earlier attempts were not. `read` then `if status` is safe and `if status` then `read` is not, and a check that flattens the statement list cannot tell them apart. The walk merges the state at each join, so a fact is discharged after a branch only when every path through it discharged the fact.
+
+Migration cost, measured before it shipped: two of this repository's forty-four programs, both genuine — `withdrawal-with-recovery` debited an account id of spaces when its request dataset was empty, and `statement-generation` produced a statement from whatever `master` held when the account was not on the file. Forty-five unit-test fixtures, all of them programs that read a file and ignored what happened, corrected by hand. The earlier measurement of 117 declarations with 95 unhandled counted *declarations*; this one counts operations and control flow, which is why the number is different and why this rule could ship where that one could not.
 
 ### table-bounds
 
