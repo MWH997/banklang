@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { bankTsTypeForSql } from "../packages/copybook/src/dclgen";
+import {
+  bankTsTypeForSql,
+  importDclgen,
+} from "../packages/copybook/src/dclgen";
 import { importCopybook } from "../packages/copybook/src/import";
 
 /**
@@ -199,5 +202,67 @@ describe("a copybook in reference format", () => {
 
   it("skips a blank line between entries", () => {
     expect(oneField("       01  R.\n\n           05  A  PIC X(4).\n")).toBe(1);
+  });
+});
+
+/**
+ * The column list, split on the commas that separate columns.
+ *
+ * `DECIMAL(15, 2)` carries a comma of its own, so the split is depth-aware.
+ * Getting that wrong does not fail: it produces a column called `2)` and loses
+ * the one after it, which is a record with the wrong fields at the wrong
+ * offsets — read from a real table.
+ *
+ * The mutation lane found the depth counter surviving in both directions, and
+ * the checked-in member is the only DCLGEN anything ran over.
+ */
+describe("a DCLGEN column list", () => {
+  const member = (columns: string, pictures: string) =>
+    `           EXEC SQL DECLARE BANKDB.T TABLE
+           ( ${columns}
+           ) END-EXEC.
+       01  DCLT.
+${pictures}
+`;
+
+  const columnsOf = (source: string) =>
+    (source.match(/^\s+(\w+):/gm) ?? []).map((line) =>
+      line.trim().replace(":", ""),
+    );
+
+  it("does not split on the comma inside a precision and scale", () => {
+    const result = importDclgen(
+      member(
+        `A DECIMAL(15, 2) NOT NULL,
+             B DECIMAL(9, 4) NOT NULL,
+             C CHAR(8) NOT NULL`,
+        `           10 A PIC S9(13)V9(2) USAGE COMP-3.
+           10 B PIC S9(5)V9(4) USAGE COMP-3.
+           10 C PIC X(8).`,
+      ),
+    );
+    expect(result.problems).toEqual([]);
+    expect(columnsOf(result.source)).toEqual(["a", "b", "c"]);
+  });
+
+  it("reads a single column with no separator at all", () => {
+    const result = importDclgen(
+      member("A CHAR(4) NOT NULL", "           10 A PIC X(4)."),
+    );
+    expect(columnsOf(result.source)).toEqual(["a"]);
+  });
+
+  it("reads the last column when it is the one carrying parentheses", () => {
+    // The tail after the final comma is pushed separately; a decimal there is
+    // where an off-by-one in the depth counter shows up.
+    const result = importDclgen(
+      member(
+        `A CHAR(8) NOT NULL,
+             B DECIMAL(15, 2)`,
+        `           10 A PIC X(8).
+           10 B PIC S9(13)V9(2) USAGE COMP-3.`,
+      ),
+    );
+    expect(columnsOf(result.source)).toEqual(["a", "b"]);
   });
 });
