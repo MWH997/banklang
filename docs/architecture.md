@@ -224,8 +224,21 @@ tested by the target's own framework rather than only by this repository.
 ### `packages/migration-analysis`
 
 Reads COBOL you already have: paragraph graph, file use, SQL use, CICS use,
-and an inventory. It states its own limits rather than guessing; see
+an inventory, and which of COBOL's constructs each member contains. It states
+its own limits rather than guessing; see
 [migration analysis](migration-analysis.md).
+
+### `packages/horizontal-validation`
+
+The other axis of validation. Everything else here is vertical — tests written
+for BankLang, measuring BankLang against what their author expected — and this
+is what measures the compiler against COBOL nobody wrote for it: independent
+corpora, their licences, the rules that decide what BankTS can represent, and
+the arithmetic that reports the answer with its denominator attached.
+
+It reaches no network and fetches nothing. Corpora arrive in an ignored cache
+through `tools/horizontal-fetch.ts`, pinned by `validation/corpus-lock.json`;
+this package reads what is on disk.
 
 ### `packages/formatter`
 

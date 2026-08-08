@@ -1,0 +1,6 @@
+{
+  "name": "@banklang/horizontal-validation",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts"
+}

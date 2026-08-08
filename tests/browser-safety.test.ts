@@ -42,8 +42,19 @@ const BROWSER_SAFE_PACKAGES = [
   "cobol-runtime",
 ];
 
-/** Packages allowed to touch the file system and process. */
-const NODE_PACKAGES = ["bankc-cli", "config", "language-server"];
+/**
+ * Packages allowed to touch the file system and process.
+ *
+ * `horizontal-validation` hashes corpus bytes with `node:crypto` and resolves
+ * corpus-supplied paths with `node:path`, and it is measurement tooling rather
+ * than compiler core — nothing the playground loads reaches it.
+ */
+const NODE_PACKAGES = [
+  "bankc-cli",
+  "config",
+  "horizontal-validation",
+  "language-server",
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
