@@ -16,6 +16,17 @@
  * What that costs is stated in `describeLimits()` and printed on every report.
  */
 
+import { detectFeatures, type FeatureCounts } from "./features";
+
+export {
+  detectFeatures,
+  featureNames,
+  isFixedFormat,
+  sourceLines,
+  FEATURES,
+} from "./features";
+export type { FeatureCounts, FeatureDefinition } from "./features";
+
 /** Columns 8 through 72, which is where COBOL text lives. */
 const AREA_A_INDEX = 7;
 const LAST_COLUMN = 72;
@@ -95,6 +106,14 @@ export interface ProgramAnalysis {
   alters: number;
   /** The deepest `IF`/`EVALUATE`/`PERFORM` nesting reached. */
   maxNesting: number;
+  /**
+   * Which COBOL constructs the member contains, and how many lines use each.
+   *
+   * The paragraph graph above says how a program is shaped; this says what it
+   * is made of, which is the question an estate asks when it wants to know
+   * what a migration would have to cover. See `./features.ts`.
+   */
+  features: FeatureCounts;
 }
 
 const VERBS = ["OPEN", "CLOSE", "READ", "WRITE", "REWRITE", "DELETE", "START"];
@@ -389,6 +408,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
     jumps,
     alters,
     maxNesting,
+    features: detectFeatures(text),
   };
 }
 
