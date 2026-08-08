@@ -4,7 +4,10 @@ import {
   bankTsTypeForSql,
   importDclgen,
 } from "../packages/copybook/src/dclgen";
-import { diffGeneratedCopybooks } from "../packages/copybook/src/index";
+import {
+  diffGeneratedCopybooks,
+  inspectGeneratedCopybook,
+} from "../packages/copybook/src/index";
 import { importCopybook } from "../packages/copybook/src/import";
 
 /**
@@ -354,5 +357,83 @@ describe("comparing two copybooks", () => {
     );
     expect(added.identical).toBe(false);
     expect(changed(added)).toBe(1);
+  });
+});
+
+/**
+ * The inspector reads the same file the importer does.
+ *
+ * They are two readers of one format and they disagreed. The importer dropped
+ * the sequence area; the inspector dropped only the identification area. So a
+ * member carrying sequence numbers in columns 1-6 — which is what a PDS from a
+ * real shop is full of — imported, and then could not be inspected or diffed:
+ * `BANK-COPY-008 Not a data description entry: 000200 05 ACCOUNT-ID PIC X(16)`.
+ *
+ * `compareLayouts` runs both over the customer's own copybook, so the round
+ * trip that proves an import worked was unavailable for exactly the files most
+ * likely to need it.
+ */
+describe("a copybook the inspector is given", () => {
+  const FIELDS =
+    "           05  A-ONE  PIC X(4).\n           05  A-TWO  PIC X(6).\n";
+
+  const measured = (source: string) => {
+    const inspection = inspectGeneratedCopybook(source);
+    return {
+      record: inspection.cobolName,
+      fields: inspection.fields.map((field) => field.cobolName),
+      total: inspection.totalLength,
+    };
+  };
+
+  const expected = { record: "R", fields: ["A-ONE", "A-TWO"], total: 10 };
+
+  it("reads one in plain reference format", () => {
+    expect(measured(`       01  R.\n${FIELDS}`)).toEqual(expected);
+  });
+
+  it("reads one carrying sequence numbers", () => {
+    expect(
+      measured(
+        "000100 01  R.\n000200     05  A-ONE  PIC X(4).\n000300     05  A-TWO  PIC X(6).\n",
+      ),
+    ).toEqual(expected);
+  });
+
+  it("reads one with no sequence area at all", () => {
+    // Every copybook this emitter writes into a test is indented four spaces
+    // and has no sequence area, so the slice has to be conditional.
+    expect(
+      measured("01  R.\n    05  A-ONE  PIC X(4).\n    05  A-TWO  PIC X(6).\n"),
+    ).toEqual(expected);
+  });
+
+  it("skips both indicator forms and free-form comments", () => {
+    expect(measured(`       01  R.\n      * note\n${FIELDS}`)).toEqual(
+      expected,
+    );
+    expect(measured(`       01  R.\n      / eject\n${FIELDS}`)).toEqual(
+      expected,
+    );
+    expect(measured(`       01  R.\n      *> note\n${FIELDS}`)).toEqual(
+      expected,
+    );
+  });
+
+  it("ignores a change tag past column 72", () => {
+    const tagged =
+      "       01  R.\n" +
+      "           05  A-ONE  PIC X(4).".padEnd(72, " ") +
+      "CHG0001\n           05  A-TWO  PIC X(6).\n";
+    expect(measured(tagged)).toEqual(expected);
+  });
+
+  it("agrees with the importer about the same file", () => {
+    // The two readers exist to be compared; disagreeing about which columns
+    // are program text is the one way that comparison cannot work.
+    const sequenced =
+      "000100 01  R.\n000200     05  A-ONE  PIC X(4).\n000300     05  A-TWO  PIC X(6).\n";
+    expect(importCopybook(sequenced).problems).toEqual([]);
+    expect(measured(sequenced).fields).toEqual(["A-ONE", "A-TWO"]);
   });
 });

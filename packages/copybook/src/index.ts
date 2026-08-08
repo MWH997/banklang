@@ -320,19 +320,45 @@ export interface CopybookSourceLine {
  * is exactly the file where "somewhere in here" is no help at all.
  */
 export function copybookSourceLines(sourceText: string): CopybookSourceLine[] {
+  /*
+   * Columns 1-6 are the sequence area, 7 is the indicator, and 73 onwards is
+   * identification. Only columns 8 to 72 are the program.
+   *
+   * The importer already dropped the sequence area — `line.slice(6)` — and
+   * this reader dropped only the identification area, so the two disagreed
+   * about the same file. A member carrying sequence numbers, which is what a
+   * PDS from a real shop is full of, imported and then could not be inspected
+   * or diffed: `BANK-COPY-008 Not a data description entry: 000200 05
+   * ACCOUNT-ID PIC X(16)`.
+   *
+   * The indicator is read from the *unsliced* line, because after slicing it
+   * is no longer in column 7 — doing it the other way round read a `/` page
+   * eject as the start of a data description entry.
+   */
   return sourceText
     .split(/\r?\n/)
-    .map((line, index) => ({
-      line: index + 1,
-      text: (line.length > 72 ? line.slice(0, 72) : line).trimEnd(),
-    }))
+    .map((line, index) => {
+      const program = line.length > 72 ? line.slice(0, 72) : line;
+      // Only where columns 1-6 really are a sequence area: all blank, or all
+      // digits. Slicing unconditionally cut into a copybook written without
+      // one — `    05  LEGACY-BAL` became `GACY-BAL` — and plenty of them are,
+      // including every copybook this emitter writes into a test.
+      const sequenced = /^(?:\s{6}|\d{6})/.test(program);
+      return {
+        line: index + 1,
+        indicator: program.length >= 7 ? program[6] : undefined,
+        text: (sequenced ? program.slice(6) : program).trimEnd(),
+      };
+    })
     .filter(
-      ({ text }) =>
+      ({ indicator, text }) =>
         text.trim().length > 0 &&
-        !(text.length >= 7 && (text[6] === "*" || text[6] === "/")) &&
+        indicator !== "*" &&
+        indicator !== "/" &&
         !text.trimStart().startsWith("*>") &&
         !text.trimStart().startsWith("*"),
-    );
+    )
+    .map(({ line, text }) => ({ line, text }));
 }
 
 export function inspectGeneratedCopybook(
