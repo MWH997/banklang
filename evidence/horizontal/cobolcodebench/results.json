@@ -7,14 +7,14 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_02",
     "corpus": "cobolcodebench",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
+    "differentialAgreement": true,
     "applicability": "applicable",
     "outcome": "pass",
     "detail": null
@@ -27,7 +27,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_04",
@@ -37,7 +37,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_05",
@@ -57,7 +57,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_08",
@@ -67,7 +67,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_09",
@@ -77,7 +77,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_10",
@@ -87,7 +87,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_11",
@@ -97,7 +97,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_12",
@@ -107,7 +107,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_13",
@@ -117,7 +117,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_14",
@@ -127,7 +127,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_15",
@@ -137,7 +137,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_16",
@@ -147,7 +147,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_17",
@@ -157,7 +157,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_18",
@@ -167,7 +167,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_19",
@@ -177,7 +177,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_20",
@@ -187,7 +187,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_21",
@@ -217,7 +217,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_24",
@@ -227,7 +227,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_25",
@@ -237,7 +237,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_26",
@@ -247,7 +247,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_27",
@@ -257,7 +257,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_28",
@@ -267,7 +267,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_29",
@@ -277,7 +277,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_30",
@@ -287,7 +287,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_31",
@@ -297,7 +297,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_32",
@@ -307,7 +307,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_33",
@@ -317,7 +317,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_34",
@@ -327,7 +327,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_35",
@@ -337,7 +337,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_36",
@@ -347,7 +347,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_37",
@@ -357,7 +357,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "language-gap: The task sorts records on a field and writes them out in a different field order. BankTS's `sort` requires the input and output files to hold the same record type, so a sort that also reformats has no form — the reformat would have to happen through an intermediate file. Evidence: BANK-FILE-005: `task7Inp holds RawLine but task7Out holds SortedLine`, and BANK-FILE-006 on the output procedure's record. Reproduced by `sort task7Inp into task7Out on rawDepartment` with an output procedure that reformats."
   },
   {
     "taskId": "cobolcodebench/task_func_38",
@@ -367,7 +367,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_39",
@@ -377,7 +377,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_40",
@@ -407,7 +407,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_45",
@@ -417,7 +417,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_47",
@@ -427,7 +427,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   },
   {
     "taskId": "cobolcodebench/task_func_48",
@@ -457,6 +457,6 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
   }
 ]

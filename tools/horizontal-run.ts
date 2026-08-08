@@ -41,6 +41,7 @@ import { tmpdir } from "node:os";
 
 import {
   allocateDdNames,
+  blockerFor,
   checkTallyIsComplete,
   classifyTask,
   compareEngines,
@@ -104,6 +105,12 @@ export function loadTasks(corpus: string, cwd = process.cwd()): LoadedTask[] {
         implementation: existsSync(implementation) ? implementation : null,
       };
     });
+}
+
+/** Why a task has no implementation, from the recorded blockers. */
+function describeBlocker(task: string): string {
+  const blocker = blockerFor(task);
+  return `${blocker.kind}: ${blocker.reason}${blocker.evidence ? ` Evidence: ${blocker.evidence}` : ""}`;
 }
 
 /**
@@ -173,7 +180,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
       "skipped",
       verdict.unsupported
         ? `${verdict.unsupported.construct}: ${verdict.unsupported.reason}`
-        : "No BankTS implementation has been written for this task yet.",
+        : describeBlocker(task.spec.upstreamId),
     );
   }
 
