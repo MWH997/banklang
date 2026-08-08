@@ -65,9 +65,30 @@ in order.
   other page of the site did.
 - Add a Format button to the playground, using the compiler's own formatter.
 - Add `blog/`, rendered to `/blog/` with structured data and a sitemap entry.
+- Execute emitted `SORT` and `MERGE` in the independent runtime, closing the
+  last differential blind spot in locally executable output —
+  [interpreter coverage](docs/validation/interpreter-coverage.md).
+- Carry several record layouts on one output file, `record Head, Detail` —
+  [files](docs/language/files.md).
+- Diagnose a file operation whose outcome the program never handled,
+  flow-sensitively — `BANK-FILE-017`.
+- Gate the runtime on every locally executable verb the backend emits, so a new
+  one cannot reopen the blind spot silently.
 
 ### Fixed
 
+- Stop a successful sort reporting failure: GnuCOBOL sets no file status on a
+  `USING` or `GIVING` file — [D27](docs/divergences.md).
+- Emit `WITH DUPLICATES IN ORDER`, since the order of equal sort keys is
+  otherwise undefined — [D26](docs/divergences.md).
+- Refuse a DD name that is also a data item, which takes the file name from that
+  item's contents on both compilers — `BANK-FILE-016`.
+- Diagnose a value-building call nested in an expression rather than raising an
+  internal invariant — `BANK-TYPE-030`.
+- Write the named record's own length rather than the record area's, which a
+  file with one layout could not distinguish.
+- Measure a fixed record through the interpreter's parser rather than a regex
+  that missed a `zoned` field's `SIGN IS TRAILING SEPARATE`.
 - Allow a branch inside a loop body in a function, which was refused while a
   `switch` in the same position compiled.
 - Name the syntax the author wrote in three diagnostics that printed an internal
