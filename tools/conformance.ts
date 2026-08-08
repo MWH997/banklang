@@ -465,7 +465,25 @@ export function buildRecord(
       continue;
     }
 
-    const text = String(value).slice(0, field.bytes).padEnd(field.bytes, " ");
+    // `COMP` is a two's-complement big-endian halfword, fullword or doubleword,
+    // not characters. Written as text it produced a record whose binary fields
+    // held digits, which is not a number any compiler would read back — a seed
+    // no test could have been right about.
+    if (field.usage === "COMP") {
+      encodeBinary(Number(value), scaleOf(field.picture), field.bytes).copy(
+        record,
+        field.offset,
+      );
+      continue;
+    }
+
+    // A signed zoned field carries its sign, and `SIGN IS TRAILING SEPARATE`
+    // puts it in a byte of its own at the end. Writing "-12" left-aligned into
+    // six bytes is not that number; `-00012` is not either. The digits are
+    // right-aligned and zero-filled and the sign follows them.
+    const text = field.picture.includes("SEPARATE")
+      ? zonedSeparate(Number(value), scaleOf(field.picture), field.bytes)
+      : String(value).slice(0, field.bytes).padEnd(field.bytes, " ");
     record.write(text, field.offset, "ascii");
   }
 
@@ -540,6 +558,34 @@ export function encodePacked(
   buffer[byteLength - 1] =
     (buffer[byteLength - 1]! & 0xf0) | (negative ? 0x0d : 0x0c);
   return buffer;
+}
+
+/** Encodes a number as `COMP`: big-endian two's complement, in `byteLength`. */
+export function encodeBinary(
+  value: number,
+  scale: number,
+  byteLength: number,
+): Buffer {
+  const buffer = Buffer.alloc(byteLength);
+  let scaled = BigInt(Math.round(value * 10 ** scale));
+  if (scaled < 0n) {
+    scaled += 1n << BigInt(byteLength * 8);
+  }
+  for (let index = byteLength - 1; index >= 0; index -= 1) {
+    buffer[index] = Number(scaled & 0xffn);
+    scaled >>= 8n;
+  }
+  return buffer;
+}
+
+/** `SIGN IS TRAILING SEPARATE`: right-aligned digits, then `+` or `-`. */
+function zonedSeparate(
+  value: number,
+  scale: number,
+  byteLength: number,
+): string {
+  const scaled = Math.round(Math.abs(value) * 10 ** scale);
+  return `${String(scaled).padStart(byteLength - 1, "0")}${value < 0 ? "-" : "+"}`;
 }
 
 /** Decodes packed decimal back to a fixed-point decimal string. */
