@@ -38,11 +38,14 @@ evidence/**/source/**
 # `pnpm horizontal:analyse` and `pnpm horizontal:run` write these: one row per
 # external file measured, with its hash and provenance. Machine output, and in
 # X-COBOL's case 5,195 rows of it.
-#
-# The two published pages under `docs/validation/` are *not* here. They are
-# generated too, and they are read by people — so they go through Prettier and
-# the generator emits what Prettier would.
 evidence/horizontal/**
+# The two pages `pnpm horizontal:report` writes. The methodology page beside
+# them is written by hand and is *not* here: it goes through Prettier like every
+# other document. These two are regenerated on every run and compared by the
+# workflow, so a formatter rewriting them would report the corpora as stale
+# whenever nothing had changed.
+docs/validation/horizontal-validation-results.md
+docs/validation/horizontal-defect-coverage.md
 *.jcl
 
 # Working papers. Not in the repository — `.gitignore` excludes the directory —

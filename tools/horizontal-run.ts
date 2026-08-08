@@ -346,9 +346,22 @@ function main(argv: string[]): number {
       `${JSON.stringify(describeEnvironment(cwd), null, 2)}\n`,
       "utf8",
     );
+    /*
+     * Without `durationMs`, which is how long the machine took rather than
+     * anything about the compiler.
+     *
+     * This file is committed evidence and the workflow fails on a diff in it,
+     * so a field that changes on every run would report the corpus as stale
+     * every time and train everybody to ignore the check. `runTask` still
+     * measures it for the console; what is recorded is the result.
+     */
     writeFileSync(
       join(out, "results.json"),
-      `${JSON.stringify(results, null, 2)}\n`,
+      `${JSON.stringify(
+        results.map(({ durationMs: _durationMs, ...rest }) => rest),
+        null,
+        2,
+      )}\n`,
       "utf8",
     );
     writeFileSync(

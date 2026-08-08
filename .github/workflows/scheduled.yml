@@ -203,8 +203,17 @@ jobs:
 
       # The published pages are generated from the evidence, so a diff here
       # means the numbers in git no longer match what the corpora produce.
+      #
+      # `environment.json` is excluded, and has to be: it records the commit the
+      # measurement ran on, which differs from the commit the evidence was
+      # committed in by construction. Comparing it would report every run as
+      # stale, and a check that always fails is a check nobody reads.
       - name: Fail if the committed results are stale
-        run: git diff --exit-code docs/validation evidence/horizontal
+        run: |
+          git diff --exit-code -- \
+            docs/validation \
+            evidence/horizontal \
+            ':!evidence/horizontal/*/environment.json'
 
       - name: Upload the evidence
         if: always()

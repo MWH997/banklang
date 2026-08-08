@@ -7,8 +7,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-1",
@@ -18,8 +17,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-100",
@@ -29,8 +27,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-101",
@@ -40,8 +37,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-102",
@@ -51,8 +47,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-103",
@@ -62,8 +57,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-104",
@@ -73,8 +67,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-105",
@@ -84,8 +77,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-106",
@@ -95,8 +87,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-107",
@@ -106,8 +97,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-108",
@@ -117,8 +107,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-109",
@@ -128,8 +117,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-11",
@@ -139,8 +127,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-110",
@@ -150,8 +137,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-113",
@@ -161,8 +147,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-114",
@@ -172,8 +157,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-116",
@@ -183,8 +167,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-117",
@@ -194,8 +177,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-118",
@@ -205,8 +187,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-119",
@@ -216,8 +197,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-12",
@@ -227,8 +207,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-120",
@@ -238,8 +217,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-121",
@@ -249,8 +227,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-122",
@@ -260,8 +237,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-123",
@@ -271,8 +247,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-124",
@@ -282,8 +257,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-126",
@@ -293,8 +267,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-127",
@@ -304,8 +277,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-128",
@@ -315,8 +287,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-13",
@@ -326,8 +297,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-130",
@@ -337,8 +307,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-131",
@@ -348,8 +317,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-132",
@@ -359,8 +327,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-133",
@@ -370,8 +337,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-134",
@@ -381,8 +347,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-135",
@@ -392,8 +357,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-138",
@@ -403,8 +367,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-139",
@@ -414,8 +377,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-14",
@@ -425,8 +387,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-140",
@@ -436,8 +397,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-141",
@@ -447,8 +407,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-142",
@@ -458,8 +417,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-143",
@@ -469,8 +427,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-144",
@@ -480,8 +437,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-145",
@@ -491,8 +447,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-146",
@@ -502,8 +457,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-147",
@@ -513,8 +467,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-148",
@@ -524,8 +477,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-149",
@@ -535,8 +487,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-15",
@@ -546,8 +497,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-150",
@@ -557,8 +507,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-151",
@@ -568,8 +517,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-152",
@@ -579,8 +527,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-153",
@@ -590,8 +537,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-154",
@@ -601,8 +547,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-155",
@@ -612,8 +557,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-156",
@@ -623,8 +567,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-157",
@@ -634,8 +577,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-158",
@@ -645,8 +587,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-159",
@@ -656,8 +597,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-16",
@@ -667,8 +607,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-160",
@@ -678,8 +617,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-161",
@@ -689,8 +627,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-162",
@@ -700,8 +637,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-163",
@@ -711,8 +647,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-17",
@@ -722,8 +657,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-18",
@@ -733,8 +667,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-19",
@@ -744,8 +677,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-2",
@@ -755,8 +687,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-20",
@@ -766,8 +697,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-21",
@@ -777,8 +707,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-23",
@@ -788,8 +717,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-24",
@@ -799,8 +727,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-25",
@@ -810,8 +737,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-26",
@@ -821,8 +747,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-27",
@@ -832,8 +757,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-28",
@@ -843,8 +767,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-29",
@@ -854,8 +777,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-3",
@@ -865,8 +787,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-30",
@@ -876,8 +797,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-31",
@@ -887,8 +807,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-34",
@@ -898,8 +817,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-35",
@@ -909,8 +827,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-36",
@@ -920,8 +837,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-39",
@@ -931,8 +847,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-40",
@@ -942,8 +857,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-41",
@@ -953,8 +867,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-42",
@@ -964,8 +877,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-43",
@@ -975,8 +887,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-44",
@@ -986,8 +897,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-45",
@@ -997,8 +907,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-46",
@@ -1008,8 +917,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-47",
@@ -1019,8 +927,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-48",
@@ -1030,8 +937,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-49",
@@ -1041,8 +947,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-5",
@@ -1052,8 +957,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-51",
@@ -1063,8 +967,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-52",
@@ -1074,8 +977,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-53",
@@ -1085,8 +987,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-54",
@@ -1096,8 +997,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-55",
@@ -1107,8 +1007,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-56",
@@ -1118,8 +1017,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-57",
@@ -1129,8 +1027,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-58",
@@ -1140,8 +1037,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-59",
@@ -1151,8 +1047,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-6",
@@ -1162,8 +1057,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-60",
@@ -1173,8 +1067,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-62",
@@ -1184,8 +1077,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-63",
@@ -1195,8 +1087,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-64",
@@ -1206,8 +1097,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-65",
@@ -1217,8 +1107,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-66",
@@ -1228,8 +1117,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-67",
@@ -1239,8 +1127,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-68",
@@ -1250,8 +1137,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-69",
@@ -1261,8 +1147,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-7",
@@ -1272,8 +1157,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-70",
@@ -1283,8 +1167,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-71",
@@ -1294,8 +1177,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-72",
@@ -1305,8 +1187,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-73",
@@ -1316,8 +1197,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-74",
@@ -1327,8 +1207,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-75",
@@ -1338,8 +1217,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-76",
@@ -1349,8 +1227,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-77",
@@ -1360,8 +1237,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-78",
@@ -1371,8 +1247,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-79",
@@ -1382,8 +1257,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-8",
@@ -1393,8 +1267,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-80",
@@ -1404,8 +1277,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-81",
@@ -1415,8 +1287,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-82",
@@ -1426,8 +1297,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-83",
@@ -1437,8 +1307,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-84",
@@ -1448,8 +1317,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-85",
@@ -1459,8 +1327,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-86",
@@ -1470,8 +1337,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-88",
@@ -1481,8 +1347,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-89",
@@ -1492,8 +1357,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-9",
@@ -1503,8 +1367,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-90",
@@ -1514,8 +1377,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-91",
@@ -1525,8 +1387,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-92",
@@ -1536,8 +1397,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   },
   {
     "taskId": "coboleval/HumanEval-93",
@@ -1547,8 +1407,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-94",
@@ -1558,8 +1417,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-96",
@@ -1569,8 +1427,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-97",
@@ -1580,8 +1437,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-98",
@@ -1591,8 +1447,7 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
-    "durationMs": 0
+    "detail": "a fixed calling interface with no room for the transaction contract: The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through."
   },
   {
     "taskId": "coboleval/HumanEval-99",
@@ -1602,7 +1457,6 @@
     "differentialAgreement": null,
     "applicability": "unsupported-by-design",
     "outcome": "skipped",
-    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids.",
-    "durationMs": 0
+    "detail": "COMP-2 / COMP-1: The task's interface is defined in IEEE binary floating point. BankTS has no floating-point type: money arithmetic that cannot be reproduced exactly is the thing the language exists to prevent, and adding a float type to score on a benchmark would be exactly the distortion this exercise forbids."
   }
 ]

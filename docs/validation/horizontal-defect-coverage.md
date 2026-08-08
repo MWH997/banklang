@@ -18,58 +18,58 @@ and compiled by `tests/horizontal-defects.test.ts` on every run. Nothing else
 may claim it. `not-demonstrated` means exactly that — not that BankLang
 would fail to catch the defect, but that this repository has not shown it.
 
-| Coverage                         | Defects         |
-| -------------------------------- | --------------- |
-| prevented at compile time        | 5 / 41 (12.2%)  |
-| not expressible in BankTS at all | 1 / 41 (2.4%)   |
-| outside BankLang's model         | 0 / 41 (0.0%)   |
-| not demonstrated                 | 35 / 41 (85.4%) |
+| Coverage | Defects |
+| --- | --- |
+| prevented at compile time | 5 / 41 (12.2%) |
+| not expressible in BankTS at all | 1 / 41 (2.4%) |
+| outside BankLang's model | 0 / 41 (0.0%) |
+| not demonstrated | 35 / 41 (85.4%) |
 
 ## Every defect
 
-| Defect | Family                   | What went wrong                                       | Coverage                  | Diagnostic      |
-| ------ | ------------------------ | ----------------------------------------------------- | ------------------------- | --------------- |
-| DF01   | file-status              | inner if statement going to outer if statement        | not-demonstrated          | —               |
-| DF02   | table-bounds             | error in array search, not uniquely defined name      | not-demonstrated          | —               |
-| DF03   | file-status              | error in in reading data records from vsam file       | not-demonstrated          | —               |
-| DF04   | group-item-semantics     | problem with move statement to right-adjust field     | not-demonstrated          | —               |
-| DF05   | compiler-and-environment | system error message in fastsrt compiler option       | not-demonstrated          | —               |
-| DF06   | name-resolution          | error in cobol compute, not uniquely defined name     | not-demonstrated          | —               |
-| DF07   | control-flow             | error in evaluate statement, in place of nested if    | not-demonstrated          | —               |
-| DF08   | table-bounds             | error in search statement on use of table index       | not-demonstrated          | —               |
-| DF09   | numeric-class            | soc7 system abend when executing unstring statement   | not-demonstrated          | —               |
-| DF10   | condition-name-coverage  | 88 level range problem not allowing for all values    | prevented-at-compile-time | `BANK-TYPE-003` |
-| DF11   | string-handling          | stringing of file name enclosed by double quote (")   | not-demonstrated          | —               |
-| DF12   | numeric-class            | alphanumeric field not convertd to packed decimal     | not-demonstrated          | —               |
-| DF13   | table-bounds             | compile error when value coded for occurs statement   | not-demonstrated          | —               |
-| DF14   | sql-handling             | undefined or unstable host variable error returned    | not-demonstrated          | —               |
-| DF15   | date-handling            | eror converting gregorian date to integer-of-date     | not-demonstrated          | —               |
-| DF16   | sql-handling             | undefined or unstable host variable error returned    | not-demonstrated          | —               |
-| DF17   | file-status              | problem in records not being written to ksds file     | not-demonstrated          | —               |
-| DF18   | pointer-and-linkage      | set statement for ws-pointer discarded by compiler    | not-expressible-in-bankts | `BANK-TYPE-001` |
-| DF19   | numeric-class            | problem moving character field to numeric field       | prevented-at-compile-time | `BANK-TYPE-003` |
-| DF21   | file-status              | error in writing records to ksds file (status 92)     | not-demonstrated          | —               |
-| DF22   | pointer-and-linkage      | soc-4 abend when reading variable-length records      | not-demonstrated          | —               |
-| DF23   | table-bounds             | error in search on use of index arithmetic expression | not-demonstrated          | —               |
-| DF24   | numeric-class            | error in redefinition of a numeric field data format  | not-demonstrated          | —               |
-| DF25   | record-lifetime          | variable initialization using output record data      | not-demonstrated          | —               |
-| DF26   | table-bounds             | error in not finding search entry using search all    | prevented-at-compile-time | `BANK-TYPE-009` |
-| DF27   | table-bounds             | error moving value from arrays in working storage     | not-demonstrated          | —               |
-| DF28   | numeric-class            | alphanumeric field not converted to numeric field     | not-demonstrated          | —               |
-| DF29   | date-handling            | problem with invalid date written to trailer record   | not-demonstrated          | —               |
-| DF30   | compiler-and-environment | compilation error - dfhb0020 defined as a data name   | not-demonstrated          | —               |
-| DF31   | pointer-and-linkage      | soc-4 abend enountered in stored procedure program    | not-demonstrated          | —               |
-| DF34   | group-item-semantics     | issue in comparing two signed group level variables   | not-demonstrated          | —               |
-| DF35   | string-handling          | problem with not unstringing all of csv record fields | not-demonstrated          | —               |
-| DF36   | numeric-precision        | problem with compute statement not rounded properly   | prevented-at-compile-time | `BANK-DEC-006`  |
-| DF39   | compiler-and-environment | program not able to display variable comp fields      | not-demonstrated          | —               |
-| DF40   | sql-handling             | program error when fetching the records from table    | not-demonstrated          | —               |
-| DF41   | numeric-class            | alphanumeric field not converted to numeric field     | not-demonstrated          | —               |
-| DF42   | sql-handling             | error using cursor looping which is not recommended   | prevented-at-compile-time | `BANK-SQL-001`  |
-| DF44   | name-resolution          | compiler error stating char-count is multi-defined    | not-demonstrated          | —               |
-| DF45   | pointer-and-linkage      | referencing error encountered when progam executed    | not-demonstrated          | —               |
-| DF46   | file-status              | program logic has occurred when rewriting a rcord     | not-demonstrated          | —               |
-| DF47   | control-flow             | compiler error when using set statement to false      | not-demonstrated          | —               |
+| Defect | Family | What went wrong | Coverage | Diagnostic |
+| --- | --- | --- | --- | --- |
+| DF01 | file-status | inner if statement going to outer if statement | not-demonstrated | — |
+| DF02 | table-bounds | error in array search, not uniquely defined name | not-demonstrated | — |
+| DF03 | file-status | error in in reading data records from vsam file | not-demonstrated | — |
+| DF04 | group-item-semantics | problem with move statement to right-adjust field | not-demonstrated | — |
+| DF05 | compiler-and-environment | system error message in fastsrt compiler option | not-demonstrated | — |
+| DF06 | name-resolution | error in cobol compute, not uniquely defined name | not-demonstrated | — |
+| DF07 | control-flow | error in evaluate statement, in place of nested if | not-demonstrated | — |
+| DF08 | table-bounds | error in search statement on use of table index | not-demonstrated | — |
+| DF09 | numeric-class | soc7 system abend when executing unstring statement | not-demonstrated | — |
+| DF10 | condition-name-coverage | 88 level range problem not allowing for all values | prevented-at-compile-time | `BANK-TYPE-003` |
+| DF11 | string-handling | stringing of file name enclosed by double quote (") | not-demonstrated | — |
+| DF12 | numeric-class | alphanumeric field not convertd to packed decimal | not-demonstrated | — |
+| DF13 | table-bounds | compile error when value coded for occurs statement | not-demonstrated | — |
+| DF14 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
+| DF15 | date-handling | eror converting gregorian date to integer-of-date | not-demonstrated | — |
+| DF16 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
+| DF17 | file-status | problem in records not being written to ksds file | not-demonstrated | — |
+| DF18 | pointer-and-linkage | set statement for ws-pointer discarded by compiler | not-expressible-in-bankts | `BANK-TYPE-001` |
+| DF19 | numeric-class | problem moving character field to numeric field | prevented-at-compile-time | `BANK-TYPE-003` |
+| DF21 | file-status | error in writing records to ksds file (status 92) | not-demonstrated | — |
+| DF22 | pointer-and-linkage | soc-4 abend when reading variable-length records | not-demonstrated | — |
+| DF23 | table-bounds | error in search on use of index arithmetic expression | not-demonstrated | — |
+| DF24 | numeric-class | error in redefinition of a numeric field data format | not-demonstrated | — |
+| DF25 | record-lifetime | variable initialization using output record data | not-demonstrated | — |
+| DF26 | table-bounds | error in not finding search entry using search all | prevented-at-compile-time | `BANK-TYPE-009` |
+| DF27 | table-bounds | error moving value from arrays in working storage | not-demonstrated | — |
+| DF28 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | — |
+| DF29 | date-handling | problem with invalid date written to trailer record | not-demonstrated | — |
+| DF30 | compiler-and-environment | compilation error - dfhb0020 defined as a data name | not-demonstrated | — |
+| DF31 | pointer-and-linkage | soc-4 abend enountered in stored procedure program | not-demonstrated | — |
+| DF34 | group-item-semantics | issue in comparing two signed group level variables | not-demonstrated | — |
+| DF35 | string-handling | problem with not unstringing all of csv record fields | not-demonstrated | — |
+| DF36 | numeric-precision | problem with compute statement not rounded properly | prevented-at-compile-time | `BANK-DEC-006` |
+| DF39 | compiler-and-environment | program not able to display variable comp fields | not-demonstrated | — |
+| DF40 | sql-handling | program error when fetching the records from table | not-demonstrated | — |
+| DF41 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | — |
+| DF42 | sql-handling | error using cursor looping which is not recommended | prevented-at-compile-time | `BANK-SQL-001` |
+| DF44 | name-resolution | compiler error stating char-count is multi-defined | not-demonstrated | — |
+| DF45 | pointer-and-linkage | referencing error encountered when progam executed | not-demonstrated | — |
+| DF46 | file-status | program logic has occurred when rewriting a rcord | not-demonstrated | — |
+| DF47 | control-flow | compiler error when using set statement to false | not-demonstrated | — |
 
 ## Families, and what BankLang says about each
 
@@ -156,3 +156,4 @@ COBOL leaves an FD's record area undefined after a WRITE, and reading it back is
 **Mechanism** none — see below.
 
 These are defects in how COBOL source is written or compiled. BankTS generates the COBOL, so the specific mistake is unavailable — but that is a consequence of code generation rather than a safety property, and it is not counted as one.
+

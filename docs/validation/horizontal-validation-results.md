@@ -9,14 +9,14 @@ measurement, and every number on it is read out of `evidence/horizontal/`.
 
 ## The compiler these numbers came from
 
-|                |                       |
-| -------------- | --------------------- |
-| BankLang       | 0.9.0                 |
-| commit         | `d6ac7999984b`        |
-| Node           | v24.18.0              |
+| | |
+| --- | --- |
+| BankLang | 0.9.0 |
+| commit | `8abf3da6ebc5` |
+| Node | v24.18.0 |
 | COBOL compiler | cobc (GnuCOBOL) 3.2.0 |
-| platform       | darwin/arm64          |
-| corpus lock    | `90aaebe2d5cb`        |
+| platform | darwin/arm64 |
+| corpus lock | `90aaebe2d5cb` |
 
 **Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL. Native IBM
 Enterprise COBOL execution: not yet performed.** Nothing on this page was
@@ -25,13 +25,13 @@ one.
 
 ## Corpora
 
-| Corpus                                 | Version                     | Licence     | Redistribution  |
-| -------------------------------------- | --------------------------- | ----------- | --------------- |
-| CobolCodeBench                         | `9d02534b7d1a`              | Apache-2.0  | redistributable |
-| COBOLEval                              | `0bb96c3114bb`              | MIT         | redistributable |
-| X-COBOL v2                             | DOI 10.5281/zenodo.14269462 | CC-BY-4.0   | derived-only    |
-| OpenCBS COBOL defects suite            | `a7a10bb0330c`              | MIT         | redistributable |
-| NIST COBOL-85 validation suite (local) | operator-supplied           | NOASSERTION | none            |
+| Corpus | Version | Licence | Redistribution |
+| --- | --- | --- | --- |
+| CobolCodeBench | `9d02534b7d1a` | Apache-2.0 | redistributable |
+| COBOLEval | `0bb96c3114bb` | MIT | redistributable |
+| X-COBOL v2 | DOI 10.5281/zenodo.14269462 | CC-BY-4.0 | derived-only |
+| OpenCBS COBOL defects suite | `a7a10bb0330c` | MIT | redistributable |
+| NIST COBOL-85 validation suite (local) | operator-supplied | NOASSERTION | none |
 
 ## Independent semantic benchmarks
 
@@ -39,31 +39,31 @@ one.
 
 Whether BankTS can independently express a program specified by somebody else in prose, and whether the COBOL this compiler emits for it produces the byte-exact output files the benchmark expects.
 
-|                                                                   |                   |
-| ----------------------------------------------------------------- | ----------------- |
-| tasks discovered                                                  | 46                |
-| imported into the harness                                         | 46                |
-| applicable — BankTS can express it _and_ an implementation exists | 0                 |
-| expressible, not yet written                                      | 0                 |
-| unsupported by design                                             | 0                 |
-| unsupported, not yet implemented                                  | 46                |
-| **passed, of applicable**                                         | **0 / 0**         |
-| **passed, of all discovered**                                     | **0 / 46 (0.0%)** |
+| | |
+| --- | --- |
+| tasks discovered | 46 |
+| imported into the harness | 46 |
+| applicable — BankTS can express it *and* an implementation exists | 0 |
+| expressible, not yet written | 0 |
+| unsupported by design | 0 |
+| unsupported, not yet implemented | 46 |
+| **passed, of applicable** | **0 / 0** |
+| **passed, of all discovered** | **0 / 46 (0.0%)** |
 
 ### COBOLEval
 
 Whether BankTS can express general algorithmic tasks against a fixed calling interface defined by somebody else, and whether the results match the benchmark's own COBOL test drivers.
 
-|                                                                   |                    |
-| ----------------------------------------------------------------- | ------------------ |
-| tasks discovered                                                  | 146                |
-| imported into the harness                                         | 146                |
-| applicable — BankTS can express it _and_ an implementation exists | 0                  |
-| expressible, not yet written                                      | 0                  |
-| unsupported by design                                             | 146                |
-| unsupported, not yet implemented                                  | 0                  |
-| **passed, of applicable**                                         | **0 / 0**          |
-| **passed, of all discovered**                                     | **0 / 146 (0.0%)** |
+| | |
+| --- | --- |
+| tasks discovered | 146 |
+| imported into the harness | 146 |
+| applicable — BankTS can express it *and* an implementation exists | 0 |
+| expressible, not yet written | 0 |
+| unsupported by design | 146 |
+| unsupported, not yet implemented | 0 |
+| **passed, of applicable** | **0 / 0** |
+| **passed, of all discovered** | **0 / 146 (0.0%)** |
 
 ## Real-world coverage
 
@@ -71,40 +71,40 @@ Whether BankTS can express general algorithmic tasks against a fixed calling int
 
 No behavioural oracle. These are files, not tests: nothing here can establish that anything computes the right answer, and a representability figure is a statement about language scope rather than about correctness.
 
-|                        |                      |
-| ---------------------- | -------------------- |
-| COBOL files discovered | 5195                 |
-| read without error     | 5195 / 5195 (100.0%) |
-| analyser failures      | 0                    |
+| | |
+| --- | --- |
+| COBOL files discovered | 5195 |
+| read without error | 5195 / 5195 (100.0%) |
+| analyser failures | 0 |
 
-| Representability                | Files               |
-| ------------------------------- | ------------------- |
-| fully-representable             | 1388 / 5195 (26.7%) |
-| representable-with-adaptation   | 2478 / 5195 (47.7%) |
-| unsupported-by-design           | 533 / 5195 (10.3%)  |
-| unsupported-not-yet-implemented | 738 / 5195 (14.2%)  |
-| analyser-failure                | 0 / 5195 (0.0%)     |
-| unknown                         | 58 / 5195 (1.1%)    |
+| Representability | Files |
+| --- | --- |
+| fully-representable | 1388 / 5195 (26.7%) |
+| representable-with-adaptation | 2478 / 5195 (47.7%) |
+| unsupported-by-design | 533 / 5195 (10.3%) |
+| unsupported-not-yet-implemented | 738 / 5195 (14.2%) |
+| analyser-failure | 0 / 5195 (0.0%) |
+| unknown | 58 / 5195 (1.1%) |
 
 Constructs BankTS cannot express, ranked by how often they occur:
 
-| Construct                | Support                         | Files | Share |
-| ------------------------ | ------------------------------- | ----- | ----- |
-| `go-to`                  | adaptation                      | 2473  | 47.6% |
-| `perform-thru`           | adaptation                      | 2394  | 46.1% |
-| `reference-modification` | adaptation                      | 600   | 11.5% |
-| `usage-index`            | adaptation                      | 452   | 8.7%  |
-| `string-unstring`        | adaptation                      | 393   | 7.6%  |
-| `file-line-sequential`   | unsupported-not-yet-implemented | 309   | 5.9%  |
-| `inspect`                | unsupported-not-yet-implemented | 269   | 5.2%  |
-| `usage-pointer`          | unsupported-by-design           | 244   | 4.7%  |
-| `file-relative`          | unsupported-not-yet-implemented | 192   | 3.7%  |
-| `screen-section`         | unsupported-by-design           | 138   | 2.7%  |
-| `external-data`          | unsupported-not-yet-implemented | 110   | 2.1%  |
-| `copy-replacing`         | unsupported-not-yet-implemented | 87    | 1.7%  |
-| `entry-point`            | unsupported-by-design           | 79    | 1.5%  |
-| `alter`                  | unsupported-by-design           | 70    | 1.3%  |
-| `comp-float`             | unsupported-by-design           | 37    | 0.7%  |
+| Construct | Support | Files | Share |
+| --- | --- | --- | --- |
+| `go-to` | adaptation | 2473 | 47.6% |
+| `perform-thru` | adaptation | 2394 | 46.1% |
+| `reference-modification` | adaptation | 600 | 11.5% |
+| `usage-index` | adaptation | 452 | 8.7% |
+| `string-unstring` | adaptation | 393 | 7.6% |
+| `file-line-sequential` | unsupported-not-yet-implemented | 309 | 5.9% |
+| `inspect` | unsupported-not-yet-implemented | 269 | 5.2% |
+| `usage-pointer` | unsupported-by-design | 244 | 4.7% |
+| `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
+| `screen-section` | unsupported-by-design | 138 | 2.7% |
+| `external-data` | unsupported-not-yet-implemented | 110 | 2.1% |
+| `copy-replacing` | unsupported-not-yet-implemented | 87 | 1.7% |
+| `entry-point` | unsupported-by-design | 79 | 1.5% |
+| `alter` | unsupported-by-design | 70 | 1.3% |
+| `comp-float` | unsupported-by-design | 37 | 0.7% |
 
 The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
 
@@ -112,30 +112,30 @@ The rules behind each verdict are in `packages/horizontal-validation/src/represe
 
 Defects reconstructed from public forum posts, so they over-represent what people ask about rather than what most often reaches production. A defect BankTS cannot express at all is prevented trivially and is recorded as such rather than counted as a save.
 
-|                        |                  |
-| ---------------------- | ---------------- |
-| COBOL files discovered | 53               |
-| read without error     | 53 / 53 (100.0%) |
-| analyser failures      | 0                |
+| | |
+| --- | --- |
+| COBOL files discovered | 53 |
+| read without error | 53 / 53 (100.0%) |
+| analyser failures | 0 |
 
-| Representability                | Files           |
-| ------------------------------- | --------------- |
-| fully-representable             | 22 / 53 (41.5%) |
-| representable-with-adaptation   | 30 / 53 (56.6%) |
-| unsupported-by-design           | 0 / 53 (0.0%)   |
-| unsupported-not-yet-implemented | 0 / 53 (0.0%)   |
-| analyser-failure                | 0 / 53 (0.0%)   |
-| unknown                         | 1 / 53 (1.9%)   |
+| Representability | Files |
+| --- | --- |
+| fully-representable | 22 / 53 (41.5%) |
+| representable-with-adaptation | 30 / 53 (56.6%) |
+| unsupported-by-design | 0 / 53 (0.0%) |
+| unsupported-not-yet-implemented | 0 / 53 (0.0%) |
+| analyser-failure | 0 / 53 (0.0%) |
+| unknown | 1 / 53 (1.9%) |
 
 Constructs BankTS cannot express, ranked by how often they occur:
 
-| Construct                | Support    | Files | Share |
-| ------------------------ | ---------- | ----- | ----- |
-| `go-to`                  | adaptation | 25    | 47.2% |
-| `usage-index`            | adaptation | 4     | 7.5%  |
-| `string-unstring`        | adaptation | 3     | 5.7%  |
-| `reference-modification` | adaptation | 1     | 1.9%  |
-| `perform-thru`           | adaptation | 1     | 1.9%  |
+| Construct | Support | Files | Share |
+| --- | --- | --- | --- |
+| `go-to` | adaptation | 25 | 47.2% |
+| `usage-index` | adaptation | 4 | 7.5% |
+| `string-unstring` | adaptation | 3 | 5.7% |
+| `reference-modification` | adaptation | 1 | 1.9% |
+| `perform-thru` | adaptation | 1 | 1.9% |
 
 The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
 
@@ -146,3 +146,4 @@ The rules behind each verdict are in `packages/horizontal-validation/src/represe
 ## COBOL conformance
 
 NIST COBOL-85 is never downloaded or redistributed by this repository. No local copy was supplied, so this lane is **unavailable** — which is not the same as passing.
+
