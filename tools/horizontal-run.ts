@@ -40,6 +40,7 @@ import { pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 
 import {
+  allocateDdNames,
   checkTallyIsComplete,
   classifyTask,
   compareEngines,
@@ -106,29 +107,28 @@ export function loadTasks(corpus: string, cwd = process.cwd()): LoadedTask[] {
 }
 
 /**
- * The DD name a benchmark's file is seeded under.
+ * The DD names a task's files are seeded under.
  *
- * A benchmark names its files the way a Unix program does — `input.txt`,
- * `task_func03_out1` — and a COBOL file is reached through a DD name, which is
- * one to eight alphanumeric characters. So the harness has to map between them,
- * and the mapping has to be something a task's BankTS can be written against
- * without knowing anything about this harness.
+ * Allocated for the whole set at once rather than name by name, because
+ * uniqueness is a property of the set. See
+ * `packages/horizontal-validation/src/dd-names.ts` for why that matters: the
+ * per-name version collapsed every file of nineteen tasks onto `TASKFUNC`.
  *
- * The rule: strip the non-alphanumerics, uppercase, take the first eight. That
- * is exactly what `toDdName` in the backend does to a BankTS file name, so an
- * implementation declaring `file inputTxt ...` for the benchmark's `input.txt`
- * lines up by construction and no per-task table exists.
- *
- * Two of a task's files can collide under the truncation —
- * `task_func03_out1` and `task_func03_out2` both become `TASKFUNC`. Those tasks
- * are reported as `infrastructure-failure` rather than run, because a run whose
- * two files are the same file measures nothing.
+ * A task's BankTS declares files whose own DD names — derived by the backend
+ * from the BankTS file name — must match what this returns. The mapping is
+ * printed by `pnpm horizontal:dd <task>` so an implementation can be written
+ * against it without anybody guessing.
  */
-export function benchmarkDdName(fileName: string): string {
-  return fileName
-    .replace(/[^A-Za-z0-9]/g, "")
-    .toUpperCase()
-    .slice(0, 8);
+export function taskDdNames(task: {
+  spec: {
+    inputs: Record<string, string>;
+    expectedOutputs: Record<string, string>;
+  };
+}): Map<string, string> {
+  return allocateDdNames([
+    ...Object.keys(task.spec.inputs),
+    ...Object.keys(task.spec.expectedOutputs),
+  ]);
 }
 
 /**
@@ -236,28 +236,15 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     tmpdir(),
     `banklang-horizontal-${task.spec.corpus}-${task.slug}`,
   );
+  const ddNames = taskDdNames(task);
+  const dd = (name: string): string => ddNames.get(name) ?? name;
   const inputs = Object.fromEntries(
     Object.entries(task.spec.inputs).map(([name, content]) => [
-      benchmarkDdName(name),
+      dd(name),
       Buffer.from(content, "utf8"),
     ]),
   );
-  const outputs = Object.keys(task.spec.expectedOutputs).map(benchmarkDdName);
-
-  // Two of the task's files reaching the same DD is not a result, so it is not
-  // reported as one.
-  const everyFile = [
-    ...Object.keys(task.spec.inputs),
-    ...Object.keys(task.spec.expectedOutputs),
-  ];
-  const dds = everyFile.map(benchmarkDdName);
-  if (new Set(dds).size !== dds.length) {
-    return finish(
-      "applicable",
-      "infrastructure-failure",
-      `Two of this task's files collide as DD names: ${everyFile.join(", ")} become ${dds.join(", ")}. A DD name is eight characters, and a run whose two files are one file measures nothing.`,
-    );
-  }
+  const outputs = Object.keys(task.spec.expectedOutputs).map(dd);
 
   /*
    * A program entered with a parameter list needs something to build one.
@@ -354,7 +341,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   const differences = compareRun(observed, {
     expectedOutputs: Object.fromEntries(
       Object.entries(task.spec.expectedOutputs).map(([name, content]) => [
-        benchmarkDdName(name),
+        dd(name),
         content,
       ]),
     ),

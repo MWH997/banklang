@@ -90,6 +90,13 @@ export {
 export type { DefectDemonstration } from "./defect-demonstrations";
 
 export {
+  allocateDdNames,
+  ddBase,
+  ddCandidate,
+  isLegalDdName,
+} from "./dd-names";
+
+export {
   analyseFile,
   looksLikeCobol,
   summarise,
