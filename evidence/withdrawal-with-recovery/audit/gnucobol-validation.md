@@ -5,11 +5,11 @@
 | validated-with-gnucobol | yes |
 | backend-profile | gnucobol-local |
 | source-artifact | examples/withdrawal-with-recovery/src/main.bank.ts |
-| source-artifact-sha256 | c144363d321a6586794c5600f8e8e4bd9a4966d0b7cac277d4edae2fbfe1e093 |
+| source-artifact-sha256 | 1259915f2e052ecc98e511c7d1b66779d222d7fb054850ebfcdb6063cc53621c |
 | generated-artifact | evidence/withdrawal-with-recovery/gnucobol/cobol/WITHDRAW.cbl |
-| generated-artifact-sha256 | 9bdee035fb32941c4246bf0706900ed1de623e51ae0c1d993356d05a1b977e3a |
+| generated-artifact-sha256 | e1efb31ee0fad50df14198ecc5ac05c44c71d80f8dfd7de23afc7c7483f27417 |
 | source-map-artifact | evidence/withdrawal-with-recovery/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 84072df875a12c5bc5b586563e57404c328062d262eb3f6ff923bfe24d1c5e69 |
+| source-map-artifact-sha256 | 5b0fbcf41418d6eb9523e306f19bf8d92644436b86be1e4544c8a29701c2dc08 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/withdrawal-with-recovery/gnucobol/copybooks evidence/withdrawal-with-recovery/gnucobol/cobol/WITHDRAW-PRE.cbl -o evidence/withdrawal-with-recovery/gnucobol/bin/withdraw |

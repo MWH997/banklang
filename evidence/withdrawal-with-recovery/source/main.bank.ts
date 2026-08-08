@@ -25,7 +25,23 @@ record WithdrawalResult {
 
 file requestInput sequential input record SavingsAccount status requestStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error requestInput {
+  log "REQUESTINPUT FAILED, STATUS ", requestStatus;
+  returnCode = 12;
+}
+
 file resultOutput sequential output record WithdrawalResult status resultStatus;
+
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error resultOutput {
+  log "RESULTOUTPUT FAILED, STATUS ", resultStatus;
+  returnCode = 12;
+}
 
 // Declared over the base record, so it works for any account that extends
 // CurrentAccount. The call site below passes a SavingsAccount: its leading

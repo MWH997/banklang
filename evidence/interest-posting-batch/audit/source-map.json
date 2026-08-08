@@ -183,96 +183,96 @@
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 26,
+        "line": 34,
         "column": 10
       },
       "sourceEnd": {
-        "line": 28,
+        "line": 36,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 130,
-      "targetEndLine": 139,
+      "targetStartLine": 140,
+      "targetEndLine": 149,
       "category": "function",
       "symbol": "isEligible"
     },
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 31,
+        "line": 39,
         "column": 10
       },
       "sourceEnd": {
-        "line": 37,
+        "line": 45,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 140,
-      "targetEndLine": 148,
+      "targetStartLine": 150,
+      "targetEndLine": 158,
       "category": "function",
       "symbol": "rateFor"
     },
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 41,
+        "line": 49,
         "column": 10
       },
       "sourceEnd": {
-        "line": 43,
+        "line": 51,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 149,
-      "targetEndLine": 178,
+      "targetStartLine": 159,
+      "targetEndLine": 188,
       "category": "function",
       "symbol": "accrue"
     },
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 46,
+        "line": 54,
         "column": 10
       },
       "sourceEnd": {
-        "line": 52,
+        "line": 60,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 179,
-      "targetEndLine": 187,
+      "targetStartLine": 189,
+      "targetEndLine": 197,
       "category": "function",
       "symbol": "feeFor"
     },
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 54,
+        "line": 62,
         "column": 13
       },
       "sourceEnd": {
-        "line": 83,
+        "line": 91,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 188,
-      "targetEndLine": 252,
+      "targetStartLine": 198,
+      "targetEndLine": 262,
       "category": "transaction",
       "symbol": "postInterest"
     },
     {
       "sourceFile": "examples/interest-posting-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 85,
+        "line": 93,
         "column": 19
       },
       "sourceEnd": {
-        "line": 107,
+        "line": 115,
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 253,
-      "targetEndLine": 343,
+      "targetStartLine": 263,
+      "targetEndLine": 353,
       "category": "transaction",
       "symbol": "runBatch"
     }

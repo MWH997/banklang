@@ -50,7 +50,23 @@ record AccountMaster {
 // Keyed access to the account master, read by account id.
 file accountMaster indexed input record AccountMaster key accountId status accountMasterStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error accountMaster {
+  log "ACCOUNTMASTER FAILED, STATUS ", accountMasterStatus;
+  returnCode = 12;
+}
+
 file statementOutput sequential output record Statement status statementOutputStatus;
+
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error statementOutput {
+  log "STATEMENTOUTPUT FAILED, STATUS ", statementOutputStatus;
+  returnCode = 12;
+}
 
 // Only an active or dormant account produces a statement.
 function isStatementable(status: AccountStatus): bool {

@@ -10,11 +10,11 @@
       "sourceSpan": {
         "sourceFile": "examples/withdrawal-with-recovery/src/main.bank.ts",
         "start": {
-          "line": 42,
+          "line": 58,
           "column": 19
         },
         "end": {
-          "line": 42,
+          "line": 58,
           "column": 23
         }
       },

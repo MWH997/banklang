@@ -311,48 +311,48 @@
     {
       "sourceFile": "examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 56,
+        "line": 72,
         "column": 10
       },
       "sourceEnd": {
-        "line": 58,
+        "line": 74,
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 156,
-      "targetEndLine": 165,
+      "targetStartLine": 173,
+      "targetEndLine": 182,
       "category": "function",
       "symbol": "isStatementable"
     },
     {
       "sourceFile": "examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 63,
+        "line": 79,
         "column": 10
       },
       "sourceEnd": {
-        "line": 73,
+        "line": 89,
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 166,
-      "targetEndLine": 178,
+      "targetStartLine": 183,
+      "targetEndLine": 195,
       "category": "function",
       "symbol": "suppressionReason"
     },
     {
       "sourceFile": "examples/statement-generation/src/main.bank.ts",
       "sourceStart": {
-        "line": 75,
+        "line": 91,
         "column": 13
       },
       "sourceEnd": {
-        "line": 108,
+        "line": 124,
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 179,
-      "targetEndLine": 355,
+      "targetStartLine": 196,
+      "targetEndLine": 372,
       "category": "transaction",
       "symbol": "generateStatement"
     }

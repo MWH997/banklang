@@ -79,9 +79,24 @@ function templateReadme(bundle: string): string {
 
 export function refreshEvidence(cwd = process.cwd()): string[] {
   const root = resolve(cwd, "evidence");
+  /*
+   * Only the directories that are evidence *bundles*.
+   *
+   * Every subdirectory of `evidence/` used to be taken for one, and the
+   * horizontal-validation programme then put `horizontal/` and
+   * `horizontal-history/` there — results and summaries, not a compiled
+   * example. `pnpm evidence:refresh` has crashed on them ever since, reading
+   * `examples/horizontal/src/main.bank.ts`, and because it crashed part-way
+   * through a sorted list the five bundles after `branch-accrual-cursor` were
+   * never regenerated at all.
+   *
+   * A bundle is a directory with an example of the same name. Anything else
+   * under `evidence/` is somebody else's output and is left alone.
+   */
   const bundles = readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
+    .filter((name) => existsSync(resolve(cwd, "examples", name)))
     .sort();
 
   for (const bundle of bundles) {
