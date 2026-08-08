@@ -52,6 +52,15 @@ Whether BankTS can independently express a program specified by somebody else in
 | **passed, of applicable** | **4 / 4 (100.0%)** |
 | **passed, of all discovered** | **4 / 46 (8.7%)** |
 
+Why the rest are not authored:
+
+| Reason | Tasks | |
+| --- | --- | --- |
+| unattempted | 28 | task_func_01, task_func_03, task_func_04, task_func_07, task_func_08, task_func_10, task_func_12, task_func_13, task_func_14, task_func_16, task_func_17, task_func_18, task_func_19, task_func_20, task_func_23, task_func_24, task_func_25, task_func_28, task_func_29, task_func_30, task_func_32, task_func_33, task_func_34, task_func_35, task_func_36, task_func_38, task_func_45, task_func_55 |
+| benchmark-ambiguous | 7 | task_func_11, task_func_15, task_func_26, task_func_27, task_func_31, task_func_39, task_func_44 |
+| randomness | 4 | task_func_21, task_func_40, task_func_48, task_func_49 |
+| language-gap | 3 | task_func_09, task_func_37, task_func_47 |
+
 ### COBOLEval
 
 Whether BankTS can express general algorithmic tasks against a fixed calling interface defined by somebody else, and whether the results match the benchmark's own COBOL test drivers.
@@ -66,6 +75,13 @@ Whether BankTS can express general algorithmic tasks against a fixed calling int
 | unsupported, not yet implemented | 0 |
 | **passed, of applicable** | **0 / 0** |
 | **passed, of all discovered** | **0 / 146 (0.0%)** |
+
+Why the rest are not authored:
+
+| Reason | Tasks | |
+| --- | --- | --- |
+| a fixed calling interface with no room for the transaction contract | 134 | HumanEval-1, HumanEval-100, HumanEval-101, HumanEval-102, HumanEval-103, HumanEval-104, HumanEval-105, HumanEval-106, HumanEval-107, HumanEval-108, HumanEval-109, HumanEval-11, HumanEval-110, HumanEval-113, HumanEval-114, HumanEval-116, HumanEval-117, HumanEval-118, HumanEval-119, HumanEval-12, HumanEval-120, HumanEval-121, HumanEval-122, HumanEval-123, HumanEval-124, HumanEval-126, HumanEval-127, HumanEval-128, HumanEval-13, HumanEval-130, HumanEval-131, HumanEval-132, HumanEval-134, HumanEval-135, HumanEval-138, HumanEval-139, HumanEval-14, HumanEval-140, HumanEval-141, HumanEval-142, HumanEval-143, HumanEval-144, HumanEval-145, HumanEval-146, HumanEval-147, HumanEval-148, HumanEval-149, HumanEval-15, HumanEval-150, HumanEval-152, HumanEval-153, HumanEval-154, HumanEval-155, HumanEval-156, HumanEval-157, HumanEval-158, HumanEval-159, HumanEval-16, HumanEval-160, HumanEval-161, HumanEval-162, HumanEval-163, HumanEval-17, HumanEval-18, HumanEval-19, HumanEval-23, HumanEval-24, HumanEval-25, HumanEval-26, HumanEval-27, HumanEval-28, HumanEval-29, HumanEval-3, HumanEval-30, HumanEval-31, HumanEval-34, HumanEval-35, HumanEval-36, HumanEval-39, HumanEval-40, HumanEval-41, HumanEval-42, HumanEval-43, HumanEval-44, HumanEval-46, HumanEval-48, HumanEval-49, HumanEval-5, HumanEval-51, HumanEval-52, HumanEval-53, HumanEval-54, HumanEval-55, HumanEval-56, HumanEval-57, HumanEval-58, HumanEval-59, HumanEval-6, HumanEval-60, HumanEval-62, HumanEval-63, HumanEval-64, HumanEval-65, HumanEval-66, HumanEval-67, HumanEval-68, HumanEval-69, HumanEval-7, HumanEval-70, HumanEval-72, HumanEval-73, HumanEval-74, HumanEval-75, HumanEval-76, HumanEval-77, HumanEval-78, HumanEval-79, HumanEval-8, HumanEval-80, HumanEval-82, HumanEval-83, HumanEval-84, HumanEval-85, HumanEval-86, HumanEval-88, HumanEval-89, HumanEval-9, HumanEval-90, HumanEval-91, HumanEval-93, HumanEval-94, HumanEval-96, HumanEval-97, HumanEval-98 |
+| COMP-2 / COMP-1 | 12 | HumanEval-0, HumanEval-133, HumanEval-151, HumanEval-2, HumanEval-20, HumanEval-21, HumanEval-45, HumanEval-47, HumanEval-71, HumanEval-81, HumanEval-92, HumanEval-99 |
 
 ## Real-world coverage
 

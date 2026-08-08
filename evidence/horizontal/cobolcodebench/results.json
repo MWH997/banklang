@@ -77,7 +77,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "language-gap: Each line holds a different number of comma-separated numbers — four on one, five on the next — and `split x by \",\" into a, b, c` writes into a fixed list of receivers named at compile time. A line whose field count is not known until it is read has no BankTS form. Evidence: Input lines carry 3 and 4 commas respectively. This is the only task in the corpus that genuinely needs it: an earlier classifier counted any variation in comma count as variable arity and so also flagged task_func_01 and task_func_24, whose variation is a header line rather than a variable record."
   },
   {
     "taskId": "cobolcodebench/task_func_10",
@@ -97,7 +97,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: The expected output lays the filename out in a fixed column the specification never states, and the column is too narrow for one of the inputs — `anthertest.docx` runs straight into the next field, so the file literally contains `docxis`. No implementation written from the contract produces that. Evidence: Expected output contains `docxis`, present in neither the specification nor the input data."
   },
   {
     "taskId": "cobolcodebench/task_func_12",
@@ -137,7 +137,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: The expected output pairs each animal with a list of foods — meat, fish, grass, seeds, sugarcane and eleven more — that exists only inside the reference solution. The specification does not give the table and the input does not contain it. Evidence: Seventeen literals in the expected output appear in neither the specification nor the inputs."
   },
   {
     "taskId": "cobolcodebench/task_func_16",
@@ -247,7 +247,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: A printed report whose headings, column positions and page furniture are in the expected output and not in the specification. Evidence: `STATUS` heading text present in the oracle only."
   },
   {
     "taskId": "cobolcodebench/task_func_27",
@@ -257,7 +257,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: As task_func_26: the report layout, including the `ACCT NO` caption, is specified only by the expected output. Evidence: `ACCT` caption present in the oracle only."
   },
   {
     "taskId": "cobolcodebench/task_func_28",
@@ -297,7 +297,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: The specification asks for the values written \"with an appropriate label\" and the oracle requires three specific labels, two of them misspelled — `MAXIMAM`, `MINIMAM`, `AVERGE`. A correct program cannot guess a typo. Evidence: `MAXIMAM`, `MINIMAM` and `AVERGE` appear in the expected output and nowhere in the contract."
   },
   {
     "taskId": "cobolcodebench/task_func_32",
@@ -377,7 +377,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: The report's column headings — `ERROR DESCRIPTION`, `ERR VALUE`, and the rule beneath them — are in the oracle and not in the specification. Evidence: `DESCRIPTION` and `RANGE` present in the oracle only."
   },
   {
     "taskId": "cobolcodebench/task_func_40",
@@ -407,7 +407,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "benchmark-ambiguous: The expected output counts words the input file does not contain, so the fixture's input and output do not describe the same run. Evidence: `INITIALIZATION`, `CLEANUP` and `COUNTING` are counted in the expected output and absent from the input."
   },
   {
     "taskId": "cobolcodebench/task_func_45",
@@ -427,7 +427,7 @@
     "differentialAgreement": null,
     "applicability": "not-yet-authored",
     "outcome": "skipped",
-    "detail": "unattempted: No BankTS implementation has been written and none has been attempted, so nothing is known about whether the language can express it."
+    "detail": "language-gap: Transliterating accented names — `Téa` to `Tea` — is exactly what `replaceChars` does, character for character. The obstacle is encoding rather than the operation: the input is UTF-8, where `é` is two bytes, and a BankTS `string<n>` is n single-byte characters, so a character-for-character conversion cannot line up. Evidence: Input `Téa\\nVáquéz\\n…` against expected `Tea\\nVaquez\\n…`. Note this task was previously classified as an oracle problem, which was a defect in `isOracleDerivable`: it compares ASCII-folded words and so reported the correctly-transliterated output as inventing literals. The specification is complete."
   },
   {
     "taskId": "cobolcodebench/task_func_48",
