@@ -28,6 +28,71 @@ record and the `rewrite` that puts it back.
 An indexed file is declared `ACCESS MODE IS DYNAMIC`, not `RANDOM`, because it
 is both read by key and browsed, and `RANDOM` allows only the first.
 
+### Text files
+
+```ts
+file paymentFeed lineSequential input record PaymentLine status paymentFeedStatus;
+```
+
+`lineSequential` is a text file: records end at a newline rather than at a fixed
+width. It is what an import from anything that is not a mainframe looks like — a
+payment feed, a reconciliation extract, a file a counterparty sent — and
+Enterprise COBOL 6.4 has it as `ORGANIZATION IS LINE SEQUENTIAL` for files in
+the z/OS UNIX file system.
+
+It carries three restrictions the other organisations do not, and all three are
+the target's rather than this compiler's.
+
+**Every field has to be printable.** Enterprise COBOL requires that records
+"contain only USAGE DISPLAY and DISPLAY-1 items", and this is the one that
+catches people, because BankTS's default is exactly what is forbidden:
+
+```ts
+record PaymentLine {
+  payAccount: string<16>;
+  payAmount: decimal<11, 2>;   // BANK-FILE-014
+}
+```
+
+`decimal` is packed — two digits to a byte with a sign nibble — and written into
+a text file it produces bytes that are neither the number nor readable text. The
+`WRITE` succeeds and nothing says so until somebody opens the file. Declare the
+number `zoned` if it can be negative, which emits the `SIGN IS TRAILING
+SEPARATE` the target asks for, or `unsigned` if it cannot:
+
+```ts
+record PaymentLine {
+  payAccount: string<16>;
+  payAmount: zoned<11, 2>;
+  payValueDate: date;
+}
+```
+
+**It cannot be opened for update.** `input` and `output` only. A record's length
+is fixed once written, so there is nothing to rewrite in place —
+`BANK-FILE-013`. A text file is amended by reading it and writing a new one,
+which is what a job that rebuilds an extract already does.
+
+**There is no `delete` and no browse.** Both need a record the file can address,
+and this organisation has neither an index nor a relative number.
+
+Reading pads: a line shorter than the record is space-filled to the declared
+width, and writing strips the trailing blanks again. So a record round-trips
+through a text file unchanged only if its declared width matches what is in the
+file — worth remembering when a feed's last field is variable.
+
+The generated JCL allocates a z/OS UNIX path rather than a dataset, because that
+is where these files live:
+
+```jcl
+//PAYMENTF DD PATH='/u/banklang/paymentf',
+//            PATHOPTS=(ORDONLY)
+```
+
+Two differences between GnuCOBOL and the target are recorded in
+[divergences](../divergences.md) — D23 on a final record with no delimiter, and
+D24 on what a blank numeric field does.
+
 ### Records that vary in length
 
 ```ts

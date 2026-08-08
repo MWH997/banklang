@@ -164,6 +164,12 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "A test written next to the program, in the same language, which becomes a zUnit case that runs on z/OS and compiles to nothing here.",
     order: 23,
   },
+  "payment-feed-import": {
+    title: "Importing a text payment feed",
+    blurb:
+      "A line-sequential file from outside the mainframe, where every field has to be printable and a packed decimal is a compile error.",
+    order: 24,
+  },
 };
 
 function idFromPath(path: string): string {

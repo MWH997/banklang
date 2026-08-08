@@ -78,7 +78,7 @@ a test fails if it drifts.
 
 | Grade        | Count | What it rules out                                                                   |
 | ------------ | ----- | ----------------------------------------------------------------------------------- |
-| **executed** | 21    | A defect that compiles. The program runs and its balances and branches are checked. |
+| **executed** | 22    | A defect that compiles. The program runs and its balances and branches are checked. |
 | **compiled** | 2     | A program the target would reject. Says nothing about what it computes.             |
 | **emitted**  | 0     | Nothing local compiles it; the conformance linter is what checks it.                |
 

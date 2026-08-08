@@ -140,7 +140,7 @@ file         = "file" , identifier , file_organization , file_mode ,
                [ "cursor" , identifier ] ,
                [ "status" , identifier ] , ";" ;
 
-file_organization = "sequential" | "indexed" | "relative" ;
+file_organization = "sequential" | "lineSequential" | "indexed" | "relative" ;
 file_mode         = "input" | "output" | "extend" | "readFile" | "writeFile" ;
 
 database     = "database" , identifier , "{" , { cursor_declaration } , "}" ;
