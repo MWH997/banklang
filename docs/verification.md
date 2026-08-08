@@ -6,6 +6,15 @@ The project must prove that compiler output is deterministic, traceable, and sem
 
 Verification is not optional. It is the difference between a toy transpiler and a bank-grade toolchain.
 
+Everything on this page is **vertical**: tests written for BankLang, run against
+BankLang. That is most of the evidence this project has and it has one blind
+spot — a misunderstanding shared between a test and the code it tests agrees
+with itself perfectly. [Horizontal
+validation](validation/horizontal-validation.md) is the other axis: the same
+compiler measured against independent COBOL corpora, benchmarks and defect
+suites that were not written for it, with the results in
+[horizontal-validation-results.md](validation/horizontal-validation-results.md).
+
 ## 1a. Static analysis
 
 ```bash
