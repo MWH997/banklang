@@ -2075,6 +2075,62 @@ function validateRaiseStatement(
 }
 
 /**
+/**
+ * A statement named as the author wrote it, not as the parser stored it.
+ *
+ * Three diagnostics interpolated `statement.kind` straight into their message
+ * and produced "A IfStatement is not allowed inside a loop body." — the wrong
+ * article in front of a word that appears nowhere in BankTS, in a message whose
+ * whole job is to tell somebody which line to change. `IfStatement` is this
+ * compiler's internal name for the node; the reader wrote `if`.
+ *
+ * Anything not listed falls back to the node's own name with the leading
+ * article chosen correctly, so a statement kind added later is still readable
+ * while it waits for an entry here.
+ */
+function describeStatementKind(kind: string): string {
+  const named: Record<string, string> = {
+    AssignStatement: "an assignment",
+    AuditStatement: "an `audit`",
+    CheckpointStatement: "a `checkpoint`",
+    CicsStatement: "a `cics` command",
+    ConsoleStatement: "a `log`",
+    CursorLoopStatement: "a cursor loop",
+    DliStatement: "an IMS segment operation",
+    ExpressionStatement: "a call",
+    FileStatement: "a file operation",
+    ForEachStatement: "a `for each`",
+    IfStatement: "an `if`",
+    LedgerStatement: "a ledger posting",
+    LetStatement: "a `let`",
+    ProgramCallStatement: "a `call`",
+    QueueStatement: "a queue operation",
+    RaiseStatement: "a `raise`",
+    ReleaseStatement: "a `release`",
+    ReportStatement: "a report statement",
+    ResetStatement: "a `reset`",
+    RestartStatement: "a `restart`",
+    ReturnCodeStatement: "a `returnCode`",
+    ReturnStatement: "a `return`",
+    SearchStatement: "a `search`",
+    SerializeStatement: "a `json` or `xml` statement",
+    SortStatement: "a `sort`",
+    SplitStatement: "a `split`",
+    SqlStatement: "an SQL statement",
+    SwitchStatement: "a `switch`",
+    UnitOfWorkStatement: "a unit-of-work statement",
+    WhileStatement: "a `while`",
+    XmlParseStatement: "an `xml` parse",
+  };
+  return named[kind] ?? `${/^[AEIOU]/.test(kind) ? "an" : "a"} ${kind}`;
+}
+
+/** The same phrase at the start of a sentence. */
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
  * Transaction bodies are a flat sequence of effect statements rather than an
  * expression with a return type, so they use their own validation path instead
  * of the terminal-statement rule that applies to functions.
@@ -2158,8 +2214,9 @@ function validateTransactionBody(
           scope,
           aliases,
           recordMap,
-          locals,
           diagnostics,
+          locals,
+          true,
         );
         break;
       case "RaiseStatement":
@@ -2170,7 +2227,7 @@ function validateTransactionBody(
           createDiagnostic({
             id: "BANK-TYPE-007",
             severity: "error",
-            message: `A ${statement.kind} is not allowed in a transaction body.`,
+            message: `${capitalise(describeStatementKind(statement.kind))} is not allowed in a transaction body.`,
             span: statement.span,
             hint: "Transactions carry effects. Move a return into a function.",
             backendProfile: null,
@@ -2189,14 +2246,45 @@ function validateTransactionBody(
  * so it is validated separately from the function-body form that must return
  * matching types on both paths.
  */
+/**
+ * An `if` used for control flow rather than as a function's whole body.
+ *
+ * `inTransaction` decides which statements its branches may hold, and it exists
+ * because this validator used to be reachable only from a transaction. A
+ * function's loop body reaches it too now — see the call sites — and a
+ * function's branch must not gain `ledger` and `audit` on the way past.
+ */
 function validateTransactionBranch(
   statement: IfStatementNode,
   scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
-  locals: ResolvedLocal[],
   diagnostics: Diagnostic[],
+  locals: ResolvedLocal[],
+  inTransaction: boolean,
 ): void {
+  const validateBody = (block: BlockNode): void => {
+    if (inTransaction) {
+      validateTransactionBody(
+        block,
+        scope,
+        aliases,
+        recordMap,
+        locals,
+        diagnostics,
+      );
+      return;
+    }
+    validateBranchBody(
+      block,
+      scope,
+      aliases,
+      recordMap,
+      locals,
+      diagnostics,
+      false,
+    );
+  };
   const conditionType = inferExpressionType(
     statement.condition,
     scope,
@@ -2225,25 +2313,11 @@ function validateTransactionBranch(
   collectGuards(statement.condition, guards);
 
   guardedNullables = guards;
-  validateTransactionBody(
-    statement.thenBranch,
-    scope,
-    aliases,
-    recordMap,
-    locals,
-    diagnostics,
-  );
+  validateBody(statement.thenBranch);
   guardedNullables = previousGuards;
 
   if (statement.elseBranch) {
-    validateTransactionBody(
-      statement.elseBranch,
-      scope,
-      aliases,
-      recordMap,
-      locals,
-      diagnostics,
-    );
+    validateBody(statement.elseBranch);
   }
 }
 
@@ -2893,14 +2967,19 @@ function validateBranchBody(
       validateAuditStatement(statement, scope, aliases, recordMap, diagnostics);
       continue;
     }
-    if (inTransaction && statement.kind === "IfStatement") {
+    // A branch, whether or not this is a transaction. See the note at the
+    // matching case in `validateWhileStatement`: `switch` reaches here for both
+    // and `if` used to reach it for one, which is a difference the language has
+    // no rule for.
+    if (statement.kind === "IfStatement") {
       validateTransactionBranch(
         statement,
         scope,
         aliases,
         recordMap,
-        locals,
         diagnostics,
+        locals,
+        inTransaction,
       );
       continue;
     }
@@ -2908,7 +2987,7 @@ function validateBranchBody(
       createDiagnostic({
         id: "BANK-TYPE-007",
         severity: "error",
-        message: `A ${statement.kind} is not allowed in this position.`,
+        message: `${capitalise(describeStatementKind(statement.kind))} is not allowed in this position.`,
         span: statement.span,
         hint: "Case and loop bodies carry effects.",
         backendProfile: null,
@@ -4432,20 +4511,36 @@ function validateWhileStatement(
       validateAuditStatement(inner, scope, aliases, recordMap, diagnostics);
       continue;
     }
-    // A branch, on the same terms a `for each` body has always allowed one.
-    // Rejecting it here was an oversight rather than a rule: `switch` was
-    // permitted and `if` was not, and the read-ahead a file loop needs — read,
-    // then act only if the read found something — could not be written at all.
-    // What the diagnostic is actually for is keeping `return` out of a loop,
-    // and `inLoopBody` still does that inside the branch.
-    if (inTransaction && inner.kind === "IfStatement") {
+    /*
+     * A branch, on the same terms a `for each` body has always allowed one.
+     *
+     * Rejecting it here was an oversight rather than a rule: `switch` was
+     * permitted and `if` was not, and the read-ahead a file loop needs — read,
+     * then act only if the read found something — could not be written at all.
+     * What the diagnostic is actually for is keeping `return` out of a loop,
+     * and `inLoopBody` still does that inside the branch.
+     *
+     * **And it was fixed for transactions only.** The guard read
+     * `inTransaction && …`, so a plain `function` still could not put an `if`
+     * inside a `while` while `switch` in the same position compiled — the exact
+     * inconsistency the paragraph above describes, left standing in the other
+     * half of the language. Nothing in this repository noticed, because every
+     * example that loops over a branch is a transaction.
+     *
+     * Found by horizontal validation: writing COBOLEval's `is_prime` from its
+     * specification needs a conditional inside a trial-division loop, in a
+     * function, and there was no way to write one. See
+     * `docs/validation/horizontal-validation.md`.
+     */
+    if (inner.kind === "IfStatement") {
       validateTransactionBranch(
         inner,
         scope,
         aliases,
         recordMap,
-        locals,
         diagnostics,
+        locals,
+        inTransaction,
       );
       continue;
     }
@@ -4453,7 +4548,7 @@ function validateWhileStatement(
       createDiagnostic({
         id: "BANK-TYPE-007",
         severity: "error",
-        message: `A ${inner.kind} is not allowed inside a loop body.`,
+        message: `${capitalise(describeStatementKind(inner.kind))} is not allowed inside a loop body.`,
         span: inner.span,
         hint: "Loop bodies carry effects; move returns outside the loop.",
         backendProfile: null,
