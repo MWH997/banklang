@@ -902,6 +902,26 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-FILE-013",
+    title: "A line-sequential file opened for update",
+    explanation:
+      'Enterprise COBOL\'s Programming Guide is explicit: "You can open a line-sequential file as INPUT, OUTPUT, or EXTEND. You cannot open a line-sequential file as I-O." The reason is the organization itself — a record ends at a newline, so rewriting one in place would change where every following record starts. The Guide says the same thing from the other end: after you have created a record "you cannot change its length or its position in the file, and you cannot delete it."',
+    remediation:
+      "Declare the file `input` or `output`. To amend a text file, read it and write a new one; that is what the organization supports, and it is what a job that rebuilds an extract already does.",
+    specReference: "language/files.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-FILE-014",
+    title: "A line-sequential record holding something unprintable",
+    explanation:
+      'A line-sequential file is text. Enterprise COBOL requires that records "contain only USAGE DISPLAY and DISPLAY-1 items", and the Language Reference says a record in such a file "can consist only of printable characters". BankTS\'s default is the thing that is forbidden: `decimal<18,2>` lowers to `COMP-3`, which packs two digits into each byte with a sign nibble. Written to a text file it produces bytes that are neither the number nor readable text, the WRITE succeeds, and nothing says so until somebody opens the file.',
+    remediation:
+      "Give the number a display usage: `zoned` for a field that can be negative, which emits `SIGN IS TRAILING SEPARATE` — the SEPARATE phrase Enterprise COBOL requires — or `unsigned` for one that cannot. A `currency` amount is always packed, so use a `decimal` field with a `zoned` usage in an interchange record.",
+    specReference: "language/files.md",
+    implemented: true,
+  },
+  {
     id: "BANK-TEST-001",
     title: "A test naming something it cannot start",
     explanation:

@@ -1722,6 +1722,10 @@ function resolveFile(
     }
   }
 
+  if (declaration.organization === "lineSequential") {
+    validateLineSequential(declaration, record, diagnostics);
+  }
+
   return {
     name: declaration.name,
     span: declaration.span,
@@ -3975,6 +3979,111 @@ function validateXmlParseStatement(
  * sequential: an indexed or relative dataset addresses records by position or
  * key, which a varying length would move.
  */
+/**
+ * A field that a line-sequential record cannot hold, or null.
+ *
+ * Enterprise COBOL's rule, from the Programming Guide's "Adding records to
+ * line-sequential files": *"Records written to line-sequential files must
+ * contain only USAGE DISPLAY and DISPLAY-1 items. Zoned decimal data items
+ * must be unsigned or declared with the SEPARATE phrase of the SIGN clause if
+ * signed."* The Language Reference puts it as a property of the organization —
+ * a record in such a file "can consist only of printable characters".
+ *
+ * It matters because BankTS's default is exactly the thing that is forbidden.
+ * `decimal<18,2>` lowers to `COMP-3`, and packed decimal is two digits a byte
+ * with a sign nibble: not printable, not DISPLAY, and written into a text file
+ * it produces bytes that are neither the number nor valid text. The failure is
+ * silent — the WRITE succeeds and the file is wrong — which is the shape of
+ * defect this language exists to move to compile time.
+ *
+ * `zoned` and `unsigned` are the two usages that satisfy it. `zoned` renders as
+ * `SIGN IS TRAILING SEPARATE`, which is the SEPARATE phrase the rule asks for;
+ * `unsigned` has no sign to place.
+ */
+function unprintableUsage(type: ResolvedType): string | null {
+  switch (type.kind) {
+    case "decimal": {
+      const usage = type.usage ?? "packed";
+      if (usage === "display" || usage === "unsigned") {
+        return null;
+      }
+      return usage === "packed"
+        ? "packed decimal (COMP-3)"
+        : usage === "binary"
+          ? "binary (COMP)"
+          : "native binary (COMP-5)";
+    }
+    // A currency amount is packed by construction, so it is never writable to
+    // a text file. The remedy is a `decimal` field with a `zoned` usage, which
+    // is what an amount in an interchange file has always been.
+    case "currency":
+      return "packed decimal (COMP-3)";
+    case "nullable":
+      return unprintableUsage(type.inner);
+    case "array":
+      return unprintableUsage(type.element);
+    case "record":
+      for (const field of type.fields) {
+        const found = unprintableUsage(field.type);
+        if (found) {
+          return found;
+        }
+      }
+      return null;
+    default:
+      // `string` is PIC X, `national` is PIC N (DISPLAY-1), a temporal is
+      // `PIC 9(n)` display, `bool` is one character and an edited field is a
+      // rendering. All are printable.
+      return null;
+  }
+}
+
+/**
+ * The restrictions a line-sequential file carries and the other three do not.
+ *
+ * Each one is Enterprise COBOL's, not this compiler's invention, and each is
+ * checked here rather than left to fail at run time or on the target. See
+ * `docs/language/files.md` for the reader-facing version.
+ */
+function validateLineSequential(
+  declaration: FileDeclarationNode,
+  record: ResolvedRecord,
+  diagnostics: Diagnostic[],
+): void {
+  // "You can open a line-sequential file as INPUT, OUTPUT, or EXTEND. You
+  // cannot open a line-sequential file as I-O." A BankTS `update` file opens
+  // I-O so that it can rewrite in place, which this organization has no way to
+  // do: a record's length is fixed once written and cannot be changed.
+  if (declaration.mode === "update") {
+    diagnostics.push(
+      createDiagnostic({
+        id: "BANK-FILE-013",
+        severity: "error",
+        message: `${declaration.name} is lineSequential update, and a line-sequential file cannot be opened I-O.`,
+        span: declaration.span,
+        hint: "Declare it `input` or `output`. A text record cannot be rewritten in place because its length would change.",
+        backendProfile: null,
+      }),
+    );
+  }
+
+  for (const field of record.fields) {
+    const unprintable = unprintableUsage(field.type);
+    if (unprintable) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-FILE-014",
+          severity: "error",
+          message: `${record.name}.${field.name} is ${unprintable}, which a line-sequential record cannot hold.`,
+          span: field.span,
+          hint: "A line-sequential file is text: every field has to be USAGE DISPLAY. Declare the number `zoned` for a signed field or `unsigned` for one that cannot be negative.",
+          backendProfile: null,
+        }),
+      );
+    }
+  }
+}
+
 function validateRecordVarying(
   declaration: FileDeclarationNode,
   recordMap: Map<string, ResolvedRecord>,
@@ -4751,7 +4860,12 @@ function validateFileStatement(
         severity: "error",
         message: `${statement.operation} needs ${file.name} open for update, not ${file.mode}.`,
         span: statement.span,
-        hint: `Declare it as \`file ${file.name} ${file.organization} update record ...\`, which opens I-O.`,
+        // A line-sequential file cannot be declared `update` at all
+        // (BANK-FILE-013), so the usual hint would point at a second error.
+        hint:
+          file.organization === "lineSequential"
+            ? `A line-sequential file cannot be opened I-O, so ${statement.operation} has nowhere to go. Read it and write a new file instead.`
+            : `Declare it as \`file ${file.name} ${file.organization} update record ...\`, which opens I-O.`,
         backendProfile: null,
       }),
     );
@@ -4761,12 +4875,16 @@ function validateFileStatement(
   // by leaving it out of the file the next program writes, not by deleting it
   // in place. GnuCOBOL compiles the statement, which is why nothing local
   // caught this.
-  if (statement.operation === "delete" && file.organization === "sequential") {
+  if (
+    statement.operation === "delete" &&
+    (file.organization === "sequential" ||
+      file.organization === "lineSequential")
+  ) {
     diagnostics.push(
       createDiagnostic({
         id: "BANK-FILE-011",
         severity: "error",
-        message: `delete needs a keyed or relative file, and ${file.name} is sequential.`,
+        message: `delete needs a keyed or relative file, and ${file.name} is ${file.organization}.`,
         span: statement.span,
         hint: "A sequential file has no record to address for removal. Copy the records worth keeping into a new file, or declare this one indexed or relative.",
         backendProfile: "ibm-enterprise-cobol-zos",
