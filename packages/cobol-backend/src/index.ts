@@ -2052,6 +2052,16 @@ const JCL_DBRM_LIBRARY = "BANKLANG.DBRMLIB";
 const JCL_DATA_PREFIX = "BANKLANG";
 
 /**
+ * Where a line-sequential file lives, which is not in a dataset at all.
+ *
+ * Enterprise COBOL reads and writes these through the z/OS UNIX file system,
+ * so the DD names a path rather than a DSN. A site will have its own directory
+ * and the generated JCL is a starting point, exactly as `BANKLANG.` is for the
+ * datasets above.
+ */
+const JCL_UNIX_PREFIX = "/u/banklang";
+
+/**
  * Where Enterprise COBOL and Language Environment are installed.
  *
  * The values IBM's own cataloged procedures default to — `IGYWCL PROC
@@ -2624,6 +2634,40 @@ function runStepLines(
     // has already laid out. A dataset created without one is allocated with
     // the system default and the first WRITE fails on a length mismatch.
     const lrecl = describeRecordLayout(file.record).totalLength;
+
+    /*
+     * A line-sequential file is not a dataset.
+     *
+     * Enterprise COBOL puts these in the z/OS UNIX file system, and the
+     * Programming Guide's "Allocating line-sequential files" is explicit about
+     * how a job reaches one: "A DD statement that specifies
+     * PATH='absolute-path-name'", optionally with PATHOPTS, PATHMODE and
+     * PATHDISP. A `DSN=` DD names an MVS dataset and would not resolve.
+     *
+     * `PATHDISP=(KEEP,DELETE)` is the file equivalent of the
+     * `DISP=(NEW,CATLG,DELETE)` used for a written dataset below, and for the
+     * same reason: a step that dies halfway through has produced a partial
+     * file, and keeping it invites the next job to read it as though it were
+     * complete.
+     */
+    if (file.organization === "lineSequential") {
+      const path = `${JCL_UNIX_PREFIX}/${toDdName(file.name).toLowerCase()}`;
+      if (file.mode === "input") {
+        lines.push(
+          `//${dd} DD PATH='${path}',`,
+          "//            PATHOPTS=(ORDONLY)",
+        );
+      } else {
+        lines.push(
+          `//${dd} DD PATH='${path}',`,
+          "//            PATHOPTS=(OWRONLY,OCREAT,OTRUNC),",
+          "//            PATHMODE=(SIRUSR,SIWUSR,SIRGRP),",
+          "//            PATHDISP=(KEEP,DELETE)",
+        );
+      }
+      continue;
+    }
+
     if (file.mode === "input") {
       lines.push(`//${dd} DD DISP=SHR,DSN=${dsn}`);
     } else if (file.mode === "update") {
@@ -2818,6 +2862,21 @@ function qsamClauses(file: IRFile): string[] {
 }
 
 /**
+ * The `ORGANIZATION IS` phrase for a BankTS file organization.
+ *
+ * Written out rather than uppercased, because one of the four is two words.
+ * `file.organization.toUpperCase()` is what this was, and it would have emitted
+ * `ORGANIZATION IS LINESEQUENTIAL` — which is not a clause Enterprise COBOL or
+ * GnuCOBOL accepts, and which no test would have caught until something tried
+ * to compile it.
+ */
+function cobolOrganization(organization: IRFile["organization"]): string {
+  return organization === "lineSequential"
+    ? "LINE SEQUENTIAL"
+    : organization.toUpperCase();
+}
+
+/**
  * A SELECT entry binding the BankTS file declaration to a DD name, with the
  * FILE STATUS clause when the declaration provides a status field. A missing
  * status is reported by the analyzer as BANK-FILE-001 rather than silently
@@ -2830,7 +2889,7 @@ function emitFileControlEntry(
 ): void {
   const cobolName = fileCobolName(file.name);
   const clauses: string[] = [
-    `               ORGANIZATION IS ${file.organization.toUpperCase()}`,
+    `               ORGANIZATION IS ${cobolOrganization(file.organization)}`,
   ];
 
   // DYNAMIC rather than RANDOM: an indexed file is read by key *and* browsed
