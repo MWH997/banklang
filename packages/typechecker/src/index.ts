@@ -3464,9 +3464,28 @@ function validateSortStatement(
     );
   }
 
+  /*
+   * The record the sort moves is the one it reads.
+   *
+   * This used to be the *output* file's record, and every file the statement
+   * touched had to hold it — including when an output procedure was present,
+   * which is when the sort does not write the output file at all. COBOL's
+   * `SORT ... OUTPUT PROCEDURE` returns records from the SD and the procedure
+   * writes whatever it likes, so requiring the destination to match the source
+   * refused the ordinary shape of sorting a detail file into a report. It is
+   * how `task_func_37` came to be recorded as a language gap.
+   *
+   * So: the sort record comes from the input side, the keys are its fields, and
+   * the output file has to hold it only when `GIVING` is what writes it.
+   */
+  const sources = statement.inputs
+    .map((name) => ({ name, file: declaredFiles.get(name) }))
+    .filter(
+      (entry): entry is { name: string; file: ResolvedFile } => !!entry.file,
+    );
+
   for (const name of statement.inputs) {
-    const input = declaredFiles.get(name);
-    if (!input) {
+    if (!declaredFiles.get(name)) {
       diagnostics.push(
         createDiagnostic({
           id: "BANK-TYPE-001",
@@ -3477,28 +3496,41 @@ function validateSortStatement(
           backendProfile: null,
         }),
       );
-      continue;
     }
+  }
+
+  const sortRecord = sources[0]?.file.record ?? output.record;
+
+  for (const { file: input } of sources) {
     if (input.mode === "output") {
       reject(
         `Cannot sort from ${input.name}, which is declared as output.`,
         "Declare the source as input.",
       );
     }
-    // The sort moves whole records, so every file has to hold the same one.
-    if (input.record.name !== output.record.name) {
+    // The sort moves whole records, so every file it reads holds the same one.
+    if (input.record.name !== sortRecord.name) {
       reject(
-        `${input.name} holds ${input.record.name} but ${output.name} holds ${output.record.name}.`,
-        "A sort moves whole records, so every file it touches holds the same record.",
+        `${input.name} holds ${input.record.name} but the sort moves ${sortRecord.name}.`,
+        "A sort moves whole records, so every file it reads holds the same record.",
       );
     }
   }
 
+  // Without an output procedure the sort writes the destination itself, and
+  // GIVING moves the sort record into it byte for byte.
+  if (!statement.outputProcedure && output.record.name !== sortRecord.name) {
+    reject(
+      `${output.name} holds ${output.record.name} but the sort moves ${sortRecord.name}.`,
+      `Give the sort an \`output\` procedure to write ${output.record.name} records, or declare ${output.name} as holding ${sortRecord.name}.`,
+    );
+  }
+
   for (const key of statement.keys) {
-    if (!output.record.fields.some((field) => field.name === key.name)) {
+    if (!sortRecord.fields.some((field) => field.name === key.name)) {
       reject(
-        `${key.name} is not a field of ${output.record.name}, so it sorts on nothing.`,
-        `Available fields: ${output.record.fields.map((field) => field.name).join(", ")}.`,
+        `${key.name} is not a field of ${sortRecord.name}, so it sorts on nothing.`,
+        `Available fields: ${sortRecord.fields.map((field) => field.name).join(", ")}.`,
       );
     }
   }
@@ -3529,7 +3561,7 @@ function validateSortStatement(
     validateSortProcedure(
       procedure,
       procedure === statement.inputProcedure,
-      output,
+      sortRecord,
       scope,
       aliases,
       recordMap,
@@ -3550,7 +3582,7 @@ function validateSortStatement(
 function validateSortProcedure(
   procedure: SortProcedureNode,
   isInput: boolean,
-  output: ResolvedFile,
+  sortRecord: ResolvedRecord,
   scope: Map<string, ResolvedType>,
   aliases: Record<string, ResolvedType>,
   recordMap: Map<string, ResolvedRecord>,
@@ -3560,7 +3592,7 @@ function validateSortProcedure(
 ): void {
   const bound = scope.get(procedure.recordName);
   const holdsTheRecord =
-    bound?.kind === "record" && bound.name === output.record.name;
+    bound?.kind === "record" && bound.name === sortRecord.name;
 
   if (!holdsTheRecord) {
     diagnostics.push(
@@ -3568,10 +3600,10 @@ function validateSortProcedure(
         id: "BANK-FILE-006",
         severity: "error",
         message: bound
-          ? `${procedure.recordName} does not hold ${output.record.name}, which is the record the sort moves.`
+          ? `${procedure.recordName} does not hold ${sortRecord.name}, which is the record the sort moves.`
           : `Unresolved record: ${procedure.recordName}.`,
         span: procedure.recordSpan,
-        hint: `Name a variable declared as ${output.record.name}.`,
+        hint: `Name a variable declared as ${sortRecord.name}.`,
         backendProfile: null,
       }),
     );

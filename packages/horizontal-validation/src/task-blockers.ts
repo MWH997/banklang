@@ -216,7 +216,7 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The output file holds a header line of text and a detail line of four right-justified numbers, and a BankTS file has one record description. An `edited` field renders a number and cannot be read back or assigned text, so no single record describes both lines.",
     evidence:
-      "`Sum,Mean,Min,Max` is 16 characters of text; the detail line is 49 characters of four `edited` columns. BANK-TYPE-003 refuses assigning a string to an edited field, which is also what Enterprise COBOL refuses. COBOL's answer is a second 01 under the FD; BankTS's `file ... record R` names exactly one.",
+      "`Sum,Mean,Min,Max` is 16 characters of text; the detail line is 49 characters of four `edited` columns. BANK-FILE-002 `File outFile carries Detail records, but head is Head` refuses writing a second shape to the file, and BANK-TYPE-003 refuses assigning a string to an edited field — which is also what Enterprise COBOL refuses. COBOL's answer is a second 01 under the FD. The group-redefines route is closed too: BankTS declares a record-typed field and accepts `redefines` on it, but member access is one level deep, so `line.cols.colSum` is BANK-SYN-001 `Expected = in assignment`.",
   },
   {
     task: "task_func_34",
@@ -224,15 +224,7 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "As task_func_25: a report file whose heading line and detail lines have different shapes, against one record description per file.",
     evidence:
-      "The 98-character heading `CUSTOMER  UNIT PRICE  QTY  SALES TAX  TOTAL` and the 93-character detail line of five numeric columns cannot share a record description, for the same reason as task_func_25.",
-  },
-  {
-    task: "task_func_37",
-    kind: "language-gap",
-    reason:
-      "The task sorts records on a field and writes them out in a different field order. BankTS's `sort` takes the record from the output file even when an output procedure is present, so a sort that reformats has no form.",
-    evidence:
-      "BANK-FILE-005 `task37Inp holds RawLine but task37Out holds OutLine`, BANK-FILE-005 `rawDept is not a field of OutLine`, and BANK-FILE-006 on both procedure records. Reproduced by `sort task37Inp into task37Out on rawDept` with an output procedure that reformats.",
+      "The 98-character heading `CUSTOMER  UNIT PRICE  QTY  SALES TAX  TOTAL` and the 93-character detail line of five numeric columns cannot share a record description, for the same reason as task_func_25 and with the same two diagnostics.",
   },
   {
     task: "task_func_47",

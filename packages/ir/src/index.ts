@@ -2188,8 +2188,21 @@ function lowerStatement(
       };
     }
     case "SortStatement": {
-      const output = fileTable.get(statement.output);
-      const fields = output?.recordFields ?? [];
+      /*
+       * The record a sort moves is the one it reads.
+       *
+       * These fields name the SD's layout and drive the MOVE that fills the
+       * procedure's record from it. Taking them from the *destination* was only
+       * right while every file in a sort had to hold the same record: with an
+       * output procedure the destination is written by the procedure and may
+       * hold anything, so the mapping has to describe the source or the
+       * generated MOVE names fields the input record does not have.
+       */
+      const source = fileTable.get(statement.inputs[0] ?? "");
+      const fields =
+        source?.recordFields ??
+        fileTable.get(statement.output)?.recordFields ??
+        [];
       const lowerProcedure = (
         procedure: SortProcedureNode | null,
       ): IRSortProcedure | null =>

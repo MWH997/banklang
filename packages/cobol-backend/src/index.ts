@@ -1120,24 +1120,23 @@ export function emitCobol(
     // An internal SORT runs through a sort-work file, described by SD rather
     // than FD because the sort owns its blocking and record handling.
     for (const sorted of sortedFiles(program)) {
-      const file = program.files.find((entry) => entry.name === sorted);
-      if (!file) {
+      // The SD is named after the destination and laid out as the *source*.
+      // With an output procedure the two are allowed to differ — the sort
+      // returns source records and the procedure writes whatever it likes — so
+      // taking the layout from the destination would describe the wrong bytes.
+      const record = sortRecordOf(program, sorted);
+      if (!record) {
         continue;
       }
       addLine("");
-      addLine(`       SD  ${sortWorkName(file.name)}.`);
-      addLine(`       01  ${sortWorkRecordName(file.name)}.`);
+      addLine(`       SD  ${sortWorkName(sorted)}.`);
+      addLine(`       01  ${sortWorkRecordName(sorted)}.`);
       suppressInitialValues = true;
-      emitRecordFields(
-        file.record.fields,
-        1,
-        addLine,
-        sortWorkRecordName(file.name),
-      );
+      emitRecordFields(record.fields, 1, addLine, sortWorkRecordName(sorted));
       suppressInitialValues = false;
       emitAllRenames(
-        file.record,
-        sortWorkRecordName(file.name),
+        record,
+        sortWorkRecordName(sorted),
         addLine,
         " ".repeat(11),
       );
@@ -7820,6 +7819,26 @@ function sortedFiles(program: IRProgram): string[] {
   return [
     ...new Set(sortStatements(program).map((entry) => entry.statement.output)),
   ];
+}
+
+/**
+ * The record a sort moves, which is the one it reads.
+ *
+ * The SD is named after the destination file, and it used to be *laid out* as
+ * the destination's record too — which is only right when `GIVING` writes it. A
+ * sort with an output procedure returns source records and the procedure writes
+ * the destination itself, so the two records are allowed to differ and the SD
+ * has to describe the source. Falls back to the destination for a statement
+ * whose inputs did not resolve, which the typechecker has already reported.
+ */
+function sortRecordOf(program: IRProgram, output: string): IRRecord | null {
+  const statement = sortStatements(program).find(
+    (entry) => entry.statement.output === output,
+  )?.statement;
+  const source = statement?.inputs[0];
+  const named = (name: string | undefined): IRRecord | null =>
+    program.files.find((entry) => entry.name === name)?.record ?? null;
+  return named(source) ?? named(output);
 }
 
 /**

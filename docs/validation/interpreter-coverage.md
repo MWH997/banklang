@@ -8,44 +8,45 @@ second is a differential blind spot: the compiled side runs, the
 interpreted side refuses, and the comparison that gives this project's
 green its meaning does not happen.
 
-Measured over the 147 programs the compiler produces from the examples and the benchmark tasks.
+Measured over the 148 programs the compiler produces from the examples and the benchmark tasks.
 
 | | |
 | --- | --- |
-| verbs emitted | 30 |
+| verbs emitted | 31 |
 | of those, interpreted | 23 |
-| differential blind spots | 7 |
+| differential blind spots | 8 |
 
 ## Blind spots, by how much emitted COBOL uses them
 
 | Verb | Emitted statements | In |
 | --- | --- | --- |
 | `ENTRY` | 6 | TZUNITTE.cbl |
+| `RELEASE` | 2 | task-func-13.cbl, task-func-37.cbl |
+| `SORT` | 2 | task-func-13.cbl, task-func-37.cbl |
 | `GENERATE` | 1 | (generated).cbl |
 | `INITIATE` | 1 | (generated).cbl |
 | `MERGE` | 1 | task-func-38.cbl |
-| `RELEASE` | 1 | task-func-13.cbl |
-| `SORT` | 1 | task-func-13.cbl |
+| `RETURN` | 1 | task-func-37.cbl |
 | `TERMINATE` | 1 | (generated).cbl |
 
 ## Every emitted verb
 
 | Verb | Emitted | Interpreted |
 | --- | --- | --- |
-| `MOVE` | 2008 | yes |
-| `IF` | 619 | yes |
-| `DISPLAY` | 575 | yes |
-| `PERFORM` | 182 | yes |
+| `MOVE` | 2053 | yes |
+| `IF` | 629 | yes |
+| `DISPLAY` | 583 | yes |
+| `PERFORM` | 186 | yes |
 | `COMPUTE` | 177 | yes |
-| `CONTINUE` | 151 | yes |
-| `EXIT` | 134 | yes |
-| `CALL` | 99 | yes |
+| `CONTINUE` | 153 | yes |
+| `EXIT` | 136 | yes |
+| `CALL` | 100 | yes |
 | `ADD` | 78 | yes |
-| `CLOSE` | 65 | yes |
-| `OPEN` | 65 | yes |
-| `GOBACK` | 51 | yes |
-| `WRITE` | 45 | yes |
-| `READ` | 40 | yes |
+| `CLOSE` | 67 | yes |
+| `OPEN` | 67 | yes |
+| `GOBACK` | 52 | yes |
+| `WRITE` | 46 | yes |
+| `READ` | 41 | yes |
 | `SET` | 23 | yes |
 | `EVALUATE` | 18 | yes |
 | `STRING` | 12 | yes |
@@ -55,11 +56,12 @@ Measured over the 147 programs the compiler produces from the examples and the b
 | `INSPECT` | 6 | yes |
 | `DIVIDE` | 4 | yes |
 | `UNSTRING` | 3 | yes |
+| `RELEASE` | 2 | **no** |
+| `SORT` | 2 | **no** |
 | `GENERATE` | 1 | **no** |
 | `INITIATE` | 1 | **no** |
 | `MERGE` | 1 | **no** |
-| `RELEASE` | 1 | **no** |
-| `SORT` | 1 | **no** |
+| `RETURN` | 1 | **no** |
 | `START` | 1 | yes |
 | `TERMINATE` | 1 | **no** |
 

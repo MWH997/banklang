@@ -150,10 +150,10 @@
     "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "execution": "gnucobol-only",
+    "differentialAgreement": true,
+    "execution": "both-engines",
     "outcome": "pass",
-    "detail": "Line 169: expected ), found :."
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_15",
@@ -422,14 +422,14 @@
   {
     "taskId": "cobolcodebench/task_func_37",
     "corpus": "cobolcodebench",
-    "applicability": "unsupported-not-yet-implemented",
-    "authoring": "unauthored",
+    "applicability": "applicable",
+    "authoring": "authored",
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "execution": "not-executed",
-    "outcome": "not-executed",
-    "detail": "language-gap: The task sorts records on a field and writes them out in a different field order. BankTS's `sort` takes the record from the output file even when an output procedure is present, so a sort that reformats has no form. Evidence: BANK-FILE-005 `task37Inp holds RawLine but task37Out holds OutLine`, BANK-FILE-005 `rawDept is not a field of OutLine`, and BANK-FILE-006 on both procedure records. Reproduced by `sort task37Inp into task37Out on rawDept` with an output procedure that reformats."
+    "execution": "gnucobol-only",
+    "outcome": "pass",
+    "detail": "Line 150: SORT is not a statement this interpreter implements."
   },
   {
     "taskId": "cobolcodebench/task_func_38",

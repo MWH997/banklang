@@ -151,6 +151,94 @@ entry transaction order(posting: Posting) {
     ).toContain("BANK-FILE-005");
   });
 
+  /*
+   * Sorting a file into a differently shaped one, which is most of what a batch
+   * sort is for: order the detail records, then write a report line.
+   *
+   * The record a sort moves is the one it *reads*. That used to be the
+   * destination's record and every file had to hold it — including when an
+   * output procedure was present, which is exactly when the sort does not write
+   * the destination at all. CobolCodeBench's task_func_37 was recorded as a
+   * language gap on the strength of it.
+   */
+  const REFORMAT = `module Reformat;
+
+record RawLine {
+  rawPart: string<5>;
+  rawQuantity: unsigned<5, 0>;
+  rawDepartment: string<2>;
+}
+
+record SortedLine {
+  outDepartment: string<2>;
+  outPart: string<5>;
+}
+
+file rawParts lineSequential input record RawLine status rawPartsStatus;
+file sortedParts lineSequential output record SortedLine status sortedStatus;
+`;
+
+  function reformat(tail: string): ReturnType<typeof compile> {
+    return compile(`${REFORMAT}
+entry transaction order(raw: RawLine, out: SortedLine, idempotencyKey: string<36>) {
+${tail}
+  audit("ORDERED", idempotencyKey);
+}`);
+  }
+
+  describe("a sort whose destination is shaped differently", () => {
+    const withOutputProcedure = `  sort rawParts into sortedParts on rawDepartment input raw {
+    release raw;
+  } output raw {
+    out.outDepartment = raw.rawDepartment;
+    out.outPart = raw.rawPart;
+    write sortedParts from out;
+  };`;
+
+    it("is accepted when an output procedure writes the destination", () => {
+      expect(errors(reformat(withOutputProcedure))).toEqual([]);
+    });
+
+    it("lays the sort work file out as the record it reads", () => {
+      // The SD is named after the destination and describes the source. Taking
+      // the layout from the destination made the generated MOVE name fields the
+      // input record does not have, and `cobc` refused the program.
+      const cobol = reformat(withOutputProcedure).cobol ?? "";
+      expect(cobol).toContain("SD  SORTED-PARTS-SORT-FILE.");
+      expect(flowed(cobol)).toContain(flowed("05  RAW-PART"));
+      expect(flowed(cobol)).toContain(flowed("05  RAW-DEPARTMENT"));
+      expect(cobol).not.toContain("OUT-PART OF SORTED-PARTS-SORT-RECORD");
+    });
+
+    it("sorts on a key of the record it reads", () => {
+      expect(flowed(reformat(withOutputProcedure).cobol)).toContain(
+        flowed("ASCENDING KEY RAW-DEPARTMENT OF SORTED-PARTS-SORT-RECORD"),
+      );
+    });
+
+    it("still refuses it when GIVING is what writes the destination", () => {
+      // Without an output procedure the sort writes the file itself and GIVING
+      // moves the sort record into it byte for byte, so the shapes must match.
+      const result = reformat(
+        "  sort rawParts into sortedParts on rawDepartment;",
+      );
+      expect(ids(result)).toContain("BANK-FILE-005");
+      expect(
+        result.diagnostics.map((entry) => entry.message).join(" "),
+      ).toContain("the sort moves RawLine");
+    });
+
+    it("binds both procedure records to the record it reads", () => {
+      const result =
+        reformat(`  sort rawParts into sortedParts on rawDepartment input raw {
+    release raw;
+  } output out {
+    write sortedParts from out;
+  };`);
+      expect(ids(result)).toContain("BANK-FILE-006");
+    });
+  });
+
   it("rejects sorting into a file declared as input", () => {
     expect(
       ids(txn("  sort sortedPostings into rawPostings on accountId;")),
