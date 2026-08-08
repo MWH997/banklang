@@ -22,6 +22,14 @@ file accountFeed sequential input record AccrualFeedRow status accountFeedStatus
 
 file adviceOutput sequential output record PostingAdvice status adviceOutputStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error adviceOutput {
+  log "ADVICEOUTPUT FAILED, STATUS ", adviceOutputStatus;
+  returnCode = 12;
+}
+
 // An account earns interest only when it is funded and not dormant.
 function isEligible(balance: MoneyBDT, minimumBalance: MoneyBDT): bool {
   return balance >= minimumBalance && balance > 0.00;

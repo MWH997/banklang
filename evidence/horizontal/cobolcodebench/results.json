@@ -15,9 +15,9 @@
     "diagnostics": [],
     "artifactHashes": {},
     "differentialAgreement": null,
-    "applicability": "not-yet-authored",
-    "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "applicability": "applicable",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_03",
@@ -44,10 +44,10 @@
     "corpus": "cobolcodebench",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "applicability": "not-yet-authored",
-    "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "differentialAgreement": true,
+    "applicability": "applicable",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_07",
@@ -204,10 +204,10 @@
     "corpus": "cobolcodebench",
     "diagnostics": [],
     "artifactHashes": {},
-    "differentialAgreement": null,
-    "applicability": "not-yet-authored",
-    "outcome": "skipped",
-    "detail": "No BankTS implementation has been written for this task yet."
+    "differentialAgreement": true,
+    "applicability": "applicable",
+    "outcome": "pass",
+    "detail": null
   },
   {
     "taskId": "cobolcodebench/task_func_23",

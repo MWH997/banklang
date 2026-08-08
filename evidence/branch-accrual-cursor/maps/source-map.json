@@ -295,32 +295,32 @@
     {
       "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
-        "line": 59,
+        "line": 75,
         "column": 10
       },
       "sourceEnd": {
-        "line": 61,
+        "line": 77,
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 137,
-      "targetEndLine": 166,
+      "targetStartLine": 154,
+      "targetEndLine": 183,
       "category": "function",
       "symbol": "interestOn"
     },
     {
       "sourceFile": "examples/branch-accrual-cursor/src/main.bank.ts",
       "sourceStart": {
-        "line": 63,
+        "line": 79,
         "column": 19
       },
       "sourceEnd": {
-        "line": 109,
+        "line": 125,
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 167,
-      "targetEndLine": 349,
+      "targetStartLine": 184,
+      "targetEndLine": 366,
       "category": "transaction",
       "symbol": "accrueBranch"
     }

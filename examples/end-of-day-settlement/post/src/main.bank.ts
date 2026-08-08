@@ -47,6 +47,14 @@ file postedSettlement sequential output record PostedItem status postedStatus;
 // from.
 file restartFile indexed update record RestartPoint key jobStep status restartStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error restartFile {
+  log "RESTARTFILE FAILED, STATUS ", restartStatus;
+  returnCode = 12;
+}
+
 on error sortedSettlement {
   log "SORTEDSETTLEMENT FAILED, STATUS ", sortedStatus;
   returnCode = 12;

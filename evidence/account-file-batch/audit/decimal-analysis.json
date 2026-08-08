@@ -52,11 +52,11 @@
       "sourceSpan": {
         "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
-          "line": 20,
+          "line": 28,
           "column": 22
         },
         "end": {
-          "line": 20,
+          "line": 28,
           "column": 39
         }
       },
@@ -73,11 +73,11 @@
       "sourceSpan": {
         "sourceFile": "examples/account-file-batch/src/main.bank.ts",
         "start": {
-          "line": 21,
+          "line": 29,
           "column": 10
         },
         "end": {
-          "line": 21,
+          "line": 29,
           "column": 14
         }
       },

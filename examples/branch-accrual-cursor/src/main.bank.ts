@@ -54,7 +54,23 @@ cursor accountsInBranch(keyBranch: string<8>, resumeAfter: string<16>) hold: Acc
 
 file summaryOutput sequential output record AccrualSummary status summaryStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error summaryOutput {
+  log "SUMMARYOUTPUT FAILED, STATUS ", summaryStatus;
+  returnCode = 12;
+}
+
 file restartFile indexed update record RestartPoint key jobName status restartStatus;
+
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error restartFile {
+  log "RESTARTFILE FAILED, STATUS ", restartStatus;
+  returnCode = 12;
+}
 
 function interestOn(balance: BDT, rate: decimal<5, 4>): BDT {
   return round(balance * rate, "HALF_EVEN");

@@ -33,6 +33,14 @@ file paymentFeed lineSequential input record PaymentLine status paymentFeedStatu
 
 file acceptedFeed lineSequential output record AcceptedLine status acceptedFeedStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error acceptedFeed {
+  log "ACCEPTEDFEED FAILED, STATUS ", acceptedFeedStatus;
+  returnCode = 12;
+}
+
 // A payment with no reference cannot be reconciled and a payment of nothing is
 // not a payment. Both are rejections rather than failures: a feed from outside
 // is expected to contain some rubbish, and a job that abends on the first bad

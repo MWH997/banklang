@@ -17,6 +17,14 @@ file accountInput sequential input record AccountRecord status accountInputStatu
 
 file postingOutput sequential output record PostingRecord status postingOutputStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error postingOutput {
+  log "POSTINGOUTPUT FAILED, STATUS ", postingOutputStatus;
+  returnCode = 12;
+}
+
 function isOverdrawn(balance: MoneyBDT): bool {
   return 0.00 > balance;
 }

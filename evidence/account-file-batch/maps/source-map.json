@@ -135,32 +135,32 @@
     {
       "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 20,
+        "line": 28,
         "column": 10
       },
       "sourceEnd": {
-        "line": 22,
+        "line": 30,
         "column": 2
       },
       "artifact": "cobol/ACCOUNTF.cbl",
-      "targetStartLine": 130,
-      "targetEndLine": 138,
+      "targetStartLine": 140,
+      "targetEndLine": 148,
       "category": "function",
       "symbol": "isOverdrawn"
     },
     {
       "sourceFile": "examples/account-file-batch/src/main.bank.ts",
       "sourceStart": {
-        "line": 28,
+        "line": 36,
         "column": 19
       },
       "sourceEnd": {
-        "line": 55,
+        "line": 63,
         "column": 2
       },
       "artifact": "cobol/ACCOUNTF.cbl",
-      "targetStartLine": 139,
-      "targetEndLine": 236,
+      "targetStartLine": 149,
+      "targetEndLine": 246,
       "category": "transaction",
       "symbol": "postAccounts"
     }

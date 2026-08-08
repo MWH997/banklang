@@ -31,6 +31,14 @@ file settlementInput sequential input record PostingLine status settlementInputS
 
 file restartFile indexed update record RestartPoint key jobName status restartStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error restartFile {
+  log "RESTARTFILE FAILED, STATUS ", restartStatus;
+  returnCode = 12;
+}
+
 // `runDate` is a date somebody types on the EXEC statement, so it arrives as
 // eight characters rather than as a number: `unsigned<8, 0>` is `PIC 9(8)`,
 // which is what a date on an estate is declared as and what the PARM carries.

@@ -25,6 +25,14 @@ file accountMaster sequential input record MasterRecord status accountMasterStat
 
 file accrualOutput sequential output record MasterRecord status accrualOutputStatus;
 
+// A DECLARATIVES handler, which is where COBOL puts the answer to "and if
+// that failed?". Without it the status is captured into a field nobody
+// reads, and a job that could not open its file ends with return code zero.
+on error accrualOutput {
+  log "ACCRUALOUTPUT FAILED, STATUS ", accrualOutputStatus;
+  returnCode = 12;
+}
+
 function monthlyAccrual(balance: MoneyBDT): MoneyBDT {
   return round(balance * 0.0025, "HALF_EVEN");
 }
