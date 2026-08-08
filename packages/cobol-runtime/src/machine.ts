@@ -95,6 +95,14 @@ class ExitParagraphSignal extends Signal {}
 class ExitPerformSignal extends Signal {}
 class GobackSignal extends Signal {}
 class StopRunSignal extends Signal {}
+/**
+ * A sort or merge stopped by `SORT-RETURN`, from inside its own procedure.
+ *
+ * Control cannot leave an input or output procedure with `GOBACK`, so this is
+ * how a procedure that has already reported failure gets out of the sort
+ * without releasing or returning another record.
+ */
+class SortTerminatedSignal extends Signal {}
 
 /** A run that could not continue: a real fault, not a program's own failure. */
 export class CobolRuntimeError extends Error {}
@@ -121,6 +129,22 @@ interface OpenFile {
   mode: "INPUT" | "OUTPUT" | "I-O" | "EXTEND" | null;
   /** Index of the next record a sequential READ returns. */
   position: number;
+}
+
+/**
+ * The records passing through one `SD` file while its `SORT` or `MERGE` runs.
+ *
+ * Not in `fileData`: a sort work file is not a dataset. Holding it there would
+ * put a `SORTWORK` entry in `RunResult.files` that the compiled side never
+ * produces, and every generated sort names its work file `SORTWORK`, so two
+ * sorts in one program would also share one set of records.
+ */
+interface SortWork {
+  records: Uint8Array[];
+  /** Index of the next record `RETURN` delivers. */
+  position: number;
+  /** True between the first `RELEASE` and the end of the ordering phase. */
+  releasing: boolean;
 }
 
 /** The result of one run. */
@@ -169,6 +193,21 @@ const DEFAULT_STEP_LIMIT = 5_000_000;
 const RETURN_CODE_PICTURE: Picture = parsePicture("S9(4)");
 
 /**
+ * `SORT-RETURN`, the other register every program has and none declares.
+ *
+ * The Language Reference gives it as `01 SORT-RETURN GLOBAL PICTURE S9(4)
+ * USAGE BINARY VALUE ZERO`, global in the outermost program — so one register
+ * per machine, not one per program instance. It reads 0 after a sort or merge
+ * that completed and 16 after one that did not, and a program may store 16
+ * into it from an input or output procedure to stop the operation.
+ *
+ * GnuCOBOL 3.2.0 defines it wider: `DISPLAY SORT-RETURN` prints `+000000016`
+ * there and `0016` here. That is divergence D25, and the reason the backend
+ * moves it into a declared item before displaying it.
+ */
+const SORT_RETURN_PICTURE: Picture = parsePicture("S9(4)");
+
+/**
  * Intrinsics whose result is characters rather than a number.
  *
  * `displayText` knows how to produce each; this is what stops the arithmetic
@@ -190,14 +229,44 @@ class Instance {
   >();
   public readonly paragraphIndex = new Map<string, number>();
   public readonly files = new Map<string, OpenFile>();
+  /** Sort work files, by `SD` name, while their `SORT` or `MERGE` is running. */
+  public readonly sortWork = new Map<string, SortWork>();
   /** LOCAL-STORAGE is reallocated per invocation; this is the current frame. */
   public localFrames: Map<string, Binding>[] = [];
+  /** Paragraph index of the last paragraph of each section, by section name. */
+  public readonly sectionEnd = new Map<string, number>();
 
   public constructor(program: Program) {
     this.program = program;
     for (const [index, paragraph] of program.paragraphs.entries()) {
       if (paragraph.name !== "") {
         this.paragraphIndex.set(paragraph.name, index);
+      }
+    }
+    // A section runs to the paragraph before the next section header, or to
+    // the end of the division. `PERFORM a-section` and a sort's input
+    // procedure both need that extent: performing the header paragraph alone
+    // would run a sort's input procedure as far as its first internal
+    // paragraph and then order whatever had been released by then.
+    //
+    // The declaratives are their own region: the last `USE` section ends at
+    // `END DECLARATIVES` and not at the next section header, which is in the
+    // main body. Without this a program with one declarative would perform the
+    // whole program whenever a file operation failed.
+    const declarativesEnd = program.declaratives.reduce(
+      (last, use) => Math.max(last, use.thru),
+      -1,
+    );
+    let open: string | null = null;
+    for (const paragraph of program.paragraphs) {
+      if (paragraph.index === declarativesEnd + 1) {
+        open = null;
+      }
+      if (paragraph.section) {
+        open = paragraph.name;
+      }
+      if (open !== null) {
+        this.sectionEnd.set(open, paragraph.index);
       }
     }
   }
@@ -230,6 +299,7 @@ export class Machine {
   private readonly fileData = new Map<string, Uint8Array[]>();
   private readonly sysout: string[] = [];
   private readonly returnCodeBytes = new Uint8Array(2);
+  private readonly sortReturnBytes = new Uint8Array(2);
   private steps = 0;
   private stepLimit = DEFAULT_STEP_LIMIT;
   /** A failing I/O statement inside a USE procedure must not re-enter it. */
@@ -265,6 +335,7 @@ export class Machine {
       );
     }
     this.returnCodeBytes.fill(0);
+    this.sortReturnBytes.fill(0);
 
     const program = this.programs.get(entry);
     if (!program) {
@@ -872,6 +943,339 @@ export class Machine {
       case "start":
         this.executeStart(instance, statement);
         return;
+
+      case "sort":
+        this.executeSort(instance, statement);
+        return;
+
+      case "release":
+        this.executeRelease(instance, statement);
+        return;
+
+      case "return":
+        this.executeReturn(instance, statement);
+        return;
+    }
+
+    // Unreachable while every statement kind is handled above, and a compile
+    // error the moment one is not. `SORT` reached this switch as a parsed
+    // statement with no case and was silently skipped for as long as it took to
+    // notice — a sort that does nothing leaves the output file empty and the
+    // program reports success.
+    const unhandled: never = statement;
+    throw new CobolRuntimeError(
+      `${JSON.stringify(unhandled)} is a statement this interpreter parses and does not execute.`,
+    );
+  }
+
+  /* -------------------------------------------------- sort and merge */
+
+  /** The `SD` file a `SORT`, `MERGE`, `RELEASE` or `RETURN` names. */
+  private sortDescriptionOf(
+    instance: Instance,
+    name: string,
+    verb: string,
+  ): FileDescription {
+    const description = instance.program.descriptions.find(
+      (item) => item.name === name,
+    );
+    if (!description) {
+      throw new CobolRuntimeError(
+        `${verb} ${name}, which is not a file in ${instance.program.name}.`,
+      );
+    }
+    if (!description.sort) {
+      throw new CobolRuntimeError(
+        `${verb} ${name}, which is described by an FD. A sort work file needs an SD.`,
+      );
+    }
+    return description;
+  }
+
+  private sortReturn(): number {
+    return Number(
+      decodeNumeric(this.sortReturnBytes, 0, 2, SORT_RETURN_PICTURE, "binary")
+        .units,
+    );
+  }
+
+  /**
+   * `SORT` and `MERGE`, format 1.
+   *
+   * Three phases, and the register is checked between them because the
+   * Language Reference lets a procedure stop the operation by storing 16 into
+   * it: fill the work file, order it, empty it. What fills it is `USING` or an
+   * input procedure; what empties it is `GIVING` or an output procedure.
+   */
+  private executeSort(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "sort" }>,
+  ): void {
+    const description = this.sortDescriptionOf(
+      instance,
+      statement.file,
+      statement.operation,
+    );
+    const work: SortWork = { records: [], position: 0, releasing: true };
+    instance.sortWork.set(statement.file, work);
+
+    // The completion code of *this* operation, so a program with two sorts does
+    // not read the first one's answer after the second.
+    encodeNumeric(
+      this.sortReturnBytes,
+      0,
+      2,
+      decimalOf("0"),
+      SORT_RETURN_PICTURE,
+      "binary",
+    );
+
+    try {
+      if (statement.inputProcedure) {
+        this.performProcedure(instance, statement.inputProcedure);
+      } else {
+        this.readIntoWork(instance, statement, description, work);
+      }
+      work.releasing = false;
+
+      if (this.sortReturn() === 0) {
+        this.orderWork(instance, statement, description, work);
+
+        if (statement.outputProcedure) {
+          this.performProcedure(instance, statement.outputProcedure);
+        } else {
+          this.writeFromWork(instance, statement, work);
+        }
+      }
+    } catch (signal) {
+      if (!(signal instanceof SortTerminatedSignal)) {
+        throw signal;
+      }
+    } finally {
+      instance.sortWork.delete(statement.file);
+    }
+  }
+
+  /** `PERFORM`s an input or output procedure, section extent included. */
+  private performProcedure(
+    instance: Instance,
+    procedure: { from: string; thru: string | null },
+  ): void {
+    const from = instance.paragraphIndex.get(procedure.from);
+    if (from === undefined) {
+      throw new CobolRuntimeError(
+        `${procedure.from} is not a procedure in ${instance.program.name}.`,
+      );
+    }
+    const last = procedure.thru ?? procedure.from;
+    const thru =
+      instance.sectionEnd.get(last) ?? instance.paragraphIndex.get(last);
+    if (thru === undefined) {
+      throw new CobolRuntimeError(
+        `${last} is not a procedure in ${instance.program.name}.`,
+      );
+    }
+    this.performRange(instance, from, thru);
+  }
+
+  /**
+   * `USING` — the sort opens, reads, and closes the input files itself.
+   *
+   * A record shorter than the work record is padded with spaces and a longer
+   * one truncated, which is what moving it into the fixed record area does.
+   */
+  private readIntoWork(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "sort" }>,
+    description: FileDescription,
+    work: SortWork,
+  ): void {
+    for (const name of statement.using) {
+      const open = this.fileOf(instance, name);
+      this.openFile(instance, name, "INPUT");
+      if (open.mode === null) {
+        // The dataset is not there. The sort did not complete, which is what
+        // `SORT-RETURN` is for; GnuCOBOL reports it the same way.
+        this.failSort();
+        return;
+      }
+      for (const record of this.recordsOf(open)) {
+        work.records.push(sized(record, description.recordLength));
+      }
+      open.mode = null;
+    }
+  }
+
+  /** Orders the work file, in place, by the statement's keys. */
+  private orderWork(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "sort" }>,
+    description: FileDescription,
+    work: SortWork,
+  ): void {
+    const record = description.records[0];
+    if (!record) {
+      throw new CobolRuntimeError(
+        `${statement.file} has no record description, so its keys have nowhere to be.`,
+      );
+    }
+    const keys = statement.keys.map((key) => ({
+      field: this.findField(instance, key.ref),
+      descending: key.descending,
+    }));
+    for (const key of keys) {
+      if (key.field.root.name !== record.name) {
+        throw new CobolRuntimeError(
+          `${key.field.name} is not a field of ${record.name}, so it cannot be a key of ${statement.file}.`,
+        );
+      }
+    }
+
+    const compareRecords = (left: Uint8Array, right: Uint8Array): number => {
+      for (const key of keys) {
+        const order = compareValues(
+          this.readAt(keyLocation(key.field, left)),
+          this.readAt(keyLocation(key.field, right)),
+        );
+        if (order !== 0) {
+          return key.descending ? -order : order;
+        }
+      }
+      return 0;
+    };
+
+    /*
+     * `Array.prototype.sort` is stable, which is what `MERGE` and a `SORT WITH
+     * DUPLICATES IN ORDER` both require: equal keys come back in the order they
+     * arrived, and for a merge the records arrive in `USING` order, which is
+     * the order the Language Reference specifies for equal keys.
+     *
+     * Without the DUPLICATES phrase the order of equal keys is undefined in
+     * Enterprise COBOL, so a stable result here is one valid answer and not the
+     * only one. The backend emits the phrase for exactly that reason; a program
+     * that does not carry it is ordered stably here and might not be on the
+     * target, which is divergence D26.
+     */
+    work.records.sort(compareRecords);
+  }
+
+  /** `GIVING` — the sort opens, writes, and closes the output files itself. */
+  private writeFromWork(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "sort" }>,
+    work: SortWork,
+  ): void {
+    for (const name of statement.giving) {
+      const open = this.fileOf(instance, name);
+      this.openFile(instance, name, "OUTPUT");
+      if (open.mode === null) {
+        this.failSort();
+        return;
+      }
+      const records = this.recordsOf(open);
+      for (const record of work.records) {
+        records.push(trimmedForOrganization(open, record));
+      }
+      open.position = records.length;
+      open.mode = null;
+    }
+  }
+
+  /** Stores 16 in `SORT-RETURN`, which is how a sort says it did not finish. */
+  private failSort(): void {
+    encodeNumeric(
+      this.sortReturnBytes,
+      0,
+      2,
+      decimalOf("16"),
+      SORT_RETURN_PICTURE,
+      "binary",
+    );
+  }
+
+  /** `RELEASE` — one record from an input procedure into the work file. */
+  private executeRelease(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "release" }>,
+  ): void {
+    const field = this.findField(instance, statement.record);
+    const description = instance.program.descriptions.find((item) =>
+      item.records.some((each) => each.name === field.root.name),
+    );
+    if (!description?.sort) {
+      throw new CobolRuntimeError(
+        `RELEASE ${statement.record.name}, which is not a record of a sort work file.`,
+      );
+    }
+    const work = instance.sortWork.get(description.name);
+    if (!work?.releasing) {
+      throw new CobolRuntimeError(
+        `RELEASE ${statement.record.name} outside the input procedure of a SORT on ${description.name}.`,
+      );
+    }
+
+    if (statement.from) {
+      this.store(this.resolveField(instance, field, []), {
+        kind: "text",
+        value: this.displayText(instance, statement.from),
+      });
+    }
+
+    // "You can set the SORT-RETURN special register to 16 in an error
+    // declarative or input/output procedure to terminate a sort or merge
+    // operation ... The operation is terminated on the next input or output
+    // function." This is that next input function.
+    if (this.sortReturn() !== 0) {
+      throw new SortTerminatedSignal();
+    }
+
+    const area = this.recordAreaOf(instance, description);
+    work.records.push(
+      Uint8Array.from(
+        area.bytes.subarray(area.offset, area.offset + area.length),
+      ),
+    );
+  }
+
+  /** `RETURN` — the next ordered record, into the work file's record area. */
+  private executeReturn(
+    instance: Instance,
+    statement: Extract<Statement, { kind: "return" }>,
+  ): void {
+    const description = this.sortDescriptionOf(
+      instance,
+      statement.file,
+      "RETURN",
+    );
+    const work = instance.sortWork.get(statement.file);
+    if (!work) {
+      throw new CobolRuntimeError(
+        `RETURN ${statement.file} outside the output procedure of a SORT or MERGE on it.`,
+      );
+    }
+
+    const record = work.records[work.position];
+    if (!record || this.sortReturn() !== 0) {
+      this.execute(instance, statement.atEnd ?? []);
+      return;
+    }
+    work.position += 1;
+
+    const area = this.recordAreaOf(instance, description);
+    area.bytes.fill(SPACE, area.offset, area.offset + area.length);
+    area.bytes.set(
+      record.subarray(0, Math.min(record.length, area.length)),
+      area.offset,
+    );
+
+    if (statement.into) {
+      this.store(this.resolve(instance, statement.into), {
+        kind: "text",
+        value: decodeText(area.bytes, area.offset, area.length),
+      });
+    }
+    if (statement.notAtEnd) {
+      this.execute(instance, statement.notAtEnd);
     }
   }
 
@@ -1080,8 +1484,12 @@ export class Machine {
           `PERFORM ${target.from}, which is not a paragraph in ${instance.program.name}.`,
         );
       }
+      // Performing a section performs every paragraph in it, not just the one
+      // the header names. `PERFORM A THRU A-EXIT` — what the emitter writes for
+      // every function — is unaffected, because a paragraph is its own extent.
+      const last = target.thru ?? target.from;
       const thru =
-        target.thru === null ? from : instance.paragraphIndex.get(target.thru);
+        instance.sectionEnd.get(last) ?? instance.paragraphIndex.get(last);
       if (thru === undefined) {
         throw new CobolRuntimeError(
           `PERFORM ... THRU ${target.thru ?? ""}, which is not a paragraph in ${instance.program.name}.`,
@@ -1448,10 +1856,23 @@ export class Machine {
   }
 
   private recordArea(instance: Instance, open: OpenFile): Location {
-    const record = open.description.records[0];
+    return this.recordAreaOf(instance, open.description);
+  }
+
+  /**
+   * The bytes a file's records share.
+   *
+   * Every 01 under one FD or SD describes the same area, so the first one names
+   * it and its length is the longest description of it.
+   */
+  private recordAreaOf(
+    instance: Instance,
+    description: FileDescription,
+  ): Location {
+    const record = description.records[0];
     if (!record) {
       throw new CobolRuntimeError(
-        `${open.entry.name} has no record description.`,
+        `${description.name} has no record description.`,
       );
     }
     const binding = this.bindingFor(instance, record);
@@ -1459,7 +1880,7 @@ export class Machine {
       field: record,
       bytes: binding.bytes,
       offset: binding.base,
-      length: open.description.recordLength,
+      length: description.recordLength,
     };
   }
 
@@ -1566,20 +1987,10 @@ export class Machine {
     }
 
     const area = this.recordArea(instance, open);
-    let bytes = Uint8Array.from(
+    const bytes = trimmedForOrganization(
+      open,
       area.bytes.subarray(area.offset, area.offset + area.length),
     );
-    // A LINE SEQUENTIAL file holds text lines, so trailing blanks are not part
-    // of the record — GnuCOBOL strips them before the newline, and a file
-    // written here has to match one written there byte for byte or the
-    // differential test is comparing two different things.
-    if (open.entry.organization === "line-sequential") {
-      let end = bytes.length;
-      while (end > 0 && bytes[end - 1] === SPACE) {
-        end -= 1;
-      }
-      bytes = bytes.subarray(0, end);
-    }
     const records = this.recordsOf(open);
 
     if (statement.kind === "rewrite") {
@@ -1671,6 +2082,9 @@ export class Machine {
     if (ref.name === "RETURN-CODE") {
       return RETURN_CODE_FIELD;
     }
+    if (ref.name === "SORT-RETURN") {
+      return SORT_RETURN_FIELD;
+    }
     const candidates = instance.fields.get(ref.name);
     if (!candidates || candidates.length === 0) {
       throw new CobolRuntimeError(
@@ -1710,6 +2124,9 @@ export class Machine {
   private bindingFor(instance: Instance, field: Field): Binding {
     if (field.root === RETURN_CODE_FIELD) {
       return { bytes: this.returnCodeBytes, base: 0 };
+    }
+    if (field.root === SORT_RETURN_FIELD) {
+      return { bytes: this.sortReturnBytes, base: 0 };
     }
     if (field.area === "local") {
       const frame = instance.localFrames[instance.localFrames.length - 1];
@@ -2345,14 +2762,14 @@ export class Machine {
  * Helpers.
  * ------------------------------------------------------------------ */
 
-/** The synthetic record every program's `RETURN-CODE` lives in. */
-const RETURN_CODE_FIELD: Field = (() => {
+/** A special register: a binary item every program has and none declares. */
+function specialRegister(name: string, picture: Picture): Field {
   const field: Field = {
-    name: "RETURN-CODE",
+    name,
     level: 1,
     parent: null,
     children: [],
-    picture: RETURN_CODE_PICTURE,
+    picture,
     usage: "binary",
     offset: 0,
     elementLength: 2,
@@ -2368,7 +2785,66 @@ const RETURN_CODE_FIELD: Field = (() => {
   };
   field.root = field;
   return field;
-})();
+}
+
+/** The synthetic record every program's `RETURN-CODE` lives in. */
+const RETURN_CODE_FIELD: Field = specialRegister(
+  "RETURN-CODE",
+  RETURN_CODE_PICTURE,
+);
+
+/** The same, for the register a `SORT` or `MERGE` reports through. */
+const SORT_RETURN_FIELD: Field = specialRegister(
+  "SORT-RETURN",
+  SORT_RETURN_PICTURE,
+);
+
+/**
+ * A record fitted to a record area: space-padded, or truncated.
+ *
+ * What a `SORT ... USING` does to a record shorter than the `SD`'s, and what
+ * moving it into the fixed record area would do.
+ */
+function sized(record: Uint8Array, length: number): Uint8Array {
+  const fitted = new Uint8Array(length).fill(SPACE);
+  fitted.set(record.subarray(0, Math.min(record.length, length)));
+  return fitted;
+}
+
+/**
+ * A record as the file holds it.
+ *
+ * A LINE SEQUENTIAL file holds text lines, so trailing blanks are not part of
+ * the record — GnuCOBOL strips them before the newline, and a file written here
+ * has to match one written there byte for byte or the differential test is
+ * comparing two different things.
+ */
+function trimmedForOrganization(open: OpenFile, bytes: Uint8Array): Uint8Array {
+  if (open.entry.organization !== "line-sequential") {
+    return Uint8Array.from(bytes);
+  }
+  let end = bytes.length;
+  while (end > 0 && bytes[end - 1] === SPACE) {
+    end -= 1;
+  }
+  return Uint8Array.from(bytes.subarray(0, end));
+}
+
+/**
+ * A sort key, read out of a record that is not in the record area.
+ *
+ * The work file's records are bytes in a list, and `Field.offset` is measured
+ * from the start of the record it belongs to — so the same field description
+ * reads the key out of any copy of that record.
+ */
+function keyLocation(field: Field, record: Uint8Array): Location {
+  return {
+    field,
+    bytes: record,
+    offset: field.offset,
+    length: field.length,
+  };
+}
 
 function figurativeText(value: string): string {
   switch (value) {

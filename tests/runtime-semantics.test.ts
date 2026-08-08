@@ -145,3 +145,142 @@ describe("the collating-sequence intrinsics", () => {
     ).toEqual(["TRIM=[hi        ]", "UPPER=[HI        ]"]);
   });
 });
+
+/**
+ * `SORT` and `MERGE` forms the emitter never produces.
+ *
+ * `tests/sort-differential.test.ts` runs the emitted subset under both engines
+ * and compares. What it cannot reach is the COBOL a person might hand the
+ * playground: a `RETURN` with no `AT END`, a `RELEASE` outside a procedure, a
+ * `COLLATING SEQUENCE` phrase whose ordering this interpreter does not
+ * implement. Each of those has a wrong answer that looks like a right one —
+ * a loop that never ends, a record quietly dropped, an order the target would
+ * not produce — so each is refused by name instead.
+ */
+describe("sort forms the interpreter refuses", () => {
+  const PREAMBLE = `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SORTREF.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT IN-FILE ASSIGN TO INF
+               ORGANIZATION IS LINE SEQUENTIAL.
+           SELECT OUT-FILE ASSIGN TO OUTF
+               ORGANIZATION IS LINE SEQUENTIAL.
+           SELECT SORT-FILE ASSIGN TO SORTWORK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  IN-FILE.
+       01  IN-REC     PIC X(4).
+       FD  OUT-FILE.
+       01  OUT-REC    PIC X(4).
+       SD  SORT-FILE.
+       01  SORT-REC.
+           05  SRT-KEY  PIC X(4).
+       WORKING-STORAGE SECTION.
+       01  WS-DONE    PIC X VALUE "N".
+       PROCEDURE DIVISION.
+       MAIN.
+`;
+
+  it("refuses a COLLATING SEQUENCE it does not implement", () => {
+    expect(() =>
+      sysout(`${PREAMBLE}           SORT SORT-FILE
+                    ASCENDING KEY SRT-KEY OF SORT-REC
+               COLLATING SEQUENCE IS NATIVE
+               USING IN-FILE
+               GIVING OUT-FILE
+           GOBACK.
+`),
+    ).toThrow(/COLLATING SEQUENCE/);
+  });
+
+  it("refuses a RETURN with no AT END, which would never end", () => {
+    expect(() =>
+      sysout(`${PREAMBLE}           SORT SORT-FILE
+                    ASCENDING KEY SRT-KEY OF SORT-REC
+               USING IN-FILE
+               OUTPUT PROCEDURE IS DRAIN
+           GOBACK.
+       DRAIN SECTION.
+           RETURN SORT-FILE
+           GOBACK.
+`),
+    ).toThrow(/AT END/);
+  });
+
+  it("refuses a RELEASE outside an input procedure", () => {
+    expect(() =>
+      sysout(`${PREAMBLE}           MOVE "AAAA" TO SRT-KEY OF SORT-REC
+           RELEASE SORT-REC
+           GOBACK.
+`),
+    ).toThrow(/RELEASE SORT-REC outside/);
+  });
+
+  it("refuses a MERGE with an input procedure", () => {
+    expect(() =>
+      sysout(`${PREAMBLE}           MERGE SORT-FILE
+                    ASCENDING KEY SRT-KEY OF SORT-REC
+               INPUT PROCEDURE IS FEED
+               GIVING OUT-FILE
+           GOBACK.
+       FEED SECTION.
+           CONTINUE.
+`),
+    ).toThrow(/MERGE has no INPUT PROCEDURE/);
+  });
+
+  /**
+   * The table `SORT` shares only the verb: it orders the elements of a
+   * `data-name`, not the records of an `SD`. Parsed as a file sort it would
+   * name a work file that is not one.
+   */
+  it("refuses the table SORT", () => {
+    expect(() =>
+      sysout(`       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TABLESORT.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-TABLE.
+           05  WS-ROW OCCURS 3 TIMES.
+               10  WS-CODE  PIC X(2).
+       PROCEDURE DIVISION.
+       MAIN.
+           SORT WS-ROW ASCENDING KEY WS-CODE
+           GOBACK.
+`),
+    ).toThrow(/WS-ROW/);
+  });
+});
+
+/**
+ * A section is every paragraph in it.
+ *
+ * `PERFORM a-section` used to run the header paragraph alone, which is right
+ * for the `PERFORM x THRU x-EXIT` the emitter writes and wrong for everything
+ * else. A sort's input procedure is a section, so the same defect would have
+ * ordered whatever had been released before the section's first internal
+ * paragraph and dropped the rest.
+ */
+describe("PERFORM of a section", () => {
+  it("runs every paragraph of the section, and stops at the next one", () => {
+    expect(
+      sysout(`       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SECPERF.
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           PERFORM WORK
+           DISPLAY "BACK"
+           GOBACK.
+       WORK SECTION.
+       WORK-FIRST.
+           DISPLAY "FIRST".
+       WORK-SECOND.
+           DISPLAY "SECOND".
+       AFTER-WORK SECTION.
+           DISPLAY "NOT REACHED BY PERFORM".
+`),
+    ).toEqual(["FIRST", "SECOND", "BACK"]);
+  });
+});

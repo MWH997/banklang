@@ -54,6 +54,16 @@ export interface FileDescription {
   records: Field[];
   /** The longest record, which is the size of the shared record area. */
   recordLength: number;
+  /**
+   * `SD` rather than `FD`: the work file a `SORT` or `MERGE` orders.
+   *
+   * It has a SELECT and a record area like any other file and is not a dataset:
+   * nothing opens it, nothing reads it, and what it holds between `RELEASE` and
+   * `RETURN` never reaches `RunResult.files`. A sort work file that did would
+   * appear in the differential comparison as an output the compiled side never
+   * produced — GnuCOBOL puts its own in a temporary directory and removes it.
+   */
+  sort: boolean;
 }
 
 export interface Program {
@@ -297,7 +307,11 @@ function atSectionBoundary(cursor: Cursor): boolean {
 function parseData(cursor: Cursor, program: Program): void {
   if (cursor.accept("FILE", "SECTION")) {
     cursor.acceptPeriod();
-    while (cursor.accept("FD") || cursor.accept("SD")) {
+    for (;;) {
+      const sort = cursor.looksLike("SD");
+      if (!cursor.accept("FD") && !cursor.accept("SD")) {
+        break;
+      }
       const name = cursor.word();
       // BLOCK CONTAINS, RECORDING MODE, LABEL RECORDS: describing the dataset,
       // not the data. The record layout below is what decides the bytes.
@@ -324,6 +338,7 @@ function parseData(cursor: Cursor, program: Program): void {
         name,
         records,
         recordLength: Math.max(0, ...records.map((record) => record.length)),
+        sort,
       });
     }
   }

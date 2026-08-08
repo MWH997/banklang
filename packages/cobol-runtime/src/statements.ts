@@ -256,6 +256,47 @@ export type Statement =
       to: Expr;
       line: number;
     }
+  | {
+      /**
+       * `SORT` and `MERGE`, format 1 — the file forms, not the table SORT.
+       *
+       * One statement kind for both because they differ only in what fills the
+       * work file: a sort takes records from `USING` files or an input
+       * procedure and orders them; a merge takes records from two or more
+       * already-ordered `USING` files and interleaves them. Everything after
+       * that — the keys, `GIVING`, the output procedure — is the same, and two
+       * near-identical statement shapes would be two places to fix a defect in.
+       */
+      kind: "sort";
+      operation: "SORT" | "MERGE";
+      /** The `SD` file the records pass through. */
+      file: string;
+      keys: { ref: Reference; descending: boolean }[];
+      /**
+       * `WITH DUPLICATES IN ORDER`.
+       *
+       * Without it the Language Reference leaves the order of records with
+       * equal keys undefined, so this is not decoration: it is the difference
+       * between an output a second engine can be held to and one it cannot.
+       */
+      duplicates: boolean;
+      /** `USING` files, empty when an input procedure supplies the records. */
+      using: string[];
+      inputProcedure: { from: string; thru: string | null } | null;
+      /** `GIVING` files, empty when an output procedure consumes the records. */
+      giving: string[];
+      outputProcedure: { from: string; thru: string | null } | null;
+      line: number;
+    }
+  | { kind: "release"; record: Reference; from: Expr | null; line: number }
+  | {
+      kind: "return";
+      file: string;
+      into: Reference | null;
+      atEnd: Statement[] | null;
+      notAtEnd: Statement[] | null;
+      line: number;
+    }
   | { kind: "continue"; line: number }
   | { kind: "exit"; what: "paragraph" | "perform" | "program"; line: number }
   | { kind: "goback"; line: number }
@@ -266,6 +307,16 @@ export interface Paragraph {
   /** Order in the division, which is what `PERFORM ... THRU` walks. */
   index: number;
   statements: Statement[];
+  /**
+   * `NAME SECTION.` rather than `NAME.`
+   *
+   * A section is every paragraph from its header to the next section header,
+   * and performing one performs all of them. `SORT ... INPUT PROCEDURE IS` and
+   * `PERFORM some-section` both depend on that: performing only the header
+   * paragraph would run a sort's input procedure as far as its first internal
+   * paragraph and then order whatever had been released so far.
+   */
+  section: boolean;
 }
 
 /**
@@ -311,6 +362,7 @@ const TERMINATORS = new Set([
   "END-CALL",
   "END-STRING",
   "END-UNSTRING",
+  "END-RETURN",
   "AT",
   "NOT",
   "ON",
@@ -359,6 +411,28 @@ const VERBS = new Set([
   "CANCEL",
 ]);
 
+/**
+ * Words that end a `KEY`, `USING` or `GIVING` list inside `SORT` or `MERGE`.
+ *
+ * None of them is a verb or a statement terminator, so without this the list
+ * parser would swallow the clause that follows it.
+ */
+const SORT_CLAUSES = new Set([
+  "ON",
+  "ASCENDING",
+  "DESCENDING",
+  "KEY",
+  "WITH",
+  "DUPLICATES",
+  "COLLATING",
+  "SEQUENCE",
+  "USING",
+  "GIVING",
+  "INPUT",
+  "OUTPUT",
+  "PROCEDURE",
+]);
+
 export class StatementParser {
   private readonly cursor: Cursor;
 
@@ -378,11 +452,16 @@ export class StatementParser {
   public paragraphs(): Division {
     const result: Paragraph[] = [];
     const declaratives: UseProcedure[] = [];
-    let current: Paragraph = { name: "", index: 0, statements: [] };
+    let current: Paragraph = {
+      name: "",
+      index: 0,
+      statements: [],
+      section: false,
+    };
     result.push(current);
 
-    const open = (name: string): void => {
-      current = { name, index: result.length, statements: [] };
+    const open = (name: string, section: boolean): void => {
+      current = { name, index: result.length, statements: [], section };
       result.push(current);
     };
 
@@ -413,7 +492,7 @@ export class StatementParser {
       ) {
         const header = this.paragraphHeader();
         if (header !== null) {
-          open(header);
+          open(header.name, header.section);
           if (this.cursor.accept("USE")) {
             this.cursor.skipNoise(
               "AFTER",
@@ -446,7 +525,7 @@ export class StatementParser {
       }
       const header = this.paragraphHeader();
       if (header !== null) {
-        open(header);
+        open(header.name, header.section);
         continue;
       }
       const statement = this.statement();
@@ -473,7 +552,7 @@ export class StatementParser {
   }
 
   /** Consumes and returns a paragraph or section name, or null. */
-  private paragraphHeader(): string | null {
+  private paragraphHeader(): { name: string; section: boolean } | null {
     const token = this.cursor.peek();
     if (token.kind !== "word" || token.column > AREA_A_END) {
       return null;
@@ -482,7 +561,7 @@ export class StatementParser {
     if (this.cursor.peek(1).kind === "period") {
       this.cursor.next();
       this.cursor.next();
-      return token.text;
+      return { name: token.text, section: false };
     }
     if (
       this.cursor.peek(1).kind === "word" &&
@@ -492,7 +571,7 @@ export class StatementParser {
       this.cursor.next();
       this.cursor.next();
       this.cursor.next();
-      return token.text;
+      return { name: token.text, section: true };
     }
     return null;
   }
@@ -578,6 +657,13 @@ export class StatementParser {
         return this.write();
       case "START":
         return this.start();
+      case "SORT":
+      case "MERGE":
+        return this.sort();
+      case "RELEASE":
+        return this.release();
+      case "RETURN":
+        return this.returnStatement();
       case "SET":
         return this.set();
       case "STRING":
@@ -1220,6 +1306,164 @@ export class StatementParser {
     return verb === "WRITE"
       ? { kind: "write", record, from, advancing, endOfPage, invalidKey, line }
       : { kind: "rewrite", record, from, invalidKey, line };
+  }
+
+  /**
+   * `SORT` and `MERGE`, format 1.
+   *
+   * The clauses are read in a loop rather than in the Language Reference's
+   * order. A fixed order would be right for what this compiler emits and wrong
+   * for the hand-written COBOL under `runtime/`, and the loop costs nothing:
+   * every clause announces itself with a keyword.
+   *
+   * The table `SORT` (format 2) sorts a `data-name` rather than an `SD` file
+   * and shares only the verb. It is refused by name below rather than
+   * misparsed as a file sort with a missing input.
+   */
+  private sort(): Statement {
+    const line = this.cursor.line;
+    const operation = this.cursor.word() as "SORT" | "MERGE";
+    const file = this.cursor.word();
+
+    const keys: { ref: Reference; descending: boolean }[] = [];
+    let duplicates = false;
+    const using: string[] = [];
+    const giving: string[] = [];
+    let inputProcedure: { from: string; thru: string | null } | null = null;
+    let outputProcedure: { from: string; thru: string | null } | null = null;
+
+    const procedure = (): { from: string; thru: string | null } => {
+      this.cursor.expect("PROCEDURE");
+      this.cursor.skipNoise("IS");
+      const from = this.cursor.word();
+      const thru =
+        this.cursor.accept("THROUGH") || this.cursor.accept("THRU")
+          ? this.cursor.word()
+          : null;
+      return { from, thru };
+    };
+
+    for (;;) {
+      this.cursor.skipNoise("ON");
+      const descending = this.cursor.looksLike("DESCENDING");
+      if (this.cursor.accept("ASCENDING") || this.cursor.accept("DESCENDING")) {
+        this.cursor.skipNoise("KEY", "IS", "ARE");
+        do {
+          keys.push({ ref: this.reference(), descending });
+        } while (this.startsSortOperand());
+        continue;
+      }
+      this.cursor.skipNoise("WITH");
+      if (this.cursor.accept("DUPLICATES")) {
+        this.cursor.skipNoise("IN", "ORDER");
+        duplicates = true;
+        continue;
+      }
+      if (this.cursor.accept("COLLATING", "SEQUENCE")) {
+        this.cursor.skipNoise("IS");
+        throw new CobolUnsupportedError(
+          `Line ${String(line)}: ${operation} with a COLLATING SEQUENCE phrase, which this interpreter does not implement. Its keys would be ordered by the native sequence instead, which is a different program.`,
+        );
+      }
+      if (this.cursor.accept("USING")) {
+        do {
+          using.push(this.cursor.word());
+        } while (this.startsSortOperand());
+        continue;
+      }
+      if (this.cursor.accept("GIVING")) {
+        do {
+          giving.push(this.cursor.word());
+        } while (this.startsSortOperand());
+        continue;
+      }
+      if (this.cursor.accept("INPUT")) {
+        inputProcedure = procedure();
+        continue;
+      }
+      if (this.cursor.accept("OUTPUT")) {
+        outputProcedure = procedure();
+        continue;
+      }
+      break;
+    }
+
+    if (keys.length === 0) {
+      throw new CobolUnsupportedError(
+        `Line ${String(line)}: ${operation} ${file} names no key. A table SORT is not implemented; only the file forms are.`,
+      );
+    }
+    if (operation === "MERGE" && inputProcedure) {
+      throw new CobolSyntaxError(
+        `Line ${String(line)}: MERGE has no INPUT PROCEDURE — its input files must already be in key order.`,
+      );
+    }
+    return {
+      kind: "sort",
+      operation,
+      file,
+      keys,
+      duplicates,
+      using,
+      giving,
+      inputProcedure,
+      outputProcedure,
+      line,
+    };
+  }
+
+  /**
+   * True when the next word continues a `KEY`, `USING` or `GIVING` list.
+   *
+   * `startsReference` is not enough: `USING` and `GIVING` are ordinary words to
+   * it, so `SORT S ASCENDING KEY K USING F` would read `USING` as a second key.
+   */
+  private startsSortOperand(): boolean {
+    return this.startsReference() && !SORT_CLAUSES.has(this.cursor.peek().text);
+  }
+
+  /** `RELEASE sort-record [FROM identifier]`. */
+  private release(): Statement {
+    const line = this.cursor.line;
+    this.cursor.expect("RELEASE");
+    const record = this.reference();
+    const from = this.cursor.accept("FROM") ? this.expression() : null;
+    return { kind: "release", record, from, line };
+  }
+
+  /** `RETURN sort-file [INTO identifier] AT END ... NOT AT END ...`. */
+  private returnStatement(): Statement {
+    const line = this.cursor.line;
+    this.cursor.expect("RETURN");
+    const file = this.cursor.word();
+    this.cursor.skipNoise("RECORD");
+    const into = this.cursor.accept("INTO") ? this.reference() : null;
+
+    let atEnd: Statement[] | null = null;
+    let notAtEnd: Statement[] | null = null;
+    for (;;) {
+      if (this.cursor.accept("NOT", "AT", "END")) {
+        notAtEnd = this.statements();
+        continue;
+      }
+      if (this.cursor.accept("AT", "END") || this.cursor.accept("END")) {
+        atEnd = this.statements();
+        continue;
+      }
+      break;
+    }
+    this.cursor.accept("END-RETURN");
+
+    // The AT END phrase is not optional on RETURN the way it is on READ: there
+    // is no declarative for a sort work file, so a RETURN without one reads the
+    // last record for ever. The generated loop always has it; hand-written
+    // COBOL that does not is refused rather than looped.
+    if (!atEnd) {
+      throw new CobolSyntaxError(
+        `Line ${String(line)}: RETURN ${file} has no AT END phrase, so nothing ends the loop that reads the sorted records.`,
+      );
+    }
+    return { kind: "return", file, into, atEnd, notAtEnd, line };
   }
 
   private start(): Statement {
