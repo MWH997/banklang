@@ -226,7 +226,12 @@ export const KEYWORDS = new Set([
  * `input`, `output`, and `status` stay usable as field and parameter names.
  */
 const FILE_MODES = new Set(["input", "output", "update"]);
-const FILE_ORGANIZATIONS = new Set(["sequential", "indexed", "relative"]);
+const FILE_ORGANIZATIONS = new Set([
+  "sequential",
+  "lineSequential",
+  "indexed",
+  "relative",
+]);
 
 /** Which MQOO_* option a queue is opened with, and so which calls it allows. */
 const QUEUE_DIRECTIONS = new Set(["input", "output"]);

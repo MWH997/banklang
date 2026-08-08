@@ -164,7 +164,7 @@ export interface IRFile {
   kind: "File";
   name: string;
   span: SourceSpan;
-  organization: "sequential" | "indexed" | "relative";
+  organization: "sequential" | "lineSequential" | "indexed" | "relative";
   mode: "input" | "output" | "update";
   record: IRRecord;
   statusName: string | null;
@@ -800,7 +800,7 @@ export interface IRFileStatement {
   recordName: string | null;
   /** Mode of the declared file, needed to emit OPEN INPUT vs OPEN OUTPUT. */
   fileMode: "input" | "output" | "update";
-  fileOrganization: "sequential" | "indexed" | "relative";
+  fileOrganization: "sequential" | "lineSequential" | "indexed" | "relative";
   statusName: string | null;
   keyFieldName: string | null;
   key: IRExpression | null;
@@ -1397,7 +1397,7 @@ const fileTable = new Map<
   string,
   {
     mode: "input" | "output" | "update";
-    organization: "sequential" | "indexed" | "relative";
+    organization: "sequential" | "lineSequential" | "indexed" | "relative";
     statusName: string | null;
     recordVarying: { min: number; max: number; lengthName: string } | null;
     keyFieldName: string | null;

@@ -777,7 +777,19 @@ export type FileOperation =
   | "start"
   | "close";
 
-export type FileOrganization = "sequential" | "indexed" | "relative";
+/**
+ * How a file's records are found.
+ *
+ * `lineSequential` is a text file: records are delimited by a newline rather
+ * than laid out at a fixed width, which is what a payment feed, a
+ * reconciliation extract or an import from anything that is not a mainframe
+ * actually looks like. Enterprise COBOL 6.4 has it as `ORGANIZATION IS LINE
+ * SEQUENTIAL` (Language Reference, format 4) for files in the z/OS UNIX file
+ * system, and it carries restrictions the other three do not — see
+ * `docs/language/files.md` and the checks in the typechecker.
+ */
+export type FileOrganization =
+  "sequential" | "lineSequential" | "indexed" | "relative";
 
 /**
  * `read accountInput into record;` and friends.
