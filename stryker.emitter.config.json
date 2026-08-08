@@ -10,7 +10,7 @@
     "packages/cobol-backend/src/prologue.ts",
     "packages/cobol-ir/src/index.ts"
   ],
-  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
   "thresholds": {
     "high": 85,
     "low": 70,

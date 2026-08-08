@@ -33,7 +33,7 @@
   "mutator": {
     "excludedMutations": ["StringLiteral", "Regex"]
   },
-  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp"],
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
   "ignoreStatic": true,
   "concurrency": 8,
   "incremental": false,

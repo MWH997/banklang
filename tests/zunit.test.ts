@@ -603,6 +603,46 @@ test acceptsAPositiveAmount for check {
     ]);
   });
 
+  /**
+   * The stub bookkeeping, all of it, in both directions.
+   *
+   * `if (stubbed.length > 0)` guards five places, and only one of them adds a
+   * nested program — the other four add storage and statements, which is why
+   * asserting the program list killed one mutant and left the rest. The
+   * counters, the group index, the record pointer and the `PERFORM CHECK-…`
+   * calls exist to check expectations against stubs; with no stub they are
+   * storage nothing reads and paragraphs nothing performs.
+   *
+   * Paired, because absence alone proves nothing: a driver that emits none of
+   * this ever would pass the first half.
+   */
+  const BOOKKEEPING = [
+    "AZ-CALL-COUNT",
+    "AZ-GRP-INDEX",
+    "AZ-FLAG-IN",
+    "AZ-RECORD-PTR",
+    "PERFORM CHECK-",
+    "call counters",
+  ];
+
+  it("emits no stub bookkeeping when nothing is stubbed", () => {
+    for (const mark of BOOKKEEPING) {
+      expect(
+        bare.driver,
+        `${mark} is storage nothing reads here`,
+      ).not.toContain(mark);
+    }
+  });
+
+  it("emits all of it when the test expects calls", () => {
+    for (const mark of BOOKKEEPING) {
+      expect(GENERATED.driver, `${mark} is missing`).toContain(mark);
+    }
+    // One check paragraph per stubbed module, named for the module.
+    expect(GENERATED.driver).toContain("CHECK-BANKLEDG-CALLS");
+    expect(GENERATED.driver).toContain("CHECK-BANKAUDT-CALLS");
+  });
+
   it("still enters the program under test", () => {
     // The one thing that must survive having nothing to assert about.
     expect(bare.driver).toContain("BZUGETEP");
@@ -619,5 +659,89 @@ test acceptsAPositiveAmount for check {
     expect(bare.driverArtifactPath).toMatch(/\.cbl$/);
     // IBM's own extension for a zUnit configuration, not `.xml`.
     expect(bare.configurationArtifactPath).toMatch(/\.bzucfg$/);
+  });
+});
+
+/**
+ * The PARM group, which a batch program has and a record-driven one does not.
+ *
+ * `if (parmFields.length > 0)` guards two places — the storage and the
+ * statements that fill it — and every test above uses a program whose entry
+ * transaction takes scalars, so the guard was never seen false. A batch
+ * program's PARM *is* the scalar parameters of its entry transaction, so a
+ * transaction taking a record has none, and `BANK-TEST-003` means such a test
+ * cannot `given` anything either.
+ */
+describe("a program the step starts with no PARM", () => {
+  const NO_PARM = `module NoParm;
+
+record Req {
+  idempotencyKey: string<36>;
+}
+
+entry transaction go(req: Req) {
+  audit("X", req.idempotencyKey);
+}
+
+test runs for go {
+}
+`;
+  const WITH_PARM = `module WithParm;
+
+entry transaction go(amount: decimal<18, 2>, idempotencyKey: string<36>) {
+  audit("X", idempotencyKey);
+}
+
+test runs for go {
+  given amount = 1.00;
+  given idempotencyKey = "IDEM";
+}
+`;
+
+  const PARM_MARKS = ["BANK-PARM", "INITIALIZE BANK-PARM", "BANK-PARM-LENGTH"];
+
+  it("declares no PARM group and does not fill one", () => {
+    const driver = emitZunit(programOf(NO_PARM)).driver;
+    for (const mark of PARM_MARKS) {
+      expect(driver, `${mark} has nothing to hold`).not.toContain(mark);
+    }
+  });
+
+  it("declares one and fills it when the entry takes scalars", () => {
+    const driver = emitZunit(programOf(WITH_PARM)).driver;
+    for (const mark of PARM_MARKS) {
+      expect(driver, `${mark} is missing`).toContain(mark);
+    }
+  });
+});
+
+/**
+ * Each stub's position, which is what its counter is read from.
+ *
+ * `counterIndex` is `findIndex(...) + 1`, so it is one-based and depends on the
+ * order `RUNTIME_INTERFACES` puts the stubs in. Two stubs are the smallest case
+ * that can tell a right answer from a constant: with one, every wrong index
+ * that happens to be 1 still passes.
+ */
+describe("the position a stub's counter is read from", () => {
+  /** The `MOVE n TO AZ-GRP-INDEX` inside one module's check paragraph. */
+  function indexUsedBy(driver: string, module: string): number {
+    const paragraph = driver.slice(driver.indexOf(`CHECK-${module}-CALLS.`));
+    const moved = /MOVE (\d+) TO AZ-GRP-INDEX/.exec(paragraph);
+    expect(moved, `CHECK-${module}-CALLS reads no counter`).not.toBeNull();
+    return Number(moved![1]);
+  }
+
+  it("gives each stubbed module its own one-based position", () => {
+    const driver = GENERATED.driver;
+    const ledger = indexUsedBy(driver, "BANKLEDG");
+    const audit = indexUsedBy(driver, "BANKAUDT");
+
+    // One-based, because zero is what an uninitialised index already holds.
+    expect(ledger).toBe(1);
+    expect(audit).toBe(2);
+    // And distinct, which is the thing a wrong index crosses over: two stubs
+    // reading one counter reports the other module's calls as this one's.
+    expect(ledger).not.toBe(audit);
   });
 });
