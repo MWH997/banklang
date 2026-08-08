@@ -82,9 +82,9 @@ No behavioural oracle. These are files, not tests: nothing here can establish th
 | Representability | Files |
 | --- | --- |
 | fully-representable | 1543 / 5195 (29.7%) |
-| representable-with-adaptation | 2548 / 5195 (49.0%) |
+| representable-with-adaptation | 2730 / 5195 (52.6%) |
 | unsupported-by-design | 533 / 5195 (10.3%) |
-| unsupported-not-yet-implemented | 513 / 5195 (9.9%) |
+| unsupported-not-yet-implemented | 331 / 5195 (6.4%) |
 | analyser-failure | 0 / 5195 (0.0%) |
 | unknown | 58 / 5195 (1.1%) |
 
@@ -97,7 +97,7 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `reference-modification` | adaptation | 600 | 11.5% |
 | `usage-index` | adaptation | 452 | 8.7% |
 | `string-unstring` | adaptation | 393 | 7.6% |
-| `inspect` | unsupported-not-yet-implemented | 269 | 5.2% |
+| `inspect` | adaptation | 269 | 5.2% |
 | `usage-pointer` | unsupported-by-design | 244 | 4.7% |
 | `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
 | `screen-section` | unsupported-by-design | 138 | 2.7% |
@@ -108,7 +108,7 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `comp-float` | unsupported-by-design | 37 | 0.7% |
 | `go-to-depending` | unsupported-by-design | 28 | 0.5% |
 
-The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
+The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. `countOf` lowers to INSPECT TALLYING FOR ALL and `replaceChars` to INSPECT CONVERTING. REPLACING, and the BEFORE/AFTER ranges, have no BankTS form — 780 and 625 statements in the corpus respectively.
 
 ### OpenCBS COBOL defects suite
 
@@ -139,13 +139,26 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `reference-modification` | adaptation | 1 | 1.9% |
 | `perform-thru` | adaptation | 1 | 1.9% |
 
-The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. INSPECT TALLYING/REPLACING/CONVERTING. No BankTS syntax; nothing about it conflicts with the language's aims.
+The rules behind each verdict are in `packages/horizontal-validation/src/representability.ts`, one row per construct. `countOf` lowers to INSPECT TALLYING FOR ALL and `replaceChars` to INSPECT CONVERTING. REPLACING, and the BEFORE/AFTER ranges, have no BankTS form — 780 and 625 statements in the corpus respectively.
 
 ## What each language change moved
 
 X-COBOL representability before and after each feature, over the same
 5,195 files. The before column is the measurement as it stood on the
 commit named in `evidence/horizontal-history/index.json`.
+
+### `inspect-classification`
+
+Measured against `216de338cc15`.
+
+| Verdict | Before | After | Change |
+| --- | --- | --- | --- |
+| fully-representable | 1543 | 1543 | 0 |
+| representable-with-adaptation | 2548 | 2730 | +182 |
+| unsupported-by-design | 533 | 533 | 0 |
+| unsupported-not-yet-implemented | 513 | 331 | -182 |
+| analyser-failure | 0 | 0 | 0 |
+| unknown | 58 | 58 | 0 |
 
 ### `line-sequential`
 
@@ -154,9 +167,9 @@ Measured against `8abf3da6ebc5`.
 | Verdict | Before | After | Change |
 | --- | --- | --- | --- |
 | fully-representable | 1388 | 1543 | +155 |
-| representable-with-adaptation | 2478 | 2548 | +70 |
+| representable-with-adaptation | 2478 | 2730 | +252 |
 | unsupported-by-design | 533 | 533 | 0 |
-| unsupported-not-yet-implemented | 738 | 513 | -225 |
+| unsupported-not-yet-implemented | 738 | 331 | -407 |
 | analyser-failure | 0 | 0 | 0 |
 | unknown | 58 | 58 | 0 |
 

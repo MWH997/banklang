@@ -5,9 +5,9 @@
   "analyserFailures": 0,
   "representability": {
     "fully-representable": 1543,
-    "representable-with-adaptation": 2730,
+    "representable-with-adaptation": 2548,
     "unsupported-by-design": 533,
-    "unsupported-not-yet-implemented": 331,
+    "unsupported-not-yet-implemented": 513,
     "analyser-failure": 0,
     "unknown": 58
   }

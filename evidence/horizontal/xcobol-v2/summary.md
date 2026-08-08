@@ -27,9 +27,9 @@ program is correct: nothing in this corpus carries an expected output.
 | Verdict | Files |
 | --- | --- |
 | fully-representable | 1543 / 5195 (29.7%) |
-| representable-with-adaptation | 2548 / 5195 (49.0%) |
+| representable-with-adaptation | 2730 / 5195 (52.6%) |
 | unsupported-by-design | 533 / 5195 (10.3%) |
-| unsupported-not-yet-implemented | 513 / 5195 (9.9%) |
+| unsupported-not-yet-implemented | 331 / 5195 (6.4%) |
 | analyser-failure | 0 / 5195 (0.0%) |
 | unknown | 58 / 5195 (1.1%) |
 
@@ -42,7 +42,7 @@ program is correct: nothing in this corpus carries an expected output.
 | `reference-modification` | adaptation | 600 | 11.5% |
 | `usage-index` | adaptation | 452 | 8.7% |
 | `string-unstring` | adaptation | 393 | 7.6% |
-| `inspect` | unsupported-not-yet-implemented | 269 | 5.2% |
+| `inspect` | adaptation | 269 | 5.2% |
 | `usage-pointer` | unsupported-by-design | 244 | 4.7% |
 | `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
 | `screen-section` | unsupported-by-design | 138 | 2.7% |
@@ -88,7 +88,7 @@ program is correct: nothing in this corpus carries an expected output.
 | `string-unstring` | 393 | 2513 | adaptation |
 | `file-line-sequential` | 309 | 598 | supported |
 | `exec-cics` | 277 | 2946 | supported |
-| `inspect` | 269 | 1757 | unsupported-not-yet-implemented |
+| `inspect` | 269 | 1757 | adaptation |
 | `call-dynamic` | 267 | 1581 | supported |
 | `usage-pointer` | 244 | 1894 | unsupported-by-design |
 | `comp-3` | 239 | 185547 | supported |

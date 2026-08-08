@@ -1,0 +1,41 @@
+{
+  "filesScanned": 5195,
+  "referenceModification": {
+    "constantBoth": 62716,
+    "dynamicStart": 3483,
+    "dynamicLength": 2279,
+    "dynamicBoth": 3117,
+    "openEnded": 207,
+    "total": 71802,
+    "files": 661
+  },
+  "string": {
+    "delimitedBySize": 973,
+    "delimitedByValue": 518,
+    "withPointer": 470,
+    "onOverflow": 118,
+    "statements": 2526,
+    "files": 389
+  },
+  "unstring": {
+    "singleDelimiter": 262,
+    "multipleDelimiters": 58,
+    "delimitedByAll": 45,
+    "withPointer": 95,
+    "tallying": 130,
+    "onOverflow": 86,
+    "statements": 622,
+    "files": 141
+  },
+  "inspect": {
+    "tallying": 1007,
+    "replacing": 780,
+    "converting": 105,
+    "all": 965,
+    "leading": 247,
+    "first": 145,
+    "beforeAfter": 625,
+    "statements": 1760,
+    "files": 268
+  }
+}

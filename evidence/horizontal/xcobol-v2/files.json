@@ -805,7 +805,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -845,7 +845,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -865,7 +865,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "inspect",
@@ -950,7 +950,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "compute",
@@ -1070,7 +1070,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "call-static",
@@ -2037,7 +2037,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "compute",
@@ -2238,7 +2238,7 @@
     "programId": "CHAR1000",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -2278,7 +2278,7 @@
     "programId": "CHAR3000",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -2389,7 +2389,7 @@
     "programId": "LISTMODS",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -5846,7 +5846,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -6027,7 +6027,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -6960,7 +6960,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -7084,7 +7084,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -7609,7 +7609,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -12974,7 +12974,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -14062,7 +14062,7 @@
     "programId": "STREX03",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "inspect"
@@ -14076,7 +14076,7 @@
     "programId": "STREX04",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "inspect"
@@ -14412,7 +14412,7 @@
     "programId": "FIZZBUZZ",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "evaluate",
@@ -14550,7 +14550,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "compute",
@@ -15614,7 +15614,7 @@
     "programId": "CONTIENE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -16436,7 +16436,7 @@
     "programId": "CM202M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -16957,7 +16957,7 @@
     "programId": "DB202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -16981,7 +16981,7 @@
     "programId": "DB203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -17008,7 +17008,7 @@
     "programId": "DB204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -17033,7 +17033,7 @@
     "programId": "DB205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -21357,7 +21357,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -21538,7 +21538,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -22471,7 +22471,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -22595,7 +22595,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -23120,7 +23120,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -31476,7 +31476,7 @@
     "programId": "DB2SQLMSG",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "call-static",
       "comp-binary",
@@ -31934,7 +31934,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -31984,7 +31984,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32041,7 +32041,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32098,7 +32098,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32155,7 +32155,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32235,7 +32235,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32863,7 +32863,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32946,7 +32946,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -32981,7 +32981,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -33008,7 +33008,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "call-dynamic",
@@ -33134,7 +33134,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -33164,7 +33164,7 @@
     "programId": "GC99COPYGEN",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -33217,7 +33217,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -33474,7 +33474,7 @@
     "programId": "PGSQLMSG",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "conditional",
       "continuation",
@@ -34080,7 +34080,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -34243,7 +34243,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -34993,7 +34993,7 @@
     "programId": "ELIZA",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-binary",
@@ -35181,7 +35181,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -35370,7 +35370,7 @@
     "programId": "GCTESTRUN4",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -35398,7 +35398,7 @@
     "programId": "GCTESTRUN8",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -35591,7 +35591,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -37967,7 +37967,7 @@
     "programId": "WORLDCITIES7",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -38775,7 +38775,7 @@
     "programId": "HCP1PL01",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -39541,7 +39541,7 @@
     "programId": "HCP1PL01",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -39872,7 +39872,7 @@
     "programId": "BBANK10P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "condition-names",
       "conditional",
@@ -39980,7 +39980,7 @@
     "programId": "BBANK50P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "compute",
@@ -40004,7 +40004,7 @@
     "programId": "BBANK60P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -40024,7 +40024,7 @@
     "programId": "BBANK70P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "compute",
@@ -41036,7 +41036,7 @@
     "programId": "SPSWD01P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "call-static",
       "comp-binary",
@@ -41078,7 +41078,7 @@
     "programId": "SSTMT01P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -43774,7 +43774,7 @@
     "programId": "HELLO",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -44576,7 +44576,7 @@
     "programId": "COADM01C",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -44635,7 +44635,7 @@
     "programId": "COCRDLIC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-3",
@@ -44698,7 +44698,7 @@
     "programId": "COCRDUPC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -44730,7 +44730,7 @@
     "programId": "COMEN01C",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -45919,7 +45919,7 @@
     "programId": "DFSIVA34",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -45945,7 +45945,7 @@
     "programId": "DFSIVP34",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -47627,7 +47627,7 @@
     "programId": "LGTESTC1",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -48403,7 +48403,7 @@
     "programId": "GET-POST-VALUE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "compute",
@@ -48538,7 +48538,7 @@
     "programId": "TOOLCHAINTEST",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "call-dynamic",
@@ -48798,7 +48798,7 @@
     "programId": "ADDAMT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -49276,7 +49276,7 @@
     "programId": "CHARFUNC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "compute",
       "inspect",
@@ -49421,7 +49421,7 @@
     "programId": "INSPECT1",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -51249,7 +51249,7 @@
     "programId": "COADM01C",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -51308,7 +51308,7 @@
     "programId": "COCRDLIC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-3",
@@ -51371,7 +51371,7 @@
     "programId": "COCRDUPC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -51403,7 +51403,7 @@
     "programId": "COMEN01C",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "comp-binary",
       "condition-names",
@@ -55204,7 +55204,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -55385,7 +55385,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -56218,7 +56218,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -56316,7 +56316,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -56841,7 +56841,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -58297,7 +58297,7 @@
     "programId": "LGTESTC1",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -59531,7 +59531,7 @@
     "programId": "YACHT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -60331,7 +60331,7 @@
     "programId": "ASHMA550",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -60381,7 +60381,7 @@
     "programId": "ASHMA825",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -60709,7 +60709,7 @@
     "programId": "ASHMA855",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61018,7 +61018,7 @@
     "programId": "ASREA018",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61111,7 +61111,7 @@
     "programId": "ASREA178",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61165,7 +61165,7 @@
     "programId": "ASREA740",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61195,7 +61195,7 @@
     "programId": "ASREA741",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61225,7 +61225,7 @@
     "programId": "ASREA742",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61347,7 +61347,7 @@
     "programId": "ASREA840",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61393,7 +61393,7 @@
     "programId": "ASREA852",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61421,7 +61421,7 @@
     "programId": "ASREA853",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61449,7 +61449,7 @@
     "programId": "ASREA856",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61473,7 +61473,7 @@
     "programId": "ASREA859",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61528,7 +61528,7 @@
     "programId": "ASREA864",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61562,7 +61562,7 @@
     "programId": "ASREA866",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61584,7 +61584,7 @@
     "programId": "ASREA868",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61606,7 +61606,7 @@
     "programId": "ASREA869",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61653,7 +61653,7 @@
     "programId": "ASREA874",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61682,7 +61682,7 @@
     "programId": "ASREA880",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61726,7 +61726,7 @@
     "programId": "ASREA909",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61754,7 +61754,7 @@
     "programId": "ASSRQ560",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61778,7 +61778,7 @@
     "programId": "ASSRQ561",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61823,7 +61823,7 @@
     "programId": "CLRTM356",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61851,7 +61851,7 @@
     "programId": "CLRTM749",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61879,7 +61879,7 @@
     "programId": "CLRTM750",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61932,7 +61932,7 @@
     "programId": "CLRTM752",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -61959,7 +61959,7 @@
     "programId": "CLRTM753",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -61986,7 +61986,7 @@
     "programId": "CLRTM755",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -62046,7 +62046,7 @@
     "programId": "CLRTM757",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -62072,7 +62072,7 @@
     "programId": "CLRTM759",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -62305,7 +62305,7 @@
     "programId": "CBU00009",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -62332,7 +62332,7 @@
     "programId": "CBU00011",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "compute",
@@ -62503,7 +62503,7 @@
     "programId": "CBU00100",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "call-dynamic",
       "compute",
@@ -62642,7 +62642,7 @@
     "programId": "CBU-U001",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "compute",
       "conditional",
@@ -64123,7 +64123,7 @@
     "programId": "COVIDRPT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "compute",
       "conditional",
@@ -64146,7 +64146,7 @@
     "programId": "GETCLAIM",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-binary",
@@ -64176,7 +64176,7 @@
     "programId": "NEWSRANK",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -64648,7 +64648,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -66135,7 +66135,7 @@
     "programId": "CM202M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -66344,7 +66344,7 @@
     "programId": "DB202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -66368,7 +66368,7 @@
     "programId": "DB203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -66395,7 +66395,7 @@
     "programId": "DB204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -66420,7 +66420,7 @@
     "programId": "DB205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -70067,7 +70067,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -70248,7 +70248,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -71181,7 +71181,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -71305,7 +71305,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -71830,7 +71830,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -78591,7 +78591,7 @@
     "programId": "QG1CX035",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -78608,7 +78608,7 @@
     "programId": "QG1CX036",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -81151,7 +81151,7 @@
     "programId": "HELLO",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "comp-3",
@@ -81295,7 +81295,7 @@
     "programId": "STRINGIT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -81696,7 +81696,7 @@
     "programId": "ZUTZCPC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -82226,7 +82226,7 @@
     "programId": "ADDAMT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -82408,7 +82408,7 @@
     "programId": "CALCLOAN",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -82553,7 +82553,7 @@
     "programId": "SPSWD01P",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "call-static",
       "comp-binary",
@@ -82635,7 +82635,7 @@
     "programId": "USERVAL",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "condition-names",
       "conditional",
@@ -82656,7 +82656,7 @@
     "programId": "ADDAMT",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -83337,7 +83337,7 @@
     "programId": "CM202M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -83546,7 +83546,7 @@
     "programId": "DB202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -83570,7 +83570,7 @@
     "programId": "DB203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -83597,7 +83597,7 @@
     "programId": "DB204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -83622,7 +83622,7 @@
     "programId": "DB205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -86903,7 +86903,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -87084,7 +87084,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -88017,7 +88017,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -88141,7 +88141,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -88666,7 +88666,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -93326,7 +93326,7 @@
     "programId": "VOWEL",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -93432,7 +93432,7 @@
     "programId": "DUPLICATES",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -94539,7 +94539,7 @@
     "programId": "DUPLICATES",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -94556,7 +94556,7 @@
     "programId": "NEW-DUP",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -94675,7 +94675,7 @@
     "programId": "DUPLICATES",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -95010,7 +95010,7 @@
     "programId": "VOWEL",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -95026,7 +95026,7 @@
     "programId": "VOWEL",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "inspect"
@@ -96034,7 +96034,7 @@
     "programId": "CPF",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -96467,7 +96467,7 @@
     "programId": "ASDF-LIST-LEDGER",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "call-static",
@@ -96714,7 +96714,7 @@
     "programId": "JOBCALC",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -96907,7 +96907,7 @@
     "programId": "SIGN-GUEST-BOOK",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -98412,7 +98412,7 @@
     "programId": "CM202M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -98933,7 +98933,7 @@
     "programId": "DB202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -98957,7 +98957,7 @@
     "programId": "DB203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -98984,7 +98984,7 @@
     "programId": "DB204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -99009,7 +99009,7 @@
     "programId": "DB205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -103333,7 +103333,7 @@
     "programId": "NC115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -103514,7 +103514,7 @@
     "programId": "NC122A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -104447,7 +104447,7 @@
     "programId": "NC216A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -104571,7 +104571,7 @@
     "programId": "NC221A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -105096,7 +105096,7 @@
     "programId": "NC247A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -110724,7 +110724,7 @@
     "programId": "COBCURSES-MENU-SD-MENU-ITEMS",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "call-static",
       "comp-binary",
@@ -111899,7 +111899,7 @@
     "programId": "ANAGRAM",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -112295,7 +112295,7 @@
     "programId": "ZECS000",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-3",
@@ -112350,7 +112350,7 @@
     "programId": "ZECS003",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-3",
@@ -112427,7 +112427,7 @@
     "programId": "COBBOTRANDOMMOVIE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -112455,7 +112455,7 @@
     "programId": "MOVIETALLY",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -112482,7 +112482,7 @@
     "programId": "SUGGESTMOVIEDECADE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -112845,7 +112845,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
