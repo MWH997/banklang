@@ -4,6 +4,7 @@ import {
   bankTsTypeForSql,
   importDclgen,
 } from "../packages/copybook/src/dclgen";
+import { diffGeneratedCopybooks } from "../packages/copybook/src/index";
 import { importCopybook } from "../packages/copybook/src/import";
 
 /**
@@ -264,5 +265,94 @@ ${pictures}
       ),
     );
     expect(columnsOf(result.source)).toEqual(["a", "b"]);
+  });
+});
+
+/**
+ * Comparing two copybooks, which is how an import is shown to have worked.
+ *
+ * A copybook is a contract about bytes, so `bankc copybook diff` answers one
+ * question: same names, same order, same offsets, same lengths. The mutation
+ * lane found its comparisons surviving — the record-name test, the total-length
+ * test and the per-field test each flipped without anything noticing.
+ *
+ * Each shape below is a different way an import can be wrong, and they have to
+ * be told apart: a renamed record with an identical layout is a cosmetic
+ * difference, and a field one byte wider moves everything after it.
+ */
+describe("comparing two copybooks", () => {
+  const record = (name: string, fields: string) =>
+    `       01  ${name}.\n${fields}`;
+  const FIELDS =
+    "           05  ACCOUNT-ID  PIC X(16).\n           05  BALANCE     PIC S9(13)V99 COMP-3.\n";
+  const ORIGINAL = record("ACCT-REC", FIELDS);
+
+  const changed = (diff: ReturnType<typeof diffGeneratedCopybooks>) =>
+    diff.fieldDiffs.filter(
+      (field) =>
+        !field.left ||
+        !field.right ||
+        field.left.cobolName !== field.right.cobolName ||
+        field.left.offset !== field.right.offset ||
+        field.left.length !== field.right.length,
+    ).length;
+
+  it("calls two identical copybooks identical", () => {
+    const diff = diffGeneratedCopybooks(ORIGINAL, ORIGINAL);
+    expect(diff.identical).toBe(true);
+    expect(diff.recordNameDiffers).toBe(false);
+    expect(diff.totalLengthDiffers).toBe(false);
+    expect(changed(diff)).toBe(0);
+  });
+
+  it("separates a renamed record from a changed layout", () => {
+    // The bytes are the same; only the name a program refers to it by moved.
+    const diff = diffGeneratedCopybooks(ORIGINAL, record("ACCTREC", FIELDS));
+    expect(diff.identical).toBe(false);
+    expect(diff.recordNameDiffers).toBe(true);
+    expect(diff.totalLengthDiffers).toBe(false);
+    expect(changed(diff)).toBe(0);
+  });
+
+  it("reports a renamed field without claiming the record grew", () => {
+    const diff = diffGeneratedCopybooks(
+      ORIGINAL,
+      record(
+        "ACCT-REC",
+        "           05  ACCT-ID     PIC X(16).\n           05  BALANCE     PIC S9(13)V99 COMP-3.\n",
+      ),
+    );
+    expect(diff.totalLengthDiffers).toBe(false);
+    expect(changed(diff)).toBe(1);
+  });
+
+  it("reports every field a widened one moved", () => {
+    // Four more bytes in the first field is a new offset for the second, so
+    // both differ — which is the thing a reader has to see.
+    const diff = diffGeneratedCopybooks(
+      ORIGINAL,
+      record(
+        "ACCT-REC",
+        "           05  ACCOUNT-ID  PIC X(20).\n           05  BALANCE     PIC S9(13)V99 COMP-3.\n",
+      ),
+    );
+    expect(diff.totalLengthDiffers).toBe(true);
+    expect(changed(diff)).toBe(2);
+  });
+
+  it("reports a field present on one side only, in both directions", () => {
+    const dropped = diffGeneratedCopybooks(
+      ORIGINAL,
+      record("ACCT-REC", "           05  ACCOUNT-ID  PIC X(16).\n"),
+    );
+    expect(dropped.identical).toBe(false);
+    expect(changed(dropped)).toBe(1);
+
+    const added = diffGeneratedCopybooks(
+      ORIGINAL,
+      record("ACCT-REC", `${FIELDS}           05  EXTRA       PIC X(2).\n`),
+    );
+    expect(added.identical).toBe(false);
+    expect(changed(added)).toBe(1);
   });
 });
