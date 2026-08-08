@@ -47,8 +47,8 @@ Whether BankTS can independently express a program specified by somebody else in
 | imported into the harness | 46 |
 | applicable — BankTS can express it | 19 |
 | unsupported by design | 7 |
-| unsupported, not yet implemented | 2 |
-| the benchmark's own expectation is not derivable | 18 |
+| unsupported, not yet implemented | 1 |
+| the benchmark's own expectation is not derivable | 19 |
 | implementations written | 20 |
 | executed | 20 |
 | both engines ran it | 20 |
@@ -64,9 +64,9 @@ Why the rest are not applicable:
 
 | Reason | Tasks | |
 | --- | --- | --- |
-| benchmark-ambiguous | 18 | task_func_01, task_func_03, task_func_08, task_func_10, task_func_11, task_func_12, task_func_15, task_func_19, task_func_24, task_func_26, task_func_27, task_func_29, task_func_30, task_func_31, task_func_36, task_func_39, task_func_44, task_func_55 |
+| benchmark-ambiguous | 19 | task_func_01, task_func_03, task_func_08, task_func_09, task_func_10, task_func_11, task_func_12, task_func_15, task_func_19, task_func_24, task_func_26, task_func_27, task_func_29, task_func_30, task_func_31, task_func_36, task_func_39, task_func_44, task_func_55 |
 | randomness | 7 | task_func_07, task_func_21, task_func_23, task_func_40, task_func_45, task_func_48, task_func_49 |
-| language-gap | 2 | task_func_09, task_func_47 |
+| language-gap | 1 | task_func_47 |
 
 | Failure | Tasks |
 | --- | --- |

@@ -167,6 +167,17 @@ export function emptyRecordUsage(): RecordUsage {
 /** How many shapes to keep, so the evidence file stays a file. */
 const EXAMPLE_LIMIT = 40;
 
+/**
+ * Clauses saying the records are not all the same length.
+ *
+ * `RECORDING MODE IS V` is IBM's way of saying it and is what the corpus's
+ * variant files actually carry — `RECORD IS VARYING` is the standard's.
+ * `RECORDING MODE IS F` must not match, which is why the alternation is
+ * anchored on the letter.
+ */
+const VARYING =
+  /RECORD\s+(IS\s+)?VARYING|RECORD\s+CONTAINS\s+\d+\s+TO\s+\d+|RECORDING\s+MODE\s+(IS\s+)?V\b/;
+
 /** `FD  NAME` or `SD  NAME` — the start of a file description. */
 const FD_START = /^\s*(FD|SD)\s+([A-Z0-9][A-Z0-9-]*)/;
 
@@ -224,10 +235,7 @@ export function fileRecordShapes(text: string): FileRecordShape[] {
         records: [],
         redefining: 0,
         copybook: false,
-        varyingLength:
-          /RECORD\s+(IS\s+)?VARYING|RECORD\s+CONTAINS\s+\d+\s+TO\s+\d+/.test(
-            line,
-          ),
+        varyingLength: VARYING.test(line),
         elementaryOnly: true,
         sharedLeadingField: false,
         leadingFiller: false,
@@ -246,9 +254,7 @@ export function fileRecordShapes(text: string): FileRecordShape[] {
       continue;
     }
     if (inClauses) {
-      if (
-        /RECORD\s+(IS\s+)?VARYING|RECORD\s+CONTAINS\s+\d+\s+TO\s+\d+/.test(line)
-      ) {
+      if (VARYING.test(line)) {
         current.varyingLength = true;
       }
       if (line.includes(".")) {
@@ -322,10 +328,15 @@ function pictureLength(clauses: string): number | null {
   if (!picture) {
     return null;
   }
-  const expanded = (picture[1] ?? "").replace(
-    /([A-Z9])\((\d+)\)/g,
-    (_, symbol: string, count: string) => symbol.repeat(Number(count)),
-  );
+  // The period that ends the entry is not a picture position. `PIC X(121).`
+  // measured as 122 and every record in the corpus was one byte long, which is
+  // the kind of error a measurement nobody tested makes and nobody sees.
+  // Only the last one: `ZZ,ZZ9.99` has a period of its own that is a position.
+  const expanded = (picture[1] ?? "")
+    .replace(/\.$/, "")
+    .replace(/([A-Z9])\((\d+)\)/g, (_, symbol: string, count: string) =>
+      symbol.repeat(Number(count)),
+    );
   if (/[^AXN9SVPZ,./+\-*$BCR0DB]/.test(expanded)) {
     return null;
   }
