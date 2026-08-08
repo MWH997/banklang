@@ -45,12 +45,12 @@ Whether BankTS can independently express a program specified by somebody else in
 | --- | --- |
 | tasks discovered | 46 |
 | imported into the harness | 46 |
-| applicable — BankTS can express it *and* an implementation exists | 1 |
-| expressible, not yet written | 41 |
+| applicable — BankTS can express it *and* an implementation exists | 4 |
+| expressible, not yet written | 38 |
 | unsupported by design | 4 |
 | unsupported, not yet implemented | 0 |
-| **passed, of applicable** | **1 / 1 (100.0%)** |
-| **passed, of all discovered** | **1 / 46 (2.2%)** |
+| **passed, of applicable** | **4 / 4 (100.0%)** |
+| **passed, of all discovered** | **4 / 46 (8.7%)** |
 
 ### COBOLEval
 

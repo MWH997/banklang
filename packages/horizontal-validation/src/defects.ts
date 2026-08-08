@@ -164,7 +164,7 @@ export const DEFECT_FAMILIES: DefectFamily[] = [
       /VSAM STATUS|FILE STATUS|STATUS 92|END OF FILE CHECK|KSDS|REWRITE|RECORD SIZE CONFLICT/i,
     mechanism: "a declared file status, and a mode the operation has to match",
     banklangPosition:
-      "A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. What BankLang does *not* yet do is require the declared status to be examined after each operation: a program that reads and never tests the status compiles today. That is the largest family here, five of the 41 defects, and it is recorded as a gap rather than claimed.",
+      'A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. What BankLang does *not* yet do is require the declared status to be examined: a program that reads and never tests it compiles today. That is the largest family here, five of the 41 defects.\n\nThe rule was built and measured in the 2026-08-08 phase and is not shipped. Read as `a declared status must be read somewhere by a program that operates on the file` — deliberately not `tested after every operation`, which would reject the idiomatic `while status == "00" { read }` — it fired on 13 files across nine of this repository\'s own examples, and on 34 fixtures across 15 test suites. The examples were corrected; the fixtures are what makes it a phase of its own rather than a rule bolted onto another change. The gap stays honest until then.',
   },
   {
     family: "table-bounds",
