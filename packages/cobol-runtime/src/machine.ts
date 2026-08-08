@@ -1893,6 +1893,8 @@ export class Machine {
     switch (expr.kind) {
       case "ref":
         return this.readAt(this.resolve(instance, expr.ref));
+      case "slice":
+        return { kind: "text", value: this.sliceText(instance, expr) };
       case "number":
         return { kind: "number", value: decimalOf(expr.text) };
       case "string":
@@ -1934,6 +1936,8 @@ export class Machine {
     switch (expr.kind) {
       case "number":
         return decimalOf(expr.text);
+      case "slice":
+        return textToNumber(this.sliceText(instance, expr));
       case "ref":
         return this.numberAt(this.resolve(instance, expr.ref));
       case "figurative":
@@ -2076,10 +2080,73 @@ export class Machine {
     }
   }
 
+  /**
+   * `FUNCTION CURRENT-DATE(1:8)` — the characters of a value, sliced.
+   *
+   * A reference modification of something that is not an item, so there is no
+   * storage to point into and the answer is the text. The bounds are checked as
+   * `resolve` checks an item's: a slice reaching outside its value is a defect
+   * to report, not a shorter answer to return.
+   */
+  private sliceText(
+    instance: Instance,
+    expr: Extract<Expr, { kind: "slice" }>,
+  ): string {
+    const text = this.displayText(instance, expr.value);
+    const from = Number(
+      rescale(this.arithmeticValue(instance, expr.from), 0).units,
+    );
+    const length = expr.length
+      ? Number(rescale(this.arithmeticValue(instance, expr.length), 0).units)
+      : text.length - from + 1;
+    if (from < 1 || length < 0 || from - 1 + length > text.length) {
+      throw new CobolRuntimeError(
+        `(${String(from)}:${String(length)}) reaches outside a value of ${String(text.length)} characters.`,
+      );
+    }
+    return text.slice(from - 1, from - 1 + length);
+  }
+
   /** The characters an item contributes to DISPLAY, STRING or a CALL name. */
   private displayText(instance: Instance, expr: Expr): string {
+    if (expr.kind === "slice") {
+      return this.sliceText(instance, expr);
+    }
     if (expr.kind === "function") {
       switch (expr.name) {
+        /**
+         * `FUNCTION CURRENT-DATE` — twenty-one characters of clock.
+         *
+         * `YYYYMMDDhhmmsshh` then the offset from Greenwich as `±hhmm`, which
+         * is the Language Reference's layout and the one the backend slices:
+         * `today()` takes `(1:8)` and `now()` takes the pieces one at a time.
+         *
+         * This reads the real clock, so a program that writes the time into an
+         * output file is not differentially comparable — the two engines run at
+         * different moments. That is a property of such a program rather than a
+         * defect here, and it is why `today()`, which reaches only the date, is
+         * the form the benchmark tasks use.
+         */
+        case "CURRENT-DATE": {
+          const now = new Date();
+          const pad = (value: number, width: number): string =>
+            String(value).padStart(width, "0");
+          const offset = -now.getTimezoneOffset();
+          const sign = offset < 0 ? "-" : "+";
+          const size = Math.abs(offset);
+          return [
+            pad(now.getFullYear(), 4),
+            pad(now.getMonth() + 1, 2),
+            pad(now.getDate(), 2),
+            pad(now.getHours(), 2),
+            pad(now.getMinutes(), 2),
+            pad(now.getSeconds(), 2),
+            pad(Math.floor(now.getMilliseconds() / 10), 2),
+            sign,
+            pad(Math.floor(size / 60), 2),
+            pad(size % 60, 2),
+          ].join("");
+        }
         case "TRIM":
           return this.displayText(instance, expr.args[0]!).trim();
         case "UPPER-CASE":

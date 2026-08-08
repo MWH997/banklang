@@ -17,6 +17,7 @@
  * would; it is simply labelled truthfully.
  */
 
+import type { BlockerKind } from "./task-blockers";
 import type { Applicability, UnsupportedReason } from "./task";
 
 export interface ApplicabilityRule {
@@ -93,7 +94,21 @@ export const APPLICABILITY_RULES: ApplicabilityRule[] = [
     fundamental: false,
   },
   {
-    pattern: /\b(?:random|shuffle)\b/i,
+    /*
+     * Every word form, which the first version of this rule did not have.
+     *
+     * `\brandom\b` matched `random seed` and missed `Randomly assign each task`
+     * and `Generate randomized stock prices` — so task_func_07, _23 and _45
+     * were reported as tasks nobody had got round to, while task_func_21, _40,
+     * _48 and _49 were reported as excluded by design, on nothing but whether
+     * the specification happened to use the bare noun somewhere. Seven tasks
+     * with the same requirement, split across two categories by an accident of
+     * wording.
+     *
+     * `random access` is a COBOL file organization and not a random source, so
+     * it is excluded explicitly rather than by hoping no specification says it.
+     */
+    pattern: /\brandom(?:ly|ised|ized)?\b(?!\s+access)|\bshuffl(?:e|ed|ing)\b/i,
     construct: "randomness",
     reason:
       "The compiler's central claim is byte-identical output for identical input, and a program whose behaviour depends on a random source cannot be part of a deterministic evidence bundle.",
@@ -141,16 +156,26 @@ export function needsLineSequential(files: Record<string, string>[]): boolean {
 }
 
 /**
- * A task's verdict from its own text.
+ * A task's verdict, from the task alone.
  *
- * `hasImplementation` is passed in rather than looked up so this stays a pure
- * function: the caller knows whether a BankTS file exists, and the distinction
- * between "BankTS could express this and nobody has written it" and "BankTS
- * cannot express this" is the one the whole report depends on.
+ * It used to take `hasImplementation` and answer `applicable` when a BankTS
+ * file existed — which made the word mean "somebody has done it" and the
+ * `pass / applicable` rate a tautology. Whether a solution exists is now
+ * nobody's business here.
+ *
+ * Two sources, in order. A **rule** fires on the task's own text and is
+ * mechanical, so it is reproducible and arguable by re-reading the pattern. A
+ * **blocker** is a determination somebody reached by attempting the task, and
+ * `task-blockers.ts` holds the evidence for each. The rule wins where both
+ * apply, because a mechanical verdict cannot be quietly revised; a test
+ * requires the two never to disagree about the same task.
+ *
+ * Everything neither excludes is `applicable`, whether or not an
+ * implementation exists — which is the state that says there is work to do.
  */
 export function classifyTask(
   text: string,
-  hasImplementation: boolean,
+  blocker: BlockerKind | null = null,
 ): ApplicabilityVerdict {
   const upper = text.toUpperCase();
   for (const rule of APPLICABILITY_RULES) {
@@ -170,8 +195,15 @@ export function classifyTask(
       };
     }
   }
-  return {
-    applicability: hasImplementation ? "applicable" : "not-yet-authored",
-    unsupported: null,
-  };
+  if (blocker) {
+    return { applicability: APPLICABILITY_OF[blocker], unsupported: null };
+  }
+  return { applicability: "applicable", unsupported: null };
 }
+
+/** What each recorded blocker says about whether BankTS could express a task. */
+const APPLICABILITY_OF: Record<BlockerKind, Applicability> = {
+  "language-gap": "unsupported-not-yet-implemented",
+  "benchmark-ambiguous": "benchmark-ambiguous",
+  "by-design": "unsupported-by-design",
+};

@@ -22,10 +22,18 @@
  * appears without anybody updating a table.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { compile } from "../packages/compiler/src/index";
 import { sourceLines } from "../packages/migration-analysis/src/features";
 import { freshArtifacts } from "./generated-artifacts";
 
@@ -121,7 +129,7 @@ export function interpretedVerbs(cwd = process.cwd()): Set<string> {
 }
 
 /**
- * Every generated program, compiled fresh from the examples.
+ * Every generated program, compiled fresh from the examples and the benchmarks.
  *
  * `freshArtifacts` rather than reading `evidence/`, which holds a bundle for
  * only some examples: measuring there reported zero blind spots while the
@@ -129,12 +137,43 @@ export function interpretedVerbs(cwd = process.cwd()): Set<string> {
  * `RELEASE` and `RETURN` — were not in the sample at all. This is the same
  * enumeration `pnpm lint:conformance` uses, so the two cannot disagree about
  * what the compiler produces.
+ *
+ * The benchmark implementations are in the sample too, and adding them was a
+ * finding rather than a tidy-up. `SORT` and `MERGE` appear in no example, so
+ * the matrix reported four blind spots while two CobolCodeBench tasks passed
+ * under `cobc` with no differential result at all — the thing this file was
+ * built to make impossible. Coverage measured over a body of code that happens
+ * to avoid the gap is not coverage.
  */
 function emittedArtifacts(cwd: string): { file: string; text: string }[] {
-  return freshArtifacts(cwd).map((artifact) => ({
+  const artifacts = freshArtifacts(cwd).map((artifact) => ({
     file: artifact.file,
     text: artifact.text,
   }));
+
+  const root = resolve(cwd, "validation", "tasks");
+  if (!existsSync(root)) {
+    return artifacts;
+  }
+  for (const corpus of readdirSync(root).sort()) {
+    const corpusRoot = join(root, corpus);
+    if (!statSync(corpusRoot).isDirectory()) {
+      continue;
+    }
+    for (const slug of readdirSync(corpusRoot).sort()) {
+      const source = join(corpusRoot, slug, "main.bank.ts");
+      if (!existsSync(source)) {
+        continue;
+      }
+      const cobol = compile(readFileSync(source, "utf8"), {
+        sourceFile: `${slug}.bank.ts`,
+      }).cobol;
+      if (cobol) {
+        artifacts.push({ file: `${corpus}/${slug}.cbl`, text: cobol });
+      }
+    }
+  }
+  return artifacts;
 }
 
 export function measureCoverage(cwd = process.cwd()): CoverageReport {
@@ -193,7 +232,7 @@ export function renderCoverage(report: CoverageReport): string {
     "interpreted side refuses, and the comparison that gives this project's",
     "green its meaning does not happen.",
     "",
-    `Measured over the ${String(report.artifacts)} programs the compiler produces from the examples.`,
+    `Measured over the ${String(report.artifacts)} programs the compiler produces from the examples and the benchmark tasks.`,
     "",
     "| | |",
     "| --- | --- |",

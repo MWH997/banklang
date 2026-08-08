@@ -2,14 +2,25 @@
   "corpus": "cobolcodebench",
   "discovered": 46,
   "imported": 46,
-  "applicable": 4,
-  "notYetAuthored": 38,
-  "unsupportedByDesign": 4,
-  "unsupportedNotYetImplemented": 0,
+  "applicable": 16,
+  "unsupportedByDesign": 7,
+  "unsupportedNotYetImplemented": 5,
+  "benchmarkAmbiguous": 18,
   "malformedUpstream": 0,
   "excludedLicence": 0,
-  "passed": 4,
-  "failures": {},
-  "passOfApplicable": "4 / 4 (100.0%)",
-  "passOfDiscovered": "4 / 46 (8.7%)"
+  "authored": 17,
+  "authoredOfApplicable": 16,
+  "executed": 17,
+  "bothEngines": 14,
+  "agreements": 14,
+  "divergences": 0,
+  "interpreterUnavailable": 3,
+  "passed": 16,
+  "failures": {
+    "semantic-mismatch": 1
+  },
+  "authoringCoverage": "16 / 16 (100.0%)",
+  "passOfAuthored": "16 / 17 (94.1%)",
+  "passOfApplicable": "16 / 16 (100.0%)",
+  "passOfDiscovered": "16 / 46 (34.8%)"
 }

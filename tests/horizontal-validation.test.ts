@@ -249,6 +249,10 @@ describe("the arithmetic that reports a run", () => {
     taskId: `t${applicability}${outcome}`,
     corpus: "c",
     applicability,
+    // An outcome other than `not-executed` means something ran, so the other
+    // two axes follow from it rather than being free to contradict it.
+    authoring: outcome === "not-executed" ? "unauthored" : "authored",
+    execution: outcome === "not-executed" ? "not-executed" : "both-engines",
     outcome,
     detail: null,
     diagnostics: [],
@@ -266,11 +270,46 @@ describe("the arithmetic that reports a run", () => {
     const counted = tally("c", 46, [
       result("applicable", "pass"),
       result("applicable", "semantic-mismatch"),
-      result("unsupported-by-design", "skipped"),
+      result("unsupported-by-design", "not-executed"),
     ]);
     // The number that flatters is 1/2; the number a reader needs is both.
     expect(counted.passOfApplicable).toBe("1 / 2 (50.0%)");
     expect(counted.passOfDiscovered).toBe("1 / 46 (2.2%)");
+  });
+
+  it("reports authoring coverage beside the rate that assumes it", () => {
+    /*
+     * The defect the four rates exist for. Two applicable tasks, one written
+     * and passing: `pass / authored` is 1/1 and reads as everything working,
+     * and it is the shape the funnel reported for months while thirty-eight
+     * tasks had no verdict at all. `authored / applicable` is the number that
+     * says half the work is not done, so it travels with it.
+     */
+    const counted = tally("c", 46, [
+      result("applicable", "pass"),
+      result("applicable", "not-executed"),
+    ]);
+    expect(counted.passOfAuthored).toBe("1 / 1 (100.0%)");
+    expect(counted.authoringCoverage).toBe("1 / 2 (50.0%)");
+    expect(counted.passOfApplicable).toBe("1 / 2 (50.0%)");
+    expect(counted.passOfDiscovered).toBe("1 / 46 (2.2%)");
+  });
+
+  it("refuses a pass from a task classified as one BankTS cannot express", () => {
+    /*
+     * The guard against relabelling a task to shrink the denominator. Every
+     * category other than `applicable` claims a conforming program could not
+     * match this task; one that passes refutes the claim, and the run says so
+     * rather than quietly banking the pass.
+     */
+    const counted = tally("c", 46, [
+      result("benchmark-ambiguous", "pass"),
+      result("applicable", "not-executed"),
+    ]);
+    expect(counted.passedNotApplicable).toBe(1);
+    expect(checkTallyIsComplete(counted).join("\n")).toMatch(
+      /classified unsupported or ambiguous/,
+    );
   });
 
   it("notices a task that was discovered and never accounted for", () => {
@@ -287,8 +326,8 @@ describe("the arithmetic that reports a run", () => {
     // Both problems are reported, not the first: a tally this wrong is one
     // investigation, and stopping at the earliest message hides the rest.
     const impossible = tally("c", 10, [result("applicable", "pass")]);
-    const problems = checkTallyIsComplete({ ...impossible, applicable: 0 });
-    expect(problems.join("\n")).toMatch(/was never run and cannot pass/);
+    const problems = checkTallyIsComplete({ ...impossible, authored: 0 });
+    expect(problems.join("\n")).toMatch(/with no implementation cannot pass/);
   });
 
   it("counts every non-passing outcome by name", () => {
@@ -359,6 +398,32 @@ describe("comparing a run against its oracle", () => {
       { "out.txt": "TOTAL LONDON 5\n" },
     );
     expect(derivable.derivable).toBe(true);
+  });
+
+  it("does not call a transliterated word invented", () => {
+    /*
+     * The defect that misfiled a task for a whole phase. `[A-Z]{4,}` matches no
+     * accented letter, so an input of `Váquéz` contributed no word while an
+     * output of `Vaquez` contributed one — and the correct answer was reported
+     * as a literal the benchmark had invented. CobolCodeBench's task_func_47 is
+     * this exact shape, and its actual obstacle is the character model rather
+     * than the oracle.
+     */
+    const folded = isOracleDerivable(
+      "Convert non-English characters to their English equivalents.",
+      { "in.txt": "Téa\nVáquéz\nGarciá\nZöe\nEleña\n" },
+      { "out.txt": "Tea\nVaquez\nGarcia\nZoe\nElena\n" },
+    );
+    expect(folded.invented).toEqual([]);
+    expect(folded.derivable).toBe(true);
+
+    // And a word that really is absent is still caught, accents or not.
+    const invented = isOracleDerivable(
+      "Convert non-English characters to their English equivalents.",
+      { "in.txt": "Téa\n" },
+      { "out.txt": "Tea\nSMITH\n" },
+    );
+    expect(invented.invented).toEqual(["SMITH"]);
   });
 });
 
@@ -463,7 +528,7 @@ function unused(): bool {
 
 describe("applicability of an external task", () => {
   it("excludes IEEE floating point by design", () => {
-    const verdict = classifyTask("05 L-THRESHOLD COMP-2.", false);
+    const verdict = classifyTask("05 L-THRESHOLD COMP-2.");
     expect(verdict.applicability).toBe("unsupported-by-design");
     expect(verdict.unsupported?.fundamental).toBe(true);
   });
@@ -471,20 +536,50 @@ describe("applicability of an external task", () => {
   it("excludes a fixed interface that leaves no room for the transaction contract", () => {
     const verdict = classifyTask(
       "LINKAGE SECTION.\n01 LINKED-ITEMS.\n  05 L-N PIC S9(10).\n  05 RESULT PIC 9.",
-      false,
     );
     expect(verdict.applicability).toBe("unsupported-by-design");
   });
 
-  it("separates a task nobody has written from one BankTS cannot express", () => {
-    // The distinction the whole report rests on: `not-yet-authored` counts
-    // against the pass rate, and it never becomes a language limit.
-    expect(classifyTask("Add two numbers.", false).applicability).toBe(
-      "not-yet-authored",
+  it("decides applicability without looking for an implementation", () => {
+    /*
+     * The defect this signature exists to prevent. `classifyTask` used to take
+     * a `hasImplementation` flag and answer `applicable` when it was true, so
+     * "applicable" meant "somebody has done it" and `pass / applicable` could
+     * only ever be 100%. There is now no way to tell it about a solution.
+     */
+    expect(classifyTask("Add two numbers.").applicability).toBe("applicable");
+  });
+
+  it("takes a recorded blocker as the reason a task is not applicable", () => {
+    expect(
+      classifyTask("Add two numbers.", "benchmark-ambiguous").applicability,
+    ).toBe("benchmark-ambiguous");
+    expect(classifyTask("Add two numbers.", "language-gap").applicability).toBe(
+      "unsupported-not-yet-implemented",
     );
-    expect(classifyTask("Add two numbers.", true).applicability).toBe(
-      "applicable",
-    );
+  });
+
+  it("excludes randomness in every word form the corpus uses", () => {
+    /*
+     * `\brandom\b` matched `random seed` and missed `Randomly assign` and
+     * `randomized`, so seven CobolCodeBench tasks with one requirement were
+     * split across two categories by an accident of wording.
+     */
+    for (const text of [
+      "Generate a random sales quantity",
+      "Randomly assign each task to an employee",
+      "Generate randomized stock prices",
+      "Randomly generate a weather condition",
+      "shuffle the deck",
+    ]) {
+      expect(classifyTask(text).applicability, text).toBe(
+        "unsupported-by-design",
+      );
+    }
+    // A COBOL file organization is not a random source.
+    expect(
+      classifyTask("The file uses random access by key.").applicability,
+    ).toBe("applicable");
   });
 
   it("decides line-sequential from the data, not from the file name", () => {

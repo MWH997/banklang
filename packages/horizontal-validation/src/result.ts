@@ -62,18 +62,51 @@ export type Outcome =
   | "runtime-only-pass"
   /** The harness itself broke: no compiler, unreadable cache, a crash. */
   | "infrastructure-failure"
-  /** Not run, and correctly so. Carries the applicability that decided it. */
-  | "skipped"
+  /**
+   * Nothing ran, because nothing was written.
+   *
+   * Named for what happened rather than for a judgement about it. It used to be
+   * `skipped`, which read as "and correctly so" and covered both a task BankTS
+   * cannot express and a task nobody had got round to — the applicability axis
+   * now carries that distinction, and this says only that no run took place.
+   */
+  | "not-executed"
   | "pass";
 
 /** Outcomes that mean the toolchain produced the expected observable behaviour. */
 export const PASSING: ReadonlySet<Outcome> = new Set<Outcome>(["pass"]);
 
+/**
+ * Whether a BankTS implementation exists, which is not whether one could.
+ *
+ * Its own axis because the previous model had none: `applicability` answered
+ * `applicable` exactly when a `main.bank.ts` was on disk, so the two questions
+ * had one answer and "applicable" meant "done". `applicable + unauthored` is
+ * the state that says there is work left, and it could not be expressed.
+ */
+export type Authoring = "authored" | "unauthored";
+
+/**
+ * Which engines ran the generated COBOL.
+ *
+ * Reported apart from the semantic result, because "it passed" and "both
+ * implementations of these semantics agreed" are different claims and the
+ * second is the one this project's green rests on. A task `cobc` ran and the
+ * interpreter refused is `gnucobol-only` and is never called a differential
+ * pass.
+ */
+export type Execution =
+  "not-executed" | "gnucobol-only" | "runtime-only" | "both-engines";
+
 export interface TaskResult {
   taskId: string;
   corpus: string;
-  /** Why it was or was not run, carried alongside what happened. */
+  /** Whether BankTS could express it, decided without looking for a solution. */
   applicability: string;
+  /** Whether one was written. */
+  authoring: Authoring;
+  /** Which engines ran it. */
+  execution: Execution;
   outcome: Outcome;
   /** Free text naming the specific defect, never a category on its own. */
   detail: string | null;
@@ -104,17 +137,44 @@ export interface CorpusTally {
   discovered: number;
   /** Tasks that parsed into the internal model. */
   imported: number;
-  /** Tasks BankTS can express *and* has an implementation for. */
+  /** Tasks BankTS can express, whether or not anybody has written one. */
   applicable: number;
-  notYetAuthored: number;
   unsupportedByDesign: number;
   unsupportedNotYetImplemented: number;
+  benchmarkAmbiguous: number;
   malformedUpstream: number;
   excludedLicence: number;
+  /** Implementations that exist, over the whole corpus and over the applicable. */
+  authored: number;
+  authoredOfApplicable: number;
+  executed: number;
+  bothEngines: number;
+  agreements: number;
+  divergences: number;
+  /** Ran under `cobc` and not under the interpreter. Never a differential pass. */
+  interpreterUnavailable: number;
   passed: number;
+  /**
+   * Passes from tasks classified as ones BankTS could not have matched.
+   *
+   * Always zero, and checked rather than assumed. Every category other than
+   * `applicable` is a claim that no conforming program could match this task;
+   * a pass refutes the claim, and this is what makes that refutation loud
+   * instead of a quietly improved score.
+   */
+  passedNotApplicable: number;
   /** Every non-passing outcome, counted by name. */
   failures: Record<string, number>;
-  /** passed / applicable, and passed / discovered. Both, always. */
+  /**
+   * Four rates, and the first is why there are four.
+   *
+   * `pass / applicable` alone reads as a score out of everything BankTS can
+   * express, and it did read that way while thirty-eight tasks had no verdict
+   * at all. `authored / applicable` is the coverage that rate assumes, so it is
+   * reported beside it and cannot be left behind.
+   */
+  authoringCoverage: string;
+  passOfAuthored: string;
   passOfApplicable: string;
   passOfDiscovered: string;
 }
@@ -152,26 +212,58 @@ export function tally(
 
   const failures: Record<string, number> = {};
   for (const result of results) {
-    if (result.outcome !== "pass" && result.outcome !== "skipped") {
+    if (result.outcome !== "pass" && result.outcome !== "not-executed") {
       failures[result.outcome] = (failures[result.outcome] ?? 0) + 1;
     }
   }
 
   const applicable = of("applicable");
   const passed = results.filter((result) => PASSING.has(result.outcome)).length;
+  const authored = results.filter(
+    (result) => result.authoring === "authored",
+  ).length;
+  const authoredOfApplicable = results.filter(
+    (result) =>
+      result.authoring === "authored" && result.applicability === "applicable",
+  ).length;
+  const executed = results.filter(
+    (result) => result.execution !== "not-executed",
+  ).length;
+  const bothEngines = results.filter(
+    (result) => result.execution === "both-engines",
+  ).length;
 
   return {
     corpus,
     discovered,
     imported: results.length,
     applicable,
-    notYetAuthored: of("not-yet-authored"),
     unsupportedByDesign: of("unsupported-by-design"),
     unsupportedNotYetImplemented: of("unsupported-not-yet-implemented"),
+    benchmarkAmbiguous: of("benchmark-ambiguous"),
     malformedUpstream: of("malformed-upstream"),
     excludedLicence: of("excluded-license"),
+    authored,
+    authoredOfApplicable,
+    executed,
+    bothEngines,
+    agreements: results.filter(
+      (result) => result.differentialAgreement === true,
+    ).length,
+    divergences: results.filter(
+      (result) => result.differentialAgreement === false,
+    ).length,
+    interpreterUnavailable: results.filter(
+      (result) => result.execution === "gnucobol-only",
+    ).length,
     passed,
+    passedNotApplicable: results.filter(
+      (result) =>
+        PASSING.has(result.outcome) && result.applicability !== "applicable",
+    ).length,
     failures,
+    authoringCoverage: formatRate(authoredOfApplicable, applicable),
+    passOfAuthored: formatRate(passed, authored),
     passOfApplicable: formatRate(passed, applicable),
     passOfDiscovered: formatRate(passed, discovered),
   };
@@ -189,9 +281,9 @@ export function checkTallyIsComplete(tally: CorpusTally): string[] {
   const problems: string[] = [];
   const categorised =
     tally.applicable +
-    tally.notYetAuthored +
     tally.unsupportedByDesign +
     tally.unsupportedNotYetImplemented +
+    tally.benchmarkAmbiguous +
     tally.malformedUpstream +
     tally.excludedLicence;
   if (categorised !== tally.imported) {
@@ -204,9 +296,33 @@ export function checkTallyIsComplete(tally: CorpusTally): string[] {
       `${tally.corpus}: ${String(tally.imported)} tasks imported from ${String(tally.discovered)} discovered, which is impossible.`,
     );
   }
-  if (tally.passed > tally.applicable) {
+  if (tally.passed > tally.authored) {
     problems.push(
-      `${tally.corpus}: ${String(tally.passed)} passed out of ${String(tally.applicable)} applicable. A task that is not applicable was never run and cannot pass.`,
+      `${tally.corpus}: ${String(tally.passed)} passed out of ${String(tally.authored)} authored. A task with no implementation cannot pass.`,
+    );
+  }
+  if (tally.authoredOfApplicable > tally.applicable) {
+    problems.push(
+      `${tally.corpus}: ${String(tally.authoredOfApplicable)} applicable tasks are authored out of ${String(tally.applicable)} applicable, which is impossible.`,
+    );
+  }
+  /*
+   * The guard against relabelling a task to shrink the denominator.
+   *
+   * Every category other than `applicable` is a claim that a conforming BankTS
+   * program could not match this task — because the language cannot express it,
+   * or because the benchmark's own expectation is not derivable from its own
+   * contract. A task in one of those categories that then *passes* refutes the
+   * claim, and the run says so rather than quietly banking the pass.
+   */
+  if (tally.passedNotApplicable > 0) {
+    problems.push(
+      `${tally.corpus}: ${String(tally.passedNotApplicable)} passed from tasks classified unsupported or ambiguous, so the classification is wrong.`,
+    );
+  }
+  if (tally.agreements + tally.divergences > tally.bothEngines) {
+    problems.push(
+      `${tally.corpus}: ${String(tally.agreements + tally.divergences)} differential verdicts from ${String(tally.bothEngines)} tasks both engines ran. A verdict needs two engines.`,
     );
   }
   return problems;

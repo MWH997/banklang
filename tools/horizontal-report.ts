@@ -270,10 +270,18 @@ function renderResults(cwd: string): string {
       "| --- | --- |",
       `| tasks discovered | ${String(summary.discovered)} |`,
       `| imported into the harness | ${String(summary.imported)} |`,
-      `| applicable — BankTS can express it *and* an implementation exists | ${String(summary.applicable)} |`,
-      `| expressible, not yet written | ${String(summary.notYetAuthored)} |`,
+      `| applicable — BankTS can express it | ${String(summary.applicable)} |`,
       `| unsupported by design | ${String(summary.unsupportedByDesign)} |`,
       `| unsupported, not yet implemented | ${String(summary.unsupportedNotYetImplemented)} |`,
+      `| the benchmark's own expectation is not derivable | ${String(summary.benchmarkAmbiguous)} |`,
+      `| implementations written | ${String(summary.authored)} |`,
+      `| executed | ${String(summary.executed)} |`,
+      `| both engines ran it | ${String(summary.bothEngines)} |`,
+      `| they agreed | ${String(summary.agreements)} |`,
+      `| they diverged | ${String(summary.divergences)} |`,
+      `| ran under \`cobc\` only — never a differential pass | ${String(summary.interpreterUnavailable)} |`,
+      `| **authored, of applicable** | **${summary.authoringCoverage}** |`,
+      `| **passed, of authored** | **${summary.passOfAuthored}** |`,
       `| **passed, of applicable** | **${summary.passOfApplicable}** |`,
       `| **passed, of all discovered** | **${summary.passOfDiscovered}** |`,
       "",
@@ -286,7 +294,7 @@ function renderResults(cwd: string): string {
     if (results) {
       const kinds = new Map<string, string[]>();
       for (const row of results) {
-        if (row.outcome !== "skipped") {
+        if (row.outcome !== "not-executed") {
           continue;
         }
         const kind = (row.detail ?? "").split(":")[0]?.trim() || "unclassified";

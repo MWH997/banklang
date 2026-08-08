@@ -58,7 +58,9 @@ export type {
 
 export { checkTallyIsComplete, formatRate, tally, PASSING } from "./result";
 export type {
+  Authoring,
   CorpusTally,
+  Execution,
   Outcome,
   RunEnvironment,
   TaskResult,

@@ -42,6 +42,8 @@ import { tmpdir } from "node:os";
 import {
   allocateDdNames,
   blockerFor,
+  type Authoring,
+  type Execution,
   checkTallyIsComplete,
   classifyTask,
   compareEngines,
@@ -107,10 +109,12 @@ export function loadTasks(corpus: string, cwd = process.cwd()): LoadedTask[] {
     });
 }
 
-/** Why a task has no implementation, from the recorded blockers. */
-function describeBlocker(task: string): string {
+/** What put a task outside the applicable set, from the recorded blockers. */
+function describeBlocker(task: string): string | null {
   const blocker = blockerFor(task);
-  return `${blocker.kind}: ${blocker.reason}${blocker.evidence ? ` Evidence: ${blocker.evidence}` : ""}`;
+  return blocker
+    ? `${blocker.kind}: ${blocker.reason} Evidence: ${blocker.evidence}`
+    : null;
 }
 
 /**
@@ -149,50 +153,71 @@ export function taskDdNames(task: {
  */
 export function runTask(task: LoadedTask, cwd: string): TaskResult {
   const started = Date.now();
+  /*
+   * Applicability first, and from the task alone.
+   *
+   * It used to be decided by whether `main.bank.ts` existed, which made the
+   * word mean "already done" and `pass / applicable` a rate that could only
+   * ever be 100%. Now it is a property of the task, an implementation is a
+   * separate axis, and a task in neither the applicable set nor the authored
+   * set has a recorded reason rather than a shrug.
+   */
+  const blocker = blockerFor(task.spec.upstreamId);
+  const verdict = classifyTask(task.spec.specification, blocker?.kind ?? null);
+  const authoring: Authoring =
+    task.implementation !== null ? "authored" : "unauthored";
+
   const base = {
     taskId: task.spec.id,
     corpus: task.spec.corpus,
+    applicability: verdict.applicability,
+    authoring,
     diagnostics: [] as string[],
     artifactHashes: {} as Record<string, string>,
     differentialAgreement: null as boolean | null,
   };
   const finish = (
-    applicability: string,
+    execution: Execution,
     outcome: Outcome,
     detail: string | null,
     extra: Partial<TaskResult> = {},
   ): TaskResult => ({
     ...base,
-    applicability,
+    execution,
     outcome,
     detail,
     durationMs: Date.now() - started,
     ...extra,
   });
 
-  const verdict = classifyTask(
-    task.spec.specification,
-    task.implementation !== null,
-  );
-  if (verdict.applicability !== "applicable") {
+  /*
+   * An implementation is run whatever its applicability says.
+   *
+   * A task classified `benchmark-ambiguous` still compiles and still executes,
+   * and that is the point: task_func_55's classification rests on both engines
+   * agreeing on every record and the expected file's last line carrying a
+   * character the input cannot produce. Skipping it would turn reproducible
+   * evidence back into an assertion.
+   */
+  if (task.implementation === null) {
     return finish(
-      verdict.applicability,
-      "skipped",
+      "not-executed",
+      "not-executed",
       verdict.unsupported
         ? `${verdict.unsupported.construct}: ${verdict.unsupported.reason}`
         : describeBlocker(task.spec.upstreamId),
     );
   }
 
-  const source = readFileSync(task.implementation as string, "utf8");
-  const sourceFile = relative(cwd, task.implementation as string);
+  const source = readFileSync(task.implementation, "utf8");
+  const sourceFile = relative(cwd, task.implementation);
 
   // ---- check ---------------------------------------------------------
   const compiled = compile(source, { sourceFile });
   base.diagnostics = compiled.diagnostics.map((diagnostic) => diagnostic.id);
   if (!compiled.ok || !compiled.cobol) {
     return finish(
-      "applicable",
+      "not-executed",
       "bankts-check-failure",
       compiled.diagnostics
         .filter((diagnostic) => diagnostic.severity === "error")
@@ -205,7 +230,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   const again = compile(source, { sourceFile });
   if (again.cobol !== compiled.cobol) {
     return finish(
-      "applicable",
+      "not-executed",
       "determinism-failure",
       "Two compilations of identical input produced different COBOL.",
     );
@@ -221,7 +246,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   });
   if (findings.length > 0) {
     return finish(
-      "applicable",
+      "not-executed",
       "conformance-failure",
       findings
         .slice(0, 3)
@@ -232,7 +257,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
 
   if (!hasCobc()) {
     return finish(
-      "applicable",
+      "not-executed",
       "infrastructure-failure",
       "cobc is not on the path, so nothing was executed. A skipped run is unchecked, not passing.",
     );
@@ -266,6 +291,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
    * output reproducible: an idempotency key that changed per run would change
    * the audit record and the evidence with it.
    */
+  let interpreterRefusal: string | null = null;
   const emitted = compiled.cobol;
   const driver = takesParm(emitted)
     ? parmDriver(programNameOf(emitted), "HORIZONTAL".padEnd(36, "0"))
@@ -284,7 +310,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   } catch (error) {
     rmSync(workDir, { recursive: true, force: true });
     return finish(
-      "applicable",
+      "not-executed",
       error instanceof ConformanceError
         ? "cobol-compile-failure"
         : "runtime-failure",
@@ -292,7 +318,15 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     );
   }
 
-  let interpretedRun;
+  let interpretedRun: ReturnType<typeof runInterpreted> | null = null;
+
+  /*
+   * Which engines got as far as running, which is not the same as whether the
+   * task passed. `gnucobol-only` is never reported as a differential result.
+   */
+  const engines = (): Execution =>
+    interpretedRun ? "both-engines" : "gnucobol-only";
+
   try {
     interpretedRun = runInterpreted({
       source,
@@ -303,9 +337,12 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
       driver,
     });
   } catch (error) {
+    // The construct the interpreter refused, kept rather than swallowed: it is
+    // the next thing worth building, and `pnpm interpreter:coverage` cannot see
+    // it because it counts verbs and this may be a phrase or an intrinsic.
     interpretedRun = null;
     base.differentialAgreement = null;
-    void error;
+    interpreterRefusal = error instanceof Error ? error.message : String(error);
   }
 
   const asObserved = (run: {
@@ -329,7 +366,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     if (divergence.length > 0) {
       rmSync(workDir, { recursive: true, force: true });
       return finish(
-        "applicable",
+        engines(),
         "execution-divergence",
         divergence
           .slice(0, 3)
@@ -358,17 +395,17 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   rmSync(workDir, { recursive: true, force: true });
 
   if (differences.length === 0) {
-    return finish("applicable", "pass", null);
+    return finish(engines(), "pass", interpreterRefusal);
   }
   if (!oracle.derivable) {
     return finish(
-      "applicable",
+      engines(),
       "oracle-not-derivable",
       `The expected output contains ${JSON.stringify(oracle.invented.slice(0, 5))}, which appears in neither the specification nor the input data, so no spec-only implementation could match it. First difference — ${differences[0]?.where}: expected ${JSON.stringify(differences[0]?.expected)}, got ${JSON.stringify(differences[0]?.actual)}.`,
     );
   }
   return finish(
-    "applicable",
+    engines(),
     "semantic-mismatch",
     differences
       .slice(0, 3)
@@ -433,10 +470,13 @@ function main(argv: string[]): number {
     );
 
     process.stdout.write(
-      `${corpus.padEnd(16)} ${String(counted.discovered)} tasks | applicable ${String(counted.applicable)} | passed ${counted.passOfApplicable} of applicable, ${counted.passOfDiscovered} of all\n`,
+      `${corpus.padEnd(16)} ${String(counted.discovered)} tasks | applicable ${String(counted.applicable)}, by design ${String(counted.unsupportedByDesign)}, not yet implemented ${String(counted.unsupportedNotYetImplemented)}, ambiguous ${String(counted.benchmarkAmbiguous)}\n`,
     );
     process.stdout.write(
-      `${" ".repeat(16)} unsupported by design ${String(counted.unsupportedByDesign)}, not yet implemented ${String(counted.unsupportedNotYetImplemented)}, not yet authored ${String(counted.notYetAuthored)}\n`,
+      `${" ".repeat(16)} authored ${counted.authoringCoverage} of applicable | passed ${counted.passOfAuthored} of authored, ${counted.passOfDiscovered} of all\n`,
+    );
+    process.stdout.write(
+      `${" ".repeat(16)} both engines ${String(counted.bothEngines)}, agreed ${String(counted.agreements)}, diverged ${String(counted.divergences)}, interpreter unavailable ${String(counted.interpreterUnavailable)}\n`,
     );
     for (const [outcome, count] of Object.entries(counted.failures).sort(
       (a, b) => b[1] - a[1],

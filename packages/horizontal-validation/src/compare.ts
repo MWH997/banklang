@@ -49,16 +49,35 @@ export function isOracleDerivable(
   inputs: Record<string, string>,
   expectedOutputs: Record<string, string>,
 ): { derivable: boolean; invented: string[] } {
-  const known =
-    `${specification} ${Object.values(inputs).join(" ")}`.toUpperCase();
+  const known = folded(`${specification} ${Object.values(inputs).join(" ")}`);
   const words = new Set<string>();
   for (const output of Object.values(expectedOutputs)) {
-    for (const word of output.toUpperCase().match(/[A-Z]{4,}/g) ?? []) {
+    for (const word of folded(output).match(/[A-Z]{4,}/g) ?? []) {
       words.add(word);
     }
   }
   const invented = [...words].filter((word) => !known.includes(word)).sort();
   return { derivable: invented.length === 0, invented };
+}
+
+/**
+ * Upper-cased with the accents taken off, on both sides of the comparison.
+ *
+ * The defect this exists for. `[A-Z]{4,}` matches no accented letter, so an
+ * input of `Váquéz` contributed no word at all while an output of `Vaquez`
+ * contributed one — and the function reported a correctly transliterated name
+ * as a literal the benchmark had invented. CobolCodeBench's task_func_47 spent
+ * a phase misfiled as an oracle problem on the strength of it; its actual
+ * obstacle is that a BankTS `string<n>` is n single-byte characters and `é` is
+ * two bytes of UTF-8.
+ *
+ * Folding both sides is the fix rather than widening the pattern to accept
+ * accents: the question is whether a word in the output came from somewhere,
+ * and `Vaquez` plainly came from `Váquéz`. A benchmark whose expected output
+ * differs from its input only by an accent is reproducing its input.
+ */
+function folded(text: string): string {
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 }
 
 /**

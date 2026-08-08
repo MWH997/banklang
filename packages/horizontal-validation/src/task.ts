@@ -19,7 +19,20 @@
  */
 
 /**
- * Why a task is or is not run.
+ * Whether BankTS could express a task, decided without looking for a solution.
+ *
+ * This used to carry `not-yet-authored`, and that one value was the flaw in the
+ * whole funnel: `classifyTask` returned `applicable` when a `main.bank.ts`
+ * existed and `not-yet-authored` when it did not, so "applicable" silently
+ * meant "already done" and `pass / applicable` was 4/4 with thirty-eight tasks
+ * nobody had a verdict on. A denominator that only ever contains successes is
+ * not a denominator.
+ *
+ * So applicability is now a property of the *task*: its requirements against
+ * the language's capabilities, decidable before anybody writes a line. Whether
+ * an implementation exists is [`Authoring`](./result.ts), separately, and the
+ * two are reported separately — `applicable + unauthored` is a real state and
+ * the one that says there is work to do.
  *
  * `unsupported-by-design` and `unsupported-not-yet-implemented` are kept apart
  * because they say opposite things about the project. The first is BankTS
@@ -27,16 +40,17 @@
  * a gap — and the second is a to-do list. Collapsing them would let every
  * missing feature be relabelled a principle.
  *
- * `not-yet-authored` is the honest third category and the one that keeps the
- * denominator straight: the task is expressible, and no BankTS implementation
- * has been written for it. It is neither a pass nor a language limit, and it is
- * never folded into either.
+ * `benchmark-ambiguous` is a statement about the benchmark and needs evidence
+ * to the standard `task-blockers.ts` describes: a constant in the expected
+ * output that is in neither the specification nor the input, an expectation
+ * that contradicts the specification, or an arithmetic the supplied data
+ * cannot produce. Difficulty is not ambiguity.
  */
 export type Applicability =
   | "applicable"
-  | "not-yet-authored"
   | "unsupported-by-design"
   | "unsupported-not-yet-implemented"
+  | "benchmark-ambiguous"
   | "malformed-upstream"
   | "excluded-license";
 

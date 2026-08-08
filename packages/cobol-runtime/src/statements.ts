@@ -43,6 +43,11 @@ export type Expr =
   | { kind: "binary"; op: string; left: Expr; right: Expr }
   | { kind: "function"; name: string; args: Expr[]; line: number }
   /**
+   * `FUNCTION CURRENT-DATE(1:8)` — a reference modification of a value that is
+   * not an item, so it cannot be carried on a `Reference` the way `X(1:8)` is.
+   */
+  | { kind: "slice"; value: Expr; from: Expr; length: Expr | null }
+  /**
    * `ADDRESS OF X`, which is a pointer rather than a value.
    *
    * The generated code tests it against `NULL` to find out whether a program
@@ -1606,16 +1611,39 @@ export class StatementParser {
     if (this.cursor.accept("FUNCTION")) {
       const name = this.cursor.word();
       const args: Expr[] = [];
+      let slice: { from: Expr; length: Expr | null } | null = null;
+
       if (this.cursor.acceptPunct("(")) {
         if (!this.cursor.acceptPunct(")")) {
-          args.push(this.expression());
-          while (this.cursor.acceptPunct(",") || this.startsExpression()) {
-            args.push(this.expression());
+          /*
+           * The parentheses after a function name are an argument list or a
+           * reference modification of its result, and which one is not known
+           * until the `:` is or is not there. `today()` lowers to
+           * `FUNCTION NUMVAL(FUNCTION CURRENT-DATE(1:8))` — no arguments and a
+           * slice — so reading them as arguments failed on the colon, and every
+           * BankTS program that asks the date had no differential cover.
+           */
+          const first = this.expression();
+          if (this.cursor.acceptPunct(":")) {
+            const next = this.cursor.peek();
+            const length =
+              next.kind === "punct" && next.text === ")"
+                ? null
+                : this.expression();
+            this.cursor.expectPunct(")");
+            slice = { from: first, length };
+          } else {
+            args.push(first);
+            while (this.cursor.acceptPunct(",") || this.startsExpression()) {
+              args.push(this.expression());
+            }
+            this.cursor.expectPunct(")");
           }
-          this.cursor.expectPunct(")");
         }
       }
-      return { kind: "function", name, args, line: token.line };
+
+      const call: Expr = { kind: "function", name, args, line: token.line };
+      return slice ? { kind: "slice", value: call, ...slice } : call;
     }
 
     if (this.cursor.accept("ALL")) {
