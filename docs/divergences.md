@@ -153,6 +153,69 @@ sort product runs, and what it wants, is a site's.
 The two are close but not identical. BankLang mangles against the union, so a
 name acceptable to IBM may still be mangled here — which is safe but visible.
 
+## D23. A final line-sequential record with no delimiter — **measured**
+
+GnuCOBOL 3.2.0 **does not deliver** the last record of a line-sequential file
+when that line has no trailing newline _and_ its length exactly fills the record
+area. It sets file status `06` and the record is lost.
+
+```cobol
+       FD  F.
+       01  R PIC X(20).
+```
+
+```text
+$ printf 'AAAAAAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBBBBBBBB' > in.txt
+REC 001 [AAAAAAAAAAAAAAAAAAAA]
+STATUS 06
+```
+
+With a trailing newline both records arrive and the loop ends on `10`. With
+records _shorter_ than the record area both arrive even without the final
+delimiter, so the condition is specifically "unterminated and exactly the record
+length".
+
+Enterprise COBOL's Programming Guide describes the end-of-file case as "The
+remainder of the record area is filled with spaces", which reads as delivering
+the record. Whether it does has not been checked on the target.
+
+The generated read loop tests the file status before using what it read, so a
+BankLang program skips the record rather than processing a partial one — the
+safe end of the difference. A program must not depend on a feed whose last line
+lacks a delimiter.
+
+Found by `tests/line-sequential.test.ts`, which pins the measured behaviour.
+
+---
+
+## D24. Moving a blank zoned field — **measured, between the local two**
+
+Where a line-sequential record is shorter than the record area, the remainder is
+space-filled — so a numeric field the input never supplied holds spaces, which
+is not a valid zoned number. `cobc` and `packages/cobol-runtime` then disagree
+about what a `MOVE` of that field does:
+
+|                          | Result                                   |
+| ------------------------ | ---------------------------------------- |
+| GnuCOBOL 3.2.0           | the spaces are carried through unchanged |
+| `packages/cobol-runtime` | the field is normalised to `000000000+`  |
+
+On the target this is a data exception — S0C7 — and neither answer is right;
+Enterprise COBOL would abend rather than produce either. It is the defect class
+OpenCBS records as DF12, DF19, DF28 and DF41, and the reason BankTS refuses to
+move a `string` into a `decimal` at all.
+
+BankLang cannot rule it out statically, because the invalid bytes come from
+outside the program. What it can do is what it already does: the record layout
+is declared, the file status is checked, and a program reading a feed whose
+records may be short should test the field it depends on rather than assume it.
+
+`tests/line-sequential.test.ts` asserts only the behaviour the two engines agree
+on, so this difference does not silently become an assertion that either is
+correct.
+
+---
+
 ## D22. `DISPLAY` of a bare intrinsic — **measured, between the local two**
 
 `DISPLAY FUNCTION ORD(X)` prints `000000109` under GnuCOBOL and `109` under
