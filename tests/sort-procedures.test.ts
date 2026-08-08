@@ -311,13 +311,49 @@ describe("the sort's own outcome", () => {
     );
   });
 
-  /** A job log saying only "sort failed" starts an investigation. */
+  /**
+   * A job log saying only "sort failed" starts an investigation.
+   *
+   * Through a declared item rather than displaying the special register, whose
+   * rendered width is implementation-defined: GnuCOBOL 3.2.0 prints
+   * `+000000016` and `packages/cobol-runtime`, holding the Language Reference's
+   * `PICTURE S9(4) USAGE BINARY`, prints `0016`. Divergence D25. The same rule
+   * the emitter already follows for the result of an intrinsic (D22).
+   */
   it("says which file failed and what the sort returned", () => {
     expect(flowed(result.cobol)).toContain(
       flowed(
-        'DISPLAY "SORT FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+        `MOVE SORT-RETURN TO BANK-SORT-RETURN
+         DISPLAY "SORT FAILED sortedPostings SORT-RETURN " BANK-SORT-RETURN UPON SYSOUT`,
       ),
     );
+    expect(flowed(result.cobol)).toContain(
+      "01 BANK-SORT-RETURN PIC 9(4) VALUE 0.",
+    );
+  });
+
+  /**
+   * The order of records with equal keys is undefined without the phrase.
+   *
+   * Language Reference, SORT format 1: "If the DUPLICATES phrase is not
+   * specified, the order of these records is undefined." A compiler whose whole
+   * claim is a deterministic build must not emit a statement whose output order
+   * the target leaves open — and a differential lane cannot hold two engines to
+   * an answer the standard says either may choose.
+   *
+   * MERGE has no such phrase and needs none: equal keys come back in USING
+   * order, which the Language Reference fixes.
+   */
+  it("asks for duplicate keys in order", () => {
+    expect(flowed(result.cobol)).toContain(
+      flowed("ASCENDING KEY BRANCH-ID OF SORTED-POSTINGS-SORT-RECORD"),
+    );
+    expect(result.cobol).toContain("WITH DUPLICATES IN ORDER");
+
+    const merged =
+      txn(`  merge rawPostings, otherPostings into sortedPostings on branchId;`)
+        .cobol ?? "";
+    expect(merged).not.toContain("DUPLICATES");
   });
 
   it("stops the step rather than writing a partial result", () => {
@@ -336,15 +372,26 @@ describe("the sort's own outcome", () => {
    * Under NOFASTSRT the sort does not check open, close, or I/O errors on a
    * USING or GIVING file, and IBM's guidance for a program that declares a file
    * status and no ERROR declarative — which is every program this compiler
-   * emits — is to test the status key *as well as* SORT-RETURN. The status is
-   * set either way; without this nothing reads it.
+   * emits — is to test the status key *as well as* SORT-RETURN.
+   *
+   * Guarded by `NOT = SPACES`, because the status key is only set on a target
+   * that sets it. The key is declared `VALUE SPACES` and nothing but an I/O
+   * operation writes it, so spaces means the sort reported through
+   * `SORT-RETURN` alone — which is what GnuCOBOL 3.2.0 does for every USING and
+   * GIVING file, successful or not (divergence D27). Without the guard every
+   * successful sort under GnuCOBOL displayed "SORT FAILED" and ended the step
+   * with return code 16; two of the three sort programs in this repository did
+   * exactly that while writing correct output. On the target, where the key is
+   * set to "00", the guard changes nothing.
    */
   it("tests the status of each file the sort handled itself", () => {
     const cobol =
       txn("  sort rawPostings into sortedPostings on branchId;").cobol ?? "";
 
-    expect(cobol).toContain("IF NOT RAW-STATUS-OK");
-    expect(cobol).toContain("IF NOT SORTED-STATUS-OK");
+    expect(cobol).toContain("IF RAW-STATUS NOT = SPACES AND NOT RAW-STATUS-OK");
+    expect(cobol).toContain(
+      "IF SORTED-STATUS NOT = SPACES AND NOT SORTED-STATUS-OK",
+    );
     expect(flowed(cobol)).toContain(
       flowed(
         'DISPLAY "SORT FAILED rawPostings STATUS " RAW-STATUS UPON SYSOUT',
@@ -371,7 +418,7 @@ describe("the sort's own outcome", () => {
 
     expect(flowed(merged)).toContain(
       flowed(
-        'DISPLAY "MERGE FAILED sortedPostings SORT-RETURN " SORT-RETURN UPON SYSOUT',
+        'DISPLAY "MERGE FAILED sortedPostings SORT-RETURN " BANK-SORT-RETURN UPON SYSOUT',
       ),
     );
   });

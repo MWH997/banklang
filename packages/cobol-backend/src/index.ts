@@ -261,6 +261,9 @@ let currentReturnType: IRType | null = null;
 /** Index used when copying a table between a file record and working storage. */
 const COPY_INDEX_FIELD = "BANK-COPY-INDEX";
 
+/** Declared item a failing sort's `SORT-RETURN` is displayed through. */
+const SORT_RETURN_DISPLAY = "BANK-SORT-RETURN";
+
 /**
  * BankTS name to COBOL field, for the routine currently being emitted.
  *
@@ -1372,7 +1375,8 @@ export function emitCobol(
   // A sort procedure's loop stops on a flag of its own rather than on the
   // file's status field, because a sort's input file need not declare one and
   // a RETURN has no status field at all.
-  for (const { statement } of sortStatements(program)) {
+  const sorts = sortStatements(program);
+  for (const { statement } of sorts) {
     for (const kind of ["input", "output"] as const) {
       const procedure =
         kind === "input" ? statement.inputProcedure : statement.outputProcedure;
@@ -1382,6 +1386,15 @@ export function emitCobol(
         );
       }
     }
+  }
+  // How wide a special register renders is implementation-defined, and the two
+  // local engines disagree: `DISPLAY SORT-RETURN` prints `+000000016` under
+  // GnuCOBOL 3.2.0 and `0016` under `packages/cobol-runtime`, which holds the
+  // Language Reference's `PICTURE S9(4) USAGE BINARY` (divergence D25). So the
+  // value is moved into a declared item and that is displayed, the same rule
+  // the emitter already follows for the result of an intrinsic (D22).
+  if (sorts.length > 0) {
+    addLine(`       01  ${SORT_RETURN_DISPLAY.padEnd(20)} PIC 9(4) VALUE 0.`);
   }
 
   // Each handler needs a name, and the statement and its section are emitted in
@@ -4624,6 +4637,20 @@ function emitSortStatement(
   addLine(`${indent}${statement.operation.toUpperCase()} ${work}`);
   addLine(`${indent}         ${keys}`);
 
+  // "If the DUPLICATES phrase is not specified, the order of these records is
+  // undefined" — Language Reference, SORT format 1. A compiler that promises a
+  // deterministic build must not emit a statement whose *output* order the
+  // target leaves open, so the phrase is always emitted. Two records with equal
+  // keys then come back in the order they were released or read, on any
+  // conforming implementation, and the interpreter can be held to the same
+  // answer as `cobc`.
+  //
+  // MERGE has no DUPLICATES phrase and needs none: equal keys come back in
+  // USING order, which the Language Reference already fixes.
+  if (statement.operation === "sort") {
+    addLine(`${indent}         WITH DUPLICATES IN ORDER`);
+  }
+
   // A procedure replaces the clause it stands in for: USING and an INPUT
   // PROCEDURE are alternatives, because the sort either reads the files itself
   // or receives records from the program, not both.
@@ -4652,8 +4679,9 @@ function emitSortStatement(
   // on writes a plausible-looking result from part of its input.
   const operation = statement.operation.toUpperCase();
   addLine(`${indent}IF SORT-RETURN NOT = 0`);
+  addLine(`${indent}    MOVE SORT-RETURN TO ${SORT_RETURN_DISPLAY}`);
   addLine(
-    `${indent}    DISPLAY "${operation} FAILED ${statement.output} SORT-RETURN " SORT-RETURN UPON SYSOUT`,
+    `${indent}    DISPLAY "${operation} FAILED ${statement.output} SORT-RETURN " ${SORT_RETURN_DISPLAY} UPON SYSOUT`,
   );
   emitStepFailure(addLine, `${indent}    `, 16, `${operation}-FAILED`);
   addLine(`${indent}END-IF`);
@@ -4667,6 +4695,15 @@ function emitSortStatement(
   //
   // A file handled by a procedure is not tested here, because the procedure
   // opened it and already checked.
+  //
+  // `NOT = SPACES` first, and it is not belt and braces. The status key is
+  // declared `VALUE SPACES` and only an I/O operation ever writes it, so spaces
+  // means the sort reported nothing through it — which is what GnuCOBOL 3.2.0
+  // does for a USING or GIVING file, successful or not (divergence D27). Left
+  // out, every successful sort under GnuCOBOL displayed "SORT FAILED" and ended
+  // the step with return code 16: two of the three sort programs in this
+  // repository did exactly that while their output files were correct. On the
+  // target, where the key is set, this changes nothing — "00" is not spaces.
   const unchecked = [
     ...(statement.inputProcedure ? [] : statement.inputs),
     ...(statement.outputProcedure ? [] : [statement.output]),
@@ -4676,7 +4713,7 @@ function emitSortStatement(
     if (!status) {
       continue;
     }
-    addLine(`${indent}IF ${openFailed(status)}`);
+    addLine(`${indent}IF ${status} NOT = SPACES AND ${openFailed(status)}`);
     addLine(
       `${indent}    DISPLAY "${operation} FAILED ${file} STATUS " ${status} UPON SYSOUT`,
     );
