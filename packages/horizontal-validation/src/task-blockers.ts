@@ -51,6 +51,75 @@ export interface TaskBlocker {
  */
 export const TASK_BLOCKERS: TaskBlocker[] = [
   {
+    task: "task_func_11",
+    kind: "benchmark-ambiguous",
+    reason:
+      "The expected output lays the filename out in a fixed column the specification never states, and the column is too narrow for one of the inputs — `anthertest.docx` runs straight into the next field, so the file literally contains `docxis`. No implementation written from the contract produces that.",
+    evidence:
+      "Expected output contains `docxis`, present in neither the specification nor the input data.",
+  },
+  {
+    task: "task_func_15",
+    kind: "benchmark-ambiguous",
+    reason:
+      "The expected output pairs each animal with a list of foods — meat, fish, grass, seeds, sugarcane and eleven more — that exists only inside the reference solution. The specification does not give the table and the input does not contain it.",
+    evidence:
+      "Seventeen literals in the expected output appear in neither the specification nor the inputs.",
+  },
+  {
+    task: "task_func_26",
+    kind: "benchmark-ambiguous",
+    reason:
+      "A printed report whose headings, column positions and page furniture are in the expected output and not in the specification.",
+    evidence: "`STATUS` heading text present in the oracle only.",
+  },
+  {
+    task: "task_func_27",
+    kind: "benchmark-ambiguous",
+    reason:
+      "As task_func_26: the report layout, including the `ACCT NO` caption, is specified only by the expected output.",
+    evidence: "`ACCT` caption present in the oracle only.",
+  },
+  {
+    task: "task_func_31",
+    kind: "benchmark-ambiguous",
+    reason:
+      'The specification asks for the values written "with an appropriate label" and the oracle requires three specific labels, two of them misspelled — `MAXIMAM`, `MINIMAM`, `AVERGE`. A correct program cannot guess a typo.',
+    evidence:
+      "`MAXIMAM`, `MINIMAM` and `AVERGE` appear in the expected output and nowhere in the contract.",
+  },
+  {
+    task: "task_func_39",
+    kind: "benchmark-ambiguous",
+    reason:
+      "The report's column headings — `ERROR DESCRIPTION`, `ERR VALUE`, and the rule beneath them — are in the oracle and not in the specification.",
+    evidence: "`DESCRIPTION` and `RANGE` present in the oracle only.",
+  },
+  {
+    task: "task_func_44",
+    kind: "benchmark-ambiguous",
+    reason:
+      "The expected output counts words the input file does not contain, so the fixture's input and output do not describe the same run.",
+    evidence:
+      "`INITIALIZATION`, `CLEANUP` and `COUNTING` are counted in the expected output and absent from the input.",
+  },
+  {
+    task: "task_func_47",
+    kind: "language-gap",
+    reason:
+      "Transliterating accented names — `Téa` to `Tea` — is exactly what `replaceChars` does, character for character. The obstacle is encoding rather than the operation: the input is UTF-8, where `é` is two bytes, and a BankTS `string<n>` is n single-byte characters, so a character-for-character conversion cannot line up.",
+    evidence:
+      "Input `Téa\\nVáquéz\\n…` against expected `Tea\\nVaquez\\n…`. Note this task was previously classified as an oracle problem, which was a defect in `isOracleDerivable`: it compares ASCII-folded words and so reported the correctly-transliterated output as inventing literals. The specification is complete.",
+  },
+  {
+    task: "task_func_09",
+    kind: "language-gap",
+    reason:
+      'Each line holds a different number of comma-separated numbers — four on one, five on the next — and `split x by "," into a, b, c` writes into a fixed list of receivers named at compile time. A line whose field count is not known until it is read has no BankTS form.',
+    evidence:
+      "Input lines carry 3 and 4 commas respectively. This is the only task in the corpus that genuinely needs it: an earlier classifier counted any variation in comma count as variable arity and so also flagged task_func_01 and task_func_24, whose variation is a header line rather than a variable record.",
+  },
+  {
     task: "task_func_37",
     kind: "language-gap",
     reason:

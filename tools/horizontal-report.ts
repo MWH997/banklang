@@ -278,6 +278,38 @@ function renderResults(cwd: string): string {
       `| **passed, of all discovered** | **${summary.passOfDiscovered}** |`,
       "",
     );
+    // Why the unauthored tasks are unauthored, from the recorded blockers
+    // rather than from a number a reader has to interpret.
+    const results = readJson<
+      { taskId: string; outcome: string; detail: string | null }[]
+    >(resolve(cwd, EVIDENCE, id, "results.json"));
+    if (results) {
+      const kinds = new Map<string, string[]>();
+      for (const row of results) {
+        if (row.outcome !== "skipped") {
+          continue;
+        }
+        const kind = (row.detail ?? "").split(":")[0]?.trim() || "unclassified";
+        const task = row.taskId.split("/").pop() ?? row.taskId;
+        kinds.set(kind, [...(kinds.get(kind) ?? []), task]);
+      }
+      if (kinds.size > 0) {
+        lines.push(
+          "Why the rest are not authored:",
+          "",
+          "| Reason | Tasks | |",
+          "| --- | --- | --- |",
+          ...[...kinds]
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(
+              ([kind, tasks]) =>
+                `| ${kind} | ${String(tasks.length)} | ${tasks.join(", ")} |`,
+            ),
+          "",
+        );
+      }
+    }
+
     if (Object.keys(summary.failures).length > 0) {
       lines.push(
         "| Failure | Tasks |",
