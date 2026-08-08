@@ -17,6 +17,16 @@ in order.
 
 ### Added
 
+- Read and write text files with a `lineSequential` organisation, under the
+  restrictions Enterprise COBOL puts on one — [files](docs/language/files.md).
+- Measure this compiler against COBOL nobody wrote for it: independent corpora,
+  their licences, and the rules that decide what BankTS can represent —
+  [horizontal validation](docs/validation/horizontal-validation.md).
+- Report which of COBOL's constructs a member contains, so an estate inventory
+  says what a migration would have to cover — `bankc analyse`.
+- Keep what a measurement said before a language change, and publish the
+  before-and-after from those files rather than from memory —
+  `pnpm horizontal:snapshot`.
 - Compute every colour pair in both themes against WCAG AA on every build,
   rather than recording a measurement.
 - Link the site from the top of the README, above the badges.
@@ -58,6 +68,10 @@ in order.
 
 ### Fixed
 
+- Allow a branch inside a loop body in a function, which was refused while a
+  `switch` in the same position compiled.
+- Name the syntax the author wrote in three diagnostics that printed an internal
+  node kind: "A IfStatement is not allowed inside a loop body."
 - Allow each inline script by its sha256 rather than by `'unsafe-inline'`, and
   drop the inline `onsubmit` a hash cannot cover.
 - Write the response headers as request paths, so the cache rules match the

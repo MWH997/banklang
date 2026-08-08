@@ -621,14 +621,39 @@ branch does not travel back out — the path that skipped the branch reaches the
 update with nothing read. This is the same rule, and the same reasoning, as
 `BANK-DLI-002`.
 
-### `BANK-FILE-011` delete on a sequential file
+### `BANK-FILE-011` delete on a sequential or line-sequential file
 
 Enterprise COBOL has no `DELETE` for a file with sequential organization: a
 record is removed by leaving it out of the file the next program writes, not by
-deleting it in place.
+deleting it in place. The same holds for a line-sequential file, where the
+Programming Guide is explicit that after a record is created "you cannot change
+its length or its position in the file, and you cannot delete it".
 
 GnuCOBOL compiles the statement, so local validation does not catch this one —
 the program passed every check here and would have been rejected by `IGYCRCTL`.
+
+### `BANK-FILE-013` a line-sequential file opened for update
+
+"You can open a line-sequential file as INPUT, OUTPUT, or EXTEND. You cannot
+open a line-sequential file as I-O." A record ends at a newline, so rewriting
+one in place would move where every following record starts.
+
+A text file is amended by reading it and writing a new one, which is what a job
+that rebuilds an extract already does.
+
+### `BANK-FILE-014` a line-sequential record holding something unprintable
+
+A line-sequential file is text. Enterprise COBOL requires that records "contain
+only USAGE DISPLAY and DISPLAY-1 items", and BankTS's default is the thing that
+is forbidden: `decimal<13,2>` lowers to `COMP-3`, two digits a byte with a sign
+nibble. Written into a text file it produces bytes that are neither the number
+nor readable text — and the `WRITE` succeeds, so nothing says so until somebody
+opens the file.
+
+Declare the number `zoned` if it can be negative, which emits the `SIGN IS
+TRAILING SEPARATE` the same paragraph requires of a signed zoned field, or
+`unsigned` if it cannot. A `currency` amount is packed by construction, so an
+interchange record uses a `decimal` field with a `zoned` usage.
 
 ### `BANK-COPY-008` not a data description entry
 
