@@ -235,10 +235,21 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
         statusChecked: false,
       });
     }
-    const assign = /\bASSIGN\s+TO\s+(?:[A-Z]+-)?([A-Z0-9-]+)/.exec(upper);
+    /*
+     * `ASSIGN TO [comment-]...[S-]ddname`, and the ddname is the last part.
+     *
+     * A DD name is one to eight alphanumeric characters and cannot contain a
+     * hyphen, so everything before the final hyphen is the comment and the
+     * organisation letters IBM allows there. Stripping one optional prefix
+     * read `ASSIGN TO UT-S-MASTER` — the ordinary QSAM form — as the DD name
+     * `S-MASTER`, and this tool exists to read other people's COBOL, which is
+     * where that form actually appears. The conversions' own originals use
+     * bare names, so nothing here noticed.
+     */
+    const assign = /\bASSIGN\s+TO\s+([A-Z0-9-]+)/.exec(upper);
     if (assign && files.size > 0) {
       const last = [...files.values()][files.size - 1]!;
-      last.dd = assign[1]!;
+      last.dd = assign[1]!.split("-").at(-1)!;
     }
     const organization = /\bORGANIZATION\s+(?:IS\s+)?([A-Z]+)/.exec(upper);
     if (organization && files.size > 0) {

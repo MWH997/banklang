@@ -608,3 +608,129 @@ ${targets}`;
     expect(risksOf(withJumps(11), "j.cbl").join("\n")).toContain(sentence);
   });
 });
+
+/**
+ * Which CICS commands are expected to report a response, and which are not.
+ *
+ * `RETURN` and `ABEND` do not come back, so there is nothing for a response to
+ * be reported into and no branch that could read one. Every other command that
+ * omits `RESP` abends the task with nothing said about it, which is the risk
+ * worth naming.
+ *
+ * Both halves matter. A rule that flagged `RETURN` would put a finding on every
+ * CICS program ever written; one that flagged nothing would be silent on the
+ * command that actually fails. The mutation lane found the exclusion list and
+ * the `respCaptured` test surviving in both directions.
+ */
+describe("a CICS command with no RESP", () => {
+  const program = (body: string) => `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CICSA.
+       PROCEDURE DIVISION.
+       A-START.
+${body}`;
+
+  const flagged = (body: string) =>
+    renderInventory([analyseCobol(program(body), "c.cbl")])
+      .split("\n")
+      .some((line) => line.includes("no `RESP`"));
+
+  it("is not reported for RETURN or ABEND, which do not come back", () => {
+    expect(flagged("           EXEC CICS RETURN END-EXEC.")).toBe(false);
+    expect(flagged("           EXEC CICS ABEND ABCODE('X999') END-EXEC.")).toBe(
+      false,
+    );
+  });
+
+  it("is reported for a command that can fail and say so", () => {
+    expect(flagged("           EXEC CICS LINK PROGRAM('SUB') END-EXEC.")).toBe(
+      true,
+    );
+    expect(flagged("           EXEC CICS READ FILE('ACCT') END-EXEC.")).toBe(
+      true,
+    );
+  });
+
+  it("is not reported when the response is captured", () => {
+    expect(
+      flagged(
+        "           EXEC CICS LINK PROGRAM('SUB') RESP(WS-RESP) END-EXEC.",
+      ),
+    ).toBe(false);
+  });
+
+  it("counts the commands it found either way", () => {
+    // The inventory reports the count whether or not it is a risk, so a
+    // command that stops being recognised is visible as a count that fell.
+    expect(
+      analyseCobol(program("           EXEC CICS RETURN END-EXEC."), "c.cbl")
+        .cics,
+    ).toHaveLength(1);
+  });
+});
+
+/**
+ * What a `SELECT` clause says about a file.
+ *
+ * Each clause attaches to the file most recently seen, so the parsing is
+ * order-dependent in a way nothing was pinning: the mutation lane found the
+ * `files.size > 0` guards and the FILE STATUS test surviving.
+ */
+describe("a file declared in FILE-CONTROL", () => {
+  const program = (fileControl: string) => `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. FILEP.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+${fileControl}
+       PROCEDURE DIVISION.
+       A-START.
+           DISPLAY "A".`;
+
+  const filesOf = (fileControl: string) =>
+    analyseCobol(program(fileControl), "f.cbl").files;
+
+  it("carries its DD name, organisation and whether a status is checked", () => {
+    const [file] = filesOf(`           SELECT MASTER ASSIGN TO UT-S-MASTER
+               ORGANIZATION IS INDEXED
+               FILE STATUS IS WS-ST.`);
+    expect(file?.name).toBe("MASTER");
+    expect(file?.organization).toBe("INDEXED");
+    expect(file?.statusChecked).toBe(true);
+  });
+
+  /**
+   * `ASSIGN TO [comment-]...[S-]ddname`. A DD name is one to eight
+   * alphanumeric characters and cannot contain a hyphen, so the ddname is the
+   * last part — `UT-S-MASTER` is the DD `MASTER`, not `S-MASTER`. The
+   * conversions' own originals use bare names, so nothing here saw it.
+   */
+  it("reads the DD name out of a qualified assignment-name", () => {
+    expect(filesOf("           SELECT M ASSIGN TO UT-S-MASTER.")[0]?.dd).toBe(
+      "MASTER",
+    );
+    expect(filesOf("           SELECT M ASSIGN TO S-MASTER.")[0]?.dd).toBe(
+      "MASTER",
+    );
+    expect(filesOf("           SELECT M ASSIGN TO MASTER.")[0]?.dd).toBe(
+      "MASTER",
+    );
+  });
+
+  it("records no status where none is declared", () => {
+    const [file] = filesOf(`           SELECT LEDGER ASSIGN TO LEDGER
+               ORGANIZATION IS SEQUENTIAL.`);
+    expect(file?.statusChecked).toBe(false);
+    expect(file?.organization).toBe("SEQUENTIAL");
+  });
+
+  it("attaches each clause to the file it follows", () => {
+    // The failure worth preventing: one file's FILE STATUS marking another's.
+    const files =
+      filesOf(`           SELECT ONE ASSIGN TO DD1 FILE STATUS IS S1.
+           SELECT TWO ASSIGN TO DD2.`);
+    expect(files.map((file) => [file.name, file.statusChecked])).toEqual([
+      ["ONE", true],
+      ["TWO", false],
+    ]);
+  });
+});
