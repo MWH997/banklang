@@ -407,6 +407,38 @@ describe("the response headers", () => {
   });
 
   /**
+   * The one host the policy names, and the reason a test names it back.
+   *
+   * Cloudflare appends a Web Analytics beacon to every HTML response as it
+   * serves it, so the tag exists in no file here and the policy refused it on
+   * every page from the day the hashes went in. Allowing the host is what makes
+   * the analytics work, and it costs little: the host is the CDN already
+   * composing these responses, so the policy was never a boundary against it.
+   *
+   * What the test is really for is the next person who needs an off-host script
+   * and finds a policy that already has one. An exact set fails on any second
+   * host, so the argument has to be made again rather than inherited.
+   *
+   * `connect-src` is asserted alongside it because the pair is the measurement:
+   * the injected tag sets `version` in `data-cf-beacon`, which `beacon.min.js`
+   * reads to mean report to the same-origin `/cdn-cgi/rum`. Analytics that
+   * work while nothing reaches off-origin is the outcome being held.
+   */
+  it("allows the injected analytics beacon, and no other host", () => {
+    const csp = policy();
+    const hosts = [...csp.matchAll(/https?:\/\/\S+?(?=[\s;])/g)].map(
+      (match) => match[0],
+    );
+    expect(new Set(hosts)).toEqual(
+      new Set(["https://static.cloudflareinsights.com"]),
+    );
+    expect(/script-src ([^;]*)/.exec(csp)?.[1]).toContain(
+      "https://static.cloudflareinsights.com",
+    );
+    expect(csp).toContain("connect-src 'self';");
+  });
+
+  /**
    * `script-src` allows each inline script by hash rather than by exemption.
    *
    * This was `'unsafe-inline'` with a note calling the per-page hash "a build
