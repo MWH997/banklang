@@ -180,6 +180,15 @@ carrying several kinds is read as one layout with a field saying which kind it
 is. The same rule covers a record key and a `varying` length, each of which
 describes one layout rather than a choice between several.
 
+The read side is measured rather than assumed. 143 of the corpus's file
+descriptions carry several records and are opened `INPUT`, and those 143 are 51
+distinct file contents: 21 parser, grammar, language-server and compiler-test
+fixtures, 16 copies of the NIST CCVS85 conformance suite, and 14 textbook and
+course programs. No application in 5,195 files reads a file this way. Eleven of
+the fourteen are the same shape — a record code in the leading field, named by
+`88` levels — so if that changes, what it would need is a typed variant with
+narrowing the compiler checks, not the `redefines` above.
+
 ### The outcome of an operation has to be looked at
 
 ```ts
@@ -204,6 +213,19 @@ it sets the status too, so a test written after one reads the close's answer.
 The comparison counts wherever it is written — in an `if`, in a loop condition,
 into a local — so the drain loop above stays exactly as it was. A `log` of the
 status does not count: printing the answer is not reading it.
+
+*Using* the record covers every way a program can read it, not only reading a
+field out of it. COBOL hands whole records to things by naming them, and
+`write trail from line`, `release line`, `putMessage feedQueue from line`,
+`call "BANKSUB" using line` and `json out from line` are each the stale record
+going somewhere. A statement that *fills* it — a second `read into` it, a queue
+`getMessage into` it — is not a use: replacing the bytes is the fix.
+
+The rule reaches into every block a statement runs, the `on page` block of a
+write and a sort procedure's body included. A transaction's `on failure`
+handler and a file's `on error` handler are each checked as a routine of their
+own, because control reaches them from anywhere: nothing the body owed is known
+there, and an operation the handler itself performs owes the same answer.
 
 ### What the compiler checks for you
 

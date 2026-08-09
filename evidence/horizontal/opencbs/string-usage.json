@@ -25,7 +25,10 @@
     "tallying": 0,
     "onOverflow": 0,
     "statements": 3,
-    "files": 2
+    "files": 2,
+    "tallyingContents": [],
+    "tallyingWithPointer": 0,
+    "tallyingSingleReceiver": 0
   },
   "inspect": {
     "tallying": 0,

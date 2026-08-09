@@ -694,6 +694,26 @@ file bills lineSequential output record BillHeading, BillDetail status billsStat
 For a file that is read, declare one record and interpret the bytes yourself: a
 field saying which kind of record it is, and a `redefines` for the rest.
 
+Note what that costs, because it is the honest half of this rule. A `redefines`
+is COBOL's, so nothing checks that the type field was tested before the overlay
+was read — the compiler refuses to hand back a value whose type is a guess, and
+it cannot stop you making the guess by hand.
+
+Whether to lift the restriction is a question about evidence, and the evidence
+is measured rather than argued. `evidence/horizontal/xcobol-v2/record-usage.json`:
+143 of X-COBOL's 6,451 file descriptions carry several records and are opened
+`INPUT`, and those 143 are **51 distinct file contents** — a corpus of 168
+repositories counts a program vendored into five of them five times. Of the 51,
+21 are parser, grammar, language-server and compiler-test fixtures, 16 are the
+NIST CCVS85 conformance suite, and 14 are textbook and course material. None is
+an application. Eleven of the fourteen are one shape: a record code in the
+leading field, named by `88` levels, with variants of different lengths.
+
+So the pattern is real and uniform where it appears, and no program in the
+corpus that exists to do a job reads a file this way. The restriction stands
+until that changes; what would change it is application code, and the
+measurement is rerun on every analysis pass.
+
 ### `BANK-FILE-016` a DD name that is also a data item
 
 The generated `SELECT` reads `ASSIGN TO <DD>`, and both Enterprise COBOL 6 and
@@ -742,6 +762,29 @@ The comparison counts wherever it is written, including into a local, and a
 loop whose condition reads the status discharges it — the drain loop the
 language reference teaches stays legal. A `log` of the status does not:
 printing the answer is not reading it.
+
+**Using it** means every way a program can read the record, not only reading a
+field out of it in an expression. COBOL hands whole records to things by naming
+them, and each of those is the same defect:
+
+```ts
+read feedIn into line;
+write trail from line; // the stale record, posted straight back out
+release line; // …handed to a sort
+putMessage feedQueue from line; // …put on a queue
+call "BANKSUB" using line; // …passed to another program
+json payload.body from line; // …published
+```
+
+A statement that *fills* the record is not a use: a second `read into` it, a
+queue `getMessage into` it, a DL/I get. Those replace the stale bytes rather
+than trusting them, which is the fix rather than the defect.
+
+The walk reaches every block a statement runs, including the `on page` block of
+a write and the bodies of a sort's input and output procedures. A transaction's
+`on failure` handler and a file's `on error` handler are walked as routines of
+their own: control arrives there from anywhere, so nothing the body owed is
+known — but an operation the handler itself performs owes the same answer.
 
 ### `BANK-COPY-008` not a data description entry
 

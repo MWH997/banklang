@@ -231,7 +231,7 @@ missing was an accurate account of how much of the real usage they cover, so
 | ---------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------------- |
 | reference modification | 661 files; 62,716 constant-bound occurrences, 8,875 with a computed bound      | constant bounds only, every out-of-range constant a compile error | `adaptation` — 194 of 661 files use only constant bounds |
 | STRING                 | 973 `DELIMITED BY SIZE`, 518 by a value, 470 `WITH POINTER`                    | `concat`, which is the SIZE form                                  | `adaptation`                                             |
-| UNSTRING               | 262 single-delimiter, 58 multiple, 95 `WITH POINTER`, 130 `TALLYING`           | `split`, one delimiter into fixed receivers                       | `adaptation`                                             |
+| UNSTRING               | 262 single-delimiter, 58 multiple, 95 `WITH POINTER`, 130 `TALLYING` in 7 files | `split`, one delimiter into fixed receivers                       | `adaptation`                                             |
 | INSPECT                | 1,007 `TALLYING`, 780 `REPLACING`, 105 `CONVERTING`, 625 with `BEFORE`/`AFTER` | `countOf` and `replaceChars`                                      | `adaptation`                                             |
 
 Only one rule was wrong: `inspect` said "No BankTS syntax", which moved 182
@@ -243,6 +243,26 @@ stays `adaptation`, and it is a deliberate trade rather than an omission. Every
 out-of-range constant is `BANK-TYPE-003` at compile time and there is no
 dynamic case to guard at run time — which is a stronger guarantee than a
 bounds check, and it costs the 451 files that compute an offset.
+
+### The `TALLYING` count, and why `split` does not have one
+
+`130 of 622 UNSTRING statements carry TALLYING` was written down as evidence
+for a bounded field count on `split` — `split line by "," into a, b, c count
+into n`. It is a true count of statements and the wrong unit, and the corrected
+measurement is in the same file: those 130 statements are **7 distinct file
+contents** in 5,195 files. 126 of them are `NC218A.CBL`, the NIST CCVS85
+conformance test for `UNSTRING`, vendored into five language-tool repositories.
+
+The shape is wrong as well as the size. `tallyingWithPointer` and
+`tallyingSingleReceiver` were added to say which of the two things `TALLYING`
+is being used for, and the answer is the first: the statements pull one field
+out at a moving pointer and use the tally to drive the scan. A count is a
+*field count* only when there are several receivers, and a `split` with one
+receiver is not a split.
+
+So `split` keeps no count. Adding one would mean either exposing `WITH POINTER`
+— pointer machinery, separately unjustified — or shipping a clause whose
+external evidence is a conformance suite exercising the syntax.
 
 ## What is next, on the same evidence
 
