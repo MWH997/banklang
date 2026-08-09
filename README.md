@@ -53,7 +53,7 @@ model.
 ## Try it
 
 **[Open the playground](https://banklang.mwhassan.com/playground/)** — nothing
-to install, and compiling and running make no network call.
+to install, and nothing you write is sent anywhere.
 
 Click a line of BankTS and the COBOL it produced lights up, from the source map.
 Fill in the entry record or dataset on **Input**, then **Run** executes it

@@ -138,5 +138,6 @@ engineering this repository, and the report generator will not print an IBM
 validation claim unless a real result file has been imported.
 
 The compiler runs entirely in your browser at
-[the playground](https://banklang.mwhassan.com/playground/) — no server, and compiling and running make no
-network call. AI assisted the writing of this compiler. It is not part of it.
+[the playground](https://banklang.mwhassan.com/playground/) — there is no
+compile server, and nothing you write is sent anywhere. AI assisted the writing
+of this compiler. It is not part of it.

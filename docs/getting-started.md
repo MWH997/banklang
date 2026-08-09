@@ -35,7 +35,8 @@ your distribution ships 3.1, either build 3.2 or expect those lanes to fail.
 pnpm playground:dev
 ```
 
-The entire compiler runs in your browser — no server, no network call. Click any
+The entire compiler runs in your browser: there is no compile server and
+nothing you write is sent anywhere. Click any
 line of BankTS and the COBOL it produced lights up, and the other way round.
 That cross-link is read straight from the emitted source map, so traceability is
 something you click rather than something the documentation claims.

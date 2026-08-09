@@ -275,7 +275,8 @@ line produced.
 
 ### `packages/playground`
 
-The whole compiler in a browser — no server and no network call. Editors for
+The whole compiler in a browser — no compile server, and nothing the reader
+writes is sent anywhere. Editors for
 BankTS and the emitted COBOL, the source map as a click-through between them,
 and `Run` over `cobol-runtime`.
 
