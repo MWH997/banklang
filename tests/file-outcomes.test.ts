@@ -934,12 +934,14 @@ describe("the record a statement names", () => {
   });
 
   /**
-   * A `rewrite` names the record it puts back, and `BANK-FILE-010` requires it
-   * to follow a read of the same file — so the read it follows is already
-   * reported by the "another operation on this file" rule, and no program can
-   * distinguish counting the record from not. It is listed for the reason
-   * every other kind is: the accounting is exhaustive, and a `rewrite` does
-   * read what it writes.
+   * A `rewrite` names the record it puts back, and a `rewrite` does read what
+   * it writes.
+   *
+   * This case alone does not prove the `rewrite` arm carries its weight:
+   * `BANK-FILE-010` makes a `rewrite` follow a read of the same file, so the
+   * read it follows is already reported by the "another operation on this
+   * file" rule, and dropping `rewrite` from the accounting leaves the
+   * diagnostic list unchanged. The next test is the one that separates them.
    */
   it("counts a rewrite of it", () => {
     expect(
@@ -948,6 +950,37 @@ describe("the record a statement names", () => {
   rewrite store from master;
   if storeStatus == "00" {
     log "OK";
+  }`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  /**
+   * A `rewrite` of one file naming *another* file's stale record.
+   *
+   * The case the test above cannot reach, and the one that makes the `rewrite`
+   * arm load-bearing. `amend` is read and tested, so it owes nothing. `feedIn`
+   * is then read and its record handed straight to `rewrite amend from line`,
+   * which publishes bytes that may be the previous record, end-of-file
+   * leftovers, or nothing at all — and the `if` that follows discharges
+   * `feedIn` only *after* the damage.
+   *
+   * Without `rewrite` in the accounting this program reports nothing at all:
+   * the use is invisible and the later test clears the outcome. Found by
+   * mutation — the arm survived every test in this file, and the comment above
+   * this pair used to claim no program could tell the difference.
+   */
+  it("counts a rewrite of one file that names another's stale record", () => {
+    expect(
+      outcomes(`  open amend;
+  open feedIn;
+  read amend into line;
+  if amendStatus == "00" {
+    log "OK";
+  }
+  read feedIn into line;
+  rewrite amend from line;
+  if feedInStatus == "00" {
+    log "DONE";
   }`),
     ).toEqual(["BANK-FILE-017"]);
   });

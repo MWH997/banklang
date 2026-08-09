@@ -301,12 +301,44 @@ naming them.
 The `on page` block of a write was never entered, and neither was a
 transaction's `on failure` handler.
 
+A fourth, found on the second pass: a **`rewrite` naming another file's record**
+was not a use. The arm was there and a test covered it, but the test could not
+tell whether the arm did anything — `BANK-FILE-010` makes a `rewrite` follow a
+read of the same file, so that read is already reported by the "another
+operation on this file" rule and the diagnostic list is the same either way. The
+comment above the test said as much, and said it was therefore
+undistinguishable. It is not. Read one file and test it, read a second, then
+`rewrite` the first _from the second's record_: the use is real, the later test
+discharges the second file only after it, and dropping the arm reports nothing
+at all. Both cases are now in `tests/file-outcomes.test.ts`, the second labelled
+as the one that makes the arm load-bearing.
+
+That is the shape worth remembering: a test that covers a branch is not a test
+that constrains it.
+
 All three came from the same shape: the walk found nested blocks by looking up
 seven property names on the statement object, and decided what a statement read
 for the nine kinds that had come up. It now uses `childBlocks` — the IR's own
 exhaustive accounting, which `tests/nested-block-walkers.test.ts` already held
 the backend to — and two exhaustive switches with no `default`, so a statement
 kind added to the language does not compile until somebody has classified it.
+
+#### The twenty-eight that remain in the rule
+
+`file-outcomes.ts` scores **87.83%**, with 231 killed, 28 surviving and four
+uncovered. Each survivor was reproduced by hand and the suite re-run, because a
+reason nobody checked is a guess:
+
+| Where                                                                                                                                                                                                   | Count | Why it cannot be killed                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case` arms in `expressionsOf` and `namesUsedBy`                                                                                                                                                        | 7     | Stryker deletes a case _body_, so the arm falls through to the next case — and each of these falls onto one with an identical body. `ReturnStatement` onto `ExpressionStatement`, `ReleaseStatement` onto `CheckpointStatement`, four `[]` arms onto the `[]` group below them, and `SqlStatement` onto `CursorLoopStatement`, whose extra `start` an SQL statement has not got. Grouping cases by shared body is what makes them equivalent. |
+| `[]` replaced by `["Stryker was here"]`                                                                                                                                                                 | 12    | Both consumers reject a bare string. `namesIn` switches on `expression.kind`, which a string has not got; and a name is matched by `Set.has` against record names, which are identifiers, so no injected literal can match one.                                                                                                                                                                                                               |
+| the guards around `tested.has(...)` and `read.has(...)` — `used.length > 0`, `statusName !== undefined`, `outcome.kind === "pending"`, `outcome.recordName !== null`, and the `&&` between the last two | 6     | Every one only stops the lookup being _made_ with `null` or `undefined`, and the lookup already answers false for both: `CLEAN` is `{ kind: "clean" }` with no `recordName`, and both sets are `Set<string>`. Verified for each by applying it and running the suite.                                                                                                                                                                         |
+| the `NullableCheck` arm of `comparedNames`                                                                                                                                                              | 2     | Unreachable by typing. The only consumer of the set it feeds is the file-status comparison, and a status is a fixed-width string — `feedInStatus?` is `BANK-SYN-001`, so no nullable check can ever name one.                                                                                                                                                                                                                                 |
+| `if (statuses.size === 0) return []`                                                                                                                                                                    | 1     | A program with no file status creates no outcome, so the walk finds nothing with or without the early return. Speed, not answers.                                                                                                                                                                                                                                                                                                             |
+
+Four mutants are uncovered rather than surviving, in the diagnostic's own
+message construction, which `tests/diagnostics.test.ts` holds instead.
 
 #### What it found in the corpus analyser
 
