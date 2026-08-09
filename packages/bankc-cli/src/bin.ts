@@ -1,5 +1,5 @@
 import { BankcError, CompilerInvariant } from "../../diagnostics/src/errors";
-import { runBankc, watchProject } from "./index";
+import { runBankc, watchProject, watchRefusal } from "./index";
 
 const argv = process.argv.slice(2);
 
@@ -76,7 +76,14 @@ function fail(error: unknown): never {
   process.exit(1);
 }
 
-if (argv.includes("--watch")) {
+const refusal = argv.includes("--watch") ? watchRefusal(argv) : null;
+
+if (refusal) {
+  // `--watch` on a command that reads no project. Decided before the banner
+  // below, because "Watching for changes" above a refusal to watch is a claim
+  // the next line contradicts.
+  write(refusal);
+} else if (argv.includes("--watch")) {
   process.stdout.write("Watching for changes. Press Ctrl+C to stop.\n");
   try {
     const stop = watchProject(

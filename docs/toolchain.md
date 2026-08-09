@@ -27,7 +27,7 @@ CI integration, and editor support.
 | `--format text\|json\|sarif` | `check`    | Diagnostic output format                       |
 | `--output <file>`            | `check`    | Write the machine-readable report to a file    |
 | `--out <dir>`                | build-like | Output root for generated artifacts            |
-| `--watch`                    | any        | Rerun when a `.bank.ts` file changes           |
+| `--watch`                    | project    | Rerun when a `.bank.ts` file changes           |
 | `--debug`                    | any        | Print the stack when the compiler itself fails |
 
 Positional arguments may appear before or after flags.
@@ -44,6 +44,15 @@ exists to shorten the loop on exactly the errors that end a build, so ending the
 watch on one is the wrong response: the exit code follows the last build, and
 saving a fix clears it. `bankc job <directory> --watch` watches the directory
 itself, since a job's sources are one level down in each step's project.
+
+`--watch` applies to the commands that read a project — `check`, `build`,
+`job`, `emit`, `audit-report`, `verify`, `test`, `zunit`, `layout`, `config` —
+and is refused with exit code 2 on the rest, which name the commands that take
+it. It used to be accepted everywhere, and "everywhere" included commands with
+no project to find: `bankc explain BANK-LED-001 --watch` read the diagnostic
+identifier as a project path and died on `ENOENT … watch '/…/BANK-LED-001'`,
+and `bankc doctor --watch` opened a recursive watch over the working directory
+to rerun a command no `.bank.ts` can change.
 
 ## Formatting
 

@@ -129,8 +129,8 @@ pnpm bankc analyse  legacy/                   # what your COBOL contains
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 ```
 
-Add `--watch` to any command to rerun on save.
-[The whole toolchain →](docs/toolchain.md)
+Add `--watch` to a project command — `check`, `build`, `verify`, `test`, `job` —
+to rerun on save. [The whole toolchain →](docs/toolchain.md)
 
 ## Examples
 

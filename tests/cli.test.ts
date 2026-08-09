@@ -12,7 +12,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runBankc } from "../packages/bankc-cli/src/index";
+import { runBankc, watchRefusal } from "../packages/bankc-cli/src/index";
 
 describe("bankc cli", () => {
   it("prints help with supported commands", () => {
@@ -492,5 +492,82 @@ describe("a project path that names nothing", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("no such BankTS file");
     expect(result.stderr).not.toContain("ENOENT");
+  });
+});
+
+/**
+ * `--watch` on a command with nothing to watch.
+ *
+ * The README said "add `--watch` to any command", and the flag was read before
+ * the command was: `bankc explain BANK-LED-001 --watch` took the diagnostic id
+ * for a project path and died on
+ * `ENOENT: no such file or directory, watch '/…/BANK-LED-001'`. `bankc doctor
+ * --watch` was quieter and worse — it opened a recursive watch over the whole
+ * working directory to rerun a command that reads no BankTS at all, and said
+ * "Watching for changes" while doing it.
+ */
+describe("--watch on a command that reads no project", () => {
+  it("is refused, naming the command and the ones that take it", () => {
+    for (const argv of [
+      ["explain", "BANK-LED-001"],
+      ["doctor"],
+      ["init", "my-service"],
+      ["copybook", "inspect", "ACCT.cpy"],
+      ["dclgen", "import", "ACCT.cpy"],
+      ["analyse", "legacy/"],
+    ]) {
+      const refusal = watchRefusal([...argv, "--watch"]);
+      expect(refusal, `${argv[0]} --watch was accepted`).not.toBeNull();
+      expect(refusal?.exitCode).toBe(2);
+      expect(refusal?.stderr).toContain(`\`${argv[0]}\` does not read one`);
+      expect(refusal?.stderr).toContain("Takes --watch:");
+      // The failure this replaces.
+      expect(refusal?.stderr).not.toContain("ENOENT");
+    }
+  });
+
+  it("lets the commands that read a project through", () => {
+    for (const command of [
+      "check",
+      "build",
+      "job",
+      "emit",
+      "audit-report",
+      "verify",
+      "test",
+      "zunit",
+      "layout",
+      "config",
+    ]) {
+      expect(
+        watchRefusal([command, "examples/account-posting", "--watch"]),
+        `${command} --watch was refused`,
+      ).toBeNull();
+    }
+  });
+
+  /**
+   * Every watchable command is a real one. A typo in the set would refuse a
+   * command that exists or admit one that does not, and neither shows up in
+   * the two tests above.
+   */
+  it("names only commands the help text lists", () => {
+    const help = runBankc(["--help"]).stdout;
+    for (const command of [
+      "check",
+      "build",
+      "job",
+      "emit",
+      "audit-report",
+      "verify",
+      "test",
+      "zunit",
+      "layout",
+      "config",
+    ]) {
+      expect(help, `${command} is not in the help text`).toMatch(
+        new RegExp(`^\\s+${command}\\b`, "m"),
+      );
+    }
   });
 });

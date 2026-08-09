@@ -1630,6 +1630,55 @@ function relativeToCwd(path: string, cwd: string): string {
 }
 
 /**
+ * Commands `--watch` reruns, because a saved `.bank.ts` changes their answer.
+ *
+ * Every one of them reads a project's BankTS and produces something from it, so
+ * a save is a reason to run again.
+ */
+const WATCHABLE = new Set([
+  "check",
+  "build",
+  "job",
+  "emit",
+  "audit-report",
+  "verify",
+  "test",
+  "zunit",
+  "layout",
+  "config",
+]);
+
+/**
+ * `--watch` on a command that has nothing to watch, as a result rather than a
+ * crash.
+ *
+ * `bankc explain BANK-LED-001 --watch` used to print "Watching for changes",
+ * then `ENOENT: no such file or directory, watch '/…/BANK-LED-001'` — the
+ * watcher had taken the diagnostic id for a project path. `bankc doctor
+ * --watch` was quieter and worse: it opened a recursive watch on the whole
+ * working directory to rerun a command whose answer no `.bank.ts` can change.
+ *
+ * Neither is a thing to make work. `explain`, `doctor`, `init`, `version`,
+ * `copybook`, `dclgen` and `analyse` do not read a project's BankTS — `analyse`
+ * reads COBOL — so the honest response is to name the flag, name the command,
+ * and say which commands take it.
+ */
+export function watchRefusal(argv: string[]): CliResult | null {
+  const command = argv.filter((arg) => !arg.startsWith("-"))[0];
+  if (command !== undefined && WATCHABLE.has(command)) {
+    return null;
+  }
+  const named = command === undefined ? "no command" : `\`${command}\``;
+  return {
+    exitCode: 2,
+    stdout: "",
+    stderr:
+      `bankc: --watch reruns a command when a .bank.ts changes, and ${named} does not read one.\n` +
+      `       Takes --watch: ${[...WATCHABLE].sort().join(", ")}.\n`,
+  };
+}
+
+/**
  * The BankTS file a project path names, whether or not it is there.
  *
  * The convention, as a function: a project is a directory with
