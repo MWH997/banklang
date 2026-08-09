@@ -32,6 +32,8 @@ import {
   corpus,
   familyOf,
   formatRate,
+  ibmClaimSentence,
+  ibmValidationStatus,
   parseDefect,
   supportFor,
   type CorpusTally,
@@ -43,6 +45,34 @@ import { corpusDir } from "./horizontal-fetch";
 import { snapshotIndex, snapshotRepresentability } from "./horizontal-snapshot";
 
 const EVIDENCE = "evidence/horizontal";
+
+/** Where an IBM run's imported result lands, if one ever exists. */
+export const IBM_RESULT_PATH = "evidence/ibm/result.json";
+
+/**
+ * The IBM claim, derived rather than typed.
+ *
+ * This paragraph used to be four string literals in the middle of this
+ * function, which is a disclaimer that survives only as long as everybody
+ * remembers it. It now comes from whatever is on disk: with no imported result
+ * the only reachable sentence says the validation has not been performed, and
+ * `tests/ibm-validation-bundle.test.ts` holds that.
+ */
+function ibmParagraph(cwd: string): string[] {
+  const path = resolve(cwd, IBM_RESULT_PATH);
+  const status = ibmValidationStatus(
+    existsSync(path) ? readFileSync(path, "utf8") : null,
+  );
+  return [
+    "**Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL.**",
+    ibmClaimSentence(status),
+    "",
+    status.performed
+      ? "The imported result is in `evidence/ibm/result.json`; every other number on this page was produced without an IBM compiler."
+      : "Nothing on this page was produced by an IBM compiler, and no result here establishes behaviour under one.",
+    "",
+  ];
+}
 
 function readJson<T>(path: string): T | null {
   return existsSync(path)
@@ -234,11 +264,7 @@ function renderResults(cwd: string): string {
   }
 
   lines.push(
-    "**Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL. Native IBM",
-    "Enterprise COBOL execution: not yet performed.** Nothing on this page was",
-    "produced by an IBM compiler, and no result here establishes behaviour under",
-    "one.",
-    "",
+    ...ibmParagraph(cwd),
     "## Corpora",
     "",
     "| Corpus | Version | Licence | Redistribution |",

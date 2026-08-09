@@ -20,10 +20,10 @@ measurement, and every number on it is read out of `evidence/horizontal/`.
 The exact commit each lane ran on is in
 `evidence/horizontal/<corpus>/environment.json`.
 
-**Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL. Native IBM
-Enterprise COBOL execution: not yet performed.** Nothing on this page was
-produced by an IBM compiler, and no result here establishes behaviour under
-one.
+**Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL.**
+Native IBM Enterprise COBOL validation: NOT YET PERFORMED.
+
+Nothing on this page was produced by an IBM compiler, and no result here establishes behaviour under one.
 
 ## Corpora
 

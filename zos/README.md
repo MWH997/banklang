@@ -148,9 +148,34 @@ Then, in order:
 
 ## What to write down
 
-Copy `RESULTS-TEMPLATE.md` to `RESULTS.md` and fill it in. A finding that
-contradicts something the README claims is the most valuable thing this
-directory can produce; record it as found rather than as fixed.
+Two forms, and both are wanted. `RESULTS-TEMPLATE.md` is the prose one: copy it
+to `RESULTS.md` and fill it in, because a finding that contradicts something
+this README claims is the most valuable thing the directory can produce, and
+prose is where a finding can be explained. Record it as found rather than as
+fixed.
 
-Until `RESULTS.md` exists, every claim in this repository stops at GnuCOBOL, and
-the README says so.
+The other is `dist/zos/result-template.json`, written beside the bundle by
+`pnpm zos:kit`. It carries the manifest's own hash, so the file says which bytes
+were run, and one entry per case with the return code and — for the programs
+that execute — whether the output matched. Fill it in, set `executed` to `true`,
+and commit it as `evidence/ibm/result.json`.
+
+That path is not a convention somebody has to remember. It is what
+`ibmValidationStatus` reads, and what the validation page's claim is computed
+from:
+
+- With no such file, the only sentence the generator can produce is
+  **Native IBM Enterprise COBOL validation: NOT YET PERFORMED**.
+- A file that does not parse, or one still carrying `executed: false`, reads the
+  same way. A template committed by somebody being helpful is not evidence of a
+  run, and `tests/ibm-validation-bundle.test.ts` holds that.
+- A valid result changes the sentence to what the run actually established:
+  how many programs compiled, how many executed, and how many matched.
+
+Note which cases the bundle asks only to _compile_. A program with `EXEC CICS`,
+`EXEC SQL` or `EXEC DLI` in it needs a region, a plan or a PSB that this
+repository cannot ship, so `manifest.json` marks it `compile` and the schema
+will not let a compile be reported as an execution.
+
+Until such a result exists, every claim in this repository stops at GnuCOBOL —
+and now that is enforced rather than remembered.
