@@ -419,10 +419,17 @@ describe("the response headers", () => {
    * and finds a policy that already has one. An exact set fails on any second
    * host, so the argument has to be made again rather than inherited.
    *
-   * `connect-src` is asserted alongside it because the pair is the measurement:
-   * the injected tag sets `version` in `data-cf-beacon`, which `beacon.min.js`
-   * reads to mean report to the same-origin `/cdn-cgi/rum`. Analytics that
-   * work while nothing reaches off-origin is the outcome being held.
+   * `connect-src` is asserted alongside it because the beacon never attempts an
+   * off-origin request: the injected tag sets `version` in `data-cf-beacon`,
+   * which `beacon.min.js` reads to mean report to the same-origin
+   * `/cdn-cgi/rum`. Allowing the script and keeping every fetch on this origin
+   * is the pair being held.
+   *
+   * Allowing the host does not make the analytics work, and this test should
+   * not be read as saying it does. Cloudflare's edge answers `/cdn-cgi/rum`
+   * with a 404 of its own, so the beacon loads, reports, and is refused. The
+   * rest is a dashboard setting, which is why the assertion here stops at the
+   * shape of the policy.
    */
   it("allows the injected analytics beacon, and no other host", () => {
     const csp = policy();

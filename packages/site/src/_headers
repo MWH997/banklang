@@ -21,26 +21,37 @@
   # nothing at all can be `none`.
   #
   # The single exception is `static.cloudflareinsights.com`, and it is here
-  # because the deployment puts it there. With Web Analytics switched on for the
-  # Pages project, Cloudflare appends a beacon `<script>` to every HTML response
-  # as it serves it. The tag is in no file in this repository, which is why the
-  # policy never named the host and why every page logged a refusal for it from
-  # the day the hashes went in: the analytics have been collecting nothing since.
-  # Cloudflare only appends it for a request that looks like a browser
-  # navigation, so `curl` with the default headers does not see it and a check
-  # written that way reports a clean page.
+  # because the deployment puts it there. Cloudflare's Web Analytics appends a
+  # beacon `<script>` to every HTML response as it serves it. The tag is in no
+  # file in this repository, which is why the policy never named the host and
+  # why every page logged a refusal for it from the day the hashes went in.
+  #
+  # It is appended by the `mwhassan.com` zone rather than by the Pages project,
+  # which is worth knowing before changing a setting: `banklang.pages.dev`
+  # serves the same build with no beacon in it, and the custom domain serves it
+  # with one. Cloudflare also only appends it for a request that looks like a
+  # browser navigation, so `curl` with the default headers is served a page with
+  # no beacon and a check written that way reports clean either way.
   #
   # Allowing it grants nothing that was not already granted. That host is the
   # CDN serving every byte of this origin, and a policy is delivered by the same
-  # response it governs, so it was never a boundary against Cloudflare. The
-  # alternative is to turn Web Analytics off in the dashboard, which is a setting
-  # rather than a file and cannot be held by a test here.
+  # response it governs, so it was never a boundary against Cloudflare.
   #
-  # `connect-src` stays `self`, which was measured rather than assumed. The
-  # injected tag carries `data-cf-beacon` with a `version` in it, and
+  # **This does not make the analytics work, and nothing in this file can.**
+  # `connect-src` stays `self` because the beacon never attempts an off-origin
+  # request: the injected tag carries a `version` in `data-cf-beacon`, and
   # `beacon.min.js` reads a defined `version` to mean report to the same-origin
-  # `/cdn-cgi/rum` instead of to `cloudflareinsights.com`. The edge answers that
-  # path, so the report never leaves this origin.
+  # `/cdn-cgi/rum` rather than to `cloudflareinsights.com`. Cloudflare's edge
+  # answers that path with its own 404 — the plain one ending `<hr><center>
+  # cloudflare</center>`, not this site's 404, so the request is refused at the
+  # edge and never reaches the deployment. Measured in a browser on 2026-08-09,
+  # after the host was allowed and the script began to load.
+  #
+  # So the beacon now runs and reports into a 404, and Web Analytics records
+  # nothing either way. What is left is in the Cloudflare dashboard: either bind
+  # the collector for this hostname, or switch Web Analytics off for the zone,
+  # at which point the injection stops and this exception should come back out.
+  # Both are settings rather than files and no test here can hold them.
   #
   # `script-src` has no `unsafe-inline`. Every page carries an inline script —
   # the theme is read from `localStorage` and stamped on `<html>` before first
