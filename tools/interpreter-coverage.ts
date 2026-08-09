@@ -350,6 +350,19 @@ export function renderCoverage(report: CoverageReport): string {
   ].join("\n")}\n`;
 }
 
+/**
+ * The gate's verdict, apart from the run that produces it.
+ *
+ * Exported so a test can hold it: `main` writes a file and prints, which a
+ * test must not do, and the one line that decides whether a build goes red is
+ * the line most worth pinning. Mutating `=== 0` to `!== 0` here turns the gate
+ * into its own opposite — green on every blind spot, red on none — and nothing
+ * in this repository noticed.
+ */
+export function exitCodeFor(report: CoverageReport): number {
+  return report.gaps.length === 0 ? 0 : 1;
+}
+
 function main(): number {
   const cwd = process.cwd();
   const report = measureCoverage(cwd);
@@ -365,7 +378,7 @@ function main(): number {
   // Non-zero on a blind spot, so this is a gate and not a readout. A backend
   // that starts emitting a locally executable verb the runtime cannot execute
   // has reopened the hole this file was built to keep shut.
-  return report.gaps.length === 0 ? 0 : 1;
+  return exitCodeFor(report);
 }
 
 if (
