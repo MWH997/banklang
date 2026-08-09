@@ -215,9 +215,29 @@ export function portablePaths(text: string, cwd = commandCwd): string {
   return text.split(prefix).join("");
 }
 
+/**
+ * A project path that names nothing bankc can compile.
+ *
+ * Its own type so `runBankc` can return it as a result rather than let it out
+ * as a throw. `bin.ts` divides thrown errors into the reader's file and bankc's
+ * own; a mistyped directory is neither. It is something this program means to
+ * report, and the contract for those is a `CliResult` with an exit code.
+ */
+class ProjectPathError extends Error {}
+
 export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
   commandCwd = cwd;
+  try {
+    return dispatch(argv, cwd);
+  } catch (error) {
+    if (error instanceof ProjectPathError) {
+      return { exitCode: 1, stdout: "", stderr: `bankc: ${error.message}\n` };
+    }
+    throw error;
+  }
+}
 
+function dispatch(argv: string[], cwd: string): CliResult {
   // `--version` before `--help`, and before the command switch. It used to fall
   // through to the help text, so `bankc --version` printed a usage message and
   // exited 0 — which is what every tool that shells out to a compiler reads as
@@ -1609,13 +1629,60 @@ function relativeToCwd(path: string, cwd: string): string {
   return within.startsWith("..") || isAbsolute(within) ? path : within;
 }
 
+/**
+ * The BankTS file a project path names, whether or not it is there.
+ *
+ * The convention, as a function: a project is a directory with
+ * `src/main.bank.ts` in it, and a path already ending `.bank.ts` names the file
+ * directly. Nothing here touches the disk, so callers that only want the path —
+ * `watchProject`, deciding which directory to watch — can ask without having to
+ * hold a project that exists.
+ */
+function sourceFileFor(projectPath: string, cwd: string): string {
+  const absolute = resolve(cwd, projectPath);
+  return absolute.endsWith(".bank.ts")
+    ? absolute
+    : join(absolute, "src", "main.bank.ts");
+}
+
+/**
+ * The BankTS file a project path names, or a report that it names nothing.
+ *
+ * The existence check is here rather than at the `readFileSync` that follows,
+ * because what Node says when the file is absent is
+ * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'` — an errno,
+ * an absolute path, and no statement of what bankc expected. That is the
+ * message a first-time user gets for a mistyped directory name, which makes it
+ * one of the most-read lines this program has, and it reads like a crash.
+ *
+ * A convention worth having is a convention worth naming, so each of the three
+ * ways a path can name nothing says which one it is: a directory that is not
+ * there, a directory that is there without a project in it, and a `.bank.ts`
+ * file that is not there.
+ *
+ * **Only for the commands that go on to read the file.** `bankc job` names a
+ * directory of projects rather than a project, so its `--watch` resolves a
+ * `src/main.bank.ts` that is correctly absent; it calls `sourceFileFor` above.
+ */
 function resolveSourceFile(projectPath: string, cwd: string): string {
   const absolute = resolve(cwd, projectPath);
+  const sourceFile = sourceFileFor(projectPath, cwd);
+  if (existsSync(sourceFile)) {
+    return sourceFile;
+  }
   if (absolute.endsWith(".bank.ts")) {
-    return absolute;
+    throw new ProjectPathError(
+      `no such BankTS file: ${relativeToCwd(absolute, cwd)}`,
+    );
   }
 
-  return join(absolute, "src", "main.bank.ts");
+  const where = relativeToCwd(absolute, cwd) || ".";
+  throw new ProjectPathError(
+    existsSync(absolute)
+      ? `${where} is not a BankLang project: expected ${relativeToCwd(sourceFile, cwd)}.\n` +
+          `       \`bankc init ${where}\` scaffolds one.`
+      : `no such directory: ${where}`,
+  );
 }
 
 function resolveOutputRoot(cwd: string, args: string[]): string {
@@ -1890,7 +1957,12 @@ export function watchProject(
 ): () => void {
   const args = argv.filter((arg) => arg !== "--watch");
   const projectPath = requireProjectPath(args.slice(1)) ?? ".";
-  const sourceFile = resolveSourceFile(projectPath, cwd);
+  // `sourceFileFor`, not `resolveSourceFile`: this is a path to derive a watch
+  // directory from, not a file about to be read. `bankc job <dir> --watch`
+  // names a directory of projects, whose own `src/main.bank.ts` is correctly
+  // absent — the fallback below is what that case is for. The build itself
+  // runs through `runBankc`, which reports a path that names nothing.
+  const sourceFile = sourceFileFor(projectPath, cwd);
 
   let running = false;
   let pending = false;

@@ -406,41 +406,91 @@ describe("an error that escapes the compiler", () => {
    * A failure with no identifier, which is what `--debug` is still for.
    *
    * F3 catalogued what the compiler knows about. What is left is the file
-   * system and Node — `ENOENT` on a project directory a `job.json` names and
-   * nobody created — and there is nothing to catalogue about those: the message
+   * system and Node, and there is nothing to catalogue about those: the message
    * is already the whole of what happened, and the interesting question is
    * which of the compiler's own reads asked for it. So they keep the original
    * behaviour: the message, and the stack one flag away.
+   *
+   * The fixture is a `src/main.bank.ts` that is a *directory*. It has to be
+   * something that gets past every check the compiler makes and then fails
+   * inside a read, and the two obvious candidates are not that:
+   *
+   * - A project path naming nothing is no longer uncatalogued. It reports what
+   *   bankc expected to find and comes back as a result rather than a throw,
+   *   which is what the last describe in this file is about.
+   * - A `job.json` that is not JSON is caught and reported against the file
+   *   that failed to parse, also without a stack.
+   *
+   * A directory in a file's place satisfies `existsSync` and dies at
+   * `readFileSync` with `EISDIR`, which is exactly the boundary: a real errno
+   * from a read the compiler chose to make, with no rule behind it.
    */
   describe("with no identifier", () => {
-    const bad = mkdtempSync(join(tmpdir(), "banklang-throw-missing-"));
-    writeFileSync(
-      join(bad, "job.json"),
-      JSON.stringify({
-        name: "NIGHT",
-        description: "A step whose project is not there",
-        steps: [{ name: "POST", project: "missing" }],
-      }),
-      "utf8",
-    );
-    const plain = spawnSync(TSX, [BIN, "job", bad], {
+    const bad = mkdtempSync(join(tmpdir(), "banklang-throw-eisdir-"));
+    mkdirSync(join(bad, "src", "main.bank.ts"), { recursive: true });
+    const plain = spawnSync(TSX, [BIN, "check", bad], {
       encoding: "utf8",
       cwd: process.cwd(),
     });
 
     it("prints the message and offers the stack", () => {
       expect(plain.status).toBe(1);
+      expect(plain.stderr).toContain("EISDIR");
       expect(plain.stderr).not.toMatch(/^\s+at /m);
       expect(plain.stderr).toContain("--debug");
     });
 
     it("prints the stack when asked", () => {
-      const debugged = spawnSync(TSX, [BIN, "job", bad, "--debug"], {
+      const debugged = spawnSync(TSX, [BIN, "check", bad, "--debug"], {
         encoding: "utf8",
         cwd: process.cwd(),
       });
       expect(debugged.status).toBe(1);
       expect(debugged.stderr).toMatch(/^\s+at /m);
     });
+  });
+});
+
+/**
+ * What a mistyped project path says.
+ *
+ * This is one of the most-read lines the program has: it is what a first-time
+ * user gets for a directory name they got wrong, and it used to be Node's
+ * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'` — an errno,
+ * an absolute path, and no statement of what bankc had expected to find. A
+ * convention worth having is worth naming.
+ */
+describe("a project path that names nothing", () => {
+  const commands = ["check", "build", "verify", "emit cobol"];
+
+  it("says the directory does not exist, in the path the user typed", () => {
+    for (const command of commands) {
+      const result = runBankc([...command.split(" "), "examples/not-here"]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("no such directory: examples/not-here");
+      expect(result.stderr).not.toContain("ENOENT");
+    }
+  });
+
+  it("says what a project is when the directory exists without one", () => {
+    const dir = mkdtempSync(join(tmpdir(), "bankc-empty-"));
+    try {
+      const result = runBankc(["check", dir]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("is not a BankLang project");
+      expect(result.stderr).toContain("src/main.bank.ts");
+      // The remedy, named, because the scaffolder is the answer.
+      expect(result.stderr).toContain("bankc init");
+      expect(result.stderr).not.toContain("ENOENT");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("says so for a .bank.ts file that is not there", () => {
+    const result = runBankc(["check", join(tmpdir(), "absent.bank.ts")]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("no such BankTS file");
+    expect(result.stderr).not.toContain("ENOENT");
   });
 });
