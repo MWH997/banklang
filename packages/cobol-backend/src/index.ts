@@ -1,4 +1,10 @@
-import type { RoundingMode, SourcePosition } from "../../ast/src/index";
+import {
+  createDiagnostic,
+  type Diagnostic,
+  type RoundingMode,
+  type SourcePosition,
+  type SourceSpan,
+} from "../../ast/src/index";
 import type {
   IRBinaryComparisonExpression,
   IRBinaryArithmeticExpression,
@@ -72,6 +78,7 @@ import {
   decimalPicture,
   divisionRemainderShape,
   fitCobolWord,
+  isReservedSlotName,
   toCobolFieldName,
   toCobolName,
   toCobolParagraphName,
@@ -660,46 +667,229 @@ const FAILURE_REGISTERS = [
   `       01  ${RETURN_CODE_FIELD.padEnd(20)} PIC S9(4) COMP EXTERNAL.`,
 ];
 
-function collectDataNames(program: IRProgram): Set<string> {
-  const names = new Set<string>();
+/**
+ * One COBOL word the backend will write, and the BankTS name it came from.
+ *
+ * `scope` is the namespace the word has to be unique inside. Two entries that
+ * share a scope and a word are one declaration in the generated program, which
+ * is what `checkCobolNameCollisions` reports and what `cobc` refuses.
+ */
+export interface GeneratedName {
+  cobolName: string;
+  /** The BankTS name, as the author wrote it. */
+  symbol: string;
+  span: SourceSpan;
+  scope: string;
+  /** What the word names, for the message. */
+  kind: string;
+}
 
-  const addFields = (fields: IRRecord["fields"]): void => {
+/**
+ * Every generated data name, with where it came from.
+ *
+ * `collectDataNames` is this list with the origins dropped, so the set the
+ * emitter consults and the list the collision check reads are one walk of the
+ * program. They were two, and the second would have had to be kept in step with
+ * this one by hand.
+ *
+ * The scopes are the ones COBOL actually requires uniqueness in. A `05` under
+ * one `01` may share a name with a `05` under another — a reference qualified
+ * with `OF` resolves it, and the backend qualifies — so fields are scoped to
+ * their group rather than to the program. Everything at `01` level shares one
+ * namespace, and that is where a routine's `-P1` and `-RESULT` cells collide.
+ */
+export function collectGeneratedNames(program: IRProgram): GeneratedName[] {
+  const names: GeneratedName[] = [];
+
+  const addFields = (fields: IRRecord["fields"], scope: string): void => {
     for (const field of fields) {
-      names.add(toCobolFieldName(field.name));
+      // `FILLER` is not a name. COBOL uses it for space nothing refers to and
+      // it may repeat within a group, so it is not a collision.
+      if (!isReservedSlotName(field.name)) {
+        names.push({
+          cobolName: toCobolFieldName(field.name),
+          symbol: field.name,
+          span: field.span,
+          scope,
+          kind: "field",
+        });
+      }
       if (field.type.kind === "record") {
-        addFields(field.type.fields);
+        addFields(field.type.fields, `${scope}.${field.name}`);
       }
       if (field.type.kind === "array" && field.type.element.kind === "record") {
-        addFields(field.type.element.fields);
+        addFields(field.type.element.fields, `${scope}.${field.name}`);
       }
     }
   };
 
   for (const record of program.records) {
-    names.add(toCobolName(record.name));
-    addFields(record.fields);
+    names.push({
+      cobolName: toCobolName(record.name),
+      symbol: record.name,
+      span: record.span,
+      scope: "01",
+      kind: "record",
+    });
+    addFields(record.fields, `record ${record.name}`);
   }
   for (const file of program.files) {
-    names.add(fileCobolName(file.name));
-    names.add(fileRecordName(file));
-    addFields(file.record.fields);
+    names.push({
+      cobolName: fileCobolName(file.name),
+      symbol: file.name,
+      span: file.span,
+      scope: "01",
+      kind: "file",
+    });
+    names.push({
+      cobolName: fileRecordName(file),
+      symbol: file.name,
+      span: file.span,
+      scope: "01",
+      kind: "file record",
+    });
+    addFields(file.record.fields, `file ${file.name}`);
     if (file.statusName) {
-      names.add(toCobolFieldName(file.statusName));
+      names.push({
+        cobolName: toCobolFieldName(file.statusName),
+        symbol: file.statusName,
+        span: file.span,
+        scope: "01",
+        kind: "file status field",
+      });
     }
   }
   for (const fn of program.functions) {
-    names.add(functionResultName(fn.name));
-    fn.parameters.forEach((_parameter, index) => {
-      names.add(parameterFieldName(fn.name, index));
+    names.push({
+      cobolName: functionResultName(fn.name),
+      symbol: fn.name,
+      span: fn.span,
+      scope: "01",
+      kind: "function result cell",
+    });
+    fn.parameters.forEach((parameter, index) => {
+      names.push({
+        cobolName: parameterFieldName(fn.name, index),
+        symbol: `${fn.name}(${parameter.name})`,
+        span: fn.span,
+        scope: "01",
+        kind: "parameter cell",
+      });
     });
   }
   for (const owner of localOwners(program)) {
     for (const local of owner.locals) {
-      names.add(localFieldName(owner.name, local.name));
+      names.push({
+        cobolName: localFieldName(owner.name, local.name),
+        symbol: `${owner.name}.${local.name}`,
+        span: local.span,
+        // Scoped to the routine, not to the program. `planLocalFields` already
+        // resolves the cross-routine case: a bare name two routines both
+        // declare is qualified with the owner in each, so `scratch` in `feeOn`
+        // and in `levyOn` are `FEE-ON-SCRATCH` and `LEVY-ON-SCRATCH` and never
+        // collide. What it does not resolve is two locals of *one* routine
+        // arriving at the same word — the plan counts distinct bare names, so
+        // it sees one and qualifies neither.
+        //
+        // The name here is the unplanned one, because this list also feeds
+        // `collectDataNames`, which the emitter consults before the plan
+        // exists. Within a single owner the qualification is the same prefix
+        // for every local, so comparing the unplanned names answers the same
+        // question.
+        scope: `locals of ${owner.name}`,
+        kind: "local",
+      });
     }
   }
 
   return names;
+}
+
+function collectDataNames(program: IRProgram): Set<string> {
+  return new Set(collectGeneratedNames(program).map((name) => name.cobolName));
+}
+
+/**
+ * Two BankTS names that arrive at one COBOL word.
+ *
+ * `fitCobolWord` abbreviates a name to the 30 characters the target allows, and
+ * it is deterministic and stateless — it cannot know what else the program
+ * declares. So two names can reach the same word, and then the program declares
+ * one name twice and every reference to it is ambiguous. GnuCOBOL says
+ * `'…' is ambiguous; needs qualification` and refuses; Enterprise COBOL does the
+ * same. Before this check the compiler accepted such a program, reported no
+ * diagnostic, and wrote COBOL that would not compile.
+ *
+ * Paragraph names are checked in a namespace of their own, because that is what
+ * COBOL gives them — and `paragraphName` already moves a paragraph out of the
+ * way of a data name of the same word, so the rule here is the one it applies.
+ */
+export function checkCobolNameCollisions(program: IRProgram): Diagnostic[] {
+  const declared = collectDataNames(program);
+  const routines = [
+    ...program.functions.map((fn) => ({ name: fn.name, span: fn.span })),
+    ...program.transactions.map((transaction) => ({
+      name: transaction.name,
+      span: transaction.span,
+    })),
+  ];
+
+  const candidates: GeneratedName[] = [
+    ...collectGeneratedNames(program),
+    ...routines.map((routine) => {
+      const base = toCobolParagraphName(routine.name);
+      return {
+        cobolName: declared.has(base) ? cobolWord(base, "PARA") : base,
+        symbol: routine.name,
+        span: routine.span,
+        scope: "paragraph",
+        kind: "paragraph",
+      };
+    }),
+  ];
+
+  const byWord = new Map<string, GeneratedName[]>();
+  for (const candidate of candidates) {
+    const key = `${candidate.scope} ${candidate.cobolName}`;
+    const bucket = byWord.get(key);
+    if (bucket) {
+      bucket.push(candidate);
+    } else {
+      byWord.set(key, [candidate]);
+    }
+  }
+
+  const diagnostics: Diagnostic[] = [];
+  for (const bucket of byWord.values()) {
+    // Distinct source names only. One name reaching the same word twice is the
+    // same declaration seen twice, not a collision — a file's record layout is
+    // walked once per file, and a parameter shares its function's span.
+    const distinct = [...new Set(bucket.map((entry) => entry.symbol))].sort();
+    if (distinct.length < 2) {
+      continue;
+    }
+
+    const first = bucket[0] as GeneratedName;
+    // Every one of them, so a fix does not have to be found by bisecting the
+    // program: the second and later names are where the author has a choice.
+    for (const entry of bucket) {
+      if (entry.symbol === first.symbol) {
+        continue;
+      }
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-NAME-001",
+          severity: "error",
+          message: `${entry.symbol} and ${first.symbol} both become the COBOL ${entry.kind === first.kind ? entry.kind : "name"} ${entry.cobolName}.`,
+          span: entry.span,
+          hint: `A COBOL word is 30 characters, so both names are abbreviated to ${entry.cobolName} and the generated program declares it twice. Rename one so they differ within those 30 characters.`,
+          backendProfile: "ibm-enterprise-cobol-zos",
+        }),
+      );
+    }
+  }
+
+  return diagnostics;
 }
 
 function requireSqlDeclaration(name: string): IRSql {

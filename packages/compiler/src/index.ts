@@ -1,5 +1,6 @@
 import type { Diagnostic } from "../../ast/src/index";
 import {
+  checkCobolNameCollisions,
   emitCobol,
   emitJcl,
   renderCopybook,
@@ -138,10 +139,17 @@ export function compile(
 
   const program = lowered.program;
   const semantics = analyzeProgramSemantics(program);
-  if (hasErrors(semantics.diagnostics)) {
+
+  // Before emission, because the answer is a property of the names the program
+  // declares and the artifact produced from colliding names is one no COBOL
+  // compiler accepts. Reported alongside the semantic diagnostics so an author
+  // sees every reason the program will not build, not the first one.
+  const collisions = checkCobolNameCollisions(program);
+  const beforeEmission = [...semantics.diagnostics, ...collisions];
+  if (hasErrors(beforeEmission)) {
     return {
       ok: false,
-      diagnostics: semantics.diagnostics,
+      diagnostics: beforeEmission,
       ...EMPTY,
       program,
       analysis: semantics.summary,
@@ -166,7 +174,7 @@ export function compile(
   const diagnostics = [
     ...parsed.diagnostics,
     ...typechecked.diagnostics,
-    ...semantics.diagnostics,
+    ...beforeEmission,
     ...coverage.diagnostics,
   ];
 

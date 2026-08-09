@@ -24,6 +24,7 @@ export type DiagnosticNamespace =
   | "FILE"
   | "COPY"
   | "GEN"
+  | "NAME"
   | "SEC"
   | "TEST"
   | "JOB";
@@ -55,6 +56,7 @@ export const NAMESPACE_TITLES: Record<DiagnosticNamespace, string> = {
   FILE: "File I/O",
   COPY: "Copybook and layout",
   GEN: "Code generation",
+  NAME: "Generated names",
   SEC: "Security",
   TEST: "zUnit test cases",
   JOB: "Job descriptor",
@@ -1028,6 +1030,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     remediation:
       "Write `test <name> for <entry transaction> { ... }`, or do not ask for a case for this program. Nothing is written for one.",
     specReference: "zunit.md",
+    implemented: true,
+  },
+  {
+    id: "BANK-NAME-001",
+    title: "Two names become one COBOL word",
+    explanation:
+      "A COBOL word is at most 30 characters, so a longer BankTS name is abbreviated word by word until it fits. The abbreviation is deterministic and takes no account of what else the program declares, which means two different source names can arrive at the same word. COBOL then has two declarations of one name, and every reference to either is ambiguous: `cobc` refuses the program, and a compiler that resolved it would have to pick one of the two. The generated cells a routine owns — its `-P1` parameters, its `-RESULT`, its `-EXIT` — are abbreviated the same way, so two routines can collide on those while their paragraph names still differ.",
+    remediation:
+      "Rename one of the two so they differ within the abbreviated word. The diagnostic names the word they share and both source names that reach it.",
+    specReference: "for-mainframe-engineers.md",
     implemented: true,
   },
   {

@@ -26,9 +26,11 @@ export function toCobolName(name: string): string {
  *
  * Deterministic and stateless, so the same source name always produces the same
  * COBOL word regardless of what else the program contains or what order things
- * were emitted in. Two distinct source names that abbreviate to one word are a
- * real defect rather than something to paper over, and `BANK-NAME-001` reports
- * them; see `collectCobolNameCollisions`.
+ * were emitted in. Being stateless is also why this cannot notice that the word
+ * it just produced is one another name already reached: two distinct source
+ * names that abbreviate alike are a real defect rather than something to paper
+ * over, and `checkCobolNameCollisions` in the backend reports them as
+ * `BANK-NAME-001`.
  */
 export function fitCobolWord(
   word: string,
@@ -116,7 +118,9 @@ function rawCobolName(name: string): string {
  * The truncation is also where two modules become one. `ACCOUNT-TRANSFER-IN`
  * and `ACCOUNT-TRANSFER-OUT` are one external name, so a library holding both
  * resolves every call to whichever was bound last — which is why
- * `BANK-NAME-001` refuses a program whose eight characters are already taken.
+ * `BANK-JOB-005` refuses a job whose steps build two programs agreeing over
+ * those eight characters. A program compiled on its own has nothing to collide
+ * with, so a job is the only place the clash is visible.
  *
  * One rule, used by whatever writes the PROGRAM-ID, whatever writes the member
  * name, and whatever writes the `EXEC PGM=` that runs it.

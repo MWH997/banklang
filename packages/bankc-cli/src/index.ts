@@ -17,6 +17,7 @@ import {
   type SourceSpan,
 } from "../../ast/src/index";
 import {
+  checkCobolNameCollisions,
   emitCobol,
   emitJcl,
   emitJobJcl,
@@ -1591,8 +1592,23 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
     ? lowerProgramToIR(typechecked)
     : { program: null, diagnostics: [] };
 
+  // `analyzeProgramSemantics` plus the generated-name collision check, which is
+  // the same pair `compile()` runs before emission. This file walks the phases
+  // itself rather than calling `compile()`, so a check added to one path and
+  // not the other is a compiler that answers differently depending on whether
+  // it was asked by `bankc` or by the playground. `tests/name-collisions.test.ts`
+  // holds the two lists to each other.
   const semantics = ir.program
-    ? analyzeProgramSemantics(ir.program)
+    ? (() => {
+        const result = analyzeProgramSemantics(ir.program);
+        return {
+          ...result,
+          diagnostics: [
+            ...result.diagnostics,
+            ...checkCobolNameCollisions(ir.program),
+          ],
+        };
+      })()
     : {
         diagnostics: [],
         summary: {
