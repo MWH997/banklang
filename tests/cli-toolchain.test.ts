@@ -286,3 +286,57 @@ describe("help", () => {
     expect(help).toContain("--format text|json|sarif");
   });
 });
+
+/**
+ * The command table in `docs/toolchain.md` against the CLI's own inventory.
+ *
+ * The table listed twelve commands and `bankc --help` listed eighteen. `job`,
+ * `analyse`, `emit`, `audit-report`, `dclgen` and `version` were missing — two
+ * of them commands the README puts in its quick start, so the page a reader is
+ * sent to for "the whole toolchain" was the one place that did not have them.
+ *
+ * Held in both directions. A command added without a row fails, and a row for a
+ * command that no longer exists fails too, which is the half that would
+ * otherwise rot quietly.
+ */
+describe("the toolchain page and the CLI agree on what the commands are", () => {
+  /** Command words from `bankc --help`, which is the CLI's own list. */
+  function helpCommands(): string[] {
+    const help = runBankc(["--help"]).stdout;
+    const body = help.slice(
+      help.indexOf("Commands:") + "Commands:".length,
+      help.indexOf("Options:"),
+    );
+    return [
+      ...new Set(
+        body
+          .split("\n")
+          .map((line) => line.trim().split(/\s+/)[0] ?? "")
+          .filter((word) => /^[a-z][a-z-]*$/.test(word)),
+      ),
+    ].sort();
+  }
+
+  /** Command words the `## Commands` table names, from its `bankc …` cells. */
+  function documentedCommands(): string[] {
+    const page = readFileSync(
+      join(import.meta.dirname, "..", "docs", "toolchain.md"),
+      "utf8",
+    );
+    const table = page.slice(
+      page.indexOf("## Commands"),
+      page.indexOf("### Global options"),
+    );
+    return [
+      ...new Set(
+        [...table.matchAll(/`bankc ([a-z][a-z-]*)/g)].map(
+          (match) => match[1] as string,
+        ),
+      ),
+    ].sort();
+  }
+
+  it("documents every command the CLI offers", () => {
+    expect(documentedCommands()).toEqual(helpCommands());
+  });
+});
