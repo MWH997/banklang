@@ -222,6 +222,38 @@ jobs:
           path: dist/vsix
           retention-days: 90
 
+      # Built on every push for the same reason the bill of materials is: the
+      # release attaches it, and the alternative is that the first CI run of
+      # `zos:kit` happens on the day of a release, which is the day it must not
+      # fail. It is also the cheapest possible regression test on the emitted
+      # COBOL — the bundle is every example's program, copybooks and JCL, and
+      # generating it exercises the whole backend.
+      - name: Build the z/OS conformance bundle
+        run: pnpm zos:kit
+
+      # The identical invocation `release.yml` archives with, run here on every
+      # push so that release day is not the first time it runs. It is
+      # GNU-tar-specific — `--sort` does not exist in the bsdtar a macOS
+      # workstation has — so a developer cannot exercise it locally, which is
+      # exactly the kind of step that is discovered to be broken at the worst
+      # moment. `--sort=name` with a fixed mtime and owner because the bundle
+      # is byte-identical across generations, and an archive that is not would
+      # throw that away at the last step.
+      - name: Archive the z/OS conformance bundle
+        run: |
+          tar --sort=name \
+              --mtime="@0" --owner=0 --group=0 --numeric-owner \
+              -czf dist/banklang-zos-conformance.tar.gz \
+              -C dist zos
+          tar -tzf dist/banklang-zos-conformance.tar.gz | head -3
+
+      - name: Upload the z/OS conformance bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: zos-conformance-bundle
+          path: dist/banklang-zos-conformance.tar.gz
+          retention-days: 90
+
   # R2. The inventory a bank's security function asks for before anything else.
   #
   # A job of its own, in parallel, for two reasons. It resolves the prebuilt

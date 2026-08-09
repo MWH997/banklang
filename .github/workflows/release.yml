@@ -116,6 +116,28 @@ jobs:
       - name: Package the VS Code extension
         run: pnpm build:vsix
 
+      # The bundle somebody with z/OS access runs. Attached to the release so
+      # that closing the native-IBM gap does not first require Node, pnpm and a
+      # clone — the reader most likely to have a mainframe is the reader least
+      # likely to want a JavaScript toolchain.
+      #
+      # No separate checksum file. Every one of the bundle's members carries a
+      # SHA-256 in its own `manifest.json`, and the archive itself is attested
+      # below; a third digest of the same bytes is one more thing to disagree.
+      #
+      # `--sort=name` with a fixed mtime and owner, because the bundle is
+      # byte-identical across generations and an archive that is not would throw
+      # that away at the last step.
+      - name: Build the z/OS conformance bundle
+        run: pnpm zos:kit
+
+      - name: Archive the z/OS conformance bundle
+        run: |
+          tar --sort=name \
+              --mtime="@0" --owner=0 --group=0 --numeric-owner \
+              -czf "dist/banklang-zos-conformance-${{ steps.version.outputs.version }}.tar.gz" \
+              -C dist zos
+
       # Sigstore, through GitHub's own OIDC identity. This is the one part of
       # R2's "signed and attested" that needs no key of the author's: it states
       # which workflow, at which commit, produced these bytes, and `gh
@@ -126,6 +148,7 @@ jobs:
           subject-path: |
             dist/vsix/*.vsix
             dist/sbom/*.cdx.json
+            dist/banklang-zos-conformance-*.tar.gz
 
       - name: Publish the release
         env:
@@ -136,7 +159,8 @@ jobs:
             --notes-file release-notes.md \
             --verify-tag \
             dist/vsix/*.vsix \
-            dist/sbom/*.cdx.json
+            dist/sbom/*.cdx.json \
+            dist/banklang-zos-conformance-*.tar.gz
 
       # Deliberately not `vsce publish`. That needs a marketplace publisher and
       # a token that belongs to a person; the `.vsix` attached above is the
