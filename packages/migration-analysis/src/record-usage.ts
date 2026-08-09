@@ -136,8 +136,8 @@ export interface RecordUsage {
    *
    * The FD count is the wrong denominator for "how common is this", because
    * X-COBOL gathers 168 repositories and a program vendored into five of them
-   * is five FDs. 143 multi-record INPUT FDs are 121 distinct files, and the
-   * distinct ones concentrate in language tooling: parser and grammar
+   * is five FDs. 143 multi-record INPUT FDs are 51 distinct file contents, and
+   * the distinct ones concentrate in language tooling: parser and grammar
    * fixtures, two compiler test suites, and the NIST CCVS85 conformance suite.
    * Counting files rather than descriptions is what makes that visible.
    */
