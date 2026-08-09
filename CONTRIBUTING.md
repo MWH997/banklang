@@ -88,6 +88,31 @@ and explainable:
     real and worth recording, but it is not IBM validation, and the two must
     never be blurred.
 
+## AI-assisted contributions
+
+Accepted. Much of this repository was written that way — the README says so on
+its front page, and [SECURITY.md](SECURITY.md#ai-policy) sets out the boundary.
+A patch drafted with a coding assistant is read against the same hard rules,
+local checks and commit style as one typed by hand, and it stands or falls on
+those.
+
+Rule 1 above governs what reaches an artifact rather than what produces a patch.
+A model may draft code, tests and prose; the reasoning behind a change has to be
+somebody's. Every byte of generated COBOL comes from deterministic compiler
+code, and a change still needs its justification from the specifications and a
+test that fails without it.
+
+Two conventions follow, and both sit with the contributor rather than the tool:
+
+- **Read the whole patch before sending it.** Review here covers the parts a
+  model wrote as closely as the rest. A confident sentence about an IBM
+  convention counts for nothing without the citation beside it, and the entries
+  in [docs/glossary.md](docs/glossary.md) show the form those take.
+- **Keep the assistant out of the trailers.** No `Co-Authored-By` naming a
+  model, and no "generated with" line. Attribution belongs to the people
+  answerable for the change, and the history here was rewritten once to take 134
+  of them back out.
+
 ## Adding a diagnostic
 
 A new diagnostic needs all four of these, or the build fails:
