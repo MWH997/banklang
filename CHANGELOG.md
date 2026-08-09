@@ -15,6 +15,29 @@ in order.
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-08-09
+
+The release that measures this compiler against COBOL nobody wrote for it.
+
+0.9.0 answered an audit of the compiler's own output. This one asks the harder
+question — what does real COBOL actually contain, and how much of it can BankTS
+represent — and answers it against four independent corpora, a semantic
+benchmark whose expectations are somebody else's, and a defect suite. The
+answers changed the language: `lineSequential` exists because 309 of 5,195 real
+files needed it, and multi-record `INPUT` is still refused because the 143
+occurrences turned out to be 51 distinct files and no application program among
+them.
+
+The compiler also grew a reference runtime that executes what it emits, so every
+example is now run by two engines and compared rather than only compiled; five
+diagnostics, including a flow-sensitive rule for file operations whose outcome a
+program never looked at; and the reproducibility work that lets a stranger clone
+this repository and regenerate every number on the validation page from pinned
+inputs.
+
+Native IBM Enterprise COBOL validation has still not been performed. There is
+now a deterministic bundle ready for somebody who can perform it.
+
 ### Added
 
 - Report the compiler's version, whether GnuCOBOL is installed and which one,

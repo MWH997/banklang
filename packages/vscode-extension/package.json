@@ -2,7 +2,7 @@
   "name": "banklang-vscode",
   "displayName": "BankLang",
   "description": "BankTS language support: banking safety diagnostics, formatting, and COBOL traceability.",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "publisher": "mwhassan",
   "license": "MIT",

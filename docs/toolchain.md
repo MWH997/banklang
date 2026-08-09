@@ -66,7 +66,7 @@ actually run rather than whatever is first on the path.
 
 ```txt
 BankLang doctor
-bankc: 0.9.0
+bankc: 0.10.0
 cwd: /home/somebody/banklang
 project: src/main.bank.ts
 node: v24.18.0

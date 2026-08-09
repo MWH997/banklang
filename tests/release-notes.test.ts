@@ -104,17 +104,29 @@ describe("the notes a release is published with", () => {
   });
 
   /**
-   * This repository, today.
+   * This repository, today: the version in package.json is releasable.
    *
-   * `## [0.9.0]` is written and `## [Unreleased]` above it is not empty, which
-   * is exactly the state above: tagging `v0.9.0` now would publish notes that
-   * omit every change made since that section was written. The refusal is the
-   * point, and it is why `release.yml` runs this before it builds anything.
+   * This assertion used to be its own inverse. It read
+   * "stops this repository from tagging v0.9.0 as it stands" and required
+   * `notesFor` to *throw*, because `## [Unreleased]` above `## [0.9.0]` was
+   * full and tagging then would have published notes omitting everything
+   * written since. That was a true statement about a Tuesday rather than a
+   * property of the repository, and it failed the moment the changelog was cut
+   * — which is the one moment it should have stayed green.
+   *
+   * The durable property is the one `release.yml` actually depends on: whatever
+   * version the manifests name must have a section a release can be published
+   * from. It fails if somebody bumps the version and forgets the changelog, or
+   * cuts a section and leaves entries stranded under Unreleased, which are the
+   * two ways this goes wrong.
    */
-  it("stops this repository from tagging v0.9.0 as it stands", () => {
+  it("can publish notes for the version the manifests name", () => {
     const version = (
       JSON.parse(readFileSync("package.json", "utf8")) as { version: string }
     ).version;
-    expect(() => notesFor(version)).toThrow(/Unreleased/);
+    const notes = notesFor(version);
+    expect(notes.length).toBeGreaterThan(200);
+    // The lede, not just a bare heading with bullets under it.
+    expect(notes).not.toMatch(/^#/);
   });
 });

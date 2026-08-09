@@ -9,7 +9,7 @@ import { compile } from "../../compiler/src/index";
  * and wrong in the one place a user looks when a diagnostic disagrees with the
  * command line. `tests/vscode-extension.test.ts` holds it to the root manifest.
  */
-export const SERVER_VERSION = "0.9.0";
+export const SERVER_VERSION = "0.10.0";
 import { explainDiagnostic } from "../../diagnostics/src/index";
 import { formatBankTs } from "../../formatter/src/index";
 import { parseBankTs } from "../../parser/src/index";

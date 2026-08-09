@@ -1,6 +1,6 @@
 {
   "name": "banklang",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "A deterministic compiler from BankTS, a small banking language with TypeScript's type syntax, to readable IBM Enterprise COBOL.",
   "license": "MIT",
   "homepage": "https://banklang.mwhassan.com",
