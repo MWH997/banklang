@@ -271,6 +271,43 @@ an `EXEC SQL` block near the top.
 
 Read the remaining 196 as a finding, in the same terms as §2.3b's 198.
 
+### 2.3d Mutation tests over the file-outcome rule
+
+```bash
+pnpm test:mutation:safety
+```
+
+`BANK-FILE-017` is a published guarantee about what this compiler proves, and a
+guarantee whose logic nobody has mutated is a claim. It sits in the rules lane's
+`mutate` glob, and the aggregate hid it: the lane reported a healthy number
+while `packages/semantic-analyzer/src/file-outcomes.ts` scored **63.73** inside
+it, behind two files above 80. So it has a lane of its own, with
+`packages/migration-analysis/src/record-usage.ts` — which produces the numbers
+that decide what goes into the language — and `tools/interpreter-coverage.ts`,
+the gate that decides whether emitted COBOL has been executed by two engines.
+
+#### What it found
+
+Not weak tests. Three holes in the rule.
+
+A `write` from the record a pending read filled was **not a use** — the stale
+record posted straight back out, which is the defect the whole rule exists for.
+Nor was a `release` into a sort, a queue `put`, a `checkpoint`, a `for each`
+over a table inside the record, a `call ... using`, a `json` generate, a CICS
+`link commarea`, a DL/I `insertSegment`, or an SQL or cursor argument taken
+from it. The walk read _expressions_, and COBOL hands whole records to things by
+naming them.
+
+The `on page` block of a write was never entered, and neither was a
+transaction's `on failure` handler.
+
+All three came from the same shape: the walk found nested blocks by looking up
+seven property names on the statement object, and decided what a statement read
+for the nine kinds that had come up. It now uses `childBlocks` — the IR's own
+exhaustive accounting, which `tests/nested-block-walkers.test.ts` already held
+the backend to — and two exhaustive switches with no `default`, so a statement
+kind added to the language does not compile until somebody has classified it.
+
 ### 2.4 Fuzz tests
 
 Fuzz:
