@@ -120,3 +120,18 @@ export type {
   RepresentabilityVerdict,
   SupportRule,
 } from "./representability";
+
+export {
+  emptyIbmResult,
+  hashManifest,
+  ibmClaimSentence,
+  ibmValidationStatus,
+  IbmResultError,
+  IBM_RESULT_VERSION,
+  parseIbmResult,
+} from "./ibm-result";
+export type {
+  IbmCaseResult,
+  IbmResult,
+  IbmValidationStatus,
+} from "./ibm-result";
