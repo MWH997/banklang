@@ -77,7 +77,6 @@ import { childBlocks } from "../../ir/src/index";
 import type {
   IRBlock,
   IRExpression,
-  IRFile,
   IRFileStatement,
   IRProgram,
   IRStatement,
@@ -406,8 +405,6 @@ function namesUsedBy(statement: IRStatement): string[] {
 }
 
 interface Walk {
-  program: IRProgram;
-  files: Map<string, IRFile>;
   /** Files with a declared status, which is the only kind this can reason about. */
   statuses: Map<string, string>;
   diagnostics: Diagnostic[];
@@ -679,9 +676,7 @@ function walkNested(walk: Walk, state: State, blocks: IRBlock[]): State {
  */
 export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
   const statuses = new Map<string, string>();
-  const files = new Map<string, IRFile>();
   for (const file of program.files) {
-    files.set(file.name, file);
     if (file.statusName) {
       statuses.set(file.name, file.statusName);
     }
@@ -691,8 +686,6 @@ export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
   }
 
   const walk: Walk = {
-    program,
-    files,
     statuses,
     diagnostics: [],
     reported: new Set<SourceSpan>(),

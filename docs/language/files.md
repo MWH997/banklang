@@ -214,11 +214,11 @@ The comparison counts wherever it is written — in an `if`, in a loop condition
 into a local — so the drain loop above stays exactly as it was. A `log` of the
 status does not count: printing the answer is not reading it.
 
-*Using* the record covers every way a program can read it, not only reading a
+_Using_ the record covers every way a program can read it, not only reading a
 field out of it. COBOL hands whole records to things by naming them, and
 `write trail from line`, `release line`, `putMessage feedQueue from line`,
 `call "BANKSUB" using line` and `json out from line` are each the stale record
-going somewhere. A statement that *fills* it — a second `read into` it, a queue
+going somewhere. A statement that _fills_ it — a second `read into` it, a queue
 `getMessage into` it — is not a use: replacing the bytes is the fix.
 
 The rule reaches into every block a statement runs, the `on page` block of a

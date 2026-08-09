@@ -227,12 +227,12 @@ UNSTRING and INSPECT as missing features. All four already existed:
 missing was an accurate account of how much of the real usage they cover, so
 `string-usage.json` now measures the _forms_ rather than the keywords.
 
-| Construct              | Corpus                                                                         | BankTS covers                                                     | Verdict                                                  |
-| ---------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------------- |
-| reference modification | 661 files; 62,716 constant-bound occurrences, 8,875 with a computed bound      | constant bounds only, every out-of-range constant a compile error | `adaptation` — 194 of 661 files use only constant bounds |
-| STRING                 | 973 `DELIMITED BY SIZE`, 518 by a value, 470 `WITH POINTER`                    | `concat`, which is the SIZE form                                  | `adaptation`                                             |
+| Construct              | Corpus                                                                          | BankTS covers                                                     | Verdict                                                  |
+| ---------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------- |
+| reference modification | 661 files; 62,716 constant-bound occurrences, 8,875 with a computed bound       | constant bounds only, every out-of-range constant a compile error | `adaptation` — 194 of 661 files use only constant bounds |
+| STRING                 | 973 `DELIMITED BY SIZE`, 518 by a value, 470 `WITH POINTER`                     | `concat`, which is the SIZE form                                  | `adaptation`                                             |
 | UNSTRING               | 262 single-delimiter, 58 multiple, 95 `WITH POINTER`, 130 `TALLYING` in 7 files | `split`, one delimiter into fixed receivers                       | `adaptation`                                             |
-| INSPECT                | 1,007 `TALLYING`, 780 `REPLACING`, 105 `CONVERTING`, 625 with `BEFORE`/`AFTER` | `countOf` and `replaceChars`                                      | `adaptation`                                             |
+| INSPECT                | 1,007 `TALLYING`, 780 `REPLACING`, 105 `CONVERTING`, 625 with `BEFORE`/`AFTER`  | `countOf` and `replaceChars`                                      | `adaptation`                                             |
 
 Only one rule was wrong: `inspect` said "No BankTS syntax", which moved 182
 files out of `not-yet-implemented` when corrected. The other three keep their
@@ -257,7 +257,7 @@ The shape is wrong as well as the size. `tallyingWithPointer` and
 `tallyingSingleReceiver` were added to say which of the two things `TALLYING`
 is being used for, and the answer is the first: the statements pull one field
 out at a moving pointer and use the tally to drive the scan. A count is a
-*field count* only when there are several receivers, and a `split` with one
+_field count_ only when there are several receivers, and a `split` with one
 receiver is not a split.
 
 So `split` keeps no count. Adding one would mean either exposing `WITH POINTER`

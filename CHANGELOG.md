@@ -77,6 +77,11 @@ in order.
 
 ### Fixed
 
+- Count every way a program reads the record an operation filled, not only a
+  field read out of it: a write, a release, a queue put and eight more were not
+  uses (`BANK-FILE-017`) — [files](docs/language/files.md).
+- Walk the `on page` block of a write and a transaction's `on failure` handler,
+  neither of which the file-outcome check entered — `BANK-FILE-017`.
 - Stop a successful sort reporting failure: GnuCOBOL sets no file status on a
   `USING` or `GIVING` file — [D27](docs/divergences.md).
 - Emit `WITH DUPLICATES IN ORDER`, since the order of equal sort keys is
@@ -163,6 +168,9 @@ in order.
 
 ### Changed
 
+- Count distinct file contents rather than occurrences: 143 multi-record
+  `INPUT` descriptions are 51 files and 130 `TALLYING` statements are 7 —
+  [horizontal validation](docs/validation/horizontal-validation.md).
 - Type a conformance finding's `rule` as the union of valid rule ids rather than
   `string`, so a misspelled id cannot be reported.
 - Declare the project's licence, repository, description and version in

@@ -776,7 +776,7 @@ call "BANKSUB" using line; // …passed to another program
 json payload.body from line; // …published
 ```
 
-A statement that *fills* the record is not a use: a second `read into` it, a
+A statement that _fills_ the record is not a use: a second `read into` it, a
 queue `getMessage into` it, a DL/I get. Those replace the stale bytes rather
 than trusting them, which is the fix rather than the defect.
 
