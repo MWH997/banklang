@@ -23,7 +23,7 @@
  * is anchored on the syntax around it.
  */
 
-import { sourceLines } from "./features";
+import { contentDigest, sourceLines } from "./features";
 
 /**
  * Reference modification, split by whether the compiler could check it.
@@ -73,6 +73,33 @@ export interface UnstringUsage {
   onOverflow: number;
   statements: number;
   files: number;
+
+  /* --- what the TALLYING statements actually are --- */
+
+  /**
+   * Digests of the distinct file *contents* carrying an `UNSTRING ...
+   * TALLYING`.
+   *
+   * A statement count answers the wrong question when a corpus gathers 168
+   * repositories, because a program copied into five of them is counted five
+   * times. This one was: 130 `TALLYING` statements in 5,195 files reads as an
+   * estate pattern, and 126 of them are `NC218A.CBL` — the NIST CCVS85
+   * conformance test for `UNSTRING` — vendored into five language-tool
+   * repositories. Deduplicating is the difference between "a common idiom" and
+   * "a conformance suite exercises the clause".
+   */
+  tallyingContents: string[];
+  /** `TALLYING` statements that also carry `WITH POINTER`: a scanning loop. */
+  tallyingWithPointer: number;
+  /**
+   * `TALLYING` statements with exactly one receiver.
+   *
+   * The count is only a *field count* when there are several receivers. With
+   * one, the statement is pulling a single field out at a moving pointer and
+   * the tally is how far the scan got — which is pointer machinery rather than
+   * "how many fields did this line have".
+   */
+  tallyingSingleReceiver: number;
 }
 
 export interface InspectUsage {
@@ -126,6 +153,9 @@ function emptyReport(): StringUsageReport {
       onOverflow: 0,
       statements: 0,
       files: 0,
+      tallyingContents: [],
+      tallyingWithPointer: 0,
+      tallyingSingleReceiver: 0,
     },
     inspect: {
       tallying: 0,
@@ -165,6 +195,26 @@ function statementsOf(flat: string, verb: string): string[] {
     found.push(match[1] ?? "");
   }
   return found;
+}
+
+/**
+ * Receivers of an `UNSTRING`: the fields between `INTO` and the next clause.
+ *
+ * `DELIMITER IN` and `COUNT IN` belong to the receiver before them rather than
+ * being receivers of their own, so they are dropped before the split.
+ */
+function receiverCount(body: string): number {
+  const into = /\bINTO\b([\s\S]*?)(?=\bWITH\s+POINTER\b|\bTALLYING\b|\bON\s+OVERFLOW\b|\bNOT\s+ON\s+OVERFLOW\b|$)/.exec(
+    body,
+  );
+  if (!into) {
+    return 0;
+  }
+  return (into[1] ?? "")
+    .replace(/\bDELIMITER\s+IN\s+[A-Z0-9][A-Z0-9-]*(\s*\([^)]*\))?/g, " ")
+    .replace(/\bCOUNT\s+IN\s+[A-Z0-9][A-Z0-9-]*(\s*\([^)]*\))?/g, " ")
+    .split(/[\s,]+/)
+    .filter((word) => /^[A-Z][A-Z0-9-]*(\([^)]*\))?$/.test(word)).length;
 }
 
 /** One member's string usage, added into a running report. */
@@ -253,6 +303,16 @@ export function addStringUsage(text: string, into: StringUsageReport): void {
       }
       if (/\bTALLYING\b/.test(body)) {
         into.unstring.tallying += 1;
+        const digest = contentDigest(text);
+        if (!into.unstring.tallyingContents.includes(digest)) {
+          into.unstring.tallyingContents.push(digest);
+        }
+        if (/WITH\s+POINTER/.test(body)) {
+          into.unstring.tallyingWithPointer += 1;
+        }
+        if (receiverCount(body) === 1) {
+          into.unstring.tallyingSingleReceiver += 1;
+        }
       }
       if (/ON\s+OVERFLOW/.test(body)) {
         into.unstring.onOverflow += 1;

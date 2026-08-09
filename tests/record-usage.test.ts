@@ -197,6 +197,25 @@ describe("the corpus totals", () => {
     expect(usage.inputVariantRepositories).toEqual(["dscobol@Cobol-Projects"]);
   });
 
+  /**
+   * The same program vendored twice is one program.
+   *
+   * A corpus of 168 repositories is full of files that appear in several of
+   * them — the NIST CCVS85 suite is in four — and a count of file descriptions
+   * counts each copy. 143 multi-record `INPUT` FDs are 121 distinct files, and
+   * the difference is what separates "an estate pattern" from "a conformance
+   * suite everybody vendored".
+   */
+  it("counts distinct file contents, not copies of one file", () => {
+    const usage = emptyRecordUsage();
+    addRecordUsage(VARIANTS, usage, "dscobol@Cobol-Projects");
+    addRecordUsage(VARIANTS, usage, "someone@else");
+    addRecordUsage(VARIANTS.replace("BDS1003", "BDS1004"), usage, "third@repo");
+
+    expect(usage.openedInput).toBe(3);
+    expect(usage.inputVariantContents).toHaveLength(2);
+  });
+
   it("counts how a program works with the records", () => {
     const usage = emptyRecordUsage();
     addRecordUsage(VARIANTS, usage, null);

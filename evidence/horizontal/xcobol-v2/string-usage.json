@@ -25,7 +25,18 @@
     "tallying": 130,
     "onOverflow": 86,
     "statements": 622,
-    "files": 141
+    "files": 141,
+    "tallyingContents": [
+      "8cd4a91c",
+      "0b4a423a",
+      "e3bfbb0f",
+      "f6922981",
+      "473ddb16",
+      "3358351a",
+      "5883019c"
+    ],
+    "tallyingWithPointer": 42,
+    "tallyingSingleReceiver": 35
   },
   "inspect": {
     "tallying": 1007,

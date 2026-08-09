@@ -49,6 +49,12 @@ jobs:
           - lane: tools
             script: test:mutation:tools
             report: dist/mutation-tools
+          # Added 2026-08-09. `BANK-FILE-017` is a published guarantee about
+          # what the compiler proves, and it lives in one file that the rules
+          # lane's aggregate hid at 63.73% behind two files above 80.
+          - lane: safety
+            script: test:mutation:safety
+            report: dist/mutation-safety
     steps:
       - uses: actions/checkout@v7
 

@@ -44,6 +44,7 @@ const STRYKER = [
   "stryker.backend.config.json",
   "stryker.runtime.config.json",
   "stryker.tools.config.json",
+  "stryker.safety.config.json",
 ] as const;
 
 /**

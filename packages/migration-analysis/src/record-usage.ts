@@ -28,7 +28,7 @@
  * ambiguous is counted in its own bucket rather than assigned to a guess.
  */
 
-import { sourceLines } from "./features";
+import { contentDigest, sourceLines } from "./features";
 
 /** One `FD`, as much of it as can be read without the copybooks. */
 export interface FileRecordShape {
@@ -130,6 +130,18 @@ export interface RecordUsage {
   variantRepositories: string[];
   /** Repositories contributing a multi-record FD opened INPUT. */
   inputVariantRepositories: string[];
+  /**
+   * Digests of the distinct file *contents* holding a multi-record FD opened
+   * INPUT.
+   *
+   * The FD count is the wrong denominator for "how common is this", because
+   * X-COBOL gathers 168 repositories and a program vendored into five of them
+   * is five FDs. 143 multi-record INPUT FDs are 121 distinct files, and the
+   * distinct ones concentrate in language tooling: parser and grammar
+   * fixtures, two compiler test suites, and the NIST CCVS85 conformance suite.
+   * Counting files rather than descriptions is what makes that visible.
+   */
+  inputVariantContents: string[];
 
   /** The shapes themselves, capped, so a reader can check the counts. */
   examples: FileRecordShape[];
@@ -156,6 +168,7 @@ export function emptyRecordUsage(): RecordUsage {
     unclassified: 0,
     variantRepositories: [],
     inputVariantRepositories: [],
+    inputVariantContents: [],
     readInto: 0,
     writeFrom: 0,
     writeOfVariant: 0,
@@ -465,6 +478,10 @@ export function addRecordUsage(
 
     if (shape.modes.includes("INPUT")) {
       usage.openedInput += 1;
+      const digest = contentDigest(text);
+      if (!usage.inputVariantContents.includes(digest)) {
+        usage.inputVariantContents.push(digest);
+      }
     }
     if (shape.modes.includes("OUTPUT") || shape.modes.includes("EXTEND")) {
       usage.openedOutput += 1;

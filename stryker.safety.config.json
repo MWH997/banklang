@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The two files that decide whether a file operation's outcome was handled, and the gate that says which emitted COBOL two engines have both executed. `BANK-FILE-017` is a published compiler guarantee, and a guarantee whose logic nobody has mutated is a claim. Its own lane because the aggregate of the rules lane hides it: file-outcomes.ts scored 63.73 inside a run that reported 78 overall, with 68 surviving mutants and five real holes among them. See docs/verification.md.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation-broad.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "packages/semantic-analyzer/src/file-outcomes.ts",
+    "packages/migration-analysis/src/record-usage.ts",
+    "tools/interpreter-coverage.ts"
+  ],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "htmlReporter": {
+    "fileName": "dist/mutation-safety/index.html"
+  },
+  "jsonReporter": {
+    "fileName": "dist/mutation-safety/mutation.json"
+  },
+  "timeoutMS": 120000,
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
+  "ignoreStatic": true,
+  "concurrency": 8,
+  "incremental": false,
+  "_incremental": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and this lane exists to measure whether the *tests* are worth anything — so a test-only change must re-measure.",
+  "tempDirName": ".stryker-tmp-safety"
+}

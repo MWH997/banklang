@@ -80,6 +80,7 @@
     "test:mutation:emitter": "stryker run stryker.emitter.config.json",
     "test:mutation:lint": "stryker run stryker.lint.config.json",
     "test:mutation:runtime": "stryker run stryker.runtime.config.json",
+    "test:mutation:safety": "stryker run stryker.safety.config.json",
     "test:mutation:tools": "stryker run stryker.tools.config.json",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "words:extract": "tsx tools/extract-ibm-words.ts",

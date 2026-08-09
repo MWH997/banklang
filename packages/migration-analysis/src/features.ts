@@ -510,3 +510,23 @@ export function detectFeatures(text: string): FeatureCounts {
 export function featureNames(counts: FeatureCounts): string[] {
   return Object.keys(counts).sort();
 }
+
+/**
+ * A short, stable digest of a file's bytes, for deduplicating a corpus.
+ *
+ * FNV-1a rather than SHA-256 because this package runs in the browser and must
+ * stay free of Node built-ins — `tests/browser-safety.test.ts` is what keeps
+ * that true. Collisions do not matter here: this is used to answer "how many
+ * *distinct* files does this pattern actually occur in", where two files with
+ * the same digest are, in every case measured, the same file vendored twice.
+ */
+export function contentDigest(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    // The FNV prime, 16777619, by shifts: a plain multiply overflows into a
+    // float and stops being the algorithm.
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
