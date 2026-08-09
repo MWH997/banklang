@@ -101,8 +101,12 @@ describe("what the README claims", () => {
       snapshot.differential;
     expect(interpreted).toBe(locallyExecutable);
     expect(blindSpots).toBe(0);
+    // The two numbers and the relation between them, not the noun phrase
+    // around them. This asserted `… it emits` verbatim, so tightening the
+    // sentence failed a test about a denominator without the denominator
+    // having changed — which teaches the wrong lesson about editing prose.
     expect(readme).toContain(
-      `${String(locallyExecutable)} of the ${String(verbsEmitted)} it emits`,
+      `${String(locallyExecutable)} of the ${String(verbsEmitted)} `,
     );
   });
 
@@ -219,4 +223,125 @@ describe("what the release notes claim", () => {
       );
     }
   });
+});
+
+/**
+ * The launch article, which quotes eight figures and is not generated.
+ *
+ * The other surfaces here were already held to the snapshot. This one was not,
+ * and it is the one written furthest from the evidence: a post is drafted once,
+ * published, and then the numbers in it move underneath it. Two of its figures
+ * had already gone stale by the time 0.10.0 was cut — the test count, and a
+ * sentence that folded a defect BankTS cannot express into the
+ * `not-demonstrated` pile.
+ *
+ * Only the figures are asserted. A blog post is prose and should stay editable;
+ * what may not change silently is a number.
+ */
+describe("what the launch article claims", () => {
+  const snapshot = JSON.parse(
+    readFileSync(SNAPSHOT_FILE, "utf8"),
+  ) as ReleaseSnapshot;
+  const path = "blog/a-banking-language-that-compiles-to-cobol.md";
+  const article = readFileSync(path, "utf8").replace(/\s+/g, " ");
+
+  const figures: [string, string][] = [
+    ["test count", String(snapshot.tests.tests)],
+    ["example project count", `${String(snapshot.examples.projects)} example`],
+    [
+      "differential denominator",
+      `${String(snapshot.differential.locallyExecutable)} of the ${String(snapshot.differential.verbsEmitted)}`,
+    ],
+    ["X-COBOL file count", String(snapshot.xcobol.discovered)],
+    [
+      "CobolCodeBench whole-corpus numerator",
+      `${String(snapshot.cobolCodeBench.passed)} of ${String(snapshot.cobolCodeBench.discovered)}`,
+    ],
+    ["OpenCBS denominator", `of ${String(snapshot.openCbs.total)} defects`],
+  ];
+
+  for (const [what, value] of figures) {
+    it(`states the ${what} the snapshot records`, () => {
+      expect(
+        article.includes(value),
+        `${path} does not state the ${what} as "${value}".`,
+      ).toBe(true);
+    });
+  }
+
+  it("says native IBM validation has not been performed", () => {
+    expect(article).toContain(
+      "Native IBM Enterprise COBOL\nvalidation has not been performed".replace(
+        /\s+/g,
+        " ",
+      ),
+    );
+  });
+});
+
+/**
+ * The claims no public surface may make, checked on all of them at once.
+ *
+ * The release notes had this check and nothing else did, so the one page most
+ * likely to be read carefully was the one page that was guarded. These phrases
+ * are the ones `docs/status-and-limits.md` fixes in advance as not allowed
+ * while no IBM compiler has run this output, and the point of fixing them in
+ * advance is that the question is settled before there is any incentive to
+ * answer it loosely.
+ */
+describe("the claims no public surface may make", () => {
+  const forbidden = [
+    "IBM-compatible",
+    "IBM compatible",
+    "IBM-validated",
+    "Enterprise COBOL validated",
+    "tested on z/OS",
+    "production-ready",
+    "production ready",
+  ];
+
+  /** Public prose. Not `docs/status-and-limits.md`, which quotes the list. */
+  const surfaces = [
+    "README.md",
+    "packages/site/src/index.html",
+    "packages/playground/index.html",
+    `docs/releases/${ROOT.version}.md`,
+    "docs/validation/horizontal-validation.md",
+    "blog/a-banking-language-that-compiles-to-cobol.md",
+  ];
+
+  for (const surface of surfaces) {
+    it(`${surface} makes none of them`, () => {
+      const text = readFileSync(surface, "utf8").toLowerCase();
+      for (const phrase of forbidden) {
+        expect(
+          text.includes(phrase.toLowerCase()),
+          `${surface} says "${phrase}"`,
+        ).toBe(false);
+      }
+    });
+  }
+
+  /**
+   * The distinction itself, on the surfaces a first-time reader lands on.
+   *
+   * Absence of a forbidden phrase is not the same as making the distinction.
+   * A page that never mentions GnuCOBOL passes the check above and still
+   * leaves a reader thinking the output has been through IBM's compiler.
+   */
+  for (const surface of [
+    "README.md",
+    "packages/site/src/index.html",
+    `docs/releases/${ROOT.version}.md`,
+  ]) {
+    it(`${surface} names GnuCOBOL and says IBM validation has not happened`, () => {
+      const text = readFileSync(surface, "utf8");
+      expect(text).toContain("GnuCOBOL");
+      // An explicit negative about IBM, not merely the absence of a claim.
+      expect(
+        /no ibm enterprise\s+cobol validation|not yet performed/i.test(text),
+        `${surface} names GnuCOBOL but never says IBM validation has not happened`,
+      ).toBe(true);
+    });
+  }
 });

@@ -107,7 +107,7 @@ failing the build. That is what catches the defect that compiles: a bounds guard
 once clamped an out-of-range subscript instead of refusing it, and every static
 check passed.
 
-The numbers, all generated from committed evidence rather than typed: 3200
+The numbers, all generated from committed evidence rather than typed: 3217
 tests; 25 example projects; 27 of the 31 emitted COBOL verbs executed by both
 engines with zero blind spots; 19 of 46 CobolCodeBench tasks passing
 whole-corpus, which is 19 of the 19 that BankTS can express at all; 20 executed
@@ -118,8 +118,9 @@ And the denominators are the honest ones. The four verbs that are not executed
 locally are named — a generated zUnit test case's entry points and a Report
 Writer section, neither of which has anywhere local to run. On the OpenCBS
 defect suite, nine of 41 defects have a BankTS program the compiler refuses;
-that is not a claim that BankLang prevents 22% of COBOL bugs, because the other
-32 are recorded as not demonstrated rather than as failures.
+that is not a claim that BankLang prevents 22% of COBOL bugs, because 31 of the
+remaining 32 are recorded as not demonstrated rather than as failures, and the
+last one cannot be written in BankTS at all.
 
 Then the part that matters most:
 

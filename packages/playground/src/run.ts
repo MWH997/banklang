@@ -216,7 +216,7 @@ function callsOf(cursor: CursorRows): Uint8Array[][][] {
  * that call delivers, which host variable of that row by its position in the
  * generated CALL, how many bytes, and the bytes. Hex because a row carries
  * packed decimal as often as text and a byte of packed decimal is not something
- * a line sequential file can hold.
+ * a `lineSequential` file can hold.
  */
 export function sqlRowRecords(
   translated: string,

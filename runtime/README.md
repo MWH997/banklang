@@ -91,7 +91,7 @@ stmt call row  hv len  the bytes, in hex
 ```
 
 Hex, because a row carries packed decimal as often as text and a byte of packed
-decimal is not something a line sequential file can hold. The bytes are the
+decimal is not something a `lineSequential` file can hold. The bytes are the
 caller's business: the stub knows nothing about a row beyond its length and
 where to put it, and whoever writes the script has the copybook.
 

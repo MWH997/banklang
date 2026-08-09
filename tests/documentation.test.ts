@@ -222,9 +222,18 @@ describe("what the README claims", () => {
    * anything else. Two lines, and the same reasoning — a reader who wanted the
    * live compiler and got a repository is the one visitor this project cannot
    * afford to lose to a scroll.
+   *
+   * And a third, to 13,800, for the same reason as the first: a list that was
+   * wrong rather than prose that grew. The example tables named twenty of the
+   * twenty-three directories in `examples/` — `payment-feed-import`,
+   * `settlement-bill-file` and `zunit-tested-posting` had been added and never
+   * listed — so a reader counting the tables got a different answer from a
+   * reader counting the directory. Three rows, and the prose was tightened to
+   * pay for most of them: the differential lane was explained twice in
+   * consecutive paragraphs and is now explained once.
    */
   it("stays short enough to read", () => {
-    expect(readme.length).toBeLessThan(13_550);
+    expect(readme.length).toBeLessThan(13_800);
   });
 
   /**

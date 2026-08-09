@@ -7,7 +7,7 @@
   "nativeIbmValidation": "NOT YET PERFORMED",
   "tests": {
     "files": 154,
-    "tests": 3200,
+    "tests": 3217,
     "measuredBy": "pnpm test"
   },
   "examples": {

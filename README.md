@@ -182,13 +182,10 @@ balances; the rest are executed twice — by `cobc` and by an interpreter writte
 against the same output — and a test fails on any disagreement. That is what
 catches a defect that compiles: the bounds guard once clamped an out-of-range
 subscript instead of refusing it, and every static check passed.
-[The grades →](evidence/GRADES.md)
 
-Every locally executable COBOL verb the backend emits is now executed by both
-engines — 27 of the 31 it emits, the other four being a generated zUnit test
-case's entry points and a Report Writer section, neither of which has anywhere
-local to run. `pnpm interpreter:coverage` measures it and
-`tests/interpreter-coverage.test.ts` fails when a new one appears.
+That lane covers 27 of the 31 COBOL verbs the backend emits. The other four are
+a generated zUnit test case's entry points and a Report Writer section, neither
+of which has anywhere local to run. [The grades →](evidence/GRADES.md)
 
 ## Documentation
 

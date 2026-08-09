@@ -36,7 +36,7 @@ So this axis asks a different question:
 | [CobolCodeBench](https://huggingface.co/datasets/harshini-kumar/CobolCodeBench) | 46 tasks specified in prose, with inputs and expected outputs | Whether BankTS can independently express a program somebody else specified |
 | [COBOLEval](https://github.com/zorse-project/COBOLEval)                         | 146 HumanEval tasks transpiled to a fixed COBOL interface     | Whether BankTS can meet a calling contract it did not choose               |
 | [X-COBOL v2](https://zenodo.org/records/14269462)                               | 5,195 files from 168 open-source repositories                 | What real COBOL contains, and how much of it BankTS can represent          |
-| [OpenCBS](https://github.com/PhaseChangeSoftware/cobol-defects-suite)           | 43 defects reconstructed from developer forum posts           | Which real defects BankLang refuses at compile time                        |
+| [OpenCBS](https://github.com/PhaseChangeSoftware/cobol-defects-suite)           | 41 defects reconstructed from developer forum posts           | Which real defects BankLang refuses at compile time                        |
 | NIST COBOL-85                                                                   | The standard's own validation suite                           | Whether the COBOL compiler _underneath_ BankLang conforms                  |
 
 Every corpus is pinned in `validation/corpus-lock.json` by revision and by the
