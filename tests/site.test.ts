@@ -198,9 +198,10 @@ describe("every page shell carries the same navigation", () => {
 
     /** An external link opened from this origin should not keep a handle on it. */
     it(`${name} opens its external links without a window handle`, () => {
-      for (const [, tag] of html.matchAll(
+      for (const match of html.matchAll(
         /<a\s([^>]*href="https?:\/\/[^"]*"[^>]*)>/g,
       )) {
+        const tag = match[1] as string;
         if (/href="https:\/\/banklang\.mwhassan\.com/.test(tag)) {
           continue;
         }

@@ -74,9 +74,20 @@ jobs:
           grep -q "sha256-" dist/site/_headers \
             || { echo "::error::the policy names no script hashes, so every inline script would be refused."; exit 1; }
 
+      # `npx`, not `cloudflare/wrangler-action`. The action installs its own
+      # pinned wrangler into the checkout with the repository's package manager,
+      # and pnpm 11 exits non-zero on `workerd`'s ignored build scripts, so the
+      # deploy failed before it started — after adding wrangler to this
+      # repository's dependency tree, which would also have put sixty-one
+      # packages into the bill of materials the release publishes.
+      #
+      # Pinned exactly rather than to a range: a deploy tool that changes under
+      # you is how a site quietly stops matching what the build produced.
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist/site --project-name=banklang --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4.120.0 pages deploy dist/site \
+            --project-name=banklang \
+            --branch=main
