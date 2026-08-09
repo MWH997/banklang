@@ -237,4 +237,29 @@ describe("nothing in the backend keeps its own list of block-carrying kinds", ()
       5,
     );
   });
+
+  /**
+   * The safety analysis is the seventh walker, and it kept its own list.
+   *
+   * `BANK-FILE-017` walks the statement tree to decide whether a file's outcome
+   * was handled, and it found the nested blocks by looking up seven property
+   * names on the statement object. `atEndOfPage` was one of the seven and the
+   * lookup was never called for a file statement, so `write ... on page { ... }`
+   * was a block the rule did not enter — a read inside one left an outcome
+   * outstanding and the compiler said the program was clean.
+   */
+  it("is what the file-outcome walk uses too", () => {
+    const analysis = readFileSync(
+      "packages/semantic-analyzer/src/file-outcomes.ts",
+      "utf8",
+    );
+
+    expect(analysis).toMatch(
+      /import \{[^}]*\bchildBlocks\b[^}]*\} from "\.\.\/\.\.\/ir\/src\/index"/,
+    );
+    expect(
+      analysis,
+      "the file-outcome walk is reading block names off the statement object again",
+    ).not.toMatch(/"atEndOfPage"|"notFound"|"onError"/);
+  });
 });

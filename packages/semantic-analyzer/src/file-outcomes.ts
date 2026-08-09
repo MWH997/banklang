@@ -45,6 +45,27 @@
  * merges the states at each join is a sound flow analysis over it without an
  * explicit graph. The merge is the conservative one: a fact is discharged after
  * a branch only if every path through it discharged it.
+ *
+ * ## Why the accounting is by kind and not by key
+ *
+ * Two questions decide every report: which names does this statement read, and
+ * which blocks does it run. The first version answered the second by looking up
+ * `body`, `notFound`, `onError` and four more names on the statement object,
+ * and answered the first for the nine statement kinds that had come up. Both
+ * are the same mistake, and mutation testing found it from the other end: a
+ * statement kind nobody thought of is silently a statement with no blocks and
+ * no uses, and the rule quietly stops applying to it.
+ *
+ * It had stopped applying to five. `write trail from line` — the stale record
+ * posted straight back out, which is the defect this whole check exists for —
+ * was not a use. Neither was `release line` into a sort, `put feedQueue from
+ * line` onto a queue, `call "SUB" using line`, nor the `on page` block of a
+ * write, which was not walked at all.
+ *
+ * So the blocks come from `childBlocks`, the IR's own exhaustive accounting of
+ * them, and what a statement reads comes from `expressionsOf` and
+ * `namesUsedBy` — exhaustive switches over `IRStatement` with no `default`. A
+ * new statement kind does not compile until somebody has said what it reads.
  */
 
 import {
@@ -52,6 +73,7 @@ import {
   type Diagnostic,
   type SourceSpan,
 } from "../../ast/src/index";
+import { childBlocks } from "../../ir/src/index";
 import type {
   IRBlock,
   IRExpression,
@@ -162,11 +184,9 @@ function namesIn(expression: IRExpression, into: Set<string>): void {
   }
 }
 
-function names(expression: IRExpression | null | undefined): Set<string> {
+function names(expression: IRExpression): Set<string> {
   const found = new Set<string>();
-  if (expression) {
-    namesIn(expression, found);
-  }
+  namesIn(expression, found);
   return found;
 }
 
@@ -180,12 +200,9 @@ function names(expression: IRExpression | null | undefined): Set<string> {
  * written, which is why this looks for the comparison rather than for an `if`.
  */
 function comparedNames(
-  expression: IRExpression | null | undefined,
+  expression: IRExpression,
   into = new Set<string>(),
 ): Set<string> {
-  if (!expression) {
-    return into;
-  }
   if (expression.kind === "BinaryComparison") {
     namesIn(expression.left, into);
     namesIn(expression.right, into);
@@ -223,8 +240,15 @@ function childrenOf(expression: IRExpression): IRExpression[] {
   }
 }
 
-/** The expressions one statement evaluates itself, not counting its blocks. */
-function ownExpressions(statement: IRStatement): IRExpression[] {
+/**
+ * The expressions one statement evaluates itself, not counting its blocks.
+ *
+ * Exhaustive over `IRStatement`, with no `default`: the return type is not
+ * nullable, so a kind nobody has classified does not compile. That is the point
+ * — the version with a `default` silently exempted `serialize`, `call using`
+ * and every cursor argument from a rule that is supposed to hold everywhere.
+ */
+function expressionsOf(statement: IRStatement): IRExpression[] {
   switch (statement.kind) {
     case "AssignStatement":
       return [statement.target, statement.expression];
@@ -234,6 +258,8 @@ function ownExpressions(statement: IRStatement): IRExpression[] {
       return [statement.expression];
     case "ExpressionStatement":
       return [statement.expression];
+    case "ReturnCodeStatement":
+      return [statement.value];
     case "LedgerStatement":
       return [statement.account, statement.amount];
     case "AuditStatement":
@@ -247,10 +273,134 @@ function ownExpressions(statement: IRStatement): IRExpression[] {
         ...(statement.target ? [statement.target] : []),
       ];
     case "FileStatement":
+    case "DliStatement":
+    case "CicsStatement":
       return statement.key ? [statement.key] : [];
     case "SplitStatement":
       return [statement.source, statement.delimiter, ...statement.targets];
-    default:
+    case "SerializeStatement":
+      // `source` is what is being written out, `target` where it lands, and a
+      // JSON GENERATE of the record a read left behind publishes it.
+      return [
+        statement.target,
+        statement.source,
+        ...(statement.count ? [statement.count] : []),
+      ];
+    case "XmlParseStatement":
+      return [
+        statement.source,
+        ...statement.bindings.map((binding) => binding.target),
+      ];
+    case "ProgramCallStatement":
+      // `using` hands the record to another program, which is the same defect
+      // one call frame further away.
+      return [statement.program, ...(statement.using ? [statement.using] : [])];
+    case "SqlStatement":
+      return statement.args;
+    case "CursorLoopStatement":
+      return [...statement.args, ...(statement.start ? [statement.start] : [])];
+    case "SearchStatement":
+      return [statement.condition];
+    case "IfStatement":
+    case "WhileStatement":
+      // Walked by their own cases, which have the branch and loop merges.
+      return [];
+    case "SwitchStatement":
+      // The subject, likewise: its case observes it before the branches.
+      return [];
+    case "ForEachStatement":
+    case "UnitOfWorkStatement":
+    case "ReportStatement":
+    case "QueueStatement":
+    case "SortStatement":
+    case "ReleaseStatement":
+    case "CheckpointStatement":
+    case "RestartStatement":
+    case "ResetStatement":
+    case "RaiseStatement":
+      return [];
+  }
+}
+
+/**
+ * Records a statement reads *by name* rather than through an expression.
+ *
+ * COBOL moves whole records around by naming them, and BankTS keeps that: a
+ * `write` says which record it is writing, a `release` says which one it is
+ * handing to the sort. None of those is an expression, so none of them was
+ * seen — and `read feedIn into line; write trail from line;` is the exact
+ * shape of the defect the rule was written for. It reported nothing.
+ *
+ * Only the ones that genuinely *read* the record. A `read ... into line` and a
+ * `get` from a queue fill it, and calling that a use would refuse the idiom
+ * that replaces the stale bytes rather than trusting them.
+ */
+function namesUsedBy(statement: IRStatement): string[] {
+  switch (statement.kind) {
+    case "FileStatement":
+      return (statement.operation === "write" ||
+        statement.operation === "rewrite") &&
+        statement.recordName
+        ? [statement.recordName]
+        : [];
+    case "QueueStatement":
+      return statement.operation === "put" && statement.recordName
+        ? [statement.recordName]
+        : [];
+    case "DliStatement":
+      return (statement.operation === "insertSegment" ||
+        statement.operation === "replaceSegment") &&
+        statement.recordName
+        ? [statement.recordName]
+        : [];
+    case "CicsStatement":
+      // `link` passes the commarea to the linked program and gets it back;
+      // the write commands send it. A `readFile` or `readQueue` fills it.
+      return (statement.operation === "link" ||
+        statement.operation === "writeFile" ||
+        statement.operation === "rewriteFile" ||
+        statement.operation === "writeQueue") &&
+        statement.commarea
+        ? [statement.commarea]
+        : [];
+    case "ReleaseStatement":
+      return [statement.recordName];
+    case "CheckpointStatement":
+      return [statement.recordName];
+    case "ForEachStatement":
+    case "SearchStatement":
+      // The table being walked lives in a record, and walking the one a read
+      // left behind reads it. `arrayTargetName` rather than `arrayRecordName`:
+      // the second is the record's *type*, which is what the generated COBOL
+      // qualifies by and is never the name the program used.
+      return [statement.arrayTargetName];
+    case "SqlStatement":
+      // `intoRecord` is filled by the fetch, not read by it.
+      return [];
+    case "RestartStatement":
+    case "ResetStatement":
+      // Both fill the record rather than read it.
+      return [];
+    case "AssignStatement":
+    case "LetStatement":
+    case "ReturnStatement":
+    case "ExpressionStatement":
+    case "ReturnCodeStatement":
+    case "LedgerStatement":
+    case "AuditStatement":
+    case "ConsoleStatement":
+    case "SplitStatement":
+    case "SerializeStatement":
+    case "XmlParseStatement":
+    case "ProgramCallStatement":
+    case "CursorLoopStatement":
+    case "IfStatement":
+    case "WhileStatement":
+    case "SwitchStatement":
+    case "UnitOfWorkStatement":
+    case "ReportStatement":
+    case "SortStatement":
+    case "RaiseStatement":
       return [];
   }
 }
@@ -316,15 +466,39 @@ function clone(state: State): State {
 function observe(
   walk: Walk,
   state: State,
-  expression: IRExpression | null | undefined,
+  expression: IRExpression,
   span: SourceSpan,
   what: string,
 ): void {
-  if (!expression) {
-    return;
+  apply(walk, state, names(expression), comparedNames(expression), span, what);
+}
+
+/**
+ * The same, for a record a statement names rather than evaluates.
+ *
+ * `write trail from line` reads `line` and tests nothing, so it can only ever
+ * report.
+ */
+function observeNames(
+  walk: Walk,
+  state: State,
+  used: string[],
+  span: SourceSpan,
+  what: string,
+): void {
+  if (used.length > 0) {
+    apply(walk, state, new Set(used), new Set(), span, what);
   }
-  const read = names(expression);
-  const tested = comparedNames(expression);
+}
+
+function apply(
+  walk: Walk,
+  state: State,
+  read: Set<string>,
+  tested: Set<string>,
+  span: SourceSpan,
+  what: string,
+): void {
   for (const [file, outcome] of state) {
     const statusName = walk.statuses.get(file);
     if (statusName !== undefined && tested.has(statusName)) {
@@ -357,7 +531,7 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
     // What this statement reads, before it does anything else. Using the
     // record a pending operation filled is the defect the whole check exists
     // for.
-    for (const expression of ownExpressions(statement)) {
+    for (const expression of expressionsOf(statement)) {
       observe(
         walk,
         state,
@@ -366,6 +540,13 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
         "the record it read is used",
       );
     }
+    observeNames(
+      walk,
+      state,
+      namesUsedBy(statement),
+      statement.span,
+      "the record it read is written out",
+    );
 
     switch (statement.kind) {
       case "FileStatement": {
@@ -397,6 +578,9 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
                 span: statement.span,
               },
         );
+        // `on page { ... }` runs when the write crossed the footing line, so
+        // it is a block that may or may not run and merges like one.
+        state = walkNested(walk, state, childBlocks(statement));
         break;
       }
 
@@ -443,33 +627,15 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
         break;
       }
 
-      case "ForEachStatement":
-      case "SearchStatement":
-      case "CursorLoopStatement":
-      case "UnitOfWorkStatement":
-      case "RestartStatement":
-      case "QueueStatement":
-      case "SortStatement":
-      case "SerializeStatement":
-      case "XmlParseStatement":
-      case "ProgramCallStatement":
       case "SwitchStatement": {
-        if (statement.kind === "SwitchStatement") {
-          observe(
-            walk,
-            state,
-            statement.subject,
-            statement.span,
-            "the record it read decides a branch",
-          );
-        }
-        // Every nested block, each from the state at the head, merged after.
-        let after: State | null = null;
-        for (const nested of nestedBlocks(statement)) {
-          const branch = walkBlock(walk, nested, clone(state));
-          after = after === null ? branch : merge(after, branch);
-        }
-        state = after === null ? state : merge(clone(state), after);
+        observe(
+          walk,
+          state,
+          statement.subject,
+          statement.span,
+          "the record it read decides a branch",
+        );
+        state = walkNested(walk, state, childBlocks(statement));
         break;
       }
 
@@ -479,6 +645,7 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
         return new Map();
 
       default:
+        state = walkNested(walk, state, childBlocks(statement));
         break;
     }
   }
@@ -486,43 +653,21 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
   return state;
 }
 
-/** The blocks a statement runs, for the kinds walked as a group above. */
-function nestedBlocks(statement: IRStatement): IRBlock[] {
-  const blocks: IRBlock[] = [];
-  const record = statement as unknown as Record<string, unknown>;
-  for (const key of [
-    "body",
-    "notFound",
-    "resumed",
-    "fresh",
-    "otherwise",
-    "onError",
-    "atEndOfPage",
-  ]) {
-    const value = record[key];
-    if (value && typeof value === "object" && "statements" in value) {
-      blocks.push(value as IRBlock);
-    }
+/**
+ * Walks blocks that may or may not run, from the state at the head.
+ *
+ * Each from the same incoming state, because they are alternatives rather than
+ * a sequence, and the result merged back into the head state — a `for each`
+ * body may run zero times and a `not found` branch may not be taken, so
+ * anything the head still owed is still owed afterwards.
+ */
+function walkNested(walk: Walk, state: State, blocks: IRBlock[]): State {
+  let after: State | null = null;
+  for (const nested of blocks) {
+    const branch = walkBlock(walk, nested, clone(state));
+    after = after === null ? branch : merge(after, branch);
   }
-  const cases = record["cases"];
-  if (Array.isArray(cases)) {
-    for (const entry of cases as { body?: IRBlock }[]) {
-      if (entry.body) {
-        blocks.push(entry.body);
-      }
-    }
-  }
-  const inputProcedure = record["inputProcedure"] as { body?: IRBlock } | null;
-  const outputProcedure = record["outputProcedure"] as {
-    body?: IRBlock;
-  } | null;
-  if (inputProcedure?.body) {
-    blocks.push(inputProcedure.body);
-  }
-  if (outputProcedure?.body) {
-    blocks.push(outputProcedure.body);
-  }
-  return blocks;
+  return after === null ? state : merge(clone(state), after);
 }
 
 /**
@@ -553,13 +698,32 @@ export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
     reported: new Set<SourceSpan>(),
   };
 
-  for (const routine of [...program.transactions, ...program.functions]) {
-    const end = walkBlock(walk, routine.body, new Map());
+  const routine = (name: string, body: IRBlock): void => {
+    const end = walkBlock(walk, body, new Map());
     for (const [file, outcome] of end) {
       if (outcome.kind === "pending") {
-        report(walk, file, outcome, `${routine.name} ends`, outcome.span);
+        report(walk, file, outcome, `${name} ends`, outcome.span);
       }
     }
+  };
+
+  for (const transaction of program.transactions) {
+    routine(transaction.name, transaction.body);
+    // The recovery path, which the body's own walk never reaches: control
+    // arrives from a `raise` anywhere inside it, so nothing the body owed is
+    // known here and nothing it discharged is either. Walked from scratch, for
+    // the operations the handler itself performs — a handler that reads a file
+    // and posts what it found owes the same answer the body would.
+    if (transaction.failureHandler) {
+      routine(
+        `${transaction.name}'s failure handler`,
+        transaction.failureHandler,
+      );
+    }
+  }
+
+  for (const fn of program.functions) {
+    routine(fn.name, fn.body);
   }
 
   // A file error handler is a `USE AFTER STANDARD ERROR` declarative, which
@@ -567,7 +731,7 @@ export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
   // one of these outcomes has one. So a handler does not discharge them, and
   // its own body is walked like any other routine would be.
   for (const handler of program.fileErrorHandlers) {
-    walkBlock(walk, handler.body, new Map());
+    routine(`the ${handler.fileName} error handler`, handler.body);
   }
 
   return walk.diagnostics;

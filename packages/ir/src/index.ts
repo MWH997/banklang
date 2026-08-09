@@ -662,6 +662,15 @@ export interface IRSearchStatement {
   /** COBOL group the table field is qualified by, and the field itself. */
   arrayRecordName: string;
   arrayFieldName: string;
+  /**
+   * The BankTS variable the table is reached through.
+   *
+   * `arrayRecordName` is the record's *type*, which is what the generated
+   * COBOL qualifies by; this is the name the program wrote. The two differ, and
+   * a check that reasons about which record a statement reads — `BANK-FILE-017`
+   * — needs the second.
+   */
+  arrayTargetName: string;
   condition: IRExpression;
   body: IRBlock;
   notFound: IRBlock;
@@ -728,6 +737,8 @@ export interface IRForEachStatement {
   /** COBOL group item the array field is qualified by. */
   arrayRecordName: string;
   arrayFieldName: string;
+  /** The BankTS variable the table is reached through; see `IRSearchStatement`. */
+  arrayTargetName: string;
   length: number;
   body: IRBlock;
 }
@@ -2391,6 +2402,12 @@ function lowerStatement(
             : array.kind === "Identifier"
               ? array.name
               : "",
+        arrayTargetName:
+          array.kind === "MemberAccess"
+            ? array.targetName
+            : array.kind === "Identifier"
+              ? array.name
+              : "",
         condition: lowerExpression(statement.condition, bodyScope),
         body: lowerBlock(statement.body, bodyScope),
         notFound: lowerBlock(statement.notFound, bodyScope),
@@ -2473,6 +2490,12 @@ function lowerStatement(
         arrayFieldName:
           array.kind === "MemberAccess"
             ? array.member
+            : statement.array.kind === "Identifier"
+              ? statement.array.name
+              : statement.array.member,
+        arrayTargetName:
+          array.kind === "MemberAccess"
+            ? array.targetName
             : statement.array.kind === "Identifier"
               ? statement.array.name
               : statement.array.member,
