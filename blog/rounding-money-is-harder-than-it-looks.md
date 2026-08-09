@@ -27,8 +27,8 @@ same kind of reason. So 0.1 in a computer is not 0.1. It is a number extremely
 close to 0.1, and the error is invisible until you add enough of them together.
 
 The classic demonstration is that 0.1 plus 0.2 does not equal 0.3. Try it in
-almost any language and you will get 0.30000000000000004. That trailing 4 is not
-a display bug. It is the actual stored value.
+almost any language and you will get 0.30000000000000004. That trailing 4 is the
+actual stored value rather than a display artefact.
 
 For a graphics calculation, nobody cares. For a balance sheet, that is a
 reconciliation break. This is why every serious financial system stores money as
@@ -83,8 +83,8 @@ which happens about half the time in each direction. Over many calculations the
 errors cancel instead of accumulating.
 
 That is why it is the default in a lot of financial regulation and why the IEEE
-754 standard picked it as its default rounding mode. It is not a quirk. It is the
-rule you use when you are going to do the calculation a great many times.
+754 standard picked it as its default rounding mode. Far from being a quirk, it
+is the rule you reach for when the calculation runs a great many times.
 
 ## Where COBOL makes this awkward
 
@@ -122,8 +122,9 @@ as a slow drift.
 
 ## What a compiler can do about it
 
-If a language knows that a value is money, it can insist that a division states
-its rounding mode. Not default to one. Insist.
+If a language knows that a value is money, it can require a division to state
+its rounding mode, refusing to compile until it does — rather than quietly
+supplying a default.
 
 That sounds pedantic until you consider what the default costs. A developer who
 writes a division and does not think about rounding has made a decision worth

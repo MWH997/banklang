@@ -2,9 +2,13 @@
 
 ## 1. Verification goal
 
-The project must prove that compiler output is deterministic, traceable, and semantically faithful for the supported subset.
+What this project has to show about its output, for the subset it supports: that
+the same input produces the same COBOL, that every generated construct can be
+traced back to the source that asked for it, and that the COBOL means what the
+BankTS meant.
 
-Verification is not optional. It is the difference between a toy transpiler and a bank-grade toolchain.
+None of that is established by the compiler agreeing with itself, which is the
+reason this page is as long as it is.
 
 Everything on this page is **vertical**: tests written for BankLang, run against
 BankLang. That is most of the evidence this project has and it has one blind
@@ -48,49 +52,33 @@ safe. Turning both on is ticketed as R7.
 
 ### 2.1 Unit tests
 
-Cover:
+One stage at a time, over the pipeline in
+[architecture.md](architecture.md): lexer, parser, AST, typechecker, decimal
+model, copybook parser, IR lowering, emitter, diagnostics. These are the tests
+that say what a stage does with an input chosen to make a point.
 
-- lexer
-- parser
-- AST
-- typechecker
-- decimal model
-- copybook parser
-- IR lowering
-- COBOL emitter
-- diagnostics
+They are also the tests §2.3a exists to distrust. A unit test that compiles a bad
+program and asserts a diagnostic passes just as well when the rule it was written
+for has been deleted and a different rule catches the same program.
 
 ### 2.2 Golden tests
 
-Given a BankTS input, expected generated output is committed.
+The expected COBOL, copybook, source map, audit report and diagnostics are
+committed, and a run that differs from them fails.
 
-Golden outputs:
-
-- COBOL source
-- copybook
-- source map
-- audit report
-- diagnostics
-
-Rules:
-
-- generated output must be deterministic
-- golden updates require explicit command
-- golden diffs must be reviewed
-- no broad snapshot rewrite without explanation
+Updating a golden is a deliberate act: it takes an explicit command, the diff is
+read rather than accepted, and a change that rewrites many fixtures at once needs
+a reason written down. The failure mode a golden suite has is that a wrong output
+is blessed because the diff was long, so the rule is about the diff, not about
+the command.
 
 ### 2.3 Property-based tests
 
-Important areas:
-
-- decimal arithmetic
-- rounding
-- overflow
-- copybook field layout
-- packed-decimal byte length
-- identifier name conversion
-- source map ranges
-- deterministic ordering
+Where the answer is checkable without a fixture: decimal arithmetic, rounding,
+overflow, copybook field layout, packed-decimal byte length, identifier name
+conversion, source map ranges, deterministic ordering. Each is a claim with a
+shape — that a byte length follows from precision, that two runs order output
+the same way — rather than a case somebody chose.
 
 #### Generated programs
 
@@ -99,8 +87,8 @@ from `tools/generate-programs.ts` and asserts three things of each: it compiles
 with no errors, its COBOL and JCL pass the conformance linter, and `cobc`
 accepts it under `tools/banklang-ibm.conf`.
 
-The point is not to fuzz the parser. It is that every hand-written fixture is a
-shape somebody thought of, and the 2026-08-05 audit's most serious finding — a
+The point is that every hand-written fixture is a shape somebody thought of, and
+the 2026-08-05 audit's most serious finding — a
 COBOL word one character over the limit — lived in a shape nobody had, because
 every fixture used short names. So the generator spends most of its budget on
 boundaries: names at 29, 30 and 31 characters, every rounding mode, precisions
@@ -288,7 +276,7 @@ the gate that decides whether emitted COBOL has been executed by two engines.
 
 #### What it found
 
-Not weak tests. Three holes in the rule.
+Three holes in the rule itself, rather than tests that were merely weak.
 
 A `write` from the record a pending read filled was **not a use** — the stale
 record posted straight back out, which is the defect the whole rule exists for.
@@ -404,37 +392,41 @@ equivalent" is the sentence that hides the ones that are not.
 
 ### 2.4 Fuzz tests
 
-Fuzz:
+There are none, and the generator in §2.3 is the reason rather than an
+oversight. Fuzzing a parser asks whether invalid input crashes it; what this
+compiler claims is about the output it produces from _valid_ input, and a
+rejected program produces none. So `tools/generate-programs.ts` generates
+programs that compile clean by construction, and the assertions are on the
+COBOL that comes out.
 
-- BankTS parser
-- copybook parser
-- COBOL emitter input validation
-- SQL declaration parser
-- diagnostic rendering
-
-Fuzzing should not require mainframe access.
+The parsers are still reached by malformed input — every diagnostic in
+`diagnostics.md` has a test that provokes it — but from fixtures written to name
+a specific error, not from random bytes.
 
 ### 2.5 Differential tests
 
-Run a reference evaluator for the supported BankTS subset and compare with generated COBOL behaviour where possible.
+Every example is executed twice, by two implementations that share no code: by
+`cobc`, and by the COBOL interpreter in `packages/cobol-runtime`, written
+against the same emitted output. A test fails on any disagreement between them.
 
-Initial focus:
+This is the lane that catches a defect which compiles. Static checks all passed
+on a bounds guard that clamped an out-of-range subscript instead of refusing it;
+running the program is what found it. `tests/cobol-runtime-differential.test.ts`
+is the main one, with `sort-differential`, `unstring-differential` and
+`interpreter-gaps-differential` beside it for the constructs whose disagreements
+are worth isolating.
 
-- pure functions
-- decimal calculations
-- validation logic
-- record transformations
+What it cannot catch is a misunderstanding shared by both sides. Three examples
+carry expected balances somebody worked out by hand, which is the only part of
+this lane that does not depend on the two implementations agreeing.
 
 ### 2.6 Integration tests
 
-Integration examples:
-
-- account transfer
-- batch interest accrual
-- copybook import/export
-- Db2 declaration emission
-- CICS declaration emission
-- VSAM file declaration emission
+A whole project through the whole pipeline, rather than a stage in isolation:
+account transfer, batch interest accrual, copybook import and export, and the
+declaration emission for Db2, CICS and VSAM. The examples in `examples/` are
+these tests — each is a real project `bankc` builds, so a break in the seam
+between two stages fails here rather than in nothing.
 
 ### 2.6a Executed conformance tests
 
@@ -528,14 +520,14 @@ which do not exist until the page runs.
 
 ### 2.7 Mainframe smoke tests
 
-Roadmap only for public repo unless access exists.
+These have never been run, because nobody on this project has z/OS access. What
+exists instead is a kit somebody who does have it can submit: `zos/` holds the
+copybooks, the JCL and the result expected from each, and
+`zos/RESULTS-TEMPLATE.md` is the form the answers come back in.
 
-Smoke test should validate:
-
-- generated COBOL compiles with IBM Enterprise COBOL
-- Db2 precompile path is documented
-- CICS translator path is documented
-- generated JCL is structurally sane
+Until one of those comes back, every claim on this page about Enterprise COBOL
+is read out of IBM's manuals — cited rule by rule in
+[target-conformance.md](target-conformance.md) — rather than observed.
 
 ## 3. Determinism tests
 
@@ -572,30 +564,23 @@ bankc verify examples/account-transfer
 bankc audit-report examples/account-transfer --out dist/audit
 ```
 
-Expected:
+All four succeed, the COBOL, copybook, source map and audit report are written,
+a second run produces the same bytes, and the golden fixtures still match. Any
+one of those failing fails the example.
 
-- no errors
-- deterministic output
-- generated COBOL exists
-- generated copybook exists
-- source map exists
-- audit report exists
-- golden tests pass
+## 6. What CI runs
 
-## 6. CI expectations
+`.github/workflows/ci.yml`, in order: `pnpm lint`, `pnpm format:check`,
+`pnpm fmt:check` over the examples, `pnpm typecheck` for the workspace and again
+for the VS Code extension, `pnpm test`, and `pnpm examples:verify`. It then
+builds the site, packages the extension and builds the z/OS conformance bundle,
+so a break in any of those is a red build rather than something found at release
+time.
 
-CI should run:
-
-- format check
-- lint
-- typecheck
-- unit tests
-- golden tests
-- conformance and z/OS semantics over every artifact
-- determinism tests
-- parser fuzz smoke
-- dependency audit
-- SBOM generation
+GnuCOBOL is built from source and cached, and the job prints which `cobc` it put
+on the path. That matters more than it looks: a compile lane that silently
+skipped would turn `pnpm test` green while proving nothing about the COBOL, so
+which compiler ran is part of the record.
 
 ## 7. Failure policy
 
@@ -615,51 +600,52 @@ Generated COBOL source map is missing entry for function validateAmount.
 Artifact: dist/cobol/ACCOUNTT.cbl
 ```
 
-## 8. Tester notes as verification evidence
+## 8. Recording what was validated
 
-Tester notes are part of the verification system.
+The record of what a change was checked against goes in the commit body, which
+is where somebody reading the history will find it attached to the change it
+describes. [CONTRIBUTING.md](../CONTRIBUTING.md) has the format: why the change
+was made, and what was validated.
 
-For substantial changes, especially compiler semantics, COBOL generation, copybook layout, Db2/CICS/VSAM/JCL support, security, and generated-output changes, create a tester note under `tester-notes/`.
+For compiler semantics, COBOL generation, copybook layout, Db2, CICS, VSAM or
+JCL support, security, and any change to generated output, say which commands
+were run and what they reported — including what was not covered. A change that
+went in with a compile lane skipped is an unverified change, and the commit is
+where that has to be legible.
 
-A tester note must record:
-
-- change summary
-- why the change was needed
-- research notes
-- validation commands
-- automated tests
-- manual checks
-- backend validation using GnuCOBOL or IBM Enterprise COBOL when available
-- known gaps
-- follow-up tickets
-
-Do not claim IBM compiler validation unless it was actually performed.
+Do not claim IBM compiler validation unless it was actually performed. Local
+GnuCOBOL validation is real and worth recording; it is not the same claim.
 
 ## 9. Backend compiler validation
 
-The primary validation target is IBM Enterprise COBOL for z/OS when available.
+The target is IBM Enterprise COBOL for z/OS. The compiler that has actually run
+is GnuCOBOL, and the two are never reported as one thing.
 
-When IBM tooling is unavailable, use GnuCOBOL or another documented open-source COBOL compiler for local validation, but mark this clearly as local validation only.
+Each evidence bundle carries a `gnucobol-validation.md` recording which compiler
+ran and what it was given: the `cobc` version, the exact command including
+`-conf=tools/banklang-ibm.conf`, the exit code, and whether the IBM-shaped
+dialect and GnuCOBOL's own default agreed. It names the SHA-256 of the source
+and of every artifact, so the report can be checked against the files rather
+than believed.
 
-Validation reports should distinguish:
-
-```txt
-validated-with-ibm-enterprise-cobol: yes/no
-validated-with-gnucobol: yes/no
-backend-profile: ibm-enterprise-cobol-zos | gnucobol-local
-known-backend-gaps: [...]
-```
+`backend-profile` is `gnucobol-local` in those reports. It reads
+`ibm-enterprise-cobol-zos` only where the artifact was generated for that target,
+never as a claim that IBM's compiler accepted it.
 
 ## 10. Documentation and definitions validation
 
-Documentation changes must validate terminology.
+A term a reader has to look up elsewhere belongs in
+[glossary.md](glossary.md), with a citation to primary documentation rather than
+to this project's own wording.
 
-Checks:
+That is held rather than asked for. `tests/citations.test.ts` fails when a
+glossary entry has no reference, when an entry is missing one of its three
+parts, when the alphabetical order breaks, or when the file is trimmed past the
+terms a reader of the generated COBOL needs. `pnpm docs:citations` fetches every
+cited URL and records what it resolved to; the test then refuses a citation that
+has not been through that check, one that landed on a product shell rather than
+a topic, and one naming a release this project does not support. Nine dead links
+and seven citations to an out-of-service Db2 were what prompted it.
 
-- New important terms are added to [glossary.md](glossary.md).
-- Each definition includes reference links.
-- Definitions prefer primary sources.
-- README and reference-page terminology matches [glossary.md](glossary.md).
-- Tester notes mention whether definitions were updated.
-
-A future CI check should scan Markdown files for configured glossary terms and report terms that appear in the documentation but are missing from [glossary.md](glossary.md).
+`tests/prose.test.ts` holds the house style over the same surfaces, and
+`tests/documentation.test.ts` fails on a link to a document that does not exist.

@@ -1,6 +1,6 @@
 ---
 title: Why banks still run COBOL, and why rewriting it keeps failing
-description: The reasons a bank's core systems are still COBOL are not technical nostalgia. They are about risk, and they explain why the big rewrites stall.
+description: A bank's core systems are still COBOL for reasons of risk rather than nostalgia, and those reasons explain why the big rewrites keep stalling.
 date: 2026-08-07
 author: Md Wahid Hassan
 related: a-compiler-that-refuses-to-build, reading-code-you-did-not-write
@@ -27,7 +27,7 @@ rule that applies to one product and not another. A branch code that means
 something different after 1998. A field that was reused for a purpose nobody
 wrote down.
 
-The COBOL is not valuable because it is COBOL. It is valuable because it is the
+What makes the COBOL valuable has nothing to do with the language. It is the
 only complete statement of what the bank actually does. The specification and
 the implementation are the same artifact, and they have been kept in step by the
 simple fact that there is only one of them.

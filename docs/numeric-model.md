@@ -167,8 +167,8 @@ fields the sequence needs would not fit in eighteen digits.
 
 ### How it is proved
 
-Not by reading it. `tests/rounding-oracle.test.ts` runs the generated program
-over inputs chosen to land on and around every boundary — an exact tie, one unit
+By execution rather than by review. `tests/rounding-oracle.test.ts` runs the
+generated program over inputs chosen to land on and around every boundary — an exact tie, one unit
 either side of it, both signs, zero, and a recurring quotient — and compares
 each answer against an oracle that holds the value as a rational in two BigInts
 and rounds it by the rule the mode names.

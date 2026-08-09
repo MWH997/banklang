@@ -136,22 +136,20 @@ every shape in the three artifacts is copied from one of those and cited in
 values are inferred rather than observed and say so, in D20 and D21. No
 generated case has been run — that is what the z/OS kit is for.
 
-## v1.0 — Serious open-source release
+## v1.0
 
-Theme: credible public launch.
+What has to be true before the interfaces stop moving:
 
-Deliverables:
-
-- stable CLI
-- documented language subset
+- a stable CLI
+- a documented language subset
 - stable audit schemas
-- deterministic output guarantee
-- security policy
-- SBOM
-- signed release target
-- serious demos
-- compatibility matrix
-- contributor process
+- a deterministic output guarantee
+- a security policy
+- an SBOM
+- a signed release target
+- demos that run something end to end
+- a compatibility matrix
+- a contributor process
 
 ## Researched, not built
 

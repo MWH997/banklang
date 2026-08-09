@@ -160,9 +160,8 @@ were run, and one entry per case with the return code and — for the programs
 that execute — whether the output matched. Fill it in, set `executed` to `true`,
 and commit it as `evidence/ibm/result.json`.
 
-That path is not a convention somebody has to remember. It is what
-`ibmValidationStatus` reads, and what the validation page's claim is computed
-from:
+That path is wired in rather than conventional: it is what `ibmValidationStatus`
+reads, and what the validation page's claim is computed from:
 
 - With no such file, the only sentence the generator can produce is
   **Native IBM Enterprise COBOL validation: NOT YET PERFORMED**.

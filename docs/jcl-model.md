@@ -3,7 +3,7 @@
 What `bankc` emits alongside the COBOL, what in it is a placeholder, and what a
 site changes.
 
-The job is not a skeleton. It is meant to be submittable, and every step, DD and
+The job is meant to be submittable rather than filled in, and every step, DD and
 parameter in it comes from IBM's own cataloged procedures as the Programming
 Guide prints them rather than from this compiler's memory of them. Before the
 2026-08-05 audit it was neither: the compile step had no `STEPLIB` and none of

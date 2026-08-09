@@ -80,6 +80,31 @@ const FORBIDDEN = [
   "robust solution",
   "best-in-class",
   "paradigm shift",
+  // A second group, from the 2026-08-09 sweep of every reader-facing file. The
+  // list above catches marketing vocabulary, which this repository never had
+  // much of; what the sweep actually found was self-congratulation and claims
+  // the project cannot support.
+  //
+  // "bank-grade" was in `docs/glossary.md` twice and in `docs/verification.md`,
+  // which opened by calling verification "the difference between a toy
+  // transpiler and a bank-grade toolchain". Nothing here has run on z/OS or
+  // moved any money, and `docs/status-and-limits.md` says so on the same site.
+  // A page that grades itself against a phrase with no definition is doing the
+  // opposite of what the rest of the documentation does.
+  "bank-grade",
+  "enterprise-grade",
+  "production-grade",
+  "battle-tested",
+  "world-class",
+  "best-in-breed",
+  "industry-leading",
+  "non-negotiable",
+  // Filler intensifiers in front of a claim, which is where a reader looks for
+  // the measurement instead.
+  "rock-solid",
+  "bulletproof",
+  "blazing",
+  "effortless",
 ];
 
 /** Every Markdown file under one directory. */
@@ -150,6 +175,38 @@ describe("everything written for a reader", () => {
         if (lower.includes(phrase)) {
           found.push(`${surface.name}: ${phrase}`);
         }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  /**
+   * The two-beat negation, which is a tic rather than a phrase.
+   *
+   * "It is not a quirk. It is the rule you use when…", "The job is not a
+   * skeleton. It is meant to be submittable", "The interesting part is not the
+   * translation. It is that the compiler refuses…". Set up a negative, then
+   * deliver the real claim in a second short sentence starting "It is".
+   *
+   * `FORBIDDEN` cannot catch it, because there is no phrase to list — every
+   * instance is different words in the same shape, which is exactly why it
+   * reads as a mannerism. Twelve of them were spread across the README, the
+   * landing page, four of the six blog posts and the documentation, and once
+   * you have noticed one you notice all of them.
+   *
+   * The rule is narrow on purpose. A negation is fine; so is a short sentence.
+   * What is caught here is the pair, and only where the second sentence opens
+   * with a bare pronoun and a copula, which is the form with no information in
+   * it — "It is", "That is", "They are". Rewriting one is usually a matter of
+   * putting the claim first and letting "rather than" carry the contrast.
+   */
+  it("does not set up a negative and answer it in the next sentence", () => {
+    const TWO_BEAT =
+      /\b(?:is|are|was|were)\s+not\s+[^.!?]{2,70}[.!?]\s+(?:It|That|They|This)\s+(?:is|are|was|were)\s/g;
+    const found: string[] = [];
+    for (const surface of SURFACES) {
+      for (const [hit] of surface.text.matchAll(TWO_BEAT)) {
+        found.push(`${surface.name}: ${hit.replace(/\s+/g, " ").trim()}`);
       }
     }
     expect(found).toEqual([]);

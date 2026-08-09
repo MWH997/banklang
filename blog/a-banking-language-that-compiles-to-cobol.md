@@ -57,8 +57,8 @@ incident, and each has a catalogue entry `bankc explain` will print.
 
 Enterprise COBOL has exactly one rounding phrase, and `ROUNDED` means half-up
 away from zero. Banker's rounding — round half to even, which is what a great
-deal of financial arithmetic actually requires — is not a mode you can ask for.
-It is arithmetic the compiler has to write out:
+deal of financial arithmetic actually requires — is arithmetic the compiler has
+to write out longhand, because no COBOL phrase asks for it:
 
 ```cobol
            EVALUATE TRUE
@@ -78,8 +78,8 @@ silently: an explicit `round` with a named mode is required.
 
 ## What the corpora said, including when they said no
 
-The part of 0.10.0 that took longest is not a feature. It is measurement against
-COBOL nobody wrote for this compiler: 5195 files from 168 open-source
+The part of 0.10.0 that took longest was measurement rather than any feature:
+5195 files of COBOL nobody wrote for this compiler, from 168 open-source
 repositories, a semantic benchmark whose expected outputs are somebody else's, a
 reconstructed defect suite, and the NIST conformance material. Each is pinned to
 a revision with per-file checksums, and none of it is redistributed here.

@@ -61,7 +61,8 @@ an unverified release, not a passing one.
 - Update `CHANGELOG.md`.
 - Update README command inventory and limitations if behavior changed.
 - Update example READMEs and evidence bundle READMEs if generated output changed.
-- Add or update tester notes for compiler behavior, generated output, or security changes.
+- Record what was validated in the commit body for compiler behaviour, generated
+  output, or security changes.
 - Keep generated outputs deterministic and avoid timestamps.
 
 ## 4. Git hygiene

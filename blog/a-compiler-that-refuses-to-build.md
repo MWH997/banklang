@@ -1,6 +1,6 @@
 ---
 title: A compiler that refuses to build
-description: Some bugs are not mistakes in the code. They are things the code failed to say. A compiler can notice that, and refusing to build is a reasonable response.
+description: Some bugs are omissions rather than mistakes — things the code failed to say. A compiler can notice that, and refusing to build is a reasonable response.
 date: 2026-08-05
 author: Md Wahid Hassan
 related: why-banks-still-run-cobol, rounding-money-is-harder-than-it-looks
