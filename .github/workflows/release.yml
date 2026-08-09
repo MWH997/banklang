@@ -36,6 +36,18 @@ jobs:
   # rather than copied: a shorter list here would drift from the real one, and
   # the drift would be invisible until a release shipped something CI rejects.
   verify:
+    # The permissions `ci.yml` declares, granted here because a called workflow
+    # cannot ask for more than the calling job holds. This file's default is
+    # `contents: read`, so the SARIF upload's `security-events: write` was an
+    # escalation and the whole run ended as `startup_failure` before a single
+    # job began — no logs, no annotation, just "a workflow file issue".
+    #
+    # Nothing caught it because nothing had run it: the release workflow only
+    # triggers on a tag, and until 0.10.0 this repository had never had one.
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     uses: ./.github/workflows/ci.yml
 
   publish:
