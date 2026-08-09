@@ -1,26 +1,23 @@
-# Definitions
+# Glossary
 
-This file is the canonical glossary for BankLang.
+The mainframe and compiler terms the rest of the documentation uses without
+stopping to explain them. A term earns a place here when somebody reading the
+generated COBOL, the JCL or a diagnostic would otherwise have to look it up.
 
-Every important term used in the repository must be defined here before or during the change that introduces it.
+Every entry cites primary documentation — IBM, GnuCOBOL, TypeScript, Ecma — so
+the terminology can be checked against the source rather than against this
+page's wording. `pnpm docs:citations` fetches all of them; `citations.json`
+records what each one resolved to.
 
-Each entry must include:
-
-1. the term,
-2. a clear definition,
-3. why it matters to BankLang,
-4. reference links to primary documentation or the best available authoritative source.
-
-Do not add unexplained jargon to README, specs, tickets, architecture docs, tester notes, or generated audit reports. If a new term appears in the project, add or update its definition here.
-
-## Definition entry template
+## Entry template
 
 ```md
 ### Term
 
-**Definition:** Clear explanation.
+**Definition:** What it is.
 
-**Why it matters to BankLang:** Explain how this affects the compiler, generated COBOL, validation, migration tooling, or audit evidence.
+**Why it matters to BankLang:** What the compiler does about it, named
+concretely — a diagnostic, a generated construct, an example that runs it.
 
 **References:**
 
@@ -46,9 +43,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Backend profile
 
-**Definition:** A named target configuration that controls how BankLang emits COBOL and related artifacts for a specific environment.
+**Definition:** A named target configuration that controls how BankLang emits
+COBOL and related artifacts for a specific environment.
 
-**Why it matters to BankLang:** IBM Enterprise COBOL for z/OS and GnuCOBOL are not identical targets. Backend profiles prevent local GnuCOBOL behaviour from being mistaken for IBM z/OS validation.
+**Why it matters to BankLang:** Enterprise COBOL and GnuCOBOL are not the same
+target, and the whole point of naming the profile is that a green `cobc` run
+locally cannot be reported as an IBM result.
+[divergences.md](divergences.md) lists where the two compilers actually
+disagree.
 
 **References:**
 
@@ -57,9 +59,12 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### BankLang
 
-**Definition:** The project name for the deterministic compiler/toolchain that compiles BankTS into readable, auditable COBOL-oriented artifacts.
+**Definition:** This project: the compiler and toolchain that turn BankTS into
+COBOL, copybooks, JCL, a source map and an audit bundle.
 
-**Why it matters to BankLang:** The project must be positioned as a compiler/toolchain, not as an AI converter.
+**Why it matters to BankLang:** Everything it emits is decided by code somebody
+can read, and the same input produces byte-identical output — which is what
+`bankc verify` checks, and what makes a review of the output worth doing at all.
 
 **References:**
 
@@ -68,9 +73,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### BankTS
 
-**Definition:** The source language BankLang compiles. A small banking language: its type syntax is TypeScript's, and its statements — `transaction`, `file`, `cursor`, `queue`, `on error` — are its own.
+**Definition:** The source language BankLang compiles. A small banking language:
+its type syntax is TypeScript's, and its statements — `transaction`, `file`,
+`cursor`, `queue`, `on error` — are its own.
 
-**Why it matters to BankLang:** BankTS deliberately avoids arbitrary JavaScript semantics, and is not a TypeScript dialect — `tsc` cannot read a BankTS module. Borrowing the type syntax makes it approachable; keeping the statements bespoke is what allows deterministic compilation, exact decimal semantics, fixed layouts, and auditability.
+**Why it matters to BankLang:** BankTS is not a TypeScript dialect: `tsc` cannot
+read a BankTS module. Borrowing the type syntax makes it approachable to read;
+keeping the statements bespoke is what leaves the compiler able to prove things
+about a program, which is what the `BANK-*` diagnostics are.
 
 **References:**
 
@@ -79,9 +89,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Bind
 
-**Definition:** In Db2 application preparation, bind is the process that creates executable database access structures such as packages or plans from precompiled SQL artifacts.
+**Definition:** In Db2 application preparation, the step that turns the output of
+the precompiler into the packages or plans Db2 executes against.
 
-**Why it matters to BankLang:** If BankLang emits embedded SQL for Db2, the build documentation and audit artifacts must record precompile and bind requirements.
+**Why it matters to BankLang:** A module that declares a `cursor` or runs `sql`
+emits `EXEC SQL`, so the generated JCL carries the precompile and bind steps
+rather than leaving somebody to add them.
+[jcl-model.md](jcl-model.md) is the job it writes.
 
 **References:**
 
@@ -92,9 +106,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### CICS
 
-**Definition:** IBM CICS is a transaction-processing environment commonly used on IBM Z systems for high-volume online applications.
+**Definition:** IBM's transaction-processing environment on z/OS, under which
+online programs run: the screen or service call arrives as a transaction, and
+the program is given a working storage and a commarea rather than a job step.
 
-**Why it matters to BankLang:** A bank-grade COBOL transpiler must understand online transaction workloads, CICS command generation, response-code handling, syncpoint/rollback behaviour, and transaction boundaries.
+**Why it matters to BankLang:** CICS is one of the two shapes a BankTS module
+compiles to, the other being batch. A `cics transaction` takes its commarea as
+the first record parameter and emits `EXEC CICS` commands, and `BANK-CICS-004`
+refuses one whose response is never tested against a condition name.
+[cics.md](language/cics.md) has the rules; `examples/online-enquiry` runs one.
 
 **References:**
 
@@ -103,9 +123,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### CICS channel/container
 
-**Definition:** CICS channels and containers provide a modern mechanism for passing structured data between CICS programs, avoiding some limitations of COMMAREA-based exchange.
+**Definition:** The later CICS mechanism for passing data between programs. A
+channel carries named containers, and neither is bounded by the 32 KB a commarea
+is.
 
-**Why it matters to BankLang:** Channels and containers are a roadmap target for modern CICS integration. Backend profiles should distinguish COMMAREA support from channel/container support.
+**Why it matters to BankLang:** Neither generated nor planned. BankLang passes a
+commarea, which is what [cics.md](language/cics.md) describes, so a program
+needing more than a commarea holds cannot be written in BankTS today.
 
 **References:**
 
@@ -113,9 +137,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### CICS COMMAREA
 
-**Definition:** A communication area used by CICS programs to pass data between program invocations or transactions.
+**Definition:** The caller's own storage, addressed by a CICS program through
+`DFHCOMMAREA` in the `LINKAGE SECTION`, and how one CICS program passes data to
+the next.
 
-**Why it matters to BankLang:** COMMAREA support is important for generated transaction programs and compatibility with older CICS application styles.
+**Why it matters to BankLang:** It is the first record parameter of a `cics
+transaction`, and it carries the reply as well as the request, because the
+caller reads back the same bytes it passed. The generated program tests
+`EIBCALEN` before touching it — reading a commarea shorter than the record
+claims is IBM's own rule, not a nicety.
 
 **References:**
 
@@ -123,9 +153,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### COBOL
 
-**Definition:** COBOL is a long-established business programming language used heavily in enterprise, government, banking, and mainframe systems.
+**Definition:** The business programming language a bank's core systems are
+written in, standardised since 1960 and still the language the overnight batch
+runs.
 
-**Why it matters to BankLang:** COBOL is the target language. Generated COBOL must be readable, deterministic, maintainable, and compatible with the chosen backend profile.
+**Why it matters to BankLang:** It is the output, and it stays the output. The
+generated program is meant to be read and reviewed by the engineers who own the
+estate, which is why the house style is written down as a contract in
+[generated-code-standards.md](generated-code-standards.md) rather than left to
+the emitter.
 
 **References:**
 
@@ -134,9 +170,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### COBOL copybook
 
-**Definition:** A COBOL source fragment, commonly included with the `COPY` statement, used to share record layouts, constants, or declarations across programs.
+**Definition:** A COBOL source fragment pulled in by `COPY`, holding a record
+layout that several programs share.
 
-**Why it matters to BankLang:** Copybook import/export is non-negotiable for bank adoption because existing COBOL estates rely on shared record layouts and field definitions.
+**Why it matters to BankLang:** It is the interface between a generated program
+and everything already running. `bankc build` writes one copybook per record;
+`bankc copybook import` reads an existing one back into BankTS, and refuses a
+layout it cannot reproduce byte for byte rather than importing it at the wrong
+offsets.
 
 **References:**
 
@@ -144,9 +185,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### COBOL division
 
-**Definition:** A major structural part of a COBOL program, such as `IDENTIFICATION DIVISION`, `ENVIRONMENT DIVISION`, `DATA DIVISION`, and `PROCEDURE DIVISION`.
+**Definition:** One of the four top-level parts of a COBOL program:
+`IDENTIFICATION`, `ENVIRONMENT`, `DATA` and `PROCEDURE`, always in that order.
 
-**Why it matters to BankLang:** Generated COBOL must follow recognisable COBOL structure so it can be reviewed and maintained by COBOL engineers.
+**Why it matters to BankLang:** The emitter writes all four in order, with
+division and section headers in Area A, because a reviewer finds their way
+around a generated program the same way they find their way around one somebody
+wrote.
 
 **References:**
 
@@ -155,9 +200,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### COMP
 
-**Definition:** In COBOL, `COMP` generally refers to computational binary storage, depending on dialect and usage.
+**Definition:** The COBOL `USAGE` for binary storage — two, four or eight bytes
+holding a whole number, rather than one byte per digit.
 
-**Why it matters to BankLang:** Numeric storage choices affect byte layout, performance, compatibility, and arithmetic behaviour. Backend profiles must define mappings precisely.
+**Why it matters to BankLang:** `binary<n>` emits `PIC S9(n) COMP`, and money
+never does — an amount is `COMP-3`. Binary is what a counter, a sequence number
+or a code is held in, and BankLang keeps `COMP-5` separate as `native<n>` for
+the cases where the value really is whatever the platform put there.
+[types.md](language/types.md) has the whole mapping, byte counts included.
 
 **References:**
 
@@ -165,9 +215,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### COMP-3 / Packed decimal
 
-**Definition:** `COMP-3` is IBM COBOL packed-decimal storage, where decimal digits are packed into bytes with sign information.
+**Definition:** IBM COBOL packed-decimal storage: two decimal digits to a byte,
+with the sign in the low half of the last one.
 
-**Why it matters to BankLang:** Packed decimal is central to banking-style fixed-point arithmetic and copybook layouts. BankLang must model precision, scale, sign, and byte layout exactly.
+**Why it matters to BankLang:** It is how every amount is stored. `decimal<p, s>`
+emits `PIC S9(p-s)V9(s) COMP-3` and occupies `ceil((p+1)/2)` bytes, so a
+`decimal<18, 2>` is ten bytes and a copybook BankLang writes lines up with one
+it did not. Arithmetic stays exact, which is the reason not to use binary
+floating point for money.
 
 **References:**
 
@@ -175,9 +230,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Copybook layout
 
-**Definition:** The byte-level arrangement of fields defined by a COBOL copybook, including order, length, numeric representation, signedness, repetition, and overlapping definitions.
+**Definition:** Where each field of a copybook record actually starts and how
+many bytes it takes: order, picture, usage, sign, repetition and any overlap.
 
-**Why it matters to BankLang:** Banking systems exchange fixed-layout records. A compiler that changes field offsets or numeric storage can break production integrations.
+**Why it matters to BankLang:** A dataset is bytes at offsets, and nothing in it
+records what those bytes mean. Move a field by one and every program reading
+that file is wrong without failing. `bankc build` writes the layout it computed
+into the audit bundle as `copybook-layout.json`, so the offsets can be compared
+against the copybook they have to match.
 
 **References:**
 
@@ -188,9 +248,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Db2 for z/OS
 
-**Definition:** IBM Db2 for z/OS is IBM's relational database system for z/OS environments.
+**Definition:** IBM's relational database on z/OS, reached from COBOL through
+embedded SQL rather than a driver.
 
-**Why it matters to BankLang:** Bank-grade COBOL programs commonly access Db2 through embedded SQL, host variables, SQLCA handling, precompile, and bind processes.
+**Why it matters to BankLang:** It is the database BankTS `sql` statements and
+`cursor` declarations compile against. The program gets host variables, an
+`SQLCA` and `SQLCODE` tests it cannot skip, and the job gets the precompile and
+bind steps that make any of it run. [sql.md](language/sql.md) is the reference.
 
 **References:**
 
@@ -209,9 +273,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Decimal type
 
-**Definition:** A fixed-precision, fixed-scale numeric type used for exact arithmetic.
+**Definition:** A number with a fixed count of digits and a fixed count of them
+after the point, computed exactly rather than approximated.
 
-**Why it matters to BankLang:** Money and ledger values must not use binary floating point. BankTS decimal types must compile to carefully defined COBOL numeric representations.
+**Why it matters to BankLang:** `decimal<18, 2>` is a number of taka, not a
+float that is usually right. Precision and scale are part of the type, so the
+compiler knows the scale of every intermediate: multiplying `decimal<18, 2>` by
+`decimal<9, 4>` gives scale 6, and storing that back as money would drop four
+digits, so `BANK-DEC-002` refuses it until you round explicitly.
 
 **References:**
 
@@ -231,9 +300,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### EBCDIC
 
-**Definition:** Extended Binary Coded Decimal Interchange Code, a character encoding historically and currently used on IBM mainframe systems.
+**Definition:** Extended Binary Coded Decimal Interchange Code, the character
+encoding z/OS uses. Not ASCII, and not a permutation of it: the letters are not
+contiguous, and digits sort above letters rather than below them.
 
-**Why it matters to BankLang:** Character encoding affects file layouts, copybook fixtures, string comparison, and byte-level compatibility in z/OS contexts.
+**Why it matters to BankLang:** A comparison that holds in ASCII can fail in
+EBCDIC, so a string comparison is one of the things that cannot be settled by
+running the program locally. [ADR-0006](adr/0006-single-byte-character-model.md)
+records why the character model is single-byte, and
+[divergences.md](divergences.md) lists what the encoding changes.
 
 **References:**
 
@@ -241,9 +316,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### EIBRESP
 
-**Definition:** `EIBRESP` is a CICS EXEC Interface Block field used after EXEC CICS commands to indicate the response condition.
+**Definition:** The field in the CICS EXEC Interface Block holding the outcome of
+the last command, when it was issued with `RESP`.
 
-**Why it matters to BankLang:** BankLang CICS generation must require response-code handling and should not emit CICS calls with ignored responses.
+**Why it matters to BankLang:** A CICS command whose `RESP` nothing reads
+succeeds silently when it failed. `BANK-CICS-004` refuses that: the response has
+to be tested against a condition name such as `DFHRESP(NORMAL)`, not against a
+bare number.
 
 **References:**
 
@@ -251,9 +330,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Embedded SQL
 
-**Definition:** SQL statements written inside a host-language program, processed by a precompiler before normal compilation.
+**Definition:** SQL written inline in a host language between `EXEC SQL` and
+`END-EXEC`, replaced by a precompiler with calls before the COBOL compiler sees
+it.
 
-**Why it matters to BankLang:** Generated COBOL that accesses Db2 must model `EXEC SQL`, host variables, SQLCA, SQLCODE handling, and precompile/bind workflows.
+**Why it matters to BankLang:** It is how a generated program talks to Db2. The
+SQL text itself is passed through rather than parsed and rebuilt, so what runs
+is what was written; what BankLang adds around it is the host variables, the
+`SQLCA`, and the `SQLCODE` tests `BANK-SQL-007` will not let you skip.
 
 **References:**
 
@@ -274,9 +358,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Fixed-format COBOL
 
-**Definition:** A COBOL source format where specific columns have special meaning, historically used in many COBOL environments.
+**Definition:** The COBOL source format in which columns carry meaning: 1–6 the
+sequence area, 7 the indicator, 8–11 Area A, 12–72 Area B, and nothing past 72.
 
-**Why it matters to BankLang:** Some target environments or style guides may require fixed-format output. The COBOL backend must be explicit about fixed versus free format.
+**Why it matters to BankLang:** It is what BankLang emits, always. Division,
+section and paragraph headers, `FD` entries and level 01 and 77 items go in
+Area A and everything else in Area B, and the conformance linter's
+`line-length`, `sequence-area`, `indicator-area` and `area-a` rules fail the
+build rather than trusting the emitter about it.
 
 **References:**
 
@@ -284,9 +373,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Free-format COBOL
 
-**Definition:** A COBOL source format with fewer column restrictions than traditional fixed format.
+**Definition:** The later COBOL source format that drops the column rules and
+lets a statement start anywhere on the line.
 
-**Why it matters to BankLang:** Free-format output may be more readable in modern tooling, but backend profiles must define what is supported and accepted by the target compiler.
+**Why it matters to BankLang:** Never emitted, because the reader is the point.
+A mainframe engineer reviewing the output reads fixed format, and so does every
+existing program on the estate. A generated program that looked different from
+its neighbours would be harder to accept.
 
 **References:**
 
@@ -296,9 +389,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### GnuCOBOL
 
-**Definition:** A free/libre COBOL compiler that produces native executables from COBOL source and is available across several operating systems.
+**Definition:** A free COBOL compiler that translates COBOL to C and builds a
+native executable, on Linux, macOS and Windows.
 
-**Why it matters to BankLang:** GnuCOBOL is the practical local validation target when IBM Enterprise COBOL is unavailable. It must not be treated as full proof of IBM z/OS compatibility.
+**Why it matters to BankLang:** It is the only compiler this project has ever
+run. Every example is compiled under a dialect configuration shaped towards
+Enterprise COBOL 6.4 and again under GnuCOBOL's own default, which is what makes
+the examples runnable in CI — and it is not IBM's compiler. A green `cobc` run
+is evidence about GnuCOBOL. [divergences.md](divergences.md) is the list of
+places the two are known to differ.
 
 **References:**
 
@@ -309,9 +408,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Host variable
 
-**Definition:** A variable in a host language, such as COBOL, that is referenced by embedded SQL statements.
+**Definition:** A COBOL data item named inside an `EXEC SQL` statement, prefixed
+with a colon, through which values pass in and out of Db2.
 
-**Why it matters to BankLang:** Db2 code generation must correctly map BankTS values to COBOL host variables with compatible layouts.
+**Why it matters to BankLang:** The picture of a host variable has to match the
+column it is bound to, and getting it wrong is a truncation nobody sees. The
+declarations are generated from the record, not written by hand, so the
+`PIC` clause and the column agree by construction.
 
 **References:**
 
@@ -321,9 +424,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### IBM Enterprise COBOL for z/OS
 
-**Definition:** IBM's enterprise-class COBOL compiler for z/OS.
+**Definition:** IBM's COBOL compiler for z/OS, currently at 6.4, and the compiler
+a bank's programs are actually built with.
 
-**Why it matters to BankLang:** This is the primary production target. Generated COBOL should be designed and validated against this compiler when access is available.
+**Why it matters to BankLang:** It is the target the output is written for and
+the compiler the output has never been run through.
+[ADR-0002](adr/0002-primary-target-ibm-enterprise-cobol.md) records why it is
+the primary target; [target-conformance.md](target-conformance.md) cites the
+manual rule by rule for what the emitter does. Everything the project claims
+about it is read out of that manual, not observed.
 
 **References:**
 
@@ -342,9 +451,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### IMS
 
-**Definition:** IBM Information Management System, a mainframe transaction and hierarchical database management system.
+**Definition:** IBM Information Management System: a hierarchical database and a
+transaction manager, older than Db2 and still underneath a great deal of banking.
 
-**Why it matters to BankLang:** IMS is part of the broader IBM mainframe application ecosystem. Initial support may be roadmap-only, but the architecture must not block future IMS integration.
+**Why it matters to BankLang:** DL/I calls are generated. A BankTS `database`
+declares its PCB, segment and key, and `getUnique`, `getNext` and
+`getHoldUnique` read through it with a status field that has to be checked the
+way a file status does. [ims.md](language/ims.md) is the reference.
 
 **References:**
 
@@ -354,9 +467,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### JCL / Job Control Language
 
-**Definition:** Job Control Language is used on IBM mainframe systems to define and control batch jobs and their required resources.
+**Definition:** The language that tells z/OS what to run and what to run it
+against: a job, its steps, and a `DD` statement binding every file the program
+opens to a real dataset.
 
-**Why it matters to BankLang:** Batch COBOL output often requires JCL examples or generated job metadata for compilation, linking, file allocation, and execution.
+**Why it matters to BankLang:** A COBOL program with no JCL cannot be run, so
+`bankc build` writes the job as well — compile, link, and the steps a program
+needs because of what is in it, such as `PRECOMP` and `BIND` for embedded SQL.
+It is meant to be submittable rather than a skeleton, and
+[jcl-model.md](jcl-model.md) says which parts a site is expected to change.
 
 **References:**
 
@@ -367,9 +486,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Money type
 
-**Definition:** A nominal type representing monetary values with currency, precision, scale, and rounding rules.
+**Definition:** A decimal that also carries which currency it is in, declared as
+`currency<"BDT", 18, 2>`.
 
-**Why it matters to BankLang:** Money values must be safer than plain decimals because currency mixing, rounding, and scale handling are common sources of financial bugs.
+**Why it matters to BankLang:** Two amounts in different currencies are the same
+shape and are not the same thing. Naming the currency in the type lets
+`BANK-DEC-005` refuse an expression that adds taka to dollars, which is
+otherwise a bug that only shows up in a reconciliation.
 
 **References:**
 
@@ -379,9 +502,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### OCCURS
 
-**Definition:** A COBOL clause used to define repeated data items, similar to fixed-size arrays.
+**Definition:** The COBOL clause that repeats a data item a fixed number of
+times, which is as close as COBOL gets to an array.
 
-**Why it matters to BankLang:** BankTS bounded arrays must map carefully to COBOL `OCCURS`, and layout reports must calculate repeated field offsets correctly.
+**Why it matters to BankLang:** A BankTS array is bounded, and the bound becomes
+the `OCCURS` count. Bounded is the whole point: the table's size is part of the
+record's length, and a subscript outside it is refused rather than clamped —
+which is a defect this project shipped once and found by running the program.
 
 **References:**
 
@@ -389,9 +516,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### OCCURS DEPENDING ON
 
-**Definition:** A COBOL construct for variable-occurrence tables whose effective number of elements depends on another data item.
+**Definition:** An `OCCURS` whose live element count is read from another field,
+which is what makes a record variable-length.
 
-**Why it matters to BankLang:** This affects dynamic record lengths and must be modelled explicitly. It is more complex than fixed `OCCURS` and requires careful backend support.
+**Why it matters to BankLang:** BankTS spells it `depending on`, and emits
+`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT OF BATCH` — the fixed bound stays
+as the maximum, because the storage is still reserved. The count must be a whole
+number declared before the table, since COBOL reads it to work out the record's
+length and cannot read a field it has not reached; `BANK-COPY-004` is what says
+so when it is not.
 
 **References:**
 
@@ -401,9 +534,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### PIC / PICTURE clause
 
-**Definition:** A COBOL clause that describes the format and size of a data item, including numeric and alphanumeric fields.
+**Definition:** The COBOL clause describing a data item's shape — how many
+digits or characters, where the decimal point sits, whether there is a sign.
+With `USAGE`, it decides how many bytes the item takes.
 
-**Why it matters to BankLang:** BankTS types must map to precise COBOL `PIC` clauses. Wrong mappings can break data layout and arithmetic.
+**Why it matters to BankLang:** Every BankTS type has one picture it compiles
+to, listed in [types.md](language/types.md), and the picture is what a copybook
+reader sees. `PIC 9(8)` and `PIC S9(8)` differ by a byte and by whether a
+negative can be held at all, so the mapping is a table rather than a judgement.
 
 **References:**
 
@@ -411,9 +549,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Precompile
 
-**Definition:** The process that scans source code containing embedded SQL and transforms it before normal compilation.
+**Definition:** The Db2 step that reads `EXEC SQL` out of a program, replaces it
+with calls, and writes the SQL to a DBRM for binding.
 
-**Why it matters to BankLang:** Db2 embedded SQL requires build pipeline awareness. BankLang audit reports and generated build guidance must account for precompile steps.
+**Why it matters to BankLang:** It runs before the COBOL compiler, so a program
+with embedded SQL cannot be built by the ordinary two steps. The generated job
+puts `PRECOMP` ahead of the compile whatever the caller asked for, which is why
+the JCL is generated from what the program contains rather than from a template.
 
 **References:**
 
@@ -423,9 +565,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### REDEFINES
 
-**Definition:** A COBOL clause that allows a data item to share storage with another data item, enabling different interpretations of the same bytes.
+**Definition:** A COBOL clause laying a second set of fields over the same bytes
+as the first, so one record can be read two ways.
 
-**Why it matters to BankLang:** `REDEFINES` is common in legacy layouts but dangerous for type-safe modelling. BankLang must parse, report, and support it carefully.
+**Why it matters to BankLang:** Real copybooks are full of it — a party record
+that is a person or a company depending on a type byte — so a compiler that
+cannot read `REDEFINES` cannot read the estate. BankTS has a `redefines` clause,
+and the copybook importer refuses a shape it cannot lay out
+(`BANK-COPY-002`) instead of importing it at the wrong offsets.
+`conversions/05-redefines-and-odo` is one that survived the trip.
 
 **References:**
 
@@ -435,9 +583,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Source map
 
-**Definition:** A mapping between source-language locations and generated artifact locations.
+**Definition:** A machine-readable record of which span of source produced which
+span of generated output.
 
-**Why it matters to BankLang:** BankTS source must be traceable to generated COBOL paragraphs, copybooks, SQL/CICS sections, and audit output.
+**Why it matters to BankLang:** It is what makes a review of the COBOL possible
+without reading it as a whole: click a line of BankTS in the playground and the
+COBOL it produced lights up. It is also what an auditor needs to ask why a
+particular paragraph exists. `bankc build` writes one per module.
 
 **References:**
 
@@ -455,9 +607,12 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### SQLCA
 
-**Definition:** SQL Communication Area; a data structure used by embedded SQL programs to receive status and diagnostic information from SQL operations.
+**Definition:** The SQL Communication Area: the structure Db2 writes the outcome
+of each statement into, `SQLCODE` among its fields.
 
-**Why it matters to BankLang:** Generated COBOL with Db2 embedded SQL must handle SQLCA/SQLCODE correctly and report unhandled paths.
+**Why it matters to BankLang:** It is the only place a program learns whether an
+SQL statement worked, so a generated program that talks to Db2 always includes
+it. Nothing is inferred from a statement appearing to succeed.
 
 **References:**
 
@@ -466,9 +621,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### SQLCODE
 
-**Definition:** A status code produced by SQL execution that indicates success, warning, not-found, or error conditions.
+**Definition:** The integer Db2 sets after every statement: `0` for success,
+`+100` for no row found, and a negative number for an error.
 
-**Why it matters to BankLang:** BankLang must reject Db2 operations where SQLCODE paths are not handled.
+**Why it matters to BankLang:** Those are three outcomes, and treating them as
+two is the bug. A `SELECT` that finds nothing is not a failure, and a `-911`
+deadlock is not an empty result — `BANK-SQL-007` refuses a test that cannot tell
+them apart. [sql.md](language/sql.md) has the shape it expects.
 
 **References:**
 
@@ -477,9 +636,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### SQLSTATE
 
-**Definition:** SQLSTATE is a standard SQL status code value that can be used alongside or instead of SQLCODE for SQL diagnostics.
+**Definition:** The five-character status the SQL standard defines, set alongside
+`SQLCODE` and portable across databases in a way `SQLCODE` is not.
 
-**Why it matters to BankLang:** Db2 integration should model SQL success/error infrastructure, including SQLCA or SQLCODE/SQLSTATE host variables.
+**Why it matters to BankLang:** BankLang tests `SQLCODE`. The distinction is not
+academic: a cursor loop that ends on `SQLSTATE` instead of the `SQLCODE` the
+`FETCH` sets never sees the end of the rows, which is a real defect in the
+OpenCBS suite and one this compiler refuses to emit.
 
 **References:**
 
@@ -487,9 +650,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### Syncpoint
 
-**Definition:** In transaction processing, a syncpoint is a point where updates are committed or backed out as a consistent unit of work.
+**Definition:** The point at which every update since the last one is committed
+together, or backed out together. What lies between two of them is a unit of
+work.
 
-**Why it matters to BankLang:** CICS and Db2 transaction behaviour must be explicit. BankLang transaction blocks must map to safe commit/rollback behaviour.
+**Why it matters to BankLang:** A BankTS `transaction` is a compile-time
+grouping — idempotency, audit and balance — and is not a syncpoint. Commit and
+rollback are not generated from it; where a syncpoint matters, as in the queue
+drained in `examples/mq-request-reply`, it is written out. Do not read the
+keyword as a promise the runtime is making.
 
 **References:**
 
@@ -502,7 +671,12 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 **Definition:** A first-class BankTS declaration that groups the effects of one business operation: ledger postings and audit events.
 
-**Why it matters to BankLang:** Transactions are the unit the banking safety rules apply to. Each must carry an [[idempotency-key]], emit at least one [[audit-event]], and balance its postings. A transaction lowers to a COBOL paragraph and must appear in the source map, which `BANK-GEN-007` enforces. Rollback and syncpoint behaviour are not modelled yet; those belong to the CICS profile on the roadmap.
+**Why it matters to BankLang:** Transactions are the unit the banking safety
+rules apply to. Each must carry an idempotency key, emit at least one audit
+event, and balance its postings. A transaction lowers to a COBOL paragraph and
+must appear in the source map, which `BANK-GEN-007` enforces. Rollback and
+syncpoint behaviour are not modelled; a transaction is a compile-time grouping,
+not a unit of work.
 
 **References:**
 
@@ -513,9 +687,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### VSAM
 
-**Definition:** Virtual Storage Access Method, an IBM mainframe data access method commonly used for record-oriented datasets.
+**Definition:** Virtual Storage Access Method: z/OS's record-oriented file
+organisations, the useful one here being KSDS, a dataset keyed on a field in the
+record and readable in key order.
 
-**Why it matters to BankLang:** Many COBOL systems use VSAM files. BankLang must model file declarations, key access, file status handling, and record layouts.
+**Why it matters to BankLang:** It is where a master file lives. A BankTS `file`
+declared `indexed` becomes a KSDS with `RECORD KEY` and any alternate keys, and
+`examples/vsam-browse` walks one with `START` and `READ NEXT` on an alternate
+index. Every operation on it sets a file status, and `BANK-FILE-001` refuses a
+declaration with nowhere to observe one.
 
 **References:**
 
@@ -525,9 +705,13 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### z/OS
 
-**Definition:** IBM's mainframe operating system for IBM Z systems.
+**Definition:** IBM's operating system for IBM Z, and where the Enterprise COBOL
+compiler, CICS, IMS, Db2, VSAM and JCL all live.
 
-**Why it matters to BankLang:** IBM Enterprise COBOL, CICS, IMS, Db2 for z/OS, VSAM, and JCL all sit in the z/OS ecosystem that BankLang primarily targets.
+**Why it matters to BankLang:** It is the platform everything generated here is
+meant to run on, and the platform none of it has run on. `zos/` holds a
+conformance kit — programs, JCL and expected results — for somebody with access
+to submit; [RESULTS-TEMPLATE.md](../zos/RESULTS-TEMPLATE.md) is what comes back.
 
 **References:**
 
@@ -536,9 +720,15 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### ZUnit
 
-**Definition:** ZUnit is IBM's z/OS automated unit testing framework, adapting xUnit concepts for Enterprise COBOL and PL/I testing.
+**Definition:** IBM's automated unit testing framework for z/OS, bringing xUnit
+to Enterprise COBOL and PL/I.
 
-**Why it matters to BankLang:** BankLang should eventually generate or align with unit-test artifacts suitable for IBM Z testing workflows.
+**Why it matters to BankLang:** It is generated. A BankTS `test <name> for
+<entry transaction>` produces a test case, a configuration and the JCL to run
+it, and `examples/zunit-tested-posting` carries all three. No generated case has
+been run, because running one needs z/OS — every shape in the artifacts is
+copied from a case IBM's own generator produced, and cited in
+[zunit.md](zunit.md).
 
 **References:**
 
@@ -548,9 +738,14 @@ Do not add unexplained jargon to README, specs, tickets, architecture docs, test
 
 ### 88-level condition name
 
-**Definition:** A COBOL condition name declared with level number 88 to associate meaningful names with specific values of a data item.
+**Definition:** A name declared at level 88 under a data item, true when the item
+holds one of the values it lists. It occupies no storage of its own.
 
-**Why it matters to BankLang:** 88-level names are useful for generated readable COBOL and copybook compatibility, especially for status fields and boolean-like values.
+**Why it matters to BankLang:** It is how generated COBOL says what a value
+means. Each member of a BankTS enum emits one 88-level, so the program tests
+`IF ACCOUNT-DORMANT` rather than `IF STATUS = "D"` — the same comparison, with
+the meaning written down where a reviewer reads it.
+`tests/enum-conditions.test.ts` holds the rule.
 
 **References:**
 

@@ -31,8 +31,8 @@ which is why the run does both — one sample would make them look like synonyms
 
 ## Where the proof is
 
-Not here. Reading the generated sequence cannot tell a correct one from one that
-is off by a unit at the tie. [`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts)
+Elsewhere, because reading the generated sequence cannot tell a correct one from
+one that is off by a unit at the tie. [`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts)
 executes it over every boundary case and compares each answer against a rational
 held in two BigInts.
 

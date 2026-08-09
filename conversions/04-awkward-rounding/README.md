@@ -86,8 +86,8 @@ needs no second field to hold a remainder in.
 
 ## How it is known to be right
 
-Not by reading it. [`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts)
-executes the generated sequence over inputs chosen to land on and around every
+By execution rather than by review. [`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts)
+runs the generated sequence over inputs chosen to land on and around every
 boundary — an exact tie, one unit either side, both signs, zero — and compares
 each answer against a rational held in two BigInts. Inverting the parity test
 makes it say 1.01 where the oracle says 1.00, and the test fails.

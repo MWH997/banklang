@@ -12,12 +12,12 @@ Enterprise COBOL — with banking safety rules enforced at compile time.**
 
 BankLang compiles **BankTS** into COBOL a mainframe engineer can read and
 review. Its types are TypeScript's; its statements — `transaction`, `file`,
-`cursor`, `queue` — are its own. It is a compiler, not an AI converter: no model
-decides what code is generated, and the same input always produces
-byte-identical output.
+`cursor`, `queue` — are its own. Everything it emits is decided by code you can
+read: no model is involved, and the same input always produces byte-identical
+output.
 
-The interesting part is not the translation. It is that the compiler **refuses
-to build unsafe programs**.
+Translation is the ordinary part. What the compiler does beyond it is **refuse to
+build unsafe programs**.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -41,8 +41,8 @@ default. No IBM Enterprise COBOL validation is claimed.
 
 **Built with AI assistance.** The design and the decisions are the author's;
 much of the implementation was written with an AI coding assistant under review.
-That is how it was written, not what it does — nothing in the compiler is a
-model.
+That describes how the compiler was built. Nothing inside it is a model, at
+build time or at run time.
 
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·

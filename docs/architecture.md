@@ -17,9 +17,13 @@ BankTS source
   -> generated COBOL/copybooks/JCL/audit artifacts
 ```
 
-The compiler must be deterministic from source input and configuration to output artifacts.
+The same source and the same configuration produce byte-identical artifacts.
+That is a property `bankc verify` checks rather than a goal.
 
-AI tools may assist repository development, documentation, and repetitive tests. AI must not participate in compilation decisions.
+An AI coding assistant helped write this repository, and nothing in the compiler
+is a model. No generated artifact depends on one, at build time or at run time.
+Every decision about what COBOL comes out is code somebody can read in
+`packages/`.
 
 ## 2. Core packages
 
@@ -373,7 +377,9 @@ Required controls:
 
 ## 6. Source mapping
 
-Every generated COBOL paragraph, major data item, copybook record, and audit event must map back to BankTS source spans.
+Every generated COBOL paragraph, data item, copybook record and audit event maps
+back to the BankTS span that asked for it. `bankc verify` fails when one does
+not, which is what makes traceability a measurement rather than a claim.
 
 Source map should include:
 
@@ -425,6 +431,9 @@ The audit folder must be machine-readable and human-readable.
 
 ## 9. Dependency policy
 
-The compiler should minimize dependencies in core packages. Parser generators are allowed only if they produce deterministic output and are easy to audit.
+Core packages carry as few dependencies as they can. A parser generator is
+allowed only where its output is deterministic and somebody can read it.
 
-Critical compiler logic must live in repository code, not opaque external services.
+Compiler logic lives in this repository. Nothing that decides what COBOL is
+emitted sits behind a network call or in a service this repository does not
+contain.

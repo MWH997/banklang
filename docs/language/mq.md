@@ -143,8 +143,8 @@ time with reason 2037 and putting to one opened `MQOO-INPUT-AS-Q-DEF` fails with
 
 The status field is a **reason code**, not a two-character status like a file's
 or a PCB's, so it is a number: `inReason` holds 2033 for an empty queue and 2085
-for a queue that is not there. It is required, for the reason a file's status is
-(`BANK-MQ-001`).
+for a queue that is not there. The field is required for the same reason a
+file's status is (`BANK-MQ-001`).
 
 #### What a queue costs on z/OS
 

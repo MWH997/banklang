@@ -49,9 +49,9 @@ runs past column 72 can pass local validation and be uncompilable on the target,
 because the target reads only the first 72 columns and quietly truncates the rest.
 
 The fix is to configure the local compiler to the dialect you are actually
-targeting, and to say clearly, everywhere, that a local compile is not validation
-against IBM's compiler. It is evidence about a different compiler that happens to
-read a similar language.
+targeting, and to say clearly, everywhere, that a local compile is evidence about
+a different compiler that happens to read a similar language, well short of
+validation against IBM's.
 
 ## Does it run
 

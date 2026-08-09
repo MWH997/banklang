@@ -34,9 +34,9 @@ the tool does not have — and on an estate, that is most of them.
 
 ## What it says to look at
 
-Not a score. A single number is what lets a conversation skip the properties,
-and the properties are the whole point. Each flag is a specific thing with a
-specific consequence:
+Deliberately not a score, because a single number is what lets a conversation
+skip the properties, and the properties are the whole point. Each flag is a
+specific thing with a specific consequence:
 
 - **`ALTER`** rewrites a `GO TO` at run time, so what the program does cannot be
   read from the source at all.

@@ -22,8 +22,8 @@ two bytes and one, so the equal-length rule refuses it, and it refuses it
 correctly — the conversion would have to delete a byte, and `CONVERTING` does not
 change a field's length.
 
-So the question this raises is not "should `replaceChars` handle accents". It is
-what a BankTS string _is_, and the answer has to hold on z/OS rather than on the
+So the question this raises is what a BankTS string _is_, rather than whether
+`replaceChars` should handle accents, and the answer has to hold on z/OS rather than on the
 machine that happens to be running the tests.
 
 ### What the target actually offers

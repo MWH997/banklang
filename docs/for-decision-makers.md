@@ -57,8 +57,8 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-Those are compile errors. Not warnings, not lint, not a review checklist — the
-build does not produce an artifact.
+Those are compile errors, so the build stops and produces no artifact. A warning
+or a lint rule would leave somebody to decide whether to act on it.
 
 The three above are a retry that posts twice, money moving with no audit trail,
 and a ledger that does not balance. There are more than ninety diagnostics, each
@@ -67,9 +67,9 @@ test that fails if the rule stops working.
 
 **Why this is the interesting part.** Every one of those defects is normally
 caught by a person: a reviewer who knows to look, a tester who thinks of the
-retry, an auditor who reconciles after the fact. The claim here is not that the
-COBOL is better. It is that a class of defect stops depending on whether
-somebody remembered.
+retry, an auditor who reconciles after the fact. The claim here is that a class
+of defect stops depending on whether somebody remembered, rather than that the
+COBOL is better.
 
 ## What the evidence actually is
 

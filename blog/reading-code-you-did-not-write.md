@@ -8,9 +8,9 @@ reading: generated-code-standards.md
 ---
 
 There is a moment that decides whether a code generator succeeds in an
-organisation, and it is not a technical one. It is when somebody who did not
-choose the tool opens its output and decides whether they are willing to be
-responsible for it.
+organisation, and it has nothing to do with the technology. It comes when
+somebody who did not choose the tool opens its output and decides whether they
+are willing to be responsible for it.
 
 If the answer is no, nothing else matters. The generator can be correct, fast and
 well tested, and it will still be quietly not used, because being on call for
@@ -18,9 +18,8 @@ something you cannot read is not a reasonable thing to ask of anybody.
 
 ## What people actually check
 
-When an experienced engineer opens generated code, they are not reading it line
-by line. They are looking for a handful of signals, quickly, and forming a
-judgement.
+When an experienced engineer opens generated code, they scan for a handful of
+signals rather than reading it line by line, and form a judgement quickly.
 
 **Can I find my way around?** Are there names that mean something, or is
 everything `WS-TEMP-1` through `WS-TEMP-40`? A reader needs to be able to hold a

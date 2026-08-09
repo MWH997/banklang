@@ -211,9 +211,9 @@ ordinary on an estate, and BankLang can call out today but cannot be called in
 except through `entry transaction`, which requires an idempotency key and an
 audit event in the caller's own record.
 
-So a callable program is a shape BankLang plausibly needs. It is not built here,
-for two reasons. It is a whole programme shape — parser, entry contract, ABI,
-JCL, zUnit — rather than a feature, and building it in the same phase that
+So a callable program is a shape BankLang plausibly needs. Two reasons kept it
+out of this release. It amounts to a whole programme shape — parser, entry
+contract, ABI, JCL, zUnit — rather than a feature, and building it in the same phase that
 measured COBOLEval would be indistinguishable from building it _for_ COBOLEval.
 The honest zero stands, and the evidence that would justify the work is recorded
 rather than spent.
