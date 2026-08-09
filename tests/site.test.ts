@@ -165,6 +165,53 @@ describe("the conversion exhibit", () => {
   });
 });
 
+/**
+ * The four page shells carry the same navigation.
+ *
+ * Landing, documentation, blog and playground are rendered by four different
+ * things — a template, `build-docs.ts`, `build-blog.ts`, and a Vite entry — so
+ * a nav item added to one is added to one. The theme control is already held
+ * together this way; the links were not, and a reader who follows a nav item on
+ * the homepage and cannot find it in the docs has been given a site that is
+ * three sites.
+ *
+ * Asserted per link rather than by comparing the four blocks, because the
+ * `href`s differ legitimately: the docs shell writes relative paths from
+ * whatever depth the page sits at.
+ */
+describe("every page shell carries the same navigation", () => {
+  const shells: [string, string][] = [
+    ["landing", PAGE],
+    ["documentation", renderPage(renderDoc(docFiles()[0]!), navigation())],
+    ["blog", renderPost(posts()[0]!)],
+    ["playground", readFileSync("packages/playground/index.html", "utf8")],
+  ];
+
+  for (const [name, html] of shells) {
+    it(`${name} links back to the author's site`, () => {
+      expect(html).toContain('href="https://mwhassan.com"');
+    });
+
+    it(`${name} links to the repository`, () => {
+      expect(html).toContain("https://github.com/MWH997/banklang");
+    });
+
+    /** An external link opened from this origin should not keep a handle on it. */
+    it(`${name} opens its external links without a window handle`, () => {
+      for (const [, tag] of html.matchAll(
+        /<a\s([^>]*href="https?:\/\/[^"]*"[^>]*)>/g,
+      )) {
+        if (/href="https:\/\/banklang\.mwhassan\.com/.test(tag)) {
+          continue;
+        }
+        expect(tag, `an external link in the ${name} shell: ${tag}`).toContain(
+          "rel=",
+        );
+      }
+    });
+  }
+});
+
 describe("the landing page", () => {
   it("says validation is GnuCOBOL and not IBM", () => {
     expect(PAGE).toContain("No IBM Enterprise\n          COBOL validation");

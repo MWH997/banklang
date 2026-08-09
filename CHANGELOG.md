@@ -16,6 +16,13 @@ earlier was tagged or released.
 
 ## [Unreleased]
 
+### Added
+
+- Publish the site to Cloudflare Pages on every push to `main`, from the same
+  `pnpm build:site` a contributor runs — [deploy](.github/workflows/deploy.yml).
+- Link back to the author's site from every page's navigation, and hold the
+  four page shells to the same links.
+
 ## [0.10.0] — 2026-08-09
 
 The release that measures this compiler against COBOL nobody wrote for it.

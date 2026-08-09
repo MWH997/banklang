@@ -570,6 +570,7 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
         <a href="${up}/../blog/">Writing</a>
         <a href="${up}/../playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
+        <a href="https://mwhassan.com" rel="noopener">mwhassan.com</a>
         ${THEME_BUTTON}
         <button id="nav-toggle" type="button" class="ghost narrow-only" aria-expanded="false" aria-controls="side">Contents</button>
       </nav>

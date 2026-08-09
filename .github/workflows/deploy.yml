@@ -1,0 +1,82 @@
+name: deploy
+
+# The site, published to Cloudflare Pages.
+#
+# Direct upload rather than Cloudflare's Git integration: the build needs pnpm,
+# Node 24 and a Vite build of the playground, and Pages' own build container
+# would be a second definition of all three that drifts from `ci.yml`. This runs
+# the same `pnpm build:site` a contributor runs and uploads what it produced.
+#
+# `dist/site/_headers` is read by Pages, so the content security policy — which
+# names the sha256 of every inline script on every page — ships with the upload
+# rather than being configured anywhere a person could forget.
+#
+# Deploys the default branch only. A push that fails `ci.yml` still deploys,
+# because the two are independent workflows; that is deliberate for now, since a
+# site rebuild is not an artifact anybody verifies against and blocking it on the
+# full COBOL matrix would mean a typo fix waits twenty minutes.
+
+on:
+  push:
+    branches:
+      - main
+    # The site is built from the compiler, the examples and the docs, so almost
+    # any change can alter a page. Narrowing this to `docs/**` would miss the
+    # landing page's generated COBOL changing when the backend does.
+  workflow_dispatch:
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+# A second push while the first is uploading would race for the same production
+# deployment. The later commit is the one that should win, and the earlier one
+# is not worth finishing.
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Builds the landing page from the compiler's own output, renders every
+      # document under `docs/`, builds the playground, and writes `_headers`
+      # with the script hashes read back off the built pages.
+      - name: Build the site
+        run: pnpm build:site
+
+      # Refuse to publish a build that lost the content policy. `build:site`
+      # throws when a hash placeholder is unfilled, but an empty or truncated
+      # `_headers` would upload silently and every inline script on the site
+      # would stop running — the theme on all of them, and the docs search.
+      - name: Check the response headers survived the build
+        run: |
+          test -s dist/site/_headers || { echo "::error::dist/site/_headers is missing or empty."; exit 1; }
+          grep -q "Content-Security-Policy" dist/site/_headers \
+            || { echo "::error::_headers carries no content security policy."; exit 1; }
+          grep -q "sha256-" dist/site/_headers \
+            || { echo "::error::the policy names no script hashes, so every inline script would be refused."; exit 1; }
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/site --project-name=banklang --branch=main

@@ -383,6 +383,7 @@ ${options.structuredData ?? ""}
         <a href="${options.up}blog/">Writing</a>
         <a href="${options.up}playground/">Playground</a>
         <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
+        <a href="https://mwhassan.com" rel="noopener">mwhassan.com</a>
         ${THEME_BUTTON}
       </nav>
     </header>
