@@ -17,6 +17,9 @@ in order.
 
 ### Added
 
+- Report the compiler's version, whether GnuCOBOL is installed and which one,
+  and that native IBM Enterprise COBOL is not detected, from `bankc doctor` —
+  [toolchain](docs/toolchain.md).
 - Read and write text files with a `lineSequential` organisation, under the
   restrictions Enterprise COBOL puts on one — [files](docs/language/files.md).
 - Measure this compiler against COBOL nobody wrote for it: independent corpora,
@@ -77,6 +80,13 @@ in order.
 
 ### Fixed
 
+- Say what a mistyped project path was expected to name, rather than Node's
+  `ENOENT … open '/…/src/main.bank.ts'` — [toolchain](docs/toolchain.md).
+- Refuse `--watch` on a command that reads no project, rather than watching a
+  path built from a diagnostic identifier — [toolchain](docs/toolchain.md).
+- Tell the release checklist to run `pnpm examples:verify` rather than a loop
+  over `examples/*/`, which fails on the example that is a job of four —
+  [releasing](docs/releasing.md).
 - Count every way a program reads the record an operation filled, not only a
   field read out of it: a write, a release, a queue put and eight more were not
   uses (`BANK-FILE-017`) — [files](docs/language/files.md).
