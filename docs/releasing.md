@@ -93,3 +93,14 @@ Pre-1.0, so a release that adds language surface, a diagnostic or a CLI command
 is a **minor** bump. `1.0` is not a function of the repository becoming public:
 there has been no native IBM Enterprise COBOL validation and no production
 ledger use, and a `1.0` claiming otherwise would be the least honest thing here.
+
+Read `## [Unreleased]` to decide which. As it stands it adds a file
+organisation, five diagnostics and a CLI command, so the next release is a
+minor one rather than a patch.
+
+**The version stays where it is until the release is cut.** All three files are
+held to each other by `tests/documentation.test.ts`, and the changelog is held
+to them: bumping `version` without renaming `## [Unreleased]` to a dated
+section names a version the changelog has never heard of, and the suite says
+so. The bump and the section rename are the same commit, and the signed tag
+follows it.
