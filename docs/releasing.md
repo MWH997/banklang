@@ -46,7 +46,7 @@ pnpm examples:verify
 ```
 
 **Not a loop over `examples/*/`.** That is what this checklist used to say, and
-it fails: `end-of-day-settlement` is four programs and a sort in one job, so it
+it fails: `end-of-day-settlement` is three programs and a sort in one job, so it
 has no `src/main.bank.ts` of its own and `bankc test` on the directory reports
 that it is not a project. CI made the same mistake and
 [CONTRIBUTING.md](../CONTRIBUTING.md) records it. `tools/verify-examples.ts`

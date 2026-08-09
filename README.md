@@ -127,8 +127,9 @@ pnpm bankc analyse  legacy/                   # what your COBOL contains
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 ```
 
-Add `--watch` to a project command — `check`, `build`, `verify`, `test`, `job` —
-to rerun on save. [The whole toolchain →](docs/toolchain.md)
+Add `--watch` to any command that reads a project to rerun it on save. The rest
+refuse the flag and name the ones that take it.
+[The whole toolchain →](docs/toolchain.md)
 
 ## Examples
 
@@ -148,6 +149,9 @@ report over them.
 | [`interest-posting-batch`](examples/interest-posting-batch/)     | Rounding, tiered rates, a fee that can refuse |
 | [`amortisation-schedule`](examples/amortisation-schedule/)       | Recursion as a `RECURSIVE` program            |
 | [`rounding-conformance`](examples/rounding-conformance/)         | All seven rounding modes, both signs          |
+| [`payment-feed-import`](examples/payment-feed-import/)           | `lineSequential` text from off the mainframe  |
+| [`settlement-bill-file`](examples/settlement-bill-file/)         | Header, detail and trailer in one output file |
+| [`zunit-tested-posting`](examples/zunit-tested-posting/)         | A `test` beside the program it covers         |
 
 **The subsystems**
 
@@ -161,14 +165,14 @@ report over them.
 
 **When it goes wrong, and a night**
 
-| Example                                                    | Demonstrates                                   |
-| ---------------------------------------------------------- | ---------------------------------------------- |
-| [`failed-open`](examples/failed-open/)                     | File status 35, 37 and 39 named apart          |
-| [`full-disk`](examples/full-disk/)                         | A `WRITE` out of extents, halfway through      |
-| [`deadlock-retry`](examples/deadlock-retry/)               | Db2 -911 and -913, bounded retry               |
-| [`high-volume-master`](examples/high-volume-master/)       | A file bigger than the loop bound              |
-| [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint    |
-| [`end-of-day-settlement`](examples/end-of-day-settlement/) | Four programs and a sort in **one JCL stream** |
+| Example                                                    | Demonstrates                                    |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| [`failed-open`](examples/failed-open/)                     | File status 35, 37 and 39 named apart           |
+| [`full-disk`](examples/full-disk/)                         | A `WRITE` out of extents, halfway through       |
+| [`deadlock-retry`](examples/deadlock-retry/)               | Db2 -911 and -913, bounded retry                |
+| [`high-volume-master`](examples/high-volume-master/)       | A file bigger than the loop bound               |
+| [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint     |
+| [`end-of-day-settlement`](examples/end-of-day-settlement/) | Three programs and a sort in **one JCL stream** |
 
 **And five conversions** — [`conversions/`](conversions/) — existing COBOL
 beside the BankTS it becomes.

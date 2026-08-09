@@ -9,12 +9,12 @@ name: release
 # So this refuses to publish an unsigned tag rather than pretending it signed
 # one.
 #
-# To cut a release:
+# To cut a release, with X.Y.Z the version being published:
 #
-#   1. Rename `## [Unreleased]` in CHANGELOG.md to `## [0.9.0] - YYYY-MM-DD`.
+#   1. Rename `## [Unreleased]` in CHANGELOG.md to `## [X.Y.Z] - YYYY-MM-DD`.
 #   2. Check `version` in package.json, CITATION.cff and the extension manifest
 #      agree — `pnpm test` fails if they do not.
-#   3. `git tag -s v0.9.0 -m "0.9.0"` and push the tag.
+#   3. `git tag -s vX.Y.Z -m "X.Y.Z"` and push that tag alone.
 #
 # Everything below then runs on its own.
 

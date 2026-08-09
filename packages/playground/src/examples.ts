@@ -174,7 +174,7 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
   "zunit-tested-posting": {
     title: "A program with a test case",
     blurb:
-      "A test written next to the program, in the same language, which becomes a zUnit case that runs on z/OS and compiles to nothing here.",
+      "A test written next to the program, in the same language, which becomes a zUnit case to run on z/OS and compiles to nothing here.",
     order: 23,
   },
   "payment-feed-import": {

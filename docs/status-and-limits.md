@@ -1,14 +1,20 @@
 # Status and honest limits
 
-The most credibility-building page in this repository, which is why it is a page
-rather than the last section of a README nobody scrolls to.
+Every limit on this page is true of BankLang 0.10.0. Where one has a plan
+attached the plan is named; where it does not, it says so. Four states are kept
+apart throughout, because they are not the same thing:
 
-Everything here is a limit that is true today. Where one has a plan attached,
-the plan is named; where it does not, it says so.
+| State               | What it means                                          |
+| ------------------- | ------------------------------------------------------ |
+| Design decision     | BankTS will not grow this. The exclusion is the point. |
+| Not implemented     | It belongs in the language and is not written yet.     |
+| Not validated       | It is implemented, and nothing has confirmed it works. |
+| Environment missing | It can only be confirmed on hardware nobody here has.  |
 
 This is a working compiler for a **deliberately narrow subset**, not a
-production mainframe toolchain. Being precise about that matters more than
-sounding impressive:
+production mainframe toolchain.
+
+## Target and validation
 
 - **Validated with GnuCOBOL, not IBM.** Every example compiles with GnuCOBOL in
   CI. No IBM Enterprise COBOL validation has been performed, and none is
@@ -18,6 +24,14 @@ sounding impressive:
   Nothing there has been run either, and the README says so.
 - **Not production-ready.** It has never run against a real ledger, and no
   institution's money has moved through it.
+- **The full mutation suite was not run for this release.** Seven lanes exist;
+  the targeted safety lane is the one 0.10.0 ran, at 90.03% total and 92.67% of
+  covered code, with every surviving mutant in it classified individually in
+  [verification](verification.md). The other six lanes are a measurement this
+  release does not have.
+
+## Runtime validation
+
 - **SQL and CICS are checked structurally, not semantically.** BankLang ships a
   precompiler that translates `EXEC SQL` and `EXEC CICS` the way `DSNHPC` and
   the CICS translator do, so every example compiles with GnuCOBOL. That proves
@@ -31,6 +45,14 @@ sounding impressive:
   so a `SQLCODE 100` or a `PGMIDERR` branch is executed rather than assumed, but
   every such value was written down by the test, not decided by a database or a
   region. Nothing has run on z/OS, against Db2, or in a CICS region.
+- **Four of the 31 emitted COBOL verbs are not executed locally.** `ENTRY`,
+  `INITIATE`, `GENERATE` and `TERMINATE` — a generated zUnit case's entry points
+  and a Report Writer section — have nowhere local to run, so 27 of 31 is the
+  denominator the differential lane reports. It is not 31 of 31.
+  [Interpreter coverage](validation/interpreter-coverage.md).
+
+## Language boundaries
+
 - **Generics are monomorphised, not polymorphic.** Every instantiation is
   expanded into a concrete record or paragraph, because COBOL has no boxing.
   Instantiated functions that lower to identical COBOL share one paragraph, so
@@ -57,8 +79,37 @@ sounding impressive:
   uninstantiated generic is never checked at all (`BANK-TYPE-015`).
 - **Ledger balance is structural.** Two different expressions that evaluate to
   the same amount are reported as unbalanced.
+
+## Character and file model
+
+- **No UTF-8 character model.** `string<n>` is n bytes in the host code page.
+  `USAGE NATIONAL` is emitted at the Enterprise COBOL width, but the character
+  model behind it is not implemented: there is no encoding conversion, and
+  length is counted in bytes rather than in characters. A design decision for
+  now, with the reasoning in
+  [ADR-0006](adr/0006-single-byte-character-model.md).
+- **Multi-record `INPUT` is refused** (`BANK-FILE-015`). A file may carry
+  several record layouts on output — `settlement-bill-file` writes a header, a
+  detail and a trailer — but a program may not read one. The recommended
+  alternative is one record, a type field and `REDEFINES`, and it is weaker than
+  it sounds: nothing forces the programmer to test the discriminator before
+  using the overlay. Refused on evidence rather than on taste — the 143
+  occurrences in X-COBOL deduplicated to 51 distinct files, none of them an
+  application program.
+- **Bounded split counting is refused.** `UNSTRING … TALLYING` has no BankTS
+  spelling, for the same reason: 126 of the 130 statements in the corpus came
+  from one NIST conformance file vendored into several repositories.
+- **`lineSequential` files are read or written, never updated in place**
+  (`BANK-FILE-013`). Enterprise COBOL does not allow `OPEN I-O` on one, and
+  neither does BankTS. Records are printable characters only, so a packed
+  decimal in a `lineSequential` record is a compile error rather than bytes that
+  do not survive the format (`BANK-FILE-014`). [Files](language/files.md).
+
+## Tooling
+
 - **The VS Code extension is unpublished.** Its language server is built by
-  `pnpm build:server` and driven over stdio by `tests/language-server-session.test.ts`,
+  `pnpm --filter banklang-vscode build:server` and driven over stdio by
+  `tests/language-server-session.test.ts`,
   which holds a whole session — initialize, open, hover, symbols, format, change,
   close, shutdown — against the bundle the extension loads. It has not been
   through marketplace review, and it has not been run inside VS Code itself.
@@ -70,16 +121,13 @@ sounding impressive:
   (D20, D21). What a case can assert is also narrow by construction — the PARM
   the step is started with, and the calls the program makes — because those are
   what a driver running in its own program can see.
-- **Db2's depth is now there, and three of the five were never missing.**
-  BankLang does not parse SQL, so isolation levels, savepoints and `LOCK TABLE`
-  always worked — what was missing was a test, a rule, and a page saying so.
-  `WITH HOLD`, multi-row `FETCH` and scrollable cursors are real additions
-  (`cursor ... hold`, `cursor ... rowset n`, `cursor ... scroll` with
-  `for each ... from n backward`). `GET DIAGNOSTICS` was listed here as absent
-  until 2026-08-07 and never was: it is an ordinary statement in a `sql`
-  declaration, host variables and all, for the same reason the isolation levels
-  always worked. What remains absent is dynamic SQL, and that is on purpose
-  (`BANK-SQL-002`).
+- **Dynamic SQL is refused, by design** (`BANK-SQL-002`). BankLang does not
+  parse SQL — a `sql` declaration reaches the precompiler as written — so
+  isolation levels, savepoints, `LOCK TABLE` and `GET DIAGNOSTICS` need nothing
+  from the compiler and have always worked. Cursors are the part it does model,
+  because their `OPEN`, `FETCH` and `CLOSE` are generated: `hold`, `rowset n`
+  and `scroll` are spelled in the language. A statement assembled at run time is
+  the one shape that cannot be checked before it exists, so it is not accepted.
 - **`bankc analyse` reads rather than compiles.** It is a count of what is in
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.

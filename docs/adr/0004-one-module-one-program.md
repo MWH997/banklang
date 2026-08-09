@@ -38,7 +38,7 @@ ACCTMAST.cpy` writes the BankTS record for an existing copybook, and the
 - **Programs** are composed at the job level, not the source level. A
   `job.json` names several programs and the order they run in, and
   `bankc job` emits one JCL stream for the lot. `examples/end-of-day-settlement`
-  is four programs and a sort in one night.
+  is three programs and a sort in one night.
 
 A BankTS program may still call another program at run time — `call` compiles to
 a COBOL `CALL`, which is dynamic and resolves at link or load time exactly as it

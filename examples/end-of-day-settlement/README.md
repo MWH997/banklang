@@ -1,7 +1,8 @@
 # End-of-day settlement
 
-A multi-step job: extract → sort → post → report. Four programs, one JCL stream,
-real step dependencies. This is what a batch actually looks like.
+A multi-step job: extract → sort → post → report. Three programs and a sort in
+one JCL stream, with real step dependencies. This is what a batch actually looks
+like.
 
 ## The job
 
@@ -20,7 +21,7 @@ That builds each program exactly as `bankc build` would — load module, build
 job, copybooks, source map, audit bundle — and then writes the one thing none of
 them has on its own: `dist/jcl/EODSETL.jcl`, the stream that runs them.
 
-## Why four programs and not one
+## Why four steps and not one program
 
 Each step has a different relationship with a rerun, and that is the whole
 reason a night is split up:
