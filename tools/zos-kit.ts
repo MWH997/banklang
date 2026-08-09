@@ -1,5 +1,12 @@
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+
+import {
+  emptyIbmResult,
+  hashManifest,
+} from "../packages/horizontal-validation/src/index";
 
 import { compile } from "../packages/compiler/src/index";
 import { emitZunit } from "../packages/zunit/src/index";
@@ -51,6 +58,8 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   members: number;
   examples: string[];
   skipped: { example: string; reason: string }[];
+  /** Cases an IBM run is asked to report on, one per program. */
+  cases: number;
 } {
   // Removed rather than overwritten. A member that was renamed leaves the old
   // one behind, and a bundle holding both is a library where two members claim
@@ -172,11 +181,114 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
     "utf8",
   );
 
+  // The machine-readable half. `MANIFEST.txt` tells a person where to upload
+  // each folder; this tells a program which bytes it received and which cases
+  // it is expected to report on, so a run on real hardware produces a result
+  // this repository can ingest without anybody editing a report by hand.
+  const cases = bundleCases(cobol);
+  const manifest = renderJsonManifest(cobol, copybooks, jcl, bzucfg, cases);
+  writeFileSync(join(outputRoot, "manifest.json"), manifest, "utf8");
+  writeFileSync(
+    join(outputRoot, "result-template.json"),
+    emptyIbmResult(
+      version(),
+      commit(),
+      hashManifest(manifest),
+      cases.map(({ id, program, kind }) => ({ id, program, kind })),
+    ),
+    "utf8",
+  );
+
   return {
     members: cobol.length + copybooks.length + jcl.length + bzucfg.length,
     examples: programs,
     skipped,
+    cases: cases.length,
   };
+}
+
+/** This repository's version, from the manifest rather than from a constant. */
+function version(): string {
+  return (
+    JSON.parse(readFileSync("package.json", "utf8")) as { version: string }
+  ).version;
+}
+
+/**
+ * The commit the bundle was built from, or `unknown` outside a checkout.
+ *
+ * `unknown` rather than a throw: a bundle built from an exported archive is
+ * still a usable bundle, and the field says so instead of pretending.
+ */
+function commit(): string {
+  const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+  return result.status === 0 ? result.stdout.trim() : "unknown";
+}
+
+/**
+ * What an IBM run is being asked to report on.
+ *
+ * One case per program, and the category is decided by what the program needs
+ * rather than by hope. A program with `EXEC CICS`, `EXEC SQL` or `EXEC DLI` in
+ * it cannot execute from a batch bundle without a region, a plan or a PSB that
+ * this repository cannot ship — so it is a `compile` case, and saying so here
+ * is what stops a compile-only run being read later as an execution.
+ */
+export function bundleCases(
+  cobol: Member[],
+): { id: string; program: string; kind: "compile" | "execute" }[] {
+  return cobol
+    .map((member) => ({
+      id: `case-${member.name.toLowerCase()}`,
+      program: member.name,
+      kind: /\bEXEC\s+(CICS|SQL|DLI)\b/.test(member.content)
+        ? ("compile" as const)
+        : ("execute" as const),
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Every shipped member with the bytes it shipped as, in a stable order. */
+function renderJsonManifest(
+  cobol: Member[],
+  copybooks: Member[],
+  jcl: Member[],
+  bzucfg: Member[],
+  cases: { id: string; program: string; kind: "compile" | "execute" }[],
+): string {
+  const members = (
+    [
+      ["cobol", cobol],
+      ["copybooks", copybooks],
+      ["jcl", jcl],
+      ["bzucfg", bzucfg],
+    ] as const
+  ).flatMap(([folder, entries]) =>
+    entries.map((member) => ({
+      path: `${folder}/${member.library ? `${member.library}/` : ""}${member.name}.txt`,
+      member: member.name,
+      bytes: Buffer.byteLength(member.content, "utf8"),
+      sha256: createHash("sha256").update(member.content).digest("hex"),
+    })),
+  );
+  members.sort((a, b) => a.path.localeCompare(b.path));
+  return `${JSON.stringify(
+    {
+      bundle: "banklang-zos-conformance",
+      version: 1,
+      banklangVersion: version(),
+      banklangCommit: commit(),
+      target: "IBM Enterprise COBOL for z/OS 6.4",
+      // Said here as well as in the prose, because this file is what a runner
+      // reads and a runner does not read prose.
+      executedBy: null,
+      sourceFormat: "fixed, columns 8-72",
+      members,
+      cases,
+    },
+    null,
+    2,
+  )}\n`;
 }
 
 function renderManifest(
