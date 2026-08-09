@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "banklangVersion": "0.10.0",
+  "released": "2026-08-09",
+  "target": "IBM Enterprise COBOL 6.4",
+  "executedWith": "cobc (GnuCOBOL) 3.2.0",
+  "nativeIbmValidation": "NOT YET PERFORMED",
+  "tests": {
+    "files": 152,
+    "tests": 3168,
+    "measuredBy": "pnpm test"
+  },
+  "examples": {
+    "projects": 25,
+    "directories": 23
+  },
+  "differential": {
+    "artifacts": 158,
+    "verbsEmitted": 31,
+    "locallyExecutable": 27,
+    "interpreted": 27,
+    "blindSpots": 0,
+    "exempt": ["ENTRY", "GENERATE", "INITIATE", "TERMINATE"]
+  },
+  "cobolCodeBench": {
+    "corpus": "cobolcodebench",
+    "discovered": 46,
+    "imported": 46,
+    "applicable": 19,
+    "unsupportedByDesign": 7,
+    "unsupportedNotYetImplemented": 1,
+    "benchmarkAmbiguous": 19,
+    "malformedUpstream": 0,
+    "excludedLicence": 0,
+    "authored": 20,
+    "authoredOfApplicable": 19,
+    "executed": 20,
+    "bothEngines": 20,
+    "agreements": 20,
+    "divergences": 0,
+    "interpreterUnavailable": 0,
+    "passed": 19,
+    "passedNotApplicable": 0,
+    "failures": {
+      "semantic-mismatch": 1
+    },
+    "authoringCoverage": "19 / 19 (100.0%)",
+    "passOfAuthored": "19 / 20 (95.0%)",
+    "passOfApplicable": "19 / 19 (100.0%)",
+    "passOfDiscovered": "19 / 46 (41.3%)"
+  },
+  "xcobol": {
+    "discovered": 5195,
+    "analysed": 5195,
+    "analyserFailures": 0,
+    "fully-representable": 1543,
+    "representable-with-adaptation": 2730,
+    "unsupported-by-design": 533,
+    "unsupported-not-yet-implemented": 331,
+    "analyser-failure": 0,
+    "unknown": 58
+  },
+  "openCbs": {
+    "total": 41,
+    "preventedAtCompileTime": 9
+  },
+  "corpora": [
+    {
+      "id": "cobolcodebench",
+      "licence": "Apache-2.0",
+      "redistribution": "redistributable",
+      "measuredAt": "469624dffd7094ab192825311a2b0a9d69b0d586"
+    },
+    {
+      "id": "coboleval",
+      "licence": "MIT",
+      "redistribution": "redistributable",
+      "measuredAt": "68999a0f2dfb6f65b60c4e11e999f7993f459984"
+    },
+    {
+      "id": "xcobol-v2",
+      "licence": "CC-BY-4.0",
+      "redistribution": "derived-only",
+      "measuredAt": "04046be57ce4dec9a7a65b358c0cd81d9f5d17f0"
+    },
+    {
+      "id": "opencbs",
+      "licence": "MIT",
+      "redistribution": "redistributable",
+      "measuredAt": "469624dffd7094ab192825311a2b0a9d69b0d586"
+    }
+  ],
+  "mutation": {
+    "lane": "pnpm test:mutation:safety",
+    "scoreTotal": 90.03,
+    "scoreCovered": 92.67,
+    "survivorsClassified": true,
+    "fullSuiteRunThisRelease": false
+  }
+}

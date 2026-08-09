@@ -69,6 +69,7 @@
     "playground:links:check": "tsx tools/playground-links.ts --check",
     "playground:preview": "pnpm --filter @banklang/playground preview",
     "release:notes": "tsx tools/release-notes.ts",
+    "release:snapshot": "tsx tools/release-snapshot.ts",
     "sbom:build": "tsx tools/sbom.ts",
     "sbom:check": "tsx tools/sbom.ts --check",
     "sbom:release": "tsx tools/sbom.ts --all-platforms",
