@@ -814,6 +814,25 @@ function shortened(account: string<16>): string<8> {
     ).toEqual(["BANK-FILE-017"]);
   });
 
+  /** A call written as a statement rather than into a value. */
+  it("counts a bare call of a function with it", () => {
+    expect(
+      outcomes(
+        `  open feedIn;
+  read feedIn into line;
+  noted(line.feedAccount);
+  if feedInStatus == "00" {
+    log "OK";
+  }`,
+        `
+function noted(account: string<16>): string<16> {
+  return account;
+}
+`,
+      ),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
   it("counts a condition that reads it", () => {
     expect(
       outcomes(`  open feedIn;
@@ -914,11 +933,22 @@ describe("the record a statement names", () => {
     ).toEqual(["BANK-FILE-017"]);
   });
 
+  /**
+   * A `rewrite` names the record it puts back, and `BANK-FILE-010` requires it
+   * to follow a read of the same file — so the read it follows is already
+   * reported by the "another operation on this file" rule, and no program can
+   * distinguish counting the record from not. It is listed for the reason
+   * every other kind is: the accounting is exhaustive, and a `rewrite` does
+   * read what it writes.
+   */
   it("counts a rewrite of it", () => {
     expect(
-      outcomes(`  open amend;
-  read amend into line;
-  rewrite amend from line;`),
+      outcomes(`  open store;
+  read store into master key line.feedAccount;
+  rewrite store from master;
+  if storeStatus == "00" {
+    log "OK";
+  }`),
     ).toEqual(["BANK-FILE-017"]);
   });
 
@@ -1218,7 +1248,7 @@ file feedIn sequential input record Request status feedInStatus;
 cics transaction enquire(request: Request) {
   open feedIn;
   read feedIn into request;
-  writeFile "ACCTFILE" from request key request.requestAccount resp writeResp;
+  writeFile "ACCTFILE" from request key "0000000000000001" resp writeResp;
   if feedInStatus == "00" {
     log "OK";
   }
@@ -1231,6 +1261,109 @@ cics transaction enquire(request: Request) {
     expect(
       result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
     ).toHaveLength(1);
+  });
+
+  it("counts a CICS file rewrite from it", () => {
+    const result = compile(
+      `module Enquiry;
+
+record Request {
+  requestAccount: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file feedIn sequential input record Request status feedInStatus;
+
+cics transaction enquire(request: Request) {
+  open feedIn;
+  read feedIn into request;
+  rewriteFile "ACCTFILE" from request resp writeResp;
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("ENQUIRED", request.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  it("counts a CICS queue write from it", () => {
+    const result = compile(
+      `module Enquiry;
+
+record Request {
+  requestAccount: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file feedIn sequential input record Request status feedInStatus;
+
+cics transaction enquire(request: Request) {
+  open feedIn;
+  read feedIn into request;
+  writeQueue "AUDITQ" from request resp queueResp;
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("ENQUIRED", request.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  /** A CICS read fills the commarea record; it does not read it. */
+  it("does not count a CICS file read that fills it", () => {
+    const result = compile(
+      `module Enquiry;
+
+record Request {
+  requestAccount: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file feedIn sequential input record Request status feedInStatus;
+
+cics transaction enquire(request: Request) {
+  open feedIn;
+  read feedIn into request;
+  readFile "ACCTFILE" into request key "0000000000000001" resp readResp;
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("ENQUIRED", request.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toEqual([]);
+  });
+
+  it("counts a segment replaced from it", () => {
+    expect(
+      dli(`  getHoldUnique accountDb into segment key "1";
+  if dbStatus == "  " {
+    log "HELD";
+  }
+  open segIn;
+  read segIn into segment;
+  replaceSegment accountDb from segment;
+  if segInStatus == "00" {
+    log "OK";
+  }`),
+    ).toEqual(["BANK-FILE-017"]);
   });
 
   it("counts an SQL argument taken from it", () => {

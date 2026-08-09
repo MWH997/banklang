@@ -56,11 +56,15 @@
  * statement kind nobody thought of is silently a statement with no blocks and
  * no uses, and the rule quietly stops applying to it.
  *
- * It had stopped applying to five. `write trail from line` — the stale record
- * posted straight back out, which is the defect this whole check exists for —
- * was not a use. Neither was `release line` into a sort, `put feedQueue from
- * line` onto a queue, `call "SUB" using line`, nor the `on page` block of a
- * write, which was not walked at all.
+ * It had stopped applying to most of the language. `write trail from line` —
+ * the stale record posted straight back out, which is the defect this whole
+ * check exists for — was not a use. Neither was `release line` into a sort,
+ * `putMessage feedQueue from line` onto a queue, `checkpoint store from
+ * master`, a `for each` or a `search` over a table inside the record, `call
+ * "SUB" using line`, `json out from line`, an `xml` parse of it, a CICS `link
+ * commarea`, a DL/I `insertSegment from`, or an SQL or cursor argument taken
+ * from it. Nor was the `on page` block of a write walked at all, nor a
+ * transaction's `on failure` handler.
  *
  * So the blocks come from `childBlocks`, the IR's own exhaustive accounting of
  * them, and what a statement reads comes from `expressionsOf` and
