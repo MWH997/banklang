@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -2195,15 +2196,68 @@ function runExplain(args: string[]): CliResult {
   return { exitCode: 0, stdout: renderDiagnosticDoc(doc), stderr: "" };
 }
 
+/**
+ * GnuCOBOL, if this machine has it, and which one.
+ *
+ * The same resolution `tools/gnucobol-validation.ts` uses, so `doctor` reports
+ * the compiler the validation lane would actually run rather than whatever is
+ * first on the path. `cobc --version` prints
+ * `cobc (GnuCOBOL) 3.2.0` on its first line; the version is what the reader
+ * needs, because every divergence this project documents is against 3.2.0 and a
+ * different one is a different set of answers.
+ *
+ * Absent is a normal state and not a failure: `cobc` is optional locally, and
+ * the tests that need it skip. So this reports what is missing and what that
+ * costs, rather than an error.
+ */
+function gnucobol(cwd: string): string {
+  const configured = process.env.GNUCOBOL_COBC_PATH?.trim();
+  const executable = configured || "cobc";
+  const probe = spawnSync(executable, ["--version"], { cwd, encoding: "utf8" });
+  if (probe.error || probe.status !== 0) {
+    return configured
+      ? `not runnable at GNUCOBOL_COBC_PATH=${configured} — \`pnpm test:gnucobol\` and the cobc tests will skip`
+      : "not found — optional; `pnpm test:gnucobol` and the cobc tests skip without it";
+  }
+  const first = (probe.stdout || "").split("\n")[0]?.trim() ?? "";
+  const where = configured ? ` (GNUCOBOL_COBC_PATH=${configured})` : "";
+  return `${first || "present"}${where}`;
+}
+
+/**
+ * The first command a reader with no BankLang knowledge is likely to run.
+ *
+ * It answers two questions: what is installed, and what this compiler is
+ * aiming at. The second half matters as much as the first, because "target"
+ * and "validated against" are different facts and this project's whole claim
+ * depends on nobody reading one as the other — so the native IBM line is
+ * printed always, states that nothing detected it, and is not conditional on
+ * anything a machine could accidentally satisfy.
+ *
+ * The version is here because a bug report about generated COBOL cannot say
+ * which compiler produced it otherwise.
+ */
 function renderDoctor(cwd: string): string {
+  const project = existsSync(join(cwd, "src", "main.bank.ts"))
+    ? "src/main.bank.ts"
+    : existsSync(join(cwd, "bankc.json"))
+      ? "bankc.json, but no src/main.bank.ts"
+      : "not a BankLang project directory";
+
   return [
     "BankLang doctor",
+    `bankc: ${compilerVersion()}`,
     `cwd: ${cwd}`,
+    `project: ${project}`,
     `node: ${process.version}`,
     `platform: ${process.platform}`,
     `arch: ${process.arch}`,
     "compiler target: ibm-enterprise-cobol-zos",
     "local validation target: gnucobol-local",
+    `gnucobol: ${gnucobol(cwd)}`,
+    // Never detected, because nothing here can detect it, and an absent line
+    // reads as an unasked question rather than as an answered one.
+    "ibm enterprise cobol: not detected — no native IBM validation is claimed",
     "",
   ].join("\n");
 }

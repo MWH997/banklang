@@ -54,6 +54,38 @@ identifier as a project path and died on `ENOENT … watch '/…/BANK-LED-001'`,
 and `bankc doctor --watch` opened a recursive watch over the working directory
 to rerun a command no `.bank.ts` can change.
 
+## `bankc doctor`
+
+The first command worth running on a machine that has just cloned this, and the
+one to paste into a bug report. It reports the compiler's own version, the
+working directory and whether it holds a project, Node and the platform, the
+backend target, and whether GnuCOBOL is installed — by running
+`cobc --version` through the same resolution `pnpm test:gnucobol` uses,
+including `GNUCOBOL_COBC_PATH`, so it names the compiler that lane would
+actually run rather than whatever is first on the path.
+
+```txt
+BankLang doctor
+bankc: 0.9.0
+cwd: /home/somebody/banklang
+project: src/main.bank.ts
+node: v24.18.0
+platform: linux
+arch: x64
+compiler target: ibm-enterprise-cobol-zos
+local validation target: gnucobol-local
+gnucobol: cobc (GnuCOBOL) 3.2.0
+ibm enterprise cobol: not detected — no native IBM validation is claimed
+```
+
+An absent `cobc` is a normal state, not a failure: the line says so and says
+what it costs, which is that `pnpm test:gnucobol` and the `cobc` tests skip.
+
+The last line is a constant. Nothing on a workstation can detect IBM Enterprise
+COBOL, and a line that is printed only when something is missing reads as an
+unasked question rather than an answered one — so it is always there, and it
+never becomes conditional on anything a machine could accidentally satisfy.
+
 ## Formatting
 
 `bankc fmt` prints from the AST, so the output shape is decided by one code

@@ -37,6 +37,45 @@ describe("bankc cli", () => {
     );
   });
 
+  /**
+   * `doctor` is the first command a reader with no BankLang knowledge runs, and
+   * the one a bug report is pasted from. It used to print six lines that named
+   * neither the compiler's version nor whether the machine had `cobc`, so it
+   * could not answer either question it exists for.
+   */
+  describe("what doctor reports", () => {
+    const out = runBankc(["doctor"]).stdout;
+
+    it("names its own version, so a bug report can say which compiler ran", () => {
+      expect(out).toMatch(/^bankc: \d+\.\d+\.\d+/m);
+    });
+
+    it("says whether GnuCOBOL is here, and calls it optional when it is not", () => {
+      expect(out).toMatch(/^gnucobol: /m);
+      const line = out.split("\n").find((l) => l.startsWith("gnucobol: "))!;
+      // Either a version banner, or an absence that says what it costs.
+      expect(line).toMatch(/\(GnuCOBOL\) \d|not found|not runnable/);
+      if (line.includes("not found")) {
+        expect(line).toContain("optional");
+      }
+    });
+
+    /**
+     * The line that must never become conditional. Nothing on this machine can
+     * detect IBM Enterprise COBOL, so the honest report is a constant — and a
+     * constant cannot be accidentally satisfied the way a probe can.
+     */
+    it("states that native IBM validation is not claimed", () => {
+      expect(out).toContain(
+        "ibm enterprise cobol: not detected — no native IBM validation is claimed",
+      );
+    });
+
+    it("says whether the working directory is a project", () => {
+      expect(out).toMatch(/^project: /m);
+    });
+  });
+
   it("builds the account-transfer example", () => {
     const outDir = mkdtempSync(join(tmpdir(), "banklang-build-"));
 
