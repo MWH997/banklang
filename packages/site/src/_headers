@@ -15,10 +15,32 @@
 # there would comma-join with every asset rule under it.
 
 /*
-  # The site is one origin's worth of static files. It fetches nothing off-host
-  # — `tests/site.test.ts` asserts that — takes no input and sets no cookie, so
-  # everything below can be `self` and the ones that need nothing at all can be
-  # `none`.
+  # The site is one origin's worth of static files. Its own markup fetches
+  # nothing off-host — `tests/site.test.ts` asserts that — and it takes no input
+  # and sets no cookie, so everything below can be `self` and the ones that need
+  # nothing at all can be `none`.
+  #
+  # The single exception is `static.cloudflareinsights.com`, and it is here
+  # because the deployment puts it there. With Web Analytics switched on for the
+  # Pages project, Cloudflare appends a beacon `<script>` to every HTML response
+  # as it serves it. The tag is in no file in this repository, which is why the
+  # policy never named the host and why every page logged a refusal for it from
+  # the day the hashes went in: the analytics have been collecting nothing since.
+  # Cloudflare only appends it for a request that looks like a browser
+  # navigation, so `curl` with the default headers does not see it and a check
+  # written that way reports a clean page.
+  #
+  # Allowing it grants nothing that was not already granted. That host is the
+  # CDN serving every byte of this origin, and a policy is delivered by the same
+  # response it governs, so it was never a boundary against Cloudflare. The
+  # alternative is to turn Web Analytics off in the dashboard, which is a setting
+  # rather than a file and cannot be held by a test here.
+  #
+  # `connect-src` stays `self`, which was measured rather than assumed. The
+  # injected tag carries `data-cf-beacon` with a `version` in it, and
+  # `beacon.min.js` reads a defined `version` to mean report to the same-origin
+  # `/cdn-cgi/rum` instead of to `cloudflareinsights.com`. The edge answers that
+  # path, so the report never leaves this origin.
   #
   # `script-src` has no `unsafe-inline`. Every page carries an inline script —
   # the theme is read from `localStorage` and stamped on `<html>` before first
@@ -32,7 +54,7 @@
   # `style-src` keeps the exemption, and not by choice: CodeMirror injects its
   # themes as `<style>` elements at run time, so the playground has no editor
   # without it.
-  Content-Security-Policy: default-src 'self'; script-src 'self' __SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com __SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   # Nothing here reads a camera, a location or a payment handler, and saying so
