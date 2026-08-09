@@ -52,15 +52,13 @@ model.
 
 ## Try it
 
-```bash
-pnpm install && pnpm playground:dev
-```
+**[Open the playground](https://banklang.mwhassan.com/playground/)** — nothing
+to install, and compiling and running make no network call.
 
-The **[playground](packages/playground/)** runs the whole compiler in your
-browser — no server, no network call. Click a line of BankTS and the COBOL it
-produced lights up, from the emitted source map. Fill in the entry record or the
-dataset on **Input**, then **Run** executes it against the reference runtime in
-[`runtime/`](runtime/README.md) and shows what it posted.
+Click a line of BankTS and the COBOL it produced lights up, from the source map.
+Fill in the entry record or dataset on **Input**, then **Run** executes it
+against the reference runtime in [`runtime/`](runtime/README.md) and shows what
+it posted. Locally: `pnpm install && pnpm playground:dev`.
 
 ## What it generates
 

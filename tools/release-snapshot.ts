@@ -110,24 +110,68 @@ function executedWith(cwd: string): string {
   return json<{ gnucobolVersion: string }>(path).gnucobolVersion;
 }
 
+/** The file whose failure is expected while a snapshot is being regenerated. */
+const SELF_REFERENTIAL = "tests/release-claims.test.ts";
+
+interface VitestReport {
+  testResults: { name: string; status: string }[];
+  numTotalTests: number;
+  numFailedTests: number;
+}
+
 /**
  * How many test files there are, and how many tests.
  *
  * `testResults.length`, not `numTotalTestSuites`. The second counts `describe`
- * blocks — this repository has 796 of them across 152 files — and reporting
- * that as a file count overstates the suite by a factor of five in the one
- * document written to be quoted.
+ * blocks — this repository has around eight hundred of them across a hundred
+ * and fifty files — and reporting that as a file count overstates the suite by
+ * a factor of five in the one document written to be quoted.
  */
 function testCounts(cwd: string): { files: number; tests: number } {
-  const raw = execFileSync(
-    "npx",
-    ["vitest", "run", "--reporter=json", "--silent"],
-    { cwd, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
+  let raw: string;
+  try {
+    raw = execFileSync(
+      "npx",
+      ["vitest", "run", "--reporter=json", "--silent"],
+      {
+        cwd,
+        encoding: "utf8",
+        maxBuffer: 256 * 1024 * 1024,
+      },
+    );
+  } catch (error) {
+    /*
+     * A red suite still prints its report, and one particular failure is
+     * expected here.
+     *
+     * `tests/release-claims.test.ts` asserts that the snapshot on disk matches
+     * the evidence. The moment a lane is re-run, that assertion fails — and
+     * the fix is to regenerate the snapshot, which is this program. Refusing
+     * to run because of it would make the snapshot impossible to update, which
+     * is a deadlock rather than a safeguard.
+     *
+     * So that one file may fail. Anything else still stops the release: a
+     * snapshot taken from a repository whose tests do not pass is a record of
+     * nothing.
+     */
+    const { stdout } = error as { stdout?: string };
+    if (typeof stdout !== "string" || !stdout.includes("{")) {
+      throw error;
+    }
+    raw = stdout;
+  }
+
+  const parsed = JSON.parse(raw.slice(raw.indexOf("{"))) as VitestReport;
+  const unexpected = parsed.testResults.filter(
+    (file) => file.status === "failed" && !file.name.endsWith(SELF_REFERENTIAL),
   );
-  const parsed = JSON.parse(raw.slice(raw.indexOf("{"))) as {
-    testResults: unknown[];
-    numTotalTests: number;
-  };
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Refusing to take a release snapshot: ${String(unexpected.length)} test file(s) failed.\n` +
+        unexpected.map((file) => `  ${file.name}`).join("\n") +
+        `\nOnly ${SELF_REFERENTIAL} may fail here, because it is the file this snapshot satisfies.`,
+    );
+  }
   return { files: parsed.testResults.length, tests: parsed.numTotalTests };
 }
 

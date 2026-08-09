@@ -190,9 +190,14 @@ describe("what the release notes claim", () => {
 
   for (const [what, value] of quoted) {
     it(`states the ${what} the snapshot records`, () => {
-      expect(notes, `the notes do not state ${what} as "${value}"`).toContain(
-        value,
-      );
+      // `toContain` on a whole document prints the whole document when it
+      // fails, which for a release page is eight kilobytes of noise around the
+      // one number that moved. The assertion is on a boolean so the message is
+      // the message.
+      expect(
+        notes.includes(value),
+        `docs/releases/${ROOT.version}.md does not state the ${what} as "${value}". Re-read evidence/release/${ROOT.version}.json and update the page.`,
+      ).toBe(true);
     });
   }
 

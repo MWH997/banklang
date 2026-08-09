@@ -11,7 +11,7 @@ measurement, and every number on it is read out of `evidence/horizontal/`.
 
 | | |
 | --- | --- |
-| BankLang | 0.9.0 |
+| BankLang | 0.10.0 |
 | Node | v24.18.0 |
 | COBOL compiler | cobc (GnuCOBOL) 3.2.0 |
 | platform | darwin/arm64 |
