@@ -43,13 +43,19 @@ Read the document that covers the area you are touching:
 
 ```bash
 pnpm lint          # eslint
-pnpm format:check  # prettier
+pnpm format:check  # prettier, over the repository
+pnpm fmt:check     # bankc fmt, over the BankTS in examples and conversions
 pnpm typecheck
 pnpm test
 
 # every example must build, verify, and compile
 pnpm examples:verify
 ```
+
+`format:check` and `fmt:check` are different checks over different files.
+Prettier does not know BankTS, so the example programs are formatted by the
+compiler's own printer; CI runs both, and a change that touches an example can
+pass the first and fail the second.
 
 Run `pnpm examples:verify` rather than a loop over `examples/`. Not every entry
 there is one program — `end-of-day-settlement` is four and a sort in one job —
