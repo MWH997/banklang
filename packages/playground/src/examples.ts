@@ -38,11 +38,24 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
       "Local variables, exact decimal arithmetic, and deterministic if/else lowering.",
     order: 2,
   },
+  /*
+   * The one the playground opens on, which is why it is `order: 0`.
+   *
+   * The list is otherwise a teaching sequence and `account-transfer` is its
+   * first step — a record, a type alias and a validator. That is the right
+   * place to start reading and the wrong thing to open on: it demonstrates
+   * that BankTS compiles, which no visitor doubts, rather than what it is
+   * for. This is the same program the README opens with, minus the three
+   * defects: a balanced debit and credit, an idempotency key and an audit
+   * event, in sixteen lines. A reader arriving from that page lands on the
+   * corrected version of the program they just watched being refused, and
+   * "Unsafe posting (fails on purpose)" is one click down the list.
+   */
   "account-posting": {
     title: "Account posting",
     blurb:
       "A transaction with balanced debit and credit postings plus an audit event.",
-    order: 3,
+    order: 0,
   },
   "account-file-batch": {
     title: "Account file batch",
