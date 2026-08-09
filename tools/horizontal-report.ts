@@ -21,7 +21,7 @@ import {
   readdirSync,
   writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
@@ -94,19 +94,40 @@ export interface DefectRow {
 }
 
 /**
- * One row per upstream defect, with what this repository has shown about it.
+ * Where the matrix is kept once it has been derived.
  *
- * The only route to `prevented-at-compile-time` is a demonstration in
- * `packages/horizontal-validation/src/defect-demonstrations.ts`, which
- * `tests/horizontal-defects.test.ts` compiles on every run. Everything else is
- * `not-demonstrated`, however obvious the answer looks — a defect family whose
- * mechanism is named but never exercised is a claim, and this matrix does not
- * print claims.
+ * The rows are computed from the OpenCBS cache, which is not in the repository
+ * — so on a fresh clone `defectMatrix` returned nothing and every consumer
+ * silently reported zero defects out of zero. The published page said so in
+ * words ("the corpus is not in the local cache"), but the release snapshot did
+ * not: it recorded `0 / 0` and `pnpm release:snapshot --check` then failed on
+ * any machine that had not run a lane, which is precisely the machine it exists
+ * to be checkable on.
+ *
+ * So the derivation is written out beside the corpus's other evidence. It is
+ * counts and titles rather than anybody's COBOL, which is the same line
+ * `licence.ts` draws for every other corpus.
+ */
+export const DEFECT_MATRIX_EVIDENCE = join(
+  EVIDENCE,
+  "opencbs",
+  "defect-coverage.json",
+);
+
+/**
+ * The reconstructed defects, and what this compiler does about each.
+ *
+ * From the cache when it is there, and from the committed evidence when it is
+ * not. Not the other way round: a present cache is the fresher answer, and
+ * `writeDefectMatrix` is what keeps the file in step with it.
  */
 export function defectMatrix(cwd = process.cwd()): DefectRow[] {
   const programs = join(corpusDir("opencbs", cwd), "COBOL_Programs");
   if (!existsSync(programs)) {
-    return [];
+    const recorded = join(cwd, DEFECT_MATRIX_EVIDENCE);
+    return existsSync(recorded)
+      ? (JSON.parse(readFileSync(recorded, "utf8")) as DefectRow[])
+      : [];
   }
   const demonstrated = new Map(
     DEFECT_DEMONSTRATIONS.map((entry) => [entry.defect, entry]),
@@ -528,10 +549,27 @@ function main(): number {
   const results = join(docs, "horizontal-validation-results.md");
   writeFileSync(results, renderResults(cwd), "utf8");
 
+  const rows = defectMatrix(cwd);
   const matrix = join(docs, "horizontal-defect-coverage.md");
-  writeFileSync(matrix, renderDefectMatrix(defectMatrix(cwd)), "utf8");
+  writeFileSync(matrix, renderDefectMatrix(rows), "utf8");
 
-  process.stdout.write(`Wrote ${results}\nWrote ${matrix}\n`);
+  /*
+   * The derivation, written beside the corpus's other evidence.
+   *
+   * Only when the cache produced it. Writing an empty array on a machine with
+   * no cache would overwrite the real measurement with the absence of one,
+   * which is the failure mode this whole file is arranged to avoid.
+   */
+  let recorded = "";
+  if (rows.length > 0) {
+    recorded = join(cwd, DEFECT_MATRIX_EVIDENCE);
+    mkdirSync(dirname(recorded), { recursive: true });
+    writeFileSync(recorded, `${JSON.stringify(rows, null, 2)}\n`, "utf8");
+  }
+
+  process.stdout.write(
+    `Wrote ${results}\nWrote ${matrix}\n${recorded ? `Wrote ${recorded}\n` : ""}`,
+  );
   return 0;
 }
 

@@ -1,0 +1,289 @@
+[
+  {
+    "defect": "DF01",
+    "title": "INNER IF STATEMENT GOING TO OUTER IF STATEMENT",
+    "family": "file-status",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-FILE-017"
+  },
+  {
+    "defect": "DF02",
+    "title": "ERROR IN ARRAY SEARCH, NOT UNIQUELY DEFINED NAME",
+    "family": "table-bounds",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF03",
+    "title": "ERROR IN IN READING DATA RECORDS FROM VSAM FILE",
+    "family": "file-status",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF04",
+    "title": "PROBLEM WITH MOVE STATEMENT TO RIGHT-ADJUST FIELD",
+    "family": "group-item-semantics",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF05",
+    "title": "SYSTEM ERROR MESSAGE IN FASTSRT COMPILER OPTION",
+    "family": "compiler-and-environment",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF06",
+    "title": "ERROR IN COBOL COMPUTE, NOT UNIQUELY DEFINED NAME",
+    "family": "name-resolution",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-TYPE-001"
+  },
+  {
+    "defect": "DF07",
+    "title": "ERROR IN EVALUATE STATEMENT, IN PLACE OF NESTED IF",
+    "family": "control-flow",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF08",
+    "title": "ERROR IN SEARCH STATEMENT ON USE OF TABLE INDEX",
+    "family": "table-bounds",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF09",
+    "title": "SOC7 SYSTEM ABEND WHEN EXECUTING UNSTRING STATEMENT",
+    "family": "numeric-class",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF10",
+    "title": "88 LEVEL RANGE PROBLEM NOT ALLOWING FOR ALL VALUES",
+    "family": "condition-name-coverage",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-TYPE-003"
+  },
+  {
+    "defect": "DF11",
+    "title": "STRINGING OF FILE NAME ENCLOSED BY DOUBLE QUOTE (\")",
+    "family": "string-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF12",
+    "title": "ALPHANUMERIC FIELD NOT CONVERTD TO PACKED DECIMAL",
+    "family": "numeric-class",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF13",
+    "title": "COMPILE ERROR WHEN VALUE CODED FOR OCCURS STATEMENT",
+    "family": "table-bounds",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF14",
+    "title": "UNDEFINED OR UNSTABLE HOST VARIABLE ERROR RETURNED",
+    "family": "sql-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF15",
+    "title": "EROR CONVERTING GREGORIAN DATE TO INTEGER-OF-DATE",
+    "family": "date-handling",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-TYPE-003"
+  },
+  {
+    "defect": "DF16",
+    "title": "UNDEFINED OR UNSTABLE HOST VARIABLE ERROR RETURNED",
+    "family": "sql-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF17",
+    "title": "PROBLEM IN RECORDS NOT BEING WRITTEN TO KSDS FILE",
+    "family": "file-status",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF18",
+    "title": "SET STATEMENT FOR WS-POINTER DISCARDED BY COMPILER",
+    "family": "pointer-and-linkage",
+    "coverage": "not-expressible-in-bankts",
+    "diagnostic": "BANK-TYPE-001"
+  },
+  {
+    "defect": "DF19",
+    "title": "PROBLEM MOVING CHARACTER FIELD TO NUMERIC FIELD",
+    "family": "numeric-class",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-TYPE-003"
+  },
+  {
+    "defect": "DF21",
+    "title": "ERROR IN WRITING RECORDS TO KSDS FILE (STATUS 92)",
+    "family": "file-status",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF22",
+    "title": "SOC-4 ABEND WHEN READING VARIABLE-LENGTH RECORDS",
+    "family": "pointer-and-linkage",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF23",
+    "title": "ERROR IN SEARCH ON USE OF INDEX ARITHMETIC EXPRESSION",
+    "family": "table-bounds",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF24",
+    "title": "ERROR IN REDEFINITION OF A NUMERIC FIELD DATA FORMAT",
+    "family": "numeric-class",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF25",
+    "title": "VARIABLE INITIALIZATION USING OUTPUT RECORD DATA",
+    "family": "record-lifetime",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-FILE-001"
+  },
+  {
+    "defect": "DF26",
+    "title": "ERROR IN NOT FINDING SEARCH ENTRY USING SEARCH ALL",
+    "family": "table-bounds",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-TYPE-009"
+  },
+  {
+    "defect": "DF27",
+    "title": "ERROR MOVING VALUE FROM ARRAYS IN WORKING STORAGE",
+    "family": "table-bounds",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF28",
+    "title": "ALPHANUMERIC FIELD NOT CONVERTED TO NUMERIC FIELD",
+    "family": "numeric-class",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF29",
+    "title": "PROBLEM WITH INVALID DATE WRITTEN TO TRAILER RECORD",
+    "family": "date-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF30",
+    "title": "COMPILATION ERROR - DFHB0020 DEFINED AS A DATA NAME",
+    "family": "compiler-and-environment",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF31",
+    "title": "SOC-4 ABEND ENOUNTERED IN STORED PROCEDURE PROGRAM",
+    "family": "pointer-and-linkage",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF34",
+    "title": "ISSUE IN COMPARING TWO SIGNED GROUP LEVEL VARIABLES",
+    "family": "group-item-semantics",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF35",
+    "title": "PROBLEM WITH NOT UNSTRINGING ALL OF CSV RECORD FIELDS",
+    "family": "string-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF36",
+    "title": "PROBLEM WITH COMPUTE STATEMENT NOT ROUNDED PROPERLY",
+    "family": "numeric-precision",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-DEC-006"
+  },
+  {
+    "defect": "DF39",
+    "title": "PROGRAM NOT ABLE TO DISPLAY VARIABLE COMP FIELDS",
+    "family": "compiler-and-environment",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF40",
+    "title": "PROGRAM ERROR WHEN FETCHING THE RECORDS FROM TABLE",
+    "family": "sql-handling",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF41",
+    "title": "ALPHANUMERIC FIELD NOT CONVERTED TO NUMERIC FIELD",
+    "family": "numeric-class",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF42",
+    "title": "ERROR USING CURSOR LOOPING WHICH IS NOT RECOMMENDED",
+    "family": "sql-handling",
+    "coverage": "prevented-at-compile-time",
+    "diagnostic": "BANK-SQL-001"
+  },
+  {
+    "defect": "DF44",
+    "title": "COMPILER ERROR STATING CHAR-COUNT IS MULTI-DEFINED",
+    "family": "name-resolution",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF45",
+    "title": "REFERENCING ERROR ENCOUNTERED WHEN PROGAM EXECUTED",
+    "family": "pointer-and-linkage",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF46",
+    "title": "PROGRAM LOGIC HAS OCCURRED WHEN REWRITING A RCORD",
+    "family": "file-status",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  },
+  {
+    "defect": "DF47",
+    "title": "COMPILER ERROR WHEN USING SET STATEMENT TO FALSE",
+    "family": "control-flow",
+    "coverage": "not-demonstrated",
+    "diagnostic": null
+  }
+]

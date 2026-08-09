@@ -78,29 +78,56 @@ workflow will not pretend it signed one. A lightweight tag has no object to
 sign and is rejected the same way.
 
 1. Rename `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`.
-2. Set `version` in `package.json`, `CITATION.cff` and
-   `packages/vscode-extension/package.json` to the same value — `pnpm test`
-   fails if the three disagree.
+2. Set the version everywhere it is stated. `tests/release-version.test.ts`
+   enumerates those surfaces and fails if any disagrees with `package.json`:
+   the extension manifest, the language server's `SERVER_VERSION`,
+   `CITATION.cff`, the extension's own changelog, and the sample `bankc doctor`
+   output printed in [toolchain.md](toolchain.md).
 3. `git tag -s vX.Y.Z -m "X.Y.Z"` and push the tag.
 
-The workflow then reruns the whole of `ci.yml` on the tagged commit, builds the
-bill of materials and the VSIX, attests both with Sigstore through GitHub's
-OIDC identity, and attaches them to a GitHub release. It deliberately does not
-run `vsce publish`: that needs a marketplace token belonging to a person, and
-the attested `.vsix` on the release is the exact file to upload.
+The workflow then reruns the whole of `ci.yml` on the tagged commit and builds
+the three artifacts a release publishes:
+
+| Artifact                                | What it is                                               |
+| --------------------------------------- | -------------------------------------------------------- |
+| `banklang-vscode-X.Y.Z.vsix`            | The editor extension, compiler bundled inside            |
+| `banklang-X.Y.Z.cdx.json`               | CycloneDX bill of materials, every platform              |
+| `banklang-zos-conformance-X.Y.Z.tar.gz` | The z/OS bundle: COBOL, copybooks, JCL, expected results |
+
+All three are attested with Sigstore through GitHub's OIDC identity and
+attached to a GitHub release. There is no checksum file: the z/OS bundle
+carries a SHA-256 per member in its own `manifest.json`, and
+`gh attestation verify` covers the archives themselves.
+
+**No npm publish.** Every workspace package is `private: true`, so the
+repository is the distribution and nothing goes to a registry. The workflow
+also deliberately does not run `vsce publish`: that needs a marketplace token
+belonging to a person, and the attested `.vsix` on the release is the exact
+file to upload by hand.
+
+Before running the release checklist, take the snapshot the release page and
+the README are held to:
+
+```bash
+pnpm release:snapshot        # writes evidence/release/X.Y.Z.json
+pnpm release:snapshot --check
+```
+
+It refuses if the changelog has no dated section for the version, and
+`tests/release-claims.test.ts` fails if any figure quoted on the release page —
+[docs/releases/0.10.0.md](releases/0.10.0.md) is the current one — disagrees
+with it.
 
 Pre-1.0, so a release that adds language surface, a diagnostic or a CLI command
 is a **minor** bump. `1.0` is not a function of the repository becoming public:
 there has been no native IBM Enterprise COBOL validation and no production
 ledger use, and a `1.0` claiming otherwise would be the least honest thing here.
 
-Read `## [Unreleased]` to decide which. As it stands it adds a file
-organisation, five diagnostics and a CLI command, so the next release is a
-minor one rather than a patch.
+Read `## [Unreleased]` to decide which: a new file organisation, a diagnostic
+or a CLI command makes it a minor release rather than a patch.
 
-**The version stays where it is until the release is cut.** All three files are
-held to each other by `tests/documentation.test.ts`, and the changelog is held
-to them: bumping `version` without renaming `## [Unreleased]` to a dated
-section names a version the changelog has never heard of, and the suite says
-so. The bump and the section rename are the same commit, and the signed tag
-follows it.
+**The version stays where it is until the release is cut.** The surfaces above
+are held to each other, and the changelog is held to them: bumping the version
+without renaming `## [Unreleased]` to a dated section names a version the
+changelog has never heard of, and the suite says so. The bump, the section
+rename and the release snapshot are one commit, and the signed tag follows it.
