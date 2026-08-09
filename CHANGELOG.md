@@ -9,9 +9,10 @@ links to rather than here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and is pre-1.0, so
 the language and the CLI may still change between minor versions.
 
-0.9.0 is the first versioned release. Everything before it is in the commit
-history, which is where a working record belongs: `git log --reverse` reads it
-in order.
+0.9.0 is the first version this file records. Everything before it is in the
+commit history, which is where a working record belongs: `git log --reverse`
+reads it in order. 0.10.0 is the first version actually published — nothing
+earlier was tagged or released.
 
 ## [Unreleased]
 
@@ -29,7 +30,7 @@ occurrences turned out to be 51 distinct files and no application program among
 them.
 
 The compiler also grew a reference runtime that executes what it emits, so every
-example is now run by two engines and compared rather than only compiled; five
+example is now run by two engines and compared rather than only compiled; six
 diagnostics, including a flow-sensitive rule for file operations whose outcome a
 program never looked at; and the reproducibility work that lets a stranger clone
 this repository and regenerate every number on the validation page from pinned
@@ -60,6 +61,9 @@ now a deterministic bundle ready for somebody who can perform it.
   COBOL — [target conformance](docs/target-conformance.md).
 - Refuse a CICS transaction whose computed record never reaches `DFHCOMMAREA`
   (`BANK-CICS-005`) — [CICS](docs/language/cics.md).
+- Refuse two names that abbreviate to one COBOL word, which the generated
+  program declared twice and no COBOL compiler accepts (`BANK-NAME-001`) —
+  [for mainframe engineers](docs/for-mainframe-engineers.md).
 - Read a `checkpoint` as the commit it is, so a cursor loop that checkpoints
   needs `hold` (`BANK-SQL-008`) — [SQL](docs/language/sql.md).
 - Supply the playground's Run tab with input: the entry record, the dataset, the

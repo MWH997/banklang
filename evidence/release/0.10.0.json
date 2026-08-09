@@ -6,8 +6,8 @@
   "executedWith": "cobc (GnuCOBOL) 3.2.0",
   "nativeIbmValidation": "NOT YET PERFORMED",
   "tests": {
-    "files": 153,
-    "tests": 3189,
+    "files": 154,
+    "tests": 3200,
     "measuredBy": "pnpm test"
   },
   "examples": {

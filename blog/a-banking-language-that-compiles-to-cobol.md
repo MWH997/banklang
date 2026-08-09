@@ -107,7 +107,7 @@ failing the build. That is what catches the defect that compiles: a bounds guard
 once clamped an out-of-range subscript instead of refusing it, and every static
 check passed.
 
-The numbers, all generated from committed evidence rather than typed: 3189
+The numbers, all generated from committed evidence rather than typed: 3200
 tests; 25 example projects; 27 of the 31 emitted COBOL verbs executed by both
 engines with zero blind spots; 19 of 46 CobolCodeBench tasks passing
 whole-corpus, which is 19 of the 19 that BankTS can express at all; 20 executed
