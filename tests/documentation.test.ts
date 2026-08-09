@@ -385,10 +385,23 @@ describe("COBOL printed in the documentation", () => {
  * to survive is that no IBM Enterprise COBOL validation is claimed.
  */
 describe("validated with GnuCOBOL, not IBM", () => {
+  /*
+   * The site's own two chrome files are here as well as the README.
+   *
+   * `packages/site/src/index.html` is the most-read page this project has and
+   * the first thing a stranger sees, and `tools/build-blog.ts` writes the
+   * footer under every post. Both carried the sentence and neither was held to
+   * it: the enforced list was the README, the limits page and the playground,
+   * so the home page could have lost the claim in a redesign and every test
+   * here would still have passed. The claim is only worth having where it
+   * cannot quietly go missing.
+   */
   const surfaces: [string, string][] = [
     ["the README", "README.md"],
     ["the honest-limits page", "docs/status-and-limits.md"],
     ["the playground", "packages/playground/index.html"],
+    ["the site's home page", "packages/site/src/index.html"],
+    ["the footer under every blog post", "tools/build-blog.ts"],
   ];
 
   for (const [name, file] of surfaces) {
