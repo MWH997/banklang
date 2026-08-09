@@ -204,9 +204,10 @@ function statementsOf(flat: string, verb: string): string[] {
  * being receivers of their own, so they are dropped before the split.
  */
 function receiverCount(body: string): number {
-  const into = /\bINTO\b([\s\S]*?)(?=\bWITH\s+POINTER\b|\bTALLYING\b|\bON\s+OVERFLOW\b|\bNOT\s+ON\s+OVERFLOW\b|$)/.exec(
-    body,
-  );
+  const into =
+    /\bINTO\b([\s\S]*?)(?=\bWITH\s+POINTER\b|\bTALLYING\b|\bON\s+OVERFLOW\b|\bNOT\s+ON\s+OVERFLOW\b|$)/.exec(
+      body,
+    );
   if (!into) {
     return 0;
   }

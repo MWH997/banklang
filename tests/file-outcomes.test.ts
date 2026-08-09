@@ -49,6 +49,8 @@ file printOut sequential output record Feed page 60 status printOutStatus;
 
 queue feedQueue manager "CSQ1" name "BANK.FEED" output
   record Feed status feedQueueReason;
+queue feedIntake manager "CSQ1" name "BANK.INTAKE" input
+  record Feed status feedIntakeReason;
 
 enum Kind { ONE, TWO }
 `;
@@ -476,6 +478,52 @@ describe("what the diagnostic says", () => {
     ).toContain("status 23 (no such record)");
   });
 
+  /**
+   * Which of the three ways the outcome went unhandled. Each is a different
+   * mistake and the message is what tells them apart: a `close` that overwrote
+   * the status reads nothing like a second read that did.
+   */
+  it("says the close overwrote the status", () => {
+    expect(
+      messages(`  open feedIn;
+  read feedIn into line;
+  close feedIn;
+  if feedInStatus == "00" {
+    log "OK";
+  }`)[0],
+    ).toContain("the file is closed, which overwrites the status");
+  });
+
+  it("says another operation on the file followed", () => {
+    expect(
+      messages(`  open feedIn;
+  read feedIn into line;
+  read feedIn into line;
+  if feedInStatus == "00" {
+    log "OK";
+  }`)[0],
+    ).toContain("another read on the same file follows");
+  });
+
+  it("says the routine ended with it outstanding", () => {
+    expect(
+      messages(`  open feedIn;
+  read feedIn into line;`)[0],
+    ).toContain("handle ends");
+  });
+
+  it("says the record was written out", () => {
+    expect(
+      messages(`  open feedIn;
+  open trail;
+  read feedIn into line;
+  write trail from line;
+  if feedInStatus == "00" {
+    log "OK";
+  }`)[0],
+    ).toContain("the record it read is written out");
+  });
+
   it("names the status field to branch on", () => {
     const message = messages(`  open feedIn;
   read feedIn into line;
@@ -880,6 +928,9 @@ describe("the record a statement names", () => {
     input line {
       read feedIn into line;
       release line;
+      if feedInStatus == "00" {
+        log "OK";
+      }
     };`),
     ).toEqual(["BANK-FILE-017"]);
   });
@@ -902,8 +953,52 @@ describe("the record a statement names", () => {
     expect(
       outcomes(`  open store;
   read store into master key line.feedAccount;
-  checkpoint store from master every 1000;`),
+  checkpoint store from master every 1000;
+  if storeStatus == "00" {
+    log "OK";
+  }`),
     ).toEqual(["BANK-FILE-017"]);
+  });
+
+  /**
+   * The other half of the same rule: a statement that *fills* the record
+   * replaces the stale bytes rather than trusting them, so it is not a use.
+   * Treating every record a statement names as read would refuse the idiom
+   * that fixes the problem.
+   */
+  it("does not count a read that fills it", () => {
+    expect(
+      clean(`  open feedIn;
+  open otherIn;
+  read feedIn into line;
+  read otherIn into line;
+  if feedInStatus == "00" {
+    log "ONE";
+  }
+  if otherInStatus == "00" {
+    log "TWO";
+  }
+  close otherIn;
+  close feedIn;`),
+    ).toEqual([]);
+  });
+
+  it("does not count a queue get that fills it", () => {
+    expect(
+      clean(`  open feedIn;
+  connectQueue feedIntake;
+  read feedIn into line;
+  getMessage feedIntake into line {
+    log "GOT";
+  } else {
+    log "NOTHING";
+  };
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  disconnectQueue feedIntake;
+  close feedIn;`),
+    ).toEqual([]);
   });
 
   it("counts a loop over a table inside it", () => {
@@ -917,6 +1012,21 @@ describe("the record a statement names", () => {
     log "OK";
   }
   close store;`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("counts a search whose condition reads it", () => {
+    expect(
+      outcomes(`  open feedIn;
+  read feedIn into line;
+  search amount in master.amounts where amount > line.feedAmount {
+    log "FOUND";
+  } else {
+    log "NONE";
+  }
+  if feedInStatus == "00" {
+    log "OK";
+  }`),
     ).toEqual(["BANK-FILE-017"]);
   });
 
@@ -993,7 +1103,269 @@ record Payload {
 });
 
 /**
+ * The statement kinds a `default:` used to exempt.
+ *
+ * Each of these is a way of handing the record somewhere else, and none of them
+ * was a use until the accounting became exhaustive. They are grouped here
+ * because each needs a declaration the rest of the suite does not.
+ */
+describe("handing the record to something outside the program", () => {
+  const DB = `module Outcomes;
+
+record Feed {
+  feedAccount: string<16>;
+  feedAmount: zoned<11, 2>;
+  idempotencyKey: string<36>;
+}
+
+record Segment {
+  segAccount: string<10>;
+  segBalance: decimal<9, 2>;
+}
+
+file feedIn sequential input record Feed status feedInStatus;
+file segIn sequential input record Segment status segInStatus;
+database accountDb pcb segment "ACCTSEG" key "ACCTID" record Segment status dbStatus;
+`;
+
+  function dli(body: string): string[] {
+    return compile(
+      `${DB}
+entry transaction handle(line: Feed, segment: Segment) {
+${body}
+  audit("HANDLED", line.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    )
+      .diagnostics.filter((entry) => entry.id === "BANK-FILE-017")
+      .map((entry) => entry.id);
+  }
+
+  it("counts a segment inserted from it", () => {
+    expect(
+      dli(`  open segIn;
+  read segIn into segment;
+  insertSegment accountDb from segment;
+  if segInStatus == "00" {
+    log "OK";
+  }`),
+    ).toEqual(["BANK-FILE-017"]);
+  });
+
+  it("does not count a get that fills the segment", () => {
+    expect(
+      compile(
+        `${DB}
+entry transaction handle(line: Feed, segment: Segment) {
+  open segIn;
+  read segIn into segment;
+  getUnique accountDb into segment key "1";
+  if segInStatus == "00" {
+    log "OK";
+  }
+  close segIn;
+  audit("HANDLED", line.idempotencyKey);
+}`,
+        { sourceFile: "outcomes.bank.ts" },
+      ).diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toEqual([]);
+  });
+
+  /**
+   * A CICS commarea is the same defect across a `LINK`: the linked program is
+   * handed the record the read left behind.
+   */
+  it("counts a commarea linked from it", () => {
+    const result = compile(
+      `module Enquiry;
+
+record Request {
+  requestAccount: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file feedIn sequential input record Request status feedInStatus;
+
+cics transaction enquire(request: Request) {
+  open feedIn;
+  read feedIn into request;
+  link "AUDITLOG" commarea request resp linkResp;
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("ENQUIRED", request.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  it("counts a CICS file write from it", () => {
+    const result = compile(
+      `module Enquiry;
+
+record Request {
+  requestAccount: string<16>;
+  idempotencyKey: string<36>;
+}
+
+file feedIn sequential input record Request status feedInStatus;
+
+cics transaction enquire(request: Request) {
+  open feedIn;
+  read feedIn into request;
+  writeFile "ACCTFILE" from request key request.requestAccount resp writeResp;
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("ENQUIRED", request.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  it("counts an SQL argument taken from it", () => {
+    const result = compile(
+      `module Posting;
+
+record Feed {
+  feedAccount: string<16>;
+  feedAmount: zoned<11, 2>;
+  idempotencyKey: string<36>;
+}
+
+record Row {
+  rowBalance: decimal<15, 2>;
+}
+
+file feedIn sequential input record Feed status feedInStatus;
+
+sql balanceOf(keyAccount: string<16>): Row {
+  SELECT BALANCE
+  INTO :rowBalance
+  FROM ACCOUNT
+  WHERE ACCOUNT_ID = :keyAccount
+}
+
+entry transaction handle(line: Feed, row: Row) {
+  open feedIn;
+  read feedIn into line;
+  execute balanceOf(line.feedAccount) into row;
+  if sqlcode < 0 {
+    raise "DB_ERROR";
+  }
+  if sqlcode == 0 {
+    log "FOUND ", row.rowBalance;
+  }
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("HANDLED", line.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  it("counts a cursor argument taken from it", () => {
+    const result = compile(
+      `module Posting;
+
+record Feed {
+  feedAccount: string<16>;
+  feedAmount: zoned<11, 2>;
+  idempotencyKey: string<36>;
+}
+
+record Row {
+  rowAccount: string<16>;
+}
+
+file feedIn sequential input record Feed status feedInStatus;
+
+cursor accountsIn(keyBranch: string<16>): Row {
+  SELECT ACCOUNT_ID
+  INTO :rowAccount
+  FROM ACCOUNT
+  WHERE BRANCH_ID = :keyBranch
+  ORDER BY ACCOUNT_ID
+}
+
+entry transaction handle(line: Feed, row: Row) {
+  open feedIn;
+  read feedIn into line;
+  for each row in accountsIn(line.feedAccount) limit 100 {
+    log "ROW ", row.rowAccount;
+  }
+  if sqlcode < 0 {
+    raise "DB_ERROR";
+  }
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("HANDLED", line.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+
+  it("counts an XML parse that reads it", () => {
+    const result = compile(
+      `module Parsing;
+
+record Feed {
+  feedBody: string<200>;
+  idempotencyKey: string<36>;
+}
+
+record Account {
+  accountId: string<16>;
+}
+
+file feedIn sequential input record Feed status feedInStatus;
+
+entry transaction handle(line: Feed, account: Account) {
+  open feedIn;
+  read feedIn into line;
+  xml line.feedBody processing {
+    element "ID" into account.accountId;
+  };
+  if feedInStatus == "00" {
+    log "OK";
+  }
+  close feedIn;
+  audit("HANDLED", line.idempotencyKey);
+}`,
+      { sourceFile: "outcomes.bank.ts" },
+    );
+
+    expect(
+      result.diagnostics.filter((entry) => entry.id === "BANK-FILE-017"),
+    ).toHaveLength(1);
+  });
+});
+
+/**
  * Blocks the walk did not reach.
+
  *
  * `on page` is the one the key-based traversal missed outright: a `write ...
  * on page { ... }` carries a block, `atEndOfPage` was in the list of names it
