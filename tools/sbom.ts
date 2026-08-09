@@ -352,6 +352,47 @@ export function repairLicences(bom: Bom, cwd: string): number {
   return repaired;
 }
 
+/**
+ * Every list in the document, in a fixed order.
+ *
+ * pnpm walks the store and emits components in whatever order it arrives at
+ * them, so two runs a second apart put `@stryker-mutator/vitest-runner` and
+ * `@stryker-mutator/core` in different places, and the `dependencies` graph
+ * comes out in a third order again. Nothing downstream cares. A reader
+ * comparing one release's bill of materials against the next does: an
+ * unordered list makes a diff that is almost entirely reordering, with the one
+ * dependency that actually changed hidden somewhere inside it.
+ *
+ * `bom-ref` is the purl and is unique — `problems()` fails when two components
+ * share one — so it is a total order, and the `?? ""` is for the type rather
+ * than for a case that occurs.
+ *
+ * This does not make the file reproducible byte for byte, and it is worth being
+ * exact about what is left. `serialNumber` and `metadata.timestamp` differ per
+ * run by design — CycloneDX defines both as identifying the document rather
+ * than its contents. Beyond those, the `dependsOn` edges themselves vary: two
+ * runs a second apart disagree about whether
+ * `@babel/plugin-proposal-decorators` depends on `@babel/helper-plugin-utils`.
+ * That is the generator's own resolution, not an ordering this can impose, and
+ * sorting a list whose membership changes would hide it rather than fix it.
+ *
+ * So: the component list — the bill of materials proper, and the thing a
+ * reviewer diffs between releases — is stable. The dependency graph is not,
+ * and no claim is made that it is.
+ */
+export function sortBom(bom: Bom): void {
+  const byRef = (left: string, right: string): number =>
+    left < right ? -1 : left > right ? 1 : 0;
+
+  bom.components.sort((left, right) =>
+    byRef(left["bom-ref"] ?? "", right["bom-ref"] ?? ""),
+  );
+  for (const dependency of bom.dependencies ?? []) {
+    dependency.dependsOn?.sort(byRef);
+  }
+  bom.dependencies?.sort((left, right) => byRef(left.ref, right.ref));
+}
+
 /** The author, taken from `CITATION.cff` so the two cannot disagree. */
 export function supplier(): string {
   const citation = readFileSync(join(ROOT, "CITATION.cff"), "utf8");
@@ -608,6 +649,7 @@ function main(): void {
   ) as { name: string; version: string };
   // `.cdx.json` is the extension CycloneDX's own tooling recognises.
   const file = join(out, `${manifest.name}-${manifest.version}.cdx.json`);
+  sortBom(bom);
   writeFileSync(file, `${JSON.stringify(bom, null, 2)}\n`, "utf8");
   console.log(`Wrote ${file.slice(ROOT.length + 1)}.`);
 
