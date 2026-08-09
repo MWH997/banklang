@@ -129,6 +129,8 @@ row.commas = countOf(row.narrative, ","); // INSPECT ... TALLYING
 row.branch = replaceChars(row.branch, " ", "0"); // INSPECT ... CONVERTING
 ```
 
+`countOf` answers `decimal<9, 0>`, whatever it counted in; the subset does not
+coerce on assignment, so a narrower field to hold it is `BANK-TYPE-003`.
 `replaceChars` converts character by character, so the two sets must be the same
 size — anything else is a substitution, which COBOL has no single statement for.
 
