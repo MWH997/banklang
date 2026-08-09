@@ -308,6 +308,68 @@ exhaustive accounting, which `tests/nested-block-walkers.test.ts` already held
 the backend to — and two exhaustive switches with no `default`, so a statement
 kind added to the language does not compile until somebody has classified it.
 
+#### What it found in the corpus analyser
+
+`record-usage.ts` is measurement rather than compilation: it reads other
+people's COBOL and produces `evidence/horizontal/xcobol-v2/record-usage.json`,
+which is the evidence `BANK-FILE-015` rests on. A number that decides what goes
+into a language is worth the same scrutiny as the language, and this lane scored
+it at **78.02%** with 67 surviving mutants.
+
+The largest cause was not a missing assertion. Two `describe` bodies read their
+fixture once and shared it:
+
+```ts
+describe("reading an FD's records", () => {
+  const [shape] = fileRecordShapes(VARIANTS); // runs at collection
+  it("stops the FD's clauses at their period", () => {
+    expect(shape?.varyingLength).toBe(true);
+  });
+});
+```
+
+A `describe` body runs when the file is collected, before Stryker activates a
+mutant, so the analyser those assertions ran against was always the unmutated
+one. Fourteen mutants survived assertions that fail the moment the same mutation
+is applied by hand — the check was reported green, and it was not being made.
+Reading the fixture inside each `it` is the whole fix, and it is worth knowing
+about anywhere a mutation score is taken seriously.
+
+Under assertions that then bound, the analyser had real holes, all of them in
+paths that move a published count:
+
+- A record with a **nested group** measured as a length rather than as
+  unmeasured. A group entry has no picture, so the running sum met `null`, and
+  `null + 4` is `4` in JavaScript — the arithmetic did not fail, it reported a
+  short record. That is what moves an FD out of `unmeasuredLength` and into
+  `sameLength` or `differentLength`.
+- A **picture symbol with no rule** — `PIC G(n)` is DBCS — was never exercised,
+  so nothing held the analyser to refusing rather than guessing.
+- `COMP` widths were asserted at nine digits only, so **both boundaries** of
+  `2 / 4 / 8` bytes were free to move.
+- `I-O` was measured by no test at all, and `openedIo` is a published row.
+- `varyingLength`, the `5+` bucket boundary, the forty-shape example cap, the
+  "every variant written" total and the per-file multi-record flag were all
+  counted by code no assertion constrained.
+
+The lane now scores **94.74%**, with 306 killed, 17 surviving and none
+uncovered.
+
+#### The seventeen that remain
+
+Every one is written down rather than tolerated, because "some survivors are
+equivalent" is the sentence that hides the ones that are not.
+
+| Where                                                     | Why it cannot be killed                                                                                                                                                                                                    |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `leading = []`, `inClauses = false` (×3 initialisers)     | `close()` runs at the head of every `FD`, and reassigns both before a record is read. The initial value is never the one used.                                                                                             |
+| `sharedLeadingField`/`leadingFiller`/`modes` initialisers | `close()` assigns all three unconditionally on the way out. A shape is only ever pushed by `close()`.                                                                                                                      |
+| `leading[0] !== null` and `name !== null`                 | A mutually protective pair: `every` already rejects a null name, and the explicit test already rejects a null first element. Neither can be removed while the other stands, so neither can be killed alone.                |
+| `leading[at] === undefined`, `running === undefined`      | `noUncheckedIndexedAccess` is on, so the type of an indexed read includes `undefined` and the compiler requires the test. The array is filled with `null`, so it is unreachable at run time and mandatory at compile time. |
+| the blank-line skip, the `OPEN` short-circuit             | Both are shortcuts. A blank line matches no pattern downstream, and a line without `OPEN` yields no words to scan. Removing either changes speed, not answers.                                                             |
+| `(expanded.match(/9/g) ?? [])`                            | Reachable only for a picture with no `9` that also carries `COMP` or `COMP-3`, which is not a picture-and-usage combination COBOL admits.                                                                                  |
+| `const targets: string[] = []`                            | Consumed only by `records.filter((r) => targets.includes(r))`, and the entry regex admits `[A-Z0-9][A-Z0-9-]*`, so no injected string can ever match a record name.                                                        |
+
 ### 2.4 Fuzz tests
 
 Fuzz:
