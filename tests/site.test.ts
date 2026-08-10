@@ -19,11 +19,13 @@ import {
 import {
   builtPages,
   inlineScriptHashes,
+  render404,
   renderLanding,
   responseHeaders,
   servedPath,
   siteContent,
   SITE_ORIGIN,
+  sitemap,
 } from "../tools/build-site";
 
 /**
@@ -407,6 +409,41 @@ describe("the response headers", () => {
   });
 
   /**
+   * The page served for an address that names no file.
+   *
+   * Cloudflare Pages serves `404.html` with a real 404 status when the build
+   * carries one. Without it, every unmatched address was answered with the
+   * landing page and a **200** — `/contributing` and `/definitely-not-a-page`
+   * both came back as the home page, measured against the live site — which
+   * invites a crawler to index an unbounded set of duplicates.
+   *
+   * The scripts are the landing page's own bytes, so the policy already allows
+   * them. That is the assertion worth having: a 404 page written freehand grows
+   * `script-src` by a hash for a page almost nobody reaches.
+   */
+  it("serves a real 404 page that the policy already allows", () => {
+    const page = render404();
+    expect(page).toContain('name="robots" content="noindex"');
+    expect(page).toContain('href="/"');
+
+    const landing = new Set(inlineScriptHashes(renderLanding(siteContent())));
+    const hashes = inlineScriptHashes(page);
+    expect(hashes.length).toBeGreaterThan(0);
+    for (const hash of hashes) {
+      expect(landing, "the 404 page needs a hash of its own").toContain(hash);
+    }
+  });
+
+  it("keeps the 404 page out of the sitemap and in the build", () => {
+    expect(builtPages()).toContain("404.html");
+    // From the generator rather than from `dist/site/sitemap.xml`, which exists
+    // only on a machine that has run the build.
+    const xml = sitemap();
+    expect(xml).not.toContain("/404");
+    expect(xml).toContain(`<loc>${SITE_ORIGIN}/</loc>`);
+  });
+
+  /**
    * The one host the policy names, and the reason a test names it back.
    *
    * Cloudflare appends a Web Analytics beacon to every HTML response as it
@@ -422,14 +459,15 @@ describe("the response headers", () => {
    * `connect-src` is asserted alongside it because the beacon never attempts an
    * off-origin request: the injected tag sets `version` in `data-cf-beacon`,
    * which `beacon.min.js` reads to mean report to the same-origin
-   * `/cdn-cgi/rum`. Allowing the script and keeping every fetch on this origin
-   * is the pair being held.
+   * `/cdn-cgi/rum`, answered with a 204. Allowing the script and keeping every
+   * fetch on this origin is the pair being held.
    *
-   * Allowing the host does not make the analytics work, and this test should
-   * not be read as saying it does. Cloudflare's edge answers `/cdn-cgi/rum`
-   * with a 404 of its own, so the beacon loads, reports, and is refused. The
-   * rest is a dashboard setting, which is why the assertion here stops at the
-   * shape of the policy.
+   * The other half of making the analytics work was in the Cloudflare account
+   * rather than here: the Web Analytics site carried an empty ruleset, so the
+   * beacon was injected while the collector accepted data for no host, and the
+   * report came back 404 until automatic installation was enabled on it. This
+   * test stops at the shape of the policy because that half is a setting no
+   * file in this repository holds.
    */
   it("allows the injected analytics beacon, and no other host", () => {
     const csp = policy();

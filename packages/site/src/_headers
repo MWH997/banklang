@@ -37,21 +37,19 @@
   # CDN serving every byte of this origin, and a policy is delivered by the same
   # response it governs, so it was never a boundary against Cloudflare.
   #
-  # **This does not make the analytics work, and nothing in this file can.**
   # `connect-src` stays `self` because the beacon never attempts an off-origin
   # request: the injected tag carries a `version` in `data-cf-beacon`, and
   # `beacon.min.js` reads a defined `version` to mean report to the same-origin
-  # `/cdn-cgi/rum` rather than to `cloudflareinsights.com`. Cloudflare's edge
-  # answers that path with its own 404 — the plain one ending `<hr><center>
-  # cloudflare</center>`, not this site's 404, so the request is refused at the
-  # edge and never reaches the deployment. Measured in a browser on 2026-08-09,
-  # after the host was allowed and the script began to load.
+  # `/cdn-cgi/rum` rather than to `cloudflareinsights.com`. The edge answers
+  # that path with a 204 and the report never leaves this origin.
   #
-  # So the beacon now runs and reports into a 404, and Web Analytics records
-  # nothing either way. What is left is in the Cloudflare dashboard: either bind
-  # the collector for this hostname, or switch Web Analytics off for the zone,
-  # at which point the injection stops and this exception should come back out.
-  # Both are settings rather than files and no test here can hold them.
+  # Allowing the host was half of it. The report was refused with a 404 for a
+  # while afterwards, because the account's Web Analytics site carried an empty
+  # ruleset — the beacon was being injected while the collector accepted data
+  # for no host — and enabling automatic installation on that site is what
+  # created the rule and turned the 404 into a 204. That half lives in the
+  # Cloudflare account rather than in this file, so a future 404 here is a
+  # setting to check and not a change to this policy.
   #
   # `script-src` has no `unsafe-inline`. Every page carries an inline script —
   # the theme is read from `localStorage` and stamped on `<html>` before first
