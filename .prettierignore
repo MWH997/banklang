@@ -58,6 +58,12 @@ docs/validation/interpreter-coverage.md
 # would edit it away from what was written.
 docs/working/
 
+# Browser-automation output, for the same reason: `.gitignore` excludes it, and
+# `prettier --check .` reads the disk. Console logs and page snapshots written
+# by a tool, which made `pnpm format:check` fail locally over files that are not
+# in the checkout CI runs it against.
+.playwright-mcp/
+
 # Conversion sources are BankTS, and the generated output is the compiler's.
 conversions/**/banklang/**
 conversions/**/generated/**
