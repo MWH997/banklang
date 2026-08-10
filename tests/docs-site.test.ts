@@ -26,6 +26,7 @@ import {
 import { buildAbout, buildBlog, buildFeed } from "../tools/build-blog";
 import {
   builtPages,
+  render404,
   renderLanding,
   servedPath,
   servedUrl,
@@ -485,6 +486,9 @@ describe("the sitemap", () => {
     // than through a builder. Rendered here so the comparison below covers the
     // one page a reader is most likely to arrive at.
     writeFileSync(join(root, "index.html"), renderLanding(siteContent()));
+    // And the page served for every address that names no file, written the
+    // same way and for the same reason.
+    writeFileSync(join(root, "404.html"), render404());
   });
 
   afterAll(() => {
@@ -531,14 +535,29 @@ describe("the sitemap", () => {
   it("agrees with the canonical each of those pages declares", () => {
     // The invariant that was broken: `/docs/index.html` as the canonical and
     // `/docs/` in the sitemap, for one page.
+    //
+    // The 404 page is the one page this cannot ask of, and the exclusion is the
+    // rule rather than a hole in it: a canonical names the address a page is
+    // served at, and that page is the answer given to every address that names
+    // no page. Naming one would be picking an address for it. What it declares
+    // instead is asserted below.
     for (const page of htmlUnder(root)) {
+      const built = relative(root, page).replace(/\\/g, "/");
+      if (built === "404.html") {
+        continue;
+      }
       const html = readFileSync(page, "utf8");
       const canonical = /rel="canonical" href="([^"]+)"/.exec(html)?.[1];
-      const built = relative(root, page).replace(/\\/g, "/");
       expect(canonical, `${built} declares no canonical`).toBe(
         servedUrl(built),
       );
     }
+  });
+
+  it("has the 404 page declare noindex instead of an address", () => {
+    const html = readFileSync(join(root, "404.html"), "utf8");
+    expect(html).toContain('name="robots" content="noindex"');
+    expect(html).not.toContain('rel="canonical"');
   });
 });
 

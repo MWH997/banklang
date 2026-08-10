@@ -409,6 +409,93 @@ export function renderLanding(content: SiteContent): string {
 }
 
 /**
+ * The page for a request that matches no file.
+ *
+ * Cloudflare Pages answers an unmatched request with `404.html` and a real 404
+ * status when the build carries one, and with the site's own `index.html` and a
+ * **200** when it does not. This build carried none, so `/contributing`,
+ * `/anything` and every mistyped or retired link came back as the landing page
+ * under its own URL. That is a soft 404: a crawler reads each address as one
+ * more copy of the home page, and a reader gets a page that answers a question
+ * they did not ask rather than telling them the address is wrong.
+ *
+ * The inline scripts are lifted out of the landing template rather than written
+ * again. A content policy hash covers exact bytes, so reusing them means this
+ * page is allowed by the hashes already on the policy and widens `script-src`
+ * by nothing. `tests/site.test.ts` holds that.
+ */
+export function render404(): string {
+  const template = readFileSync(join(SITE, "index.html"), "utf8");
+  const scripts = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
+    (match) => `<script>${match[1] ?? ""}</script>`,
+  );
+  if (scripts.length === 0) {
+    throw new Error(
+      "The landing template carries no inline script to reuse, so this page " +
+        "would need a hash of its own on the content policy.",
+    );
+  }
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>No page at this address — BankLang</title>
+    <meta name="description" content="The address does not name a page on this site." />
+    <!-- Served for any unmatched address, so there is nothing here to index. -->
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="wordmark" href="/">BankLang</a>
+      <nav>
+        <a href="/docs/">Docs</a>
+        <a href="/blog/">Writing</a>
+        <a href="/playground/">Playground</a>
+        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
+        <button id="theme" type="button" class="ghost" aria-pressed="false">
+          Dark mode
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <h1>No page at this address</h1>
+      <p>
+        The link is either older than the page it named, or the address is
+        mistyped. These are the places worth starting from:
+      </p>
+      <ul>
+        <li><a href="/docs/getting-started">Getting started</a></li>
+        <li><a href="/docs/">All of the documentation</a></li>
+        <li><a href="/playground/">The playground</a>, which compiles in the browser</li>
+        <li><a href="/blog/">Writing</a></li>
+      </ul>
+      <p class="muted">
+        The documentation moved here from GitHub, so a link written against the
+        repository may name a <code>.md</code> file. The same page is under
+        <a href="/docs/">/docs/</a> without the extension.
+      </p>
+    </main>
+
+    <footer class="foot">
+      <p>
+        <a href="/">Home</a> ·
+        <a href="/docs/">Docs</a> ·
+        <a href="/blog/">Writing</a> ·
+        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
+      </p>
+    </footer>
+${scripts.map((script) => `    ${script}`).join("\n")}
+  </body>
+</html>
+`;
+}
+
+/**
  * Every page this build writes, as the path it lands on disk.
  *
  * One list, so the sitemap cannot fall behind what is rendered. It already had:
@@ -423,6 +510,12 @@ export function builtPages(): string[] {
   const files = docFiles();
   return [
     "index.html",
+    // Written, and deliberately absent from the sitemap. `sitemap()` drops it
+    // rather than this list doing so, because the comparison in
+    // `tests/docs-site.test.ts` runs both ways against the files on disk: a
+    // page left out here to keep it out of the sitemap reads as a page the
+    // build writes and nothing accounts for.
+    "404.html",
     "about/index.html",
     "playground/index.html",
     "docs/index.html",
@@ -502,17 +595,32 @@ export function responseHeaders(template: string, hashes: string[]): string {
   return filled;
 }
 
-function sitemap(): string {
+/**
+ * Exported so a test can read what the build would write.
+ *
+ * The first version of the 404 test read `dist/site/sitemap.xml`, which exists
+ * on a machine that has run the build and nowhere else: it passed locally and
+ * failed in CI, where the tests run against the sources. Nothing else in these
+ * tests reads `dist`, and this is why.
+ */
+export function sitemap(): string {
   const today = new Date().toISOString().slice(0, 10);
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     // `servedUrl`, not the file path. F11: every one of these named the `.html`
     // form, which the host answers with a redirect rather than with the page.
-    ...builtPages().map(
-      (page) =>
-        `  <url><loc>${servedUrl(page)}</loc><lastmod>${today}</lastmod></url>`,
-    ),
+    //
+    // The 404 page is the one page the build writes that belongs to no address,
+    // and it carries `noindex` for the same reason. Submitting it would be
+    // asking a crawler to index the answer given to every address that has no
+    // page.
+    ...builtPages()
+      .filter((page) => page !== "404.html")
+      .map(
+        (page) =>
+          `  <url><loc>${servedUrl(page)}</loc><lastmod>${today}</lastmod></url>`,
+      ),
     "</urlset>",
     "",
   ].join("\n");
@@ -524,6 +632,7 @@ function main(): void {
 
   const content = siteContent();
   writeFileSync(join(OUT, "index.html"), renderLanding(content));
+  writeFileSync(join(OUT, "404.html"), render404());
   cpSync(join(SITE, "site.css"), join(OUT, "assets/site.css"));
   cpSync(join(SITE, "docs.css"), join(OUT, "assets/docs.css"));
   cpSync(join(SITE, "docs.js"), join(OUT, "assets/docs.js"));
