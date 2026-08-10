@@ -110,8 +110,7 @@ Two conventions follow, and both sit with the contributor rather than the tool:
   in [docs/glossary.md](docs/glossary.md) show the form those take.
 - **Keep the assistant out of the trailers.** No `Co-Authored-By` naming a
   model, and no "generated with" line. Attribution belongs to the people
-  answerable for the change, and the history here was rewritten once to take 134
-  of them back out.
+  answerable for the change.
 
 ## Adding a diagnostic
 
