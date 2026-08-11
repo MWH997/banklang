@@ -5819,10 +5819,10 @@ function sensitiveFieldOf(
 /**
  * Reports restricted data escaping into a log.
  *
- * An audit event and a ledger posting are both written to a durable record that
- * outlives the transaction and is read by people who have no business seeing a
- * card number. A field marked `sensitive` may be read, computed with, and
- * written to a file; it may not be written here.
+ * Audit events and ledger postings are written to durable records, and the job
+ * log likewise outlives the program invocation. They are read by people who
+ * have no business seeing a card number. A field marked `sensitive` may be
+ * read, computed with, and written to a file; it may not be written here.
  */
 function checkNotSensitive(
   expression: ExpressionNode,

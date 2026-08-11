@@ -168,6 +168,33 @@ entry transaction enquire(row: AccountRow, result: EnquiryResult) {
 }
 `;
 
+/**
+ * Opens one file successfully, then fails opening another.
+ *
+ * The second OPEN leaves the transaction through its generated failure path,
+ * skipping the source CLOSE for the first file. That first file must still be
+ * closed before the generated module returns: apart from flushing and locking
+ * semantics, GnuCOBOL 3.2 reports implicit closes during shutdown after the
+ * module's file descriptors are out of lifetime (a SIGSEGV on arm64).
+ */
+const OPEN_CLEANUP_SOURCE = `module OpenCleanup;
+
+record WorkItem {
+  idempotencyKey: string<36>;
+}
+
+file partialOutput sequential output record WorkItem status outputStatus;
+file missingInput sequential input record WorkItem status inputStatus;
+
+entry transaction run(work: WorkItem) {
+  open partialOutput;
+  open missingInput;
+  close missingInput;
+  close partialOutput;
+  audit("FINISHED", work.idempotencyKey);
+}
+`;
+
 const runner = hasCobc() ? describe : describe.skip;
 
 function workDir(name: string): string {
@@ -257,6 +284,20 @@ describe("record inheritance layout", () => {
 });
 
 runner("executed against the reference runtime", () => {
+  it("closes a live file when a later OPEN abandons the transaction", () => {
+    const result = runConformance({
+      source: OPEN_CLEANUP_SOURCE,
+      sourceFile: "open-cleanup.bank.ts",
+      workDir: workDir("open-cleanup"),
+    });
+
+    expect(result.exitCode).toBe(12);
+    expect(lines(result.stdout)).toEqual([
+      "OPEN FAILED missingInput STATUS 35",
+    ]);
+    expect(result.stderr).not.toContain("implicit CLOSE");
+  });
+
   it("posts a permitted withdrawal and leaves the ledger balanced", () => {
     const { result } = run("permitted", {
       accountId: "ACC-0000000001",

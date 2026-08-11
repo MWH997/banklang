@@ -144,12 +144,12 @@ a value is restricted is a decision about the data and not a guess from
 spelling. What the compiler adds is that the decision then holds everywhere the
 value goes, rather than everywhere someone remembered.
 
-A restricted value may not reach an **audit event** or a **ledger posting**
-(`BANK-AUD-002`). Both are durable records that outlive the transaction and are
-read by people with no business seeing a card number. It may not be assigned to
-a field that is not itself marked (`BANK-SEC-001`): a field's marking is part of
-its record declaration and therefore part of its copybook, so copying restricted
-data into an unmarked field would reclassify it silently.
+A restricted value may not reach an **audit event**, a **ledger posting**, or
+the **job log** (`BANK-AUD-002`). All three outlive the transaction or program
+invocation and are read by people with no business seeing a card number. It may
+not be assigned to a field that is not itself marked (`BANK-SEC-001`): a field's
+marking is part of its record declaration and therefore part of its copybook,
+so copying restricted data into an unmarked field would reclassify it silently.
 
 It may be read, compared, computed with, and written to a file — which is where
 such data legitimately lives. The layout report marks which fields carry it, so

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -8,7 +9,14 @@ import {
   watch,
   writeFileSync as writeArtifactBytes,
 } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -42,6 +50,10 @@ import { importDclgen } from "../../copybook/src/dclgen";
 import { analyzeProgramSemantics } from "../../semantic-analyzer/src/index";
 import {
   analyseCobol,
+  buildCopybookDependencyGraph,
+  type CopybookDependencyGraph,
+  type CopybookGraphSource,
+  renderCopybookDependencyGraph,
   renderInventory,
   renderParagraphGraph,
 } from "../../migration-analysis/src/index";
@@ -534,8 +546,9 @@ function runAnalyse(args: string[], cwd: string): CliResult {
     };
   }
 
-  const members = paths.flatMap((path) => cobolMembers(resolve(cwd, path)));
-  if (members.length === 0) {
+  const roots = paths.map((path) => resolve(cwd, path));
+  const members = discoverAnalysisMembers(roots);
+  if (members.programs.length === 0) {
     return {
       exitCode: 1,
       stdout: "",
@@ -543,23 +556,51 @@ function runAnalyse(args: string[], cwd: string): CliResult {
     };
   }
 
-  const analyses = members.map((member) =>
-    analyseCobol(readFileSync(member, "utf8"), relativeToCwd(member, cwd)),
+  const programSources = members.programs.map((member) => ({
+    kind: "program" as const,
+    artifact: analysisArtifact(member, cwd),
+    text: readFileSync(member, "utf8"),
+  }));
+  const copybookSources = members.copybooks.map((member) => ({
+    kind: "copybook" as const,
+    artifact: analysisArtifact(member, cwd),
+    member: basename(member)
+      .replace(/\.cpy$/i, "")
+      .trim(),
+    text: readFileSync(member, "utf8"),
+  }));
+  const graph = buildCopybookDependencyGraph([
+    ...programSources,
+    ...copybookSources,
+  ] satisfies CopybookGraphSource[]);
+  const analyses = programSources.map((source) =>
+    analyseCobol(source.text, source.artifact),
   );
+  const inventory = `${renderInventory(analyses)}\n${renderCopybookSummary(graph)}`;
 
   const outIndex = args.indexOf("--out");
   if (outIndex === -1) {
     return {
       exitCode: 0,
-      stdout: renderInventory(analyses),
+      stdout: inventory,
       stderr: "",
     };
   }
 
   const outputRoot = resolveOutputRoot(cwd, args);
   mkdirSync(outputRoot, { recursive: true });
-  const written = [join(outputRoot, "inventory.md")];
-  writeFileSync(written[0]!, renderInventory(analyses), "utf8");
+  const inventoryPath = join(outputRoot, "inventory.md");
+  const graphMarkdownPath = join(outputRoot, "copybook-dependencies.md");
+  const graphJsonPath = join(outputRoot, "copybook-dependencies.json");
+  const written = [inventoryPath, graphMarkdownPath, graphJsonPath];
+  writeFileSync(inventoryPath, inventory, "utf8");
+  writeFileSync(
+    graphMarkdownPath,
+    `# Copybook dependency graph\n\n${renderCopybookDependencyGraph(graph)}\n\n` +
+      "This resolves `COPY` member names only. Copybook contents are not expanded into the inventory counts.\n",
+    "utf8",
+  );
+  writeFileSync(graphJsonPath, `${JSON.stringify(graph, null, 2)}\n`, "utf8");
 
   for (const analysis of analyses) {
     const name = analysis.programId ?? "PROGRAM";
@@ -579,17 +620,145 @@ function runAnalyse(args: string[], cwd: string): CliResult {
   };
 }
 
-/** Every COBOL member under a path, which may be one file. */
-function cobolMembers(path: string): string[] {
-  if (!existsSync(path)) {
-    return [];
+interface AnalysisMembers {
+  programs: string[];
+  copybooks: string[];
+}
+
+/**
+ * Every supported analysis member under the supplied roots.
+ *
+ * A tree is walked once even when command arguments overlap. Directory
+ * symlinks are deliberately not followed: apart from escaping the requested
+ * tree, they can point back to an ancestor and make discovery non-terminating.
+ * A symlink whose target is a regular source file is still a source file.
+ */
+function discoverAnalysisMembers(roots: string[]): AnalysisMembers {
+  const programs = new Set<string>();
+  const copybooks = new Set<string>();
+  const visitedDirectories = new Set<string>();
+
+  const visit = (path: string): void => {
+    let entry: ReturnType<typeof lstatSync>;
+    try {
+      entry = lstatSync(path);
+    } catch {
+      return;
+    }
+
+    if (entry.isSymbolicLink()) {
+      let target: ReturnType<typeof statSync>;
+      try {
+        target = statSync(path);
+      } catch {
+        return;
+      }
+      if (target.isDirectory() || !target.isFile()) {
+        return;
+      }
+    } else if (entry.isDirectory()) {
+      if (visitedDirectories.has(path)) {
+        return;
+      }
+      visitedDirectories.add(path);
+      for (const child of readdirSync(path, { withFileTypes: true }).sort(
+        (left, right) =>
+          left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+      )) {
+        visit(join(path, child.name));
+      }
+      return;
+    } else if (!entry.isFile()) {
+      return;
+    }
+
+    if (/\.(cbl|cob)$/i.test(path)) {
+      programs.add(path);
+    } else if (/\.cpy$/i.test(path)) {
+      const member = basename(path)
+        .replace(/\.cpy$/i, "")
+        .trim();
+      if (member !== "") {
+        copybooks.add(path);
+      }
+    }
+  };
+
+  for (const root of [...new Set(roots)].sort()) {
+    visit(root);
   }
-  if (!statSync(path).isDirectory()) {
-    return /\.(cbl|cob)$/i.test(path) ? [path] : [];
+  return {
+    programs: [...programs].sort(),
+    copybooks: [...copybooks].sort(),
+  };
+}
+
+/** A report path whose bytes do not depend on the host path separator. */
+function analysisArtifact(path: string, cwd: string): string {
+  return relativeToCwd(path, cwd).replaceAll("\\", "/");
+}
+
+/** The graph's decision-sized summary for the ordinary stdout report. */
+function renderCopybookSummary(graph: CopybookDependencyGraph): string {
+  const count = (
+    status: CopybookDependencyGraph["edges"][number]["status"],
+  ): number => graph.edges.filter((edge) => edge.status === status).length;
+  const copybooks = graph.nodes.filter(
+    (node) => node.kind === "copybook",
+  ).length;
+  const lines = [
+    "## Copybook dependencies",
+    "",
+    `${String(copybooks)} copybook member(s), ${String(graph.edges.length)} \`COPY\` reference(s): ${String(count("resolved"))} resolved, ${String(count("missing"))} missing and ${String(count("ambiguous"))} ambiguous.`,
+  ];
+  if (graph.cycles.length > 0) {
+    lines.push(
+      "",
+      `${String(graph.cycles.length)} strongly connected dependency cycle group(s) found: ${graph.cycles
+        .map((cycle) => cycle.map(markdownCodeSpan).join(", "))
+        .join("; ")}.`,
+    );
   }
-  return readdirSync(path, { withFileTypes: true })
-    .flatMap((entry) => cobolMembers(join(path, entry.name)))
-    .sort();
+  lines.push(
+    "",
+    "Member names are resolved without expanding copybook content into the inventory counts.",
+    "",
+  );
+  return lines.join("\n");
+}
+
+/** A single-line CommonMark code span that keeps unusual paths visible. */
+function markdownCodeSpan(text: string): string {
+  const visible = [...text]
+    .map((character) => {
+      if (character === "\r") {
+        return "\\r";
+      }
+      if (character === "\n") {
+        return "\\n";
+      }
+      if (character === "\t") {
+        return "\\t";
+      }
+      const codePoint = character.codePointAt(0) ?? 0;
+      return codePoint <= 0x1f ||
+        (codePoint >= 0x7f && codePoint <= 0x9f) ||
+        codePoint === 0x2028 ||
+        codePoint === 0x2029
+        ? `\\u{${codePoint.toString(16).toUpperCase()}}`
+        : character;
+    })
+    .join("");
+  const longestRun = Math.max(
+    0,
+    ...[...visible.matchAll(/`+/g)].map((match) => match[0].length),
+  );
+  const fence = "`".repeat(longestRun + 1);
+  const needsPadding =
+    visible.startsWith("`") ||
+    visible.endsWith("`") ||
+    (visible.startsWith(" ") && visible.endsWith(" "));
+  return `${fence}${needsPadding ? ` ${visible} ` : visible}${fence}`;
 }
 
 export const JOB_FILE_NAME = "job.json";

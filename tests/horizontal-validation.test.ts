@@ -572,7 +572,7 @@ function unused(): bool {
       "unsupported-by-design",
     );
     expect(classifyProgram({ move: 9, "file-relative": 1 }).verdict).toBe(
-      "unsupported-not-yet-implemented",
+      "representable-with-adaptation",
     );
     expect(classifyProgram({ move: 9, "go-to": 1 }).verdict).toBe(
       "representable-with-adaptation",

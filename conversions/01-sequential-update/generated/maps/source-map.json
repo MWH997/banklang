@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 113,
-      "targetEndLine": 117,
+      "targetStartLine": 117,
+      "targetEndLine": 121,
       "category": "record",
       "symbol": "TransRecord"
     },
@@ -47,8 +47,8 @@
         "column": 24
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 114,
-      "targetEndLine": 114,
+      "targetStartLine": 118,
+      "targetEndLine": 118,
       "category": "field",
       "symbol": "trAcctNo"
     },
@@ -63,8 +63,8 @@
         "column": 22
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 115,
-      "targetEndLine": 115,
+      "targetStartLine": 119,
+      "targetEndLine": 119,
       "category": "field",
       "symbol": "trAmount"
     },
@@ -79,8 +79,8 @@
         "column": 21
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 116,
-      "targetEndLine": 116,
+      "targetStartLine": 120,
+      "targetEndLine": 120,
       "category": "field",
       "symbol": "trType"
     },
@@ -95,8 +95,8 @@
         "column": 23
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 117,
-      "targetEndLine": 117,
+      "targetStartLine": 121,
+      "targetEndLine": 121,
       "category": "field",
       "symbol": "trFiller"
     },
@@ -111,8 +111,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 118,
-      "targetEndLine": 121,
+      "targetStartLine": 122,
+      "targetEndLine": 125,
       "category": "record",
       "symbol": "MasterRecord"
     },
@@ -127,8 +127,8 @@
         "column": 24
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 119,
-      "targetEndLine": 119,
+      "targetStartLine": 123,
+      "targetEndLine": 123,
       "category": "field",
       "symbol": "miAcctNo"
     },
@@ -143,8 +143,8 @@
         "column": 23
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 120,
-      "targetEndLine": 120,
+      "targetStartLine": 124,
+      "targetEndLine": 124,
       "category": "field",
       "symbol": "miBalance"
     },
@@ -159,8 +159,8 @@
         "column": 23
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 121,
-      "targetEndLine": 121,
+      "targetStartLine": 125,
+      "targetEndLine": 125,
       "category": "field",
       "symbol": "miStatus"
     },
@@ -175,8 +175,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 122,
-      "targetEndLine": 124,
+      "targetStartLine": 126,
+      "targetEndLine": 128,
       "category": "record",
       "symbol": "RejectRecord"
     },
@@ -191,8 +191,8 @@
         "column": 28
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 123,
-      "targetEndLine": 123,
+      "targetStartLine": 127,
+      "targetEndLine": 127,
       "category": "field",
       "symbol": "rejectAcctNo"
     },
@@ -207,8 +207,8 @@
         "column": 28
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 124,
-      "targetEndLine": 124,
+      "targetStartLine": 128,
+      "targetEndLine": 128,
       "category": "field",
       "symbol": "rejectFiller"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 125,
-      "targetEndLine": 129,
+      "targetStartLine": 129,
+      "targetEndLine": 133,
       "category": "record",
       "symbol": "RunCounts"
     },
@@ -239,8 +239,8 @@
         "column": 29
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 126,
-      "targetEndLine": 126,
+      "targetStartLine": 130,
+      "targetEndLine": 130,
       "category": "field",
       "symbol": "countRead"
     },
@@ -255,8 +255,8 @@
         "column": 32
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 127,
-      "targetEndLine": 127,
+      "targetStartLine": 131,
+      "targetEndLine": 131,
       "category": "field",
       "symbol": "countApplied"
     },
@@ -271,8 +271,8 @@
         "column": 33
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 128,
-      "targetEndLine": 128,
+      "targetStartLine": 132,
+      "targetEndLine": 132,
       "category": "field",
       "symbol": "countRejected"
     },
@@ -287,8 +287,8 @@
         "column": 30
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 129,
-      "targetEndLine": 129,
+      "targetStartLine": 133,
+      "targetEndLine": 133,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -303,8 +303,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 181,
-      "targetEndLine": 198,
+      "targetStartLine": 233,
+      "targetEndLine": 250,
       "category": "function",
       "symbol": "shouldReject"
     },
@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 199,
-      "targetEndLine": 225,
+      "targetStartLine": 251,
+      "targetEndLine": 277,
       "category": "function",
       "symbol": "newBalanceFor"
     },
@@ -335,8 +335,8 @@
         "column": 2
       },
       "artifact": "cobol/ACCTUPDT.cbl",
-      "targetStartLine": 226,
-      "targetEndLine": 491,
+      "targetStartLine": 278,
+      "targetEndLine": 551,
       "category": "transaction",
       "symbol": "updateAccounts"
     }

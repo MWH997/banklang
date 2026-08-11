@@ -146,9 +146,9 @@ Three things, and the second and third are the argument for doing this at all.
 **A representability boundary nobody had measured.** Of 5,195 real COBOL files,
 the reader handled every one without error, and the constructs BankTS cannot
 express turn out to be led by `go-to` and `perform-thru` — present in roughly
-half the corpus — with `inspect`, `file-relative` and line-sequential files as
-the largest genuinely missing features. That is a to-do list ordered by evidence
-instead of by whoever asked most recently.
+half the corpus — with external data and `COPY ... REPLACING` among the largest
+features that remain genuinely missing. That is a to-do list ordered by
+evidence instead of by whoever asked most recently.
 
 **A support rule that was wrong in the flattering direction.**
 `file-line-sequential` was marked `supported` because `LINE SEQUENTIAL` appears

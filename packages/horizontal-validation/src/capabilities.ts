@@ -193,6 +193,28 @@ function unused(): bool {
 `,
   },
   {
+    bankts: "relative files",
+    feature: "file-relative",
+    execution: "differential",
+    emits: "ORGANIZATION IS RELATIVE",
+    probe: `module Probe;
+
+record Entry {
+  entryText: string<20>;
+}
+
+file entries relative input record Entry status entriesStatus;
+
+on error entries {
+  log "ENTRIES FAILED ", entriesStatus;
+}
+
+function unused(): bool {
+  return true;
+}
+`,
+  },
+  {
     bankts: "sort",
     feature: "sort-merge",
     execution: "differential",

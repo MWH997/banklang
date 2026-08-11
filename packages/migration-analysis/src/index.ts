@@ -17,6 +17,23 @@
  */
 
 import { detectFeatures, type FeatureCounts } from "./features";
+import { parseCopyReferences } from "./copybook-dependencies";
+
+export {
+  buildCopybookDependencyGraph,
+  parseCopyReferences,
+  renderCopybookDependencyGraph,
+} from "./copybook-dependencies";
+export type {
+  CopybookDependencyGraph,
+  CopybookGraphCopybookSource,
+  CopybookGraphEdge,
+  CopybookGraphNode,
+  CopybookGraphProgramSource,
+  CopybookGraphSource,
+  CopybookResolutionStatus,
+  CopyReference,
+} from "./copybook-dependencies";
 
 export {
   detectFeatures,
@@ -158,7 +175,9 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
   const sql: SqlUse[] = [];
   const cics: CicsUse[] = [];
   const calls = new Set<string>();
-  const copybooks = new Set<string>();
+  const copybooks = new Set(
+    parseCopyReferences(text).map((reference) => reference.member),
+  );
 
   let programId: string | null = null;
   let statementLines = 0;
@@ -242,10 +261,6 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
       } else if (/\bPROGRAM-ID\s*\.\s*$/.test(upper)) {
         awaitingProgramId = true;
       }
-    }
-
-    for (const member of upper.matchAll(/\bCOPY\s+([A-Z0-9$#@-]+)/g)) {
-      copybooks.add(member[1]!);
     }
 
     if (/\bFILE-CONTROL\s*\./.test(upper)) {
@@ -533,7 +548,7 @@ function unreachableParagraphs(
 export function describeLimits(): string[] {
   return [
     "Read from reference-format text, not compiled. A construct written in a way this reader does not recognise is absent from the report rather than reported as unknown.",
-    "Copybooks are named, not expanded. A paragraph, file or SQL statement inside one is not counted.",
+    "Copybook dependency names are followed when their source is supplied, not expanded semantically. A paragraph, file or SQL statement inside one is not counted.",
     "`unreachable` is a lower bound: fall-through and `PERFORM ... THRU` are both followed, so a paragraph listed here is very likely dead and one absent from it may still be.",
     "Nothing here is a conversion estimate. It is a count of what is in the source.",
   ];

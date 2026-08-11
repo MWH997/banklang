@@ -33,9 +33,11 @@ The honest comparison is that they solve opposite problems. A converter is for
 an estate somebody wants to leave. BankLang is for writing new programs _into_
 an estate that is staying.
 
-Where a converter wins outright: it works on the code you already have.
+Where a converter wins outright: it transforms the code you already have.
 BankLang has copybook and DCLGEN import so a new program can share your records,
-but it will not read your existing COBOL and it does not pretend to.
+and `bankc analyse` reads existing COBOL to produce an inventory, paragraph
+graphs, and a copybook dependency graph. It does not semantically parse or
+convert that COBOL, and does not pretend to.
 
 ## Against Micro Focus, or any COBOL-on-another-platform product
 
@@ -113,9 +115,12 @@ transaction>` becomes a zUnit case to run on z/OS, and what it can assert
 6. **It is one project with no support contract**, and the code that comes out
    of it is going into a system where being wrong costs money.
 
-7. **Migration analysis does not exist.** Reading an existing estate — an
-   inventory, a paragraph graph, extractors for the SQL and CICS in it — is on
-   the roadmap and unbuilt. That is the piece a team would actually start with.
+7. **Migration analysis is deliberately shallow.** `bankc analyse` inventories
+   an existing estate, draws paragraph and copybook dependency graphs, and
+   extracts files, SQL, CICS, and calls. It reads source text rather than
+   compiling or semantically parsing it, follows copybook names without
+   expanding their content, and is not a conversion estimate. See
+   [migration-analysis.md](migration-analysis.md).
 
 ---
 

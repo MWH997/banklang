@@ -1,0 +1,63 @@
+name: Set up GnuCOBOL
+description: Build, cache, and verify the exact GnuCOBOL release used as evidence
+
+inputs:
+  version:
+    description: GnuCOBOL release to build
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache GnuCOBOL ${{ inputs.version }}
+      id: gnucobol
+      uses: actions/cache@v6
+      with:
+        path: /opt/gnucobol
+        key: gnucobol-${{ inputs.version }}-${{ runner.os }}
+
+    # The cache contains the compiler, not the runner's shared libraries. Keep
+    # this outside the cache-miss branch so a restored compiler can still run.
+    - name: Install GnuCOBOL dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          build-essential libgmp-dev libdb-dev libncurses-dev \
+          libxml2-dev libcjson-dev
+
+    # Build outside the checkout: repository-wide format checks must never see
+    # files unpacked from the upstream source archive.
+    - name: Build GnuCOBOL ${{ inputs.version }}
+      if: steps.gnucobol.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ runner.temp }}
+      env:
+        GNUCOBOL_VERSION: ${{ inputs.version }}
+      run: |
+        curl -fsSL -o gnucobol.tar.xz \
+          "https://downloads.sourceforge.net/project/gnucobol/gnucobol/${GNUCOBOL_VERSION}/gnucobol-${GNUCOBOL_VERSION}.tar.xz"
+        tar xf gnucobol.tar.xz
+        cd "gnucobol-${GNUCOBOL_VERSION}"
+        ./configure --prefix=/opt/gnucobol
+        make -j"$(nproc)"
+        sudo make install
+
+    - name: Activate and verify GnuCOBOL ${{ inputs.version }}
+      shell: bash
+      env:
+        GNUCOBOL_VERSION: ${{ inputs.version }}
+      run: |
+        echo "/opt/gnucobol/bin" >> "$GITHUB_PATH"
+        echo "LD_LIBRARY_PATH=/opt/gnucobol/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+        echo "COB_CONFIG_DIR=/opt/gnucobol/share/gnucobol/config" >> "$GITHUB_ENV"
+        echo "COB_COPY_DIR=/opt/gnucobol/share/gnucobol/copy" >> "$GITHUB_ENV"
+        version="$(/opt/gnucobol/bin/cobc --version 2>&1 | head -1)"
+        echo "$version"
+        case "$version" in
+          *"(GnuCOBOL) ${GNUCOBOL_VERSION}"*) ;;
+          *)
+            echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}: ${version}"
+            exit 1
+            ;;
+        esac

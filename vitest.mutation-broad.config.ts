@@ -1,6 +1,12 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 
 import base from "./vitest.config";
+import {
+  MUTATION_BROAD_ONLY_TESTS,
+  MUTATION_NATIVE_COBOL_TESTS,
+  MUTATION_REPOSITORY_HYGIENE_TESTS,
+  MUTATION_SANDBOX_INCOMPATIBLE_TESTS,
+} from "./vitest.mutation-excludes";
 
 /**
  * The suite the wider mutation lanes run against: everything except the slow.
@@ -30,48 +36,15 @@ export default mergeConfig(
   defineConfig({
     test: {
       exclude: [
-        "**/node_modules/**",
-        "dist/**",
-        ".stryker-tmp/**",
-        "evidence/**",
-        "conversions/**",
-        "examples/**",
-        "tests/fixtures/**",
-        "tests/inputs/**",
         // Minutes each: these spawn `cobc` and run what it builds.
-        "tests/cobol-compiles.test.ts",
-        "tests/conformance.test.ts",
-        "tests/gnucobol-validation.test.ts",
-        "tests/rounding-oracle.test.ts",
-        "tests/generated-programs.test.ts",
+        ...MUTATION_NATIVE_COBOL_TESTS,
         "tests/cobol-runtime-differential.test.ts",
-        "tests/determinism.test.ts",
-        // Builds the language server through `pnpm run build:server`, which
-        // cannot run inside Stryker's sandbox: `dist/` is an ignore pattern, so
-        // it is not copied, and the build has nowhere to write. A build step is
-        // not something a mutant in these packages changes.
-        "tests/language-server-session.test.ts",
-        // Scans `packages/*/src` for `throw new Error(`. Stryker instruments
-        // every mutated file with its own preamble, which contains exactly
-        // that, so the check reports the instrumentation as a compiler defect
-        // and the dry run fails before a single mutant is tried. It is a
-        // question about repository source, and no mutant changes the source.
-        "tests/errors.test.ts",
+        ...MUTATION_SANDBOX_INCOMPATIBLE_TESTS,
         // Repository hygiene: these read files, and no mutant changes a file.
-        "tests/conversions.test.ts",
-        "tests/documentation.test.ts",
-        "tests/docs-site.test.ts",
-        "tests/site.test.ts",
-        "tests/site-layout.test.ts",
-        "tests/blog.test.ts",
-        "tests/prose.test.ts",
-        "tests/accessibility.test.ts",
-        "tests/contrast.test.ts",
-        "tests/workflows.test.ts",
-        "tests/browser-safety.test.ts",
-        "tests/editor-surfaces.test.ts",
-        "tests/mutation-scope.test.ts",
-        "tests/mutation-floor.test.ts",
+        ...MUTATION_REPOSITORY_HYGIENE_TESTS,
+        // These also compile the site's examples, so the rules lane keeps
+        // them; runtime, backend and tools mutants cannot change their answer.
+        ...MUTATION_BROAD_ONLY_TESTS,
       ],
     },
   }),

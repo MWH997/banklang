@@ -12,12 +12,10 @@ measurement, and every number on it is read out of `evidence/horizontal/`.
 | | |
 | --- | --- |
 | BankLang | 0.10.0 |
-| Node | v24.18.0 |
 | COBOL compiler | cobc (GnuCOBOL) 3.2.0 |
-| platform | darwin/arm64 |
 | corpus lock | `90aaebe2d5cb` |
 
-The exact commit each lane ran on is in
+The exact compiler environment and commit for each lane are in
 `evidence/horizontal/<corpus>/environment.json`.
 
 **Target: IBM Enterprise COBOL 6.4. Runtime validation: GnuCOBOL.**
@@ -117,9 +115,9 @@ No behavioural oracle. These are files, not tests: nothing here can establish th
 | Representability | Files |
 | --- | --- |
 | fully-representable | 1543 / 5195 (29.7%) |
-| representable-with-adaptation | 2730 / 5195 (52.6%) |
+| representable-with-adaptation | 2919 / 5195 (56.2%) |
 | unsupported-by-design | 533 / 5195 (10.3%) |
-| unsupported-not-yet-implemented | 331 / 5195 (6.4%) |
+| unsupported-not-yet-implemented | 142 / 5195 (2.7%) |
 | analyser-failure | 0 / 5195 (0.0%) |
 | unknown | 58 / 5195 (1.1%) |
 
@@ -134,7 +132,7 @@ Constructs BankTS cannot express, ranked by how often they occur:
 | `string-unstring` | adaptation | 393 | 7.6% |
 | `inspect` | adaptation | 269 | 5.2% |
 | `usage-pointer` | unsupported-by-design | 244 | 4.7% |
-| `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
+| `file-relative` | adaptation | 192 | 3.7% |
 | `screen-section` | unsupported-by-design | 138 | 2.7% |
 | `external-data` | unsupported-not-yet-implemented | 110 | 2.1% |
 | `copy-replacing` | unsupported-not-yet-implemented | 87 | 1.7% |
@@ -189,9 +187,9 @@ Measured against `216de338cc15`.
 | Verdict | Before | After | Change |
 | --- | --- | --- | --- |
 | fully-representable | 1543 | 1543 | 0 |
-| representable-with-adaptation | 2548 | 2730 | +182 |
+| representable-with-adaptation | 2548 | 2919 | +371 |
 | unsupported-by-design | 533 | 533 | 0 |
-| unsupported-not-yet-implemented | 513 | 331 | -182 |
+| unsupported-not-yet-implemented | 513 | 142 | -371 |
 | analyser-failure | 0 | 0 | 0 |
 | unknown | 58 | 58 | 0 |
 
@@ -202,9 +200,9 @@ Measured against `8abf3da6ebc5`.
 | Verdict | Before | After | Change |
 | --- | --- | --- | --- |
 | fully-representable | 1388 | 1543 | +155 |
-| representable-with-adaptation | 2478 | 2730 | +252 |
+| representable-with-adaptation | 2478 | 2919 | +441 |
 | unsupported-by-design | 533 | 533 | 0 |
-| unsupported-not-yet-implemented | 738 | 331 | -407 |
+| unsupported-not-yet-implemented | 738 | 142 | -596 |
 | analyser-failure | 0 | 0 | 0 |
 | unknown | 58 | 58 | 0 |
 

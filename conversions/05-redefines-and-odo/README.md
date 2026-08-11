@@ -102,10 +102,10 @@ order, same pictures, same total length.
 
 |                                                | Original | Regenerated |
 | ---------------------------------------------- | -------- | ----------- |
-| Lines of code, comments and blanks excluded    | 21       | 263         |
+| Lines of code, comments and blanks excluded    | 21       | 278         |
 | `GO TO` a paragraph that is not an exit        | 0        | 0           |
 | `GO TO` in total, single-exit returns included | 0        | 10          |
-| File operations whose result is tested         | 0 of 0   | 3 of 3      |
+| File operations whose result is tested         | 0 of 0   | 4 of 4      |
 
 The BankTS in between is 71 lines.
 

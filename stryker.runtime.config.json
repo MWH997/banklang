@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "The interpreter and the precompiler. `packages/cobol-runtime` is what the differential lane compares against `cobc`, so a defect here does not fail a test \u2014 it agrees with the wrong answer and reports a match. That is the shape worth mutating.",
+  "_comment": "The interpreter's smaller modules. `packages/cobol-runtime` is what the differential lane compares against `cobc`, so a defect here does not fail a test \u2014 it agrees with the wrong answer and reports a match. `machine.ts`, `statements.ts`, and the precompiler have parallel lanes so no target can consume the scheduled job's entire three-hour bound.",
   "packageManager": "pnpm",
   "reporters": ["html", "clear-text", "progress", "json"],
   "testRunner": "vitest",
@@ -9,8 +9,13 @@
   },
   "coverageAnalysis": "perTest",
   "mutate": [
-    "packages/cobol-runtime/src/**/*.ts",
-    "packages/precompiler/src/**/*.ts"
+    "packages/cobol-runtime/src/cursor.ts",
+    "packages/cobol-runtime/src/data.ts",
+    "packages/cobol-runtime/src/index.ts",
+    "packages/cobol-runtime/src/picture.ts",
+    "packages/cobol-runtime/src/program.ts",
+    "packages/cobol-runtime/src/source.ts",
+    "packages/cobol-runtime/src/value.ts"
   ],
   "thresholds": {
     "high": 85,
@@ -32,5 +37,6 @@
   "ignoreStatic": true,
   "concurrency": 8,
   "incremental": false,
-  "_incremental": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and these lanes exist to measure whether the *tests* are worth anything \u2014 so a test-only change must re-measure. With it on, adding tests for packages/zunit left the score byte-identical at 126 survivors, which reads as 'the tests are useless' and was 'the run was reused'. CI is unaffected either way: a fresh runner has no dist/ and so no cache."
+  "_incremental_comment": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and these lanes exist to measure whether the *tests* are worth anything \u2014 so a test-only change must re-measure. With it on, adding tests for packages/zunit left the score byte-identical at 126 survivors, which reads as 'the tests are useless' and was 'the run was reused'. CI is unaffected either way: a fresh runner has no dist/ and so no cache.",
+  "tempDirName": ".stryker-tmp-runtime-core"
 }

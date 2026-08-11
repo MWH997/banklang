@@ -15,6 +15,17 @@ import { describe, expect, it } from "vitest";
 const ROOT = resolve(import.meta.dirname, "..");
 const workflow = (name: string): string =>
   readFileSync(resolve(ROOT, ".github/workflows", name), "utf8");
+const action = (name: string): string =>
+  readFileSync(resolve(ROOT, ".github/actions", name, "action.yml"), "utf8");
+
+/** One top-level job, ending before the next top-level job. */
+function job(source: string, name: string): string {
+  const start = source.indexOf(`\n  ${name}:\n`);
+  expect(start, `no job named "${name}"`).toBeGreaterThan(-1);
+  const rest = source.slice(start + 1);
+  const next = rest.search(/\n {2}[a-z][a-z-]*:\n/);
+  return next === -1 ? rest : rest.slice(0, next);
+}
 
 /**
  * G4. The audit's claim was that "the tool exists and nothing runs it". At the
@@ -67,5 +78,62 @@ describe("the SARIF report", () => {
     // Conditioned on the step rather than on the job: an upload with no file is
     // a red step on a green run, which reads as a fault and is not one.
     expect(step("Upload SARIF")).toContain("if: steps.sarif.outcome");
+  });
+});
+
+describe("the scheduled validation toolchain", () => {
+  const ci = workflow("ci.yml");
+  const scheduled = workflow("scheduled.yml");
+  const setup = action("setup-gnucobol");
+
+  it("uses one pinned GnuCOBOL setup in CI and horizontal validation", () => {
+    const invocation = "uses: ./.github/actions/setup-gnucobol";
+    expect(job(ci, "verify")).toContain(invocation);
+    expect(job(scheduled, "horizontal")).toContain(invocation);
+    expect(job(scheduled, "mutation")).not.toContain(invocation);
+    expect(ci).toContain('GNUCOBOL_VERSION: "3.2"');
+    expect(scheduled).toContain('GNUCOBOL_VERSION: "3.2"');
+  });
+
+  it("keeps cache-hit dependencies and the version assertion in the setup", () => {
+    expect(setup).toContain("uses: actions/cache@v6");
+    expect(setup).toContain("libcjson-dev");
+    expect(setup).toContain("if: steps.gnucobol.outputs.cache-hit != 'true'");
+    expect(setup).toContain('"(GnuCOBOL) ${GNUCOBOL_VERSION}"');
+  });
+});
+
+describe("scheduled mutation reporting", () => {
+  const mutation = job(workflow("scheduled.yml"), "mutation");
+
+  it("runs bounded interpreter and precompiler matrix jobs", () => {
+    expect(mutation).toContain("script: test:mutation:runtime");
+    expect(mutation).toContain("report: dist/mutation-runtime");
+    expect(mutation).toContain("script: test:mutation:runtime:machine");
+    expect(mutation).toContain("report: dist/mutation-runtime-machine");
+    expect(mutation).toContain("script: test:mutation:runtime:statements");
+    expect(mutation).toContain("report: dist/mutation-runtime-statements");
+    expect(mutation).toContain("script: test:mutation:precompiler");
+    expect(mutation).toContain("report: dist/mutation-precompiler");
+    expect(mutation).toContain("timeout-minutes: 180");
+  });
+
+  it("does not mistake a missing report for a per-file-floor failure", () => {
+    expect(mutation).toContain("id: report");
+    expect(mutation).toContain("timeout-minutes: 165");
+    expect(mutation).toContain(
+      "if: always() && steps.report.outputs.present == 'true'",
+    );
+    expect(mutation).toContain("**Run failure:**");
+    expect(mutation).toContain("**Missing report:**");
+    expect(mutation).toContain("**Per-file floor failure:**");
+    expect(mutation).toContain("open.title !== title");
+  });
+
+  it("restores a captured mutation failure as the job conclusion", () => {
+    expect(mutation).toContain("- name: Fail an unsuccessful mutation lane");
+    expect(mutation).toContain(
+      "steps.report.outcome == 'failure' || steps.floor.outcome == 'failure'",
+    );
   });
 });

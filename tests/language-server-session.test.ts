@@ -205,8 +205,17 @@ async function openUnbalanced(session: Session) {
 describe("the language server the extension loads", () => {
   beforeAll(() => {
     // The same script `pnpm build` runs, so the test cannot pass against a
-    // bundle built some other way.
-    execFileSync("pnpm", ["run", "build:server"], {
+    // bundle built some other way. Invoke the package-manager CLI through the
+    // Node process that launched Vitest when Corepack has not installed a
+    // `pnpm` shim on PATH; Stryker's sandbox preserves `npm_execpath`, and the
+    // scheduled lane must be able to run this compiler-facing integration
+    // suite rather than excluding it wholesale.
+    const packageManager = process.env.npm_execpath;
+    const executable = packageManager ? process.execPath : "corepack";
+    const command = packageManager
+      ? [packageManager, "run", "build:server"]
+      : ["pnpm", "run", "build:server"];
+    execFileSync(executable, command, {
       cwd: EXTENSION,
       stdio: "pipe",
     });

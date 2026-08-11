@@ -660,7 +660,15 @@ describe("the documents the site does not publish", () => {
    * gets.
    */
   it("keeps them out of the repository as well as off the site", () => {
-    const tracked = execFileSync("git", ["ls-files", "docs/"], {
+    // Stryker runs from a nested sandbox inside the checkout. A relative
+    // pathspec there means `.stryker-tmp/.../docs`, which correctly matches no
+    // tracked files and makes this repository check fail before mutation even
+    // starts. Ask Git for the real worktree first so the assertion means the
+    // same thing from an ordinary test run and a mutation sandbox.
+    const worktree = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      encoding: "utf8",
+    }).trim();
+    const tracked = execFileSync("git", ["-C", worktree, "ls-files", "docs/"], {
       encoding: "utf8",
     })
       .split("\n")

@@ -27,9 +27,9 @@ program is correct: nothing in this corpus carries an expected output.
 | Verdict | Files |
 | --- | --- |
 | fully-representable | 1543 / 5195 (29.7%) |
-| representable-with-adaptation | 2730 / 5195 (52.6%) |
+| representable-with-adaptation | 2919 / 5195 (56.2%) |
 | unsupported-by-design | 533 / 5195 (10.3%) |
-| unsupported-not-yet-implemented | 331 / 5195 (6.4%) |
+| unsupported-not-yet-implemented | 142 / 5195 (2.7%) |
 | analyser-failure | 0 / 5195 (0.0%) |
 | unknown | 58 / 5195 (1.1%) |
 
@@ -44,7 +44,7 @@ program is correct: nothing in this corpus carries an expected output.
 | `string-unstring` | adaptation | 393 | 7.6% |
 | `inspect` | adaptation | 269 | 5.2% |
 | `usage-pointer` | unsupported-by-design | 244 | 4.7% |
-| `file-relative` | unsupported-not-yet-implemented | 192 | 3.7% |
+| `file-relative` | adaptation | 192 | 3.7% |
 | `screen-section` | unsupported-by-design | 138 | 2.7% |
 | `external-data` | unsupported-not-yet-implemented | 110 | 2.1% |
 | `copy-replacing` | unsupported-not-yet-implemented | 87 | 1.7% |
@@ -93,7 +93,7 @@ program is correct: nothing in this corpus carries an expected output.
 | `usage-pointer` | 244 | 1894 | unsupported-by-design |
 | `comp-3` | 239 | 185547 | supported |
 | `rounded` | 227 | 2677 | supported |
-| `file-relative` | 192 | 305 | unsupported-not-yet-implemented |
+| `file-relative` | 192 | 305 | adaptation |
 | `on-size-error` | 189 | 7593 | supported |
 | `search` | 169 | 1579 | supported |
 | `start-browse` | 158 | 1397 | supported |

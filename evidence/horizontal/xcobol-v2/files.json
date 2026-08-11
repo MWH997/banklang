@@ -1225,7 +1225,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -1245,7 +1245,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -1265,7 +1265,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -1373,7 +1373,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -2646,7 +2646,7 @@
     "programId": "REL4000",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "compute",
@@ -4867,7 +4867,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -7956,7 +7956,7 @@
     "programId": "RL101A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -7981,7 +7981,7 @@
     "programId": "RL104A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8008,7 +8008,7 @@
     "programId": "RL105A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -8032,7 +8032,7 @@
     "programId": "RL106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -8056,7 +8056,7 @@
     "programId": "RL107A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -8080,7 +8080,7 @@
     "programId": "RL108A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8105,7 +8105,7 @@
     "programId": "RL111A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8131,7 +8131,7 @@
     "programId": "RL112A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8158,7 +8158,7 @@
     "programId": "RL113A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8185,7 +8185,7 @@
     "programId": "RL114A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8212,7 +8212,7 @@
     "programId": "RL115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8239,7 +8239,7 @@
     "programId": "RL116A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8266,7 +8266,7 @@
     "programId": "RL117A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8292,7 +8292,7 @@
     "programId": "RL118A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8318,7 +8318,7 @@
     "programId": "RL119A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8345,7 +8345,7 @@
     "programId": "RL201A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8370,7 +8370,7 @@
     "programId": "RL204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8397,7 +8397,7 @@
     "programId": "RL205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -8424,7 +8424,7 @@
     "programId": "RL206A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8449,7 +8449,7 @@
     "programId": "RL209A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8474,7 +8474,7 @@
     "programId": "RL210A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8499,7 +8499,7 @@
     "programId": "RL211A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8524,7 +8524,7 @@
     "programId": "RL212A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -8549,7 +8549,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -8566,7 +8566,7 @@
     "programId": "RL302M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -8582,7 +8582,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -19880,7 +19880,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23654,7 +23654,7 @@
     "programId": "RL101A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23679,7 +23679,7 @@
     "programId": "RL102A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23704,7 +23704,7 @@
     "programId": "RL103A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23729,7 +23729,7 @@
     "programId": "RL104A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23756,7 +23756,7 @@
     "programId": "RL105A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -23780,7 +23780,7 @@
     "programId": "RL106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -23804,7 +23804,7 @@
     "programId": "RL107A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -23828,7 +23828,7 @@
     "programId": "RL108A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23853,7 +23853,7 @@
     "programId": "RL109A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23878,7 +23878,7 @@
     "programId": "RL110A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23903,7 +23903,7 @@
     "programId": "RL111A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23929,7 +23929,7 @@
     "programId": "RL112A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23956,7 +23956,7 @@
     "programId": "RL113A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -23983,7 +23983,7 @@
     "programId": "RL114A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24010,7 +24010,7 @@
     "programId": "RL115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24037,7 +24037,7 @@
     "programId": "RL116A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24064,7 +24064,7 @@
     "programId": "RL117A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24090,7 +24090,7 @@
     "programId": "RL118A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24116,7 +24116,7 @@
     "programId": "RL119A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24143,7 +24143,7 @@
     "programId": "RL201A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24168,7 +24168,7 @@
     "programId": "RL202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24193,7 +24193,7 @@
     "programId": "RL203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24218,7 +24218,7 @@
     "programId": "RL204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24245,7 +24245,7 @@
     "programId": "RL205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -24272,7 +24272,7 @@
     "programId": "RL206A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24297,7 +24297,7 @@
     "programId": "RL207A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24322,7 +24322,7 @@
     "programId": "RL208A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24347,7 +24347,7 @@
     "programId": "RL209A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24372,7 +24372,7 @@
     "programId": "RL210A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24397,7 +24397,7 @@
     "programId": "RL211A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24422,7 +24422,7 @@
     "programId": "RL212A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24447,7 +24447,7 @@
     "programId": "RL213A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -24472,7 +24472,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -24489,7 +24489,7 @@
     "programId": "RL302M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -24505,7 +24505,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -42246,7 +42246,7 @@
     "programId": "CREATE-RELATIVE-FILE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -42320,7 +42320,7 @@
     "programId": "READ-RELATIVE-FILE",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -54202,7 +54202,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -57219,7 +57219,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -57236,7 +57236,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -59872,7 +59872,7 @@
     "programId": "ACT-CLI",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -59921,7 +59921,7 @@
     "programId": "G-A-PROV",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -60040,7 +60040,7 @@
     "programId": "UD11E1",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "conditional",
@@ -60058,7 +60058,7 @@
     "programId": "UD11E2",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -60078,7 +60078,7 @@
     "programId": "PE-AR01",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "file-line-sequential",
       "file-relative",
@@ -60095,7 +60095,7 @@
     "programId": "PE-AR02",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "file-relative",
@@ -60111,7 +60111,7 @@
     "programId": "PE-AR03",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "file-relative",
@@ -60226,7 +60226,7 @@
     "programId": "FERMIN",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -64352,7 +64352,7 @@
     "programId": "COMPRAR",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -64382,7 +64382,7 @@
     "programId": "CONSULTAMOV",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -64517,7 +64517,7 @@
     "programId": "ORDENARESP",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "arithmetic-verbs",
@@ -64540,7 +64540,7 @@
     "programId": "ORDENARMOV",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "continuation",
@@ -68797,7 +68797,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72265,7 +72265,7 @@
     "programId": "RL101A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72290,7 +72290,7 @@
     "programId": "RL102A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72315,7 +72315,7 @@
     "programId": "RL103A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72340,7 +72340,7 @@
     "programId": "RL104A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72367,7 +72367,7 @@
     "programId": "RL105A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -72391,7 +72391,7 @@
     "programId": "RL106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -72415,7 +72415,7 @@
     "programId": "RL107A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -72439,7 +72439,7 @@
     "programId": "RL108A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72464,7 +72464,7 @@
     "programId": "RL109A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72489,7 +72489,7 @@
     "programId": "RL110A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72514,7 +72514,7 @@
     "programId": "RL111A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72540,7 +72540,7 @@
     "programId": "RL112A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72567,7 +72567,7 @@
     "programId": "RL113A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72594,7 +72594,7 @@
     "programId": "RL114A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72621,7 +72621,7 @@
     "programId": "RL115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72648,7 +72648,7 @@
     "programId": "RL116A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72675,7 +72675,7 @@
     "programId": "RL117A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72701,7 +72701,7 @@
     "programId": "RL118A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72727,7 +72727,7 @@
     "programId": "RL119A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72754,7 +72754,7 @@
     "programId": "RL201A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72779,7 +72779,7 @@
     "programId": "RL202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72804,7 +72804,7 @@
     "programId": "RL203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72829,7 +72829,7 @@
     "programId": "RL204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72856,7 +72856,7 @@
     "programId": "RL205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -72883,7 +72883,7 @@
     "programId": "RL206A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72908,7 +72908,7 @@
     "programId": "RL207A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72933,7 +72933,7 @@
     "programId": "RL208A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72958,7 +72958,7 @@
     "programId": "RL209A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -72983,7 +72983,7 @@
     "programId": "RL210A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -73008,7 +73008,7 @@
     "programId": "RL211A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -73033,7 +73033,7 @@
     "programId": "RL212A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -73058,7 +73058,7 @@
     "programId": "RL213A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -73083,7 +73083,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -73100,7 +73100,7 @@
     "programId": "RL302M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -73116,7 +73116,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -78803,7 +78803,7 @@
     "programId": "QG1CX047",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -78822,7 +78822,7 @@
     "programId": "QG1CX048",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -78840,7 +78840,7 @@
     "programId": "QG1CX049",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -85924,7 +85924,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89057,7 +89057,7 @@
     "programId": "RL101A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89082,7 +89082,7 @@
     "programId": "RL104A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89109,7 +89109,7 @@
     "programId": "RL105A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -89133,7 +89133,7 @@
     "programId": "RL106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -89157,7 +89157,7 @@
     "programId": "RL107A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -89181,7 +89181,7 @@
     "programId": "RL108A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89206,7 +89206,7 @@
     "programId": "RL111A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89232,7 +89232,7 @@
     "programId": "RL112A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89259,7 +89259,7 @@
     "programId": "RL113A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89286,7 +89286,7 @@
     "programId": "RL114A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89313,7 +89313,7 @@
     "programId": "RL115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89340,7 +89340,7 @@
     "programId": "RL116A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89367,7 +89367,7 @@
     "programId": "RL117A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89393,7 +89393,7 @@
     "programId": "RL118A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89419,7 +89419,7 @@
     "programId": "RL119A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89446,7 +89446,7 @@
     "programId": "RL201A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89471,7 +89471,7 @@
     "programId": "RL204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89498,7 +89498,7 @@
     "programId": "RL205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -89525,7 +89525,7 @@
     "programId": "RL206A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89550,7 +89550,7 @@
     "programId": "RL209A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89575,7 +89575,7 @@
     "programId": "RL210A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89600,7 +89600,7 @@
     "programId": "RL211A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89625,7 +89625,7 @@
     "programId": "RL212A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -89650,7 +89650,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -89667,7 +89667,7 @@
     "programId": "RL302M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -89683,7 +89683,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -95943,7 +95943,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "condition-names",
@@ -95983,7 +95983,7 @@
     "programId": null,
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "call-static",
@@ -101856,7 +101856,7 @@
     "programId": "IX106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105630,7 +105630,7 @@
     "programId": "RL101A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105655,7 +105655,7 @@
     "programId": "RL102A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105680,7 +105680,7 @@
     "programId": "RL103A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105705,7 +105705,7 @@
     "programId": "RL104A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105732,7 +105732,7 @@
     "programId": "RL105A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -105756,7 +105756,7 @@
     "programId": "RL106A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -105780,7 +105780,7 @@
     "programId": "RL107A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "conditional",
@@ -105804,7 +105804,7 @@
     "programId": "RL108A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105829,7 +105829,7 @@
     "programId": "RL109A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105854,7 +105854,7 @@
     "programId": "RL110A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105879,7 +105879,7 @@
     "programId": "RL111A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105905,7 +105905,7 @@
     "programId": "RL112A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105932,7 +105932,7 @@
     "programId": "RL113A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105959,7 +105959,7 @@
     "programId": "RL114A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -105986,7 +105986,7 @@
     "programId": "RL115A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106013,7 +106013,7 @@
     "programId": "RL116A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106040,7 +106040,7 @@
     "programId": "RL117A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106066,7 +106066,7 @@
     "programId": "RL118A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106092,7 +106092,7 @@
     "programId": "RL119A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106119,7 +106119,7 @@
     "programId": "RL201A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106144,7 +106144,7 @@
     "programId": "RL202A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106169,7 +106169,7 @@
     "programId": "RL203A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106194,7 +106194,7 @@
     "programId": "RL204A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106221,7 +106221,7 @@
     "programId": "RL205A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "condition-names",
@@ -106248,7 +106248,7 @@
     "programId": "RL206A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106273,7 +106273,7 @@
     "programId": "RL207A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106298,7 +106298,7 @@
     "programId": "RL208A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106323,7 +106323,7 @@
     "programId": "RL209A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106348,7 +106348,7 @@
     "programId": "RL210A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106373,7 +106373,7 @@
     "programId": "RL211A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106398,7 +106398,7 @@
     "programId": "RL212A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106423,7 +106423,7 @@
     "programId": "RL213A",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "arithmetic-verbs",
       "comp-binary",
@@ -106448,7 +106448,7 @@
     "programId": "RL301M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "continuation",
       "file-relative",
@@ -106465,7 +106465,7 @@
     "programId": "RL302M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",
@@ -106481,7 +106481,7 @@
     "programId": "RL401M",
     "analysed": true,
     "failure": null,
-    "representability": "unsupported-not-yet-implemented",
+    "representability": "representable-with-adaptation",
     "features": [
       "accept-display",
       "continuation",

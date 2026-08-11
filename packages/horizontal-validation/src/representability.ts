@@ -349,8 +349,8 @@ export const SUPPORT_RULES: SupportRule[] = [
   },
   {
     feature: "file-relative",
-    support: "unsupported-not-yet-implemented",
-    note: "ORGANIZATION RELATIVE, addressed by record number. No syntax; no conflict with the language's aims.",
+    support: "adaptation",
+    note: "`file <name> relative ...` emits ORGANIZATION IS RELATIVE and a generated RELATIVE KEY. Migration is still an adaptation: BankTS does not expose relative-record-number access, and source-level `key` operations and browsing remain indexed-only.",
     desirable: true,
   },
   {

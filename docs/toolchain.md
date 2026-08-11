@@ -9,26 +9,26 @@ Every command `bankc --help` lists, and nothing else.
 `tests/cli-toolchain.test.ts` holds this table to the CLI's own inventory, so a
 command added without a row here fails the build.
 
-| Command                        | Purpose                                               |
-| ------------------------------ | ----------------------------------------------------- |
-| `bankc init <dir>`             | Scaffold a project that compiles on first run         |
-| `bankc check <project>`        | Diagnostics only, no artifacts                        |
-| `bankc build <project>`        | COBOL, copybooks, JCL, source map, audit bundle       |
-| `bankc job <directory>`        | Several programs and their sorts, as one JCL stream   |
-| `bankc emit <what> <project>`  | One artifact kind: `cobol`, `copybooks` or `jcl`      |
-| `bankc audit-report <project>` | The audit bundle on its own                           |
-| `bankc verify <project>`       | Determinism and source-map coverage                   |
-| `bankc test <project>`         | check, build, verify, plus local `cobc` validation    |
-| `bankc zunit <project>`        | zUnit test case: configuration, driver, and job       |
-| `bankc layout <project>`       | Copybook byte layout report                           |
-| `bankc config <project>`       | Show the resolved configuration                       |
-| `bankc fmt <project>`          | Format source; `--check` to verify only               |
-| `bankc analyse <path>...`      | What COBOL you already have contains, as an inventory |
-| `bankc copybook <sub> <file>`  | Import, inspect, summarise, or diff a copybook        |
-| `bankc dclgen import <file>`   | A Db2 DCLGEN member, as BankTS                        |
-| `bankc explain [id]`           | Explain a diagnostic, or list the catalogue           |
-| `bankc doctor`                 | Environment report                                    |
-| `bankc version`                | The compiler version, and nothing else                |
+| Command                        | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `bankc init <dir>`             | Scaffold a project that compiles on first run       |
+| `bankc check <project>`        | Diagnostics only, no artifacts                      |
+| `bankc build <project>`        | COBOL, copybooks, JCL, source map, audit bundle     |
+| `bankc job <directory>`        | Several programs and their sorts, as one JCL stream |
+| `bankc emit <what> <project>`  | One artifact kind: `cobol`, `copybooks` or `jcl`    |
+| `bankc audit-report <project>` | The audit bundle on its own                         |
+| `bankc verify <project>`       | Determinism and source-map coverage                 |
+| `bankc test <project>`         | check, build, verify, plus local `cobc` validation  |
+| `bankc zunit <project>`        | zUnit test case: configuration, driver, and job     |
+| `bankc layout <project>`       | Copybook byte layout report                         |
+| `bankc config <project>`       | Show the resolved configuration                     |
+| `bankc fmt <project>`          | Format source; `--check` to verify only             |
+| `bankc analyse <path>...`      | COBOL inventory, paragraph and copybook graphs      |
+| `bankc copybook <sub> <file>`  | Import, inspect, summarise, or diff a copybook      |
+| `bankc dclgen import <file>`   | A Db2 DCLGEN member, as BankTS                      |
+| `bankc explain [id]`           | Explain a diagnostic, or list the catalogue         |
+| `bankc doctor`                 | Environment report                                  |
+| `bankc version`                | The compiler version, and nothing else              |
 
 ### Global options
 
@@ -41,6 +41,12 @@ command added without a row here fails the build.
 | `--debug`                    | any        | Print the stack when the compiler itself fails |
 
 Positional arguments may appear before or after flags.
+
+`bankc analyse` recursively reads `.cbl`, `.cob`, and `.cpy` members from its
+supplied paths. `--out` writes the inventory, one paragraph graph per program,
+and deterministic copybook dependency reports as Mermaid Markdown and JSON.
+Dependency resolution reports missing and duplicate member names rather than
+guessing, and does not expand copybook content into the inventory counts.
 
 Everything the compiler means to report — a diagnostic, a missing project, an
 unreadable copybook — comes back as a message and an exit code. A failure it did

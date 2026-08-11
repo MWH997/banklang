@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The interpreter's state machine, isolated because this 3,081-line module is the largest share of a combined lane that exceeded three hours.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation-broad.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": ["packages/cobol-runtime/src/machine.ts"],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "htmlReporter": {
+    "fileName": "dist/mutation-runtime-machine/index.html"
+  },
+  "jsonReporter": {
+    "fileName": "dist/mutation-runtime-machine/mutation.json"
+  },
+  "timeoutMS": 120000,
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
+  "ignoreStatic": true,
+  "concurrency": 8,
+  "incremental": false,
+  "_incremental_comment": "Off deliberately: this lane measures test changes as well as source changes, and CI has no cache to reuse.",
+  "tempDirName": ".stryker-tmp-runtime-machine"
+}

@@ -33,16 +33,16 @@ Every locally executable verb the backend emits can be executed by both engines.
 
 | Verb | Emitted | Locally executable | Interpreted |
 | --- | --- | --- | --- |
-| `MOVE` | 2305 | yes | yes |
-| `IF` | 699 | yes | yes |
-| `DISPLAY` | 657 | yes | yes |
+| `MOVE` | 2667 | yes | yes |
+| `IF` | 918 | yes | yes |
+| `DISPLAY` | 730 | yes | yes |
 | `PERFORM` | 201 | yes | yes |
 | `COMPUTE` | 197 | yes | yes |
 | `CONTINUE` | 165 | yes | yes |
+| `CLOSE` | 149 | yes | yes |
 | `EXIT` | 146 | yes | yes |
 | `CALL` | 103 | yes | yes |
 | `ADD` | 83 | yes | yes |
-| `CLOSE` | 76 | yes | yes |
 | `OPEN` | 75 | yes | yes |
 | `GOBACK` | 55 | yes | yes |
 | `WRITE` | 55 | yes | yes |

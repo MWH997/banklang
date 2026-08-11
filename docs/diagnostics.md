@@ -344,9 +344,9 @@ Financial transaction path lacks audit event.
 
 ### `BANK-AUD-002` restricted data reaches a log
 
-A value marked `sensitive` reaches an audit event or a ledger posting. Both are
-durable records that outlive the transaction and are read by people with no
-business seeing a card number or a national identifier.
+A value marked `sensitive` reaches an audit event, a ledger posting, or the job
+log. All three outlive the transaction or program invocation and are read by
+people with no business seeing a card number or a national identifier.
 
 ### `BANK-AUD-003` audit event name is not compile-time constant
 

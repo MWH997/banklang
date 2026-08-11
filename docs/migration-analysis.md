@@ -4,6 +4,7 @@ Reading COBOL that already exists, and saying what is in it.
 
 ```bash
 pnpm bankc analyse path/to/programs
+pnpm bankc analyse path/to/programs path/to/copybooks
 pnpm bankc analyse path/to/programs --out dist/analysis
 ```
 
@@ -29,7 +30,7 @@ the tool does not have — and on an estate, that is most of them.
 | SQL                     | Each `EXEC SQL` block, its verb, and the names in it                   |
 | CICS                    | Each `EXEC CICS` command, its resource, and whether it captures `RESP` |
 | Calls                   | `CALL "X"` and `CALL 'X'`, and a count of dynamic ones                 |
-| Copybooks               | `COPY`                                                                 |
+| Copybooks               | `COPY`, including multiline statements and `REPLACING`                 |
 | `ALTER`                 | Counted, because of what it costs                                      |
 
 ## What it says to look at
@@ -61,6 +62,27 @@ A `PERFORM` is a solid arrow, the far end of a `THRU` a dotted one, and a
 `GO TO` a thick one. The difference between the three is the question a reader
 is actually asking.
 
+## The copybook dependency graph
+
+Every supplied directory is searched recursively for program members
+(`.cbl`/`.cob`) and copybooks (`.cpy`). Copybook names are matched by member
+name, case-insensitively, and references inside copybooks are followed as well
+as references from programs.
+
+The ordinary inventory reports how many `COPY` references resolved, were
+missing, or were ambiguous. With `--out`, the analysis directory also contains:
+
+- **copybook-dependencies.md** — a Mermaid graph. Resolved references are solid;
+  missing and ambiguous references are dotted, and dependency cycles are
+  highlighted.
+- **copybook-dependencies.json** — the same stable, versioned data for tooling,
+  including the original line, resolution status, candidate targets and whether
+  the statement used `REPLACING`.
+
+Two `.cpy` files with the same member name are reported as ambiguous; input
+order never chooses one silently. A missing member remains an edge in both
+reports, because a hole in the available source is part of the estate map.
+
 ## What it does not know
 
 Printed on every report, because a count that is read as an estimate is worse
@@ -68,8 +90,9 @@ than no count:
 
 - **It is not compiled.** A construct written in a way this reader does not
   recognise is absent from the report rather than reported as unknown.
-- **Copybooks are named, not expanded.** A paragraph, file or SQL statement
-  inside one is not counted.
+- **Copybooks are followed for dependency names, not expanded semantically.**
+  A paragraph, file or SQL statement inside one is not counted, and
+  `COPY ... REPLACING` is recorded but not applied.
 - **`unreachable` is a lower bound.** Fall-through and `PERFORM ... THRU` are
   both followed, so a paragraph listed is very likely dead and one absent from
   the list may still be. That direction is deliberate: over-reporting dead code

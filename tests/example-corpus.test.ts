@@ -26,6 +26,10 @@ import { verificationPlan } from "../tools/verify-examples";
  */
 
 const WORKFLOW = readFileSync(".github/workflows/ci.yml", "utf8");
+const GNUCOBOL_SETUP = readFileSync(
+  ".github/actions/setup-gnucobol/action.yml",
+  "utf8",
+);
 
 describe("the examples CI verifies", () => {
   it("is every project and every job, from the one enumeration", () => {
@@ -93,7 +97,7 @@ describe("the workflow that runs them", () => {
    * the step worked was the only one that ever could.
    */
   it("installs system packages outside the step a cache hit skips", () => {
-    const steps = WORKFLOW.split(/\n {6}- name: /).slice(1);
+    const steps = GNUCOBOL_SETUP.split(/\n {4}- name: /).slice(1);
     for (const step of steps) {
       if (!/apt-get install/.test(step)) {
         continue;
@@ -105,7 +109,7 @@ describe("the workflow that runs them", () => {
     }
     // And the guard is still on the step that does the building, or the cache
     // is buying nothing.
-    expect(WORKFLOW).toMatch(
+    expect(GNUCOBOL_SETUP).toMatch(
       /Build GnuCOBOL[\s\S]{0,200}if: steps\.gnucobol\.outputs\.cache-hit != 'true'/,
     );
   });
