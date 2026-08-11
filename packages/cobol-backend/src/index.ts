@@ -72,7 +72,11 @@ import type {
  * kind added with a block and forgotten here is a type error rather than a
  * silent omission. That is the property none of the six had.
  */
-import { childBlocks, isLibraryModule } from "../../ir/src/index";
+import {
+  childBlocks,
+  flattenIRStatements,
+  isLibraryModule,
+} from "../../ir/src/index";
 import {
   copybookMemberName,
   decimalPicture,
@@ -733,7 +737,8 @@ export function collectGeneratedNames(program: IRProgram): GeneratedName[] {
     });
     addFields(record.fields, `record ${record.name}`);
   }
-  for (const file of program.files) {
+  const usedFileNames = filesUsedByProgram(program);
+  for (const [index, file] of program.files.entries()) {
     names.push({
       cobolName: fileCobolName(file.name),
       symbol: file.name,
@@ -756,6 +761,15 @@ export function collectGeneratedNames(program: IRProgram): GeneratedName[] {
         span: file.span,
         scope: "01",
         kind: "file status field",
+      });
+    }
+    if (usedFileNames.has(file.name)) {
+      names.push({
+        cobolName: generatedFileOpenFlagName(index),
+        symbol: file.name,
+        span: file.span,
+        scope: "01",
+        kind: "file open-state flag",
       });
     }
   }
@@ -1119,6 +1133,18 @@ export function emitCobol(
   currentRecords = new Map(
     program.records.map((record) => [record.name, record]),
   );
+  // A failed transaction may leave a file open when it jumps to its exit.
+  // Numbered backend-owned flags let BANK-MAIN close only those files; a
+  // blanket CLOSE would turn every unopened file into a second failure.
+  const usedFileNames = filesUsedByProgram(program);
+  fileOpenFlagNames = new Map(
+    program.files
+      .filter((file) => usedFileNames.has(file.name))
+      .map((file) => [
+        file.name,
+        generatedFileOpenFlagName(program.files.indexOf(file)),
+      ]),
+  );
 
   // Every line goes through reference format on the way in, so `lineNumber`
   // counts the lines the artifact will actually have and the source map points
@@ -1417,6 +1443,11 @@ export function emitCobol(
   }
 
   for (const file of program.files) {
+    if (usedFileNames.has(file.name)) {
+      addLine(
+        `       01  ${fileOpenFlagName(file.name).padEnd(20)} PIC X(1) VALUE "N".`,
+      );
+    }
     if (file.statusName) {
       const status = toCobolFieldName(file.statusName);
       addLine(
@@ -2033,6 +2064,10 @@ export function emitCobol(
         `           PERFORM ${paragraphName(entryTransaction.name)} THRU ${exitParagraphName(entryTransaction.name)}`,
       );
     }
+    emitOpenFileCleanup(
+      program.files.filter((file) => usedFileNames.has(file.name)),
+      addLine,
+    );
     if (entryTransaction.isCics) {
       // A CICS program has no return code: RETURN-CODE is a batch step's
       // answer to JCL, and nothing under CICS reads it. What a transaction that
@@ -2132,6 +2167,10 @@ export function emitCobol(
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (abendParagraphUsed) {
     addLine(`       ${ABEND_PARAGRAPH}.`);
+    emitOpenFileCleanup(
+      program.files.filter((file) => usedFileNames.has(file.name)),
+      addLine,
+    );
     if (currentProgramIsCics) {
       addLine(
         `           EXEC CICS ABEND ABCODE("${CICS_ABEND_CODE}") END-EXEC`,
@@ -3236,6 +3275,42 @@ function emitRelativeKeys(
  */
 function fileCobolName(fileName: string): string {
   return cobolWord(toCobolName(fileName), "FILE");
+}
+
+/** Stable backend-owned name for one declaration's open-state flag. */
+function generatedFileOpenFlagName(index: number): string {
+  return `BANK-FILE-OPEN-${String(index + 1)}`;
+}
+
+/** Files with source operations that can make an open-state flag live. */
+function filesUsedByProgram(program: IRProgram): Set<string> {
+  const blocks = [
+    ...program.functions.map((fn) => fn.body),
+    ...program.transactions.flatMap((transaction) => [
+      transaction.body,
+      ...(transaction.failureHandler ? [transaction.failureHandler] : []),
+    ]),
+  ];
+  return new Set(
+    blocks
+      .flatMap((block) => flattenIRStatements(block.statements))
+      .filter(
+        (statement): statement is IRFileStatement =>
+          statement.kind === "FileStatement",
+      )
+      .map((statement) => statement.fileName),
+  );
+}
+
+/** Backend-owned flag recording whether an explicit OPEN still needs a CLOSE. */
+function fileOpenFlagName(fileName: string): string {
+  const name = fileOpenFlagNames.get(fileName);
+  if (!name) {
+    throw new CompilerInvariant(
+      `Missing open-state flag for declared file: ${fileName}`,
+    );
+  }
+  return name;
 }
 
 function fileRecordName(file: IRFile): string {
@@ -4845,6 +4920,45 @@ function emitFileStatusCheck(
 }
 
 /**
+ * Closes files whose source CLOSE was skipped by an early routine exit.
+ *
+ * A transaction failure is a flag plus a jump to the body's exit paragraph;
+ * it deliberately skips every later statement, including later CLOSEs. The
+ * operating system must not become the file-lifecycle policy: an output buffer
+ * still has to be flushed and an update file still has to release its lock.
+ *
+ * The flags matter because COBOL has no portable "is this file open" test. A
+ * blanket CLOSE would turn each unopened file into status 42 and replace the
+ * original error with cleanup noise. Cleanup also keeps closing after one
+ * CLOSE fails, preserving the first failure code when there already is one.
+ */
+function emitOpenFileCleanup(
+  files: IRFile[],
+  addLine: (line?: string) => void,
+): void {
+  const indent = " ".repeat(11);
+  for (const file of files) {
+    const nested = `${indent}    `;
+    const status = file.statusName ? toCobolFieldName(file.statusName) : null;
+    addLine(`${indent}IF ${fileOpenFlagName(file.name)} = "Y"`);
+    addLine(`${nested}CLOSE ${fileCobolName(file.name)}`);
+    if (status) {
+      addLine(`${nested}IF ${ioFailed(status, [])}`);
+      addLine(
+        `${nested}    DISPLAY "CLOSE FAILED ${file.name} STATUS " ${status} UPON SYSOUT`,
+      );
+      addLine(`${nested}    MOVE 12 TO ${RETURN_CODE_FIELD}`);
+      addLine(`${nested}    IF ${FAILURE_CODE_FIELD} = SPACES`);
+      addLine(`${nested}        MOVE "CLOSE-FAILED" TO ${FAILURE_CODE_FIELD}`);
+      addLine(`${nested}    END-IF`);
+      addLine(`${nested}END-IF`);
+    }
+    addLine(`${nested}MOVE "N" TO ${fileOpenFlagName(file.name)}`);
+    addLine(`${indent}END-IF`);
+  }
+}
+
+/**
  * `SORT` or `MERGE`, through the sort-work file COBOL requires.
  *
  * `USING` and `GIVING` let the sort open, read, write, and close the files
@@ -5430,6 +5544,8 @@ let xmlHandlerIndexes = new Map<IRXmlParseStatement, number>();
  * has to test the one that file declared rather than any other.
  */
 let fileStatusNames = new Map<string, string>();
+/** One stable, collision-free open-state flag per declared file. */
+let fileOpenFlagNames = new Map<string, string>();
 /** Declared files by name, for resolving which `01` a statement writes. */
 let fileLayouts = new Map<string, IRFile>();
 
@@ -6537,6 +6653,10 @@ function emitFileStatement(
       // output file and a return code of zero, which looks exactly like a run
       // with nothing to do. The convention is to report it and stop.
       check("OPEN");
+      // The check jumps away on failure, so reaching this MOVE proves the
+      // runtime has a file that must either meet a source CLOSE or be cleaned
+      // up before BANK-MAIN returns.
+      addLine(`${indent}MOVE "Y" TO ${fileOpenFlagName(statement.fileName)}`);
       return;
     }
     case "close":
@@ -6545,6 +6665,7 @@ function emitFileStatement(
       // whose last buffer could not be written — which is the one that matters,
       // because the records the program thinks it wrote are the ones missing.
       check("CLOSE");
+      addLine(`${indent}MOVE "N" TO ${fileOpenFlagName(statement.fileName)}`);
       return;
     case "read":
       // A keyed read on an indexed file moves the key into the record key

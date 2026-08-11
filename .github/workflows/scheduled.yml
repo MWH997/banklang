@@ -17,6 +17,9 @@ permissions:
   contents: read
   issues: write
 
+env:
+  GNUCOBOL_VERSION: "3.2"
+
 jobs:
   mutation:
     name: mutation testing
@@ -43,9 +46,18 @@ jobs:
           - lane: backend
             script: test:mutation:backend
             report: dist/mutation-backend
-          - lane: runtime
+          - lane: runtime-core
             script: test:mutation:runtime
             report: dist/mutation-runtime
+          - lane: runtime-machine
+            script: test:mutation:runtime:machine
+            report: dist/mutation-runtime-machine
+          - lane: runtime-statements
+            script: test:mutation:runtime:statements
+            report: dist/mutation-runtime-statements
+          - lane: runtime-precompiler
+            script: test:mutation:precompiler
+            report: dist/mutation-precompiler
           - lane: tools
             script: test:mutation:tools
             report: dist/mutation-tools
@@ -80,7 +92,28 @@ jobs:
       - name: Run ${{ matrix.lane }}
         id: run
         continue-on-error: true
+        # Leave the job fifteen minutes to require/upload the report, open an
+        # accurate issue, and restore the failure if Stryker itself stalls.
+        timeout-minutes: 165
         run: pnpm ${{ matrix.script }}
+
+      # A command failure and an absent report are different evidence. Check
+      # the file explicitly so the floor step never turns "Stryker produced
+      # nothing" into the much narrower claim "a file scored too low".
+      - name: Require the mutation report
+        id: report
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          report="${{ matrix.report }}/mutation.json"
+          if test -f "$report"; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::error::The ${{ matrix.lane }} lane produced no JSON report at $report"
+            exit 1
+          fi
 
       # Stryker's `break` threshold is applied to the aggregate, and an
       # aggregate hides the file worth knowing about: the emitter lane scored
@@ -88,18 +121,17 @@ jobs:
       # `packages/cobol-ir/src/index.ts` inside it was at 44.12, with 81
       # surviving mutants. Two healthier files carried it.
       #
-      # `if: always()` because this has to run when the step above failed as
-      # well — a lane under its aggregate threshold is exactly when the
-      # per-file picture matters most. The outcome is folded into `run` below
-      # so either failure opens the issue.
+      # Run after a non-zero Stryker exit only when its report exists. Stryker
+      # can return non-zero because the aggregate is under its threshold and
+      # still leave valid evidence for the per-file check.
       - name: Hold every file to the mutation floor
         id: floor
-        if: always()
+        if: always() && steps.report.outputs.present == 'true'
         continue-on-error: true
         run: pnpm tsx tools/mutation-floor.ts ${{ matrix.report }}/mutation.json
 
       - name: Upload the HTML report
-        if: always()
+        if: always() && steps.report.outputs.present == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: mutation-${{ matrix.lane }}
@@ -108,13 +140,19 @@ jobs:
 
       # A silent drop is the failure mode worth preventing: these runs exist to
       # be read, and nobody reads a workflow that goes green whatever happens.
-      - name: Open an issue when the score falls below its threshold
-        if: steps.run.outcome == 'failure' || steps.floor.outcome == 'failure'
+      - name: Open an issue when mutation validation fails
+        if: always() && (steps.run.outcome == 'failure' || steps.report.outcome == 'failure' || steps.floor.outcome == 'failure')
         uses: actions/github-script@v9
+        env:
+          MUTATION_LANE: ${{ matrix.lane }}
+          RUN_OUTCOME: ${{ steps.run.outcome }}
+          REPORT_PRESENT: ${{ steps.report.outputs.present }}
+          FLOOR_OUTCOME: ${{ steps.floor.outcome }}
         with:
           script: |
-            const lane = "${{ matrix.lane }}";
-            const title = `Mutation score below threshold: ${lane}`;
+            const lane = process.env.MUTATION_LANE;
+            const title = `Mutation validation failed: ${lane}`;
+            const legacyTitle = `Mutation score below threshold: ${lane}`;
             const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -122,15 +160,45 @@ jobs:
               state: "open",
               labels: "mutation",
             });
-            const open = existing.data.find((issue) => issue.title === title);
+            const open = existing.data.find(
+              (issue) => issue.title === title || issue.title === legacyTitle,
+            );
+            const failures = [];
+            if (process.env.RUN_OUTCOME === "failure") {
+              failures.push(
+                "- **Run failure:** the Stryker command returned non-zero. Inspect its log to distinguish an aggregate-threshold result from a runner or configuration error.",
+              );
+            }
+            if (process.env.REPORT_PRESENT !== "true") {
+              failures.push(
+                "- **Missing report:** the lane produced no mutation JSON, so the per-file floor could not run and no report artifact was uploaded.",
+              );
+            }
+            if (process.env.FLOOR_OUTCOME === "failure") {
+              failures.push(
+                "- **Per-file floor failure:** the floor command returned non-zero after finding the JSON report. Its log identifies a low-scoring file or an unreadable report.",
+              );
+            }
             const body = [
-              `The \`${lane}\` mutation lane finished under the \`break\` threshold in its Stryker config.`,
+              `The \`${lane}\` mutation lane failed validation:`,
+              "",
+              ...failures,
               "",
               `Run: ${url}`,
               "",
-              "The HTML report is attached to that run as an artifact. A surviving mutant is a change to the code that no test noticed, so read the survivors before adjusting the threshold.",
+              process.env.REPORT_PRESENT === "true"
+                ? "The HTML and JSON reports are attached to that run as an artifact. Read the survivors before adjusting a threshold."
+                : "Use the run log to repair report generation before drawing a conclusion about mutation score.",
             ].join("\n");
             if (open) {
+              if (open.title !== title) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: open.number,
+                  title,
+                });
+              }
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -146,6 +214,12 @@ jobs:
                 labels: ["mutation"],
               });
             }
+
+      # The earlier steps continue only so evidence can be uploaded and the
+      # issue can be written. Restore their failure as the job's conclusion.
+      - name: Fail an unsuccessful mutation lane
+        if: always() && (steps.run.outcome == 'failure' || steps.report.outcome == 'failure' || steps.floor.outcome == 'failure')
+        run: exit 1
 
   # Horizontal validation: this compiler against COBOL nobody wrote for it.
   #
@@ -173,6 +247,11 @@ jobs:
         with:
           node-version: "24"
           cache: "pnpm"
+
+      - name: Set up pinned GnuCOBOL
+        uses: ./.github/actions/setup-gnucobol
+        with:
+          version: ${{ env.GNUCOBOL_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

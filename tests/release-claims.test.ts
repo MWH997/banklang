@@ -1,9 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildSnapshot,
+  compareReleaseSnapshotEvidence,
+  releaseSnapshotLifecycle,
+  releaseSnapshotMetadataError,
   snapshotPath,
   type ReleaseSnapshot,
 } from "../tools/release-snapshot";
@@ -19,9 +22,10 @@ import {
  * it is a measurement that moved after the sentence quoting it was written, and
  * nobody re-reads a sentence.
  *
- * So every published figure is compared against `evidence/release/<version>.json`,
- * and that file is compared against the evidence it came from by
- * `pnpm release:snapshot --check`. Two links, both mechanical.
+ * Historical release prose is always compared against
+ * `evidence/release/<version>.json`. Current surfaces and current evidence are
+ * compared with it only while cutting a release. Once new work is filed under
+ * Unreleased, the snapshot stays frozen while those current surfaces move.
  */
 
 const ROOT = JSON.parse(readFileSync("package.json", "utf8")) as {
@@ -29,6 +33,93 @@ const ROOT = JSON.parse(readFileSync("package.json", "utf8")) as {
 };
 
 const SNAPSHOT_FILE = snapshotPath(ROOT.version);
+const CHANGELOG = readFileSync("CHANGELOG.md", "utf8");
+const SNAPSHOT_LIFECYCLE = releaseSnapshotLifecycle(CHANGELOG);
+const RELEASE_CUT = SNAPSHOT_LIFECYCLE === "release-cut";
+
+describe("the release-snapshot lifecycle", () => {
+  const snapshot = JSON.parse(
+    readFileSync(SNAPSHOT_FILE, "utf8"),
+  ) as ReleaseSnapshot;
+
+  it("distinguishes ordinary development from an empty release-cut section", () => {
+    expect(
+      releaseSnapshotLifecycle(
+        "## [Unreleased]\n\n### Added\n\n- Work.\n\n## [0.10.0] — 2026-08-09\n",
+      ),
+    ).toBe("development");
+    expect(
+      releaseSnapshotLifecycle(
+        "## [Unreleased]\n\n## [0.11.0] — 2026-08-11\n\n- Work.\n",
+      ),
+    ).toBe("release-cut");
+    expect(() =>
+      releaseSnapshotLifecycle("## [0.10.0] — 2026-08-09\n"),
+    ).toThrow("CHANGELOG.md has no `## [Unreleased]` section.");
+  });
+
+  it("does not derive current evidence during ordinary development", () => {
+    const fresh = vi.fn(() => snapshot);
+    const result = compareReleaseSnapshotEvidence(
+      "## [Unreleased]\n\n- Next release work.\n\n## [0.10.0] — 2026-08-09\n",
+      snapshot,
+      fresh,
+    );
+    expect(result).toBe("deferred");
+    expect(fresh).not.toHaveBeenCalled();
+  });
+
+  it("still validates frozen release identity during development", () => {
+    const changelog =
+      "## [Unreleased]\n\n- Next release work.\n\n## [0.10.0] — 2026-08-09\n";
+    expect(releaseSnapshotMetadataError(snapshot, "0.10.0", changelog)).toBe(
+      null,
+    );
+    expect(
+      releaseSnapshotMetadataError(
+        { ...snapshot, schema: 2 },
+        "0.10.0",
+        changelog,
+      ),
+    ).toContain("schema 2");
+    expect(
+      releaseSnapshotMetadataError(
+        { ...snapshot, banklangVersion: "0.9.0" },
+        "0.10.0",
+        changelog,
+      ),
+    ).toContain("BankLang 0.9.0");
+    expect(
+      releaseSnapshotMetadataError(
+        { ...snapshot, released: "2026-08-08" },
+        "0.10.0",
+        changelog,
+      ),
+    ).toContain("release date 2026-08-08");
+  });
+
+  it("compares at a release cut and reports drift", () => {
+    const drifted = {
+      ...snapshot,
+      xcobol: { ...snapshot.xcobol, discovered: -1 },
+    };
+    const fresh = vi.fn(() => drifted);
+    const result = compareReleaseSnapshotEvidence(
+      "## [Unreleased]\n\n## [0.11.0] — 2026-08-11\n",
+      snapshot,
+      fresh,
+    );
+    expect(result).toBe("drift");
+    expect(fresh).toHaveBeenCalledOnce();
+    expect(
+      compareReleaseSnapshotEvidence(
+        "## [Unreleased]\n\n## [0.11.0] — 2026-08-11\n",
+        snapshot,
+        () => snapshot,
+      ),
+    ).toBe("match");
+  });
+});
 
 describe("the release snapshot", () => {
   it("exists for the version the manifests name", () => {
@@ -42,20 +133,14 @@ describe("the release snapshot", () => {
     readFileSync(SNAPSHOT_FILE, "utf8"),
   ) as ReleaseSnapshot;
 
-  /**
-   * The snapshot against the evidence, which is what `--check` does.
-   *
-   * Repeated here so a stale snapshot fails `pnpm test` rather than waiting for
-   * somebody to run the release tool. The test count is carried across rather
-   * than recomputed: this assertion is running inside the suite it would have
-   * to count.
-   */
-  it("still agrees with the evidence it was taken from", () => {
-    const fresh = buildSnapshot(process.cwd(), {
-      files: snapshot.tests.files,
-      tests: snapshot.tests.tests,
-    });
-    expect(fresh).toEqual(snapshot);
+  it("is frozen in development and agrees with evidence at a release cut", () => {
+    const comparison = compareReleaseSnapshotEvidence(CHANGELOG, snapshot, () =>
+      buildSnapshot(process.cwd(), {
+        files: snapshot.tests.files,
+        tests: snapshot.tests.tests,
+      }),
+    );
+    expect(comparison).toBe(RELEASE_CUT ? "match" : "deferred");
   });
 
   it("names the version the manifests name", () => {

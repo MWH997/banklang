@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 75,
-      "targetEndLine": 77,
+      "targetStartLine": 76,
+      "targetEndLine": 78,
       "category": "record",
       "symbol": "CmParty"
     },
@@ -47,8 +47,8 @@
         "column": 24
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 76,
-      "targetEndLine": 76,
+      "targetStartLine": 77,
+      "targetEndLine": 77,
       "category": "field",
       "symbol": "cmPerson"
     },
@@ -63,8 +63,8 @@
         "column": 15
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 77,
-      "targetEndLine": 77,
+      "targetStartLine": 78,
+      "targetEndLine": 78,
       "category": "field",
       "symbol": "reserved#2"
     },
@@ -79,8 +79,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 78,
-      "targetEndLine": 80,
+      "targetStartLine": 79,
+      "targetEndLine": 81,
       "category": "record",
       "symbol": "CmCompany"
     },
@@ -95,8 +95,8 @@
         "column": 23
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 79,
-      "targetEndLine": 79,
+      "targetStartLine": 80,
+      "targetEndLine": 80,
       "category": "field",
       "symbol": "cmRegNo"
     },
@@ -111,8 +111,8 @@
         "column": 29
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 80,
-      "targetEndLine": 80,
+      "targetStartLine": 81,
+      "targetEndLine": 81,
       "category": "field",
       "symbol": "cmTradingName"
     },
@@ -127,8 +127,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 81,
-      "targetEndLine": 84,
+      "targetStartLine": 82,
+      "targetEndLine": 85,
       "category": "record",
       "symbol": "CmAddresses"
     },
@@ -143,8 +143,8 @@
         "column": 27
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 82,
-      "targetEndLine": 82,
+      "targetStartLine": 83,
+      "targetEndLine": 83,
       "category": "field",
       "symbol": "cmAddrLine1"
     },
@@ -159,8 +159,8 @@
         "column": 27
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 83,
-      "targetEndLine": 83,
+      "targetStartLine": 84,
+      "targetEndLine": 84,
       "category": "field",
       "symbol": "cmAddrLine2"
     },
@@ -175,8 +175,8 @@
         "column": 29
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 84,
-      "targetEndLine": 84,
+      "targetStartLine": 85,
+      "targetEndLine": 85,
       "category": "field",
       "symbol": "cmAddrPostcode"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 85,
-      "targetEndLine": 103,
+      "targetStartLine": 86,
+      "targetEndLine": 104,
       "category": "record",
       "symbol": "CustomerRecord"
     },
@@ -207,8 +207,8 @@
         "column": 24
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 86,
-      "targetEndLine": 86,
+      "targetStartLine": 87,
+      "targetEndLine": 87,
       "category": "field",
       "symbol": "cmCustNo"
     },
@@ -223,8 +223,8 @@
         "column": 22
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 87,
+      "targetStartLine": 88,
+      "targetEndLine": 88,
       "category": "field",
       "symbol": "cmName"
     },
@@ -239,8 +239,8 @@
         "column": 21
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 88,
-      "targetEndLine": 88,
+      "targetStartLine": 89,
+      "targetEndLine": 89,
       "category": "field",
       "symbol": "cmKind"
     },
@@ -255,8 +255,8 @@
         "column": 20
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 89,
-      "targetEndLine": 91,
+      "targetStartLine": 90,
+      "targetEndLine": 92,
       "category": "field",
       "symbol": "cmParty"
     },
@@ -271,8 +271,8 @@
         "column": 42
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 92,
-      "targetEndLine": 94,
+      "targetStartLine": 93,
+      "targetEndLine": 95,
       "category": "field",
       "symbol": "cmCompany"
     },
@@ -287,8 +287,8 @@
         "column": 28
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 95,
-      "targetEndLine": 95,
+      "targetStartLine": 96,
+      "targetEndLine": 96,
       "category": "field",
       "symbol": "cmOpened"
     },
@@ -303,8 +303,8 @@
         "column": 29
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 96,
-      "targetEndLine": 96,
+      "targetStartLine": 97,
+      "targetEndLine": 97,
       "category": "field",
       "symbol": "cmBalance"
     },
@@ -319,8 +319,8 @@
         "column": 31
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 97,
-      "targetEndLine": 97,
+      "targetStartLine": 98,
+      "targetEndLine": 98,
       "category": "field",
       "symbol": "cmAddrCount"
     },
@@ -335,8 +335,8 @@
         "column": 56
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 98,
-      "targetEndLine": 103,
+      "targetStartLine": 99,
+      "targetEndLine": 104,
       "category": "field",
       "symbol": "cmAddresses"
     },
@@ -351,8 +351,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 104,
-      "targetEndLine": 109,
+      "targetStartLine": 105,
+      "targetEndLine": 110,
       "category": "record",
       "symbol": "ReadTotals"
     },
@@ -367,8 +367,8 @@
         "column": 33
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 105,
-      "targetEndLine": 105,
+      "targetStartLine": 106,
+      "targetEndLine": 106,
       "category": "field",
       "symbol": "customersRead"
     },
@@ -383,8 +383,8 @@
         "column": 28
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 106,
-      "targetEndLine": 106,
+      "targetStartLine": 107,
+      "targetEndLine": 107,
       "category": "field",
       "symbol": "personal"
     },
@@ -399,8 +399,8 @@
         "column": 29
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 107,
-      "targetEndLine": 107,
+      "targetStartLine": 108,
+      "targetEndLine": 108,
       "category": "field",
       "symbol": "corporate"
     },
@@ -415,8 +415,8 @@
         "column": 32
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 108,
-      "targetEndLine": 108,
+      "targetStartLine": 109,
+      "targetEndLine": 109,
       "category": "field",
       "symbol": "addressLines"
     },
@@ -431,8 +431,8 @@
         "column": 30
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 109,
-      "targetEndLine": 109,
+      "targetStartLine": 110,
+      "targetEndLine": 110,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -447,8 +447,8 @@
         "column": 2
       },
       "artifact": "cobol/CUSTREAD.cbl",
-      "targetStartLine": 132,
-      "targetEndLine": 294,
+      "targetStartLine": 145,
+      "targetEndLine": 309,
       "category": "transaction",
       "symbol": "readCustomers"
     }

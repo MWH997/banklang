@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "The COBOL precompiler, split from the interpreter so the two mutation targets run in parallel and each remains inside the scheduled job's three-hour bound.",
+  "packageManager": "pnpm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation-broad.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": ["packages/precompiler/src/**/*.ts"],
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
+  },
+  "htmlReporter": {
+    "fileName": "dist/mutation-precompiler/index.html"
+  },
+  "jsonReporter": {
+    "fileName": "dist/mutation-precompiler/mutation.json"
+  },
+  "timeoutMS": 120000,
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "Regex"]
+  },
+  "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
+  "ignoreStatic": true,
+  "concurrency": 8,
+  "incremental": false,
+  "_incremental_comment": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and these lanes exist to measure whether the tests are worth anything, so a test-only change must re-measure. CI uses a fresh runner and has no cache to reuse.",
+  "tempDirName": ".stryker-tmp-precompiler"
+}

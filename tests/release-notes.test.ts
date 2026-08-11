@@ -104,29 +104,26 @@ describe("the notes a release is published with", () => {
   });
 
   /**
-   * This repository, today: the version in package.json is releasable.
-   *
-   * This assertion used to be its own inverse. It read
-   * "stops this repository from tagging v0.9.0 as it stands" and required
-   * `notesFor` to *throw*, because `## [Unreleased]` above `## [0.9.0]` was
-   * full and tagging then would have published notes omitting everything
-   * written since. That was a true statement about a Tuesday rather than a
-   * property of the repository, and it failed the moment the changelog was cut
-   * — which is the one moment it should have stayed green.
-   *
-   * The durable property is the one `release.yml` actually depends on: whatever
-   * version the manifests name must have a section a release can be published
-   * from. It fails if somebody bumps the version and forgets the changelog, or
-   * cuts a section and leaves entries stranded under Unreleased, which are the
-   * two ways this goes wrong.
+   * The manifest names the last release during ordinary development and the
+   * release being cut only in the release commit. In the first state newer
+   * work belongs under Unreleased and publishing the old notes must be refused;
+   * in the second state those entries have been folded into the new section
+   * and its body must be substantial enough to publish.
    */
-  it("can publish notes for the version the manifests name", () => {
+  it("keeps the manifest version in one of the two valid release states", () => {
     const version = (
       JSON.parse(readFileSync("package.json", "utf8")) as { version: string }
     ).version;
-    const notes = notesFor(version);
-    expect(notes.length).toBeGreaterThan(200);
-    // The lede, not just a bare heading with bullets under it.
-    expect(notes).not.toMatch(/^#/);
+    try {
+      const notes = notesFor(version);
+      expect(notes.length).toBeGreaterThan(200);
+      // The lede, not just a bare heading with bullets under it.
+      expect(notes).not.toMatch(/^#/);
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(
+        `CHANGELOG.md still has entries under Unreleased. Releasing ${version} now publishes notes that leave every one of them out — fold them into ${version}, or release the next version instead.`,
+      );
+    }
   });
 });

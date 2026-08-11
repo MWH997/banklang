@@ -16,6 +16,20 @@ earlier was tagged or released.
 
 ## [Unreleased]
 
+### Added
+
+- Follow nested `COPY` references in `bankc analyse`, reporting missing and
+  ambiguous members, `REPLACING` metadata and dependency cycles as deterministic
+  Mermaid and JSON — [migration analysis](docs/migration-analysis.md).
+
+### Fixed
+
+- Repair scheduled validation: pin GnuCOBOL for horizontal execution, exclude
+  repository-only mutation tests, split runtime mutation, and report missing
+  evidence accurately.
+- Correct stale public claims about migration analysis, sensitive values in job
+  logs, strict TypeScript/lint settings, and relative-file representability.
+
 ## [0.10.0] — 2026-08-09
 
 The release that measures this compiler against COBOL nobody wrote for it.
@@ -457,5 +471,5 @@ the checking added for them is the larger half of this release.
   than `CM-ADDR-LINE1`.
 - Give a PARM field for an `unsigned` type no separate sign.
 
-[unreleased]: https://github.com/MWH997/banklang/compare/v0.9.0...HEAD
-[0.9.0]: https://github.com/MWH997/banklang/releases/tag/v0.9.0
+[unreleased]: https://github.com/MWH997/banklang/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/MWH997/banklang/releases/tag/v0.10.0

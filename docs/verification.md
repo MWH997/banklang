@@ -43,10 +43,12 @@ written in three places and read in none, two unreachable functions in the
 emitter, and a call passing the working directory into a parameter named
 `commandName`. See the 2026-08-06 audit, §8.
 
-`no-unnecessary-condition` is deliberately off, and `eslint.config.js` carries
-the reason at length: without `noUncheckedIndexedAccess` it reports correct
-guards as dead, so acting on it would delete the checks that make index access
-safe. Turning both on is ticketed as R7.
+`noUncheckedIndexedAccess` and `no-unnecessary-condition` are both on. The
+compiler option makes an indexed read `T | undefined`, so the ESLint rule can
+distinguish a guard that makes index access safe from one that is genuinely
+dead. Enabling the compiler option first exposed 366 places whose types had
+previously promised an element was present; correcting those was the
+prerequisite for enabling the lint rule safely.
 
 ## 2. Test categories
 

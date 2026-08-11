@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -43,6 +43,9 @@ const STRYKER = [
   "stryker.lint.config.json",
   "stryker.backend.config.json",
   "stryker.runtime.config.json",
+  "stryker.runtime-machine.config.json",
+  "stryker.runtime-statements.config.json",
+  "stryker.precompiler.config.json",
   "stryker.tools.config.json",
   "stryker.safety.config.json",
 ] as const;
@@ -62,6 +65,8 @@ function namedTests(config: string): string[] {
     (match) => match[1]!,
   );
 }
+
+const source = (file: string): string => readFileSync(file, "utf8");
 
 describe("every mutation lane", () => {
   for (const config of LANES) {
@@ -95,6 +100,44 @@ describe("every mutation lane", () => {
       "tests/cobol-ir-names.test.ts",
     );
   });
+
+  it("shares repository-hygiene exclusions between blocklist lanes", () => {
+    for (const config of [
+      "vitest.mutation.config.ts",
+      "vitest.mutation-broad.config.ts",
+    ]) {
+      expect(source(config)).toContain("MUTATION_REPOSITORY_HYGIENE_TESTS");
+      expect(source(config)).toContain("MUTATION_SANDBOX_INCOMPATIBLE_TESTS");
+    }
+
+    const shared = namedTests("vitest.mutation-excludes.ts");
+    expect(shared).toContain("tests/workflows.test.ts");
+    expect(shared.filter((path) => !existsSync(path))).toEqual([]);
+    expect(
+      shared.filter((path, index) => shared.indexOf(path) !== index),
+    ).toEqual([]);
+
+    const exclusions = source("vitest.mutation-excludes.ts");
+    const common =
+      /MUTATION_REPOSITORY_HYGIENE_TESTS = \[([\s\S]*?)\] as const/.exec(
+        exclusions,
+      )?.[1] ?? "";
+    for (const compilerSuite of [
+      "tests/docs-site.test.ts",
+      "tests/site.test.ts",
+      "tests/site-layout.test.ts",
+      "tests/accessibility.test.ts",
+      "tests/language-server-session.test.ts",
+    ]) {
+      expect(common).not.toContain(compilerSuite);
+    }
+    expect(source("vitest.mutation-broad.config.ts")).toContain(
+      "MUTATION_BROAD_ONLY_TESTS",
+    );
+    expect(source("vitest.mutation.config.ts")).not.toContain(
+      "MUTATION_BROAD_ONLY_TESTS",
+    );
+  });
 });
 
 /**
@@ -122,4 +165,48 @@ describe("every Stryker config", () => {
       expect(existsSync(lane.vitest?.configFile ?? "")).toBe(true);
     });
   }
+
+  it("splits the interpreter and precompiler into bounded lanes", () => {
+    const runtime = JSON.parse(source("stryker.runtime.config.json")) as {
+      mutate: string[];
+      jsonReporter: { fileName: string };
+      tempDirName?: string;
+    };
+    const machine = JSON.parse(
+      source("stryker.runtime-machine.config.json"),
+    ) as typeof runtime;
+    const statements = JSON.parse(
+      source("stryker.runtime-statements.config.json"),
+    ) as typeof runtime;
+    const precompiler = JSON.parse(
+      source("stryker.precompiler.config.json"),
+    ) as typeof runtime;
+
+    expect(machine.mutate).toEqual(["packages/cobol-runtime/src/machine.ts"]);
+    expect(statements.mutate).toEqual([
+      "packages/cobol-runtime/src/statements.ts",
+    ]);
+    expect(precompiler.mutate).toEqual(["packages/precompiler/src/**/*.ts"]);
+    const reports = [runtime, machine, statements, precompiler].map(
+      (config) => config.jsonReporter.fileName,
+    );
+    expect(new Set(reports).size).toBe(reports.length);
+    const tempDirectories = [runtime, machine, statements, precompiler].map(
+      (config) => config.tempDirName,
+    );
+    expect(tempDirectories.every(Boolean)).toBe(true);
+    expect(new Set(tempDirectories).size).toBe(tempDirectories.length);
+    const runtimeTargets = [
+      ...runtime.mutate,
+      ...machine.mutate,
+      ...statements.mutate,
+    ];
+    expect(new Set(runtimeTargets).size).toBe(runtimeTargets.length);
+    expect(runtimeTargets.sort()).toEqual(
+      readdirSync("packages/cobol-runtime/src")
+        .filter((file) => file.endsWith(".ts"))
+        .map((file) => `packages/cobol-runtime/src/${file}`)
+        .sort(),
+    );
+  });
 });

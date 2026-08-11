@@ -497,7 +497,7 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     id: "BANK-AUD-002",
     title: "Restricted data reaches a log",
     explanation:
-      "A value marked `sensitive` reaches an audit event or a ledger posting. Both are durable records that outlive the transaction and are read by people with no business seeing a card number or a national identifier.",
+      "A value marked `sensitive` reaches an audit event, a ledger posting, or the job log. All three outlive the transaction or program invocation and are read by people with no business seeing a card number or a national identifier.",
     remediation:
       "Pass an idempotency key or another unrestricted identifier, or derive a masked value through a function first.",
     specReference: "language/transactions.md",

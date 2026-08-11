@@ -104,7 +104,8 @@ Deliverables:
 - SQL extractor — **done**
 - CICS extractor — **done**
 - paragraph graph — **done**, as Mermaid
-- copybook dependency graph — copybooks are named, not followed
+- copybook dependency graph — **done**, nested `COPY` references, missing and
+  ambiguous members, `REPLACING` metadata and cycles as Mermaid and JSON
 - skeleton migration output — not started, and the least certain of the six: a
   skeleton that is wrong in a way a reader trusts is worse than none
 

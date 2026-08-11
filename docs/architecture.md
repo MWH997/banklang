@@ -227,9 +227,10 @@ tested by the target's own framework rather than only by this repository.
 
 ### `packages/migration-analysis`
 
-Reads COBOL you already have: paragraph graph, file use, SQL use, CICS use,
-an inventory, and which of COBOL's constructs each member contains. It states
-its own limits rather than guessing; see
+Reads COBOL you already have: paragraph and copybook dependency graphs, file
+use, SQL use, CICS use, an inventory, and which of COBOL's constructs each
+member contains. It follows copybook names without expanding their contents and
+states its own limits rather than guessing; see
 [migration analysis](migration-analysis.md).
 
 ### `packages/horizontal-validation`

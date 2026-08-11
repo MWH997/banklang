@@ -10,6 +10,13 @@
  * quoting it was written, which nobody re-reads. So the numbers get one home,
  * and `tests/release-claims.test.ts` holds the prose to it.
  *
+ * The snapshot belongs to the release commit, not to every later commit whose
+ * manifest still names that release. During ordinary development the version
+ * deliberately stays put and new work accumulates under `Unreleased`; current
+ * horizontal evidence may then move without rewriting the released snapshot.
+ * Once `Unreleased` is empty for a release cut, `--check` derives the snapshot
+ * again and drift is a failure.
+ *
  * **Everything here is derived from committed evidence**, not probed from this
  * machine. The corpus figures come out of `evidence/horizontal/<corpus>/summary.json`,
  * the environment each was measured in comes out of the `environment.json`
@@ -84,8 +91,7 @@ function json<T>(path: string): T {
 }
 
 /** The date the changelog gives this version, so nothing here reads a clock. */
-function releaseDate(version: string, cwd: string): string {
-  const changelog = readFileSync(join(cwd, "CHANGELOG.md"), "utf8");
+function releaseDateFromChangelog(version: string, changelog: string): string {
   const found = new RegExp(
     `^## \\[${version.replace(/\./g, "\\.")}\\] — (\\d{4}-\\d{2}-\\d{2})$`,
     "m",
@@ -96,6 +102,13 @@ function releaseDate(version: string, cwd: string): string {
     );
   }
   return found;
+}
+
+function releaseDate(version: string, cwd: string): string {
+  return releaseDateFromChangelog(
+    version,
+    readFileSync(join(cwd, "CHANGELOG.md"), "utf8"),
+  );
 }
 
 /** The commit a corpus was last measured at, from the evidence beside it. */
@@ -267,11 +280,96 @@ function render(snapshot: ReleaseSnapshot): string {
   return `${JSON.stringify(snapshot, null, 2)}\n`;
 }
 
+/** Where the current changelog is in the release-snapshot lifecycle. */
+export type ReleaseSnapshotLifecycle = "development" | "release-cut";
+
+/**
+ * A non-empty Unreleased section means the manifest still names the last
+ * release while the repository is already building the next one.
+ *
+ * The section itself is mandatory even on a release commit: cutting a release
+ * empties it and adds the new dated section underneath. Treating a missing
+ * heading as a release cut would make a malformed changelog the one state that
+ * permits a frozen snapshot to be overwritten.
+ */
+export function releaseSnapshotLifecycle(
+  changelog: string,
+): ReleaseSnapshotLifecycle {
+  const headings = [...changelog.matchAll(/^## +(.+)$/gm)];
+  const index = headings.findIndex(
+    (heading) => (heading[1] ?? "").trim().toLowerCase() === "[unreleased]",
+  );
+  if (index === -1) {
+    throw new Error("CHANGELOG.md has no `## [Unreleased]` section.");
+  }
+  const heading = headings[index];
+  const next = headings[index + 1];
+  const start = (heading?.index ?? 0) + (heading?.[0].length ?? 0);
+  const body = changelog.slice(start, next?.index ?? changelog.length).trim();
+  return body === "" ? "release-cut" : "development";
+}
+
+/** Stable release identity that remains checkable while evidence moves. */
+export function releaseSnapshotMetadataError(
+  snapshot: Pick<ReleaseSnapshot, "banklangVersion" | "released"> & {
+    schema: number;
+  },
+  version: string,
+  changelog: string,
+): string | null {
+  if (snapshot.schema !== 1) {
+    return `records schema ${String(snapshot.schema)}, not 1`;
+  }
+  if (snapshot.banklangVersion !== version) {
+    return `records BankLang ${snapshot.banklangVersion}, not ${version}`;
+  }
+  let released: string;
+  try {
+    released = releaseDateFromChangelog(version, changelog);
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+  if (snapshot.released !== released) {
+    return `records release date ${snapshot.released}, not ${released}`;
+  }
+  return null;
+}
+
+export type ReleaseSnapshotEvidenceCheck = "deferred" | "match" | "drift";
+
+/**
+ * Compare a snapshot only when the changelog says this is a release cut.
+ *
+ * `fresh` is a callback so ordinary development does not even derive current
+ * release evidence. That distinction prevents an accidental comparison from
+ * turning a historical snapshot into a moving mirror of `evidence/horizontal`.
+ */
+export function compareReleaseSnapshotEvidence(
+  changelog: string,
+  onDisk: ReleaseSnapshot,
+  fresh: () => ReleaseSnapshot,
+): ReleaseSnapshotEvidenceCheck {
+  if (releaseSnapshotLifecycle(changelog) === "development") {
+    return "deferred";
+  }
+  return render(fresh()) === render(onDisk) ? "match" : "drift";
+}
+
 function main(argv: string[]): number {
   const cwd = process.cwd();
   const check = argv.includes("--check");
   const version = json<{ version: string }>(join(cwd, "package.json")).version;
   const path = join(cwd, snapshotPath(version));
+  const changelog = readFileSync(join(cwd, "CHANGELOG.md"), "utf8");
+  let lifecycle: ReleaseSnapshotLifecycle;
+  try {
+    lifecycle = releaseSnapshotLifecycle(changelog);
+  } catch (error) {
+    process.stderr.write(
+      `${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    return 1;
+  }
 
   if (check) {
     if (!existsSync(path)) {
@@ -281,14 +379,31 @@ function main(argv: string[]): number {
       return 1;
     }
     const onDisk = json<ReleaseSnapshot>(path);
+    const metadataError = releaseSnapshotMetadataError(
+      onDisk,
+      version,
+      changelog,
+    );
+    if (metadataError !== null) {
+      process.stderr.write(`${snapshotPath(version)} ${metadataError}.\n`);
+      return 1;
+    }
     // The recorded test count is carried through rather than recomputed: this
     // mode does not run the suite, and comparing against a zero it never
     // measured would fail for the wrong reason.
-    const fresh = buildSnapshot(cwd, {
-      files: onDisk.tests.files,
-      tests: onDisk.tests.tests,
-    });
-    if (render(fresh) !== render(onDisk)) {
+    const evidence = compareReleaseSnapshotEvidence(changelog, onDisk, () =>
+      buildSnapshot(cwd, {
+        files: onDisk.tests.files,
+        tests: onDisk.tests.tests,
+      }),
+    );
+    if (evidence === "deferred") {
+      process.stdout.write(
+        `${snapshotPath(version)} is frozen for ${version}. CHANGELOG.md has Unreleased entries, so current evidence belongs to the next release and was not compared.\n`,
+      );
+      return 0;
+    }
+    if (evidence === "drift") {
       process.stderr.write(
         `${snapshotPath(version)} disagrees with the evidence in ${EVIDENCE}/.\nRun \`pnpm release:snapshot\` and review the difference.\n`,
       );
@@ -298,6 +413,13 @@ function main(argv: string[]): number {
       `${snapshotPath(version)} matches the evidence it was taken from.\n`,
     );
     return 0;
+  }
+
+  if (lifecycle === "development") {
+    process.stderr.write(
+      `Refusing to overwrite frozen ${snapshotPath(version)} while CHANGELOG.md has Unreleased entries. Cut the next version before taking its snapshot.\n`,
+    );
+    return 1;
   }
 
   process.stdout.write("Counting tests…\n");

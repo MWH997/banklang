@@ -1,6 +1,11 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 
 import base from "./vitest.config";
+import {
+  MUTATION_NATIVE_COBOL_TESTS,
+  MUTATION_REPOSITORY_HYGIENE_TESTS,
+  MUTATION_SANDBOX_INCOMPATIBLE_TESTS,
+} from "./vitest.mutation-excludes";
 
 /**
  * The suite Stryker runs against, which is not the whole suite.
@@ -25,25 +30,12 @@ export default mergeConfig(
   defineConfig({
     test: {
       exclude: [
-        "**/node_modules/**",
-        "dist/**",
-        ".stryker-tmp/**",
-        "evidence/**",
-        "conversions/**",
-        "examples/**",
-        "tests/fixtures/**",
-        "tests/inputs/**",
-        "tests/conversions.test.ts",
-        "tests/documentation.test.ts",
+        ...MUTATION_REPOSITORY_HYGIENE_TESTS,
+        ...MUTATION_NATIVE_COBOL_TESTS,
+        ...MUTATION_SANDBOX_INCOMPATIBLE_TESTS,
+        // This reads registries and generated evidence. The broad tools lane
+        // keeps it because it directly exercises several of those registries.
         "tests/feature-coverage.test.ts",
-        "tests/browser-safety.test.ts",
-        "tests/editor-surfaces.test.ts",
-        "tests/cobol-compiles.test.ts",
-        "tests/conformance.test.ts",
-        "tests/gnucobol-validation.test.ts",
-        "tests/rounding-oracle.test.ts",
-        "tests/generated-programs.test.ts",
-        "tests/determinism.test.ts",
       ],
     },
   }),

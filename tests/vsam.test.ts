@@ -195,6 +195,9 @@ describe("the whole master file update", () => {
     const cobol = result.cobol ?? "";
     expect(cobol.indexOf("OPEN I-O")).toBeLessThan(cobol.indexOf("READ "));
     expect(cobol.indexOf("READ ")).toBeLessThan(cobol.indexOf("REWRITE "));
-    expect(cobol.indexOf("REWRITE ")).toBeLessThan(cobol.indexOf("CLOSE "));
+    // BANK-MAIN now has a guarded cleanup CLOSE before the transaction
+    // paragraphs. The source CLOSE remains the final one and is the ordering
+    // this assertion is about.
+    expect(cobol.indexOf("REWRITE ")).toBeLessThan(cobol.lastIndexOf("CLOSE "));
   });
 });

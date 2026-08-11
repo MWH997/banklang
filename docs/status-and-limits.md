@@ -24,11 +24,12 @@ production mainframe toolchain.
   Nothing there has been run either, and the README says so.
 - **Not production-ready.** It has never run against a real ledger, and no
   institution's money has moved through it.
-- **The full mutation suite was not run for this release.** Seven lanes exist;
-  the targeted safety lane is the one 0.10.0 ran, at 90.03% total and 92.67% of
-  covered code, with every surviving mutant in it classified individually in
-  [verification](verification.md). The other six lanes are a measurement this
-  release does not have.
+- **The full mutation suite was not run for this release.** The current
+  scheduled matrix has ten lanes; the targeted safety lane is the one 0.10.0
+  ran, at 90.03% total and 92.67% of covered code, with every surviving mutant
+  in it classified individually in [verification](verification.md). The other
+  nine lanes are scheduled current-development measurements, not
+  release-0.10.0 claims.
 
 ## Runtime validation
 

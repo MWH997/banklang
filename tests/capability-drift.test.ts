@@ -175,11 +175,12 @@ describe("the validator against the compiler", () => {
     ).toEqual([]);
   });
 
-  it("keeps the two rules the previous phases got wrong", () => {
-    // Named explicitly, because both were corrected in the direction of
+  it("keeps the rules previous phases got wrong", () => {
+    // Named explicitly, because each was corrected in the direction of
     // whatever the last person assumed, and a regression would be silent.
     expect(supportFor("inspect")?.support).toBe("adaptation");
     expect(supportFor("file-line-sequential")?.support).toBe("supported");
+    expect(supportFor("file-relative")?.support).toBe("adaptation");
   });
 });
 

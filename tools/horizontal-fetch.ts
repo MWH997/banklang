@@ -28,6 +28,7 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  renameSync,
   readFileSync,
   rmSync,
   statSync,
@@ -234,6 +235,45 @@ function copyInto(from: string, to: string): void {
   writeFileSync(to, readFileSync(from));
 }
 
+/**
+ * Decode the `#Uhhhh` filename escapes used by some ZIP producers.
+ *
+ * The X-COBOL Zenodo archive contains the same bytes under this spelling on
+ * unzip implementations that do not honour its Unicode extra field, while
+ * the lock records the human-readable Unicode path. Normalising names after
+ * extraction keeps path identity independent of the extractor without
+ * changing any corpus bytes.
+ */
+function normaliseArchiveNames(root: string): void {
+  const decode = (name: string): string =>
+    name.replace(/#U([0-9A-Fa-f]{4,6})/g, (_match, hex: string) => {
+      const codePoint = Number.parseInt(hex, 16);
+      return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : _match;
+    });
+
+  const walk = (directory: string): void => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const source = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        walk(source);
+      }
+      const decoded = decode(entry.name);
+      if (decoded === entry.name) {
+        continue;
+      }
+      const target = join(directory, decoded);
+      if (existsSync(target)) {
+        throw new Error(
+          `Archive filename collision after Unicode decoding: ${source}`,
+        );
+      }
+      renameSync(source, target);
+    }
+  };
+
+  walk(root);
+}
+
 async function fetchHuggingface(
   definition: CorpusDefinition & { fetch: { kind: "huggingface" } },
   cwd: string,
@@ -263,7 +303,9 @@ async function fetchZenodo(
       target,
     );
     if (file.endsWith(".zip")) {
-      extract(target, join(root, file.replace(/\.zip$/, "")));
+      const extracted = join(root, file.replace(/\.zip$/, ""));
+      extract(target, extracted);
+      normaliseArchiveNames(extracted);
       // The archive itself is not kept: it is 50MB of the same bytes, and the
       // lock records the unpacked files, which are what gets measured.
       rmSync(target, { force: true });

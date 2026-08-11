@@ -20,11 +20,12 @@ record Card {
 The marking means something rather than documenting something. Two rules follow
 from it.
 
-### `BANK-AUD-002` — it may not reach an audit event or a ledger posting
+### `BANK-AUD-002` — it may not reach an audit event, ledger posting, or job log
 
-Both are durable records that outlive the transaction and are read by people
+All three outlive the transaction or program invocation and are read by people
 with no business seeing a card number or a national identifier. An audit trail
-is the last place a PAN should be, and it is the first place one ends up.
+or job log is the last place a PAN should be, and it is often the first place
+one ends up.
 
 ### `BANK-SEC-001` — it may not be assigned to a field that is not marked
 
@@ -97,9 +98,9 @@ in three places: a failed I/O statement (naming the file and the status), an
 arithmetic overflow (naming the field), and a subscript out of range (naming the
 index). None of them prints a record.
 
-A `log` statement in the source prints whatever it is given, and `sensitive` does
-**not** stop it. That is a gap: `BANK-AUD-002` covers audit and ledger, not the
-job log.
+A `log` statement in the source prints unrestricted values with `DISPLAY ...
+UPON SYSOUT`. Passing it a value marked `sensitive`, including one carried
+through a local, is a compile error (`BANK-AUD-002`).
 
 ### The audit trail
 

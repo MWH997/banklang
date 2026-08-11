@@ -48,92 +48,13 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
-      # tests/cobol-compiles.test.ts and tests/conformance.test.ts skip without
-      # cobc. Installing GnuCOBOL keeps both lanes running in CI, so neither
-      # generated COBOL that no compiler accepts nor a program that compiles and
-      # then computes the wrong balance can merge.
-      #
-      # **Built, not installed from apt.** `apt-get install gnucobol` on
-      # ubuntu-latest gives 3.1.2, and every version this project documents,
-      # measures and asserts is 3.2.0 — `docs/divergences.md` opens with it and
-      # `tests/gnucobol-validation.test.ts` records it as the compiler that
-      # produced the evidence. The gap is not cosmetic: 3.2 added the
-      # `JSON-STATUS` special register that Enterprise COBOL has and that this
-      # compiler emits, so on 3.1.2 six test files fail on COBOL that is correct
-      # for the target. CI was validating against a compiler nobody claimed.
-      #
-      # Cached on the version, so it is built once and restored after that.
-      - name: Cache GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
-        id: gnucobol
-        uses: actions/cache@v6
+      # One local action owns the build, cache-hit dependencies, activation and
+      # version assertion. The scheduled horizontal run uses the same action,
+      # so neither lane can silently validate with the runner's older compiler.
+      - name: Set up pinned GnuCOBOL
+        uses: ./.github/actions/setup-gnucobol
         with:
-          path: /opt/gnucobol
-          key: gnucobol-${{ env.GNUCOBOL_VERSION }}-${{ runner.os }}
-
-      # **Always, cache hit or miss.** `/opt/gnucobol` is the compiler; these are
-      # the shared objects it links against, and they live in the runner image
-      # rather than in the cache. Installing them inside the build step meant a
-      # cache hit skipped them, so `cobc` was restored onto a machine with no
-      # `libcjson.so.1` and died on the version assertion before it compiled
-      # anything.
-      #
-      # That made the first run green and every run after it red, which is the
-      # worst shape a CI failure can take: the run that proved the step works is
-      # the only one that ever could. Splitting the install out is what makes
-      # the cached path and the built path the same machine.
-      #
-      # The `-dev` packages rather than the runtime ones: they pull in the
-      # runtime `.so` as a dependency and they are, by construction, the exact
-      # versions the build linked against.
-      - name: Install GnuCOBOL's dependencies
-        run: |
-          sudo apt-get update
-          # libcjson is what gives `JSON GENERATE` and `JSON PARSE` a backend;
-          # without it cobc builds and then refuses both at run time.
-          sudo apt-get install -y --no-install-recommends \
-            build-essential libgmp-dev libdb-dev libncurses-dev \
-            libxml2-dev libcjson-dev
-
-      # Built in the runner's temp directory, not the workspace. The first
-      # attempt unpacked the tarball where it stood, and `prettier --check .`
-      # then reported style issues in GnuCOBOL's own README.
-      - name: Build GnuCOBOL ${{ env.GNUCOBOL_VERSION }}
-        if: steps.gnucobol.outputs.cache-hit != 'true'
-        working-directory: ${{ runner.temp }}
-        run: |
-          curl -fsSL -o gnucobol.tar.xz \
-            "https://downloads.sourceforge.net/project/gnucobol/gnucobol/3.2/gnucobol-${GNUCOBOL_VERSION}.tar.xz"
-          tar xf gnucobol.tar.xz
-          cd "gnucobol-${GNUCOBOL_VERSION}"
-          ./configure --prefix=/opt/gnucobol
-          make -j"$(nproc)"
-          sudo make install
-
-      - name: Put GnuCOBOL on the path, and prove which one it is
-        run: |
-          echo "/opt/gnucobol/bin" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=/opt/gnucobol/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "COB_CONFIG_DIR=/opt/gnucobol/share/gnucobol/config" >> "$GITHUB_ENV"
-          echo "COB_COPY_DIR=/opt/gnucobol/share/gnucobol/copy" >> "$GITHUB_ENV"
-          # The assertion, not a courtesy print: a cache restored from a
-          # different build, or an apt cobc earlier on the path, fails here
-          # rather than eight test files later.
-          #
-          # `cobc --version` prints `cobc (GnuCOBOL) 3.2.0`. The closing
-          # parenthesis sits between the name and the number, so a pattern of
-          # `GnuCOBOL <version>` never matches — which is what failed twice,
-          # first through `grep -q` and then through `case`, against a compiler
-          # printing exactly the right string. Matched on `(GnuCOBOL) ` now, and
-          # the failure prints what it saw so the next one is one read.
-          version="$(/opt/gnucobol/bin/cobc --version 2>&1 | head -1)"
-          echo "$version"
-          case "$version" in
-            *"(GnuCOBOL) ${GNUCOBOL_VERSION}"*) ;;
-            *)
-              echo "::error::cobc is not GnuCOBOL ${GNUCOBOL_VERSION}: ${version}"
-              exit 1
-              ;;
-          esac
+          version: ${{ env.GNUCOBOL_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

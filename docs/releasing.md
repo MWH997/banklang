@@ -106,15 +106,18 @@ also deliberately does not run `vsce publish`: that needs a marketplace token
 belonging to a person, and the attested `.vsix` on the release is the exact
 file to upload by hand.
 
-Before running the release checklist, take the snapshot the release page and
-the README are held to:
+At the release cut, after the version section has been dated and
+`[Unreleased]` is empty, take the snapshot the release page and README are held
+to:
 
 ```bash
 pnpm release:snapshot        # writes evidence/release/X.Y.Z.json
 pnpm release:snapshot --check
 ```
 
-It refuses if the changelog has no dated section for the version, and
+It refuses if the changelog has no dated section for the version, and in
+ordinary development it leaves the already-released snapshot frozen. At the
+release cut it compares the snapshot with the current evidence, and
 `tests/release-claims.test.ts` fails if any figure quoted on the release page —
 [docs/releases/0.10.0.md](releases/0.10.0.md) is the current one — disagrees
 with it.

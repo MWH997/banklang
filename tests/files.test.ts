@@ -178,6 +178,45 @@ describe("file COBOL emission", () => {
 
     expect(occurrences).toBe(1);
   });
+
+  /**
+   * A failed second OPEN jumps past the source CLOSE for the first file. The
+   * generated program has to remember the first one is live and close it from
+   * BANK-MAIN; closing every declaration blindly would turn the unopened
+   * second file into status 42 and hide the original failure.
+   */
+  it("closes only files still open when an early failure leaves the body", () => {
+    const { emit } = compileExample("examples/account-file-batch");
+    const cobol = emit.cobol;
+
+    expect(unpadded(cobol)).toContain(
+      '01 BANK-FILE-OPEN-1 PIC X(1) VALUE "N".',
+    );
+    expect(unpadded(cobol)).toContain(
+      '01 BANK-FILE-OPEN-2 PIC X(1) VALUE "N".',
+    );
+
+    const body = cobol.slice(cobol.indexOf("       POST-ACCOUNTS."));
+    expect(body.indexOf("OPEN INPUT ACCOUNT-INPUT-FILE")).toBeLessThan(
+      body.indexOf('MOVE "Y" TO BANK-FILE-OPEN-1'),
+    );
+    expect(body.indexOf("CLOSE ACCOUNT-INPUT-FILE")).toBeLessThan(
+      body.indexOf('MOVE "N" TO BANK-FILE-OPEN-1'),
+    );
+
+    const main = cobol.slice(
+      cobol.indexOf("       BANK-MAIN."),
+      cobol.indexOf("       BANK-ACCEPT-PARM."),
+    );
+    expect(main).toContain('IF BANK-FILE-OPEN-1 = "Y"');
+    expect(main).toContain("CLOSE ACCOUNT-INPUT-FILE");
+    expect(main).toContain('IF BANK-FILE-OPEN-2 = "Y"');
+    expect(main).toContain("CLOSE POSTING-OUTPUT-FILE");
+    expect(main.indexOf("CLOSE ACCOUNT-INPUT-FILE")).toBeLessThan(
+      main.indexOf("MOVE BANK-RETURN-CODE TO RETURN-CODE"),
+    );
+    expect(main).toContain("IF BANK-FAILURE-CODE = SPACES");
+  });
 });
 
 /**

@@ -123,7 +123,7 @@ pnpm bankc test    examples/account-posting   # the above, plus cobc
 pnpm bankc job     examples/end-of-day-settlement  # several programs, one job
 pnpm bankc explain BANK-LED-001               # explain a diagnostic
 
-pnpm bankc analyse  legacy/                   # what your COBOL contains
+pnpm bankc analyse  legacy/                   # inventory + dependency graphs
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 ```
 
