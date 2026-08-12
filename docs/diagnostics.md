@@ -262,6 +262,23 @@ let built: string<5> = concat("0.", substring(rate, 7, 3));
 work.rate = toNumber(built);
 ```
 
+### `BANK-TYPE-031` an edited type cannot be a type argument
+
+An edited type renders a value rather than being one, so there is no storage for
+an instantiation to be made of. `Slot<edited<BDT, "credit">>` names no layout.
+
+The refusal is not new; saying it is. The type argument could not be rebuilt, so
+the field was dropped from the record and the program compiled clean — a
+declared field that produced no COBOL and no diagnostic, which is the one
+outcome a compiler must never have.
+
+```ts
+record Statement {
+  amount: BDT;
+  shown: edited<BDT, "credit">;
+}
+```
+
 ## 4. Decimal diagnostics
 
 ### `BANK-DEC-001` floating-point money forbidden
