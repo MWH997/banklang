@@ -382,6 +382,20 @@ export function edit(value: Decimal, picture: Picture): string {
   let suppressing = true;
   const pointAt = mask.indexOf(".");
 
+  // What a suppressed position is filled with. `Z` blanks it; `*` — check
+  // protection, written on a cheque so a suppressed amount cannot be altered —
+  // fills it with an asterisk, *including the simple insertion characters
+  // inside the suppressed run. `PIC **,**9.99` on 1.00 is `*****1.00`, not
+  // `** **1.00`: a gap there is a space where the protection is supposed to be,
+  // which is precisely the alteration the asterisk exists to prevent.
+  //
+  // Standard COBOL does not allow `Z` and `*` in one picture, so the mask
+  // holding an asterisk at all decides this for the whole field.
+  //
+  // Reference: *Enterprise COBOL for z/OS Language Reference*, PICTURE clause,
+  // the `*` symbol and the zero-suppression and replacement rules.
+  const suppressionFill = mask.includes("*") ? "*" : " ";
+
   for (const [index, symbol] of [...mask].entries()) {
     const beforePoint = pointAt < 0 || index < pointAt;
     switch (symbol) {
@@ -409,7 +423,7 @@ export function edit(value: Decimal, picture: Picture): string {
         break;
       }
       case ",": {
-        out.push(suppressing && beforePoint ? " " : ",");
+        out.push(suppressing && beforePoint ? suppressionFill : ",");
         break;
       }
       case ".": {

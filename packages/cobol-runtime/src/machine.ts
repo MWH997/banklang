@@ -357,7 +357,18 @@ export class Machine {
       );
     }
 
-    this.invoke(program, []);
+    // `STOP RUN` unwinds every frame by throwing, so the outermost call is
+    // where it stops being a signal and becomes an ordinary end to the run.
+    // Without this it escaped `runCobol` as a bare `Error` with no message: the
+    // generated programs all end in `GOBACK`, so nothing in the corpus reached
+    // it, and every hand-written or migrated program ends in `STOP RUN`.
+    try {
+      this.invoke(program, []);
+    } catch (signal) {
+      if (!(signal instanceof StopRunSignal)) {
+        throw signal;
+      }
+    }
 
     return {
       returnCode: this.returnCode(),
