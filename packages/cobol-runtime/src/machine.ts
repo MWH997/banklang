@@ -937,6 +937,14 @@ export class Machine {
       case "close":
         for (const name of statement.files) {
           const open = this.fileOf(instance, name);
+          // Closing a file that was never opened is status 42, not success.
+          // Reporting `00` told a program that checks its status after every
+          // operation — which is what `BANK-FILE-001` exists to require — that
+          // a close it never had an open for had worked.
+          if (open.mode === null) {
+            this.setStatus(instance, open, "42");
+            continue;
+          }
           open.mode = null;
           this.setStatus(instance, open, "00");
         }
@@ -2021,10 +2029,55 @@ export class Machine {
     if (statement.kind === "rewrite") {
       const at = Math.max(0, open.position - 1);
       records[at] = bytes;
-    } else {
-      records.push(bytes);
-      open.position = records.length;
+      this.setStatus(instance, open, "00");
+      return;
     }
+
+    // An indexed file is held in key order, and a key may appear once.
+    //
+    // Appending was wrong twice over. A record written with a key between two
+    // existing ones landed at the end, so the next sequential read returned the
+    // file out of order and a `START` bisecting it positioned on the wrong
+    // record. And a key that was already present was accepted silently, which
+    // put a duplicate primary key in the file — `cobc` reports status 22 and
+    // takes `INVALID KEY`, and so does z/OS VSAM.
+    if (open.entry.organization === "indexed") {
+      const keyName = open.entry.recordKey;
+      if (keyName !== null) {
+        const area = this.recordArea(instance, open);
+        const keyField = this.resolveField(
+          instance,
+          this.fieldNamed(instance, keyName),
+          [],
+        );
+        const keyOffset = keyField.offset - area.offset;
+        const wanted = decodeText(bytes, keyOffset, keyField.length);
+        const keyAt = (record: Uint8Array): string =>
+          decodeText(record, keyOffset, keyField.length);
+
+        if (records.some((record) => keyAt(record) === wanted)) {
+          this.setStatus(instance, open, "22");
+          this.afterIo(instance, open, statement.invalidKey !== null);
+          if (statement.invalidKey) {
+            this.execute(instance, statement.invalidKey);
+          }
+          return;
+        }
+
+        const at = records.findIndex((record) => keyAt(record) > wanted);
+        if (at < 0) {
+          records.push(bytes);
+        } else {
+          records.splice(at, 0, bytes);
+        }
+        open.position = records.length;
+        this.setStatus(instance, open, "00");
+        return;
+      }
+    }
+
+    records.push(bytes);
+    open.position = records.length;
     this.setStatus(instance, open, "00");
   }
 
@@ -2076,9 +2129,30 @@ export class Machine {
       }
     };
 
-    const found = records.findIndex((record) =>
-      matches(decodeText(record, keyOffset, key.length)),
-    );
+    // `<` and `<=` position at the *highest* key satisfying the relation, not
+    // the lowest. The file is ordered by key, so scanning forward finds the
+    // wrong end of the range: `START ... KEY <= "BBB"` over AAA/BBB/CCC left the
+    // file on AAA, and the READ NEXT after it returned a record the program had
+    // positioned past. `cobc` returns BBB. `<` happened to agree whenever only
+    // one record qualified, which is why this survived.
+    //
+    // Reference: *Enterprise COBOL for z/OS Language Reference*, START
+    // statement — the file is positioned at the record with the highest key
+    // that satisfies a LESS THAN or LESS THAN OR EQUAL comparison.
+    const backwards = statement.op === "<" || statement.op === "<=";
+    const keyOf = (record: Uint8Array): string =>
+      decodeText(record, keyOffset, key.length);
+    let found = -1;
+    if (backwards) {
+      for (let index = records.length - 1; index >= 0; index -= 1) {
+        if (matches(keyOf(records[index]!))) {
+          found = index;
+          break;
+        }
+      }
+    } else {
+      found = records.findIndex((record) => matches(keyOf(record)));
+    }
     if (found < 0) {
       this.setStatus(instance, open, "23");
       this.afterIo(instance, open, statement.invalidKey !== null);
