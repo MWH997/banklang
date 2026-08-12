@@ -6459,8 +6459,23 @@ function instantiateGenericRecord(
     if (!resolvedArgument) {
       return null;
     }
+    // `typeToTypeNode` rebuilds every kind a generic can be instantiated at and
+    // refuses an edited type, which renders a value rather than being one. That
+    // refusal was silent: the field was dropped from the record, no COBOL was
+    // generated for it, and the program compiled clean. A declared field that
+    // vanishes is the worst shape a limit can take, so it is said out loud.
     const normalizedNode = typeToTypeNode(resolvedArgument, argument.span);
     if (!normalizedNode) {
+      diagnostics.push(
+        createDiagnostic({
+          id: "BANK-TYPE-031",
+          severity: "error",
+          message: `An edited type cannot be a type argument to ${node.name}.`,
+          span: argument.span,
+          hint: "Instantiate the generic at the type being displayed, and declare the edited field where it is displayed.",
+          backendProfile: null,
+        }),
+      );
       return null;
     }
     normalized.push(normalizedNode);

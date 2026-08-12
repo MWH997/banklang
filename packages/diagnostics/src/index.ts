@@ -523,6 +523,16 @@ export const DIAGNOSTICS: DiagnosticDoc[] = [
     implemented: true,
   },
   {
+    id: "BANK-TYPE-031",
+    title: "An edited type cannot be a type argument",
+    explanation:
+      "An edited type is a rendering of a value rather than a value, so there is no storage a generic could be instantiated at. The refusal used to be silent: the field was dropped from the record and the program compiled clean, so a declared field simply did not appear in the generated COBOL.",
+    remediation:
+      "Instantiate the generic at the type being displayed, and declare the edited field where it is displayed.",
+    specReference: "language/records.md",
+    implemented: true,
+  },
+  {
     id: "BANK-FILE-001",
     title: "File status not checked",
     explanation:
