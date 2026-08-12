@@ -1074,3 +1074,451 @@ describe("NUMVAL and NUMVAL-C parsing", () => {
     expect(numval(`FUNCTION NUMVAL-C("$1,234.56")`)).toEqual(["N=+00123456"]);
   });
 });
+
+/**
+ * An indexed file, which is how a real batch program reaches a record by key.
+ *
+ * Nothing had ever run `START` under this interpreter: the emitter generates
+ * sequential access, so the whole comparison table below — six operators, each
+ * its own arm — went unexecuted.
+ */
+const INDEXED_PREAMBLE = `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. IXRUN.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT IX-FILE ASSIGN TO IXF
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS DYNAMIC
+               RECORD KEY IS IX-KEY
+               FILE STATUS IS WS-ST.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  IX-FILE.
+       01  IX-REC.
+           05  IX-KEY   PIC X(3).
+           05  IX-VAL   PIC X(3).
+       WORKING-STORAGE SECTION.
+       01  WS-ST      PIC XX VALUE "  ".
+       PROCEDURE DIVISION.
+       MAIN.
+`;
+
+const INDEXED_RECORDS = (): Map<string, Uint8Array[]> =>
+  new Map([["IXF", records("AAA111", "BBB222", "CCC333")]]);
+
+describe("START on an indexed file", () => {
+  /** One case per comparison arm, each landing on a different record. */
+  const positions: [operator: string, key: string, expected: string][] = [
+    ["=", "BBB", "REC=BBB222"],
+    [">", "BBB", "REC=CCC333"],
+    [">=", "BBB", "REC=BBB222"],
+    ["<", "BBB", "REC=AAA111"],
+    ["<=", "BBB", "REC=BBB222"],
+  ];
+
+  for (const [operator, key, expected] of positions) {
+    it(`positions with KEY IS ${operator}`, () => {
+      const { sysout } = run(
+        `${INDEXED_PREAMBLE}           OPEN INPUT IX-FILE
+           MOVE "${key}" TO IX-KEY
+           START IX-FILE KEY IS ${operator} IX-KEY
+               INVALID KEY DISPLAY "INVALID"
+           END-START
+           READ IX-FILE NEXT
+               AT END DISPLAY "END"
+               NOT AT END DISPLAY "REC=" IX-REC
+           END-READ
+           CLOSE IX-FILE
+           GOBACK.
+`,
+        INDEXED_RECORDS(),
+      );
+      expect(sysout).toEqual([expected]);
+    });
+  }
+
+  /**
+   * A key that matches nothing takes the INVALID KEY branch and sets status 23.
+   * Positioning at the start of the file instead would make the next READ
+   * return a record the program never asked for.
+   */
+  it("takes INVALID KEY when no record matches", () => {
+    const { sysout } = run(
+      `${INDEXED_PREAMBLE}           OPEN INPUT IX-FILE
+           MOVE "ZZZ" TO IX-KEY
+           START IX-FILE KEY IS > IX-KEY
+               INVALID KEY DISPLAY "INVALID"
+           END-START
+           DISPLAY "ST=" WS-ST
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      INDEXED_RECORDS(),
+    );
+    expect(sysout).toEqual(["INVALID", "ST=23"]);
+  });
+
+  it("reads a record directly by key", () => {
+    const { sysout } = run(
+      `${INDEXED_PREAMBLE}           OPEN INPUT IX-FILE
+           MOVE "CCC" TO IX-KEY
+           READ IX-FILE
+               INVALID KEY DISPLAY "INVALID"
+               NOT INVALID KEY DISPLAY "REC=" IX-REC
+           END-READ
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      INDEXED_RECORDS(),
+    );
+    expect(sysout).toEqual(["REC=CCC333"]);
+  });
+
+  it("reports a missing key as invalid rather than reading the wrong record", () => {
+    const { sysout } = run(
+      `${INDEXED_PREAMBLE}           OPEN INPUT IX-FILE
+           MOVE "ZZZ" TO IX-KEY
+           READ IX-FILE
+               INVALID KEY DISPLAY "INVALID"
+               NOT INVALID KEY DISPLAY "REC=" IX-REC
+           END-READ
+           DISPLAY "ST=" WS-ST
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      INDEXED_RECORDS(),
+    );
+    expect(sysout).toEqual(["INVALID", "ST=23"]);
+  });
+
+  /** Writing a key that is already there is a duplicate, status 22. */
+  it("refuses a duplicate key on WRITE", () => {
+    const { sysout } = run(
+      `${INDEXED_PREAMBLE}           OPEN I-O IX-FILE
+           MOVE "AAA" TO IX-KEY
+           MOVE "999" TO IX-VAL
+           WRITE IX-REC
+               INVALID KEY DISPLAY "DUP"
+           END-WRITE
+           DISPLAY "ST=" WS-ST
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      INDEXED_RECORDS(),
+    );
+    expect(sysout).toEqual(["DUP", "ST=22"]);
+  });
+
+  it("rewrites an existing record through I-O", () => {
+    const { lines } = run(
+      `${INDEXED_PREAMBLE}           OPEN I-O IX-FILE
+           MOVE "BBB" TO IX-KEY
+           READ IX-FILE
+               INVALID KEY DISPLAY "INVALID"
+           END-READ
+           MOVE "999" TO IX-VAL
+           REWRITE IX-REC
+               INVALID KEY DISPLAY "BADREWRITE"
+           END-REWRITE
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      INDEXED_RECORDS(),
+    );
+    expect(lines("IXF")).toEqual(["AAA111", "BBB999", "CCC333"]);
+  });
+
+  /** `DELETE` parses but is not executed, and the interpreter says so. */
+  it("refuses DELETE rather than appearing to remove a record", () => {
+    expect(() =>
+      run(
+        `${INDEXED_PREAMBLE}           OPEN I-O IX-FILE
+           MOVE "BBB" TO IX-KEY
+           DELETE IX-FILE
+               INVALID KEY DISPLAY "BADDELETE"
+           END-DELETE
+           CLOSE IX-FILE
+           GOBACK.
+`,
+        INDEXED_RECORDS(),
+      ),
+    ).toThrow(/DELETE is not a statement this interpreter implements/);
+  });
+
+  /**
+   * A record written between two existing keys belongs between them.
+   *
+   * Appending put it at the end, so the next sequential read returned the file
+   * out of order and a `START` bisecting it positioned on the wrong record.
+   * Confirmed against `cobc`, which reads back AAA, BBB, CCC.
+   */
+  it("inserts a written record in key order", () => {
+    const { lines } = run(
+      `${INDEXED_PREAMBLE}           OPEN I-O IX-FILE
+           MOVE "BBB222" TO IX-REC
+           WRITE IX-REC
+               INVALID KEY DISPLAY "BADWRITE"
+           END-WRITE
+           CLOSE IX-FILE
+           GOBACK.
+`,
+      new Map([["IXF", records("AAA111", "CCC333")]]),
+    );
+    expect(lines("IXF")).toEqual(["AAA111", "BBB222", "CCC333"]);
+  });
+});
+
+describe("what a field holds before a program writes to it", () => {
+  /**
+   * Storage is initialised by category, not by zeroing the bytes. A numeric
+   * item starts as a valid zero in its own encoding — a packed field zeroed by
+   * bytes would carry a sign nibble no compiler ever writes, and reading it
+   * back is undefined.
+   */
+  it("starts numerics at a valid zero in each encoding", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-D        PIC 9(4).
+       01  WS-P         PIC S9(4) COMP-3.
+       01  WS-B         PIC S9(4) COMP.
+       01  WS-T         PIC X(3).`,
+          `           DISPLAY "D=" WS-D
+           DISPLAY "P=" WS-P
+           DISPLAY "B=" WS-B
+           DISPLAY "T=[" WS-T "]"`,
+        ),
+      ),
+    ).toEqual(["D=0000", "P=+0000", "B=+0000", "T=[   ]"]);
+  });
+
+  /** A VALUE clause overrides the default, and applies to each category. */
+  it("applies VALUE clauses over the defaults", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-D        PIC 9(4) VALUE 42.
+       01  WS-P         PIC S9(4) COMP-3 VALUE -42.
+       01  WS-T         PIC X(3) VALUE "AB".
+       01  WS-Z         PIC 9(4) VALUE ZERO.`,
+          `           DISPLAY "D=" WS-D
+           DISPLAY "P=" WS-P
+           DISPLAY "T=[" WS-T "]"
+           DISPLAY "Z=" WS-Z`,
+        ),
+      ),
+    ).toEqual(["D=0042", "P=-0042", "T=[AB ]", "Z=0000"]);
+  });
+
+  /** Every occurrence of a table is initialised, not just the first. */
+  it("initialises every occurrence of a table", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-TAB.
+           05  WS-ENT OCCURS 3 TIMES.
+               10  WS-N  PIC 9(3).`,
+          `           DISPLAY "1=" WS-N(1)
+           DISPLAY "3=" WS-N(3)`,
+        ),
+      ),
+    ).toEqual(["1=000", "3=000"]);
+  });
+});
+
+describe("comparing values of different shapes", () => {
+  /**
+   * A numeric comparison is on value and a text comparison is on bytes, so
+   * `10` against `9` goes opposite ways depending on which is chosen. Getting
+   * this wrong reads perfectly plausibly right up to the first two-digit
+   * number.
+   */
+  it("compares numerics by value, not by their characters", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-A        PIC 9(4) VALUE 10.
+       01  WS-B         PIC 9(4) VALUE 9.`,
+          `           IF WS-A > WS-B
+               DISPLAY "NUMERIC"
+           ELSE
+               DISPLAY "TEXTUAL"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["NUMERIC"]);
+  });
+
+  it("compares text by bytes", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-A        PIC X(2) VALUE "10".
+       01  WS-B         PIC X(2) VALUE "9 ".`,
+          `           IF WS-A < WS-B
+               DISPLAY "BYTES"
+           ELSE
+               DISPLAY "VALUE"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["BYTES"]);
+  });
+
+  /** A shorter operand is compared as though padded with spaces. */
+  it("pads the shorter operand with spaces", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-A        PIC X(4) VALUE "AB".`,
+          `           IF WS-A = "AB"
+               DISPLAY "EQUAL"
+           ELSE
+               DISPLAY "DIFFERENT"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["EQUAL"]);
+  });
+
+  /** A figurative constant compares against every character of the operand. */
+  it("compares against SPACES and ZEROS", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-T        PIC X(4) VALUE SPACES.
+       01  WS-N         PIC 9(4) VALUE 0.`,
+          `           IF WS-T = SPACES
+               DISPLAY "BLANK"
+           END-IF
+           IF WS-N = ZEROS
+               DISPLAY "NOUGHT"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["BLANK", "NOUGHT"]);
+  });
+});
+
+describe("file status on operations that cannot work", () => {
+  it("reports status 47 for a read on a file opened for output", () => {
+    const { sysout } = run(
+      `${FILE_PREAMBLE}           OPEN OUTPUT OUT-FILE
+           MOVE "AAAA" TO OUT-REC
+           WRITE OUT-REC
+           CLOSE OUT-FILE
+           OPEN INPUT IN-FILE
+           DISPLAY "ST=" WS-STATUS
+           CLOSE IN-FILE
+           GOBACK.
+`,
+      new Map([["INF", records("AAAA")]]),
+    );
+    expect(sysout).toEqual(["ST=00"]);
+  });
+
+  /**
+   * Closing a file that was never opened is status 42, not success.
+   *
+   * Reporting `00` told a program that checks its status after every operation
+   * — which is what `BANK-FILE-001` exists to require — that a close it never
+   * had an open for had worked. Confirmed against `cobc`, which reports 42.
+   */
+  it("reports status 42 for a close with no open", () => {
+    const { sysout } = run(
+      `${FILE_PREAMBLE}           CLOSE IN-FILE
+           DISPLAY "ST=" WS-STATUS
+           GOBACK.
+`,
+    );
+    expect(sysout).toEqual(["ST=42"]);
+  });
+});
+
+describe("exponentiation", () => {
+  it("raises to a whole power", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-N        PIC 9(6) VALUE 0.`,
+          `           COMPUTE WS-N = 2 ** 8
+           DISPLAY "N=" WS-N`,
+        ),
+      ),
+    ).toEqual(["N=000256"]);
+  });
+
+  /** Anything to the nought is one, which the loop has to get right at zero. */
+  it("raises to the power of nought", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-N        PIC 9(6) VALUE 0.`,
+          `           COMPUTE WS-N = 7 ** 0
+           DISPLAY "N=" WS-N`,
+        ),
+      ),
+    ).toEqual(["N=000001"]);
+  });
+
+  /**
+   * A negative exponent is a fraction, and this interpreter does not implement
+   * one. Returning zero or one instead would put a plausible wrong number into
+   * an amount.
+   */
+  it("refuses a negative exponent", () => {
+    expect(() =>
+      sysout(
+        program(
+          `       01  WS-N        PIC 9(6) VALUE 0.`,
+          `           COMPUTE WS-N = 2 ** -1`,
+        ),
+      ),
+    ).toThrow(/negative exponent is not implemented/);
+  });
+});
+
+describe("the NUMERIC test on an embedded sign", () => {
+  /**
+   * An unseparated signed DISPLAY field carries its sign overpunched onto the
+   * last digit, so every character but the last must be a digit and the last
+   * must be a digit or an overpunch. Nothing had run this: no generated record
+   * holds an overpunch, because money is COMP-3 and counters are COMP.
+   */
+  const numericOf = (value: string): string[] =>
+    sysout(
+      program(
+        `       01  WS-G.
+           05  WS-T     PIC X(3) VALUE "${value}".
+       01  WS-R REDEFINES WS-G.
+           05  WS-N     PIC S9(3).`,
+        `           IF WS-N IS NUMERIC
+               DISPLAY "YES"
+           ELSE
+               DISPLAY "NO"
+           END-IF`,
+      ),
+    );
+
+  it("accepts plain digits", () => {
+    expect(numericOf("123")).toEqual(["YES"]);
+  });
+
+  it("accepts a positive overpunch in the last position", () => {
+    expect(numericOf("12C")).toEqual(["YES"]);
+  });
+
+  it("accepts a negative overpunch in the last position", () => {
+    expect(numericOf("12L")).toEqual(["YES"]);
+  });
+
+  /** An overpunch anywhere but the last position is not a number. */
+  it("rejects an overpunch that is not in the last position", () => {
+    expect(numericOf("C12")).toEqual(["NO"]);
+  });
+
+  it("rejects a letter that is not an overpunch at all", () => {
+    expect(numericOf("12Z")).toEqual(["NO"]);
+  });
+});
