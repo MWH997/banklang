@@ -433,6 +433,28 @@ const SORT_CLAUSES = new Set([
   "PROCEDURE",
 ]);
 
+/**
+ * Words that end the `INTO` receiver list inside `UNSTRING`.
+ *
+ * The same hazard as `SORT_CLAUSES` and the same fix. None of these is a verb or
+ * a terminator, so `startsReference()` accepts every one of them as a receiver
+ * name and the loop reads the phrase that follows `INTO` as more receivers.
+ *
+ * That made the four refusals below unreachable, which mattered because of what
+ * the author was told instead. `UNSTRING ... WITH POINTER WS-N` reported `WITH
+ * is not declared in STMT` — a runtime error, naming a data item nobody wrote,
+ * for a phrase this interpreter had a considered message about. `TALLYING` and
+ * `DELIMITER IN` did the same; `COUNT IN` reached `END is not a statement this
+ * interpreter implements`, having eaten `END-UNSTRING` as well.
+ */
+const UNSTRING_PHRASES = new Set([
+  "DELIMITER",
+  "COUNT",
+  "WITH",
+  "POINTER",
+  "TALLYING",
+]);
+
 export class StatementParser {
   private readonly cursor: Cursor;
 
@@ -1575,7 +1597,10 @@ export class StatementParser {
 
     this.cursor.expect("INTO");
     const into = [this.reference()];
-    while (this.startsReference()) {
+    while (
+      this.startsReference() &&
+      !UNSTRING_PHRASES.has(this.cursor.peek().text)
+    ) {
       into.push(this.reference());
     }
     if (this.cursor.looksLike("DELIMITER") || this.cursor.looksLike("COUNT")) {
