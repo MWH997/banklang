@@ -1522,3 +1522,324 @@ describe("the NUMERIC test on an embedded sign", () => {
     expect(numericOf("12Z")).toEqual(["NO"]);
   });
 });
+
+describe("ROUNDED", () => {
+  /**
+   * Enterprise COBOL rounds half **away from zero**, not to even and not toward
+   * positive. The two directions differ only on a value ending exactly in five,
+   * which is the case a rounding bug hides in — and money is full of them.
+   *
+   * Every figure here was taken from `cobc` 3.2.0 before it was asserted.
+   */
+  const roundings: [expression: string, expected: string][] = [
+    ["1.25", "+0001.3"],
+    ["1.35", "+0001.4"],
+    ["-1.25", "-0001.3"],
+    ["-1.35", "-0001.4"],
+    ["1.24", "+0001.2"],
+    ["-1.24", "-0001.2"],
+  ];
+
+  for (const [expression, expected] of roundings) {
+    it(`rounds ${expression} to ${expected}`, () => {
+      expect(
+        sysout(
+          program(
+            `       01  WS-R        PIC S9(4)V9 VALUE 0.`,
+            `           COMPUTE WS-R ROUNDED = ${expression}
+           DISPLAY "R=" WS-R`,
+          ),
+        ),
+      ).toEqual([`R=${expected}`]);
+    });
+  }
+
+  /** Without ROUNDED the digit is dropped, which is the whole distinction. */
+  it("truncates toward zero without ROUNDED", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-A        PIC S9(4)V9 VALUE 0.
+       01  WS-B         PIC S9(4)V9 VALUE 0.`,
+          `           COMPUTE WS-A = 1.29
+           COMPUTE WS-B = -1.29
+           DISPLAY "A=" WS-A
+           DISPLAY "B=" WS-B`,
+        ),
+      ),
+    ).toEqual(["A=+0001.2", "B=-0001.2"]);
+  });
+
+  /** A value already at the target scale is left alone. */
+  it("leaves a value at the target scale unchanged", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-R        PIC S9(4)V9 VALUE 0.`,
+          `           COMPUTE WS-R ROUNDED = 1.2
+           DISPLAY "R=" WS-R`,
+        ),
+      ),
+    ).toEqual(["R=+0001.2"]);
+  });
+});
+
+describe("INTEGER against INTEGER-PART", () => {
+  /**
+   * `INTEGER` is the greatest integer *not above* the value and `INTEGER-PART`
+   * truncates toward zero. They agree on every positive number and differ on
+   * every negative one with a fraction, which is the only thing that tells them
+   * apart — and the reason a mutant routing one to the other survives until a
+   * negative is tried.
+   */
+  const cases: [expression: string, expected: string][] = [
+    ["FUNCTION INTEGER(2.5)", "+0002"],
+    ["FUNCTION INTEGER(-2.5)", "-0003"],
+    ["FUNCTION INTEGER-PART(2.5)", "+0002"],
+    ["FUNCTION INTEGER-PART(-2.5)", "-0002"],
+    ["FUNCTION INTEGER(-3)", "-0003"],
+    ["FUNCTION INTEGER-PART(-3)", "-0003"],
+  ];
+
+  for (const [expression, expected] of cases) {
+    it(`evaluates ${expression} as ${expected}`, () => {
+      expect(
+        sysout(
+          program(
+            `       01  WS-I        PIC S9(4) VALUE 0.`,
+            `           COMPUTE WS-I = ${expression}
+           DISPLAY "I=" WS-I`,
+          ),
+        ),
+      ).toEqual([`I=${expected}`]);
+    });
+  }
+});
+
+describe("tables of more than one dimension", () => {
+  const TABLE2 = `       01  WS-TAB.
+           05  WS-ROW OCCURS 3 TIMES.
+               10  WS-COL OCCURS 4 TIMES.
+                   15  WS-CELL  PIC 9(2).`;
+
+  /**
+   * A two-dimensional subscript is an offset built from the stride of every
+   * table the field sits inside. Getting the stride wrong reads a neighbouring
+   * cell, which is a plausible number from the wrong row.
+   */
+  it("addresses each cell independently", () => {
+    expect(
+      sysout(
+        program(
+          TABLE2,
+          `           MOVE 11 TO WS-CELL(1, 1)
+           MOVE 77 TO WS-CELL(3, 4)
+           MOVE 34 TO WS-CELL(2, 3)
+           DISPLAY "A=" WS-CELL(1, 1)
+           DISPLAY "B=" WS-CELL(3, 4)
+           DISPLAY "C=" WS-CELL(2, 3)`,
+        ),
+      ),
+    ).toEqual(["A=11", "B=77", "C=34"]);
+  });
+
+  /** Writing one cell must not disturb the cell beside it or below it. */
+  it("leaves the neighbouring cells alone", () => {
+    expect(
+      sysout(
+        program(
+          TABLE2,
+          `           MOVE 99 TO WS-CELL(2, 2)
+           DISPLAY "LEFT=" WS-CELL(2, 1)
+           DISPLAY "RIGHT=" WS-CELL(2, 3)
+           DISPLAY "ABOVE=" WS-CELL(1, 2)
+           DISPLAY "BELOW=" WS-CELL(3, 2)`,
+        ),
+      ),
+    ).toEqual(["LEFT=00", "RIGHT=00", "ABOVE=00", "BELOW=00"]);
+  });
+
+  /** Every cell of every dimension is initialised, not just the first row. */
+  it("initialises every cell of every row", () => {
+    expect(
+      sysout(
+        program(
+          TABLE2,
+          `           DISPLAY "FIRST=" WS-CELL(1, 1)
+           DISPLAY "LAST=" WS-CELL(3, 4)`,
+        ),
+      ),
+    ).toEqual(["FIRST=00", "LAST=00"]);
+  });
+});
+
+describe("comparing a numeric against text", () => {
+  /**
+   * One numeric side compares numerically when the other side reads as a
+   * number, and as characters otherwise. `"10"` against 9 is the case that
+   * separates them: numerically 10 is the greater, as characters `"1"` sorts
+   * before `"9"`.
+   */
+  it("compares numerically when the text reads as a number", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-N        PIC 9(2) VALUE 9.`,
+          `           IF WS-N < 10
+               DISPLAY "NUMERIC"
+           ELSE
+               DISPLAY "TEXTUAL"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["NUMERIC"]);
+  });
+
+  /** Text that is not a number falls back to a character comparison. */
+  it("compares as characters when the text is not a number", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-T        PIC X(4) VALUE "ABC".`,
+          `           IF WS-T = "ABC"
+               DISPLAY "EQUAL"
+           ELSE
+               DISPLAY "DIFFERENT"
+           END-IF`,
+        ),
+      ),
+    ).toEqual(["EQUAL"]);
+  });
+
+  /** A signed value displays its sign, and an unsigned one does not. */
+  it("renders a signed item with its sign and an unsigned one without", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-S        PIC S9(3)V99 VALUE -12.34.
+       01  WS-U         PIC 9(3)V99  VALUE 12.34.`,
+          `           DISPLAY "S=" WS-S
+           DISPLAY "U=" WS-U`,
+        ),
+      ),
+    ).toEqual(["S=-012.34", "U=012.34"]);
+  });
+});
+
+describe("the guards that stop a runaway program", () => {
+  /**
+   * A loop with no reachable end is reported rather than hung.
+   *
+   * The playground runs this interpreter in a browser tab, so a program that
+   * never finishes has to be stopped by something. `stepLimit` is that
+   * something, and until now nothing had ever reached it.
+   */
+  it("stops a program that runs past the step limit", () => {
+    const source = program(
+      `       01  WS-N        PIC 9(4) VALUE 0.`,
+      `           PERFORM UNTIL WS-N = 99999
+               ADD 1 TO WS-N
+               SUBTRACT 1 FROM WS-N
+           END-PERFORM`,
+    );
+    expect(() => runCobol({ sources: [source], stepLimit: 500 })).toThrow(
+      /ran past 500 statements/,
+    );
+  });
+
+  /** The caller may raise the ceiling, and the message names the limit used. */
+  it("reports the limit it was given", () => {
+    const source = program(
+      `       01  WS-N        PIC 9(4) VALUE 0.`,
+      `           PERFORM UNTIL WS-N = 99999
+               ADD 1 TO WS-N
+               SUBTRACT 1 FROM WS-N
+           END-PERFORM`,
+    );
+    expect(() => runCobol({ sources: [source], stepLimit: 250 })).toThrow(
+      /ran past 250 statements/,
+    );
+  });
+
+  /**
+   * Recursion without a base case reaches a named error rather than exhausting
+   * the browser's stack, which is what a program calling itself would do.
+   */
+  it("stops a program that recurses without a base case", () => {
+    expect(() =>
+      runCobol({
+        sources: [
+          `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LOOPER.
+       PROCEDURE DIVISION.
+       MAIN.
+           CALL "LOOPER"
+           GOBACK.
+`,
+        ],
+        entry: "LOOPER",
+      }),
+    ).toThrow(/recursed more than 400 deep/);
+  });
+});
+
+describe("references that name nothing", () => {
+  /** A field nobody declared is a named failure, not a zero. */
+  it("refuses a reference to an undeclared field", () => {
+    expect(() =>
+      sysout(
+        program(
+          `       01  WS-N        PIC 9(4) VALUE 0.`,
+          `           MOVE 1 TO WS-MISSING`,
+        ),
+      ),
+    ).toThrow(/WS-MISSING is not declared/);
+  });
+
+  /** A record that belongs to no file cannot be written. */
+  it("refuses a WRITE of a record that is not a file's", () => {
+    expect(() =>
+      sysout(
+        program(
+          `       01  WS-REC      PIC X(4) VALUE "AAAA".`,
+          `           WRITE WS-REC`,
+        ),
+      ),
+    ).toThrow(/not a record of any file/);
+  });
+});
+
+describe("REDEFINES across differing lengths", () => {
+  /**
+   * A redefinition longer than the record it redefines needs the storage to
+   * grow, or the extra bytes are read from past the end of the allocation.
+   */
+  it("grows the storage when the redefinition is longer", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-SHORT    PIC X(2) VALUE "AB".
+       01  WS-LONG REDEFINES WS-SHORT.
+           05  WS-A     PIC X(2).
+           05  WS-B     PIC X(2).`,
+          `           MOVE "CD" TO WS-B
+           DISPLAY "A=[" WS-A "]"
+           DISPLAY "B=[" WS-B "]"`,
+        ),
+      ),
+    ).toEqual(["A=[AB]", "B=[CD]"]);
+  });
+
+  /** A shorter redefinition reads the leading bytes of the same storage. */
+  it("reads the leading bytes when the redefinition is shorter", () => {
+    expect(
+      sysout(
+        program(
+          `       01  WS-LONG     PIC X(4) VALUE "ABCD".
+       01  WS-SHORT REDEFINES WS-LONG PIC X(2).`,
+          `           DISPLAY "S=[" WS-SHORT "]"`,
+        ),
+      ),
+    ).toEqual(["S=[AB]"]);
+  });
+});
