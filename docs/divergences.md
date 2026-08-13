@@ -283,6 +283,50 @@ pinning either width, and `runtime/*.cbl` should too.
 
 ---
 
+## D28. `DISPLAY` of an assumed decimal point — **suspected**
+
+A `V` occupies no storage: `PIC 9(4)V99` is six digit characters and the point
+is a property of the picture, not a byte in the field. What a `DISPLAY` of such
+an item sends is the question, and the two local engines agree on an answer that
+Enterprise COBOL may not share.
+
+```cobol
+01  WS-V   PIC 9(4)V99  VALUE 12.34.
+01  WS-P   PIC 9(4)V99  COMP-3 VALUE 12.34.
+01  WS-S   PIC S9(4)V99 VALUE -12.34.
+    DISPLAY "V=" WS-V
+    DISPLAY "P=" WS-P
+    DISPLAY "S=" WS-S
+```
+
+|                          | `V=`      | `P=`      | `S=`       |
+| ------------------------ | --------- | --------- | ---------- |
+| GnuCOBOL 3.2.0           | `0012.34` | `0012.34` | `-0012.34` |
+| `packages/cobol-runtime` | `0012.34` | `0012.34` | `-0012.34` |
+
+Both insert a point the field does not contain, and the signed case a sign it
+does not contain either. Reading the Language Reference on the `PICTURE` clause,
+the item holds six digits and nothing else, which would make the Enterprise
+COBOL rendering `001234` — but that is an inference from the storage definition,
+not a measurement, and this entry stays **suspected** until Enterprise COBOL
+compiles it.
+
+**It is cheap to check and worth checking**, because the two engines agreeing is
+what normally ends an investigation here. `tests/cobol-runtime-differential.test.ts`
+compares this interpreter against `cobc` and would report nothing: they agree,
+and both may be wrong about the target together. That is the one shape of defect
+the differential comparison is structurally blind to.
+
+Nothing is affected today. No generated program displays a named field at all —
+checked across every example — and the reference runtime in `runtime/` displays
+none either, for the same reason D22 records: a value bound for a report is
+moved into an edited item first, and how _that_ renders is defined by its
+picture. So the exposure is a hand-written or migrated program that displays a
+scaled field directly, and `tests/interpreter-machine.test.ts` scales such
+values to whole numbers rather than pinning either rendering.
+
+---
+
 ## Deliberate differences
 
 ### D14. `NOSSRANGE`, and a generated bounds check instead
