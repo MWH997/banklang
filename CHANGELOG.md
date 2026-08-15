@@ -20,10 +20,28 @@ earlier was tagged or released.
 
 - Follow nested `COPY` references in `bankc analyse`, reporting missing and
   ambiguous members, `REPLACING` metadata and dependency cycles as deterministic
-  Mermaid and JSON — [migration analysis](docs/migration-analysis.md).
+  Mermaid and JSON: [migration analysis](docs/migration-analysis.md).
+- Give every page one site header, with the navigation behind a menu button
+  below 52rem: [`siteHeader`](tools/build-site.ts).
+- Hold every generated artifact to ASCII, and the reader-facing prose to no em
+  dashes and no self-answering negatives: [verification](docs/verification.md).
+
+### Changed
+
+- Fit the playground to the viewport above 900px and scroll the panes inside
+  themselves, so the editor stays beside the COBOL it produced.
+- Seed the playground's Input panel from what the program tests a field against,
+  and offer the record a keyed read takes its key from.
 
 ### Fixed
 
+- Stop emitting a non-ASCII byte in every generated program's header comment,
+  where z/OS reads the source in EBCDIC:
+  [generated code standards](docs/generated-code-standards.md).
+- Run `amortisation-schedule` in the playground, which was refused because a
+  recursive helper's `PROCEDURE DIVISION USING` was read as the entry program's.
+- Give the SBOM a licence for the fifty components pnpm stores under a
+  peer-suffixed directory name.
 - Repair scheduled validation: pin GnuCOBOL for horizontal execution, exclude
   repository-only mutation tests, split runtime mutation, and report missing
   evidence accurately.

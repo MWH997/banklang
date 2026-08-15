@@ -46,7 +46,8 @@ import {
   highlightCobol,
   servedUrl,
   SITE_ORIGIN,
-  THEME_BUTTON,
+  NAV_SCRIPT,
+  siteHeader,
   THEME_SCRIPT,
 } from "./build-site";
 
@@ -330,7 +331,7 @@ function readableDate(iso: string): string {
  * finds a feed by looking at whatever page it was given.
  */
 export function feedLink(up: string): string {
-  return `<link rel="alternate" type="application/rss+xml" title="BankLang — Writing" href="${up}blog/feed.xml" />`;
+  return `<link rel="alternate" type="application/rss+xml" title="BankLang · Writing" href="${up}blog/feed.xml" />`;
 }
 
 function shell(options: {
@@ -376,17 +377,7 @@ ${options.structuredData ?? ""}
   <body class="blog">
     <a class="skip" href="#post">Skip to content</a>
 
-    <header class="top">
-      <a class="wordmark" href="${options.up}">BankLang</a>
-      <nav>
-        <a href="${options.up}docs/">Docs</a>
-        <a href="${options.up}blog/">Writing</a>
-        <a href="${options.up}playground/">Playground</a>
-        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
-        <a href="https://mwhassan.com" rel="noopener">mwhassan.com</a>
-        ${THEME_BUTTON}
-      </nav>
-    </header>
+${siteHeader({ up: options.up, current: "blog" })}
 
 ${options.body}
 
@@ -406,6 +397,7 @@ ${options.body}
     </footer>
 
 ${THEME_SCRIPT}
+${NAV_SCRIPT}
   </body>
 </html>
 `;
@@ -490,7 +482,7 @@ ${JSON.stringify(
     </script>`;
 
   return shell({
-    title: `${post.title} — BankLang`,
+    title: `${post.title} · BankLang`,
     description: post.description,
     canonical,
     structuredData,
@@ -514,7 +506,7 @@ ${furtherReading(post)}
 
 export function renderIndex(all: Post[]): string {
   return shell({
-    title: "Writing — BankLang",
+    title: "Writing · BankLang",
     description:
       "Notes on compiling to COBOL, rounding money correctly, and testing a compiler whose target you cannot run.",
     canonical: servedUrl("blog/index.html"),
@@ -593,7 +585,7 @@ export function renderFeed(all: Post[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>BankLang — Writing</title>
+    <title>BankLang · Writing</title>
     <link>${servedUrl("blog/index.html")}</link>
     <atom:link href="${self}" rel="self" type="application/rss+xml" />
     <description>Why a compiler for banking logic looks the way it does, and what the problems underneath it actually are.</description>
@@ -616,7 +608,7 @@ ${items.join("\n")}
 export function renderAbout(): string {
   const author = citationAuthor();
   return shell({
-    title: `About — BankLang`,
+    title: `About · BankLang`,
     description: `BankLang is written by ${author.name}. What it is, who wrote it, and how to get in touch.`,
     canonical: servedUrl("about/index.html"),
     ogType: "website",

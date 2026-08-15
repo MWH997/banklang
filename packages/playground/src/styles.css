@@ -95,6 +95,39 @@ body {
     sans-serif;
 }
 
+/*
+ * The page is the viewport, and the panes scroll inside themselves.
+ *
+ * Without this the document is as tall as its tallest pane and the window
+ * scrolls: reaching the end of the generated COBOL scrolled the editor you were
+ * comparing it against off the top of the screen, which is the one thing this
+ * page is for. The tab strip and the trace line went with it, so the way back
+ * was to scroll up and find them again.
+ *
+ * Conditioned on height as well as width. Locking a 500px-tall window to the
+ * viewport hides whatever does not fit with no way to reach it, and a short
+ * window is the one case where scrolling the document is the better answer.
+ * Below either threshold the page scrolls as it did.
+ *
+ * `100dvh` rather than `100vh`: on a phone in landscape the two differ by the
+ * address bar, and `vh` is the taller of them, so the footer sat under it.
+ */
+@media (min-width: 901px) and (min-height: 600px) {
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app {
+    min-height: 0;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -104,72 +137,266 @@ body {
   white-space: nowrap;
 }
 
-/* ---------- the site's header, shared with every other page ---------- */
+/* ---------------------------------------------------------------- header */
 
+/*
+ * One header for every page of the site, written once in `siteHeader`
+ * (`tools/build-site.ts`) and styled once here.
+ *
+ * Sticky, because every page under it is long: the documentation runs to
+ * several screens, a post to a dozen, and the playground's panes scroll inside
+ * themselves. A header that scrolls away takes the only route to another page
+ * with it, and the reader's answer is to scroll back to the top first.
+ *
+ * Translucent only where the browser can blur what is behind it. Without the
+ * blur a semi-transparent bar is text over text, so the fallback is opaque.
+ */
 .top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem clamp(1rem, 5vw, 2rem);
+  gap: 1rem 2rem;
+  padding: 0.65rem clamp(1rem, 5vw, 4rem);
   border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
+  background: var(--bg);
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .top {
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+}
+
+.top__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.top__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .wordmark {
   font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
   color: var(--text);
   text-decoration: none;
+  padding: 0.25rem 0;
 }
 
-.top nav {
+.wordmark:hover {
+  color: var(--accent);
+}
+
+.top__nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  row-gap: 0.5rem;
+  gap: 0.5rem;
 }
 
-/* WCAG 2.5.8 asks for a 24px target. These were 20px tall, which is a miss on
-   a phone and a miss for anyone whose pointing is imprecise. */
-.top nav a,
-.top nav button {
-  display: inline-flex;
+.top__links {
+  display: flex;
   align-items: center;
-  min-height: 24px;
-  font-size: 0.92rem;
-}
-
-.top nav a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.top nav a:hover {
-  text-decoration: underline;
+  gap: 0.1rem;
 }
 
 /*
- * On a narrow screen the navigation gets a row of its own.
+ * Full-contrast text rather than link blue. Five blue links and a bordered
+ * button is a header that competes with the page for attention on every page,
+ * and the affordance a navigation item needs is the background it takes on
+ * under the pointer.
  *
- * Left to `flex-wrap` alone it stayed beside the wordmark and overflowed
- * whenever there was *nearly* enough room — it wrapped correctly at 365px and
- * clipped its last two items at 380. Giving it the full width makes the
- * behaviour the same at every size below the breakpoint instead of depending
- * on where the items happen to land.
+ * WCAG 2.5.8 asks for a 24px target and these were 20px tall.
  */
-@media (max-width: 40rem) {
+.top__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 7px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.925rem;
+  white-space: nowrap;
+}
+
+.top__nav a:hover {
+  background: var(--panel-2);
+}
+
+/* The page you are on, said in the navigation as well as in the address bar. */
+.top__nav a[aria-current="page"] {
+  background: var(--panel-2);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/*
+ * The menu button.
+ *
+ * Hidden above the breakpoint, where the links are laid along the header and
+ * there is nothing to disclose. Its three lines become a cross when the menu is
+ * open, so the control says which of its two states it is in without depending
+ * on the panel below it being visible.
+ */
+.burger {
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--field);
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.burger:hover {
+  background: var(--panel-2);
+}
+
+.burger__box {
+  position: relative;
+  width: 1rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.burger__box::before,
+.burger__box::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.burger__box::before {
+  top: -5px;
+}
+
+.burger__box::after {
+  top: 5px;
+}
+
+.top.open .burger__box {
+  background: transparent;
+}
+
+.top.open .burger__box::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.top.open .burger__box::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .burger__box,
+  .burger__box::before,
+  .burger__box::after {
+    transition:
+      top 160ms ease,
+      transform 160ms ease,
+      background-color 160ms ease;
+  }
+}
+
+/*
+ * Below the breakpoint the links go behind the menu button.
+ *
+ * They used to wrap onto a row of their own, which is what a header falls into
+ * when nothing decides what should happen instead. On a 360px screen the five
+ * links and the theme toggle took two full rows under the wordmark, so a third
+ * of the first screen of every page was navigation and the page's own heading
+ * started below it.
+ *
+ * 52rem is where the five links, the toggle and the wordmark stop fitting on
+ * one line with room to spare. Above it the button is not rendered at all, so
+ * there is no state for a reader to get stuck in.
+ */
+@media (max-width: 51.999rem) {
   .top {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.6rem;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.55rem clamp(0.9rem, 4vw, 2rem);
   }
 
-  .top nav {
+  .top__bar {
     width: 100%;
-    gap: 0.7rem;
+  }
+
+  .burger {
+    display: inline-flex;
+  }
+
+  .top__nav {
+    display: none;
+  }
+
+  .top.open .top__nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.5rem 0 0.6rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.55rem;
+  }
+
+  /* Pulled left by the links' own padding, so the words line up under the
+     wordmark rather than sitting indented from it while keeping their target. */
+  .top.open .top__links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.1rem;
+    margin-left: -0.75rem;
+  }
+
+  .top__nav a {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+  }
+
+  .top__nav .ghost {
+    align-self: flex-start;
+    margin-top: 0.45rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .top.open .top__nav {
+      animation: nav-open 160ms ease;
+    }
+  }
+}
+
+@keyframes nav-open {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -405,6 +632,41 @@ select,
   display: none;
 }
 
+/*
+ * The output pane's bar stays one row.
+ *
+ * With `flex-wrap: wrap` the Copy and Copy link buttons dropped to a second row
+ * whenever the seven tabs did not leave room for them, which in two columns at
+ * 1280px is always: the bar stood 90px tall and took that height out of the
+ * pane it labels. The strip already scrolls, so the strip is what should give.
+ */
+.pane--output .pane__bar {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+/*
+ * A strip that scrolls says so.
+ *
+ * At 1280px in two columns the seven tabs need 521px and have 464, so Analysis
+ * sat off the right-hand edge of a strip with its scrollbar hidden: there was
+ * nothing on screen to say the tab existed. The fade is applied only while the
+ * strip actually overflows, which `main.ts` measures, because a permanent one
+ * dims the last tab on every width where they all fit.
+ */
+.tabs--overflowing {
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
+.pane--output .tabs {
+  flex: 1 1 0;
+}
+
+.pane--output .pane__bar > .ghost,
+.pane--output .pane__bar > select {
+  flex: 0 0 auto;
+}
+
 .tab {
   flex: 0 0 auto;
 }
@@ -417,7 +679,7 @@ select,
   cursor: pointer;
   font: inherit;
   font-size: 13px;
-  padding: 5px 10px;
+  padding: 5px 9px;
 }
 
 .tab:hover {
@@ -501,6 +763,16 @@ select[hidden] {
 .diag__msg {
   margin: 0;
   font-size: 13.5px;
+}
+
+/* The catalogue, at the foot of the list rather than in the header. */
+.diag__more {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+}
+
+.diag__more a {
+  color: var(--accent);
 }
 
 .diag__hint {

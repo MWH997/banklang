@@ -41,7 +41,7 @@ storage. A `nested function` is a COBOL **contained program**: `PROGRAM-ID
 ... COMMON.`, written inside the container before its `END PROGRAM`, with its
 own working storage and a real `CALL` boundary.
 
-What it buys is what a sibling program cannot do — **it reads the module's
+What it buys is what a sibling program cannot do: **it reads the module's
 records directly**, because the container declares them `GLOBAL`:
 
 ```cobol
@@ -59,7 +59,7 @@ Scalars still travel through `LINKAGE`, because a value has to be handed over.
 **A nested function cannot recurse** (`BANK-TYPE-027`). COBOL forbids
 `LOCAL-STORAGE` in a contained program, so its locals are one copy shared by
 every invocation: a recursive call would overwrite them on the way down and read
-the innermost call's values on the way back out — it compiles, it runs, and it
+the innermost call's values on the way back out: it compiles, it runs, and it
 returns the wrong number. Drop `nested` and an ordinary recursive function is
 emitted as a sibling with `LOCAL-STORAGE`, which is what makes recursion safe.
 
@@ -69,7 +69,7 @@ field and parameter name.
 ### Locals
 
 COBOL has no block scope. Every `let` becomes an `01` item in
-`WORKING-STORAGE` — including one written inside a loop or a `switch` branch,
+`WORKING-STORAGE`: including one written inside a loop or a `switch` branch,
 which is allocated once for the whole routine rather than per iteration.
 
 A local keeps its own name when only one routine declares it. When two do, both
@@ -101,8 +101,8 @@ now()                           // a Db2 timestamp, from CURRENT-DATE
 ```
 
 Every result has a length the compiler can name, because a COBOL field has a
-fixed one. `substring` therefore takes **literal** bounds — a length decided at
-run time has no `PIC X(n)` to land in — and a slice that runs past the end of
+fixed one. `substring` therefore takes **literal** bounds (a length decided at
+run time has no `PIC X(n)` to land in), and a slice that runs past the end of
 its string is rejected outright. `concat` sums its arguments' lengths.
 
 A computed string pads into a wider field, exactly as a written literal does,
@@ -132,7 +132,7 @@ row.branch = replaceChars(row.branch, " ", "0"); // INSPECT ... CONVERTING
 `countOf` answers `decimal<9, 0>`, whatever it counted in; the subset does not
 coerce on assignment, so a narrower field to hold it is `BANK-TYPE-003`.
 `replaceChars` converts character by character, so the two sets must be the same
-size — anything else is a substitution, which COBOL has no single statement for.
+size. Anything else is a substitution, which COBOL has no single statement for.
 
 `split` takes a field apart, which is `UNSTRING`:
 
@@ -167,7 +167,7 @@ reached with `CALL` rather than `PERFORM`, because a COBOL paragraph is not
 reentrant: performing one that is already active is undefined.
 
 Its locals go in `LOCAL-STORAGE`, not `WORKING-STORAGE`. That distinction is
-not cosmetic — `WORKING-STORAGE` is shared across invocations, so locals held
+not cosmetic: `WORKING-STORAGE` is shared across invocations, so locals held
 there are overwritten by the nested call and the program returns a wrong answer
 while compiling perfectly.
 
@@ -182,7 +182,7 @@ cancel request.productModule;
 ```
 
 A **dynamic** `CALL`: the module is named by a value, not written into the
-source. That is how a bank dispatches — a product code selects the module that
+source. That is how a bank dispatches: a product code selects the module that
 prices it, and a new product ships as a new load module without relinking
 anything that calls it.
 
@@ -193,7 +193,7 @@ own `LINKAGE SECTION`.
 
 **`on error` is the point.** A static call that cannot be resolved fails at link
 time, where somebody sees it. A dynamic one fails in the middle of a batch, and
-without a handler that is an abend rather than a rejected record — so a `call`
+without a handler that is an abend rather than a rejected record, so a `call`
 without one is warned about.
 
 `cancel` drops the loaded module, so the next call gets its working storage as
@@ -218,7 +218,7 @@ spelling of the member in the procedure division, where it can drift from the 88
 that defines it: rename the member and the `MOVE` still compiles, still runs, and
 writes a value no condition matches.
 
-The condition is qualified by its group, for the same reason the `MOVE` was —
+The condition is qualified by its group, for the same reason the `MOVE` was.
 the record is emitted in working storage and again inside every `FD` that holds
 it.
 

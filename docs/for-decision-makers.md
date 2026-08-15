@@ -11,8 +11,8 @@ you will find that out anyway and finding it yourself is worse.
 
 ## What this is
 
-A compiler. You write a program in **BankTS** — a small banking language whose
-types are TypeScript's and whose statements are its own — and it emits IBM
+A compiler. You write a program in **BankTS** (a small banking language whose
+types are TypeScript's and whose statements are its own), and it emits IBM
 Enterprise COBOL, a copybook for every record, the JCL to build and run it, and
 a source map tying every generated line back to the line that produced it.
 
@@ -73,7 +73,7 @@ COBOL is better.
 
 ## What the evidence actually is
 
-Grades are generated, not asserted — `pnpm evidence:grades` writes the table and
+Grades are generated, not asserted: `pnpm evidence:grades` writes the table and
 a test fails if it drifts.
 
 | Grade        | Count | What it rules out                                                                   |
@@ -85,8 +85,8 @@ a test fails if it drifts.
 **"Executed" covers two strengths of evidence, and the difference matters.**
 Three of the twenty-three have expected balances somebody worked out by hand,
 which is the strongest thing this project has. The other twenty are run twice
-— once compiled by GnuCOBOL and once by a separate interpreter written against
-the same output — and required to agree. That catches a defect that compiles
+(once compiled by GnuCOBOL and once by a separate interpreter written against
+the same output), and required to agree. That catches a defect that compiles
 without anybody having to predict the answer, and it would not catch a program
 that is wrong in the same way twice. `evidence/GRADES.md` says which each one is.
 
@@ -99,7 +99,7 @@ Beyond that:
 
 - **A conformance linter** reads every emitted artifact as text and holds it to
   rules that each cite a page of an IBM manual. It catches what a compiler
-  accepts and a target does not — a COBOL word past thirty characters, a
+  accepts and a target does not: a COBOL word past thirty characters, a
   `PROGRAM-ID` that cannot be a load module member, a dataset qualifier too long
   to catalogue.
 - **Rounding is checked against exact arithmetic**, over every boundary case, in
@@ -117,7 +117,7 @@ Beyond that:
 The honest next step is small and it is not a procurement.
 
 1. **Read one conversion.** [`conversions/`](../conversions/) puts existing COBOL,
-   the BankTS it becomes, and the regenerated COBOL side by side — a sequential
+   the BankTS it becomes, and the regenerated COBOL side by side, a sequential
    master update, a CICS enquiry, a Db2 cursor batch, hand-written banker's
    rounding, and a copybook with `REDEFINES`, `FILLER` and `OCCURS DEPENDING ON`.
    One engineer, one afternoon, and you will know whether the output is

@@ -326,6 +326,23 @@ const RUNTIME_FILES = new Set([
 
 const decoder = new TextDecoder();
 
+/**
+ * The text of the entry program alone, which is the program being run.
+ *
+ * A compiled unit is not always one program. A recursive function is emitted as
+ * a second, sibling `RECURSIVE` program, and that one has `PROCEDURE DIVISION
+ * USING` for its arguments — so asking the whole file whether it takes a PARM
+ * answered yes for every program that merely contained a recursive helper.
+ * `amortisation-schedule` was then wrapped in the PARM driver it does not want,
+ * the driver became the entry point, and the entry record had nowhere to land:
+ * "BANKDRIV declares no record called LOAN". Only the first program decides how
+ * this unit is entered.
+ */
+function entryProgram(translated: string): string {
+  const end = /^\s{7}END PROGRAM\b/m.exec(translated);
+  return end ? translated.slice(0, end.index) : translated;
+}
+
 export function run(cobol: string, inputs: RunInputs = {}): RunOutcome {
   const started = performance.now();
   const empty: Omit<RunOutcome, "ok" | "refusal" | "milliseconds"> = {
@@ -352,7 +369,9 @@ export function run(cobol: string, inputs: RunInputs = {}): RunOutcome {
   }
 
   const program = /^\s*PROGRAM-ID\.\s+([A-Z0-9-]+)/im.exec(translated)?.[1];
-  const takesParm = /^\s{7}PROCEDURE\s+DIVISION\s+USING\b/m.test(translated);
+  const takesParm = /^\s{7}PROCEDURE\s+DIVISION\s+USING\b/m.test(
+    entryProgram(translated),
+  );
 
   // The Db2 script sits beside the program under a fixed name, exactly as the
   // conformance harness writes it, so nothing in the generated program has to

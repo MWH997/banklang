@@ -10,7 +10,7 @@ pnpm bankc analyse path/to/programs --out dist/analysis
 
 This is the one part of the toolchain that generates nothing. Before a bank asks
 whether a compiler produces COBOL it likes, it asks what would happen to the two
-thousand programs it already has — and the honest first answer is a count.
+thousand programs it already has, and the honest first answer is a count.
 
 ---
 
@@ -18,7 +18,7 @@ thousand programs it already has — and the honest first answer is a count.
 
 Reference-format text. It parses nothing semantically and compiles nothing,
 which is what lets it work on a member that will not compile without copybooks
-the tool does not have — and on an estate, that is most of them.
+the tool does not have, and on an estate, that is most of them.
 
 | Found                   | How                                                                    |
 | ----------------------- | ---------------------------------------------------------------------- |
@@ -55,7 +55,7 @@ specific thing with a specific consequence:
 ## The paragraph graph
 
 `--out` writes one Mermaid graph per program, which renders wherever the reader
-already is — a Markdown file, a pull request — rather than needing a tool
+already is (a Markdown file, a pull request) rather than needing a tool
 installed.
 
 A `PERFORM` is a solid arrow, the far end of a `THRU` a dotted one, and a
@@ -72,10 +72,10 @@ as references from programs.
 The ordinary inventory reports how many `COPY` references resolved, were
 missing, or were ambiguous. With `--out`, the analysis directory also contains:
 
-- **copybook-dependencies.md** — a Mermaid graph. Resolved references are solid;
+- **copybook-dependencies.md**: a Mermaid graph. Resolved references are solid;
   missing and ambiguous references are dotted, and dependency cycles are
   highlighted.
-- **copybook-dependencies.json** — the same stable, versioned data for tooling,
+- **copybook-dependencies.json**: the same stable, versioned data for tooling,
   including the original line, resolution status, candidate targets and whether
   the statement used `REPLACING`.
 
@@ -125,7 +125,7 @@ Everything above was written against `conversions/`, and every original in
 `conversions/` was written by the author of this reader. On 2026-08-07 it was
 pointed at
 [AWS CardDemo](https://github.com/aws-samples/aws-mainframe-modernization-carddemo)
-— thirty-one CICS and batch programs, Apache-2.0 — and got two things wrong that
+(thirty-one CICS and batch programs, Apache-2.0), and got two things wrong that
 no test here could have caught, because neither shape occurs in code this
 project wrote:
 
@@ -140,14 +140,14 @@ Both are fixed and both shapes are regression tests. The second is the worse
 one: a finding invented out of a message is the kind a reader checks, does not
 find, and stops trusting the rest of the report over.
 
-The reader is still what this page says it is — reference-format text, nothing
-compiled — so the honest expectation for a first run against an unfamiliar
+The reader is still what this page says it is (reference-format text, nothing
+compiled), so the honest expectation for a first run against an unfamiliar
 estate is that something else is wrong in the same way, and that the report
 saying what it does not know is the part that matters most.
 
 ## Related pages
 
-- [conversions/](../conversions/) — the same programs, converted, and the
+- [conversions/](../conversions/) (the same programs, converted, and the
   licence table for third-party corpora
-- [toolchain.md](toolchain.md) — the rest of the CLI
-- [roadmap.md](roadmap.md) — what is planned
+- [toolchain.md](toolchain.md)) the rest of the CLI
+- [roadmap.md](roadmap.md), what is planned

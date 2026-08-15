@@ -55,7 +55,7 @@ terminate branchSummary;
 `initiate` and `terminate` name the report. Everything between the two is the
 compiler's: it turns the page, repeats the heading, and breaks the totals.
 
-Printing the source above three times — twice for LONDON, once for LEEDS —
+Printing the source above three times (twice for LONDON, once for LEEDS)
 produces:
 
 ```
@@ -82,7 +82,7 @@ eighteen digits `ARITH(COMPAT)` carries, since how large a total gets depends on
 how many rows arrive and that is not known until the job runs.
 
 A column prints a literal, a field, `sum` of a field, or `pageNumber`. A field is
-named bare and resolved against the record the report's file holds — a report is
+named bare and resolved against the record the report's file holds. A report is
 declared at the top level, where no transaction's variables are in scope, and
 that record is the only thing it reads. An amount is printed in its edited form,
 with the picture taken from the field's own precision and scale, which is what
@@ -90,7 +90,7 @@ lets a `COMP-3` balance reach a page at all.
 
 Groups are `pageHeading`, `pageFooting`, `detail`, `controlHeading`, and
 `controlFooting`. A heading or footing may name a control field or leave it off,
-which means `FINAL` — the total over everything. Lines are placed with
+which means `FINAL`: the total over everything. Lines are placed with
 `line <n>` for an absolute line, or `line next` / `line plus <n>` to space.
 
 The checks are `BANK-FILE-008`: a control field has to be in the record, a
@@ -110,9 +110,9 @@ COBOL Report Writer Precompiler and Libraries (5798-DYR)", and `RD`,
 description entries are all listed as features that precompiler supplies. A
 `REPORT SECTION` handed straight to `IGYCRCTL` does not compile.
 
-The generated job therefore runs the stand-alone precompiler first — `SPCRWCOB`,
+The generated job therefore runs the stand-alone precompiler first (`SPCRWCOB`,
 reading `SYSIN`, writing the expanded COBOL to `SYSINS`, with `RWWORK` as
-working space — and the compile step reads what it wrote. It runs before the
+working space), and the compile step reads what it wrote. It runs before the
 CICS translator and the Db2 precompiler, because Report Writer passes
 `EXEC ... END-EXEC` through unchanged and neither of the others understands a
 `REPORT SECTION`. The link-edit step picks up the Report Writer run time library,
@@ -124,7 +124,7 @@ the file paginates with `LINAGE`, which is in the base compiler.
 #### Verifying one locally
 
 GnuCOBOL implements Report Writer and [the tests
-execute one](../../tests/report-writer.test.ts) — headings, control breaks, and
+execute one](../../tests/report-writer.test.ts): headings, control breaks, and
 totals all check out. One local wrinkle is worth knowing: GnuCOBOL's default
 `assign_clause` resolves an unquoted `ASSIGN TO <name>` on a file carrying
 `REPORT IS` to report-section storage rather than to the DD name, so the output
@@ -155,13 +155,13 @@ written after spacing rather than on top of the last one.
 
 `on page { ... }` is `AT END-OF-PAGE`. It needs the file to declare a depth,
 since otherwise there is no page for a write to reach the end of
-(`BANK-FILE-007`), and a page depth belongs to a `sequential output` file —
+(`BANK-FILE-007`), and a page depth belongs to a `sequential output` file:
 a keyed file has records, not lines to space.
 
 ### What the copybook contains
 
 A generated copybook is the record's own COBOL declaration, not a summary of it:
-every clause the program's inline record carries, the copybook carries too —
+every clause the program's inline record carries, the copybook carries too,
 `REDEFINES`, `OCCURS` with its index, `SYNCHRONIZED`, `JUSTIFIED`, `BLANK WHEN
 ZERO`, the nested groups, and the 88-levels of an enum.
 

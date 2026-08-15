@@ -7,7 +7,7 @@ Accepted
 ## Context
 
 The language makes transactions first class, with `debit`, `credit`, and
-`audit` operations in the transaction body — see
+`audit` operations in the transaction body, see
 [language-reference.md](../language-reference.md). The COBOL backend has
 to lower those operations into something readable and deterministic.
 

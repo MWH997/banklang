@@ -411,7 +411,7 @@ describe("the rendered pages keep the site's promises", () => {
   it("gives every page a title, a description and the URL it is served at", () => {
     for (const page of pages) {
       const html = readFileSync(page, "utf8");
-      expect(html, page).toMatch(/<title>[^<]+ — BankLang<\/title>/);
+      expect(html, page).toMatch(/<title>[^<]+ · BankLang<\/title>/);
       expect(html, page).toMatch(/<meta name="description" content="[^"]+"/);
 
       const expected = servedUrl(relative(out, page));

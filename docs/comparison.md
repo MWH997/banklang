@@ -9,7 +9,7 @@ second half is what makes the first half worth reading.
 
 A deterministic source-to-source compiler. A restricted, statically typed
 language in, IBM Enterprise COBOL for z/OS 6.4 and its JCL out. No runtime, no
-framework, no interpreter — what ships is a member you own.
+framework, no interpreter: what ships is a member you own.
 
 The claim is narrow: **the compiler refuses programs whose failure modes are
 silent.** A debit with no matching credit, a division with no stated rounding
@@ -63,8 +63,8 @@ This is the real comparison, because it is the one an actual team faces.
   screen section, no communication section. Every one of those has a legitimate
   use somewhere.
 - Reading a program a colleague wrote. Nobody on your team knows BankTS.
-- Fifty years of tooling — debuggers, coverage, code analysers, everything IDz
-  does — all of which understands COBOL and none of which understands BankTS.
+- Fifty years of tooling (debuggers, coverage, code analysers, everything IDz
+  does) all of which understands COBOL and none of which understands BankTS.
   You get COBOL out, so most of it still applies to the output; none of it
   applies to the source.
 - Fixing something at 3am. You will be reading the COBOL, and if the fix belongs
@@ -78,7 +78,7 @@ This is the real comparison, because it is the one an actual team faces.
   paragraph structure, same failure path, same prologue. A reviewer who has read
   one has read the shape of all of them.
 - One rule, applied everywhere. The bounds guard, the file status check, the
-  `ON SIZE ERROR`, the single exit — you write them once in the emitter and get
+  `ON SIZE ERROR`, the single exit: you write them once in the emitter and get
   them in every program, rather than in the programs where somebody remembered.
 - Traceability. Every generated line maps back to a source line, and the map is
   emitted rather than reconstructed.
@@ -105,7 +105,7 @@ believes.
 
 4. **The test framework for the source is thin.** `test <name> for <entry
 transaction>` becomes a zUnit case to run on z/OS, and what it can assert
-   is the PARM the step is started with and the calls the program makes — see
+   is the PARM the step is started with and the calls the program makes: see
    `docs/zunit.md`. Anything beyond that, you test the
    generated program the way you test any COBOL program.
 
@@ -127,7 +127,7 @@ transaction>` becomes a zUnit case to run on z/OS, and what it can assert
 ## When to use it
 
 A new batch or online program, going into an existing z/OS estate, doing
-something arithmetic that has to be right — accruals, settlement, posting,
+something arithmetic that has to be right: accruals, settlement, posting,
 reconciliation. Something where the failure that matters is a wrong number
 reported as success rather than a program that will not compile.
 
@@ -136,13 +136,13 @@ reported as success rather than a program that will not compile.
 An estate you are leaving. A program that needs the parts of COBOL this subset
 does not have. A team with nobody who wants to learn another language. Anything
 where "it has never been compiled by the target compiler" is not an acceptable
-sentence — which is a reasonable position, and is why that sentence is on this
+sentence, which is a reasonable position, and is why that sentence is on this
 page rather than at the bottom of a README.
 
 ---
 
 ## Related pages
 
-- [divergences.md](divergences.md) — what is known not to be proved
-- [verification.md](verification.md) — what is checked, and how
-- [for-mainframe-engineers.md](for-mainframe-engineers.md) — the output, read construct by construct
+- [divergences.md](divergences.md) (what is known not to be proved
+- [verification.md](verification.md)) what is checked, and how
+- [for-mainframe-engineers.md](for-mainframe-engineers.md). The output, read construct by construct

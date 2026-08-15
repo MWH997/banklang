@@ -118,8 +118,8 @@ pnpm release:snapshot --check
 It refuses if the changelog has no dated section for the version, and in
 ordinary development it leaves the already-released snapshot frozen. At the
 release cut it compares the snapshot with the current evidence, and
-`tests/release-claims.test.ts` fails if any figure quoted on the release page —
-[docs/releases/0.10.0.md](releases/0.10.0.md) is the current one — disagrees
+`tests/release-claims.test.ts` fails if any figure quoted on the release page (
+[docs/releases/0.10.0.md](releases/0.10.0.md) is the current one) disagrees
 with it.
 
 Pre-1.0, so a release that adds language surface, a diagnostic or a CLI command

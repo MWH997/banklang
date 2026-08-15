@@ -1,18 +1,18 @@
 # BankLang
 
-**[banklang.mwhassan.com](https://banklang.mwhassan.com)** — the compiler runs
+**[banklang.mwhassan.com](https://banklang.mwhassan.com)**. The compiler runs
 in your browser at [/playground/](https://banklang.mwhassan.com/playground/).
 
 **A deterministic compiler from a small banking language to readable IBM
-Enterprise COBOL — with banking safety rules enforced at compile time.**
+Enterprise COBOL, with banking safety rules enforced at compile time.**
 
 [![CI](https://github.com/MWH997/banklang/actions/workflows/ci.yml/badge.svg)](https://github.com/MWH997/banklang/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
 BankLang compiles **BankTS** into COBOL a mainframe engineer can read and
-review. Its types are TypeScript's; its statements — `transaction`, `file`,
-`cursor`, `queue` — are its own. Everything it emits is decided by code you can
+review. Its types are TypeScript's; its statements (`transaction`, `file`,
+`cursor`, `queue`) are its own. Everything it emits is decided by code you can
 read: no model is involved, and the same input always produces byte-identical
 output.
 
@@ -52,7 +52,7 @@ build time or at run time.
 
 ## Try it
 
-**[Open the playground](https://banklang.mwhassan.com/playground/)** — nothing
+**[Open the playground](https://banklang.mwhassan.com/playground/)**: nothing
 to install, and nothing you write is sent anywhere.
 
 Click a line of BankTS and the COBOL it produced lights up, from the source map.
@@ -174,12 +174,12 @@ report over them.
 | [`parm-driven-batch`](examples/parm-driven-batch/)         | The PARM convention, restart and checkpoint     |
 | [`end-of-day-settlement`](examples/end-of-day-settlement/) | Three programs and a sort in **one JCL stream** |
 
-**And five conversions** — [`conversions/`](conversions/) — existing COBOL
+**And five conversions** in [`conversions/`](conversions/): existing COBOL
 beside the BankTS it becomes.
 
 Every example is **run**, not only compiled. Three have hand-written expected
-balances; the rest are executed twice — by `cobc` and by an interpreter written
-against the same output — and a test fails on any disagreement. That is what
+balances; the rest are executed twice (by `cobc` and by an interpreter written
+against the same output), and a test fails on any disagreement. That is what
 catches a defect that compiles: the bounds guard once clamped an out-of-range
 subscript instead of refusing it, and every static check passed.
 

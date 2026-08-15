@@ -54,8 +54,15 @@
    document, so every documentation page opened with four level-two headings
    before its own `h1` — F17. The group name is still announced, through the
    `aria-labelledby` on the list it labels, which is what it was doing here. */
+/*
+ * 0.78rem rather than 0.72. Uppercased and letter-spaced text reads smaller
+ * than its size, and at 0.72rem these came out at 11.5px: the four labels that
+ * say what the forty-five pages beneath them are grouped by were the smallest
+ * text on the site.
+ */
 .side__title {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);

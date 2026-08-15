@@ -8,8 +8,8 @@ parameter in it comes from IBM's own cataloged procedures as the Programming
 Guide prints them rather than from this compiler's memory of them. Before the
 2026-08-05 audit it was neither: the compile step had no `STEPLIB` and none of
 the sixteen work files, the link-edit ran `PGM=IEWL` with no LE libraries, the
-run step had no `STEPLIB` at all — so a job that compiled and linked perfectly
-ended S806 — and the dataset names were built by turning the build path into
+run step had no `STEPLIB` at all (so a job that compiled and linked perfectly
+ended S806), and the dataset names were built by turning the build path into
 qualifiers, which produced `DIST.COBOL.BATCHINTERESTACCRUAL` and a JCL error
 before the compiler was reached.
 
@@ -17,7 +17,7 @@ before the compiler was reached.
 
 ## Two forms
 
-### Cataloged — the default
+### Cataloged: the default
 
 ```jcl
 //COMPILE  EXEC IGYWCL,
@@ -47,7 +47,7 @@ not exist is created, passed, and gone at end of job.
 generated from `IGYWCL`'s printed text: the three `STEPLIB` libraries, `SYSUT1`
 through `SYSUT15` and `SYSMDECK`, `REGION=0M` on both steps, `PGM=IEWBLINK`, the
 two LE link libraries on the binder's `SYSLIB`, and `COND=(8,LT,COBOL)` rather
-than `(4,LT)` — a compile that only warned returns 4 and its object module is
+than `(4,LT)`: a compile that only warned returns 4 and its object module is
 still worth binding.
 
 For a site with no `IGYWCL` installed, or to see what the procedure does.
@@ -77,7 +77,7 @@ neither knows.
 ### Why `IKJEFT1B` for the run and `IKJEFT01` for the bind
 
 A program with embedded SQL cannot be started by `EXEC PGM=`. It needs a thread
-to Db2, and the DSN command processor is what establishes one — the step runs
+to Db2, and the DSN command processor is what establishes one. The step runs
 TSO in batch and `DSN RUN` attaches the program under a plan.
 
 The two entry points differ on an abend. Under `IKJEFT01` an abending program
@@ -87,7 +87,7 @@ a half-written dataset is catalogued after all. `IKJEFT1B` terminates the step
 with X'04C'.
 
 The bind keeps `IKJEFT01` for the opposite reason: a `BIND` that only warns
-returns 4, and `IKJEFT1B` stops the moment anything returns non-zero — so the
+returns 4, and `IKJEFT1B` stops the moment anything returns non-zero, so the
 plan would go unbound because the package warned.
 
 ### A CICS program has no run step
@@ -111,7 +111,7 @@ job. The generated job says so rather than writing a step that cannot work.
 
 ### Disposition
 
-An input file is `DISP=SHR`. An updated file is `DISP=OLD` — `NEW` would create
+An input file is `DISP=SHR`. An updated file is `DISP=OLD`: `NEW` would create
 an empty one and the program would find nothing in it, and `SHR` would let a
 second job read it half-updated.
 
@@ -127,8 +127,8 @@ RECORDS` in the program is the other half of it.
 ### `COND`
 
 Every step after the first carries one, so a failed compile does not reach the
-run step and execute whatever the load library already held — the previous
-version — under a return code that says the job worked.
+run step and execute whatever the load library already held (the previous
+version) under a return code that says the job worked.
 
 `COND=(4,LT)` everywhere except the expanded link-edit, which uses IBM's own
 `COND=(8,LT,COBOL)`.
@@ -208,7 +208,7 @@ comment block naming each field:
 ```
 
 Replace the `x`s. A PARM shorter than the fields it feeds ends the step with
-return code 12 rather than being read past — the trailing parameters would
+return code 12 rather than being read past: the trailing parameters would
 otherwise be whatever the region left there, which for an idempotency key means
 a duplicate posting nobody can trace.
 
@@ -218,6 +218,6 @@ For a Db2 program the PARM goes on the `DSN RUN` subcommand instead.
 
 ## Related pages
 
-- [for-mainframe-engineers.md](for-mainframe-engineers.md) — reading the generated COBOL
-- [error-handling.md](error-handling.md) — what each return code means
-- [target-conformance.md](target-conformance.md) — the JCL rules and their citations
+- [for-mainframe-engineers.md](for-mainframe-engineers.md) (reading the generated COBOL
+- [error-handling.md](error-handling.md)) what each return code means
+- [target-conformance.md](target-conformance.md), the JCL rules and their citations

@@ -56,8 +56,8 @@ let term: decimal<9, 0> = daysBetween(loan.openedOn, loan.maturesOn);
 let grace: date = addDays(loan.maturesOn, 5);
 ```
 
-These lower to the COBOL intrinsics that know the calendar — `CURRENT-DATE`,
-`INTEGER-OF-DATE`, and `DATE-OF-INTEGER` — rather than to `+` on the stored
+These lower to the COBOL intrinsics that know the calendar (`CURRENT-DATE`,
+`INTEGER-OF-DATE`, and `DATE-OF-INTEGER`) rather than to `+` on the stored
 digits. That is the whole reason they exist: thirty days after the 31st of
 January is the 2nd of March, which arithmetic on `20260131` would never produce.
 A date is therefore not something you can add to directly, and a fraction of a
@@ -83,7 +83,7 @@ and a compiler that only knows `COMP-3` cannot read those files at all:
 
 `unsigned` is the one that surprises people, and it is the most common numeric
 picture in a copybook. `PIC 9(8)` carries no sign, so it is eight bytes rather
-than nine and cannot hold a negative — assigning one stores its absolute value,
+than nine and cannot hold a negative: assigning one stores its absolute value,
 which is COBOL's rule and not something this compiler changes. It exists
 because `zoned` is a byte wider, and importing a `PIC 9(8)` as a `zoned<8,0>`
 would move every field after it.
@@ -91,7 +91,7 @@ would move every field after it.
 A `binary` field is held in the halfword, fullword, or doubleword that fits its
 declared digit count, which is how IBM Enterprise COBOL allocates `COMP`: 1–4
 digits take two bytes, 5–9 take four, 10–18 take eight. More than eighteen is
-`BANK-TYPE-002` — a doubleword holds no more.
+`BANK-TYPE-002`. A doubleword holds no more.
 
 Zoned decimal is one byte per digit with the sign kept separate, so the field
 reads as plain text, which is what a file another system or a person reads
@@ -114,7 +114,7 @@ record Counters {
 
 A COBOL `VALUE` clause. Working storage starts as whatever the region left there
 unless a field says otherwise, so a counter with no initial value starts at an
-unpredictable number — and writing it in the record rather than in an opening
+unpredictable number, and writing it in the record rather than in an opening
 paragraph keeps the fact next to the field, where it cannot drift out of step
 when the record gains one.
 
@@ -125,7 +125,7 @@ fit (`BANK-COPY-006`). Anything that needs computing belongs in the program. A
 second reading of another field's bytes.
 
 The clause is dropped when the same record is written into an `FD`, where COBOL
-does not allow it — a file record describes a buffer the file fills, so there is
+does not allow it: a file record describes a buffer the file fills, so there is
 nothing there to initialise.
 
 ### Alignment
@@ -151,7 +151,7 @@ wrong place. The layout report accounts for the slack, and counts it in the
 record's length.
 
 **Usage is representation, not meaning.** A count is a count whichever bytes
-hold it, so usage takes no part in type compatibility — only in the picture and
+hold it, so usage takes no part in type compatibility: only in the picture and
 the byte count. Currency stays nominally typed regardless: a BDT amount is still
 not an unqualified number that happens to have two decimals.
 
@@ -169,7 +169,7 @@ record LegacyDate {
 
 A legacy copybook splits a date into year, month, and day and then wants to move
 all three at once. `renames` emits a level-66, which gives that run a second
-name without a second copy of the storage — that is what distinguishes it from
+name without a second copy of the storage. That is what distinguishes it from
 `redefines`, which is a new _reading_ of the same bytes.
 
 It costs nothing and appears after the record's own fields, which is where COBOL
@@ -177,8 +177,8 @@ requires it. Both ends are qualified by the group in the generated code, because
 the same record is emitted in working storage and again inside every `FD` that
 holds it.
 
-The name reads as the alphanumeric span it covers — `string<11>` above, since
-zoned decimal is a byte per digit plus one for the separate sign — which is
+The name reads as the alphanumeric span it covers (`string<11>` above, since
+zoned decimal is a byte per digit plus one for the separate sign) which is
 exactly what a COBOL group move treats it as. Both ends have to be fields of the
 record, the first has to come before the last, and the run cannot cross a table
 whose length depends on a count, since a 66 has no length of its own
@@ -194,7 +194,7 @@ movement: (edited < GBP, "grouped" > blankWhenZero);
 `justified` emits `JUSTIFIED RIGHT`. COBOL moves an alphanumeric value
 left-aligned and pads on the right; this reverses it, which is how a code lands
 in the right of a fixed column without the program counting spaces. Alphanumeric
-only — a number's alignment comes from its picture (`BANK-COPY-005`).
+only: a number's alignment comes from its picture (`BANK-COPY-005`).
 
 `blankWhenZero` emits `BLANK WHEN ZERO`: a statement line with no movement
 prints blank rather than `0.00`, and says so in the record rather than in a
@@ -219,7 +219,7 @@ everything after it at the wrong offset.
 It is a storage type, not a text type. A national may be assigned from, compared
 with, and passed as another national of the same length; it can be read from and
 written to files like any other field. What it cannot do is mix with
-`string<n>` — in either direction, literals included:
+`string<n>`: in either direction, literals included:
 
 ```ts
 name.given = "SMITH"; // BANK-TYPE-003
@@ -236,7 +236,7 @@ than emit a move whose result differs between compilers, the compiler declines.
 does not cover**, and every such field carries a warning (`BANK-TYPE-024`) saying
 so.
 
-GnuCOBOL 3.2.0 — the compiler everything else here is checked against —
+GnuCOBOL 3.2.0 (the compiler everything else here is checked against)
 allocates **four** bytes per national character inside a group, not two. That is
 measured, not assumed:
 
@@ -259,7 +259,7 @@ check.
 ### 3b. Edited fields
 
 An amount held as `COMP-3` cannot be printed. `edited<T, "style">` declares the
-rendering, and assignment into it is the formatting step — which is exactly what
+rendering, and assignment into it is the formatting step, which is exactly what
 a COBOL `MOVE` into a numeric-edited item does:
 
 ```ts
@@ -286,12 +286,12 @@ counts `Z`s:
 Leading positions suppress and the last integer position stays `9`, so a zero
 amount prints as `0.00` rather than as nothing. Decimals never suppress: an
 amount is read to the penny, and a blank penny column is a defect. Asterisk fill
-is cheque protection — it leaves no room to write digits in. `CR` rather than a
+is cheque protection. It leaves no room to write digits in. `CR` rather than a
 minus is the accounting convention for a credit balance.
 
 **An edited field is a rendering, not a number.** It may be assigned from a
 value of its inner type and written to a file or a report line. It may not be
-read back as a value, compared, or computed with — which is also what COBOL
+read back as a value, compared, or computed with, which is also what COBOL
 allows, and which stops a report column becoming arithmetic input and losing
 the digits the editing removed. A style the compiler does not know is
 `BANK-TYPE-023` rather than a picture passed through unchecked.

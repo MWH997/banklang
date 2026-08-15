@@ -383,7 +383,7 @@ function renderInput(result: CompileResult): void {
       <b>This is the job around the program.</b> On z/OS a step allocates the
       datasets, the initiator passes the PARM, and a caller fills the record.
       Here you do. Everything below is written at the offsets the copybook
-      reports, in the encoding it reports — packed decimal included.
+      reports, in the encoding it reports, packed decimal included.
     </p>
     ${program.surfaces.map(surfaceHtml).join("")}`;
 
@@ -405,11 +405,11 @@ function renderInput(result: CompileResult): void {
 function surfaceHtml(surface: InputSurface, index: number): string {
   const title =
     surface.kind === "entry"
-      ? `Entry record — <code>${escapeHtml(surface.name)}</code>`
+      ? `Entry record: <code>${escapeHtml(surface.name)}</code>`
       : surface.kind === "parm"
         ? "PARM"
         : surface.kind === "sql"
-          ? `Db2 — rows for <code>${escapeHtml(surface.name)}</code>`
+          ? `Db2 rows for <code>${escapeHtml(surface.name)}</code>`
           : `Dataset <code>${escapeHtml(surface.name)}</code>`;
 
   return `
@@ -568,7 +568,7 @@ function paintRun(
       : `
     <p class="run__inputs">
       <b>Nothing was supplied as input.</b> ${escapeHtml(program?.reason ?? "")}
-      The amounts below are what this program does with empty storage — real
+      The amounts below are what this program does with empty storage: real
       arithmetic on real storage, and not a worked example.
     </p>`,
   );
@@ -580,7 +580,7 @@ function paintRun(
         ${outcome.missingInputs.map((name) => `<code>${escapeHtml(name)}</code>`).join(", ")},
         and there is nothing behind ${outcome.missingInputs.length === 1 ? "it" : "them"} here.
         The <code>OPEN</code> returns file status 35 and what you are seeing
-        below is the failure path — which is a path worth reading, and the one
+        below is the failure path, which is a path worth reading, and the one
         an unchecked <code>OPEN</code> would have skipped silently.
       </p>`);
   }
@@ -724,14 +724,15 @@ function renderDiagnostics(result: CompileResult): void {
     return;
   }
 
-  pane.innerHTML = result.diagnostics
-    .map((diagnostic) => {
-      const span = diagnostic.span;
-      const where = span
-        ? `line ${span.start.line}, column ${span.start.column}`
-        : "no location";
-      const doc = explainDiagnostic(diagnostic.id);
-      return `
+  pane.innerHTML =
+    result.diagnostics
+      .map((diagnostic) => {
+        const span = diagnostic.span;
+        const where = span
+          ? `line ${span.start.line}, column ${span.start.column}`
+          : "no location";
+        const doc = explainDiagnostic(diagnostic.id);
+        return `
         <article class="diag" data-line="${span?.start.line ?? ""}" data-end="${span?.end.line ?? ""}">
           <header>
             <code class="diag__id">${escapeHtml(diagnostic.id)}</code>
@@ -750,8 +751,14 @@ function renderDiagnostics(result: CompileResult): void {
               : ""
           }
         </article>`;
-    })
-    .join("");
+      })
+      .join("") +
+    // The full catalogue, linked from the pane that shows a diagnostic rather
+    // than from the site navigation: a reader looking at `BANK-LED-001` wants
+    // the entry for it, and that is the only place this link is worth having.
+    `<p class="diag__more">
+       <a href="/docs/diagnostics.html">Every diagnostic, with its rule and remediation →</a>
+     </p>`;
 
   for (const node of pane.querySelectorAll<HTMLElement>(".diag")) {
     node.addEventListener("click", () => {
@@ -1030,6 +1037,25 @@ function boot(): void {
       selectTab(next);
     });
   }
+
+  /*
+   * Say when the tab strip has more in it than fits.
+   *
+   * The strip scrolls and its scrollbar is hidden, so at 1280px in two columns
+   * the Analysis tab sat off the right-hand edge with nothing on screen to
+   * suggest it existed. The fade is a class rather than a permanent mask
+   * because at a width where all seven fit, a fade dims the last one for no
+   * reason. Measured on resize, since the pane's width is half the window's.
+   */
+  const strip = $<HTMLElement>(".pane--output .tabs");
+  const syncOverflow = (): void => {
+    strip.classList.toggle(
+      "tabs--overflowing",
+      strip.scrollWidth > strip.clientWidth + 1,
+    );
+  };
+  syncOverflow();
+  new ResizeObserver(syncOverflow).observe(strip);
 
   $<HTMLSelectElement>("#copybook-picker").addEventListener(
     "change",

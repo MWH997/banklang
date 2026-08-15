@@ -45,7 +45,7 @@ import type {
   CopybookLayoutEntry,
   CopybookLayoutReport,
 } from "../../copybook/src/index";
-import type { IRProgram, IRSql } from "../../ir/src/index";
+import type { IRProgram, IRSql, IRTransaction } from "../../ir/src/index";
 import {
   batchParmFields,
   restartControlFiles,
@@ -433,12 +433,161 @@ function seedFor(field: InputField, index: number): string {
 function seedRecord(
   fields: InputField[],
   index: number,
+  /** The BankTS record these fields belong to, for the comparison lookup. */
+  record?: string,
+  /** What the program tests each field against, from `comparedLiterals`. */
+  compared?: Map<string, string>,
 ): Record<string, string> {
   const values: Record<string, string> = {};
   for (const field of fields) {
-    values[field.name] = seedFor(field, index);
+    values[field.name] =
+      compared?.get(`${record ?? ""}.${field.name}`) ?? seedFor(field, index);
   }
   return values;
+}
+
+/**
+ * Record variables a keyed read takes its key from.
+ *
+ * `read accountMaster into master key statement.accountId` asks the file for
+ * one record, and the key comes out of `statement` — a parameter the program
+ * never writes. The rule below excludes every record parameter of a
+ * file-reading program on the grounds that the file fills them, which is true
+ * of `master` and false of `statement`: `statement-generation` ran with a blank
+ * key, the master file answered "no such record", and the one example whose
+ * subject is producing a statement demonstrated the not-found path instead.
+ *
+ * A record the program also reads into is excluded, because then the program
+ * fills it. `vsam-browse` looks like a counter-example and is not: it starts a
+ * browse at `account.customerId`, but the statement before the `START` is
+ * `account.customerId = request.wantedCustomerId`, so the program writes the
+ * key it then searches on and a seeded one is a form the reader fills in and
+ * the program discards.
+ */
+function keyedRecords(transaction: IRTransaction): Set<string> {
+  const names = new Set<string>();
+  const filled = new Set<string>();
+
+  const fromExpression = (node: unknown): void => {
+    if (node === null || typeof node !== "object") {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(fromExpression);
+      return;
+    }
+    if ("targetName" in node && typeof node.targetName === "string") {
+      names.add(node.targetName);
+    }
+    Object.values(node).forEach(fromExpression);
+  };
+
+  const fromStatements = (node: unknown): void => {
+    if (node === null || typeof node !== "object") {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(fromStatements);
+      return;
+    }
+    const statement = node as {
+      kind?: string;
+      key?: unknown;
+      operation?: string;
+      recordName?: string | null;
+      intoRecord?: string | null;
+      commarea?: string | null;
+    };
+    if (
+      (statement.kind === "FileStatement" ||
+        statement.kind === "CicsStatement") &&
+      statement.key !== undefined
+    ) {
+      fromExpression(statement.key);
+    }
+    // What the program writes for itself, by any of the four routes there are.
+    if (
+      statement.kind === "FileStatement" &&
+      (statement.operation === "read" || statement.operation === "readNext") &&
+      statement.recordName
+    ) {
+      filled.add(statement.recordName);
+    }
+    if (
+      statement.kind === "QueueStatement" &&
+      statement.operation === "get" &&
+      statement.recordName
+    ) {
+      filled.add(statement.recordName);
+    }
+    if (statement.kind === "SqlStatement" && statement.intoRecord) {
+      filled.add(statement.intoRecord);
+    }
+    if (statement.kind === "CicsStatement" && statement.commarea) {
+      filled.add(statement.commarea);
+    }
+    Object.values(node).forEach(fromStatements);
+  };
+
+  fromStatements(transaction.body);
+  for (const name of filled) {
+    names.delete(name);
+  }
+  return names;
+}
+
+/**
+ * The value a program tests a field against, where it tests one.
+ *
+ * A seed derived from the field's name is a guess, and on a field the program
+ * branches on it is usually the wrong guess: `rawStatus` is a `string<1>`, the
+ * name rule answered "OPEN", one byte of that is "O", and the program that
+ * settles a transaction when `rawStatus == "A"` settled none of the three it
+ * was given. The whole night's first step reported "READ 3, EXTRACTED 0" and
+ * ended with return code 4, which is real behaviour on data nobody chose.
+ *
+ * The program says what it wants. Where a field is compared against a string
+ * literal, that literal is the seed, so the panel opens on the path the example
+ * exists to show. The first comparison wins: a field tested against several
+ * values has no single right answer, and the first is the one the program
+ * checks first.
+ */
+function comparedLiterals(transaction: IRTransaction): Map<string, string> {
+  const found = new Map<string, string>();
+
+  const visit = (node: unknown): void => {
+    if (node === null || typeof node !== "object") {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    const test = node as {
+      kind?: string;
+      operator?: string;
+      left?: { kind?: string; recordName?: string; member?: string };
+      right?: { kind?: string; value?: unknown };
+    };
+    if (
+      test.kind === "BinaryComparison" &&
+      test.operator === "==" &&
+      test.left?.kind === "MemberAccess" &&
+      test.left.recordName &&
+      test.left.member &&
+      test.right?.kind === "StringLiteral" &&
+      typeof test.right.value === "string"
+    ) {
+      const key = `${test.left.recordName}.${toCobolName(test.left.member)}`;
+      if (!found.has(key)) {
+        found.set(key, test.right.value);
+      }
+    }
+    Object.values(node).forEach(visit);
+  };
+
+  visit(transaction.body);
+  return found;
 }
 
 /** How many records a seeded input dataset holds. Enough to see a loop run. */
@@ -531,10 +680,22 @@ export function inputsFor(
   const readsQueue = program.queues.some(
     (queue) => queue.direction === "input",
   );
+  //
+  // A record a keyed read takes its key from is the exception, and it is
+  // checked first: the program asks the file for the record that key names, so
+  // nothing fills it and a blank one asks for a record that is not there.
+  const keyed = entry ? keyedRecords(entry) : new Set<string>();
+  const compared = entry ? comparedLiterals(entry) : new Map<string, string>();
   const entryRecord =
-    readsFile || readsQueue || entry?.isCics
+    entry?.parameters.find(
+      (parameter) =>
+        parameter.type.kind === "record" && keyed.has(parameter.name),
+    ) ??
+    (readsFile || readsQueue || entry?.isCics
       ? undefined
-      : entry?.parameters.find((parameter) => parameter.type.kind === "record");
+      : entry?.parameters.find(
+          (parameter) => parameter.type.kind === "record",
+        ));
   if (entry && entryRecord) {
     const layout = byName.get(recordNameOf(entryRecord.type));
     if (layout) {
@@ -542,9 +703,9 @@ export function inputsFor(
       surfaces.push({
         kind: "entry",
         name: layout.cobolName,
-        note: `The record ${entry.name} works on. It sits in WORKING-STORAGE and nothing in the program fills it — on z/OS a caller, a PARM or a dataset does, and here this panel does.`,
+        note: `The record ${entry.name} works on. It sits in WORKING-STORAGE and nothing in the program fills it. On z/OS a caller, a PARM or a dataset does, and here this panel does.`,
         fields,
-        records: [seedRecord(fields, 0)],
+        records: [seedRecord(fields, 0, layout.recordName, compared)],
       });
     }
   }
@@ -601,7 +762,7 @@ export function inputsFor(
       note: `The rows Db2 answers ${cursor.name} with. Each is one row of its SELECT, written into the fields its INTO names; when they run out the cursor gets end of data, which is how the loop finishes rather than reaching its bound.`,
       fields,
       records: Array.from({ length: SEEDED_ROWS }, (_, index) =>
-        seedRecord(fields, index),
+        seedRecord(fields, index, layout.recordName, compared),
       ),
     });
   }
@@ -621,7 +782,7 @@ export function inputsFor(
       note: `The dataset ${file.name} reads. Each row is one fixed-length record of ${String(layout.totalLength)} bytes, laid out exactly as the copybook says.`,
       fields,
       records: Array.from({ length: SEEDED_RECORDS }, (_, index) =>
-        seedRecord(fields, index),
+        seedRecord(fields, index, layout.recordName, compared),
       ),
     });
   }

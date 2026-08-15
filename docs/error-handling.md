@@ -36,7 +36,7 @@ nothing in a region reads it. A CICS program that has failed abends with code
 `RETURN-CODE` cannot hold the answer while the program is still running. The
 Language Reference is explicit: "the RETURN-CODE special register in the calling
 program is set to the value of the RETURN-CODE special register in the called
-program" — so every generated transaction, which ends by calling `BANKAUDT`,
+program", so every generated transaction, which ends by calling `BANKAUDT`,
 used to hand the operating system the audit program's zero.
 
 `BANK-RETURN-CODE` holds it and `BANK-MAIN` moves it out once, after everything
@@ -59,8 +59,8 @@ Every generated failure does the same three things, in the same order:
 
 Set the code, name the failure, leave through the enclosing routine's exit.
 Control returns to `BANK-MAIN`, which is the only paragraph that ends the
-program. Where there is no enclosing routine — a file error declarative, an XML
-handler section, both entered by the run time rather than performed —
+program. Where there is no enclosing routine (a file error declarative, an XML
+handler section, both entered by the run time rather than performed)
 `BANK-ABEND` is the paragraph it goes to instead.
 
 Every call site tests the register afterwards:
@@ -91,7 +91,7 @@ entry transaction postAccounts(account: Account) {
 }
 ```
 
-It compiles to the standard COBOL shape for a body with an early exit — a
+It compiles to the standard COBOL shape for a body with an early exit: a
 wrapper that performs the body `THRU` its exit and then inspects the register:
 
 ```cobol
@@ -135,7 +135,7 @@ The status field carries condition names:
 
 `"00" THRU "09"` is IBM's successful-completion class. `"02"` is a duplicate
 alternate key where duplicates are allowed, `"05"` is an OPTIONAL file created
-on this run — a check written `NOT = "00"` stops a restartable batch on its
+on this run: a check written `NOT = "00"` stops a restartable batch on its
 first night.
 
 The statuses a given statement is _allowed_ to produce are its own. End of file
@@ -165,7 +165,7 @@ thread lost, `-904` a resource that was not available, `-805` a package that was
 never bound.
 
 A body that runs SQL and never tests `SQLCODE` is `BANK-SQL-001`. A body that
-tests it but cannot separate an error from `+100` is **`BANK-SQL-007`** —
+tests it but cannot separate an error from `+100` is **`BANK-SQL-007`**,
 because `if sqlcode == 0 { found } else { not found }` turns a deadlock into a
 customer being told their account does not exist, and `sqlcode != 100` is no
 better, putting `+100` and `-911` on the same side.
@@ -196,8 +196,8 @@ The comparison is against the condition name, not a number:
            IF LINK-RESP = DFHRESP(NORMAL)
 ```
 
-The API Reference names one value a program may write — a normal return is
-`DFHRESP(NORMAL)` — and says the rest are tested "by means of DFHRESP", the
+The API Reference names one value a program may write (a normal return is
+`DFHRESP(NORMAL)`), and says the rest are tested "by means of DFHRESP", the
 translator's own built-in function. The numbers behind the other conditions
 belong to the translator, so comparing against one is `BANK-CICS-004`.
 
@@ -207,7 +207,7 @@ own sample writes it: ending the task is something CICS does, not something
 COBOL does.
 
 A commarea shorter than the record is refused before anything reads it, with
-abend code `BKNC` — IBM's guidance is to verify the length "matches what the
+abend code `BKNC`: IBM's guidance is to verify the length "matches what the
 program expects", because a short one leaves the `MOVE` reading somebody else's
 storage.
 
@@ -255,7 +255,7 @@ Every loop carries one, and reaching it is a failure:
 The condition is re-evaluated so the two exits are told apart exactly. A loop
 that ended because its own condition went false is the ordinary end; the counter
 at the limit while the condition still holds is the bound stopping work that had
-not finished — which without this branch was a five-million-record master
+not finished, which without this branch was a five-million-record master
 processing the first million and ending RC=0.
 
 ---
@@ -267,7 +267,7 @@ receiving field alone when the phrase is present rather than storing the
 truncated answer, which is what makes stopping safe: the wrong value never
 reaches the ledger.
 
-Without it, the digits truncated are the high-order ones — so an overflowing
+Without it, the digits truncated are the high-order ones, so an overflowing
 addition does not produce a large wrong number that stands out, it produces a
 plausible small one.
 
@@ -279,6 +279,6 @@ See [for-mainframe-engineers.md](for-mainframe-engineers.md#why-the-bounds-guard
 
 ## Related pages
 
-- [diagnostics.md](diagnostics.md) — every diagnostic the compiler emits
-- [numeric-model.md](numeric-model.md) — overflow, rounding and intermediate results
-- [jcl-model.md](jcl-model.md) — what `COND=` the generated job writes
+- [diagnostics.md](diagnostics.md) (every diagnostic the compiler emits
+- [numeric-model.md](numeric-model.md)) overflow, rounding and intermediate results
+- [jcl-model.md](jcl-model.md): what `COND=` the generated job writes

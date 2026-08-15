@@ -6,7 +6,7 @@ specific objection that can be answered or fixed; and whoever changes the
 emitter next, so that a new construct has a rule to follow rather than a
 precedent to copy.
 
-Every rule here is checked. Where a check exists it is named — either
+Every rule here is checked. Where a check exists it is named: either
 `packages/conformance-lint`, which reads the emitted text and knows nothing
 about how it was produced, or a test.
 
@@ -39,7 +39,7 @@ about how it was produced, or a test.
 | A picture describes at most 18 digits, which is `ARITH(COMPAT)`.                                                                                                                                                                          | `digit-count`                      |
 | A PICTURE character-string is at most 50 characters; an alphanumeric literal at most 160.                                                                                                                                                 | `picture-length`, `literal-length` |
 | One literal delimiter. `"` everywhere, which is what the `CBL` statement's `QUOTE` says.                                                                                                                                                  | `literal-delimiter`                |
-| One spelling per picture shape. `PIC X(1)` not `PIC X`, `V99` not `V9(2)` — either is legal, both in one program is not.                                                                                                                  | `tests/feature-coverage.test.ts`   |
+| One spelling per picture shape. `PIC X(1)` not `PIC X`, `V99` not `V9(2)`: either is legal, both in one program is not.                                                                                                                   | `tests/feature-coverage.test.ts`   |
 | A file status field carries condition names: `-OK` (`"00" THRU "09"`), `-EOF`, `-DUPKEY`, `-NOTFND`.                                                                                                                                      | `tests/generated-style.test.ts`    |
 | An enum field carries one 88-level per member.                                                                                                                                                                                            | `tests/enum-conditions.test.ts`    |
 | A QSAM `FD` carries `BLOCK CONTAINS 0 RECORDS` and `RECORDING MODE`. VSAM carries neither.                                                                                                                                                | `tests/generated-style.test.ts`    |
@@ -74,7 +74,7 @@ and with what, every file with its DD name and record length, the modules it
 calls, the copybooks it needs, what each return code means, and whether a rerun
 is safe.
 
-A module with no transaction says so — "None. This module is a library" —
+A module with no transaction says so: "None. This module is a library":
 rather than repeating the batch sentence, and the job that builds it emits no
 run step. The two used to disagree inside one artifact: `PURPOSE` said "Nothing
 here is an entry point" and `ENTRY` four lines below said "started by EXEC PGM
@@ -92,7 +92,7 @@ Checked by `tests/generated-style.test.ts`.
 ## 6. Comments in the body
 
 Comments are emitted where the generated COBOL does something the reader would
-otherwise have to reconstruct — a rounding sequence, a guard, a translated
+otherwise have to reconstruct, a rounding sequence, a guard, a translated
 construct. They are short enough to survive reference format at any nesting
 depth, because a comment that wraps mid-sentence reads worse than no comment.
 

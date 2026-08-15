@@ -6,8 +6,8 @@ Accepted
 
 ## Context
 
-BankTS has no `import`. A project is exactly one source file — `src/main.bank.ts`
-— and everything a program uses is declared in it.
+BankTS has no `import`. A project is exactly one source file (`src/main.bank.ts`
+), and everything a program uses is declared in it.
 
 That is unusual enough to read as an omission rather than a decision, and it is
 the first thing a language engineer notices. It deserves an answer, because the
@@ -40,7 +40,7 @@ ACCTMAST.cpy` writes the BankTS record for an existing copybook, and the
   `bankc job` emits one JCL stream for the lot. `examples/end-of-day-settlement`
   is three programs and a sort in one night.
 
-A BankTS program may still call another program at run time — `call` compiles to
+A BankTS program may still call another program at run time: `call` compiles to
 a COBOL `CALL`, which is dynamic and resolves at link or load time exactly as it
 does on z/OS. What it may not do is textually include one.
 
@@ -64,7 +64,7 @@ does on z/OS. What it may not do is textually include one.
 **An include mechanism, textual like COBOL's `COPY`.** This is what COBOL
 itself does, and it works because the copybook is also the artifact. In BankTS
 the artifact is generated, so a textual include would produce a copybook whose
-provenance is two files — and the copybook is the thing an installation reviews.
+provenance is two files, and the copybook is the thing an installation reviews.
 
 **A module system with explicit exports.** Coherent, and it makes the compiler a
 linker. The layout of a record would then depend on resolution order, which is

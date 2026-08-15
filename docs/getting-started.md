@@ -5,7 +5,7 @@ looks the way it does.
 
 ## Requirements
 
-Node.js 24 or later, and pnpm 11.7.0. GnuCOBOL is optional — everything except
+Node.js 24 or later, and pnpm 11.7.0. GnuCOBOL is optional: everything except
 the compile and execute lanes works without it.
 
 ```bash
@@ -133,7 +133,7 @@ exactly how a 31-character data name and a rounding phrase that does not exist
 both shipped.
 
 `pnpm lint:conformance` reads every emitted artifact, every checked-in fixture
-and every evidence bundle as text and asserts the target's rules — 30-character
+and every evidence bundle as text and asserts the target's rules: 30-character
 words, column 72, `ARITH(COMPAT)`'s eighteen digits, dataset qualifiers at
 eight, and that every word in the program is one Enterprise COBOL has heard of.
 
@@ -141,7 +141,7 @@ eight, and that every word in the program is one Enterprise COBOL has heard of.
 whether the toolchain will accept the program, but whether z/OS will do what it
 says. The 2026-08-07 audit found two shipped programs that compiled, bound and
 verified, and then aborted on their second `MQCONN` or returned the caller's own
-request unchanged — neither of which is a syntax error, a style violation or a
+request unchanged: neither of which is a syntax error, a style violation or a
 wrong number. Both are in [target-conformance.md](target-conformance.md).
 
 ---
@@ -154,7 +154,7 @@ pnpm bankc check my-service
 ```
 
 `bankc init` produces a project that compiles first try. `banklang.json` beside
-`src/` holds the settings — see [toolchain.md](toolchain.md).
+`src/` holds the settings: see [toolchain.md](toolchain.md).
 
 ---
 
@@ -167,7 +167,7 @@ pnpm bankc copybook import path/to/ACCTMAST.cpy
 ```
 
 It prints a BankTS record. Before printing anything it emits that record back to
-a copybook and compares the two field by field — same names, same order, same
+a copybook and compares the two field by field: same names, same order, same
 offsets, same lengths, same pictures. If they differ, nothing is written and the
 reason is named: a field read at the wrong length moves every field after it.
 
@@ -177,7 +177,7 @@ If you have a DCLGEN member:
 pnpm bankc dclgen import path/to/ACCOUNT.cpy
 ```
 
-Same idea, and it gets nullability from the catalogue — a column with no
+Same idea, and it gets nullability from the catalogue: a column with no
 `NOT NULL` becomes `nullable<T>`, which makes the compiler require a presence
 check before the program reads it.
 

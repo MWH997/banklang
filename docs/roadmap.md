@@ -1,6 +1,6 @@
 # Roadmap
 
-## v0.1 — Compiler credibility
+## v0.1: Compiler credibility
 
 Theme: deterministic compiler skeleton.
 
@@ -18,7 +18,7 @@ Deliverables:
 - account-transfer pure-function demo
 - audit report skeleton
 
-## v0.2 — Financial arithmetic
+## v0.2: Financial arithmetic
 
 Theme: safe decimal and money behaviour.
 
@@ -31,7 +31,7 @@ Deliverables:
 - decimal property tests
 - COBOL decimal mapping report
 
-## v0.3 — Copybook foundation
+## v0.3: Copybook foundation
 
 Theme: data-layout credibility.
 
@@ -44,7 +44,7 @@ Deliverables:
 - fixture generator
 - copybook roundtrip example
 
-## v0.4 — Banking diagnostics
+## v0.4: Banking diagnostics
 
 Theme: domain safety.
 
@@ -57,7 +57,7 @@ Deliverables:
 - file-status checker
 - source-map coverage checker
 
-## v0.5 — Batch and file programs
+## v0.5: Batch and file programs
 
 Theme: batch workload credibility.
 
@@ -69,7 +69,7 @@ Deliverables:
 - generated JCL example
 - batch interest accrual example
 
-## v0.6 — Db2 profile
+## v0.6: Db2 profile
 
 Theme: embedded SQL credibility.
 
@@ -82,7 +82,7 @@ Deliverables:
 - CRUD lowering
 - cursor support
 
-## v0.7 — CICS profile
+## v0.7: CICS profile
 
 Theme: online transaction credibility.
 
@@ -94,48 +94,48 @@ Deliverables:
 - response-code diagnostics
 - syncpoint/rollback model
 
-## v0.8 — Migration analysis
+## v0.8: Migration analysis
 
 Theme: legacy-estate relevance.
 
 Deliverables:
 
-- COBOL inventory tools — **done**, `bankc analyse`
-- SQL extractor — **done**
-- CICS extractor — **done**
-- paragraph graph — **done**, as Mermaid
-- copybook dependency graph — **done**, nested `COPY` references, missing and
+- COBOL inventory tools (**done**, `bankc analyse`
+- SQL extractor) **done**
+- CICS extractor (**done**
+- paragraph graph) **done**, as Mermaid
+- copybook dependency graph (**done**, nested `COPY` references, missing and
   ambiguous members, `REPLACING` metadata and cycles as Mermaid and JSON
-- skeleton migration output — not started, and the least certain of the six: a
+- skeleton migration output) not started, and the least certain of the six: a
   skeleton that is wrong in a way a reader trusts is worse than none
 
 See [migration-analysis.md](migration-analysis.md).
 
-## v0.9 — The depth each subsystem is missing
+## v0.9: The depth each subsystem is missing
 
 Theme: the second program of each kind, rather than the first.
 
 Db2, in the order a batch meets them:
 
-- ~~`WITH HOLD` cursors~~ — done, `cursor ... hold`, with `BANK-SQL-008`
-- ~~multi-row `FETCH`~~ — done, `cursor ... rowset n`
-- ~~isolation level on a statement~~ — never missing: the SQL is passed through
-- ~~savepoints~~ — the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
-- ~~`LOCK TABLE`~~ — the same
-- ~~`GET DIAGNOSTICS`~~ — never missing either: an ordinary statement in a
+- ~~`WITH HOLD` cursors~~ (done, `cursor ... hold`, with `BANK-SQL-008`
+- ~~multi-row `FETCH`~~) done, `cursor ... rowset n`
+- ~~isolation level on a statement~~ (never missing: the SQL is passed through
+- ~~savepoints~~) the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
+- ~~`LOCK TABLE`~~ (the same
+- ~~`GET DIAGNOSTICS`~~) never missing either: an ordinary statement in a
   `sql` declaration, with host variables resolved like any other
-- ~~scrollable cursors~~ — done 2026-08-07, and it was the one that needed
+- ~~scrollable cursors~~: done 2026-08-07, and it was the one that needed
   syntax rather than pass-through. `cursor ... scroll` emits
   `INSENSITIVE SCROLL CURSOR`, and `for each ... from n backward` walks the
   result set from a chosen row with `FETCH ABSOLUTE :position`
 
-~~zUnit test generation~~ — done, `test <name> for <entry transaction>` and
+~~zUnit test generation~~: done, `test <name> for <entry transaction>` and
 `bankc zunit`. It was blocked on not having IBM's schema, and what unblocked it
 was test cases IBM's own generator produced, published in public repositories:
 every shape in the three artifacts is copied from one of those and cited in
 [zunit.md](zunit.md). Two
 values are inferred rather than observed and say so, in D20 and D21. No
-generated case has been run — that is what the z/OS kit is for.
+generated case has been run. That is what the z/OS kit is for.
 
 ## v1.0
 
@@ -180,8 +180,8 @@ anything depended on it.
 [Galasa](https://openmainframeproject.org/projects/galasa/) ·
 [COBOL Check](https://github.com/openmainframeproject/cobol-check)
 
-**IBM Z Open Editor.** The editor work that did happen — the LSP and the VS Code
-extension — went its own way. What is still unbuilt is the part that would make
+**IBM Z Open Editor.** The editor work that did happen (the LSP and the VS Code
+extension) went its own way. What is still unbuilt is the part that would make
 a generated program navigable from the editor a z/OS developer already uses:
 copybook preview, generated-COBOL preview, and source-to-COBOL navigation.
 [Z Open Editor](https://ibm.github.io/zopeneditor-about/Docs/introduction.html) ·

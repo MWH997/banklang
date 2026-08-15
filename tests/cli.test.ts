@@ -67,7 +67,7 @@ describe("bankc cli", () => {
      */
     it("states that native IBM validation is not claimed", () => {
       expect(out).toContain(
-        "ibm enterprise cobol: not detected — no native IBM validation is claimed",
+        "ibm enterprise cobol: not detected, and no native IBM validation is claimed",
       );
     });
 

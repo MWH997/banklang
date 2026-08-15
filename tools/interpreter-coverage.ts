@@ -345,7 +345,7 @@ export function renderCoverage(report: CoverageReport): string {
     "",
     report.external.length === 0
       ? "_None emitted._"
-      : `${report.external.map((name) => `\`${name}\``).join(", ")} — these need Db2, a CICS region or IMS. The reference modules under \`runtime/\` stand in well enough to run a program, which falls well short of executing SQL. They are not counted as gaps because no interpreter change would close them.`,
+      : `${report.external.map((name) => `\`${name}\``).join(", ")}: these need Db2, a CICS region or IMS. The reference modules under \`runtime/\` stand in well enough to run a program, which falls well short of executing SQL. They are not counted as gaps because no interpreter change would close them.`,
     "",
   ].join("\n")}\n`;
 }

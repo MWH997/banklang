@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>BankLang — a banking language that compiles to IBM COBOL</title>
+    <title>BankLang: a banking language that compiles to IBM COBOL</title>
     <meta
       name="description"
-      content="Write banking logic in BankTS — TypeScript's type syntax, with statements of its own for transactions, files, cursors and queues — and get readable IBM Enterprise COBOL. The compiler refuses to compile financially unsafe programs: unbalanced ledger postings, retries that post twice, money moving with no audit trail."
+      content="Write banking logic in BankTS, which has TypeScript's type syntax and statements of its own for transactions, files, cursors and queues, and get readable IBM Enterprise COBOL. The compiler refuses to compile financially unsafe programs: unbalanced ledger postings, retries that post twice, money moving with no audit trail."
     />
     <link rel="canonical" href="{{ORIGIN}}/" />
     <link
       rel="alternate"
       type="application/rss+xml"
-      title="BankLang — Writing"
+      title="BankLang · Writing"
       href="/blog/feed.xml"
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -22,7 +22,7 @@
     <meta property="og:url" content="{{ORIGIN}}/" />
     <meta
       property="og:title"
-      content="BankLang — a banking language that compiles to IBM COBOL"
+      content="BankLang: a banking language that compiles to IBM COBOL"
     />
     <meta
       property="og:description"
@@ -56,33 +56,15 @@
   <body>
     <a class="skip" href="#what">Skip to content</a>
 
-    <header class="top">
-      <a class="wordmark" href="/">BankLang</a>
-      <nav>
-        <a href="/docs/">Docs</a>
-        <a href="/blog/">Writing</a>
-        <a href="/playground/">Playground</a>
-        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
-        <a href="https://mwhassan.com" rel="noopener">mwhassan.com</a>
-        <!--
-          E5. A toggle button, not an action: the label names what is toggled
-          and `aria-pressed` says whether it is on. It said "Theme" whatever
-          was on, with no state at all, so neither a sighted nor a
-          screen-reader user could tell the current mode from the control.
-        -->
-        <button id="theme" type="button" class="ghost" aria-pressed="false">
-          Dark mode
-        </button>
-      </nav>
-    </header>
+{{HEADER}}
 
     <main>
       <!-- 1. What it is. -->
       <section id="what" class="hero">
         <h1>A compiler from a small banking language to readable IBM COBOL.</h1>
         <p class="lede">
-          You write <strong>BankTS</strong>. Its types are TypeScript's —
-          <code>decimal&lt;18, 2&gt;</code>, <code>string&lt;16&gt;</code> — and
+          You write <strong>BankTS</strong>. Its types are TypeScript's
+          (<code>decimal&lt;18, 2&gt;</code>, <code>string&lt;16&gt;</code>) and
           its statements are its own: <code>transaction</code>,
           <code>file</code>, <code>cursor</code>, <code>queue</code>. It emits
           IBM Enterprise COBOL, a copybook for every record, and the JCL to build
@@ -137,11 +119,11 @@
 
         <p>
           A retry that posts twice, money moving with no audit trail, and a
-          ledger that does not balance. Each is normally caught by a person — a
+          ledger that does not balance. Each is normally caught by a person: a
           reviewer who knows to look, an auditor reconciling afterwards. There
           are <strong>{{SAFETY_RULE_COUNT}}</strong> such rules, among
-          <strong>{{DIAGNOSTIC_COUNT}}</strong> diagnostics in all — each
-          documented with an explanation and a remediation, and each one
+          <strong>{{DIAGNOSTIC_COUNT}}</strong> diagnostics in all. Each is
+          documented with an explanation and a remediation, and each one is
           provoked by a test that fails if the rule stops working.
         </p>
       </section>
@@ -199,7 +181,7 @@
           Four <code>SELECT</code> statements with no <code>FILE STATUS</code>
           clause between them, and one <code>OPEN</code> whose outcome nothing
           tests. A missing input gives file status 35 and the first read hits
-          <code>AT END</code> — the job ends with return code 0 having processed
+          <code>AT END</code>: the job ends with return code 0 having processed
           nothing. The layouts are unchanged, field for field, so the same
           datasets are read by the same DD names. What changes is everything the
           original left implicit.
@@ -279,29 +261,14 @@
       </p>
     </footer>
 
-    <script>
-      // The theme toggle, and nothing else. Everything on this page that could
-      // be built once was built once.
-      //
-      // The same block runs on the documentation and blog shells and in the
-      // playground's `main.ts`. `tests/site.test.ts` holds the four together.
-      (() => {
-        const button = document.getElementById("theme");
-        const root = document.documentElement;
-        const dark = matchMedia("(prefers-color-scheme: dark)");
-        const isDark = () =>
-          root.dataset.theme === "dark" || (!root.dataset.theme && dark.matches);
-        const sync = () => button.setAttribute("aria-pressed", String(isDark()));
-        sync();
-        // The preference can change without a click, and then the button is
-        // announcing a state that is no longer true.
-        dark.addEventListener("change", sync);
-        button.addEventListener("click", () => {
-          root.dataset.theme = isDark() ? "light" : "dark";
-          localStorage.setItem("banklang-theme", root.dataset.theme);
-          sync();
-        });
-      })();
-    </script>
+    <!--
+      The theme toggle and the menu button, and nothing else. Everything on this
+      page that could be built once was built once, and these two are filled in
+      from `tools/build-site.ts` so that this page, the 404, every documentation
+      page and every post run the same bytes, one hash each on the content
+      policy rather than one per page.
+    -->
+{{THEME_SCRIPT}}
+{{NAV_SCRIPT}}
   </body>
 </html>

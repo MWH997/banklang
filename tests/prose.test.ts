@@ -24,29 +24,25 @@ import { isWorkingPaper } from "../tools/build-docs";
  * | `docs/*.md`                |       620 |
  *
  * The audit's own framing was: extend it, or drop it and stop drawing the
- * distinction. **Dropped**, and the reasoning is worth writing down because the
- * easy reading of that is that a standard was lowered.
+ * distinction. It was dropped in August, on the reasoning that enforcing it on
+ * the six posts while the documentation carried 620 of them was the worst of
+ * the three options, and that extending it meant a mechanical rewrite of prose
+ * that was already good.
  *
- * The stated rationale was that "the em dash is the punctuation mark a language
- * model reaches for, and a reader who has noticed that stops reading". Two
- * things are wrong with it. It is a proxy: what it is reaching for is writing
- * that reads as though nobody chose the words, and the phrase list below is the
- * direct measurement of that. And it was enforced on the one surface where the
- * writing is most deliberate, while the documentation and the code comments —
- * the two surfaces this project asks to be judged on — carried 1,235 of them.
- * A reader who notices the blog punctuates differently from the docs draws
- * exactly the inference the rule existed to prevent.
+ * **It has since been extended, and the rewrite was not mechanical.** Every one
+ * of the 685 in the documentation and the posts was read and replaced with the
+ * punctuation the sentence wanted: a colon where the dash introduced an
+ * explanation, parentheses where a pair of them bracketed an aside, a full stop
+ * where what followed could stand on its own. Three of the documents are
+ * generated, so those were fixed in the generators. So were the site's own
+ * markup, the page titles and the strings the playground renders.
  *
- * Extending it was the other option, and it is worse than it sounds: it is a
- * mechanical rewrite of 1,235 sentences in prose that is currently good, to
- * satisfy a heuristic about how the prose might be read rather than about
- * whether it is right. `README.md` discloses the AI assistance in the second
- * paragraph, so nothing was being concealed by the punctuation either way.
- *
- * What survives is the check with a basis, applied to everything: the phrase
- * list, over the blog, the documentation, the README, the contributing guide
- * and the site's own copy. It passed on all of them the day it was extended,
- * which is the argument for extending it rather than against.
+ * What is held here is therefore both checks, over the same surfaces: the
+ * phrase list, the two shapes of self-answering negative, and the dash. Code
+ * comments are deliberately outside it, and the reason is the one the August
+ * entry gave: they are written for whoever is reading the code, the objection
+ * is about what a visitor to the site reads, and a rule reaching into every
+ * comment in the repository is the mechanical rewrite that was rightly refused.
  */
 
 const FORBIDDEN = [
@@ -207,6 +203,76 @@ describe("everything written for a reader", () => {
     for (const surface of SURFACES) {
       for (const [hit] of surface.text.matchAll(TWO_BEAT)) {
         found.push(`${surface.name}: ${hit.replace(/\s+/g, " ").trim()}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  /**
+   * The same shape inside one sentence, joined with a comma.
+   *
+   * "is not a rule, it is a comment", "is not a compiler error, it is a file
+   * somebody uploads". The rule above catches the two-sentence form and this
+   * one was left: same mannerism, one mark of punctuation different, and a
+   * comma splice on top of it.
+   *
+   * "not X but Y" and "not X: Y" are both left alone. The objection is to the
+   * pronoun-and-copula restatement, which carries no information the first
+   * clause did not, and not to contrast.
+   */
+  it("does not answer its own negative with a comma and a pronoun", () => {
+    // The trailing `(?!\s+not\b)` excludes a list of negatives, which is a
+    // different shape and a correct one: "they are not implementations, they
+    // are not secure, and they write plain files".
+    const SPLICE =
+      /\b(?:is|are|was|were)\s+not\s+[^.;:!?]{3,70},\s+(?:it|that|they|this)\s+(?:is|are|was|were)\b(?!\s+not\b)/gi;
+    const found: string[] = [];
+    for (const surface of SURFACES) {
+      for (const [hit] of surface.text.matchAll(SPLICE)) {
+        found.push(`${surface.name}: ${hit.replace(/\s+/g, " ").trim()}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  /**
+   * No em dashes, in anything a reader reads.
+   *
+   * The comment at the top of this file records why this rule was dropped in
+   * August: it was enforced on the six blog posts and absent from the 1,235
+   * instances in the documentation and the code comments, and a reader who
+   * notices that the blog punctuates differently from the docs draws exactly
+   * the inference the rule existed to prevent. Extending it was called a
+   * mechanical rewrite of prose that was already good.
+   *
+   * It has now been extended, which is what makes the rule defensible: 685 in
+   * the documentation and the posts, and every one in the site's own markup and
+   * in the strings the playground renders, rewritten as the punctuation the
+   * sentence actually wanted — a colon where the dash introduced an
+   * explanation, parentheses where a pair of them bracketed an aside, a full
+   * stop where the clause after it could stand alone.
+   *
+   * Held over the reader-facing surfaces only. Code comments are not in
+   * `proseSurfaces()` and are not covered: they are written for whoever is
+   * reading the code, the argument above is about what a visitor to the site
+   * sees, and a rule that reaches into every comment in the repository is the
+   * mechanical rewrite that was rightly refused.
+   *
+   * Generated pages are covered through their generators. `pnpm
+   * horizontal:report` writes three of the documents this reads, so the em
+   * dashes in it were fixed in `tools/horizontal-report.ts` and in
+   * `packages/horizontal-validation/src/defects.ts` rather than in the output,
+   * where the next run would have put them back.
+   */
+  it("uses no em dashes", () => {
+    const found: string[] = [];
+    for (const surface of SURFACES) {
+      // Fenced blocks are content: a COBOL sample or a terminal transcript is
+      // quoted, not written. `posts()` already arrives as prose.
+      const prose = surface.text.replace(/```[\s\S]*?```/g, "");
+      const count = (prose.match(/—/g) ?? []).length;
+      if (count > 0) {
+        found.push(`${surface.name}: ${String(count)}`);
       }
     }
     expect(found).toEqual([]);

@@ -195,7 +195,7 @@ and edited-field model behind it, plus files, cursors, the ledger and the
 audit log.
 
 It exists to disagree. Every example is executed twice, once by `cobc` and
-once here, and a test fails on any difference — which is what catches a defect
+once here, and a test fails on any difference, which is what catches a defect
 that compiles and passes every static check.
 
 ### `packages/verifier`
@@ -217,7 +217,7 @@ what grades an example nothing local can compile.
 
 ### `packages/zos-lint`
 
-Rules over emitted COBOL that only matter on z/OS — commarea writes, `CALL`
+Rules over emitted COBOL that only matter on z/OS: commarea writes, `CALL`
 operands, statement-level conventions the compiler is expected to honour.
 
 ### `packages/zunit`
@@ -235,8 +235,8 @@ states its own limits rather than guessing; see
 
 ### `packages/horizontal-validation`
 
-The other axis of validation. Everything else here is vertical — tests written
-for BankLang, measuring BankLang against what their author expected — and this
+The other axis of validation. Everything else here is vertical (tests written
+for BankLang, measuring BankLang against what their author expected), and this
 is what measures the compiler against COBOL nobody wrote for it: independent
 corpora, their licences, the rules that decide what BankTS can represent, and
 the arithmetic that reports the answer with its denominator attached.
@@ -280,7 +280,7 @@ line produced.
 
 ### `packages/playground`
 
-The whole compiler in a browser — no compile server, and nothing the reader
+The whole compiler in a browser: no compile server, and nothing the reader
 writes is sent anywhere. Editors for
 BankTS and the emitted COBOL, the source map as a click-through between them,
 and `Run` over `cobol-runtime`.

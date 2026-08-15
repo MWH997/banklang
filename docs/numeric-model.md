@@ -9,7 +9,7 @@ right.
 ## Every number has a declared precision and scale
 
 There is no floating point in the language. `decimal<18,2>` is eighteen digits
-of which two are fractional, held as `PIC S9(16)V99 COMP-3` — packed decimal.
+of which two are fractional, held as `PIC S9(16)V99 COMP-3`: packed decimal.
 Binary floating point cannot represent 0.10, and a bank's arithmetic is decimal.
 
 | Declaration           | Picture                                      | Bytes           | Used for                                     |
@@ -24,7 +24,7 @@ Binary floating point cannot represent 0.10, and a bank's arithmetic is decimal.
 `unsigned` cannot hold a negative. Assigning one stores its absolute value,
 which is COBOL's rule and not something this compiler changes. It exists because
 `PIC 9(n)` is the most common numeric picture in a copybook and `zoned` is a
-byte wider — importing one as the other would move every field after it.
+byte wider: importing one as the other would move every field after it.
 
 ## Eighteen digits, not thirty-one
 
@@ -35,7 +35,7 @@ an arithmetic operand is 18". `ARITH(EXTEND)` gives 31.
 Eighteen is what every generated picture is sized against and what
 `BANK-DEC-006` refuses a rounding for. Compiling the same program under
 `ARITH(EXTEND)` would not break it, but the compiler's own refusals would stop
-matching the arithmetic — which is why the option is written into the source
+matching the arithmetic, which is why the option is written into the source
 rather than left to the installation's defaults module.
 
 `BANK-TYPE-002` refuses a declaration past eighteen digits.
@@ -59,7 +59,7 @@ A `return round(...)` rounds to the routine's declared return type.
 
 COBOL's own. `COMPUTE X = A * B` evaluates the product in the compiler's
 intermediate, which carries more digits than any field the emitter could
-declare — the Programming Guide's Appendix A gives the number of integer and
+declare: the Programming Guide's Appendix A gives the number of integer and
 decimal places carried through a fixed-point expression.
 
 This matters for the rounding sequences below. The excess a truncation discarded
@@ -82,7 +82,7 @@ from zero:
 > absolute value of the discarded digits is greater than or equal to 5
 
 There is no `MODE IS` sub-phrase. `ROUNDED MODE IS NEAREST-EVEN` is COBOL 2002
-and `NEAREST-EVEN` appears in no column of Appendix E's reserved word table —
+and `NEAREST-EVEN` appears in no column of Appendix E's reserved word table:
 Enterprise COBOL has never heard of the word. BankLang emitted it for two years
 because GnuCOBOL's default dialect, which is a superset of every COBOL it knows,
 accepted it.
@@ -130,7 +130,7 @@ receiver's scale and the excess taken by subtraction:
 ```
 
 The expression is re-stated rather than held in a wider field, because the
-subtraction is then evaluated in COBOL's own intermediate — exact given the
+subtraction is then evaluated in COBOL's own intermediate: exact given the
 operands' declared scales, where any field the emitter declared would not be.
 Every call in the expression has already run and left its answer in a result
 field, so naming it twice reads it twice rather than running it twice.
@@ -145,7 +145,7 @@ own remainder:
 
 The remainder is exact. The tie test is `|remainder| × 10^scale × 2` against
 `|divisor|`, which is the same comparison as `|excess|` against half a unit with
-both sides multiplied by the same positive number — and no division in it.
+both sides multiplied by the same positive number, and no division in it.
 
 The step's sign comes from the remainder and the divisor together, because the
 remainder carries the dividend's sign.
@@ -154,22 +154,22 @@ remainder carries the dividend's sign.
 
 Because it does not fit. `divide(a, b)` where both are `decimal<18,2>` needs
 `max(divisor.precision - divisor.scale - receiver.scale, 1)` integer digits and
-`max(dividend.scale, receiver.scale + divisor.scale)` fractional ones — 18
+`max(dividend.scale, receiver.scale + divisor.scale)` fractional ones: 18
 exactly. One more and `BANK-DEC-006` refuses the rounding rather than emitting
 arithmetic that overflows.
 
 ### `BANK-DEC-006`
 
-Refused when the rounding is not the whole value being stored —
-`a + round(b, "HALF_EVEN")` — because COBOL's rounding attaches to the receiving
+Refused when the rounding is not the whole value being stored (
+`a + round(b, "HALF_EVEN")`), because COBOL's rounding attaches to the receiving
 field, and there is no receiver for the inner one. And refused when the work
 fields the sequence needs would not fit in eighteen digits.
 
 ### How it is proved
 
 By execution rather than by review. `tests/rounding-oracle.test.ts` runs the
-generated program over inputs chosen to land on and around every boundary — an exact tie, one unit
-either side of it, both signs, zero, and a recurring quotient — and compares
+generated program over inputs chosen to land on and around every boundary (an exact tie, one unit
+either side of it, both signs, zero, and a recurring quotient), and compares
 each answer against an oracle that holds the value as a rational in two BigInts
 and rounds it by the rule the mode names.
 
@@ -180,7 +180,7 @@ makes it say 1.01 where the oracle says 1.00, and the test fails.
 
 `currency<"BDT",18,2>` lays out exactly as `decimal<18,2>`; the code is a
 typechecker fact. Adding a `MoneyBDT` to a `MoneyUSD` is `BANK-DEC-005`, and
-there is no conversion operator — a rate is a number somebody has to supply, and
+there is no conversion operator. A rate is a number somebody has to supply, and
 a compiler that invented one would be inventing an exchange rate.
 
 ## Comparison
@@ -192,7 +192,7 @@ way and comparing them is a decision rather than an operation.
 
 ## Related pages
 
-- [error-handling.md](error-handling.md) — what an overflow does
-- [target-conformance.md](target-conformance.md) — the eighteen-digit rule, and its citation
-- [divergences.md](divergences.md) — D17, the generated rounding modes
-- [language-reference.md](language-reference.md) — the whole type system
+- [error-handling.md](error-handling.md) (what an overflow does
+- [target-conformance.md](target-conformance.md)) the eighteen-digit rule, and its citation
+- [divergences.md](divergences.md) (D17, the generated rounding modes
+- [language-reference.md](language-reference.md)) the whole type system
