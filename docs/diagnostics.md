@@ -132,7 +132,7 @@ assigned into a record and passed by name.
 ### `BANK-TYPE-022` two transaction parameters share one record
 
 A transaction is a program entry point, so its record parameters live in working
-storage — one COBOL group per record type. Two parameters of the same type would
+storage: one COBOL group per record type. Two parameters of the same type would
 be two names for one piece of storage, and writing through either would be
 visible through the other. A function is unaffected: its record parameters are
 `LINKAGE` cells the caller rebinds.
@@ -150,7 +150,7 @@ A warning, on every `national<n>` field.
 `national<n>` emits `PIC N(n) USAGE NATIONAL`. Enterprise COBOL holds each
 character in two bytes of UTF-16, and that is the width the layout report, the
 copybook, and the copybook inspector all use. GnuCOBOL 3.2.0 allocates four
-bytes per character inside a group — measured, not assumed — and warns on every
+bytes per character inside a group (measured, not assumed), and warns on every
 such line that its handling of `USAGE NATIONAL` is unfinished.
 
 Byte-exact layout is the only thing the type promises, so this is the one place
@@ -171,13 +171,13 @@ clean and processes an empty record.
 The local build no longer runs that. The precompiler rewrites the statement into
 calls on `BANKJSON`, a reference stub, so the record is populated from the
 document and the `JSON-STATUS` test below is reached with a value it did not
-invent — the same routing `EXEC SQL` and `EXEC CICS` already had. What ships to
+invent: the same routing `EXEC SQL` and `EXEC CICS` already had. What ships to
 z/OS keeps its `JSON PARSE`. The warning stays because the stub is a scan and
 not IBM's parser: `runtime/README.md` lists what it does not attempt.
 
 On Enterprise COBOL the hazard is different but has the same shape. A parse can
 meet a _nonexception condition_, which does not terminate the statement and
-"might result in the receiver being partially modified" — so `on error` is never
+"might result in the receiver being partially modified", so `on error` is never
 reached and the record holds some fields and not others, which is exactly what a
 record that parsed cleanly looks like. Only `JSON-STATUS` distinguishes them, and
 the compiler emits a test of it that reports the case to the job log. It reports
@@ -185,7 +185,7 @@ rather than raises, because a nonexception condition is not always an error: a
 document carrying fields the record does not declare is one of them.
 
 Verify the program on z/OS before relying on what it reads, and check the record
-rather than trusting the failure path — a parse that did nothing does not report
+rather than trusting the failure path: a parse that did nothing does not report
 one. `zos/README.md` records the divergence.
 
 ### `BANK-TYPE-026` invalid xml read
@@ -203,7 +203,7 @@ xml message.body processing {
 ```
 
 and its bindings have to make sense: at least one element, each element bound
-once — a second binding for the same name would never be reached — and each read
+once (a second binding for the same name would never be reached), and each read
 into something characters can be moved into, which is a `string<n>` or a number.
 
 `json <text> into <record>` fills a record directly if the document is JSON.
@@ -211,7 +211,7 @@ into something characters can be moved into, which is a `string<n>` or a number.
 ### `BANK-TYPE-027` nested function is recursive
 
 COBOL forbids `LOCAL-STORAGE` in a contained program, so a `nested function`'s
-locals sit in `WORKING-STORAGE` — one copy shared by every invocation. A
+locals sit in `WORKING-STORAGE`: one copy shared by every invocation. A
 recursive one would overwrite its own locals on the way down and read the
 innermost call's values on the way back out: it compiles, it runs, and it returns
 the wrong number.
@@ -222,7 +222,7 @@ with `LOCAL-STORAGE`, which is what makes recursion safe.
 ### `BANK-TYPE-028` invalid sorted search
 
 `search sorted` becomes COBOL `SEARCH ALL`, a binary search. COBOL will bisect a
-table only if the declaration says it is ordered — `ascending <field>` — and only
+table only if the declaration says it is ordered (`ascending <field>`), and only
 on equality against that key, because anything else has no ordering to cut in
 half.
 
@@ -247,15 +247,15 @@ sees it, and a dynamic one fails in the middle of a batch.
 ### `BANK-TYPE-030` a value-building call nested in an expression
 
 `concat`, `now`, `countOf` and `replaceChars` build a value rather than name
-one: each lowers to a COBOL statement — `STRING`, `INSPECT`, a `CURRENT-DATE`
-sequence — writing into a field of its own. COBOL has no expression to nest that
+one: each lowers to a COBOL statement (`STRING`, `INSPECT`, a `CURRENT-DATE`
+sequence) writing into a field of its own. COBOL has no expression to nest that
 in, so the call can be the whole right-hand side of an assignment, the whole
 initialiser of a local, or the whole returned expression, and nothing else.
 
 Written anywhere else there is nothing for the backend to emit. Before this
 diagnostic existed it raised an internal invariant, so
-`toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable way to read a
-rate written in thousandths — reached the author as a stack trace.
+`toNumber(concat("0.", substring(rate, 7, 3)))` (a reasonable way to read a
+rate written in thousandths) reached the author as a stack trace.
 
 ```ts
 let built: string<5> = concat("0.", substring(rate, 7, 3));
@@ -268,7 +268,7 @@ An edited type renders a value rather than being one, so there is no storage for
 an instantiation to be made of. `Slot<edited<BDT, "credit">>` names no layout.
 
 The refusal is not new; saying it is. The type argument could not be rebuilt, so
-the field was dropped from the record and the program compiled clean — a
+the field was dropped from the record and the program compiled clean: a
 declared field that produced no COBOL and no diagnostic, which is the one
 outcome a compiler must never have.
 
@@ -387,7 +387,7 @@ SQL host variable does not match expected COBOL field layout.
 
 A `commit` or `rollback` appears inside a CICS transaction. CICS owns the unit
 of work there and commits Db2's work along with everything else, so an
-`EXEC SQL COMMIT` is not merely redundant — Db2 rejects it at run time.
+`EXEC SQL COMMIT` is not merely redundant: Db2 rejects it at run time.
 
 ### `BANK-SQL-005` cursor and statement confused
 
@@ -428,7 +428,7 @@ File record layout differs from declared copybook.
 
 A transaction posts to the ledger inside a loop without both halves of
 checkpoint/restart. A job that dies halfway is rerun, and without a position
-written down the rerun starts at the beginning and posts everything twice — and
+written down the rerun starts at the beginning and posts everything twice, and
 a position written down but never read back leaves the rerun starting at the
 beginning just the same. Reported as a warning because the compiler cannot tell
 whether the job is rerunnable another way.
@@ -455,7 +455,7 @@ allows.
 ### `BANK-FILE-006` invalid sort procedure
 
 A sort procedure works through a record variable that does not hold the record
-being sorted, or `release` appears where no sort is running — it hands a record
+being sorted, or `release` appears where no sort is running: it hands a record
 to a sort in progress, so it means nothing elsewhere.
 
 An input procedure that never reaches a `release` sorts an empty file, and a
@@ -466,7 +466,7 @@ it.
 ### `BANK-FILE-007` invalid page declaration
 
 A page depth describes a print file, so it belongs to a sequential output file,
-and its footing has to be a line the page has — past the end it would never be
+and its footing has to be a line the page has: past the end it would never be
 reached. `advancing` writes a report line, and `on page` is signalled from the
 page counter, so a file with no declared depth never reaches the end of one.
 
@@ -481,7 +481,7 @@ A report's names have to resolve, or the generated COBOL means nothing:
 - a control field must be a field of the record the report prints;
 - a `controlHeading` or `controlFooting` must name a control the report breaks
   on, or none at all, which means `FINAL`;
-- `sum` totals a numeric field — a `decimal` or a currency amount. It
+- `sum` totals a numeric field: a `decimal` or a currency amount. It
   accumulates with COBOL's `ADD`, which will not take a string, and will not
   take an already-edited field either, that being a display form rather than a
   number;
@@ -507,7 +507,7 @@ name is truncated into one the queue manager does not have.
 
 The status field matters most. MQ reports what happened in a completion code and
 a reason code, and without somewhere to read the reason a `getMessage` that
-found an empty queue is indistinguishable from one that read a message — so the
+found an empty queue is indistinguishable from one that read a message, so the
 program goes on to process whatever the message area held last.
 
 ### `BANK-MQ-002` queue used against its direction
@@ -531,7 +531,7 @@ record of the wrong shape, looks for a key that is not text, or reaches a
 database with no status field.
 
 The segment and key names are eight bytes each, because that is what a search
-argument carries — a longer one is truncated into a name matching nothing in the
+argument carries: a longer one is truncated into a name matching nothing in the
 DBD.
 
 The status field is the one that matters most. The two characters DL/I leaves in
@@ -561,9 +561,9 @@ names something that is not a count declared before the table, which COBOL reads
 to decide the record's length.
 
 A redefinition **may** be longer than what it redefines. Enterprise COBOL then
-extends the storage area rather than overrunning it — the Language Reference
+extends the storage area rather than overrunning it (the Language Reference
 gives `05 A PIC X(6).` redefined by `05 B REDEFINES A PIC N(4).`, eight bytes
-over six, as a legal example — and the record runs to the end of the longest
+over six, as a legal example), and the record runs to the end of the longest
 reading of the area, so every field after it moves by the overhang. The layout
 report shows this. The one case COBOL forbids is a redefined item declared as an
 external data record, which this language cannot declare.
@@ -586,7 +586,7 @@ What it rejects:
 
 On `depending on`, this compiler is **stricter than COBOL and says so**: the
 varying table has to be the last field in the record that takes storage. A field
-declared after it is _variably located_ — it sits at the start of the table plus
+declared after it is _variably located_: it sits at the start of the table plus
 the count times the entry, so it moves every time the count does. IBM calls this
 complex `ODO` and permits it. The layout report and the copybook could then only
 state the offset that field has when the table is full, which is an offset no
@@ -598,7 +598,7 @@ record ends with its table.
 
 ### `BANK-COPY-005` invalid field clause
 
-`justified` right-aligns an alphanumeric value, so a number cannot carry it — a
+`justified` right-aligns an alphanumeric value, so a number cannot carry it: a
 number's alignment is decided by its picture. `blankWhenZero` prints spaces for
 a zero, so there has to be a number to be zero.
 
@@ -607,7 +607,7 @@ a zero, so there has to be a number to be zero.
 A field's initial value becomes a COBOL `VALUE` clause, which the compiler
 evaluates when it compiles. It has to be something the compiler can see: a
 written number, string, boolean, or enum member of the field's own type, short
-enough to fit — a `VALUE` longer than its field would be truncated silently, so
+enough to fit: a `VALUE` longer than its field would be truncated silently, so
 it is refused instead.
 
 A `REDEFINES` field cannot carry one. It has no storage of its own, only a
@@ -617,7 +617,7 @@ redefined.
 ### `BANK-COPY-007` two records share one copybook member
 
 A PDS member name is one to eight characters of letters, digits, and the
-national characters, with no hyphens — and that is also all the COBOL compiler
+national characters, with no hyphens, and that is also all the COBOL compiler
 looks at when it resolves a `COPY` from a PDS: "only the first eight characters
 of text-name are used as the identifying name".
 
@@ -634,7 +634,7 @@ overwrite each other rather than shipping one under the other's name.
 ### `BANK-FILE-009` invalid varying record
 
 `varying <min> to <max> length <field>` becomes `RECORD IS VARYING IN SIZE`. The
-bounds have to be a range of lengths — a shortest of at least one character, and
+bounds have to be a range of lengths: a shortest of at least one character, and
 no longer than the longest.
 
 The file has to be `sequential`: an indexed or relative dataset addresses a
@@ -644,7 +644,7 @@ record by key or by position, which a varying length would move.
 
 `rewrite` and `delete` replace the record the last `read` returned, so on a file
 the program accesses sequentially they need one. Without it the operation **is
-not performed and the file status is 92** — no abend and no exception, so a
+not performed and the file status is 92**: no abend and no exception, so a
 program that does not test the status carries on believing it updated something.
 
 Only `sequential` and `relative` files are affected. An indexed file is
@@ -652,7 +652,7 @@ Only `sequential` and `relative` files are affected. An indexed file is
 record is meant and no prior read is required.
 
 A read in an enclosing block covers a branch inside it, but a read inside a
-branch does not travel back out — the path that skipped the branch reaches the
+branch does not travel back out: the path that skipped the branch reaches the
 update with nothing read. This is the same rule, and the same reasoning, as
 `BANK-DLI-002`.
 
@@ -664,7 +664,7 @@ deleting it in place. The same holds for a line-sequential file, where the
 Programming Guide is explicit that after a record is created "you cannot change
 its length or its position in the file, and you cannot delete it".
 
-GnuCOBOL compiles the statement, so local validation does not catch this one —
+GnuCOBOL compiles the statement, so local validation does not catch this one.
 the program passed every check here and would have been rejected by `IGYCRCTL`.
 
 ### `BANK-FILE-013` a line-sequential file opened for update
@@ -682,7 +682,7 @@ A line-sequential file is text. Enterprise COBOL requires that records "contain
 only USAGE DISPLAY and DISPLAY-1 items", and BankTS's default is the thing that
 is forbidden: `decimal<13,2>` lowers to `COMP-3`, two digits a byte with a sign
 nibble. Written into a text file it produces bytes that are neither the number
-nor readable text — and the `WRITE` succeeds, so nothing says so until somebody
+nor readable text, and the `WRITE` succeeds, so nothing says so until somebody
 opens the file.
 
 Declare the number `zoned` if it can be negative, which emits the `SIGN IS
@@ -695,7 +695,7 @@ interchange record uses a `decimal` field with a `zoned` usage.
 COBOL puts several `01` entries under one `FD`: a report whose heading line and
 detail lines are different shapes, a feed of header, detail and trailer
 records. They share one record area, and each `WRITE` names the layout it is
-writing — so on an output file the variant is decided by the program and its
+writing, so on an output file the variant is decided by the program and its
 type is known where it is chosen.
 
 A `READ` names nothing. Which layout arrived is decided by the data, and a value
@@ -713,13 +713,13 @@ field saying which kind of record it is, and a `redefines` for the rest.
 
 Note what that costs, because it is the honest half of this rule. A `redefines`
 is COBOL's, so nothing checks that the type field was tested before the overlay
-was read — the compiler refuses to hand back a value whose type is a guess, and
+was read: the compiler refuses to hand back a value whose type is a guess, and
 it cannot stop you making the guess by hand.
 
 Whether to lift the restriction is a question about evidence, and the evidence
 is measured rather than argued. `evidence/horizontal/xcobol-v2/record-usage.json`:
 143 of X-COBOL's 6,451 file descriptions carry several records and are opened
-`INPUT`, and those 143 are **51 distinct file contents** — a corpus of 168
+`INPUT`, and those 143 are **51 distinct file contents**: a corpus of 168
 repositories counts a program vendored into five of them five times. Of the 51,
 21 are parser, grammar, language-server and compiler-test fixtures, 16 are the
 NIST CCVS85 conformance suite, and 14 are textbook and course material. None is
@@ -734,7 +734,7 @@ measurement is rerun on every analysis pass.
 ### `BANK-FILE-016` a DD name that is also a data item
 
 The generated `SELECT` reads `ASSIGN TO <DD>`, and both Enterprise COBOL 6 and
-GnuCOBOL treat that word as a data item when one of that name exists — taking
+GnuCOBOL treat that word as a data item when one of that name exists: taking
 the file name from its _contents_ rather than from the environment. A `record
 Feed` becomes the group `FEED`, a `file feed` assigns to DD `FEED`, and the
 program compiles. At run time the `OPEN` looks for a dataset named by whatever
@@ -755,14 +755,14 @@ that the file is broken.
 
 When the program does not look, the record area still holds the record before
 it. A read at end of file leaves the last transaction in place, and a program
-that carries on posts it twice — with a return code of zero. It is OpenCBS
+that carries on posts it twice: with a return code of zero. It is OpenCBS
 `DF01`.
 
 The check is flow-sensitive. An operation that can end with one of those
 statuses leaves an outstanding outcome, and it is an error to
 
 - use the record it filled,
-- operate on the file again — a `close` overwrites the status too, so a test
+- operate on the file again: a `close` overwrites the status too, so a test
   written after one reads the close's answer, or
 - reach the end of the routine
 
@@ -776,7 +776,7 @@ if feedInStatus == "00" {
 ```
 
 The comparison counts wherever it is written, including into a local, and a
-loop whose condition reads the status discharges it — the drain loop the
+loop whose condition reads the status discharges it: the drain loop the
 language reference teaches stays legal. A `log` of the status does not:
 printing the answer is not reading it.
 
@@ -801,18 +801,18 @@ The walk reaches every block a statement runs, including the `on page` block of
 a write and the bodies of a sort's input and output procedures. A transaction's
 `on failure` handler and a file's `on error` handler are walked as routines of
 their own: control arrives there from anywhere, so nothing the body owed is
-known — but an operation the handler itself performs owes the same answer.
+known, but an operation the handler itself performs owes the same answer.
 
 ### `BANK-COPY-008` not a data description entry
 
 A line in the copybook is not a level number followed by a name. Every entry in
 a copybook is, so this is either a file that is not a copybook, or a construct
-this reader does not have — a `COPY` of another member, a `REPLACING` phrase, or
+this reader does not have: a `COPY` of another member, a `REPLACING` phrase, or
 a compiler directive other than the `EJECT`, `SKIP` and `TITLE` it skips.
 
 It is refused rather than skipped. An entry that is passed over is a field
 missing from the record, and a missing field moves the offset of every field
-after it — which is a program reading somebody else's data at the right length
+after it, which is a program reading somebody else's data at the right length
 in the wrong place. The message names the line.
 
 ### `BANK-COPY-009` copybook declares no 01-level record
@@ -887,7 +887,7 @@ changes its line layout.
 ### `BANK-GEN-007` transaction missing source map entry
 
 A transaction reached the backend but has no source map entry. The generated
-COBOL has to expose the transaction boundary in the source map — see
+COBOL has to expose the transaction boundary in the source map: see
 [language-reference.md](language-reference.md) for what a transaction is, and
 [verification.md](verification.md) for what the map is checked against.
 
@@ -971,7 +971,7 @@ A step runs a BankLang project, named by `project`, or a sort, named by `input`,
 A load module member name is eight characters with the hyphens removed, and that
 is all the binder and every `EXEC PGM=` see. Two programs in one job whose names
 agree over those eight characters are one member: the second build overwrites
-the first, and both steps run whichever was written last — a step that names one
+the first, and both steps run whichever was written last, a step that names one
 program and executes another, with a return code that looks fine.
 
 A program built on its own has nothing to collide with, so the job is where this

@@ -249,7 +249,7 @@ export const SUPPORT_RULES: SupportRule[] = [
      * direction: a rule written from the inside, understating the compiler
      * instead of flattering it. Both distort a published number.
      */
-    note: "`countOf` lowers to INSPECT TALLYING FOR ALL and `replaceChars` to INSPECT CONVERTING. REPLACING, and the BEFORE/AFTER ranges, have no BankTS form — 780 and 625 statements in the corpus respectively.",
+    note: "`countOf` lowers to INSPECT TALLYING FOR ALL and `replaceChars` to INSPECT CONVERTING. REPLACING, and the BEFORE/AFTER ranges, have no BankTS form: 780 and 625 statements in the corpus respectively.",
     desirable: true,
   },
   {

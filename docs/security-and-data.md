@@ -20,14 +20,14 @@ record Card {
 The marking means something rather than documenting something. Two rules follow
 from it.
 
-### `BANK-AUD-002` — it may not reach an audit event, ledger posting, or job log
+### `BANK-AUD-002`. It may not reach an audit event, ledger posting, or job log
 
 All three outlive the transaction or program invocation and are read by people
 with no business seeing a card number or a national identifier. An audit trail
 or job log is the last place a PAN should be, and it is often the first place
 one ends up.
 
-### `BANK-SEC-001` — it may not be assigned to a field that is not marked
+### `BANK-SEC-001`. It may not be assigned to a field that is not marked
 
 A field's marking is part of its record declaration and therefore part of its
 copybook, so copying restricted data into an unmarked field would reclassify it
@@ -51,7 +51,7 @@ function maskPan(pan: string<16>): string<16> {
 ```
 
 The result is unmarked. Following taint across a call needs per-function
-summaries, and a language with no closures can express masking no other way —
+summaries, and a language with no closures can express masking no other way,
 so the call _is_ the boundary, and it is visible in the source rather than
 inferred.
 
@@ -64,7 +64,7 @@ unmarked data as far as the compiler is concerned.
 
 **It says nothing about a file.** A record written to a dataset carries whatever
 it carries. Dataset-level protection is RACF's, and the generated JCL states no
-`PROTECT` or `SECMODEL` — that is a site's standard and the compiler does not
+`PROTECT` or `SECMODEL`. That is a site's standard and the compiler does not
 invent one.
 
 **It says nothing about encryption**, in transit or at rest. There is no
@@ -86,7 +86,7 @@ source.
 `TERMTHDACT(UADUMP)` asks for a readable dump on an abend. **A dump contains
 working storage**, which contains every field the program read, marked or not.
 
-This is not a BankLang property — it is what a dump is — but it is the answer to
+This is not a BankLang property (it is what a dump is), but it is the answer to
 "where could a PAN turn up". If your site restricts dumps, restrict these:
 change the `CEEOPTS` cards through `runtimeOptions`, and the `SYSOUT` class on
 `CEEDUMP` and `SYSUDUMP`.
@@ -117,7 +117,7 @@ should.
 
 ## The reference runtime is not a runtime
 
-`runtime/` holds stubs — `BANKLEDG`, `BANKAUDT`, `BANKMQ`, `CBLTDLI`, `DSNHLI`,
+`runtime/` holds stubs: `BANKLEDG`, `BANKAUDT`, `BANKMQ`, `CBLTDLI`, `DSNHLI`,
 `DFHEI1`, `BANKJSON`, `BANKXML`. They exist so the local build can execute a
 generated program and observe which branch it took.
 
@@ -134,12 +134,12 @@ framework, no agent, no network call, no telemetry. The compiler runs locally
 and in a browser; nothing it does reaches a network.
 
 `vendor-docs/` holds IBM manuals as text, used to cite rules. They are not
-redistributed by this project — see the repository's licence notes.
+redistributed by this project: see the repository's licence notes.
 
 ---
 
 ## Related pages
 
-- [diagnostics.md](diagnostics.md) — `BANK-AUD-002` and `BANK-SEC-001` in full
-- [language-reference.md](language-reference.md) — the `sensitive` modifier
-- [error-handling.md](error-handling.md) — what a failure writes to the job log
+- [diagnostics.md](diagnostics.md) (`BANK-AUD-002` and `BANK-SEC-001` in full
+- [language-reference.md](language-reference.md)) the `sensitive` modifier
+- [error-handling.md](error-handling.md): what a failure writes to the job log

@@ -40,7 +40,8 @@ import {
   highlightCobol,
   servedUrl,
   SITE_ORIGIN,
-  THEME_BUTTON,
+  NAV_SCRIPT,
+  siteHeader,
   THEME_SCRIPT,
 } from "./build-site";
 import { isRunnable, playgroundUrl } from "./playground-links";
@@ -516,7 +517,7 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
   const up = depthOf(doc.file);
   const canonical = servedUrl(`docs/${doc.file.replace(/\.md$/, ".html")}`);
   const description = doc.text.slice(0, 180).trim();
-  const title = `${doc.title} — BankLang`;
+  const title = `${doc.title} · BankLang`;
 
   return `<!doctype html>
 <html lang="en">
@@ -563,18 +564,14 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
   <body class="docs">
     <a class="skip" href="#doc">Skip to content</a>
 
-    <header class="top">
-      <a class="wordmark" href="${up}/../">BankLang</a>
-      <nav>
-        <a href="${up}/../docs/">Docs</a>
-        <a href="${up}/../blog/">Writing</a>
-        <a href="${up}/../playground/">Playground</a>
-        <a href="https://github.com/MWH997/banklang" rel="noopener">GitHub</a>
-        <a href="https://mwhassan.com" rel="noopener">mwhassan.com</a>
-        ${THEME_BUTTON}
-        <button id="nav-toggle" type="button" class="ghost narrow-only" aria-expanded="false" aria-controls="side">Contents</button>
-      </nav>
-    </header>
+${siteHeader({
+  up: `${up}/../`,
+  current: "docs",
+  // The page's own contents, beside the menu button rather than inside it: it
+  // opens the headings of the document being read, which is not the site's
+  // navigation and should not take two taps through a control saying "Menu".
+  extra: `          <button id="nav-toggle" type="button" class="ghost narrow-only" aria-expanded="false" aria-controls="side">Contents</button>`,
+})}
 
     <div class="shell">
       <nav class="side" id="side" aria-label="Documentation">
@@ -601,6 +598,7 @@ ${onThisPage(doc)}
 
     <script src="${up}/../assets/docs.js" defer></script>
 ${THEME_SCRIPT}
+${NAV_SCRIPT}
   </body>
 </html>
 `;

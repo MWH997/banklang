@@ -35,9 +35,9 @@ record CustomerParty {
 }
 ```
 
-`FILLER PIC X(20)`. Every copybook on an estate has them — a field that was
+`FILLER PIC X(20)`. Every copybook on an estate has them (a field that was
 removed, a gap left for one that is coming, an area another program's copybook
-overlays — and a record language without a way to say so cannot describe the
+overlays), and a record language without a way to say so cannot describe the
 records it has to interoperate with. The importer used to refuse such a
 copybook outright, which is the right answer to "can this be laid out short?"
 and a useless answer to "can this copybook be imported?"
@@ -69,7 +69,7 @@ record LegacyRecord {
 }
 ```
 
-`redefines` is a second reading of storage another field already occupies —
+`redefines` is a second reading of storage another field already occupies:
 how a legacy layout says "this area means different things depending on the
 record type". The layout report shows it at the offset it shares.
 
@@ -80,12 +80,12 @@ redefine a table, and it cannot carry a `depending on` (`BANK-COPY-004`).
 
 It may be **longer** than what it redefines. COBOL then extends the storage
 area, so the record runs to the end of the longest reading of it and every field
-after it moves by the overhang — `a: string<6>` redefined by `national<4>` is
+after it moves by the overhang: `a: string<6>` redefined by `national<4>` is
 the Language Reference's own example, and leaves the next field at byte 8.
 
 `depending on` names the field holding how much of a table this record uses,
 which is what makes a variable-length record variable. The fixed bound stays as
-the maximum — the storage still has to be reserved — so the emitted clause is
+the maximum (the storage still has to be reserved), so the emitted clause is
 `OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT OF BATCH`. The count must be a
 whole number declared before the table, because COBOL reads it to decide the
 record's length and cannot read a field it has not reached.
@@ -98,7 +98,7 @@ qualified; they cannot be subscripted or indexed."
 
 **The count is checked before anything uses it.** The Language Reference says
 "the behavior is undefined if the value of the object is outside of the range",
-and the object decides how long the record containing the table is — a count of
+and the object decides how long the record containing the table is: a count of
 500 on a table declared to hold 100 describes a record longer than the storage
 allocated for it, so every group move, write, or call using that record runs off
 the end. The check matters most where the value is least controlled: the count
@@ -114,7 +114,7 @@ the count times the entry, so it moves every time the count does, and no
 copybook can give it an offset. IBM calls this complex `ODO` and permits it;
 this compiler is stricter and says why (`BANK-COPY-004`). The layout report
 would otherwise state the offset the field has when the table is full, which is
-an offset no other record has — and a copybook that names a byte position
+an offset no other record has, and a copybook that names a byte position
 nothing is at is worse than no copybook at all. GnuCOBOL refuses the shape
 outright, so such a program could not be executed locally either.
 
@@ -240,7 +240,7 @@ record RateBook {
 ```
 
 Nested `OCCURS`, three rows of four. The bounds read outermost-first, so the 3
-becomes the outer table and the 4 the inner one — a rate matrix by term and
+becomes the outer table and the 4 the inner one: a rate matrix by term and
 band, which is how a bank holds one.
 
 ```ts
@@ -273,8 +273,8 @@ reads on its own.
 
 `copy` is the shape a real shop expects, where the copybook is the contract
 between programs rather than a document that can drift from them. The generated
-job then carries a `SYSLIB` for the copybook library — without it the copy
-statements resolve to nothing and every data name is undefined — and local
+job then carries a `SYSLIB` for the copybook library (without it the copy
+statements resolve to nothing and every data name is undefined), and local
 GnuCOBOL validation puts the copybook directory on the compiler's search path,
 so the mode that ships is the mode that is checked.
 
@@ -284,7 +284,7 @@ have a layout report of their own.
 
 **A copybook is named for its member, not for its record.** A PDS member name is
 one to eight characters of letters, digits, and the national characters, with no
-hyphens — and that is also all the compiler looks at: "only the first eight
+hyphens, and that is also all the compiler looks at: "only the first eight
 characters of text-name are used as the identifying name" when it searches a PDS
 or PDSE. So `TransferRequest` is the member `TRANSFER`, and the `COPY` names
 that. `COPY TRANSFER-REQUEST` would have the compiler look for a member called

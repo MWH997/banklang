@@ -255,7 +255,7 @@ checkpoint_statement = ( "checkpoint" | "restart" | "reset" ) ,
 ## Batch operations
 
 The verbs a night is made of. Each is a statement rather than a library call,
-because each compiles to a COBOL construct with rules of its own — a `SORT` has
+because each compiles to a COBOL construct with rules of its own. A `SORT` has
 an input procedure, a `SEARCH ALL` needs an ordered table, and neither survives
 being wrapped in a function.
 
@@ -396,10 +396,10 @@ elsewhere:
 
 - **Types** are checked in `packages/typechecker`, and
   [`docs/language/types.md`](types.md) is what to read.
-- **Banking safety** — balance, idempotency, audit, bounded loops, checked file
-  status — is checked in `packages/semantic-analyzer` and catalogued in
+- **Banking safety** (balance, idempotency, audit, bounded loops, checked file
+  status) is checked in `packages/semantic-analyzer` and catalogued in
   [`docs/diagnostics.md`](../diagnostics.md).
-- **Layout** — how a record becomes bytes — is in
+- **Layout** (how a record becomes bytes) is in
   [`docs/language/records.md`](records.md) and enforced by
   `packages/copybook`.
 

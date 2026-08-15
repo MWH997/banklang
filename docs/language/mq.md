@@ -42,7 +42,7 @@ a reason code coming back:
 ```
 
 The manager and queue names live on the declaration because they go into the
-object descriptor once, and each is 48 characters — `MQ_Q_MGR_NAME_LENGTH` and
+object descriptor once, and each is 48 characters: `MQ_Q_MGR_NAME_LENGTH` and
 `MQ_Q_NAME_LENGTH` are both that, which is what `MQOD-OBJECTNAME` and `MQCONN`'s
 first parameter are declared as. A longer one is truncated into a name the queue
 manager has never heard of (`BANK-MQ-001`).
@@ -78,8 +78,8 @@ open queues on that manager:
            END-IF
 ```
 
-A `connectQueue` cannot know statically whether another has already run — it may
-sit behind a condition or inside a loop — so the first one to run connects and
+A `connectQueue` cannot know statically whether another has already run (it may
+sit behind a condition or inside a loop), so the first one to run connects and
 the last one to close disconnects, in whatever order the program does them.
 
 `MQRC-ALREADY-CONNECTED` is also the one warning the generated check forgives.
@@ -107,7 +107,7 @@ bare, which is why the ambiguity does not show up there.
                    DISPLAY "MQGET FAILED paymentIn COMPCODE " ...
 ```
 
-An empty queue is the ordinary end of a drain, not a failure — MQ reports it as
+An empty queue is the ordinary end of a drain, not a failure: MQ reports it as
 reason 2033. Folding it in with the failures stops a batch every time it
 finishes its work; folding it in with success processes the message area again,
 still holding the last message read. That is why both branches are required.
@@ -117,7 +117,7 @@ neither is visible outside the unit of work until it commits: a payment released
 before its ledger posting is committed is one the downstream system acts on and
 the bank has not recorded. A `get` also asks `MQGMO-NO-WAIT`, because a batch
 that blocks on an empty queue never ends. Both set `MQMI-NONE` and `MQCI-NONE`
-in the message descriptor — on a put that asks the queue manager for a new
+in the message descriptor: on a put that asks the queue manager for a new
 message identifier rather than reusing the last one, and on a get it means any
 message will do.
 
@@ -127,7 +127,7 @@ Nothing in the generated program calls `MQCMIT`, and that is deliberate. IBM MQ
 Application Programming Reference, MQDISC usage note 2a: where the unit of work
 is coordinated by the queue manager, "the queue manager issues the MQCMIT call
 on behalf of the application" when the connection ends normally. `disconnectQueue`
-is an `MQCLOSE` and, on the last queue open on that manager, an `MQDISC` — so the
+is an `MQCLOSE` and, on the last queue open on that manager, an `MQDISC`, so the
 puts and gets above commit there.
 
 Under CICS or IMS the unit of work belongs to the transaction manager rather than
@@ -148,7 +148,7 @@ file's status is (`BANK-MQ-001`).
 
 #### What a queue costs on z/OS
 
-MQ needs no precompiler — the MQI is plain `CALL`s — but the job needs three
+MQ needs no precompiler (the MQI is plain `CALL`s), but the job needs three
 things it would not otherwise have, and the generated JCL asks for all of them:
 `MQM.SCSQCOBC` on `SYSLIB` so `COPY CMQV` and the rest resolve at compile time,
 `MQM.SCSQLOAD` on `SYSLIB` at link time so `MQCONN` and the others resolve to the
@@ -159,7 +159,7 @@ Nothing outside z/OS supplies the MQI, so the local build cannot link a queue
 program at all. `runtime/BANKMQ.cbl` stands in: the precompiler replaces the MQ
 copybooks with a local declaration of the fields the compiler sets, and the stub
 answers each call with the completion and reason codes IBM documents, holding
-one message between a put and a get. **It is not IBM MQ** — no queue manager, no
+one message between a put and a get. **It is not IBM MQ**, no queue manager, no
 persistence, no syncpoint, no channel. What running against it proves is that
 the call sequence is one MQ accepts, that every operand resolves and is the
 right type, and that all three outcomes of a get are reachable. What ships to

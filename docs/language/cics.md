@@ -44,7 +44,7 @@ out before it returns:
 Every other record parameter is working storage, and working storage is gone
 when the task ends. A transaction that computes its answer into a second record
 named something like `reply` returns control having changed nothing the caller
-can see — it hands back the bytes it was sent. `BANK-CICS-005` refuses it. The
+can see: it hands back the bytes it was sent. `BANK-CICS-005` refuses it. The
 `EIBCALEN` test is IBM's rule rather than a nicety: reading a commarea the
 caller did not pass, or one shorter than the record expects, reads storage
 belonging to something else and reads clean.

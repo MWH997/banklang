@@ -47,8 +47,8 @@ production mainframe toolchain.
   every such value was written down by the test, not decided by a database or a
   region. Nothing has run on z/OS, against Db2, or in a CICS region.
 - **Four of the 31 emitted COBOL verbs are not executed locally.** `ENTRY`,
-  `INITIATE`, `GENERATE` and `TERMINATE` — a generated zUnit case's entry points
-  and a Report Writer section — have nowhere local to run, so 27 of 31 is the
+  `INITIATE`, `GENERATE` and `TERMINATE` (a generated zUnit case's entry points
+  and a Report Writer section) have nowhere local to run, so 27 of 31 is the
   denominator the differential lane reports. It is not 31 of 31.
   [Interpreter coverage](validation/interpreter-coverage.md).
 
@@ -90,11 +90,11 @@ production mainframe toolchain.
   now, with the reasoning in
   [ADR-0006](adr/0006-single-byte-character-model.md).
 - **Multi-record `INPUT` is refused** (`BANK-FILE-015`). A file may carry
-  several record layouts on output — `settlement-bill-file` writes a header, a
-  detail and a trailer — but a program may not read one. The recommended
+  several record layouts on output (`settlement-bill-file` writes a header, a
+  detail and a trailer), but a program may not read one. The recommended
   alternative is one record, a type field and `REDEFINES`, and it is weaker than
   it sounds: nothing forces the programmer to test the discriminator before
-  using the overlay. Refused on evidence rather than on taste — the 143
+  using the overlay. Refused on evidence rather than on taste: the 143
   occurrences in X-COBOL deduplicated to 51 distinct files, none of them an
   application program.
 - **Bounded split counting is refused.** `UNSTRING … TALLYING` has no BankTS
@@ -111,19 +111,19 @@ production mainframe toolchain.
 - **The VS Code extension is unpublished.** Its language server is built by
   `pnpm --filter banklang-vscode build:server` and driven over stdio by
   `tests/language-server-session.test.ts`,
-  which holds a whole session — initialize, open, hover, symbols, format, change,
-  close, shutdown — against the bundle the extension loads. It has not been
+  which holds a whole session (initialize, open, hover, symbols, format, change,
+  close, shutdown) against the bundle the extension loads. It has not been
   through marketplace review, and it has not been run inside VS Code itself.
 - **No zUnit case has been run.** `bankc zunit` writes the three artifacts and
   the driver compiles under GnuCOBOL in both dialects, which is narrower
   evidence than it sounds: `COPY EQAITERC` resolves to a stand-in declaring the
   two fields the driver names, because IBM's copybook is not here. Two values in
   the configuration are inferred rather than observed and are named as such
-  (D20, D21). What a case can assert is also narrow by construction — the PARM
-  the step is started with, and the calls the program makes — because those are
+  (D20, D21). What a case can assert is also narrow by construction (the PARM
+  the step is started with, and the calls the program makes), because those are
   what a driver running in its own program can see.
 - **Dynamic SQL is refused, by design** (`BANK-SQL-002`). BankLang does not
-  parse SQL — a `sql` declaration reaches the precompiler as written — so
+  parse SQL (a `sql` declaration reaches the precompiler as written), so
   isolation levels, savepoints, `LOCK TABLE` and `GET DIAGNOSTICS` need nothing
   from the compiler and have always worked. Cursors are the part it does model,
   because their `OPEN`, `FETCH` and `CLOSE` are generated: `hold`, `rowset n`
@@ -159,10 +159,10 @@ named in the generated `CBL` statement's options.
 
 ## The two lists that matter more than this page
 
-- [divergences.md](divergences.md) — every place GnuCOBOL and Enterprise COBOL
+- [divergences.md](divergences.md): every place GnuCOBOL and Enterprise COBOL
   are known or suspected to disagree, numbered so they can be cited. A finding
   there is a real defect in this compiler.
-- [comparison.md](comparison.md) — what BankLang is worse at than an AI
+- [comparison.md](comparison.md): what BankLang is worse at than an AI
   converter, than Micro Focus, and than hand-writing COBOL.
 
 ## Closing the biggest one

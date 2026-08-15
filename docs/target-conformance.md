@@ -4,17 +4,17 @@ The rules the generated artifacts obey, each with the manual it comes from.
 
 This is the page that turns "we think it compiles" into something checkable.
 Every rule below is enforced by one of two passes that read a `.cbl`, `.cpy` or
-`.jcl` as text and know nothing about how it was produced — that independence is
+`.jcl` as text and know nothing about how it was produced. That independence is
 the point. A checker written from the same belief as the emitter agrees with the
 emitter, including where the emitter is wrong.
 
 The two passes ask different questions, and the second exists because for two
 years nothing was asking it:
 
-- **`packages/conformance-lint`**, run with `pnpm lint:conformance` — will the
+- **`packages/conformance-lint`**, run with `pnpm lint:conformance`: will the
   toolchain accept this? Reference format, names, limits, the vocabulary
   Enterprise COBOL has.
-- **`packages/zos-lint`**, run with `pnpm lint:zos` — will z/OS do what the
+- **`packages/zos-lint`**, run with `pnpm lint:zos`: will z/OS do what the
   program says? See [z/OS semantics](#zos-semantics) below.
 
 Both read the same three sets of artifacts, collected once in
@@ -32,11 +32,11 @@ than the other:
 
 Manuals, as extracted in `vendor-docs/`:
 
-- **LR** — Enterprise COBOL for z/OS 6.4 Language Reference
-- **PG** — Enterprise COBOL for z/OS 6.4 Programming Guide
-- **JCL** — z/OS MVS JCL Reference
-- **MQ** — IBM MQ for z/OS Application Programming Reference
-- **CICS** — CICS TS for z/OS: Developing CICS Applications
+- **LR**: Enterprise COBOL for z/OS 6.4 Language Reference
+- **PG** (Enterprise COBOL for z/OS 6.4 Programming Guide
+- **JCL**) z/OS MVS JCL Reference
+- **MQ**: IBM MQ for z/OS Application Programming Reference
+- **CICS**: CICS TS for z/OS: Developing CICS Applications
 
 ---
 
@@ -90,7 +90,7 @@ This is the one that matters most, and the one that would have caught the
 `ROUNDED MODE IS NEAREST-EVEN` was emitted for two years. It compiled under
 GnuCOBOL's default dialect, which is a superset of every COBOL it knows, and it
 reads like COBOL. `NEAREST-EVEN` appears in **no column** of the Language
-Reference's Appendix E — not reserved, not an unimplemented 85 Standard word,
+Reference's Appendix E, not reserved, not an unimplemented 85 Standard word,
 not a word that might be reserved in a future release. Enterprise COBOL has
 never heard of it.
 
@@ -98,8 +98,8 @@ A checker that asks whether the compiler in front of it accepted the text cannot
 tell that. One that asks whether the target has ever heard of the word can.
 
 The word list is not typed here. `tools/extract-ibm-words.ts` pulls it out of
-Appendix E's own table, taking the leftmost of the three columns — the words
-"reserved for function implemented in Enterprise COBOL" — plus Table 59's
+Appendix E's own table, taking the leftmost of the three columns (the words
+"reserved for function implemented in Enterprise COBOL") plus Table 59's
 intrinsic function names. `pnpm words:extract` regenerates it, and the diff is
 the review.
 
@@ -123,8 +123,8 @@ the review.
 - A step running `IEWBLINK` needs `SYSLIN`, `SYSLMOD`, `SYSPRINT` and `SYSLIB`.
 - A step running anything that is not an IBM utility on the linklist needs
   `STEPLIB`, because a module the job has just built is not on any search the
-  step makes unless the job says where it is. Without it the step ends S806 —
-  module not found — having compiled and linked perfectly.
+  step makes unless the job says where it is. Without it the step ends S806 (
+  module not found) having compiled and linked perfectly.
 
 ---
 
@@ -153,14 +153,14 @@ reply is discarded", because none of them is a question about behaviour.
 **`mq-connection-per-manager`.** `examples/mq-request-reply` declares two queues
 on `CSQ1`, and the emitter paired a connect with every open. IBM's MQCONN usage
 note 3 says the second call to a queue manager you are already connected to
-returns "the same [handle] as that returned by the previous MQCONN call" — so
+returns "the same [handle] as that returned by the previous MQCONN call", so
 two handles to one manager are one handle under two names, and the first
 `MQDISC` ends both.
 
 **`mq-already-connected`.** The same usage note says that second call comes back
 with `MQCC_WARNING` and `MQRC_ALREADY_CONNECTED`, and "Use the connection handle
 returned in this situation as normal." The generated test read
-`NOT = MQCC-OK` and abended the step with RC 12 — before it read a message, on a
+`NOT = MQCC-OK` and abended the step with RC 12: before it read a message, on a
 connection that was working.
 
 **`cics-commarea-answered`.** A CICS program is passed a pointer to the caller's
@@ -197,6 +197,6 @@ with a machine.
 
 ## Related pages
 
-- [generated-code-standards.md](generated-code-standards.md) — the house style, and what checks each rule
-- [divergences.md](divergences.md) — GnuCOBOL against Enterprise COBOL
-- [verification.md](verification.md) — the whole testing strategy
+- [generated-code-standards.md](generated-code-standards.md), the house style, and what checks each rule
+- [divergences.md](divergences.md) (GnuCOBOL against Enterprise COBOL
+- [verification.md](verification.md)) the whole testing strategy

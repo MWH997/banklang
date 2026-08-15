@@ -284,14 +284,25 @@ describe("the landing page", () => {
     expect(resources.length).toBeGreaterThan(1);
   });
 
-  it("ships one script, and it only switches the theme", () => {
+  /**
+   * The scripts this page ships, and the whole of what they do.
+   *
+   * Three blocks: the pre-paint theme read, the theme toggle, and the menu
+   * button. Nothing else, and nothing fetched — the budget for this page is
+   * that it arrives and is readable before anything has to run.
+   *
+   * The menu button is the third because the navigation is a disclosure below
+   * the breakpoint, and disclosure is the one thing CSS alone cannot do here
+   * without a checkbox standing in for a button and losing `aria-expanded`
+   * with it.
+   */
+  it("ships three scripts, for the theme and the menu and nothing else", () => {
     const scripts = [
       ...PAGE.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g),
     ].map((match) => match[1]!);
-    // Two blocks: the pre-paint theme read, and the toggle.
-    expect(scripts).toHaveLength(2);
+    expect(scripts).toHaveLength(3);
     for (const body of scripts) {
-      expect(body).toMatch(/theme/i);
+      expect(body).toMatch(/theme|nav-burger/i);
     }
     expect(PAGE).not.toMatch(/<script[^>]+src=/);
   });

@@ -37,7 +37,7 @@ A restricted value may not be written to the log (`BANK-AUD-002`), for the same
 reason it may not reach an audit event: the log outlives the run and is read
 widely.
 
-`reset` clears a whole record — alphanumerics to spaces, numerics to zero.
+`reset` clears a whole record: alphanumerics to spaces, numerics to zero.
 Clearing it field by field is the same thing written out, and drifts the moment
 the record gains a field.
 
@@ -56,7 +56,7 @@ queue, a gateway, or a file a distributed system reads otherwise builds the text
 by hand with `STRING`, which is where the quoting and the escaping go wrong.
 
 COBOL builds the document from the group's own field names, so nothing here
-describes the shape — **the record is the schema**:
+describes the shape: **the record is the schema**:
 
 ```
 {"ACCOUNT":{"ACCOUNT-ID":"12345678","BALANCE":1234.56}}
@@ -69,8 +69,8 @@ caller can tell the text from the padding when it comes to write it out. Both
 `count` and `on error` are optional, and `from` and `count` stay usable as field
 names.
 
-The target must be `string<n>` — not `national<n>`, whose two bytes to a
-character is not what `JSON GENERATE` writes — the source must be a record, and
+The target must be `string<n>` (not `national<n>`, whose two bytes to a
+character is not what `JSON GENERATE` writes) the source must be a record, and
 the count must be a whole number.
 
 **A record carrying a `sensitive` field cannot be generated** (`BANK-AUD-002`).
@@ -97,12 +97,12 @@ the marking working, not an escape.
 
 **It carries a warning** (`BANK-TYPE-025`). Enterprise COBOL implements
 `JSON PARSE`; GnuCOBOL 3.2.0 compiles it, warns that it is not implemented, and
-then does nothing at run time — the record is left untouched and no exception is
+then does nothing at run time. The record is left untouched and no exception is
 raised, so a program reading a payload runs clean and processes an empty record.
 
 The local build no longer runs that. The precompiler rewrites the statement into
-one call on `BANKJSON` per item of the record — the same routing `EXEC SQL` and
-`EXEC CICS` have — so the record is populated from the document and the
+one call on `BANKJSON` per item of the record (the same routing `EXEC SQL` and
+`EXEC CICS` have), so the record is populated from the document and the
 `JSON-STATUS` test reports a document that did not fill it, with IBM's own reason
 code 1. What ships to z/OS keeps its `JSON PARSE`.
 
@@ -115,7 +115,7 @@ before relying on what a real document reads as.
 
 XML is different, and not by choice: `XML PARSE` is event-driven in Enterprise
 COBOL and in GnuCOBOL alike. COBOL calls a procedure once per token of the
-document — a start tag, its content, an end tag — and the procedure works out
+document (a start tag, its content, an end tag), and the procedure works out
 what to keep by reading the `XML-EVENT` and `XML-TEXT` special registers. There
 is no form that fills a record, so there is no `xml ... into ...`
 (`BANK-TYPE-026`).
@@ -168,7 +168,7 @@ The handler is a section placed after the last `GOBACK`, because a section in
 the flow of control would be run again on the way past.
 
 Bindings must name at least one element, must not bind one twice, and must read
-into a `string<n>` or a number — COBOL hands the content over as characters.
+into a `string<n>` or a number: COBOL hands the content over as characters.
 
 **The same warning applies** (`BANK-TYPE-025`). GnuCOBOL compiles all of this,
 including the special registers, warns that `XML PARSE` is not implemented, and
@@ -176,8 +176,8 @@ then does nothing: no field is filled, and neither the exception nor the
 not-exception branch is taken, so a document that failed looks exactly like one
 that worked.
 
-The precompiler rewrites the statement into the loop it is — `BANKXML` returns
-one event per call and the generated handler is `PERFORM`ed for each — so the
+The precompiler rewrites the statement into the loop it is (`BANKXML` returns
+one event per call and the generated handler is `PERFORM`ed for each), so the
 local build enters the handler, takes the branch the document asks for, and
 fills the fields. The registers cannot come along: GnuCOBOL reserves `XML-TEXT`
 but only a real `XML PARSE` sets it, and a `MOVE` to it ends the run with a
@@ -197,13 +197,13 @@ merge morningFile, eveningFile into dayFile on accountId;
 An internal `SORT` is what a program uses when the ordering is its own business
 rather than the job's. It runs through a sort-work file, described by `SD`
 rather than `FD` because the sort owns its blocking. `USING` and `GIVING` let the
-sort open, read, write, and close the files itself — the form to use when there
+sort open, read, write, and close the files itself: the form to use when there
 is nothing to do to the records on the way through.
 
 The `SD` gets a `SELECT ... ASSIGN TO SORTWORK`, and that name is
 **documentation**: COBOL requires the clause and then ignores the name, which is
 why IBM's own example assigns two `SD` files to the same one. Nothing is
-allocated for it and no DD answers to it. It is deliberately not `SORTWK01` —
+allocated for it and no DD answers to it. It is deliberately not `SORTWK01`.
 that is the DD the sort product reads for its first _work dataset_, which the
 generated job does allocate, along with `SORTWK02` and `SORTWK03`. Naming the
 `SD` after it would read as though the two were connected.
@@ -230,7 +230,7 @@ sort rawPostings into sortedPostings on branchId, descending accountId
 ```
 
 A procedure replaces the clause it stands in for: `input` replaces `USING`,
-`output` replaces `GIVING`. They are alternatives, not additions — the sort
+`output` replaces `GIVING`. They are alternatives, not additions: the sort
 either handles the file itself or leaves it to the program. Either may be given
 alone.
 
@@ -238,7 +238,7 @@ The record named after `input` or `output` is an ordinary record variable, the
 same way `read <file> into <record>` names one, so the body reads and assigns
 fields exactly as the rest of the program does. Only the loop is generated: the
 `OPEN`, the `READ` or `RETURN`, the end-of-data test, and the `CLOSE`.
-Hand-writing those is where this shape is usually got wrong — a `RETURN` whose
+Hand-writing those is where this shape is usually got wrong: a `RETURN` whose
 `AT END` is forgotten reads the last record forever.
 
 `release` is the statement an input procedure exists for. The records it does
@@ -277,7 +277,7 @@ while ... {
 
 A job that dies halfway is rerun. Without a position written down, the rerun
 starts at the beginning and posts everything twice. `checkpoint` writes that
-position and, in a program with SQL, commits the work up to it — position first,
+position and, in a program with SQL, commits the work up to it: position first,
 commit after, so a restart that finds a position can trust everything up to it
 is durable.
 
@@ -296,7 +296,7 @@ done.
 The restart file must be **`indexed update`** (`BANK-FILE-003`). A sequential
 output file is rewritten from the start by the next `OPEN`, so a rerun that dies
 before its own first checkpoint destroys the position it was resuming from and
-the run after that starts from the beginning — the failure the whole mechanism
+the run after that starts from the beginning: the failure the whole mechanism
 exists to prevent. One keyed record, rewritten in place by each checkpoint, has
 no such window, and it is what a restart control record on z/OS conventionally
 is: a small KSDS holding the last committed position.
@@ -314,7 +314,7 @@ other file stays required, and a missing one still stops the job.
 
 A transaction that posts to the ledger **inside a loop** without both halves is
 `BANK-FILE-003`. It is a **warning**, not an error: the compiler can see the
-hazard but cannot tell whether the job is rerunnable another way — a consumed
+hazard but cannot tell whether the job is rerunnable another way, a consumed
 and recreated input, a small enough window, an operator procedure. It reports
 what it can see and leaves the judgement where the knowledge is. A single
 posting outside a loop is not flagged; rerunning that is the caller's problem,

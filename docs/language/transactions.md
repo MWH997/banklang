@@ -75,8 +75,8 @@ body raises, including inside a function the body called.
 
 What the backend generates:
 
-- `BANK-FAILURE-CODE`, an `EXTERNAL` `PIC X(32)`, so a recursive function —
-  which is a sibling program rather than a paragraph — raises into the same
+- `BANK-FAILURE-CODE`, an `EXTERNAL` `PIC X(32)`, so a recursive function (
+  which is a sibling program rather than a paragraph) raises into the same
   field its caller tests
 - a wrapper paragraph that performs the body `THRU` its exit paragraph, then
   inspects the code. `THRU` is required: a `GO TO` out of a plain `PERFORM`
@@ -99,7 +99,7 @@ it. A code must be non-empty and fit `BANK-FAILURE-CODE` (`BANK-TXN-008`).
 An out-of-range computed subscript raises `BANK-BOUNDS-VIOLATION` where a
 handler can see it. It is not clamped: running the statement against a
 substituted element is the defect the check exists to prevent. Every subscript a
-statement evaluates is guarded, not only the ones in the value being assigned —
+statement evaluates is guarded, not only the ones in the value being assigned:
 the subscript on an assignment's _target_ is the one that writes past the table,
 and inside a record the storage past a table is the next field.
 
@@ -151,7 +151,7 @@ not be assigned to a field that is not itself marked (`BANK-SEC-001`): a field's
 marking is part of its record declaration and therefore part of its copybook,
 so copying restricted data into an unmarked field would reclassify it silently.
 
-It may be read, compared, computed with, and written to a file — which is where
+It may be read, compared, computed with, and written to a file, which is where
 such data legitimately lives. The layout report marks which fields carry it, so
 an auditor reading the evidence does not have to read the source.
 
@@ -166,5 +166,5 @@ audit("SETTLED", carried);            // BANK-AUD-002
 so `maskPan(card.number)` is unrestricted and the compiler does not check that
 `maskPan` masks anything. Following taint across a call would need per-function
 summaries, and a language with no closures and no higher-order functions can
-express masking no other way — so the call is the declassification point, made
+express masking no other way, so the call is the declassification point, made
 explicit rather than hidden.

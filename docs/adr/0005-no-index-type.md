@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-`USAGE INDEX` and `INDEXED BY` appear in 452 of X-COBOL's 5,195 files — 8.7%,
+`USAGE INDEX` and `INDEXED BY` appear in 452 of X-COBOL's 5,195 files: 8.7%,
 the fourth most common construct BankTS does not offer directly. That frequency
 is a reason to look, and the horizontal validation programme's rule is that a
 construct is implemented because it earns its place, not because it is common.
@@ -25,7 +25,7 @@ one:
 
 The shape is unambiguous. An index is overwhelmingly _machinery attached to a
 table_: 11,499 declarations bound to an `OCCURS`, against 98 items declared as
-an index in their own right — less than one percent. What programs do with them
+an index in their own right: less than one percent. What programs do with them
 is walk a table (`SET UP BY`) and search one (`SEARCH`, `SEARCH ALL`). An index
 is almost never data a program computes with, passes around, or writes to a
 file; it is how COBOL says "where I am in this table".
@@ -37,7 +37,7 @@ for each entry in rates { ... }        // the walk
 search rates by rateCode { ... }       // SEARCH / SEARCH ALL
 ```
 
-The generated COBOL for those already carries `INDEXED BY` where it needs one —
+The generated COBOL for those already carries `INDEXED BY` where it needs one:
 `AMORTISA.cbl` and `STATEMEN.cbl` in the evidence bundles both have it. The
 abstraction is not hypothetical; it is what the backend does today.
 
@@ -48,7 +48,7 @@ say so. The corpus says that program is rare: 98 items in 5,195 files.
 The argument against is stronger than "it is rare". An index is a raw offset
 into storage with no bounds attached to it, and its value is meaningless outside
 the table it was declared against. Handing one to a programmer reintroduces
-exactly the failure BankTS refuses elsewhere — `SET NI UP BY 1` past the end of
+exactly the failure BankTS refuses elsewhere: `SET NI UP BY 1` past the end of
 a table is the OpenCBS defect family `table-bounds`, six of the 41 reconstructed
 defects, and BankTS answers it with `BANK-TYPE-009` at compile time and a bounds
 check at run time. A language that refuses an unchecked subscript cannot then
@@ -65,8 +65,8 @@ language names.
 
 `usage-index` stays classified `adaptation` in the representability rules: a
 program written around `SET NI UP BY 1` is expressible in BankTS, and becomes a
-loop rather than a translated register. That is an honest label — the program
-has to be restructured — and it is not a gap to be closed.
+loop rather than a translated register. That is an honest label (the program
+has to be restructured), and it is not a gap to be closed.
 
 ## Consequences
 
@@ -85,8 +85,8 @@ it on the same terms.
 
 ## Related
 
-- [ADR-0001](0001-bankts-restricted-language.md) — what BankTS refuses and why
+- [ADR-0001](0001-bankts-restricted-language.md) (what BankTS refuses and why
 - [docs/validation/horizontal-validation.md](../validation/horizontal-validation.md)
-  — where the corpus figures come from
-- `packages/horizontal-validation/src/representability.ts` — the `usage-index`
+  ) where the corpus figures come from
+- `packages/horizontal-validation/src/representability.ts`, the `usage-index`
   row this decision fixes

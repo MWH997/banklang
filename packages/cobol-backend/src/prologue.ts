@@ -82,7 +82,14 @@ export function prologueLines(
   };
 
   lines.push(
-    `${COMMENT}${facts.programName} — ${program.moduleName}`,
+    // A colon, and deliberately not an em dash. This was the one non-ASCII
+    // byte in every program this compiler has ever generated. COBOL source
+    // reaches z/OS in EBCDIC, U+2014 is three bytes of UTF-8 with no mapping
+    // in the single-byte code pages this compiler targets, and it sat inside a
+    // fixed-format 80-column line whose columns are counted in bytes.
+    // `tests/generated-artifacts.test.ts` now holds every emitted artifact to
+    // ASCII rather than trusting this comment.
+    `${COMMENT}${facts.programName}: ${program.moduleName}`,
     COMMENT.trimEnd(),
     // The file's own name, not the path it was compiled from. An absolute
     // path is this machine's, and a checked-in artifact holding one is not

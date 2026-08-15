@@ -181,11 +181,25 @@ describe("the playground page itself", () => {
     expect(html).toContain('href="/docs/"');
   });
 
+  /**
+   * The two reference pages a reader of this page wants, on this domain.
+   *
+   * They used to be two more items in the header, which is how the playground
+   * came to have a different navigation from every other page of the site. They
+   * are now where each is actually wanted: the language reference beside the
+   * editor you write BankTS in, and the diagnostic catalogue at the foot of the
+   * pane that has just shown you a diagnostic. The rule this test exists for is
+   * unchanged, and it is about the destination rather than the position.
+   */
   it("points the language and diagnostics links at this domain", () => {
+    const main = readFileSync(
+      join(process.cwd(), "packages/playground/src/main.ts"),
+      "utf8",
+    );
     expect(html).toContain('href="/docs/language-reference.html"');
-    expect(html).toContain('href="/docs/diagnostics.html"');
+    expect(main).toContain('href="/docs/diagnostics.html"');
     expect(html).not.toContain("blob/main/docs/language-reference.md");
-    expect(html).not.toContain("blob/main/docs/diagnostics.md");
+    expect(main).not.toContain("blob/main/docs/diagnostics.md");
   });
 
   it("says what the panes are, before a reader has to guess", () => {

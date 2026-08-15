@@ -94,7 +94,7 @@ function main(): void {
 
   mkdirSync(join(ROOT, "dist/og"), { recursive: true });
   writeFileSync(join(ROOT, "dist/og/index.html"), page);
-  console.log("Wrote dist/og/index.html — screenshot it at 1200x630.");
+  console.log("Wrote dist/og/index.html. Screenshot it at 1200x630.");
 }
 
 main();

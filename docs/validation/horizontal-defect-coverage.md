@@ -15,7 +15,7 @@ live, so both halves are recoverable.
 `prevented-at-compile-time` requires a BankTS program that the compiler
 refuses, named in `packages/horizontal-validation/src/defect-demonstrations.ts`
 and compiled by `tests/horizontal-defects.test.ts` on every run. Nothing else
-may claim it. `not-demonstrated` means exactly that — not that BankLang
+may claim it. `not-demonstrated` means exactly that: not that BankLang
 would fail to catch the defect, but that this repository has not shown it.
 
 | Coverage | Defects |
@@ -30,46 +30,46 @@ would fail to catch the defect, but that this repository has not shown it.
 | Defect | Family | What went wrong | Coverage | Diagnostic |
 | --- | --- | --- | --- | --- |
 | DF01 | file-status | inner if statement going to outer if statement | prevented-at-compile-time | `BANK-FILE-017` |
-| DF02 | table-bounds | error in array search, not uniquely defined name | not-demonstrated | — |
-| DF03 | file-status | error in in reading data records from vsam file | not-demonstrated | — |
-| DF04 | group-item-semantics | problem with move statement to right-adjust field | not-demonstrated | — |
-| DF05 | compiler-and-environment | system error message in fastsrt compiler option | not-demonstrated | — |
+| DF02 | table-bounds | error in array search, not uniquely defined name | not-demonstrated | none |
+| DF03 | file-status | error in in reading data records from vsam file | not-demonstrated | none |
+| DF04 | group-item-semantics | problem with move statement to right-adjust field | not-demonstrated | none |
+| DF05 | compiler-and-environment | system error message in fastsrt compiler option | not-demonstrated | none |
 | DF06 | name-resolution | error in cobol compute, not uniquely defined name | prevented-at-compile-time | `BANK-TYPE-001` |
-| DF07 | control-flow | error in evaluate statement, in place of nested if | not-demonstrated | — |
-| DF08 | table-bounds | error in search statement on use of table index | not-demonstrated | — |
-| DF09 | numeric-class | soc7 system abend when executing unstring statement | not-demonstrated | — |
+| DF07 | control-flow | error in evaluate statement, in place of nested if | not-demonstrated | none |
+| DF08 | table-bounds | error in search statement on use of table index | not-demonstrated | none |
+| DF09 | numeric-class | soc7 system abend when executing unstring statement | not-demonstrated | none |
 | DF10 | condition-name-coverage | 88 level range problem not allowing for all values | prevented-at-compile-time | `BANK-TYPE-003` |
-| DF11 | string-handling | stringing of file name enclosed by double quote (") | not-demonstrated | — |
-| DF12 | numeric-class | alphanumeric field not convertd to packed decimal | not-demonstrated | — |
-| DF13 | table-bounds | compile error when value coded for occurs statement | not-demonstrated | — |
-| DF14 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
+| DF11 | string-handling | stringing of file name enclosed by double quote (") | not-demonstrated | none |
+| DF12 | numeric-class | alphanumeric field not convertd to packed decimal | not-demonstrated | none |
+| DF13 | table-bounds | compile error when value coded for occurs statement | not-demonstrated | none |
+| DF14 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | none |
 | DF15 | date-handling | eror converting gregorian date to integer-of-date | prevented-at-compile-time | `BANK-TYPE-003` |
-| DF16 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | — |
-| DF17 | file-status | problem in records not being written to ksds file | not-demonstrated | — |
+| DF16 | sql-handling | undefined or unstable host variable error returned | not-demonstrated | none |
+| DF17 | file-status | problem in records not being written to ksds file | not-demonstrated | none |
 | DF18 | pointer-and-linkage | set statement for ws-pointer discarded by compiler | not-expressible-in-bankts | `BANK-TYPE-001` |
 | DF19 | numeric-class | problem moving character field to numeric field | prevented-at-compile-time | `BANK-TYPE-003` |
-| DF21 | file-status | error in writing records to ksds file (status 92) | not-demonstrated | — |
-| DF22 | pointer-and-linkage | soc-4 abend when reading variable-length records | not-demonstrated | — |
-| DF23 | table-bounds | error in search on use of index arithmetic expression | not-demonstrated | — |
-| DF24 | numeric-class | error in redefinition of a numeric field data format | not-demonstrated | — |
+| DF21 | file-status | error in writing records to ksds file (status 92) | not-demonstrated | none |
+| DF22 | pointer-and-linkage | soc-4 abend when reading variable-length records | not-demonstrated | none |
+| DF23 | table-bounds | error in search on use of index arithmetic expression | not-demonstrated | none |
+| DF24 | numeric-class | error in redefinition of a numeric field data format | not-demonstrated | none |
 | DF25 | record-lifetime | variable initialization using output record data | prevented-at-compile-time | `BANK-FILE-001` |
 | DF26 | table-bounds | error in not finding search entry using search all | prevented-at-compile-time | `BANK-TYPE-009` |
-| DF27 | table-bounds | error moving value from arrays in working storage | not-demonstrated | — |
-| DF28 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | — |
-| DF29 | date-handling | problem with invalid date written to trailer record | not-demonstrated | — |
-| DF30 | compiler-and-environment | compilation error - dfhb0020 defined as a data name | not-demonstrated | — |
-| DF31 | pointer-and-linkage | soc-4 abend enountered in stored procedure program | not-demonstrated | — |
-| DF34 | group-item-semantics | issue in comparing two signed group level variables | not-demonstrated | — |
-| DF35 | string-handling | problem with not unstringing all of csv record fields | not-demonstrated | — |
+| DF27 | table-bounds | error moving value from arrays in working storage | not-demonstrated | none |
+| DF28 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | none |
+| DF29 | date-handling | problem with invalid date written to trailer record | not-demonstrated | none |
+| DF30 | compiler-and-environment | compilation error - dfhb0020 defined as a data name | not-demonstrated | none |
+| DF31 | pointer-and-linkage | soc-4 abend enountered in stored procedure program | not-demonstrated | none |
+| DF34 | group-item-semantics | issue in comparing two signed group level variables | not-demonstrated | none |
+| DF35 | string-handling | problem with not unstringing all of csv record fields | not-demonstrated | none |
 | DF36 | numeric-precision | problem with compute statement not rounded properly | prevented-at-compile-time | `BANK-DEC-006` |
-| DF39 | compiler-and-environment | program not able to display variable comp fields | not-demonstrated | — |
-| DF40 | sql-handling | program error when fetching the records from table | not-demonstrated | — |
-| DF41 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | — |
+| DF39 | compiler-and-environment | program not able to display variable comp fields | not-demonstrated | none |
+| DF40 | sql-handling | program error when fetching the records from table | not-demonstrated | none |
+| DF41 | numeric-class | alphanumeric field not converted to numeric field | not-demonstrated | none |
 | DF42 | sql-handling | error using cursor looping which is not recommended | prevented-at-compile-time | `BANK-SQL-001` |
-| DF44 | name-resolution | compiler error stating char-count is multi-defined | not-demonstrated | — |
-| DF45 | pointer-and-linkage | referencing error encountered when progam executed | not-demonstrated | — |
-| DF46 | file-status | program logic has occurred when rewriting a rcord | not-demonstrated | — |
-| DF47 | control-flow | compiler error when using set statement to false | not-demonstrated | — |
+| DF44 | name-resolution | compiler error stating char-count is multi-defined | not-demonstrated | none |
+| DF45 | pointer-and-linkage | referencing error encountered when progam executed | not-demonstrated | none |
+| DF46 | file-status | program logic has occurred when rewriting a rcord | not-demonstrated | none |
+| DF47 | control-flow | compiler error when using set statement to false | not-demonstrated | none |
 
 ## Families, and what BankLang says about each
 
@@ -89,13 +89,13 @@ A `string<n>` and a `decimal<p,s>` are different types and neither moves into th
 
 **Mechanism** a declared file status, a mode the operation has to match, and a flow-sensitive check that its outcome was handled
 
-A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in — reading an output file is refused. Since this phase it also has to be *looked at*.
+A file must declare a status field (`BANK-FILE-001`) and an operation must match the mode the file was opened in, and reading an output file is refused. Since this phase it also has to be *looked at*.
 
-Every generated I/O statement is followed by a test of the status, and anything outside class 0 stops the step. That covers the failures and deliberately does not cover the statuses a program is written to produce: end of file on a read, no such record on a keyed read or a browse, a duplicate key on a write to a KSDS. Those are the program's business, and a program that ignores one carries on with the record area still holding the record before it. `BANK-FILE-017` is the rule that says so: an operation that can end with one of those statuses leaves an outstanding outcome, and using the record it filled, operating on the file again — a close overwrites the status too — or reaching the end of the routine with it outstanding is an error. Comparing the status discharges it, wherever the comparison is written; a `log` of the status does not, because printing the answer is not reading it.
+Every generated I/O statement is followed by a test of the status, and anything outside class 0 stops the step. That covers the failures and deliberately does not cover the statuses a program is written to produce: end of file on a read, no such record on a keyed read or a browse, a duplicate key on a write to a KSDS. Those are the program's business, and a program that ignores one carries on with the record area still holding the record before it. `BANK-FILE-017` is the rule that says so: an operation that can end with one of those statuses leaves an outstanding outcome, and using the record it filled, operating on the file again (a close overwrites the status too) or reaching the end of the routine with it outstanding is an error. Comparing the status discharges it, wherever the comparison is written; a `log` of the status does not, because printing the answer is not reading it.
 
 The rule is flow-sensitive, which is what the two earlier attempts were not. `read` then `if status` is safe and `if status` then `read` is not, and a check that flattens the statement list cannot tell them apart. The walk merges the state at each join, so a fact is discharged after a branch only when every path through it discharged the fact.
 
-Migration cost, measured before it shipped: two of this repository's forty-four programs, both genuine — `withdrawal-with-recovery` debited an account id of spaces when its request dataset was empty, and `statement-generation` produced a statement from whatever `master` held when the account was not on the file. Forty-five unit-test fixtures, all of them programs that read a file and ignored what happened, corrected by hand. The earlier measurement of 117 declarations with 95 unhandled counted *declarations*; this one counts operations and control flow, which is why the number is different and why this rule could ship where that one could not.
+Migration cost, measured before it shipped: two of this repository's forty-four programs, both genuine: `withdrawal-with-recovery` debited an account id of spaces when its request dataset was empty, and `statement-generation` produced a statement from whatever `master` held when the account was not on the file. Forty-five unit-test fixtures, all of them programs that read a file and ignored what happened, corrected by hand. The earlier measurement of 117 declarations with 95 unhandled counted *declarations*; this one counts operations and control flow, which is why the number is different and why this rule could ship where that one could not.
 
 ### table-bounds
 
@@ -137,7 +137,7 @@ Conditionals are blocks with explicit ends, so an `IF` cannot fall into the wron
 
 **Mechanism** `date` as a distinct type
 
-A date is its own type stored as `PIC 9(8)` YYYYMMDD, not a group with subordinate fields, and date arithmetic goes through builtins that lower to the COBOL intrinsics. The shape these defects rely on — a date group that is numeric from one angle and not from another — is not expressible.
+A date is its own type stored as `PIC 9(8)` YYYYMMDD, not a group with subordinate fields, and date arithmetic goes through builtins that lower to the COBOL intrinsics. The shape these defects rely on (a date group that is numeric from one angle and not from another) is not expressible.
 
 ### group-item-semantics
 
@@ -153,13 +153,13 @@ An enum is closed and its members generate the condition names, so a value outsi
 
 ### record-lifetime
 
-**Mechanism** none — see below.
+**Mechanism** none. See below.
 
 COBOL leaves an FD's record area undefined after a WRITE, and reading it back is what this defect does. Whether BankLang refuses that is settled by `tests/horizontal-defects.test.ts` rather than asserted here.
 
 ### compiler-and-environment
 
-**Mechanism** none — see below.
+**Mechanism** none. See below.
 
-These are defects in how COBOL source is written or compiled. BankTS generates the COBOL, so the specific mistake is unavailable — but that is a consequence of code generation rather than a safety property, and it is not counted as one.
+These are defects in how COBOL source is written or compiled. BankTS generates the COBOL, so the specific mistake is unavailable, but that is a consequence of code generation rather than a safety property, and it is not counted as one.
 

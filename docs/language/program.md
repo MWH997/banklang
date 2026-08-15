@@ -6,7 +6,7 @@ Part of the [BankTS language reference](../language-reference.md).
 
 ## Design goal
 
-BankTS is a small banking language that compiles to COBOL. Its type syntax is TypeScript's; its statements — `transaction`, `file`, `cursor`, `queue`, `on error` — are its own.
+BankTS is a small banking language that compiles to COBOL. Its type syntax is TypeScript's; its statements (`transaction`, `file`, `cursor`, `queue`, `on error`) are its own.
 
 It is intentionally less expressive than TypeScript, and it is not a TypeScript dialect: `tsc` cannot read a BankTS module. The goal is safety, auditability, and predictable COBOL generation.
 
@@ -36,13 +36,13 @@ record Movement {
 movement.type = "DR";
 ```
 
-There is nothing to be ambiguous with in those positions — a field name is
+There is nothing to be ambiguous with in those positions: a field name is
 followed by `:`, and a member name follows `.`, and nothing else can appear
 there.
 
 This does **not** extend to parameters and locals. Those are read as bare
-identifiers in expressions, where a keyword really is a keyword — `log` begins a
-statement — so a parameter called `type` could be declared and never read, which
+identifiers in expressions, where a keyword really is a keyword (`log` begins a
+statement), so a parameter called `type` could be declared and never read, which
 is worse than not allowing it.
 
 `sensitive` is the one word that has to be told apart from itself. It is a
@@ -78,7 +78,7 @@ so they are project settings:
 
 `DECIMAL-POINT IS COMMA` is what much of Europe writes: 1.234,56. It swaps the
 roles of the comma and the point **inside pictures too**, so a grouped amount
-becomes `PIC Z.ZZZ.ZZ9,99` — the compiler rewrites edited pictures to match. A
+becomes `PIC Z.ZZZ.ZZ9,99`: the compiler rewrites edited pictures to match. A
 picture built the other way round is not merely printed oddly; the COBOL
 compiler rejects it, because the separator would appear more than once.
 
@@ -123,7 +123,7 @@ such a program can still be compiled and checked locally:
   command referenced.
 - A command's `RESP` option is not passed as an operand. CICS returns a response
   in `EIBRESP`, so the translator emits the `MOVE EIBRESP TO ...` that follows
-  the call — which is what makes a generated program's error branch reachable.
+  the call, which is what makes a generated program's error branch reachable.
 
 **What this proves:** the surrounding COBOL is valid, every host variable and
 data name resolves, and SQLCA fields such as `SQLCODE` are declared and usable.
@@ -142,7 +142,7 @@ its `EXEC SQL` and `EXEC CICS` blocks.
 The generated JCL carries the steps those blocks require, in the order z/OS
 needs them: the CICS translator first, then the Db2 precompiler, then the
 compiler, the link-edit, and the bind. A job that omitted the precompile step
-would not be an incomplete skeleton but a wrong one — it would describe a build
+would not be an incomplete skeleton but a wrong one. It would describe a build
 that cannot succeed. A batch program's declared files become DD statements named
 after the same DD the generated `SELECT` assigns to. A CICS program gets no run
 step at all: it is started by a transaction identifier in a region, not by
@@ -171,7 +171,7 @@ test postsBothLegs for postOne {
 ```
 
 `test`, `given` and `expect` are matched in position rather than reserved, so
-all three stay usable as field and parameter names — copybooks are full of
+all three stay usable as field and parameter names: copybooks are full of
 `TEST-FLAG`.
 
 **`for`** names the entry transaction, which under zUnit is the whole program.
@@ -180,7 +180,7 @@ program is `BANK-TEST-002`: neither is started the way a batch case starts a
 program.
 
 **`given`** supplies one scalar parameter of that transaction, which is one
-field of the job's PARM. A record parameter is refused (`BANK-TEST-003`) — it is
+field of the job's PARM. A record parameter is refused (`BANK-TEST-003`). It is
 a buffer the program fills from a file, so there is nothing for a caller to
 supply.
 
@@ -196,8 +196,8 @@ Test names are letters and digits, at most 25 of them, and unique
 one load module, and the runner picks a test by matching the name.
 
 What a test may say is decided by what a zUnit driver can see. It runs in its
-own program — it enters the program under test through its entry point and the
-runner intercepts the modules that program calls — so the observable surface is
+own program (it enters the program under test through its entry point and the
+runner intercepts the modules that program calls), so the observable surface is
 the LINKAGE the step is started with and the calls it makes, and nothing else.
 The program's `WORKING-STORAGE` is not reachable, and a test that appeared to
 assert on it would be reporting a pass nobody checked. See

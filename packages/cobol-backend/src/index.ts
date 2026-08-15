@@ -864,7 +864,7 @@ export function checkCobolNameCollisions(program: IRProgram): Diagnostic[] {
 
   const byWord = new Map<string, GeneratedName[]>();
   for (const candidate of candidates) {
-    const key = `${candidate.scope} ${candidate.cobolName}`;
+    const key = `${candidate.scope}\0${candidate.cobolName}`;
     const bucket = byWord.get(key);
     if (bucket) {
       bucket.push(candidate);

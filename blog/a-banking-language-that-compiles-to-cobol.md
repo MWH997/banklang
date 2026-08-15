@@ -17,7 +17,7 @@ BankLang 0.10.0, released today, does the opposite. It keeps COBOL as the
 output and moves the safety earlier.
 
 BankTS is a small language with TypeScript's type syntax and statements of its
-own — `transaction`, `file`, `cursor`, `queue`. It compiles to COBOL a mainframe
+own: `transaction`, `file`, `cursor`, `queue`. It compiles to COBOL a mainframe
 engineer can read in review, targeting IBM Enterprise COBOL 6.4. It is not a
 converter and there is no model anywhere in it: every byte of output comes from
 deterministic code, and the same input always produces byte-identical artifacts.
@@ -56,8 +56,8 @@ incident, and each has a catalogue entry `bankc explain` will print.
 ## Rounding is where money languages are decided
 
 Enterprise COBOL has exactly one rounding phrase, and `ROUNDED` means half-up
-away from zero. Banker's rounding — round half to even, which is what a great
-deal of financial arithmetic actually requires — is arithmetic the compiler has
+away from zero. Banker's rounding (round half to even, which is what a great
+deal of financial arithmetic actually requires) is arithmetic the compiler has
 to write out longhand, because no COBOL phrase asks for it:
 
 ```cobol
@@ -89,7 +89,7 @@ where the answer was no.
 
 `lineSequential` exists because 309 of the 5195 files needed it. Multi-record
 `INPUT` does not, and that decision is the one worth describing. The raw count
-said 143 file descriptions used it — enough to look like a gap. Deduplicating by
+said 143 file descriptions used it: enough to look like a gap. Deduplicating by
 content brought it to 51 distinct files, and reading those 51 found parser
 fixtures, sixteen copies of the same NIST conformance program, and fourteen
 teaching examples. No application program. The feature stayed refused, and
@@ -101,7 +101,7 @@ repositories. A number is not evidence until you have looked at what it counts.
 
 ## What has been validated, and what has not
 
-Every example is executed, not merely compiled — by `cobc` and by an independent
+Every example is executed, not merely compiled: by `cobc` and by an independent
 interpreter written against the same emitted output, with any disagreement
 failing the build. That is what catches the defect that compiles: a bounds guard
 once clamped an out-of-range subscript instead of refusing it, and every static
@@ -115,7 +115,7 @@ tasks, 20 engine agreements, zero divergences; 5195 X-COBOL files analysed with
 zero analyser failures.
 
 And the denominators are the honest ones. The four verbs that are not executed
-locally are named — a generated zUnit test case's entry points and a Report
+locally are named: a generated zUnit test case's entry points and a Report
 Writer section, neither of which has anywhere local to run. On the OpenCBS
 defect suite, nine of 41 defects have a BankTS program the compiler refuses;
 that is not a claim that BankLang prevents 22% of COBOL bugs, because 31 of the
@@ -138,6 +138,6 @@ engineering this repository, and the report generator will not print an IBM
 validation claim unless a real result file has been imported.
 
 The compiler runs entirely in your browser at
-[the playground](https://banklang.mwhassan.com/playground/) — there is no
+[the playground](https://banklang.mwhassan.com/playground/). There is no
 compile server, and nothing you write is sent anywhere. AI assisted the writing
 of this compiler. It is not part of it.

@@ -35,8 +35,8 @@ file paymentFeed lineSequential input record PaymentLine status paymentFeedStatu
 ```
 
 `lineSequential` is a text file: records end at a newline rather than at a fixed
-width. It is what an import from anything that is not a mainframe looks like — a
-payment feed, a reconciliation extract, a file a counterparty sent — and
+width. It is what an import from anything that is not a mainframe looks like (a
+payment feed, a reconciliation extract, a file a counterparty sent), and
 Enterprise COBOL 6.4 has it as `ORGANIZATION IS LINE SEQUENTIAL` for files in
 the z/OS UNIX file system.
 
@@ -54,7 +54,7 @@ record PaymentLine {
 }
 ```
 
-`decimal` is packed — two digits to a byte with a sign nibble — and written into
+`decimal` is packed (two digits to a byte with a sign nibble), and written into
 a text file it produces bytes that are neither the number nor readable text. The
 `WRITE` succeeds and nothing says so until somebody opens the file. Declare the
 number `zoned` if it can be negative, which emits the `SIGN IS TRAILING
@@ -69,7 +69,7 @@ record PaymentLine {
 ```
 
 **It cannot be opened for update.** `input` and `output` only. A record's length
-is fixed once written, so there is nothing to rewrite in place —
+is fixed once written, so there is nothing to rewrite in place:
 `BANK-FILE-013`. A text file is amended by reading it and writing a new one,
 which is what a job that rebuilds an extract already does.
 
@@ -79,7 +79,7 @@ and this organisation has neither an index nor a relative number.
 Reading pads: a line shorter than the record is space-filled to the declared
 width, and writing strips the trailing blanks again. So a record round-trips
 through a text file unchanged only if its declared width matches what is in the
-file — worth remembering when a feed's last field is variable.
+file: worth remembering when a feed's last field is variable.
 
 The generated JCL allocates a z/OS UNIX path rather than a dataset, because that
 is where these files live:
@@ -90,7 +90,7 @@ is where these files live:
 ```
 
 Two differences between GnuCOBOL and the target are recorded in
-[divergences](../divergences.md) — D23 on a final record with no delimiter, and
+[divergences](../divergences.md): D23 on a final record with no delimiter, and
 D24 on what a blank numeric field does.
 
 ### Records that vary in length
@@ -104,7 +104,7 @@ file feed sequential output record FeedLine
 longest one it might hold; for a feed whose records differ by hundreds of bytes
 that is most of the dataset, and on tape it is most of the tape.
 
-`length` names the field that says how much of the record is in use — set it
+`length` names the field that says how much of the record is in use: set it
 before a write, and a read fills it:
 
 ```ts
@@ -116,7 +116,7 @@ write feed from line;
 `textLength` pairs with it: it is what the field holds rather than how wide it
 was declared, which is exactly the number a varying write needs.
 
-A record written shorter than the declared minimum is not written — COBOL
+A record written shorter than the declared minimum is not written: COBOL
 rejects it and the file status says so, which is what the `status` field is for.
 
 The bounds have to be a range, and the file has to be `sequential`: an indexed or
@@ -138,7 +138,7 @@ or writing an input file is `BANK-FILE-001`.
 
 A file's name folds to a DD name of eight characters, and the generated `SELECT`
 reads `ASSIGN TO <DD>`. If a record or a field has that same COBOL name, both
-Enterprise COBOL 6 and GnuCOBOL take the file name from _its contents_ instead —
+Enterprise COBOL 6 and GnuCOBOL take the file name from _its contents_ instead:
 the program compiles and the `OPEN` fails with status 35. `BANK-FILE-016`.
 
 A `read` sets the status field to `"10"` at end of file, so a batch loop can
@@ -185,8 +185,8 @@ descriptions carry several records and are opened `INPUT`, and those 143 are 51
 distinct file contents: 21 parser, grammar, language-server and compiler-test
 fixtures, 16 copies of the NIST CCVS85 conformance suite, and 14 textbook and
 course programs. No application in 5,195 files reads a file this way. Eleven of
-the fourteen are the same shape — a record code in the leading field, named by
-`88` levels — so if that changes, what it would need is a typed variant with
+the fourteen are the same shape (a record code in the leading field, named by
+`88` levels), so if that changes, what it would need is a typed variant with
 narrowing the compiler checks, not the `redefines` above.
 
 ### The outcome of an operation has to be looked at
@@ -201,7 +201,7 @@ if accountFeedStatus == "00" {
 End of file (`10`), no such record (`23`) and a duplicate key (`22`) are not
 failures: they are answers, and the generated check lets them through for the
 program to decide about. A program that does not decide carries on with the
-record area still holding the record before it — a read past the end of a feed
+record area still holding the record before it. A read past the end of a feed
 posts the last transaction twice, with a return code of zero.
 
 So an operation that can end with one of those statuses leaves an outcome the
@@ -210,16 +210,16 @@ that operation filled, operates on the file again, or reaches the end of the
 routine without comparing the status. A `close` counts as operating on the file:
 it sets the status too, so a test written after one reads the close's answer.
 
-The comparison counts wherever it is written — in an `if`, in a loop condition,
-into a local — so the drain loop above stays exactly as it was. A `log` of the
+The comparison counts wherever it is written (in an `if`, in a loop condition,
+into a local), so the drain loop above stays exactly as it was. A `log` of the
 status does not count: printing the answer is not reading it.
 
 _Using_ the record covers every way a program can read it, not only reading a
 field out of it. COBOL hands whole records to things by naming them, and
 `write trail from line`, `release line`, `putMessage feedQueue from line`,
 `call "BANKSUB" using line` and `json out from line` are each the stale record
-going somewhere. A statement that _fills_ it — a second `read into` it, a queue
-`getMessage into` it — is not a use: replacing the bytes is the fix.
+going somewhere. A statement that _fills_ it (a second `read into` it, a queue
+`getMessage into` it) is not a use: replacing the bytes is the fix.
 
 The rule reaches into every block a statement runs, the `on page` block of a
 write and a sort procedure's body included. A transaction's `on failure`
@@ -229,7 +229,7 @@ there, and an operation the handler itself performs owes the same answer.
 
 ### What the compiler checks for you
 
-Every I/O statement is followed by a generated test of the file status **key** —
+Every I/O statement is followed by a generated test of the file status **key**:
 the first character, since class 0 is successful completion and includes `02`,
 `04`, `05` and `07`, not only `00`. A status outside class 0 names the operation,
 the file and the status in the job log, sets a return code of 12, and stops.
@@ -240,7 +240,7 @@ duplicate key on a write to a KSDS. Those say the request found nothing, not
 that the file failed, so the loop above still ends the way it always did.
 
 This matters most where nothing else would notice. A `write` that cannot happen
-— the volume full, a `varying` record outside its declared length — leaves the
+(the volume full, a `varying` record outside its declared length) leaves the
 loop running and the output file short, and the job ends with a return code of
 zero. Inside a sort's input or output procedure the same failure sets
 `SORT-RETURN` to 16 instead, because control may not leave a sort procedure
@@ -266,7 +266,7 @@ file accountMaster indexed input record Account
 
 A KSDS is read by its primary key and browsed by any of its alternates. A
 program that can only name the primary cannot open a file whose alternate index
-is the whole reason it exists — an account file read by customer, say.
+is the whole reason it exists: an account file read by customer, say.
 
 Each alternate is declared `WITH DUPLICATES`, because many accounts per customer
 is nearly always why one exists. Only an indexed file has them
@@ -287,7 +287,7 @@ operation on that file fails, wherever it was written. That is what makes
 `DECLARATIVES` the standard error path rather than a convenience.
 
 The handler is declared at the top level, not inside a transaction, because it
-is not reached from one — it runs when the failure happens. It sees the file
+is not reached from one. It runs when the failure happens. It sees the file
 statuses and nothing else: there is no record in scope and no ledger to post to.
 
 A file may have one handler (`BANK-FILE-005`), which is what COBOL allows. When
@@ -302,7 +302,7 @@ readNext accountMaster into master;         // walk from there
 ```
 
 `START` uses `KEY IS NOT LESS THAN`, which begins at the first record at or
-after the key — what a range walk wants. An exact match would make a browse from
+after the key, what a range walk wants. An exact match would make a browse from
 a partial key impossible.
 
 `readNext` reports end of data through the file status, the way a sequential

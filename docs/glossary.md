@@ -4,7 +4,7 @@ The mainframe and compiler terms the rest of the documentation uses without
 stopping to explain them. A term earns a place here when somebody reading the
 generated COBOL, the JCL or a diagnostic would otherwise have to look it up.
 
-Every entry cites primary documentation — IBM, GnuCOBOL, TypeScript, Ecma — so
+Every entry cites primary documentation (IBM, GnuCOBOL, TypeScript, Ecma), so
 the terminology can be checked against the source rather than against this
 page's wording. `pnpm docs:citations` fetches all of them; `citations.json`
 records what each one resolved to.
@@ -17,7 +17,7 @@ records what each one resolved to.
 **Definition:** What it is.
 
 **Why it matters to BankLang:** What the compiler does about it, named
-concretely — a diagnostic, a generated construct, an example that runs it.
+concretely: a diagnostic, a generated construct, an example that runs it.
 
 **References:**
 
@@ -63,7 +63,7 @@ disagree.
 COBOL, copybooks, JCL, a source map and an audit bundle.
 
 **Why it matters to BankLang:** Everything it emits is decided by code somebody
-can read, and the same input produces byte-identical output — which is what
+can read, and the same input produces byte-identical output, which is what
 `bankc verify` checks, and what makes a review of the output worth doing at all.
 
 **References:**
@@ -74,8 +74,8 @@ can read, and the same input produces byte-identical output — which is what
 ### BankTS
 
 **Definition:** The source language BankLang compiles. A small banking language:
-its type syntax is TypeScript's, and its statements — `transaction`, `file`,
-`cursor`, `queue`, `on error` — are its own.
+its type syntax is TypeScript's, and its statements (`transaction`, `file`,
+`cursor`, `queue`, `on error`) are its own.
 
 **Why it matters to BankLang:** BankTS is not a TypeScript dialect: `tsc` cannot
 read a BankTS module. Borrowing the type syntax makes it approachable to read;
@@ -144,7 +144,7 @@ the next.
 **Why it matters to BankLang:** It is the first record parameter of a `cics
 transaction`, and it carries the reply as well as the request, because the
 caller reads back the same bytes it passed. The generated program tests
-`EIBCALEN` before touching it — reading a commarea shorter than the record
+`EIBCALEN` before touching it: reading a commarea shorter than the record
 claims is IBM's own rule, not a nicety.
 
 **References:**
@@ -200,11 +200,11 @@ wrote.
 
 ### COMP
 
-**Definition:** The COBOL `USAGE` for binary storage — two, four or eight bytes
+**Definition:** The COBOL `USAGE` for binary storage: two, four or eight bytes
 holding a whole number, rather than one byte per digit.
 
 **Why it matters to BankLang:** `binary<n>` emits `PIC S9(n) COMP`, and money
-never does — an amount is `COMP-3`. Binary is what a counter, a sequence number
+never does. An amount is `COMP-3`. Binary is what a counter, a sequence number
 or a code is held in, and BankLang keeps `COMP-5` separate as `native<n>` for
 the cases where the value really is whatever the platform put there.
 [types.md](language/types.md) has the whole mapping, byte counts included.
@@ -395,7 +395,7 @@ native executable, on Linux, macOS and Windows.
 **Why it matters to BankLang:** It is the only compiler this project has ever
 run. Every example is compiled under a dialect configuration shaped towards
 Enterprise COBOL 6.4 and again under GnuCOBOL's own default, which is what makes
-the examples runnable in CI — and it is not IBM's compiler. A green `cobc` run
+the examples runnable in CI, and it is not IBM's compiler. A green `cobc` run
 is evidence about GnuCOBOL. [divergences.md](divergences.md) is the list of
 places the two are known to differ.
 
@@ -472,7 +472,7 @@ against: a job, its steps, and a `DD` statement binding every file the program
 opens to a real dataset.
 
 **Why it matters to BankLang:** A COBOL program with no JCL cannot be run, so
-`bankc build` writes the job as well — compile, link, and the steps a program
+`bankc build` writes the job as well: compile, link, and the steps a program
 needs because of what is in it, such as `PRECOMP` and `BIND` for embedded SQL.
 It is meant to be submittable rather than a skeleton, and
 [jcl-model.md](jcl-model.md) says which parts a site is expected to change.
@@ -507,7 +507,7 @@ times, which is as close as COBOL gets to an array.
 
 **Why it matters to BankLang:** A BankTS array is bounded, and the bound becomes
 the `OCCURS` count. Bounded is the whole point: the table's size is part of the
-record's length, and a subscript outside it is refused rather than clamped —
+record's length, and a subscript outside it is refused rather than clamped,
 which is a defect this project shipped once and found by running the program.
 
 **References:**
@@ -520,7 +520,7 @@ which is a defect this project shipped once and found by running the program.
 which is what makes a record variable-length.
 
 **Why it matters to BankLang:** BankTS spells it `depending on`, and emits
-`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT OF BATCH` — the fixed bound stays
+`OCCURS 1 TO 100 TIMES DEPENDING ON LINE-COUNT OF BATCH`: the fixed bound stays
 as the maximum, because the storage is still reserved. The count must be a whole
 number declared before the table, since COBOL reads it to work out the record's
 length and cannot read a field it has not reached; `BANK-COPY-004` is what says
@@ -534,7 +534,7 @@ so when it is not.
 
 ### PIC / PICTURE clause
 
-**Definition:** The COBOL clause describing a data item's shape — how many
+**Definition:** The COBOL clause describing a data item's shape: how many
 digits or characters, where the decimal point sits, whether there is a sign.
 With `USAGE`, it decides how many bytes the item takes.
 
@@ -568,8 +568,8 @@ the JCL is generated from what the program contains rather than from a template.
 **Definition:** A COBOL clause laying a second set of fields over the same bytes
 as the first, so one record can be read two ways.
 
-**Why it matters to BankLang:** Real copybooks are full of it — a party record
-that is a person or a company depending on a type byte — so a compiler that
+**Why it matters to BankLang:** Real copybooks are full of it (a party record
+that is a person or a company depending on a type byte), so a compiler that
 cannot read `REDEFINES` cannot read the estate. BankTS has a `redefines` clause,
 and the copybook importer refuses a shape it cannot lay out
 (`BANK-COPY-002`) instead of importing it at the wrong offsets.
@@ -626,7 +626,7 @@ it. Nothing is inferred from a statement appearing to succeed.
 
 **Why it matters to BankLang:** Those are three outcomes, and treating them as
 two is the bug. A `SELECT` that finds nothing is not a failure, and a `-911`
-deadlock is not an empty result — `BANK-SQL-007` refuses a test that cannot tell
+deadlock is not an empty result: `BANK-SQL-007` refuses a test that cannot tell
 them apart. [sql.md](language/sql.md) has the shape it expects.
 
 **References:**
@@ -655,7 +655,7 @@ together, or backed out together. What lies between two of them is a unit of
 work.
 
 **Why it matters to BankLang:** A BankTS `transaction` is a compile-time
-grouping — idempotency, audit and balance — and is not a syncpoint. Commit and
+grouping (idempotency, audit and balance), and is not a syncpoint. Commit and
 rollback are not generated from it; where a syncpoint matters, as in the queue
 drained in `examples/mq-request-reply`, it is written out. Do not read the
 keyword as a promise the runtime is making.
@@ -710,7 +710,7 @@ compiler, CICS, IMS, Db2, VSAM and JCL all live.
 
 **Why it matters to BankLang:** It is the platform everything generated here is
 meant to run on, and the platform none of it has run on. `zos/` holds a
-conformance kit — programs, JCL and expected results — for somebody with access
+conformance kit (programs, JCL and expected results) for somebody with access
 to submit; [RESULTS-TEMPLATE.md](../zos/RESULTS-TEMPLATE.md) is what comes back.
 
 **References:**
@@ -726,7 +726,7 @@ to Enterprise COBOL and PL/I.
 **Why it matters to BankLang:** It is generated. A BankTS `test <name> for
 <entry transaction>` produces a test case, a configuration and the JCL to run
 it, and `examples/zunit-tested-posting` carries all three. No generated case has
-been run, because running one needs z/OS — every shape in the artifacts is
+been run, because running one needs z/OS: every shape in the artifacts is
 copied from a case IBM's own generator produced, and cited in
 [zunit.md](zunit.md).
 
@@ -743,7 +743,7 @@ holds one of the values it lists. It occupies no storage of its own.
 
 **Why it matters to BankLang:** It is how generated COBOL says what a value
 means. Each member of a BankTS enum emits one 88-level, so the program tests
-`IF ACCOUNT-DORMANT` rather than `IF STATUS = "D"` — the same comparison, with
+`IF ACCOUNT-DORMANT` rather than `IF STATUS = "D"`: the same comparison, with
 the meaning written down where a reviewer reads it.
 `tests/enum-conditions.test.ts` holds the rule.
 

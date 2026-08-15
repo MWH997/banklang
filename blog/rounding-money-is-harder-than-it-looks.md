@@ -123,7 +123,7 @@ as a slow drift.
 ## What a compiler can do about it
 
 If a language knows that a value is money, it can require a division to state
-its rounding mode, refusing to compile until it does — rather than quietly
+its rounding mode, refusing to compile until it does, rather than quietly
 supplying a default.
 
 That sounds pedantic until you consider what the default costs. A developer who

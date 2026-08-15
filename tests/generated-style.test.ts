@@ -30,7 +30,7 @@ describe("the program prologue", () => {
   const prologue = emit.cobol.slice(0, emit.cobol.indexOf("IDENTIFICATION"));
 
   it("names the program and what it is entered at", () => {
-    expect(prologue).toContain("ACCOUNTF — AccountFileBatch");
+    expect(prologue).toContain("ACCOUNTF: AccountFileBatch");
     expect(prologue).toContain("POST-ACCOUNTS, the transaction");
   });
 

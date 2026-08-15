@@ -33,7 +33,7 @@ search row in statement.lines where row.entryKind == "DEBIT" {
 
 A linear scan with `for each` finds a row too, but it runs the whole table every
 time and says nothing about what it was looking for. `SEARCH` stops at the first
-match, and its `AT END` covers the case a hand-written scan usually forgets —
+match, and its `AT END` covers the case a hand-written scan usually forgets,
 which is why the `else` is required rather than optional.
 
 Every `OCCURS` carries an `INDEXED BY`, because COBOL's `SEARCH` walks an index
@@ -61,8 +61,8 @@ search sorted band in book.bands where band.upper == target {
 `SEARCH ALL`. A linear scan of four hundred bands reads two hundred rows to find
 one; bisecting reads nine.
 
-COBOL will do it only on a table whose declaration says it is ordered —
-`ascending <field>` becomes `ASCENDING KEY IS` — and only on equality against
+COBOL will do it only on a table whose declaration says it is ordered (
+`ascending <field>` becomes `ASCENDING KEY IS`), and only on equality against
 that key, because anything else has no ordering to cut in half. Both are checked
 (`BANK-TYPE-028`).
 
@@ -148,7 +148,7 @@ mortgage.payment = round(
 );
 ```
 
-£100,000 at 0.5% a month over 240 months gives £716.43 — and it is COBOL that
+£100,000 at 0.5% a month over 240 months gives £716.43, and it is COBOL that
 computes it, not this compiler. That is the reason to route to the intrinsic
 rather than write the series out: a repayment factor worked out in a loop rounds
 differently, and the difference shows up in a customer's final instalment.
@@ -158,7 +158,7 @@ by twelve: `decimal<9, 6>` holding `0.005000` for 0.5%. The term is a whole
 number of periods.
 
 `annuity`, `presentValue`, and `toNumber` take the scale of whatever they are
-assigned to, the way `round` does — a repayment factor has no natural scale of
+assigned to, the way `round` does: a repayment factor has no natural scale of
 its own, and the only one that matters is the scale of the money it multiplies.
 
 `mod` is what a check digit is: `mod(accountNumber, 97)` is the arithmetic
@@ -184,7 +184,7 @@ Both read grouping and a currency symbol as well as plain digits, because
 left of them, which is what a cash-handling or a settlement program does.
 `sign` says which way an amount moves without comparing it twice.
 
-`textLength` is the length the field actually holds, trailing spaces excluded —
+`textLength` is the length the field actually holds, trailing spaces excluded,
 not the width it was declared as, which the compiler already knows. That is the
 length a variable-length record needs to write, and what `reverse` pairs with
 for the check-digit algorithms that read a number backwards.
@@ -213,7 +213,7 @@ Enterprise COBOL has **one** rounding phrase. `ROUNDED` is half-up away from
 zero, and omitting it truncates towards zero; there is no `MODE IS` sub-phrase,
 and `NEAREST-EVEN` appears nowhere in the 6.4 Language Reference. So two of the
 seven modes are a phrase and the other five are arithmetic this compiler writes
-out — a truncation, the excess that truncation discarded, and a conditional step
+out: a truncation, the excess that truncation discarded, and a conditional step
 of one unit in the last place.
 
 | Mode        | What is emitted    | Use                                  |
@@ -241,13 +241,13 @@ where `ROUNDED` attaches to the receiving field rather than to the expression.
 Every computation is emitted with `ON SIZE ERROR`, which names the field in the
 job log, sets a return code of 12, and returns. Without the phrase the Language
 Reference is explicit that "truncation rules apply and the value of the affected
-resultant identifier is computed" — and the digits truncated are the high-order
+resultant identifier is computed", and the digits truncated are the high-order
 ones, so an overflow does not produce a number large enough to notice. It
 produces a plausible small one. Two amounts a `decimal<9, 2>` can each hold add
 up to one it cannot: 9,999,999.99 twice stored 9,999,999.98 and returned zero.
 
 With the phrase COBOL leaves the receiving field unchanged rather than storing
-the truncated answer, which is why stopping is safe — the wrong value never
+the truncated answer, which is why stopping is safe, the wrong value never
 reaches the ledger. Division by zero raises the same condition and takes the
 same path. Naming a value rather than computing one cannot overflow, so a plain
 assignment is emitted unguarded.

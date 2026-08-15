@@ -58,11 +58,11 @@ sql insertPosting(keyAccount: string<16>, keyAmount: MoneyBDT) {
 
 Neither is available inside a `cics transaction` (`BANK-SQL-004`). There CICS
 owns the syncpoint and commits Db2's work along with everything else, so an
-`EXEC SQL COMMIT` is not merely redundant — Db2 rejects it at run time. Use
+`EXEC SQL COMMIT` is not merely redundant: Db2 rejects it at run time. Use
 `syncpoint resp <status>;` instead, which is why that statement exists.
 
 **Positioned update.** `WHERE CURRENT OF <cursor>` names a cursor the program
-declared, and the compiler rewrites it to that cursor's COBOL name — without
+declared, and the compiler rewrites it to that cursor's COBOL name: without
 which the update would refer to a cursor Db2 has never heard of:
 
 ```ts
@@ -94,7 +94,7 @@ for each row in accountsInBranch(request.branchId) limit 5000 {
 ```
 
 The `OPEN` and the `CLOSE` are generated around the body rather than written, so
-a cursor cannot be left open — a cursor still holding Db2 locks at the end of a
+a cursor cannot be left open: a cursor still holding Db2 locks at the end of a
 batch window is a defect the language can simply make unwritable. There is
 deliberately no `open` / `fetch` / `close` to write by hand; that shape would
 need three more diagnostics to reach the same guarantee and would still permit
@@ -109,7 +109,7 @@ whole one, which is how a batch silently under-posts. Because the loop tests
 `SQLCODE` itself, it does not put the body under `BANK-SQL-001`; an `execute` in
 the body still does.
 
-**Where the `INTO` goes.** `DECLARE CURSOR` may not carry an `INTO` — Db2 puts
+**Where the `INTO` goes.** `DECLARE CURSOR` may not carry an `INTO`: Db2 puts
 the row's destination on the `FETCH`, which is where a row actually arrives.
 Writing it on the SELECT is how the query reads, so the author writes it there
 and the compiler moves it:
@@ -153,7 +153,7 @@ cursor that is not held closes after a commit operation."
 
 A long batch has to commit inside its own cursor loop. Not committing means the
 log fills and the locks accumulate until nothing else can read the table, so a
-run over a million rows commits every few thousand — and over a cursor that is
+run over a million rows commits every few thousand, and over a cursor that is
 not held, the `FETCH` after the first commit answers `-501`, cursor not open,
 having already processed and committed part of the result set.
 
@@ -172,7 +172,7 @@ rather than an edge one: a loop that posts to the ledger has to checkpoint
 **A rollback is not a commit, and `hold` does not save it.** The same manual:
 "A ROLLBACK statement closes all open cursors. A COMMIT statement ... closes
 cursors that are not declared WITH HOLD and leaves open those cursors that are
-declared WITH HOLD." Under CICS it says it again — "SYNCPOINT ROLLBACK closes
+declared WITH HOLD." Under CICS it says it again: "SYNCPOINT ROLLBACK closes
 all cursors". So a `rollback;` inside a cursor loop is `BANK-SQL-008` whether
 the cursor is held or not, and the only fix is to move it out.
 
@@ -180,11 +180,11 @@ the cursor is held or not, and the only fix is to move it out.
 CURSOR...WITH HOLD in message processing programs (MPP) and message-driven batch
 message processing (BMP). Each message is a new user for Db2." The compiler does
 not know which kind of IMS region a program will run in, so it does not refuse
-one — this is a thing to know rather than a thing it checks.
+one. This is a thing to know rather than a thing it checks.
 
-Holding a cursor is not free. Db2 does not close a held cursor at a syncpoint —
+Holding a cursor is not free. Db2 does not close a held cursor at a syncpoint:
 the same manual says "Close all cursors that are declared with the WITH HOLD
-option before each sync point. Db2 does not automatically close them" — and a
+option before each sync point. Db2 does not automatically close them", and a
 thread with an open cursor cannot be reused. The generated `CLOSE` is what
 covers that, and it is emitted whether the cursor is held or not.
 
@@ -202,14 +202,14 @@ One fetch per row is one crossing into Db2 per row; over a million-row master
 that is the difference between a million crossings and ten thousand.
 
 The loop reads the same: `for each row in ...` still gives one row at a time.
-What changed is underneath it — an inner `PERFORM VARYING` over the rows the
+What changed is underneath it: an inner `PERFORM VARYING` over the rows the
 last fetch returned, moving each column's array element into the record before
 the body runs.
 
 **The last rowset is the part that is easy to get wrong.** From the Application
 Programming and SQL Guide: "when the last row has been retrieved, the program
 must still process the rows in the last rowset through that last row." `+100`
-arrives _with_ the final partial rowset, not after it — so a loop that leaves on
+arrives _with_ the final partial rowset, not after it, so a loop that leaves on
 the `+100` where a single-row fetch would silently drops up to one rowset of
 work off the end of every run, and the total is short by a number nobody can
 predict. The generated loop processes the rowset first and tests `SQLCODE = 100`
@@ -221,7 +221,7 @@ at the end of the eleventh fetch.
 
 The dimension is 1 to 32767, which is what the manual allows a host-variable
 array's `OCCURS` to be. Each column becomes an elementary item with its own
-`OCCURS` — a group with the `OCCURS` on the group is a host structure array,
+`OCCURS`: a group with the `OCCURS` on the group is a host structure array,
 which a multiple-row fetch does not take, and Db2 answers
 `UNDECLARED HOST VARIABLE ARRAY`.
 
@@ -250,7 +250,7 @@ for each row in statementPage(request.accountId) backward limit 20 { }
 
 Both need the cursor to be declared `scroll`; without it, `BANK-SQL-010`. That
 is an error rather than a warning because Db2 accepts the `DECLARE` of a
-forward-only cursor and rejects the `FETCH` against it — so a program without
+forward-only cursor and rejects the `FETCH` against it, so a program without
 the keyword compiles here, precompiles, and fails at bind.
 
 **`INSENSITIVE` is written rather than left out.**
@@ -266,7 +266,7 @@ the keyword compiles here, precompiles, and fails at bind.
 ```
 
 Db2's default is `ASENSITIVE`, which resolves to insensitive or to sensitive
-dynamic depending on the statement — so the same source could page over a fixed
+dynamic depending on the statement, so the same source could page over a fixed
 result set or over one changing underneath it, decided per query. A reader
 seeing the same transaction on two pages, or never seeing it because it moved
 between them, is not something the program can detect. `INSENSITIVE` fixes the
@@ -298,7 +298,7 @@ every way the loop ends is Db2's answer instead of arithmetic:
 
 - past the last row, `ABSOLUTE` beyond the end answers `+100`;
 - walking backward off the front, the position reaches 0, which the SQL
-  Reference defines as before the first row — also `+100`;
+  Reference defines as before the first row: also `+100`;
 - a negative position counts from the end, so `backward` with no `from` starts
   at `-1`, the last row, without the program knowing or asking how many rows
   there are.
@@ -310,7 +310,7 @@ takes an integer, and a scaled decimal there is `-301` from the precompiler
 rather than a rounded row number.
 
 `scroll` and `rowset` together are `BANK-SQL-011`. Both are real Db2 and the
-combination is a third statement — `FETCH ROWSET STARTING AT ABSOLUTE n` — which
+combination is a third statement (`FETCH ROWSET STARTING AT ABSOLUTE n`) which
 positions a rowset rather than a row, so the loop's arithmetic, its `SQLERRD(3)`
 count and its bound would all mean something different. Pick the one that
 matches the job: `rowset` reads a whole result set with fewer crossings,
@@ -352,7 +352,7 @@ Isolation levels, savepoints and `LOCK TABLE` need nothing from the compiler.
 
 **Two things do not go here.** A bare `COMMIT` or `ROLLBACK` written as SQL is
 `BANK-SQL-009`, because the language has `commit;` and `rollback;` and routing
-around them skips the rules attached to them — `BANK-SQL-004`, which refuses one
+around them skips the rules attached to them: `BANK-SQL-004`, which refuses one
 inside a `cics transaction` because Db2 answers `-925` for a `COMMIT` and `-926`
 for a `ROLLBACK` there, and `BANK-FILE-003`, which is about where a batch can be
 restarted from.

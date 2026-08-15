@@ -11,7 +11,12 @@ import {
   renderDoc,
   renderPage,
 } from "../tools/build-docs";
-import { renderLanding, siteContent } from "../tools/build-site";
+import {
+  NAV_SCRIPT,
+  renderLanding,
+  siteContent,
+  siteHeader,
+} from "../tools/build-site";
 
 /**
  * Layout rules that were broken, found by measuring, and are now held.
@@ -65,21 +70,66 @@ describe("every page of the site", () => {
   });
 
   /**
-   * The navigation takes a row of its own below the breakpoint rather than
-   * relying on `flex-wrap`, which keeps items beside the wordmark until one of
-   * them cannot break and then overflows instead of wrapping.
+   * Below the breakpoint the navigation is behind a menu button.
+   *
+   * It used to take a row of its own, which was an improvement on the
+   * `flex-wrap` it replaced and still meant that on a 360px screen the five
+   * links and the theme toggle stood in two rows under the wordmark, above the
+   * page's own heading. The rule being held now is that the links are hidden
+   * until the button opens them, and that the button exists only below the
+   * breakpoint, so there is no state a reader can be stuck in above it.
    */
-  it("gives the header's navigation its own row on a narrow screen", () => {
+  it("puts the header's navigation behind a menu button on a narrow screen", () => {
     for (const [name, css] of [
       ["site.css", SITE_CSS],
       ["playground styles.css", PLAYGROUND_CSS],
     ] as const) {
-      const narrow = /@media \(max-width: 40rem\)\s*\{([\s\S]*?)\n\}/.exec(
-        css,
-      )?.[1];
+      // Not rendered at all above the breakpoint.
+      expect(css, `${name} always shows the menu button`).toMatch(
+        /\.burger\s*\{[^}]*display:\s*none/,
+      );
+
+      const narrow =
+        /@media \(max-width: 51\.999rem\)\s*\{([\s\S]*?)\n\}\n/.exec(css)?.[1];
       expect(narrow, `${name} has no narrow-screen header rule`).toBeDefined();
-      expect(narrow, name).toMatch(/flex-direction:\s*column/);
+      expect(narrow, `${name} never shows the menu button`).toMatch(
+        /\.burger\s*\{[^}]*display:\s*inline-flex/,
+      );
+      expect(narrow, `${name} leaves the links visible`).toMatch(
+        /\.top__nav\s*\{[^}]*display:\s*none/,
+      );
+      expect(narrow, `${name} never opens them`).toMatch(
+        /\.top\.open\s+\.top__nav\s*\{[^}]*display:\s*flex/,
+      );
     }
+  });
+
+  /**
+   * The playground page carries a copy of the generated header, because Vite
+   * builds that page rather than `tools/build-site.ts`. Held to the generated
+   * one so that a link added to the site navigation cannot quietly miss the one
+   * page that is not generated.
+   *
+   * Compared with whitespace removed, because Prettier formats this file and
+   * the generator's line breaks are not the ones it chooses: it breaks the menu
+   * button's attributes across five lines and puts a space before the closing
+   * angle bracket. Whitespace is the only thing Prettier changes, so removing
+   * all of it compares every tag, attribute and value while ignoring the one
+   * difference that is allowed to exist.
+   */
+  const shape = (source: string): string => source.replace(/\s+/g, "");
+
+  it("gives the playground the same header every other page has", () => {
+    expect(shape(PLAYGROUND_HTML)).toContain(
+      shape(siteHeader({ up: "/", current: "playground" })),
+    );
+  });
+
+  /**
+   * And the same menu script, for the same reason.
+   */
+  it("gives the playground the same menu behaviour", () => {
+    expect(shape(PLAYGROUND_HTML)).toContain(shape(NAV_SCRIPT));
   });
 });
 

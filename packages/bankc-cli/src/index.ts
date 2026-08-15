@@ -2442,7 +2442,7 @@ function renderDoctor(cwd: string): string {
     `gnucobol: ${gnucobol(cwd)}`,
     // Never detected, because nothing here can detect it, and an absent line
     // reads as an unasked question rather than as an answered one.
-    "ibm enterprise cobol: not detected — no native IBM validation is claimed",
+    "ibm enterprise cobol: not detected, and no native IBM validation is claimed",
     "",
   ].join("\n");
 }

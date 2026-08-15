@@ -282,17 +282,37 @@ export function componentKey(component: BomComponent): string {
  * inferred: this is the string the publisher wrote, or nothing at all.
  */
 export function declaredLicence(cwd: string, key: string): string | undefined {
-  // pnpm's store directory names escape the scope slash and nothing else:
+  // pnpm's store directory names escape the scope slash:
   // `@vscode/vsce-sign@2.0.9` lives under `@vscode+vsce-sign@2.0.9`.
+  //
+  // And it escapes more than that. A package with peer dependencies gets the
+  // resolved peers appended to the directory name, so `@eslint/js@10.0.1` is
+  // under `@eslint+js@10.0.1_eslint@10.8.0`. Reading the exact name found
+  // nothing for any of them, `declaredLicence` returned `undefined`, and fifty
+  // components — every ESLint and Stryker package this repository installs —
+  // went into the bill of materials with no licence at all. The BOM is the
+  // artifact a consumer runs a licence scanner over, so fifty unknowns is the
+  // one output this file exists to prevent.
   const name = key.slice(0, key.lastIndexOf("@"));
-  const path = join(
-    cwd,
-    "node_modules/.pnpm",
-    key.replace("/", "+"),
-    "node_modules",
-    name,
-    "package.json",
-  );
+  const escaped = key.replace("/", "+");
+  const store = join(cwd, "node_modules/.pnpm");
+
+  let directory = escaped;
+  if (!existsSync(join(store, directory))) {
+    // The peer suffix is separated by an underscore, and a version never
+    // contains one, so the prefix is unambiguous. Sorted, so a package
+    // installed against two peer sets resolves to the same one every run and
+    // the BOM stays reproducible.
+    const suffixed = readdirSync(store)
+      .filter((entry) => entry.startsWith(`${escaped}_`))
+      .sort();
+    if (suffixed.length === 0) {
+      return undefined;
+    }
+    directory = suffixed[0]!;
+  }
+
+  const path = join(store, directory, "node_modules", name, "package.json");
 
   let manifest: { license?: unknown; licenses?: unknown };
   try {

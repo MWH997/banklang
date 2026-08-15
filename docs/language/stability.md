@@ -44,8 +44,8 @@ land:
 3. Every example in `examples/` updated, which `pnpm examples:verify` enforces.
 4. A note here if the change is one an existing program has to be edited for.
 
-A change to the _generated output_ — a different COBOL shape for the same
-BankTS — needs the reason in the commit body and a golden fixture update that a
+A change to the _generated output_ (a different COBOL shape for the same
+BankTS) needs the reason in the commit body and a golden fixture update that a
 reviewer sees. `CONTRIBUTING.md` calls that out: a golden change is reviewed as
 a behaviour change, never as a formatting one.
 

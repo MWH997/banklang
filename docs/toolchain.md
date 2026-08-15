@@ -48,8 +48,8 @@ and deterministic copybook dependency reports as Mermaid Markdown and JSON.
 Dependency resolution reports missing and duplicate member names rather than
 guessing, and does not expand copybook content into the inventory counts.
 
-Everything the compiler means to report — a diagnostic, a missing project, an
-unreadable copybook — comes back as a message and an exit code. A failure it did
+Everything the compiler means to report (a diagnostic, a missing project, an
+unreadable copybook) comes back as a message and an exit code. A failure it did
 not anticipate is still a thrown error, and `bankc` prints its message on one
 line prefixed with `bankc:` and exits 1. `--debug` adds the stack, which is the
 right output for a bug in the compiler and the wrong output for a mistake in a
@@ -61,8 +61,8 @@ watch on one is the wrong response: the exit code follows the last build, and
 saving a fix clears it. `bankc job <directory> --watch` watches the directory
 itself, since a job's sources are one level down in each step's project.
 
-`--watch` applies to the commands that read a project — `check`, `build`,
-`job`, `emit`, `audit-report`, `verify`, `test`, `zunit`, `layout`, `config` —
+`--watch` applies to the commands that read a project (`check`, `build`,
+`job`, `emit`, `audit-report`, `verify`, `test`, `zunit`, `layout`, `config`)
 and is refused with exit code 2 on the rest, which name the commands that take
 it. It used to be accepted everywhere, and "everywhere" included commands with
 no project to find: `bankc explain BANK-LED-001 --watch` read the diagnostic
@@ -75,7 +75,7 @@ to rerun a command no `.bank.ts` can change.
 The first command worth running on a machine that has just cloned this, and the
 one to paste into a bug report. It reports the compiler's own version, the
 working directory and whether it holds a project, Node and the platform, the
-backend target, and whether GnuCOBOL is installed — by running
+backend target, and whether GnuCOBOL is installed: by running
 `cobc --version` through the same resolution `pnpm test:gnucobol` uses,
 including `GNUCOBOL_COBC_PATH`, so it names the compiler that lane would
 actually run rather than whatever is first on the path.
@@ -91,7 +91,7 @@ arch: x64
 compiler target: ibm-enterprise-cobol-zos
 local validation target: gnucobol-local
 gnucobol: cobc (GnuCOBOL) 3.2.0
-ibm enterprise cobol: not detected — no native IBM validation is claimed
+ibm enterprise cobol: not detected, and no native IBM validation is claimed
 ```
 
 An absent `cobc` is a normal state, not a failure: the line says so and says
@@ -99,7 +99,7 @@ what it costs, which is that `pnpm test:gnucobol` and the `cobc` tests skip.
 
 The last line is a constant. Nothing on a workstation can detect IBM Enterprise
 COBOL, and a line that is printed only when something is missing reads as an
-unasked question rather than an answered one — so it is always there, and it
+unasked question rather than an answered one, so it is always there, and it
 never becomes conditional on anything a machine could accidentally satisfy.
 
 ## Formatting

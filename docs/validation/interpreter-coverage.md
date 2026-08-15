@@ -76,5 +76,5 @@ Every locally executable verb the backend emits can be executed by both engines.
 
 ## Not executable locally, as whole statements
 
-`EXEC CICS`, `EXEC SQL` — these need Db2, a CICS region or IMS. The reference modules under `runtime/` stand in well enough to run a program, which falls well short of executing SQL. They are not counted as gaps because no interpreter change would close them.
+`EXEC CICS`, `EXEC SQL`: these need Db2, a CICS region or IMS. The reference modules under `runtime/` stand in well enough to run a program, which falls well short of executing SQL. They are not counted as gaps because no interpreter change would close them.
 

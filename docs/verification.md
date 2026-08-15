@@ -12,7 +12,7 @@ reason this page is as long as it is.
 
 Everything on this page is **vertical**: tests written for BankLang, run against
 BankLang. That is most of the evidence this project has and it has one blind
-spot — a misunderstanding shared between a test and the code it tests agrees
+spot: a misunderstanding shared between a test and the code it tests agrees
 with itself perfectly. [Horizontal
 validation](validation/horizontal-validation.md) is the other axis: the same
 compiler measured against independent COBOL corpora, benchmarks and defect
@@ -30,7 +30,7 @@ Until 2026-08-06 `pnpm lint` was `prettier --check`, and calling a formatter a
 linter is how the gap stayed invisible: TypeScript caught types, Prettier caught
 whitespace, and nothing looked at the space between them. A duplicate
 `case "RaiseStatement"` sat in the formatter until esbuild happened to mention
-it while bundling the language server — TypeScript does not report a duplicate
+it while bundling the language server: TypeScript does not report a duplicate
 case, because the exhaustiveness check over `never` is satisfied by the first
 one.
 
@@ -79,8 +79,8 @@ the command.
 Where the answer is checkable without a fixture: decimal arithmetic, rounding,
 overflow, copybook field layout, packed-decimal byte length, identifier name
 conversion, source map ranges, deterministic ordering. Each is a claim with a
-shape — that a byte length follows from precision, that two runs order output
-the same way — rather than a case somebody chose.
+shape (that a byte length follows from precision, that two runs order output
+the same way) rather than a case somebody chose.
 
 #### Generated programs
 
@@ -90,8 +90,8 @@ with no errors, its COBOL and JCL pass the conformance linter, and `cobc`
 accepts it under `tools/banklang-ibm.conf`.
 
 The point is that every hand-written fixture is a shape somebody thought of, and
-the 2026-08-05 audit's most serious finding — a
-COBOL word one character over the limit — lived in a shape nobody had, because
+the 2026-08-05 audit's most serious finding (a
+COBOL word one character over the limit) lived in a shape nobody had, because
 every fixture used short names. So the generator spends most of its budget on
 boundaries: names at 29, 30 and 31 characters, every rounding mode, precisions
 and scales at the edge of what `ARITH(COMPAT)` allows, tables at one occurrence
@@ -101,15 +101,15 @@ It is deterministic. The seed is the program, and a failure names the seed that
 reproduces it.
 
 It found two defects on its first run, both unreachable from any example:
-`decimal<2, 2>` — a value entirely below the decimal point, which is what a rate
-is — emitted `PIC S9(0)V99`, and a function name long enough to need
+`decimal<2, 2>` (a value entirely below the decimal point, which is what a rate
+is) emitted `PIC S9(0)V99`, and a function name long enough to need
 abbreviating gave its paragraph, its parameter cell, its result field and its
 exit paragraph the same thirty-character word.
 
 ### 2.3a Mutation tests
 
 The diagnostics are the product. A safety rule with no test that fails when you
-invert it is not a rule, it is a comment — and reading the suite cannot tell the
+invert it is a comment rather than a rule, and reading the suite cannot tell the
 two apart, because a test that compiles a bad program and asserts the right
 diagnostic passes just as well when the rule is deleted and another rule catches
 the same program.
@@ -118,20 +118,20 @@ the same program.
 pnpm test:mutation
 ```
 
-Stryker, against `packages/typechecker` and `packages/semantic-analyzer` — the
+Stryker, against `packages/typechecker` and `packages/semantic-analyzer`: the
 two packages that decide whether a program is refused.
 
 There is a second run, `pnpm test:mutation:emitter`, against the code that
 decides what the emitted text looks like. It exists because the reason
-originally given for leaving the emitter out — that golden fixtures, the
-conformance linter and `cobc` already hold it — turned out to be wrong in a way
+originally given for leaving the emitter out (that golden fixtures, the
+conformance linter and `cobc` already hold it) turned out to be wrong in a way
 worth recording. See §2.3b.
 
 Three configuration decisions are worth knowing, because each changes what the
 number means:
 
 - **`vitest.mutation.config.ts`** narrows the suite Stryker runs. Left out is
-  everything that cannot answer the question — the repository-hygiene tests,
+  everything that cannot answer the question: the repository-hygiene tests,
   which read files rather than compile programs, and the ones that spawn `cobc`,
   which are minutes each and prove things about the emitter.
 - **`ignoreStatic`** skips mutants in module-level initialisers. Over half the
@@ -156,14 +156,14 @@ Run on 2026-08-06, 4,585 mutants, 56 minutes:
 | **All**           | 69.88 | 78.59   | 3,195  | 873      | 508         |
 
 Two numbers, because they answer different questions. **Covered** is the share
-of mutants some test reached and killed — how good the tests are at what they
+of mutants some test reached and killed: how good the tests are at what they
 look at. **Total** counts the 508 mutants no test in
 `vitest.mutation.config.ts` reaches at all, which is the more useful number and
 the lower one.
 
 The survivors cluster: 483 conditional expressions, 99 logical operators, 74
-block statements. A large share of those are in diagnostic construction —
-message text, hint text, `span` selection — where an inverted condition changes
+block statements. A large share of those are in diagnostic construction (
+message text, hint text, `span` selection) where an inverted condition changes
 what a message says rather than whether the program is refused. That is a real
 limit of the measurement here rather than an excuse: it means the number
 understates how well the _rules_ are tested and overstates how much of the
@@ -171,7 +171,7 @@ remainder is worth chasing.
 
 **It found a defect in a rule written an hour before it ran.** `BANK-SQL-008`
 tested `operation === "commit"`, and mutating that to `true` survived the entire
-suite — nothing distinguished a commit in a cursor loop from a rollback. The
+suite: nothing distinguished a commit in a cursor loop from a rollback. The
 manual settles which is right: "A ROLLBACK statement closes all open cursors. A
 COMMIT statement ... closes cursors that are not declared WITH HOLD." So the
 rule was too narrow, not the test, and `hold` saves a commit and saves nothing
@@ -186,8 +186,8 @@ pnpm test:mutation:emitter
 A separate run, because it asks a different question of different tests.
 
 The emitter was out of scope on the grounds that its output is already held by
-golden fixtures, the conformance linter and `cobc`. The 2026-08-05 audit's F13 —
-`MOVE 'Y'` two lines under a `VALUE "N"` — shipped through all three: the golden
+golden fixtures, the conformance linter and `cobc`. The 2026-08-05 audit's F13 (
+`MOVE 'Y'` two lines under a `VALUE "N"`) shipped through all three: the golden
 fixture _contained_ the defect, the linter had no rule for it, and `cobc`
 accepts both delimiters. Three controls, named as sufficient, all passing.
 
@@ -195,7 +195,7 @@ So the scope is the files that decide what emitted text looks like rather than
 what it says: `reference-format.ts`, `prologue.ts`, and the name and picture
 builders in `cobol-ir`. A surviving mutant in those is a house-style rule that
 nothing enforces, which is exactly F13's class. The 8,700-line backend index
-stays out — mutating it produces five figures of mutants, most about semantics,
+stays out: mutating it produces five figures of mutants, most about semantics,
 which the corpus assertions and `cobc` already answer.
 
 `vitest.mutation-emitter.config.ts` is an allowlist of the ten suites that read
@@ -217,7 +217,7 @@ Read this as a finding rather than as a pass. It clears the 60 threshold by
 under a point, and **198 survivors means 198 places where the emitted text can
 change and nothing complains.** `cobol-ir` at 43.90 is the weakest: that file
 holds the name abbreviation and the picture builders, which is where F13's
-sibling defects — two spellings of one picture, a 31-character word — came from.
+sibling defects (two spellings of one picture, a 31-character word) came from.
 
 The honest reading is that the emitter's _semantics_ are well covered by the
 corpus assertions, `cobc` and the oracle, and its _presentation_ is not. That is
@@ -250,8 +250,8 @@ Run on 2026-08-06. First run, before any test was written for it:
 **It found a rule with no test at all.** `unreferenced-item` was added in the
 previous pass of the 2026-08-06 audit and shipped with none: every mutant
 survived, including replacing its collection condition with `if (true)` and
-emptying the loop that reports its findings. The rule works — it found six dead
-storage items the day it was written — and nothing in the suite would have
+emptying the loop that reports its findings. The rule works (it found six dead
+storage items the day it was written), and nothing in the suite would have
 noticed if it stopped.
 
 It also found that `literal-delimiter`, the rule written to close F13, could stop
@@ -272,15 +272,15 @@ guarantee whose logic nobody has mutated is a claim. It sits in the rules lane's
 `mutate` glob, and the aggregate hid it: the lane reported a healthy number
 while `packages/semantic-analyzer/src/file-outcomes.ts` scored **63.73** inside
 it, behind two files above 80. So it has a lane of its own, with
-`packages/migration-analysis/src/record-usage.ts` — which produces the numbers
-that decide what goes into the language — and `tools/interpreter-coverage.ts`,
+`packages/migration-analysis/src/record-usage.ts` (which produces the numbers
+that decide what goes into the language), and `tools/interpreter-coverage.ts`,
 the gate that decides whether emitted COBOL has been executed by two engines.
 
 #### What it found
 
 Three holes in the rule itself, rather than tests that were merely weak.
 
-A `write` from the record a pending read filled was **not a use** — the stale
+A `write` from the record a pending read filled was **not a use**: the stale
 record posted straight back out, which is the defect the whole rule exists for.
 Nor was a `release` into a sort, a queue `put`, a `checkpoint`, a `for each`
 over a table inside the record, a `call ... using`, a `json` generate, a CICS
@@ -293,7 +293,7 @@ transaction's `on failure` handler.
 
 A fourth, found on the second pass: a **`rewrite` naming another file's record**
 was not a use. The arm was there and a test covered it, but the test could not
-tell whether the arm did anything — `BANK-FILE-010` makes a `rewrite` follow a
+tell whether the arm did anything: `BANK-FILE-010` makes a `rewrite` follow a
 read of the same file, so that read is already reported by the "another
 operation on this file" rule and the diagnostic list is the same either way. The
 comment above the test said as much, and said it was therefore
@@ -308,9 +308,9 @@ that constrains it.
 
 All three came from the same shape: the walk found nested blocks by looking up
 seven property names on the statement object, and decided what a statement read
-for the nine kinds that had come up. It now uses `childBlocks` — the IR's own
+for the nine kinds that had come up. It now uses `childBlocks` (the IR's own
 exhaustive accounting, which `tests/nested-block-walkers.test.ts` already held
-the backend to — and two exhaustive switches with no `default`, so a statement
+the backend to), and two exhaustive switches with no `default`, so a statement
 kind added to the language does not compile until somebody has classified it.
 
 #### The twenty-eight that remain in the rule
@@ -319,13 +319,13 @@ kind added to the language does not compile until somebody has classified it.
 uncovered. Each survivor was reproduced by hand and the suite re-run, because a
 reason nobody checked is a guess:
 
-| Where                                                                                                                                                                                                   | Count | Why it cannot be killed                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `case` arms in `expressionsOf` and `namesUsedBy`                                                                                                                                                        | 7     | Stryker deletes a case _body_, so the arm falls through to the next case — and each of these falls onto one with an identical body. `ReturnStatement` onto `ExpressionStatement`, `ReleaseStatement` onto `CheckpointStatement`, four `[]` arms onto the `[]` group below them, and `SqlStatement` onto `CursorLoopStatement`, whose extra `start` an SQL statement has not got. Grouping cases by shared body is what makes them equivalent. |
-| `[]` replaced by `["Stryker was here"]`                                                                                                                                                                 | 12    | Both consumers reject a bare string. `namesIn` switches on `expression.kind`, which a string has not got; and a name is matched by `Set.has` against record names, which are identifiers, so no injected literal can match one.                                                                                                                                                                                                               |
-| the guards around `tested.has(...)` and `read.has(...)` — `used.length > 0`, `statusName !== undefined`, `outcome.kind === "pending"`, `outcome.recordName !== null`, and the `&&` between the last two | 6     | Every one only stops the lookup being _made_ with `null` or `undefined`, and the lookup already answers false for both: `CLEAN` is `{ kind: "clean" }` with no `recordName`, and both sets are `Set<string>`. Verified for each by applying it and running the suite.                                                                                                                                                                         |
-| the `NullableCheck` arm of `comparedNames`                                                                                                                                                              | 2     | Unreachable by typing. The only consumer of the set it feeds is the file-status comparison, and a status is a fixed-width string — `feedInStatus?` is `BANK-SYN-001`, so no nullable check can ever name one.                                                                                                                                                                                                                                 |
-| `if (statuses.size === 0) return []`                                                                                                                                                                    | 1     | A program with no file status creates no outcome, so the walk finds nothing with or without the early return. Speed, not answers.                                                                                                                                                                                                                                                                                                             |
+| Where                                                                                                                                                                                                  | Count | Why it cannot be killed                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case` arms in `expressionsOf` and `namesUsedBy`                                                                                                                                                       | 7     | Stryker deletes a case _body_, so the arm falls through to the next case, and each of these falls onto one with an identical body. `ReturnStatement` onto `ExpressionStatement`, `ReleaseStatement` onto `CheckpointStatement`, four `[]` arms onto the `[]` group below them, and `SqlStatement` onto `CursorLoopStatement`, whose extra `start` an SQL statement has not got. Grouping cases by shared body is what makes them equivalent. |
+| `[]` replaced by `["Stryker was here"]`                                                                                                                                                                | 12    | Both consumers reject a bare string. `namesIn` switches on `expression.kind`, which a string has not got; and a name is matched by `Set.has` against record names, which are identifiers, so no injected literal can match one.                                                                                                                                                                                                              |
+| the guards around `tested.has(...)` and `read.has(...)`: `used.length > 0`, `statusName !== undefined`, `outcome.kind === "pending"`, `outcome.recordName !== null`, and the `&&` between the last two | 6     | Every one only stops the lookup being _made_ with `null` or `undefined`, and the lookup already answers false for both: `CLEAN` is `{ kind: "clean" }` with no `recordName`, and both sets are `Set<string>`. Verified for each by applying it and running the suite.                                                                                                                                                                        |
+| the `NullableCheck` arm of `comparedNames`                                                                                                                                                             | 2     | Unreachable by typing. The only consumer of the set it feeds is the file-status comparison, and a status is a fixed-width string: `feedInStatus?` is `BANK-SYN-001`, so no nullable check can ever name one.                                                                                                                                                                                                                                 |
+| `if (statuses.size === 0) return []`                                                                                                                                                                   | 1     | A program with no file status creates no outcome, so the walk finds nothing with or without the early return. Speed, not answers.                                                                                                                                                                                                                                                                                                            |
 
 Four mutants are uncovered rather than surviving, in the diagnostic's own
 message construction, which `tests/diagnostics.test.ts` holds instead.
@@ -353,7 +353,7 @@ describe("reading an FD's records", () => {
 A `describe` body runs when the file is collected, before Stryker activates a
 mutant, so the analyser those assertions ran against was always the unmutated
 one. Fourteen mutants survived assertions that fail the moment the same mutation
-is applied by hand — the check was reported green, and it was not being made.
+is applied by hand. The check was reported green, and it was not being made.
 Reading the fixture inside each `it` is the whole fix, and it is worth knowing
 about anywhere a mutation score is taken seriously.
 
@@ -362,10 +362,10 @@ paths that move a published count:
 
 - A record with a **nested group** measured as a length rather than as
   unmeasured. A group entry has no picture, so the running sum met `null`, and
-  `null + 4` is `4` in JavaScript — the arithmetic did not fail, it reported a
+  `null + 4` is `4` in JavaScript. The arithmetic did not fail, it reported a
   short record. That is what moves an FD out of `unmeasuredLength` and into
   `sameLength` or `differentLength`.
-- A **picture symbol with no rule** — `PIC G(n)` is DBCS — was never exercised,
+- A **picture symbol with no rule** (`PIC G(n)` is DBCS) was never exercised,
   so nothing held the analyser to refusing rather than guessing.
 - `COMP` widths were asserted at nine digits only, so **both boundaries** of
   `2 / 4 / 8` bytes were free to move.
@@ -401,8 +401,8 @@ rejected program produces none. So `tools/generate-programs.ts` generates
 programs that compile clean by construction, and the assertions are on the
 COBOL that comes out.
 
-The parsers are still reached by malformed input — every diagnostic in
-`diagnostics.md` has a test that provokes it — but from fixtures written to name
+The parsers are still reached by malformed input (every diagnostic in
+`diagnostics.md` has a test that provokes it), but from fixtures written to name
 a specific error, not from random bytes.
 
 ### 2.5 Differential tests
@@ -427,7 +427,7 @@ this lane that does not depend on the two implementations agreeing.
 A whole project through the whole pipeline, rather than a stage in isolation:
 account transfer, batch interest accrual, copybook import and export, and the
 declaration emission for Db2, CICS and VSAM. The examples in `examples/` are
-these tests — each is a real project `bankc` builds, so a break in the seam
+these tests. Each is a real project `bankc` builds, so a break in the seam
 between two stages fails here rather than in nothing.
 
 ### 2.6a Executed conformance tests
@@ -448,7 +448,7 @@ This catches the class of defect that compiles. The bounds guard once clamped an
 out-of-range subscript instead of refusing it; a recursive function returned `5`
 for `5!` because `WORKING-STORAGE` is shared across invocations; and every
 non-failing function paragraph ended with `GOBACK.`, so performing one ended the
-whole program at the first call — a program that exited 0 having posted nothing.
+whole program at the first call: a program that exited 0 having posted nothing.
 All three passed every static check and every golden fixture.
 
 Outcomes the program branches on can be scripted, because the reference Db2 and
@@ -456,8 +456,8 @@ CICS runtimes decide nothing on their own. Seeding `SQLCODE 100` for a statement
 or `PGMIDERR` for a command, executes the branch the generated program guards
 with `sqlcode == 0` or a `resp` test rather than reading it out of the emitted
 COBOL. A scripted count of successful fetches does the same for a cursor: the
-loop's own decisions — when it stops, whether it closes, and whether the declared
-bound holds when the rows never run out — are executed rather than inspected. See
+loop's own decisions (when it stops, whether it closes, and whether the declared
+bound holds when the rows never run out) are executed rather than inspected. See
 `runtime/README.md` for the file format.
 
 The suite skips when `cobc` is unavailable, and CI installs GnuCOBOL so it does
@@ -485,14 +485,14 @@ abended the step with RC 12 on IBM's `MQRC_ALREADY_CONNECTED` warning before it
 read a message. `examples/online-enquiry` computed a balance into a second
 record and returned the caller its own request. Both compiled. Both bound. Both
 passed the conformance linter, `cobc` under the IBM-shaped dialect, the golden
-fixtures, `pnpm examples:verify` and the executed conformance suite — because
+fixtures, `pnpm examples:verify` and the executed conformance suite, because
 every one of those asks whether the toolchain accepts the program, and neither
 program had anything wrong with it that a toolchain can see.
 
 `packages/zos-lint` reads the emitted artifacts and asks what the platform will
 do with them, citing the MQ and CICS manuals the way the conformance linter
 cites the Language Reference. `tests/zos-lint.test.ts` runs it over the whole
-corpus, and holds each rule against the program this compiler actually shipped —
+corpus, and holds each rule against the program this compiler actually shipped:
 the emitter no longer produces either shape, and a rule whose failing case is
 hypothetical is a rule that might be inert.
 
@@ -502,8 +502,8 @@ found that runs, and is wrong. See
 
 ### 2.6c Accessibility
 
-`tests/accessibility.test.ts` runs `axe-core` over all four page templates —
-home, a documentation page, a blog post, and the playground — at WCAG 2.2 AA
+`tests/accessibility.test.ts` runs `axe-core` over all four page templates (
+home, a documentation page, a blog post, and the playground) at WCAG 2.2 AA
 plus axe's best-practice set.
 
 The 2026-08-07 audit found five defects by hand (F15–F19): two unlabelled
@@ -515,7 +515,7 @@ a build.
 jsdom rather than a browser, which is a deliberate narrowing: Playwright in
 `devDependencies` means a browser download in CI and an install script, and
 `pnpm-workspace.yaml` takes those one decision at a time. Every defect the audit
-found is structural — a name, a role, a heading order, a state — and jsdom sees
+found is structural (a name, a role, a heading order, a state), and jsdom sees
 all of them. What it cannot see is `color-contrast`, which is switched off
 explicitly rather than left to report nothing, and the two CodeMirror editors,
 which do not exist until the page runs.
@@ -528,8 +528,8 @@ copybooks, the JCL and the result expected from each, and
 `zos/RESULTS-TEMPLATE.md` is the form the answers come back in.
 
 Until one of those comes back, every claim on this page about Enterprise COBOL
-is read out of IBM's manuals — cited rule by rule in
-[target-conformance.md](target-conformance.md) — rather than observed.
+is read out of IBM's manuals (cited rule by rule in
+[target-conformance.md](target-conformance.md)) rather than observed.
 
 ## 3. Determinism tests
 
@@ -611,7 +611,7 @@ was made, and what was validated.
 
 For compiler semantics, COBOL generation, copybook layout, Db2, CICS, VSAM or
 JCL support, security, and any change to generated output, say which commands
-were run and what they reported — including what was not covered. A change that
+were run and what they reported: including what was not covered. A change that
 went in with a compile lane skipped is an unverified change, and the commit is
 where that has to be legible.
 
