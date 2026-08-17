@@ -4,7 +4,7 @@ import { compile } from "../../compiler/src/index";
  * What the server tells the editor it is.
  *
  * A literal, because this file is bundled by esbuild and shipped inside the VS
- * Code extension — there is no `package.json` beside it at runtime to read. It
+ * Code extension, and there is no `package.json` beside it at runtime to read. It
  * had said `0.1.0` since it was written, which was wrong from the first release
  * and wrong in the one place a user looks when a diagnostic disagrees with the
  * command line. `tests/vscode-extension.test.ts` holds it to the root manifest.
@@ -208,10 +208,7 @@ export class LanguageServer {
 
     if (diagnostic) {
       const doc = explainDiagnostic(diagnostic.id);
-      const parts = [
-        `**${diagnostic.id}** — ${doc?.title ?? "Diagnostic"}`,
-        "",
-      ];
+      const parts = [`**${diagnostic.id}**: ${doc?.title ?? "Diagnostic"}`, ""];
       parts.push(diagnostic.message);
       if (doc) {
         parts.push("", doc.explanation, "", `**Fix:** ${doc.remediation}`);
@@ -386,7 +383,7 @@ export function encodeMessage(message: JsonRpcMessage): string {
  * rather than assumed to arrive whole.
  *
  * The buffer is bytes, not characters, throughout. `Content-Length` counts
- * bytes — the LSP specification's base protocol says so — and the two differ
+ * bytes, which the LSP specification's base protocol says, and the two differ
  * for every non-ASCII character. Buffering the stream as a string and then
  * slicing it by the byte count takes too many characters, which leaves the
  * remainder starting partway into the next header and desynchronises the

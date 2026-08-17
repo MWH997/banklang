@@ -11,7 +11,7 @@ import { FIXTURES, exampleProgram } from "../tools/refresh-fixtures";
  * One test over the whole set rather than one written by hand per file. A
  * fixture nothing compares is a file that goes stale silently, which is how
  * `tests/fixtures/interest-posting-batch.cbl` came to hold
- * `ROUNDED MODE IS NEAREST-EVEN` — a phrase Enterprise COBOL does not have —
+ * `ROUNDED MODE IS NEAREST-EVEN`, a phrase Enterprise COBOL does not have,
  * for as long as it did: no test named it, so nothing ever read it.
  *
  * `pnpm fixtures:refresh` rewrites them all when a change to the emitter is

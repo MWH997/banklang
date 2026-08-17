@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
  * ordinary project.
  *
  * Five tools enumerated `examples/*` themselves and each assumed the first
- * shape — the formatter, the conformance linter, the GnuCOBOL lane, the z/OS
+ * shape: the formatter, the conformance linter, the GnuCOBOL lane, the z/OS
  * kit, and the compile test. Adding a job directory made all five of them try
  * to read a source file that is one level further down, so the enumeration is
  * written once here and a project is defined by what it holds rather than by

@@ -15,13 +15,13 @@ import {
 /**
  * The size budget, and the wiring that makes it a build failure.
  *
- * The 2026-08-07 audit's F12 is not that the playground is 879 kB. It is that
- * Vite has printed "(!) Some chunks are larger than 500 kB after minification"
- * on every build since there was a playground, and nothing reads it. A number
+ * The problem was never that the playground is 879 kB. It is that Vite has
+ * printed "(!) Some chunks are larger than 500 kB after minification" on every
+ * build since there was a playground, and nothing reads it. A number
  * with no consequence is what let the bundle get there.
  *
  * So this file checks two things: that the budget refuses a bundle over it, and
- * that `pnpm build:site` runs the budget. The second is the one that matters —
+ * that `pnpm build:site` runs the budget. The second is the one that matters:
  * a check nothing invokes is the warning again.
  */
 
@@ -153,7 +153,7 @@ describe("reading a built bundle", () => {
  * `pnpm build:site` is what CI runs and what Cloudflare Pages runs, so it is
  * the only place a budget can actually stop something. A test that measured the
  * real bundle would need the playground built first and would skip when it was
- * not — which is the shape of check that passes on the day it matters.
+ * not, which is the shape of check that passes on the day it matters.
  */
 describe("the build", () => {
   const source = readFileSync("tools/build-site.ts", "utf8");

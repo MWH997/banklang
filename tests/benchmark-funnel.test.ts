@@ -17,7 +17,7 @@ import {
  *
  * This file exists because of one number. The funnel reported `pass /
  * applicable` as 4/4 while twenty-eight of forty-six tasks sat in a category
- * whose own description was "nobody has attempted it, so nothing is known" —
+ * whose own description was "nobody has attempted it, so nothing is known",
  * and `applicable` was computed as "a `main.bank.ts` exists", so the rate could
  * not have been anything but 100%. A denominator that only ever contains
  * successes is not a denominator, and a corpus whose largest bucket carries no
@@ -90,7 +90,7 @@ describe("the CobolCodeBench funnel", () => {
   it("gives every non-applicable task a recorded reason", () => {
     /*
      * The whole point. A task BankTS is said not to express, or a benchmark
-     * said not to be matchable, must say which and why — either from a rule
+     * said not to be matchable, must say which and why, either from a rule
      * that fires on the task's own text, or from an entry in TASK_BLOCKERS.
      * "Nobody tried" is not among the answers any more.
      */

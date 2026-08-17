@@ -5,14 +5,14 @@
  * that works with an estate. Every bank's records already exist, in copybooks
  * that other programs share, and a language that can only describe records it
  * invented cannot be used on the same data as the programs beside it. The
- * 2026-08-05 audit called it "the single most valuable missing feature".
+ * external audit called it "the single most valuable missing feature".
  *
  * What makes it safe rather than approximate is the round trip. A record
  * imported from a copybook is emitted back to a copybook, and the two are
  * compared field by field: the same names, in the same order, at the same
  * offsets, with the same lengths and the same pictures. A field this reads
  * wrongly moves an offset, and an offset that moves is a program reading
- * somebody else's data — so anything that does not survive the round trip is
+ * somebody else's data, so anything that does not survive the round trip is
  * reported rather than imported, and the import fails.
  *
  * The COBOL a copybook may contain is much larger than what BankTS can say.
@@ -55,7 +55,7 @@ interface Entry {
  * Reference format is assumed, because that is what a z/OS copybook is: column
  * 7 is the indicator area, so a `*` or `/` there is a comment and everything
  * from column 73 is the identification area and not part of the text. A
- * copybook written in free format — which some tools now produce — is read the
+ * copybook written in free format, which some tools now produce, is read the
  * same way as long as nothing sits in the first seven columns, which is the
  * common case.
  */
@@ -183,7 +183,7 @@ function countSymbol(picture: string, symbol: string): number {
  * `reserved <n>` counts bytes, not digits, so this cannot go through `typeFor`:
  * `PIC S9(9) COMP-3` is nine digits and five bytes, and reserving nine would
  * move every field after it four bytes along. Returns null when the entry is
- * something whose storage this importer will not guess at — which is the right
+ * something whose storage this importer will not guess at, which is the right
  * answer, because a guess here is a record that lays out wrong and compiles.
  */
 function fillerBytes(entry: Entry): number | null {
@@ -317,7 +317,7 @@ export function typeFor(clauses: string): FieldType {
 
   // No usage clause means DISPLAY. Which of the two display forms it is comes
   // from the picture: an `S` is a sign the field carries, and without one the
-  // field is `PIC 9(n)` — one byte per digit and nothing spent on a sign it
+  // field is `PIC 9(n)`: one byte per digit and nothing spent on a sign it
   // cannot hold, which is what most dates, counts and codes on an estate are.
   if (!/^S/i.test(picture)) {
     return { text: `unsigned<${digits}, ${scale}>` };
@@ -365,7 +365,7 @@ export function importCopybook(
 
     // `FILLER` is space nothing names, and `reserved <n>;` is how BankTS says
     // it. The bytes are what matter: a record imported without them lays out
-    // short, and every field after the gap is at the wrong offset — which is
+    // short, and every field after the gap is at the wrong offset, which is
     // the one failure a copybook exists to prevent.
     //
     // A FILLER with no PICTURE is a group of them, and its members are
@@ -403,8 +403,8 @@ export function importCopybook(
      * silent.
      *
      * None of these can be imported rather than refused. BankTS has no binary
-     * floating point — the reason is `docs/numeric-model.md`, and it is the
-     * same reason DCLGEN refuses `REAL` and `DOUBLE` — and an index or a
+     * floating point. The reason is `docs/numeric-model.md`, and it is the
+     * same reason DCLGEN refuses `REAL` and `DOUBLE`. An index or a
      * pointer is a run-time address, not a value a record contract can carry.
      */
     const usageOnly =

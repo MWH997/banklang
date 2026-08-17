@@ -6,14 +6,14 @@
  * with, which datasets it touches under which DD names, which modules it calls,
  * which copybooks it needs, what each return code means, and whether it can be
  * rerun. A program with none reads as machine output whatever the code below it
- * looks like — the 2026-08-05 audit called it "the cheapest change with the
+ * looks like. The external audit called this "the cheapest change with the
  * largest effect on perceived seriousness".
  *
  * None of it is decoration. The DD table is what an operator needs when the job
  * abends on an allocation; the return-code table is what the next step's `COND=`
  * is written against; the restart note is what somebody decides at 3am. It is
  * all derived from the program rather than written by hand, so it cannot drift
- * away from what the program actually does — which is the failure mode of every
+ * away from what the program actually does, which is the failure mode of every
  * prologue maintained by editing.
  */
 

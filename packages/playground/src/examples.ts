@@ -42,7 +42,7 @@ const META: Record<string, { title: string; blurb: string; order: number }> = {
    * The one the playground opens on, which is why it is `order: 0`.
    *
    * The list is otherwise a teaching sequence and `account-transfer` is its
-   * first step — a record, a type alias and a validator. That is the right
+   * first step: a record, a type alias and a validator. That is the right
    * place to start reading and the wrong thing to open on: it demonstrates
    * that BankTS compiles, which no visitor doubts, rather than what it is
    * for. This is the same program the README opens with, minus the three

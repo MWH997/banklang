@@ -1,9 +1,9 @@
-# 01 — The classic sequential update
+# 01. The classic sequential update
 
 Read a transaction file, apply each posting to an account master, write a new
 master and a reject file. Every estate has thirty of these.
 
-Written for this repository in period style — see the
+Written for this repository in period style. See the
 [provenance note](../README.md#provenance).
 
 ## The original

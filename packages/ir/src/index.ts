@@ -113,11 +113,11 @@ export interface IRSql {
   resultRecordName: string | null;
   /** `statement` runs once; `cursor` is declared, opened, fetched, and closed. */
   form: "statement" | "cursor";
-  /** `WITH HOLD` — the cursor survives a commit. */
+  /** `WITH HOLD`: the cursor survives a commit. */
   hold: boolean;
-  /** `rowset <n>` — rows per FETCH, or null for one at a time. */
+  /** `rowset <n>`: rows per FETCH, or null for one at a time. */
   rowset: number | null;
-  /** `scroll` — `INSENSITIVE SCROLL`, readable from any row and backward. */
+  /** `scroll`: `INSENSITIVE SCROLL`, readable from any row and backward. */
   scroll: boolean;
   text: string;
   /** A cursor's SELECT without its INTO, and that INTO on its own. */
@@ -177,13 +177,13 @@ export interface IRFile {
    */
   alternateRecords: IRRecord[];
   statusName: string | null;
-  /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
+  /** `RECORD IS VARYING`: the bounds, and the field holding the used length. */
   recordVarying: { min: number; max: number; lengthName: string } | null;
   keyFieldName: string | null;
   /** Alternate record keys, which allow duplicates. */
   alternateKeyNames: string[];
   /**
-   * `LINAGE` — page depth, for a print file that paginates.
+   * `LINAGE`: page depth, for a print file that paginates.
    *
    * COBOL counts the lines written and signals `AT END-OF-PAGE` at the footing
    * line, which is where a report writes its totals and the next heading.
@@ -234,28 +234,28 @@ export interface IRField {
   type: IRType;
   /**
    * Restricted data. Carried into the IR so the copybook layout report can say
-   * which fields hold it — an auditor reading the evidence should not have to
+   * which fields hold it: an auditor reading the evidence should not have to
    * read the BankTS source to find out.
    */
   sensitive: boolean;
-  /** `FILLER` — space nothing names, so nothing may move through it either. */
+  /** `FILLER`: space nothing names, so nothing may move through it either. */
   reserved: boolean;
   /** The field whose storage this one re-reads, for a variant record. */
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
-  /** `ASCENDING KEY` — the field the table is ordered by, for a binary search. */
+  /** `ASCENDING KEY`: the field the table is ordered by, for a binary search. */
   ascendingKey: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
-  /** `VALUE` — the literal the field starts as, already in COBOL's spelling. */
+  /** `VALUE`: the literal the field starts as, already in COBOL's spelling. */
   initialValue: string | null;
-  /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
+  /** `JUSTIFIED RIGHT`: right-align an alphanumeric value in the field. */
   justified: boolean;
-  /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
+  /** `BLANK WHEN ZERO`: print spaces rather than zeros. */
   blankWhenZero: boolean;
   /**
-   * `RENAMES` — the run of fields this one is a second name for.
+   * `RENAMES`: the run of fields this one is a second name for.
    *
    * It carries no storage: the emitters skip it among the record's own entries
    * and write it as a level-66 after them, which is where COBOL requires it.
@@ -277,7 +277,7 @@ export interface IRFunction {
    */
   isRecursive: boolean;
   /**
-   * `nested function` — emitted as a COBOL contained program: its own storage
+   * `nested function`: emitted as a COBOL contained program with its own storage
    * and a real `CALL` boundary, reading the module's records directly because
    * they are `GLOBAL` in the container.
    */
@@ -308,7 +308,7 @@ export interface IRBlock {
  * generates.
  *
  * An array field carries its bound, because COBOL cannot move an `OCCURS` item
- * without a subscript, and the item its length depends on when it has one — the
+ * without a subscript, and the item its length depends on when it has one. The
  * mapping has to stop at the occurrences the record is actually using rather
  * than at the declared maximum.
  */
@@ -368,8 +368,8 @@ export function isLibraryModule(program: IRProgram): boolean {
 /**
  * Every block nested inside one statement.
  *
- * There are six walkers over the IR — what a block can fail with, what posts to
- * the ledger, which routines it calls, which statements a rule counts — and
+ * There are six walkers over the IR (what a block can fail with, what posts to
+ * the ledger, which routines it calls, which statements a rule counts) and
  * each of them used to enumerate the block-carrying statement kinds itself.
  * Every one of them missed `QueueStatement`, so a transaction whose only audit
  * event was inside an MQ get was reported as having none, and a ledger posting
@@ -458,7 +458,7 @@ export interface IRConsoleStatement {
   source: "parameter" | "date" | "time" | null;
 }
 
-/** `INITIALIZE` — every field to its type's empty value. */
+/** `INITIALIZE`: every field to its type's empty value. */
 export interface IRResetStatement {
   kind: "ResetStatement";
   span: SourceSpan;
@@ -483,7 +483,7 @@ export interface IRCheckpointStatement {
  * Reading back the position a checkpoint wrote.
  *
  * The half without which the other half is decoration: a keyed read of the
- * restart record, and the two branches a batch needs — resume from here, or
+ * restart record, and the two branches a batch needs: resume from here, or
  * there is nothing to resume from.
  */
 export interface IRRestartStatement {
@@ -527,7 +527,7 @@ export interface IRSortStatement {
   outputProcedure: IRSortProcedure | null;
 }
 
-/** `RELEASE` — hands a record to a running sort from its input procedure. */
+/** `RELEASE`: hands a record to a running sort from its input procedure. */
 export interface IRReleaseStatement {
   kind: "ReleaseStatement";
   span: SourceSpan;
@@ -667,25 +667,25 @@ export interface IRSearchStatement {
    *
    * `arrayRecordName` is the record's *type*, which is what the generated
    * COBOL qualifies by; this is the name the program wrote. The two differ, and
-   * a check that reasons about which record a statement reads — `BANK-FILE-017`
-   * — needs the second.
+   * a check that reasons about which record a statement reads, such as
+   * `BANK-FILE-017`, needs the second.
    */
   arrayTargetName: string;
   condition: IRExpression;
   body: IRBlock;
   notFound: IRBlock;
-  /** `SEARCH ALL` — a binary search over a table that declares its order. */
+  /** `SEARCH ALL`: a binary search over a table that declares its order. */
   sorted: boolean;
 }
 
-/** `MOVE <n> TO RETURN-CODE` — the step's condition code. */
+/** `MOVE <n> TO RETURN-CODE`: the step's condition code. */
 export interface IRReturnCodeStatement {
   kind: "ReturnCodeStatement";
   span: SourceSpan;
   value: IRExpression;
 }
 
-/** `EXEC SQL COMMIT` or `EXEC SQL ROLLBACK` — the batch unit of work. */
+/** `EXEC SQL COMMIT` or `EXEC SQL ROLLBACK`: the batch unit of work. */
 export interface IRUnitOfWorkStatement {
   kind: "UnitOfWorkStatement";
   span: SourceSpan;
@@ -696,7 +696,7 @@ export interface IRUnitOfWorkStatement {
  * A bounded read of a Db2 cursor.
  *
  * The OPEN and CLOSE are generated around the body rather than written, so the
- * cursor cannot be left open — a cursor still holding locks at the end of a
+ * cursor cannot be left open: a cursor still holding locks at the end of a
  * batch window is a defect the language can simply make unwritable.
  */
 export interface IRCursorLoopStatement {
@@ -709,19 +709,19 @@ export interface IRCursorLoopStatement {
   /** The most rows the loop may process. */
   limit: number;
   /**
-   * `from <expression>` — the row to start at, or null for the first.
+   * `from <expression>`: the row to start at, or null for the first.
    *
    * Only ever set on a cursor declared `scroll`, which the semantic analyzer
    * enforces: a forward-only cursor cannot be positioned.
    */
   start: IRExpression | null;
-  /** `backward` — towards the first row rather than away from it. */
+  /** `backward`: towards the first row rather than away from it. */
   backward: boolean;
   body: IRBlock;
 }
 
 /**
- * `raise "CODE"` — abandons the rest of the body and hands control to the
+ * `raise "CODE"`: abandons the rest of the body and hands control to the
  * enclosing transaction's failure path.
  */
 export interface IRRaiseStatement {
@@ -839,7 +839,7 @@ export interface IRFileStatement {
   recordFields: IRMappedField[];
   /** `AFTER ADVANCING`, on a write to a print file. */
   advancing: number | "page" | null;
-  /** `AT END-OF-PAGE` — where a report writes its totals and next heading. */
+  /** `AT END-OF-PAGE`: where a report writes its totals and next heading. */
   atEndOfPage: IRBlock | null;
 }
 
@@ -1405,7 +1405,7 @@ export function lowerProgramToIR(
         ...(typechecked.reports.length > 0
           ? (["report-writer-precompiler"] as const)
           : []),
-        // MQ needs no precompiler — the MQI is plain CALLs. What it needs is
+        // MQ needs no precompiler, since the MQI is plain CALLs. What it needs is
         // the copybook library at compile time and the stub and run-time
         // libraries at link and run time.
         ...(typechecked.queues.length > 0 ? (["mq"] as const) : []),
@@ -1448,7 +1448,7 @@ const fileTable = new Map<
      *
      * One entry for almost every file. A file declared `record Heading, Detail`
      * has one per layout, and a `write` is lowered against the layout its
-     * record variable's type names rather than against the file's first one —
+     * record variable's type names rather than against the file's first one,
      * otherwise the generated moves would copy the heading's fields out of a
      * detail record.
      */
@@ -1463,7 +1463,7 @@ const databaseStatusTable = new Map<string, string>();
  * Each queue's status field.
  *
  * MQ reports in a reason code rather than a two-character status, so unlike a
- * file's or a PCB's this one is a number — 2033 is an empty queue, 2085 is a
+ * file's or a PCB's this one is a number: 2033 is an empty queue, 2085 is a
  * queue that is not there. Typing it as text would let a program compare it
  * with a string and never match.
  */
@@ -1589,7 +1589,7 @@ function isInstantiation(name: string): boolean {
  * copies differ. `firstOr<MoneyBDT>` and `firstOr<MoneyUSD>` both emit
  * `PIC S9(16)V99 COMP-3`: two identical paragraphs and two sets of storage for
  * a distinction that exists only in the typechecker. Sharing them changes what
- * is emitted, never what is accepted — currency stays nominally typed, and a
+ * is emitted, never what is accepted. Currency stays nominally typed, and a
  * BDT amount is still rejected where a USD amount is expected.
  *
  * Only instantiations are merged. A function the author wrote keeps its own
@@ -1886,9 +1886,9 @@ function expressionNeedsBoundsCheck(expression: IRExpression): boolean {
  * What a numeric builtin's result is held in.
  *
  * `abs`, `min`, and `max` give back what they were given. `mod` and `rem` give
- * a whole number. The financial three have no scale of their own — a repayment
+ * a whole number. The financial three have no scale of their own: a repayment
  * factor is a ratio, and a parsed number is whatever the field it lands in
- * holds — so they take the widest packed decimal and let the receiving field's
+ * holds, so they take the widest packed decimal and let the receiving field's
  * picture decide, which is what COMPUTE does anyway.
  */
 function numericCallType(

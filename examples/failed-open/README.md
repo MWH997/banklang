@@ -7,7 +7,7 @@ real batch and the one no example showed.
 
 A step whose input dataset is not catalogued gets file status 35. A program that
 tests only for `"00"` before reading then reads end-of-file immediately, closes,
-and reports success over an empty run — indistinguishable from a night that had
+and reports success over an empty run, indistinguishable from a night that had
 no work.
 
 Three of the four statuses here look identical to an empty file from inside the
@@ -32,7 +32,7 @@ The `on error` handler, which becomes a `USE AFTER STANDARD ERROR` declarative:
 ```
 
 A status test covers the statement that thought to look. The declarative covers
-the ones that did not, wherever in the program they were written — which is why
+the ones that did not, wherever in the program they were written, which is why
 `DECLARATIVES` is the standard error path in COBOL rather than a convenience.
 Everything after it moves into a `BANK-BODY SECTION`, because everything
 following `DECLARATIVES` has to be in a section.
@@ -43,8 +43,8 @@ following `DECLARATIVES` has to be in a section.
 
 ## Related
 
-- [docs/error-handling.md](../../docs/error-handling.md) — file status, and the 88-levels
+- [docs/error-handling.md](../../docs/error-handling.md): file status, and the 88-levels
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=failed-open) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=failed-open). It compiles in your browser, with the generated COBOL beside it.

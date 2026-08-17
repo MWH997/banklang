@@ -8,9 +8,9 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 //
 // A customer's accounts are not contiguous in the primary key and there is no
 // query language here to find them, so the file carries an alternate index on
-// the customer. `START` positions on the first record at or after the key —
+// the customer. `START` positions on the first record at or after the key,
 // KEY IS NOT LESS THAN, which is what makes a browse from a partial key
-// possible at all — and `readNext` walks from there. The walk has to stop
+// possible at all, and `readNext` walks from there. The walk has to stop
 // itself: the file does not end where the customer's records do, so a browse
 // that only tests for end-of-file reads the rest of the estate's accounts into
 // this customer's total.
@@ -49,7 +49,7 @@ entry transaction browseCustomer(request: BrowseRequest, account: AccountRecord,
   }
 
   // The key the browse starts from. Setting it on the record is how COBOL's
-  // START names a key — the field in the record area is the operand, not an
+  // START names a key: the field in the record area is the operand, not an
   // argument to the statement, and naming an alternate key's field is what
   // makes the browse walk that index.
   account.customerId = request.wantedCustomerId;

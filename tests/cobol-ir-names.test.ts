@@ -33,7 +33,7 @@ describe("fitting a name into a COBOL word", () => {
   it("leaves a name that already fits exactly at the limit", () => {
     const exact = "A".repeat(MAX_COBOL_WORD_LENGTH);
     expect(fitCobolWord(exact)).toBe(exact);
-    // One over is where the work starts — the boundary, not near it.
+    // One over is where the work starts: the boundary, not near it.
     expect(fitCobolWord(`${exact}A`)).not.toBe(`${exact}A`);
   });
 
@@ -72,7 +72,7 @@ describe("fitting a name into a COBOL word", () => {
 
   /**
    * When every segment is at the floor, segments come out of the *middle* and
-   * the first and last are kept — a long name carries least in the middle, and
+   * the first and last are kept, since a long name carries least in the middle, and
    * cutting the tail would take the suffix off.
    */
   it("removes middle segments when nothing can be abbreviated further", () => {

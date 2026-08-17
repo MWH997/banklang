@@ -6,7 +6,7 @@ import { KEYWORDS, parseBankTs } from "../packages/parser/src/index";
  * A syntax error has to end in a diagnostic, not in a hung compiler.
  *
  * Each recovery routine stops on the token it wants to resume at. A parse that
- * failed without consuming anything leaves that same token current — so the
+ * failed without consuming anything leaves that same token current, so the
  * loop that called the recovery resumed exactly where it started, and did it
  * again forever. What the author saw was the compiler exhausting memory, which
  * is the worst possible way to be told about a missing brace.
@@ -14,7 +14,7 @@ import { KEYWORDS, parseBankTs } from "../packages/parser/src/index";
  * The rule that makes it impossible is that recovery either advances or the
  * caller advances for it, so every iteration consumes at least one token.
  * Progress is structural rather than a property each routine has to remember to
- * preserve — which matters because a new recovery routine will be added by
+ * preserve, which matters because a new recovery routine will be added by
  * somebody who has not read this comment.
  *
  * Across the sources below that guarantee has to force progress a couple of
@@ -99,7 +99,7 @@ describe("the parser always finishes", () => {
 
   /**
    * The budget is the assertion. A parser that loops does not fail this by a
-   * margin — it never returns at all, and the runner's own timeout is what
+   * margin. It never returns at all, and the runner's own timeout is what
    * reports it.
    */
   it("terminates on every malformed source", () => {
@@ -107,7 +107,7 @@ describe("the parser always finishes", () => {
 
     for (const source of sources) {
       const parsed = parseBankTs(source, "p.bank.ts");
-      // Every one of these is malformed, so every one has something to say —
+      // Every one of these is malformed, so every one has something to say,
       // except a bare prefix that happens to be a complete, valid module.
       expect(Array.isArray(parsed.diagnostics)).toBe(true);
     }

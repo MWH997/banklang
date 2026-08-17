@@ -8,7 +8,7 @@
  *
  * `JSON PARSE` and `XML PARSE` are here for the opposite reason. Enterprise
  * COBOL needs no preprocessing for either; GnuCOBOL 3.2.0 compiles both, warns
- * that it has not implemented them, and then does nothing at run time — the
+ * that it has not implemented them, and then does nothing at run time: the
  * record is left untouched and no exception is raised, so a program reading a
  * payload runs clean and processes an empty record. Rewriting them into calls
  * on `BANKJSON` and `BANKXML` is what makes the local run mean anything.
@@ -49,7 +49,7 @@ export function isCompilerOptionStatement(line: string): boolean {
  * The program with its compiler-option statements taken out and nothing else.
  *
  * For a caller that wants to compile the artifact as it ships, minus the one
- * line the local compiler cannot read — `tests/gnucobol-coverage.test.ts` does,
+ * line the local compiler cannot read. `tests/gnucobol-coverage.test.ts` does,
  * because what it is measuring is which constructs GnuCOBOL warns about, and
  * translating them away would answer a different question.
  */
@@ -83,7 +83,7 @@ export interface PrecompileResult {
  * `COPY CMQGMOV` resolve from the MQ installation, and the artifact that ships
  * keeps them. None of them exists locally, so the local build gets these
  * instead: not IBM's copybooks and not copies of them, but the smallest
- * declaration that makes the generated program compile and run — the fields the
+ * declaration that makes the generated program compile and run: the fields the
  * compiler actually sets, each at the size and value IBM's reference documents,
  * and a filler standing for the rest of the structure.
  *
@@ -205,7 +205,7 @@ const CICS_COMMAND_FIELD = "DFHEIV-COMMAND";
 /**
  * The part of the EXEC interface block a generated program actually reads.
  *
- * Not the whole EIB — the real one carries around thirty fields — but the ones
+ * Not the whole EIB, since the real one carries around thirty fields, but the ones
  * this compiler emits references to. `EIBCALEN` is here because a program must
  * test it before touching `DFHCOMMAREA`: a commarea that was not passed is not
  * an empty record but storage belonging to something else, and reading it is a
@@ -332,7 +332,7 @@ interface RecordItem {
  * The elementary items of every `01` record in working storage.
  *
  * `JSON PARSE` matches a document's names against the receiving record's own
- * data names — the record is the schema — so the expansion has to know what
+ * data names, since the record is the schema, so the expansion has to know what
  * that record contains. Read from the generated source rather than from the IR,
  * because a precompiler reads COBOL: that is the whole point of it running
  * where IBM's would.
@@ -435,7 +435,7 @@ export function precompile(cobol: string): PrecompileResult {
   // supplies an area and points the commarea at it, which is what CICS does.
   const usesCommarea = usesCics && /^\s*01\s+DFHCOMMAREA\./im.test(cobol);
   // GnuCOBOL compiles JSON PARSE and XML PARSE, warns that it implements
-  // neither, and then does nothing at run time — the record is left untouched
+  // neither, and then does nothing at run time: the record is left untouched
   // and no exception is raised, so a program reading a payload runs clean and
   // processes an empty record. Both are expanded here for the same reason
   // EXEC SQL and EXEC CICS are: what ships to z/OS keeps the statement, and
@@ -457,11 +457,11 @@ export function precompile(cobol: string): PrecompileResult {
     // because to it those columns are the sequence number area.
     //
     // Removed rather than translated, because there is nothing to translate
-    // into — `cobc` takes its dialect from `tools/banklang-ibm.conf` and its
+    // into. `cobc` takes its dialect from `tools/banklang-ibm.conf` and its
     // own flags, which is where the local build says the same thing.
     if (isCompilerOptionStatement(line)) {
       optionStatements += 1;
-      output.push(`      *> ${trimmed} — removed by the BankLang precompiler.`);
+      output.push(`      *> ${trimmed}: removed by the BankLang precompiler.`);
       continue;
     }
 
@@ -577,7 +577,7 @@ export function precompile(cobol: string): PrecompileResult {
     if (kind === "SQL") {
       sqlBlocks += 1;
       // A declare-section marker is removed rather than translated, and it is
-      // not a statement, so it does not take a statement number — the numbers
+      // not a statement, so it does not take a statement number, and the numbers
       // are what a test scripts an outcome against.
       if (isDeclareSectionMarker(body)) {
         output.push(
@@ -623,8 +623,8 @@ export function precompile(cobol: string): PrecompileResult {
     ? withXml.map((line) => line.replace(/\bDFHRESP\s*\(\s*NORMAL\s*\)/gi, "0"))
     : withXml;
 
-  // A translated block is longer than the `EXEC` it replaces — a call with its
-  // whole host-variable list on one line — so the output has to be laid out
+  // A translated block is longer than the `EXEC` it replaces (a call with its
+  // whole host-variable list on one line) so the output has to be laid out
   // again. IBM's own precompiler writes reference format for the same reason.
   return {
     cobol: rewritten.flatMap((line) => toReferenceFormat(line)).join("\n"),
@@ -698,7 +698,7 @@ function readBlock(
  *
  * COBOL matches a document's names against the receiving record's own data
  * names, so asking the runtime for each item by name is the same question the
- * statement asks — and the record ends up populated rather than untouched,
+ * statement asks, and the record ends up populated rather than untouched,
  * which is the whole difference between this and what GnuCOBOL does with the
  * statement it will not implement.
  *
@@ -773,7 +773,7 @@ function translateJsonParse(
  * a section in its caller, so the loop stays here and the runtime is one step
  * of it: given a position it describes the next event and moves the position
  * past it. That is the same control flow the statement has, which is what makes
- * running it worth anything — the handler is entered, its `EVALUATE` picks a
+ * running it worth anything: the handler is entered, its `EVALUATE` picks a
  * branch, and the record is filled from the document.
  */
 function translateXmlParse(block: ParseBlock): string[] {
@@ -876,7 +876,7 @@ function isCursorDeclaration(body: string): boolean {
  * These mark the host variables for the precompiler and are not statements: Db2
  * removes them, leaving the declarations they surround. Translating one into a
  * call would put an executable statement in the DATA DIVISION, where none may
- * appear — which is exactly what happened when the section was first emitted.
+ * appear, which is exactly what happened when the section was first emitted.
  */
 function isDeclareSectionMarker(body: string): boolean {
   return /^\s*(BEGIN|END)\s+DECLARE\s+SECTION\s*$/i.test(

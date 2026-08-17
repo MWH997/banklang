@@ -1,10 +1,10 @@
 /**
  * Reading COBOL that already exists, and saying what is in it.
  *
- * The 2026-08-05 audit's §4.4, and the one thing on its missing list that is
- * not about generating anything. Before a bank asks whether a compiler produces
+ * Asked for by the external audit, and the one thing on its missing list that
+ * is not about generating anything. Before a bank asks whether a compiler produces
  * COBOL it likes, it asks what would happen to the two thousand programs it
- * already has — and the honest first answer is a count: how many, how big, what
+ * already has, and the honest first answer is a count: how many, how big, what
  * they touch, and which ones nobody can follow.
  *
  * This is deliberately a *reader*, not a converter. It parses nothing
@@ -166,7 +166,7 @@ function area(line: string): string {
  *
  * Everything here is found by position and shape rather than by parsing, which
  * is what makes it work on a member that will not compile without its
- * copybooks — and on an estate, that is most of them.
+ * copybooks, and on an estate that is most of them.
  */
 export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
   const lines = text.split("\n");
@@ -193,7 +193,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
   /**
    * Between `FILE-CONTROL.` and the end of the section.
    *
-   * Files are only declared there, and `SELECT` outside it is something else —
+   * Files are only declared there, and `SELECT` outside it is something else,
    * a data name ending in `-SELECT`, or the word inside a message. Found by
    * running this over AWS's CardDemo: `COCRDLIC` declares
    * `05 WS-EDIT-SELECT PIC X(1)` and displays
@@ -248,7 +248,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
      * A COBOL clause continues across lines, and nine of CardDemo's thirty-one
      * programs write the name underneath: `PROGRAM-ID.` on one line, `COACTUPC`
      * on the next. Requiring both on one line reported those nine with no name
-     * at all — an estate report where a third of the rows say `?` is one nobody
+     * at all: an estate report where a third of the rows say `?` is one nobody
      * reads twice.
      */
     if (programId === null) {
@@ -291,7 +291,7 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
      * A DD name is one to eight alphanumeric characters and cannot contain a
      * hyphen, so everything before the final hyphen is the comment and the
      * organisation letters IBM allows there. Stripping one optional prefix
-     * read `ASSIGN TO UT-S-MASTER` — the ordinary QSAM form — as the DD name
+     * read `ASSIGN TO UT-S-MASTER`, the ordinary QSAM form, as the DD name
      * `S-MASTER`, and this tool exists to read other people's COBOL, which is
      * where that form actually appears. The conversions' own originals use
      * bare names, so nothing here noticed.
@@ -373,8 +373,8 @@ export function analyseCobol(text: string, artifact: string): ProgramAnalysis {
       );
     // `PERFORM UNTIL`, `PERFORM VARYING`, `PERFORM WITH TEST` and
     // `PERFORM n TIMES` are inline loops rather than calls. A paragraph name
-    // may itself start with a digit — `1000-READ-TRANS` is the house style on
-    // half the estates there are — so the count form has to be matched with
+    // may itself start with a digit, and `1000-READ-TRANS` is the house style on
+    // half the estates there are, so the count form has to be matched with
     // its `TIMES` rather than by the digit alone.
     if (
       performed &&
@@ -479,7 +479,7 @@ function recordExec(
  *
  * Fall-through counts: COBOL runs into the next paragraph unless something
  * stops it, so a paragraph is reachable if the one before it can fall into it.
- * That makes this a *lower* bound on dead code, which is the right direction —
+ * That makes this a *lower* bound on dead code, which is the right direction,
  * a tool that over-reported dead paragraphs would have somebody delete a live
  * one.
  */
@@ -535,7 +535,7 @@ function unreachableParagraphs(
       }
       // Fall-through from whatever is above it, unless that one leaves.
       // Approximated by whether it jumps at all, and a section header with no
-      // statements of its own always falls into its first paragraph — reading
+      // statements of its own always falls into its first paragraph, and reading
       // an empty paragraph as one that leaves had the entry point of every
       // generated program reported as dead code.
       const previous = paragraphs[index - 1]!;
@@ -646,8 +646,8 @@ function describeRisks(analysis: ProgramAnalysis): string[] {
 /**
  * The paragraph graph, as Mermaid.
  *
- * Mermaid because it renders in the places a reader already is — a Markdown
- * file, a pull request — rather than needing a tool installed. A `PERFORM` and
+ * Mermaid because it renders in the places a reader already is (a Markdown
+ * file, a pull request) rather than needing a tool installed. A `PERFORM` and
  * a `GO TO` are drawn differently, because the difference between them is the
  * whole question a reader is asking.
  */

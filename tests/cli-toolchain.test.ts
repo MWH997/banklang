@@ -291,7 +291,7 @@ describe("help", () => {
  * The command table in `docs/toolchain.md` against the CLI's own inventory.
  *
  * The table listed twelve commands and `bankc --help` listed eighteen. `job`,
- * `analyse`, `emit`, `audit-report`, `dclgen` and `version` were missing — two
+ * `analyse`, `emit`, `audit-report`, `dclgen` and `version` were missing: two
  * of them commands the README puts in its quick start, so the page a reader is
  * sent to for "the whole toolchain" was the one place that did not have them.
  *

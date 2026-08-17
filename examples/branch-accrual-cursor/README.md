@@ -111,7 +111,7 @@ cursor accountsInBranch(keyBranch: string<8>): AccountBalanceRow {
 `DECLARE CURSOR` may not carry an `INTO`, so the compiler moves it to the
 `FETCH`, which is the statement a row actually arrives at. A cursor with no
 `INTO` at all is `BANK-SQL-006`, rather than the compiler guessing that the
-select list lines up with the record's fields — it does not parse SQL well
+select list lines up with the record's fields, and it does not parse SQL well
 enough to know that.
 
 ## What the executed test checks
@@ -121,10 +121,10 @@ scripting how many fetches succeed:
 
 | Scripted                          | Executed result                             |
 | --------------------------------- | ------------------------------------------- |
-| 3 fetches succeed, then `100`     | open, 4 fetches, close — 3 rows processed   |
-| the first fetch reports `100`     | open, 1 fetch, close — no postings          |
-| every fetch succeeds, `limit 4`   | open, 4 fetches, close — the bound held     |
-| 2 succeed, then `-911` (deadlock) | open, 3 fetches, close — the error ended it |
+| 3 fetches succeed, then `100`     | open, 4 fetches, close; 3 rows processed    |
+| the first fetch reports `100`     | open, 1 fetch, close; no postings           |
+| every fetch succeeds, `limit 4`   | open, 4 fetches, close; the bound held      |
+| 2 succeed, then `-911` (deadlock) | open, 3 fetches, close; the error ended it  |
 | 150 fetches succeed, then `100`   | one commit at row 100, and fetching goes on |
 
 The cursor is closed in every case, including the ones that ended early.
@@ -141,7 +141,7 @@ pnpm bankc test  examples/branch-accrual-cursor
 The runtime this executes against is a reference implementation in this
 repository, not Db2. It writes the host variables it is scripted with, so a
 fetched row arrives with values in it and the postings above are real
-arithmetic over them — but the rows are the test's, not a query's. What is
+arithmetic over them, but the rows are the test's, not a query's. What is
 established is that the generated loop handles the protocol: how many rows it
 processed, that it opened, bounded and closed correctly, that it commits inside
 the loop and goes on fetching, and that an error is not treated as the end. What
@@ -151,4 +151,4 @@ been performed, and none is claimed.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=branch-accrual-cursor) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=branch-accrual-cursor). It compiles in your browser, with the generated COBOL beside it.

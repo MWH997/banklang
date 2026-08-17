@@ -2,7 +2,7 @@
  * The landing page's stylesheet, and the only one it loads.
  *
  * The palette is the playground's, which is GitHub's, so the two pages read as
- * one site. Every pair here clears WCAG AA in both themes — computed by
+ * one site. Every pair here clears WCAG AA in both themes, computed by
  * `tests/contrast.test.ts` over every token in every theme, rather than
  * measured by hand once. The hand measurement had drifted: three light-theme
  * colours were below 4.5:1 on `--panel-2`, one of them `--accent`, which is
@@ -18,7 +18,7 @@
  * They are two tokens because WCAG 2.2 asks two different things of them.
  * A rule between table cells is decoration and 1.4.11 does not reach it. The
  * outline of a text input is the only thing that says a text input is there,
- * and 1.4.11 requires 3:1 against what is behind it — `--border` is 1.45:1 in
+ * and 1.4.11 requires 3:1 against what is behind it. `--border` is 1.45:1 in
  * the light theme, so the documentation search read as a faint rectangle on
  * forty-five pages. `--field` clears 3:1 on all three surfaces a control sits
  * on, in both themes; `tests/contrast.test.ts` computes that rather than
@@ -461,6 +461,18 @@ h1 {
   margin: 0 0 1.75rem;
 }
 
+/* The second half of the opening: what a compiler for this can do that COBOL
+   cannot. Same measure and slightly quieter, so the two paragraphs read as one
+   introduction and the first still carries the definition. */
+.lede--secondary {
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.lede--secondary strong {
+  color: var(--text);
+}
+
 .cta {
   display: flex;
   flex-wrap: wrap;
@@ -562,7 +574,7 @@ h2 {
  * A split holding generated COBOL does not get a column. It gets the page.
  *
  * F13, measured: at 1280px each column is 470px and the rounding sample is
- * 624px, so a quarter of the widest line sat behind an inner scrollbar — and
+ * 624px, so a quarter of the widest line sat behind an inner scrollbar, and
  * the lines that were cut were `WHEN FUNCTION ABS (BANK-RND-1-EXCESS) > 0.005`
  * and the `ADD` under it, which are the banker's-rounding arithmetic the
  * section titled "The COBOL it produces" exists to show. An 80-column language
@@ -678,6 +690,29 @@ p code {
 
 .limits strong {
   color: var(--text);
+}
+
+/* ---------------------------------------------------------------- routes */
+
+/* Three ways into the documentation, because three different people arrive
+   here: somebody who wants to run it, somebody who has to review the COBOL,
+   and somebody who has to sign off the risk. Marked up as a list because that
+   is what it is, and given the reading measure the bands already use. */
+.routes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.9rem;
+  max-width: 68ch;
+}
+
+.routes li {
+  color: var(--muted);
+}
+
+.routes a {
+  font-weight: 600;
 }
 
 /* ---------------------------------------------------------------- footer */

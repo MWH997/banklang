@@ -12,7 +12,7 @@ import {
 /**
  * A DCLGEN member read into a BankTS record.
  *
- * The 2026-08-05 audit lists DCLGEN import beside copybook import — "same
+ * The external audit lists DCLGEN import beside copybook import, on the "same
  * argument". A DCLGEN is Db2's own declarations generator: it writes the
  * `DECLARE ... TABLE` block from the catalogue and a COBOL host structure to
  * match, and shops keep the members in a library. It says two things a copybook
@@ -46,7 +46,7 @@ describe("a DCLGEN member", () => {
   /**
    * The reason this is worth more than a copybook. A column with no `NOT NULL`
    * may hold one, and a program that reads it without checking is what
-   * `BANK-TYPE-008` exists to refuse — a copybook says nothing about it.
+   * `BANK-TYPE-008` exists to refuse, and a copybook says nothing about it.
    */
   it("carries the nullability the catalogue states", () => {
     expect(imported.source).toContain(
@@ -58,7 +58,7 @@ describe("a DCLGEN member", () => {
 
   /**
    * Db2 hands a date to COBOL as a fixed-length character string, not as a
-   * number. Reading it as BankTS's `date` — `PIC 9(8)` — would be two bytes
+   * number. Reading it as BankTS's `date`, which is `PIC 9(8)`, would be two bytes
    * short and the wrong shape.
    */
   it("reads a DATE the way Db2 passes one", () => {

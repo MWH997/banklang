@@ -11,7 +11,7 @@
  * - **Area A and Area B are structural.** A division header, a section header,
  *   a paragraph name, an `FD` and a level 01 start in column 8. Everything else
  *   starts in column 12. Putting a paragraph name in Area B does not make it a
- *   paragraph, so this is not decoration — a misplaced name is a compile error
+ *   paragraph, so this is not decoration: a misplaced name is a compile error
  *   on the target and a silently different program under a compiler that
  *   guesses.
  * - **Nesting is four spaces.** `IF`/`END-IF`, `EVALUATE`/`WHEN`,
@@ -26,7 +26,7 @@
  *
  * **It does not reproduce this emitter's line breaks, and is not meant to.**
  * The emitter puts some clauses on lines of their own where they would have
- * fitted — a `SELECT` and its `ORGANIZATION`, an `ON SIZE ERROR` and its body —
+ * fitted (a `SELECT` and its `ORGANIZATION`, an `ON SIZE ERROR` and its body)
  * because that is how a person reads them. Recovering which of those was a
  * choice and which was a wrap at column 72 is not possible from the text, so
  * formatting generated COBOL produces a program that is correctly formatted and
@@ -186,7 +186,7 @@ function read(source: string): Line[] {
     // Columns 1-6 are the sequence area only when they hold a sequence number:
     // blank, or digits. A program that was pasted, or emailed, or pulled out of
     // a listing may start in column 1, and slicing seven characters off it
-    // would take the first word of every line. That is not a hypothetical —
+    // would take the first word of every line. That is not a hypothetical:
     // it is what a program somebody needs this tool for looks like.
     const sequence = raw.slice(0, 6);
     const fixed = sequence.trim() === "" || /^\d+\s*$/.test(sequence);
@@ -231,7 +231,7 @@ function firstWord(text: string): string {
  * Statements that are one word and a full stop.
  *
  * `CONTINUE.` and `EXIT.` have exactly the shape of a paragraph header, and
- * treating them as one moves them into Area A — which is not a formatting
+ * treating them as one moves them into Area A, which is not a formatting
  * difference. A word in Area A *is* a paragraph name, so the formatter would
  * have invented a paragraph and broken the `PERFORM ... THRU` above it.
  */
@@ -266,8 +266,8 @@ export interface FormatCobolResult {
  *
  * A statement wrapped at column 72 arrives as several lines, and re-indenting
  * each of them separately is how a continuation ends up in the wrong column.
- * Folding first and re-wrapping with `toReferenceFormat` — the same function
- * the emitter uses on the way out — is what makes formatting already-formatted
+ * Folding first and re-wrapping with `toReferenceFormat`, the same function
+ * the emitter uses on the way out, is what makes formatting already-formatted
  * output a no-op rather than nearly one.
  *
  * A line continues the one before it when that one did not end in a full stop
@@ -509,7 +509,7 @@ function indentFor(depth: number, inProcedure: boolean): number {
  * `PERFORM PARA THRU PARA-EXIT` and `PERFORM UNTIL ... END-PERFORM` start with
  * the same word and only the second indents. Rather than guess from the rest of
  * the line, the matching terminator is looked for ahead, stopping at the end of
- * the sentence — which is where a scope opened without one has to have closed.
+ * the sentence, which is where a scope opened without one has to have closed.
  */
 function opensScope(
   word: string,

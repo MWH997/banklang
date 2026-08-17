@@ -13,11 +13,11 @@ import {
  * lane that covered it globbed the whole runtime package and was cancelled at
  * the three-hour job timeout, so it produced no report at all; splitting it into
  * four made it finish, and finishing put the file at 57.26% against the 60%
- * per-file floor — with 147 mutants no test executed.
+ * per-file floor, with 147 mutants no test executed.
  *
  * The gap has a clear shape. `tests/cobol-runtime-differential.test.ts` runs the
  * example corpus under this interpreter and under `cobc` and compares, which is
- * the strongest evidence there is — but it can only reach what the emitter
+ * the strongest evidence there is, but it can only reach what the emitter
  * emits. `tests/runtime-semantics.test.ts` adds what the hand-written COBOL in
  * `runtime/` needs. What neither reaches is the rest of the grammar this parser
  * accepts: UNSTRING, the class and sign conditions, the written-out relation
@@ -25,7 +25,7 @@ import {
  *
  * The refusals are tested as carefully as the successes. A parser that accepts a
  * construct it cannot execute is worse than one that rejects it, because the
- * program runs and the answer is wrong — so each `CobolUnsupportedError` here is
+ * program runs and the answer is wrong, so each `CobolUnsupportedError` here is
  * a promise that the interpreter says so rather than guessing.
  */
 
@@ -53,8 +53,8 @@ describe("UNSTRING", () => {
    * The whole statement, from one source field into three receivers.
    *
    * Nothing reached this at all: the emitter never generates UNSTRING, and the
-   * reference runtime does not use it. Every line of the parse — the receiver
-   * list, the delimiter, the returned statement — was unexecuted.
+   * reference runtime does not use it. Every line of the parse (the receiver
+   * list, the delimiter, the returned statement) was unexecuted.
    */
   it("splits a field into several receivers on a delimiter", () => {
     expect(
@@ -77,7 +77,7 @@ describe("UNSTRING", () => {
 
   /**
    * More receivers than the source has pieces leaves the extras alone, and the
-   * overflow branch is not taken — the receivers were enough.
+   * overflow branch is not taken, because the receivers were enough.
    */
   it("runs the overflow branch only when the receivers run out", () => {
     expect(
@@ -104,7 +104,7 @@ describe("UNSTRING", () => {
    * is not a verb or a terminator, so the receiver loop read `WITH`, `POINTER`,
    * `TALLYING`, `DELIMITER` and `COUNT` as receiver names and ran past every
    * check below them. What the author got instead was a runtime error naming a
-   * data item they never wrote — `WITH is not declared in STMT` — and, for
+   * data item they never wrote, `WITH is not declared in STMT`, and, for
    * `COUNT IN`, `END is not a statement this interpreter implements`, the loop
    * having swallowed `END-UNSTRING` too. `COUNT IN` therefore threw a
    * `CobolUnsupportedError` and a test asserting only the class went green
@@ -164,8 +164,8 @@ describe("class and sign conditions", () => {
   /**
    * One case per arm, each with its negation.
    *
-   * `NUMERIC` was the only one any test reached. The others share a shape — the
-   * optional `IS`, the optional `NOT`, then the test word — so a mutant in the
+   * `NUMERIC` was the only one any test reached. The others share a shape: the
+   * optional `IS`, the optional `NOT`, then the test word, so a mutant in the
    * shared `wrap` is caught by any of them, but a mutant that deletes an arm is
    * caught only by that arm.
    */
@@ -209,7 +209,7 @@ describe("relation operators written as words", () => {
   /**
    * COBOL spells its relations several ways and this parser accepts all of
    * them. Only the punctuation forms were ever exercised, so `EQUAL TO`,
-   * `GREATER THAN`, `LESS THAN` and the two `OR EQUAL` compounds went unrun —
+   * `GREATER THAN`, `LESS THAN` and the two `OR EQUAL` compounds went unrun,
    * as did the inversion table that `NOT` selects.
    */
   const relations: [condition: string, expected: string][] = [
@@ -266,7 +266,7 @@ describe("INSPECT TALLYING", () => {
    * The three counting phrases, each of which is its own arm.
    *
    * `CHARACTERS` counts every character, `ALL` counts occurrences of a value and
-   * `LEADING` counts only the run at the front — three different answers on the
+   * `LEADING` counts only the run at the front: three different answers on the
    * same field, which is what makes a mutant that swaps them visible.
    */
   it("counts characters, all occurrences and leading runs", () => {

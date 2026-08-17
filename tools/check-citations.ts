@@ -4,7 +4,7 @@
  *
  * The relative-link check in `tests/documentation.test.ts` has caught dead
  * in-repo links for a long time. External links were never checked at all, and
- * the 2026-08-06 audit found why that mattered: `docs/glossary.md` cited an IBM
+ * a sweep of them found why that mattered: `docs/glossary.md` cited an IBM
  * topic for the FILE STATUS clause that does not exist, one for the z/OS DD
  * statement that does not exist, and a source-map specification that has been
  * 404 since it was replaced by an Ecma standard.
@@ -25,7 +25,7 @@
  *     topic under it is not.
  *
  * Both are recorded as failures. A real topic answers with its own heading, and
- * that heading is what gets written to `docs/citations.json` — so a citation
+ * that heading is what gets written to `docs/citations.json`, so a citation
  * that is silently re-slugged to a different page is a diff, not a pass.
  *
  * IBM serves the rendered DITA only to clients it takes for crawlers. Sending a
@@ -96,14 +96,15 @@ const OWN_REPOSITORY = "https://github.com/MWH997/banklang";
 /**
  * This project's own site, for the same reason and one more.
  *
- * A citation check exists to notice when *somebody else's* page moves — IBM
+ * A citation check exists to notice when *somebody else's* page moves. IBM
  * retiring a topic is the case it was written for. Our own pages move when we
  * move them, and the tests that already cover them are stronger: the playground
  * links in the example READMEs are checked against the example ids the
  * playground actually loads (`tests/playground-links.test.ts`), which catches a
  * broken link the day it breaks rather than the week the schedule next runs.
  *
- * It also has nowhere to resolve to yet. The domain is not served until A1.
+ * At the time this was written the domain was not served yet, so a link to it
+ * had nowhere to resolve to.
  */
 const OWN_SITE = "https://banklang.mwhassan.com";
 
@@ -140,8 +141,8 @@ type Result = { url: string; title: string; problem?: string };
  * `redirect: "follow"` turns this into a clean 200 with a plausible title, so
  * the citation reads as alive and points at nothing. The IBM shell check above
  * is one publisher's version of the same failure; this is the general one, and
- * it turned up on 2026-08-07 when NIST's COBOL-85 test suite page —
- * `itl.nist.gov/div897/ctg/cobol_form.htm`, three path segments — began
+ * it turned up when NIST's COBOL-85 test suite page,
+ * `itl.nist.gov/div897/ctg/cobol_form.htm` with its three path segments, began
  * answering `302` to `nist.gov/itl`, the laboratory's home page, with nothing
  * about COBOL on it.
  *
@@ -170,8 +171,8 @@ async function fetchTitle(url: string): Promise<Result> {
     }
     // IBM's manuals are also published as PDFs carrying a publication number,
     // which is the citation a mainframe engineer looks up and the one IBM does
-    // not re-slug. A PDF has no title element, so the content type stands in —
-    // enough to catch an HTML error page served where a manual used to be.
+    // not re-slug. A PDF has no title element, so the content type stands in,
+    // which is enough to catch an HTML error page served where a manual was.
     const type = response.headers.get("content-type") ?? "";
     if (type.includes("application/pdf")) {
       return { url, title: "(PDF)" };
@@ -198,7 +199,7 @@ async function fetchTitle(url: string): Promise<Result> {
      * The IBM check above is one publisher's version of this. The general form
      * turned up on 2026-08-07: NIST's COBOL-85 test suite page,
      * `itl.nist.gov/div897/ctg/cobol_form.htm`, now answers `302` to
-     * `nist.gov/itl/` — the laboratory's home page, with nothing about COBOL on
+     * `nist.gov/itl/`, the laboratory's home page, with nothing about COBOL on
      * it. `redirect: "follow"` makes that a clean 200 and a plausible title, so
      * the citation reads as alive and points at nothing.
      *

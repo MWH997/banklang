@@ -25,8 +25,8 @@ import {
 /**
  * Four constructs the backend emits that the interpreter could not execute.
  *
- * Each was found the same way — a benchmark task passed under `cobc` and
- * recorded `differentialAgreement: null` — and each was invisible to
+ * Each was found the same way: a benchmark task passed under `cobc` and
+ * recorded `differentialAgreement: null`, and each was invisible to
  * `pnpm interpreter:coverage`, which counts verbs. A verb can be two thirds
  * missing, and an intrinsic function is not a verb at all:
  *
@@ -34,7 +34,7 @@ import {
  *   - `INSPECT ... CONVERTING`, which is what `replaceChars` becomes;
  *   - `FUNCTION NUMVAL-C`, which is what `toNumber` becomes;
  *   - `DIVIDE ... GIVING ... REMAINDER`, which every generated rounding mode
- *     emits — `HALF_EVEN` among them, the one this project calls the usual
+ *     emits, `HALF_EVEN` among them, the one this project calls the usual
  *     choice for money.
  *
  * So this runs the *same generated COBOL* through `cobc` and through

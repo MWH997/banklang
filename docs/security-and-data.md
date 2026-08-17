@@ -140,6 +140,6 @@ redistributed by this project: see the repository's licence notes.
 
 ## Related pages
 
-- [diagnostics.md](diagnostics.md) (`BANK-AUD-002` and `BANK-SEC-001` in full
-- [language-reference.md](language-reference.md)) the `sensitive` modifier
+- [diagnostics.md](diagnostics.md): `BANK-AUD-002` and `BANK-SEC-001` in full
+- [language-reference.md](language-reference.md): the `sensitive` modifier
 - [error-handling.md](error-handling.md): what a failure writes to the job log

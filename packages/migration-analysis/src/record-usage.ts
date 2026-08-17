@@ -51,7 +51,7 @@ export interface FileRecordShape {
    *
    * The COBOL idiom for a variant file: the first record names the
    * discriminator and the others overlay those bytes with `FILLER` because
-   * they have no use for them. `BDS1003.cbl` in the corpus is exactly this —
+   * they have no use for them. `BDS1003.cbl` in the corpus is exactly this:
    * `InsertionRec` carries `TypeCode-TF` with its `88`s, and `DeletionRec`
    * begins `02 FILLER PIC 9(7)`. A shared *name* would miss it entirely.
    */
@@ -95,14 +95,14 @@ export interface RecordUsage {
   differentLength: number;
   /** Multi-record FDs where a picture could not be read, so length is unknown. */
   unmeasuredLength: number;
-  /** Multi-record FDs the program opens `INPUT` — the ones a READ must narrow. */
+  /** Multi-record FDs the program opens `INPUT`: the ones a READ must narrow. */
   openedInput: number;
   /** Multi-record FDs the program opens `OUTPUT` or `EXTEND`. */
   openedOutput: number;
   /** Multi-record FDs opened `I-O`. */
   openedIo: number;
   /**
-   * None of the above — several named layouts, no overlay, no copybook, no
+   * None of the above: several named layouts, no overlay, no copybook, no
    * shared leading field. The residue, and the honest size of "variants this
    * analyser could not classify".
    */
@@ -124,7 +124,7 @@ export interface RecordUsage {
    *
    * The deciding number. A pattern found in one teaching repository is not an
    * estate pattern however many times that repository repeats it, and the
-   * print-file idiom — two elementary records, same length, opened OUTPUT —
+   * print-file idiom, two elementary records of the same length opened OUTPUT,
    * is 93% of every multi-record FD in this corpus.
    */
   variantRepositories: string[];
@@ -184,14 +184,14 @@ const EXAMPLE_LIMIT = 40;
  * Clauses saying the records are not all the same length.
  *
  * `RECORDING MODE IS V` is IBM's way of saying it and is what the corpus's
- * variant files actually carry — `RECORD IS VARYING` is the standard's.
+ * variant files actually carry. `RECORD IS VARYING` is the standard's.
  * `RECORDING MODE IS F` must not match, which is why the alternation is
  * anchored on the letter.
  */
 const VARYING =
   /RECORD\s+(IS\s+)?VARYING|RECORD\s+CONTAINS\s+\d+\s+TO\s+\d+|RECORDING\s+MODE\s+(IS\s+)?V\b/;
 
-/** `FD  NAME` or `SD  NAME` — the start of a file description. */
+/** `FD  NAME` or `SD  NAME`: the start of a file description. */
 const FD_START = /^\s*(FD|SD)\s+([A-Z0-9][A-Z0-9-]*)/;
 
 /** A data description entry, with its level and name. */
@@ -365,7 +365,7 @@ function pictureLength(clauses: string): number | null {
   return expanded.replace(/[SVP]/g, "").length || null;
 }
 
-/** `OPEN INPUT A B OUTPUT C` — every file, with how it was opened. */
+/** `OPEN INPUT A B OUTPUT C`: every file, with how it was opened. */
 function openModes(lines: string[]): Map<string, string[]> {
   const modes = new Map<string, string[]>();
   const add = (file: string, mode: string): void => {

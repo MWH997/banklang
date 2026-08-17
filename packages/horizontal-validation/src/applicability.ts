@@ -4,8 +4,8 @@
  * The two semantic corpora hand this project 192 programs written to somebody
  * else's contract. Some of them BankTS can express; many it cannot, and the
  * honest reporting of *which* is the whole value of the exercise. The rules
- * below are applied to the task's own text — its specification, and for
- * COBOLEval the calling interface the benchmark fixes — so the verdict is
+ * below are applied to the task's own text: its specification, and for
+ * COBOLEval the calling interface the benchmark fixes. The verdict is
  * reproducible and arguable rather than a judgement somebody made once.
  *
  * The bar this file has to clear: it must not be possible to raise the score by
@@ -53,7 +53,7 @@ export const APPLICABILITY_RULES: ApplicabilityRule[] = [
      * does not fit inside it.
      *
      * COBOLEval's drivers `CALL "X" USING LINKED-ITEMS` where LINKED-ITEMS is
-     * declared field for field — `05 L-N PIC S9(10). 05 RESULT PIC 9.` — and
+     * declared field for field (`05 L-N PIC S9(10). 05 RESULT PIC 9.`) and
      * assert on what the program leaves in `RESULT`. A BankTS program's only
      * entry point is `entry transaction`, which the compiler requires to carry
      * an idempotency key (`BANK-TXN-001`) and to emit an audit event
@@ -63,7 +63,7 @@ export const APPLICABILITY_RULES: ApplicabilityRule[] = [
      * driver declares, which changes the interface the benchmark calls through.
      *
      * So this is a boundary at the *program interface*, upstream of anything
-     * about the algorithm — several of these tasks are otherwise perfectly
+     * about the algorithm. Several of these tasks are otherwise perfectly
      * expressible, and one of them is what found the `if`-inside-a-loop defect
      * in the typechecker. Recorded as `desirable: false` because a callable
      * entry point with no transaction contract is a different language feature,
@@ -73,7 +73,7 @@ export const APPLICABILITY_RULES: ApplicabilityRule[] = [
     construct:
       "a fixed calling interface with no room for the transaction contract",
     reason:
-      "The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event — both fields in the same record — so a conforming program cannot be written without changing the interface the benchmark calls through.",
+      "The benchmark declares the exact LINKAGE the caller passes and asserts on a RESULT field in it. BankTS's only program entry point is `entry transaction`, which must carry an idempotency key and emit an audit event, both fields in the same record, so a conforming program cannot be written without changing the interface the benchmark calls through.",
     desirable: false,
     fundamental: true,
   },
@@ -98,7 +98,7 @@ export const APPLICABILITY_RULES: ApplicabilityRule[] = [
      * Every word form, which the first version of this rule did not have.
      *
      * `\brandom\b` matched `random seed` and missed `Randomly assign each task`
-     * and `Generate randomized stock prices` — so task_func_07, _23 and _45
+     * and `Generate randomized stock prices`, so task_func_07, _23 and _45
      * were reported as tasks nobody had got round to, while task_func_21, _40,
      * _48 and _49 were reported as excluded by design, on nothing but whether
      * the specification happened to use the bare noun somewhere. Seven tasks
@@ -136,8 +136,8 @@ export interface ApplicabilityVerdict {
  * Kept, and no longer an exclusion. This decided the whole of CobolCodeBench's
  * applicability until 2026-08-08: every one of the 46 tasks reads a text file,
  * BankTS had no line-sequential organization, and so nothing in that corpus was
- * expressible. The evidence is what prompted the feature — see
- * `docs/language/files.md` — and the organization now exists.
+ * expressible. The evidence is what prompted the feature, described in
+ * `docs/language/files.md`, and the organization now exists.
  *
  * The predicate stays because the *shape* of the finding is still worth
  * measuring, and because a caller may want to know which tasks need it. What
@@ -145,7 +145,7 @@ export interface ApplicabilityVerdict {
  *
  * Decided from the data rather than from the file name. The first version of
  * this rule matched `*.txt` in the specification and missed nineteen tasks
- * whose files are called `task_func23_inp` — extensionless, and every bit as
+ * whose files are called `task_func23_inp`: extensionless, and every bit as
  * line-delimited. A rule that depends on somebody's naming habit is a rule that
  * silently under-reports.
  */
@@ -159,7 +159,7 @@ export function needsLineSequential(files: Record<string, string>[]): boolean {
  * A task's verdict, from the task alone.
  *
  * It used to take `hasImplementation` and answer `applicable` when a BankTS
- * file existed — which made the word mean "somebody has done it" and the
+ * file existed, which made the word mean "somebody has done it" and the
  * `pass / applicable` rate a tautology. Whether a solution exists is now
  * nobody's business here.
  *
@@ -171,7 +171,7 @@ export function needsLineSequential(files: Record<string, string>[]): boolean {
  * requires the two never to disagree about the same task.
  *
  * Everything neither excludes is `applicable`, whether or not an
- * implementation exists — which is the state that says there is work to do.
+ * implementation exists, which is the state that says there is work to do.
  */
 export function classifyTask(
   text: string,

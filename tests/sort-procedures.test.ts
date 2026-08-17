@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol } from "./helpers";
 
 /**
- * `INPUT PROCEDURE` and `OUTPUT PROCEDURE` — the form a sort takes when there is
+ * `INPUT PROCEDURE` and `OUTPUT PROCEDURE`: the form a sort takes when there is
  * something to do to the records on the way through.
  *
  * `USING`/`GIVING` lets the sort open, read, write, and close the files itself,
@@ -221,7 +221,7 @@ describe("where the procedures are placed", () => {
 
   /**
    * Two sorts in one routine need two sets of names, and the name says which
-   * routine and which sort rather than which line of the source file — a name
+   * routine and which sort rather than which line of the source file, so a name
    * built from a source position renames itself when a blank line is added
    * above it.
    */
@@ -296,7 +296,7 @@ describe("merge", () => {
  *
  * The concrete failure is quiet rather than loud: a sort whose input never
  * opened releases no records, so the output file is written, is empty, and the
- * job ends with a return code of zero — indistinguishable from a night when
+ * job ends with a return code of zero, indistinguishable from a night when
  * there was nothing to sort.
  */
 describe("the sort's own outcome", () => {
@@ -338,7 +338,7 @@ describe("the sort's own outcome", () => {
    * Language Reference, SORT format 1: "If the DUPLICATES phrase is not
    * specified, the order of these records is undefined." A compiler whose whole
    * claim is a deterministic build must not emit a statement whose output order
-   * the target leaves open — and a differential lane cannot hold two engines to
+   * the target leaves open, and a differential lane cannot hold two engines to
    * an answer the standard says either may choose.
    *
    * MERGE has no such phrase and needs none: equal keys come back in USING
@@ -371,13 +371,13 @@ describe("the sort's own outcome", () => {
    * `SORT-RETURN` is not the whole story for the files the sort opens itself.
    * Under NOFASTSRT the sort does not check open, close, or I/O errors on a
    * USING or GIVING file, and IBM's guidance for a program that declares a file
-   * status and no ERROR declarative — which is every program this compiler
-   * emits — is to test the status key *as well as* SORT-RETURN.
+   * status and no ERROR declarative, which is every program this compiler
+   * emits, is to test the status key *as well as* SORT-RETURN.
    *
    * Guarded by `NOT = SPACES`, because the status key is only set on a target
    * that sets it. The key is declared `VALUE SPACES` and nothing but an I/O
    * operation writes it, so spaces means the sort reported through
-   * `SORT-RETURN` alone — which is what GnuCOBOL 3.2.0 does for every USING and
+   * `SORT-RETURN` alone, which is what GnuCOBOL 3.2.0 does for every USING and
    * GIVING file, successful or not (divergence D27). Without the guard every
    * successful sort under GnuCOBOL displayed "SORT FAILED" and ended the step
    * with return code 16; two of the three sort programs in this repository did

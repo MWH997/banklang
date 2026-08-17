@@ -4,7 +4,7 @@
  * Every other check in this repository is *vertical*: a test written for
  * BankLang, run against BankLang, passing because BankLang does what the person
  * who wrote the test expected. Thousands of them, and they share one blind
- * spot — they cannot tell you what happens when the compiler meets a program
+ * spot: they cannot tell you what happens when the compiler meets a program
  * nobody wrote for it. A shared misreading between the test and the code agrees
  * with itself perfectly, which is the same argument `packages/cobol-runtime`
  * exists to answer for execution.
@@ -27,7 +27,7 @@ import { CompilerInvariant } from "../../diagnostics/src/errors";
  * How a corpus is obtained.
  *
  * `local` is not a lesser case. The NIST COBOL-85 validation suite is
- * deliberately never downloaded by this repository — see `ccvs85-local` below —
+ * deliberately never downloaded by this repository (see `ccvs85-local` below)
  * and the adapter for it has to be exactly as real as the others.
  */
 export type FetchMechanism =
@@ -46,7 +46,7 @@ export type FetchMechanism =
  * What a corpus is for, which decides what a result from it may claim.
  *
  * The distinction matters more than it looks. A `semantic` corpus ships an
- * oracle — expected output for a given input — so a run of it produces a
+ * oracle, expected output for a given input, so a run of it produces a
  * pass or a failure. A `coverage` corpus is a pile of real programs with no
  * expected behaviour attached: it can tell you what COBOL people write and
  * whether this toolchain can read it, and it cannot tell you that anything is
@@ -63,7 +63,7 @@ export type CorpusCategory = "semantic" | "coverage" | "defect" | "conformance";
  * `redistributable` means the upstream licence permits it *and* this project
  * has determined the permission covers what would be copied. `derived-only`
  * means statistics, hashes and identifiers may be published while the source
- * may not — which is the honest answer for a dataset that aggregates 168 other
+ * may not, which is the honest answer for a dataset that aggregates 168 other
  * people's repositories under a licence covering the *compilation* rather than
  * the contents. `none` means not even a hash goes in until somebody supplies
  * the corpus themselves.
@@ -135,7 +135,7 @@ export const CORPORA: CorpusDefinition[] = [
     establishes:
       "Whether BankTS can express general algorithmic tasks against a fixed calling interface defined by somebody else, and whether the results match the benchmark's own COBOL test drivers.",
     limits:
-      "146 tasks derived from HumanEval. The interface every task is defined against uses COMP-2 — IEEE binary floating point — which BankTS refuses by design, so the representability figure here measures the distance between a banking language and a general-purpose one rather than a defect.",
+      "146 tasks derived from HumanEval. The interface every task is defined against uses COMP-2, IEEE binary floating point, which BankTS refuses by design, so the representability figure here measures the distance between a banking language and a general-purpose one rather than a defect.",
   },
   {
     id: "xcobol-v2",
@@ -145,7 +145,7 @@ export const CORPORA: CorpusDefinition[] = [
       "X-COBOL: A Dataset of Open-Source COBOL repositories, Zenodo, DOI 10.5281/zenodo.14269462, published 2024-12-05",
     category: "coverage",
     licence: "CC-BY-4.0",
-    // The Zenodo record is CC-BY-4.0. That covers the *compilation* — the act
+    // The Zenodo record is CC-BY-4.0. That covers the *compilation*, the act
     // of gathering 5,195 files from 168 repositories and publishing the set. It
     // does not relicense the files, each of which belongs to whoever wrote it
     // under whatever terms that repository carries, and the record ships no
@@ -158,7 +158,7 @@ export const CORPORA: CorpusDefinition[] = [
       files: ["COBOL_Files.zip", "file_stats.csv", "final_repo_statistics.csv"],
     },
     establishes:
-      "What constructs real COBOL actually contains, whether this toolchain's reader survives them, and which of them BankTS can and cannot represent — ranked by how often they really occur.",
+      "What constructs real COBOL actually contains, whether this toolchain's reader survives them, and which of them BankTS can and cannot represent, ranked by how often they really occur.",
     limits:
       "No behavioural oracle. These are files, not tests: nothing here can establish that anything computes the right answer, and a representability figure is a statement about language scope rather than about correctness.",
   },

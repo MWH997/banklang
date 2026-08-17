@@ -9,7 +9,7 @@ import { KEYWORDS } from "../packages/parser/src/index";
  * Every word this language reserves is a word some copybook uses as a field:
  * `type`, `date`, `currency`, `error`, `record`, `file`, `transaction`, `log`,
  * `commit`, `status`. Reserving them for the whole source text meant a real
- * record could not be described at all — and describing real records is the
+ * record could not be described at all, and describing real records is the
  * point of the language.
  *
  * In a name position there is nothing to be ambiguous with. A field name is
@@ -17,8 +17,8 @@ import { KEYWORDS } from "../packages/parser/src/index";
  * by `:`. Nothing else can appear there, so a keyword read in one of those
  * places is a name and only a name.
  *
- * This test exists because the alternative — making words contextual one at a
- * time as each collision is discovered — is a slow leak that only shows up when
+ * This test exists because the alternative, making words contextual one at a
+ * time as each collision is discovered, is a slow leak that only shows up when
  * somebody's copybook cannot be expressed.
  */
 
@@ -86,8 +86,8 @@ entry transaction t(r: R) {
 
   /**
    * Deliberately not extended to parameters and locals. Those are read as bare
-   * identifiers in expressions, where a keyword really is a keyword — `log`
-   * begins a statement — so accepting one at the declaration would allow a name
+   * identifiers in expressions, where a keyword really is a keyword and `log`
+   * begins a statement, so accepting one at the declaration would allow a name
    * that could be declared and never read. A record field is always reached
    * through `.`, which is why the copybook case is the one that works.
    */
@@ -137,7 +137,7 @@ entry transaction t(r: R) {
  *
  * The Language Reference gives `05 A PICTURE X(6).` redefined by
  * `05 B REDEFINES A GLOBAL PICTURE N(4).` and says in as many words that B "can
- * occupy more storage than the redefined item, A" — six bytes against eight.
+ * occupy more storage than the redefined item, A": six bytes against eight.
  * The redefinition extends the storage area; the only case it forbids is a
  * redefined item declared as an external data record.
  *

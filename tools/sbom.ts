@@ -3,7 +3,7 @@
  *
  * Release hygiene, from the launch checklist. The first thing a bank's security function
  * asks for is an inventory of what is in the build, and the format they ask for
- * it in is CycloneDX — ratified as **ECMA-424**, 1st edition for 1.6 and 2nd
+ * it in is CycloneDX, ratified as **ECMA-424**, 1st edition for 1.6 and 2nd
  * edition (December 2025) for 1.7, which is what this emits.
  *
  * ## No new dependency
@@ -11,7 +11,7 @@
  * pnpm 11 generates CycloneDX natively. That is not a convenience: CycloneDX
  * abandoned their own `cyclonedx-node-pnpm` in favour of it, so the native
  * command *is* the maintained implementation. It also means the tool that
- * inventories the supply chain is not itself a new link in it — which matters
+ * inventories the supply chain is not itself a new link in it, which matters
  * here, where `pnpm-workspace.yaml` sets a `minimumReleaseAge` precisely to
  * avoid being first to install a fresh release.
  *
@@ -24,20 +24,20 @@
  * store, and a package that does not run on this platform was never downloaded
  * into it. Measured against an empty store on 2026-08-07: a normal install and
  * `pnpm sbom` produce **79 of 392 components with no licence**, every one a
- * prebuilt native binary — `@esbuild/*`, `@rolldown/binding-*`,
+ * prebuilt native binary: `@esbuild/*`, `@rolldown/binding-*`,
  * `lightningcss-*`. A licence scanner reads that as 79 components needing
  * manual review.
  *
  * It is worse than machine-dependent. The store is global and shared across
  * every project on the machine, so the same commit produces a different BOM
- * depending on what else has been installed there — running the
+ * depending on what else has been installed there. Running the
  * `--all-platforms` path once fills the store, and every plain `pnpm sbom`
  * afterwards reports full coverage from packages that are not in this
  * project's `node_modules` at all. An artifact that gets *more* complete
  * because of unrelated work is one nobody can reproduce.
  *
  * `--all-platforms` resolves the whole matrix first, which takes the count to
- * zero from a cold store — 32 seconds and about a gigabyte, which is why it is
+ * zero from a cold store: 32 seconds and about a gigabyte, which is why it is
  * a flag and not the default.
  *
  * (`--lockfile-only` is the opposite trade, and worth naming so nobody reaches
@@ -50,14 +50,14 @@
  *
  * ## Not checked in
  *
- * A BOM carries a timestamp and a fresh `serialNumber` per document — required
+ * A BOM carries a timestamp and a fresh `serialNumber` per document, required
  * by the spec, since two BOMs of the same tree are still two documents. So it
  * cannot be committed and held to `git diff` the way every other generated file
  * here is. It is built in CI and attached to the release, and what is committed
  * is this program and the tests that hold its output to the invariants above.
  *
  * Usage:
- *   pnpm sbom:check      report problems, write nothing — the quick one
+ *   pnpm sbom:check      report problems, write nothing, the quick one
  *   pnpm sbom:build      write dist/sbom/, resolving this platform only
  *   pnpm sbom:release    resolve every platform first; what CI runs
  */
@@ -91,14 +91,14 @@ export const SPEC_VERSION = "1.7";
 /**
  * Every platform the locked tree has a prebuilt binary for.
  *
- * This is not a wish list — it is derived from the lockfile, and
+ * This is derived from the lockfile rather than wished for, and
  * `tests/sbom.test.ts` fails if the lockfile ever names an `os`, `cpu` or
  * `libc` that is missing here. That check is the point: a new dependency
  * bringing in, say, a `powerpc64` build would otherwise reintroduce exactly the
  * silent licence gap this exists to close, and the BOM would still look
  * complete.
  *
- * pnpm's `"*"` is not a wildcard over unknown values — asking for it returns
+ * pnpm's `"*"` is not a wildcard over unknown values: asking for it returns
  * the same set as naming the three common operating systems, so the values are
  * listed.
  */
@@ -108,7 +108,7 @@ export const ARCHITECTURES: Record<"os" | "cpu" | "libc", string[]> = {
     // Not a `process.platform` value. `@vscode/vsce-sign` ships an
     // `alpine-x64` build and declares `os: [alpine]` where the convention is
     // `os: [linux], libc: [musl]`. pnpm records what the package says, so this
-    // does too — the alternative is a platform binary nobody resolves.
+    // does too, and the alternative is a platform binary nobody resolves.
     "alpine",
     "android",
     "darwin",
@@ -165,8 +165,8 @@ export interface LockfileFacts {
    *
    * A package can be absent for two reasons, and only one of them is a
    * platform. `@napi-rs/wasm-runtime` and the `@emnapi/*` packages under it are
-   * the WebAssembly fallback for the native bundlers: no `os` or `cpu` — they
-   * run anywhere — but optional, so a machine that resolved the native binary
+   * the WebAssembly fallback for the native bundlers: no `os` or `cpu`, so they
+   * run anywhere, but optional, so a machine that resolved the native binary
    * never downloads them. Found by CI on 2026-08-07, where five of them arrived
    * in the BOM with no licence and the platform rule did not excuse them.
    */
@@ -191,8 +191,8 @@ export function mayBeAbsent(facts: LockfileFacts, key: string): boolean {
  * Which packages are prebuilt binaries, taken from the lockfile rather than
  * from their names.
  *
- * The alternative is a list of prefixes — `@esbuild/`, `@rolldown/`,
- * `lightningcss-` — which is a list that goes stale the first time a dependency
+ * The alternative is a list of prefixes (`@esbuild/`, `@rolldown/`,
+ * `lightningcss-`) which is a list that goes stale the first time a dependency
  * ships a native binary under a name nobody predicted. `os:`, `cpu:` and
  * `libc:` are what pnpm itself uses to decide whether to install one.
  */
@@ -210,7 +210,7 @@ export function lockfileFacts(): LockfileFacts {
   for (const line of lockfile.split("\n")) {
     const entry = /^ {2}(?!\s)(.+):$/.exec(line);
     if (entry) {
-      // `pkg@1.0.0(peer@2.0.0)` — the peer suffix is pnpm's, not the package's.
+      // `pkg@1.0.0(peer@2.0.0)`: the peer suffix is pnpm's, not the package's.
       current = (entry[1] ?? "")
         .replace(/^["']|["']$/g, "")
         .replace(/\(.*$/, "");
@@ -289,7 +289,7 @@ export function declaredLicence(cwd: string, key: string): string | undefined {
   // resolved peers appended to the directory name, so `@eslint/js@10.0.1` is
   // under `@eslint+js@10.0.1_eslint@10.8.0`. Reading the exact name found
   // nothing for any of them, `declaredLicence` returned `undefined`, and fifty
-  // components — every ESLint and Stryker package this repository installs —
+  // components, every ESLint and Stryker package this repository installs,
   // went into the bill of materials with no licence at all. The BOM is the
   // artifact a consumer runs a licence scanner over, so fifty unknowns is the
   // one output this file exists to prevent.
@@ -339,7 +339,7 @@ export function declaredLicence(cwd: string, key: string): string | undefined {
  *
  * Found on 2026-08-07, by this repository's own tests, the day `@vscode/vsce`
  * was added to package the extension. Ten components arrived with **no licence
- * field at all** — `@vscode/vsce-sign` and its nine platform binaries — and
+ * field at all**, `@vscode/vsce-sign` and its nine platform binaries, and
  * every one of them is installed, on disk, declaring
  * `"license": "SEE LICENSE IN LICENSE.txt"` in its own `package.json`.
  *
@@ -352,7 +352,7 @@ export function declaredLicence(cwd: string, key: string): string | undefined {
  * in a file". A reviewer chasing the first one has to go and find the second.
  *
  * So the value is read back out of the package the BOM is describing and
- * written where the specification puts it. Nothing is guessed — a package that
+ * written where the specification puts it. Nothing is guessed: a package that
  * declares no licence still comes out with none, and `problems()` still fails
  * on it.
  */
@@ -383,21 +383,21 @@ export function repairLicences(bom: Bom, cwd: string): number {
  * unordered list makes a diff that is almost entirely reordering, with the one
  * dependency that actually changed hidden somewhere inside it.
  *
- * `bom-ref` is the purl and is unique — `problems()` fails when two components
- * share one — so it is a total order, and the `?? ""` is for the type rather
+ * `bom-ref` is the purl and is unique (`problems()` fails when two components
+ * share one) so it is a total order, and the `?? ""` is for the type rather
  * than for a case that occurs.
  *
  * This does not make the file reproducible byte for byte, and it is worth being
  * exact about what is left. `serialNumber` and `metadata.timestamp` differ per
- * run by design — CycloneDX defines both as identifying the document rather
+ * run by design, since CycloneDX defines both as identifying the document rather
  * than its contents. Beyond those, the `dependsOn` edges themselves vary: two
  * runs a second apart disagree about whether
  * `@babel/plugin-proposal-decorators` depends on `@babel/helper-plugin-utils`.
  * That is the generator's own resolution, not an ordering this can impose, and
  * sorting a list whose membership changes would hide it rather than fix it.
  *
- * So: the component list — the bill of materials proper, and the thing a
- * reviewer diffs between releases — is stable. The dependency graph is not,
+ * So the component list, the bill of materials proper and the thing a
+ * reviewer diffs between releases, is stable. The dependency graph is not,
  * and no claim is made that it is.
  */
 export function sortBom(bom: Bom): void {
@@ -453,7 +453,7 @@ function pnpmSbom(cwd: string): Bom {
 /**
  * A copy of the workspace with every platform resolved.
  *
- * Only the manifests and the lockfile are copied — that is everything pnpm
+ * Only the manifests and the lockfile are copied, which is everything pnpm
  * needs to install, and it means the real `node_modules` is never replaced with
  * a gigabyte of binaries for platforms this machine cannot run. The working
  * tree is not written to at all: the `supportedArchitectures` block goes into
@@ -512,7 +512,7 @@ export interface Options {
   /**
    * Whether a missing licence on a prebuilt binary is a problem.
    *
-   * On a developer's machine it is not — those packages are not installed, so
+   * On a developer's machine it is not, because those packages are not installed, so
    * there is nothing to read a licence out of. In CI, where `--all-platforms`
    * resolved the lot, it is: it means the matrix above stopped covering the
    * tree.

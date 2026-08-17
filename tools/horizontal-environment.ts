@@ -3,7 +3,7 @@
  *
  * A validation number is only reproducible if the reader can tell what produced
  * it. Which compiler version, which commit of this repository, which corpus
- * revisions — and, in this project's case, which COBOL compiler, because the
+ * revisions, and, in this project's case, which COBOL compiler, because the
  * whole point of `docs/divergences.md` is that GnuCOBOL 3.1.2 and 3.2.0 do not
  * agree about the target.
  *

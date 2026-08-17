@@ -36,11 +36,12 @@ import {
 /**
  * The documentation, rendered as part of the site.
  *
- * D1. Forty-two documents that were readable only as raw Markdown on
- * github.com, several of them the strongest evidence this project has.
+ * Forty-two documents that were readable only as raw Markdown on github.com,
+ * several of them the strongest evidence this project has.
  *
- * What is worth testing here is not that pages exist — a build that produced no
- * pages would be noticed immediately. It is the two things that rot silently:
+ * What is worth testing here is not that pages exist, because a build that
+ * produced no pages would be noticed immediately. It is the two things that rot
+ * silently:
  *
  * - **Links.** These documents cross-reference each other more than two
  *   thousand times, written for GitHub, where `../verification.md#what-it-scored`
@@ -134,7 +135,7 @@ describe("every link in the rendered site resolves", () => {
         // Only `docs/` is built here. A link to the stylesheet, the favicon or
         // the landing page leaves this tree, and what matters about those is
         // not that they resolve inside a temporary directory but that they are
-        // the ones `build-site.ts` actually writes — checked below.
+        // the ones `build-site.ts` actually writes, checked below.
         if (!target.startsWith(docsRoot)) {
           outside.add(relative(out, target) || "(the site root)");
           continue;
@@ -164,7 +165,7 @@ describe("every link in the rendered site resolves", () => {
       "assets/docs.css",
       "assets/site.css",
       "blog",
-      // D5. Every page declares the feed, not only the blog: a reader who
+      // Every page declares the feed, not only the blog: a reader who
       // wants to follow this is as likely to be on a documentation page, and a
       // feed reader looks at whatever page it was handed.
       "blog/feed.xml",
@@ -337,7 +338,7 @@ describe("the search index", () => {
    * The names a reader of a compiler's documentation actually types.
    *
    * `docs.js` opens by saying that a reader is nearly always looking for a page
-   * by name — `EIBRESP`, `rounding`, `BANK-LED-001` — and the index stripped
+   * by name (`EIBRESP`, `rounding`, `BANK-LED-001`) and the index stripped
    * every inline code span, so all three of the code-shaped ones matched
    * nothing. The search could not find the things it was built to find.
    */
@@ -400,10 +401,10 @@ describe("the rendered pages keep the site's promises", () => {
   });
 
   /**
-   * D2. The exact form, not a prefix.
+   * The exact form, not a prefix.
    *
-   * This asserted that the canonical *started with* `…/docs/`, which is why
-   * F11 survived it: the docs index declared `…/docs/index.html` canonical
+   * This asserted that the canonical *started with* `…/docs/`, which is how the
+   * defect survived it: the docs index declared `…/docs/index.html` canonical
    * while its own sitemap entry said `…/docs/`, and both matched. Cloudflare
    * Pages answers `/docs/index.html` with a 308 to `/docs/`, so the page had
    * declared a redirect to be its own preferred URL.
@@ -427,8 +428,8 @@ describe("the rendered pages keep the site's promises", () => {
   });
 
   /**
-   * D3. A documentation page shared as a bare link used to render as a bare
-   * link: no card, no title beyond the URL, no image.
+   * A documentation page shared as a bare link used to render as a bare link:
+   * no card, no title beyond the URL, no image.
    */
   it("carries the metadata a shared link needs", () => {
     for (const page of pages) {
@@ -464,11 +465,11 @@ describe("the rendered pages keep the site's promises", () => {
 });
 
 /**
- * D2. What the sitemap says the site contains.
+ * What the sitemap says the site contains.
  *
- * Two failures, one ticket. Forty-seven of fifty-one entries named the `.html`
+ * Two failures at once. Forty-seven of fifty-one entries named the `.html`
  * form, which Cloudflare Pages answers with a redirect rather than with the
- * page — "Page with redirect, not indexed" in Search Console. And the list was
+ * page: "Page with redirect, not indexed" in Search Console. And the list was
  * written out by hand beside the build rather than derived from it, so the two
  * documentation directory indexes, which `buildDocs` has rendered all along,
  * were in no sitemap at all.
@@ -563,11 +564,11 @@ describe("the sitemap", () => {
 
 describe("headings", () => {
   it("are listed as a reader sees them, not as they are written", () => {
-    // `D1. \`USAGE NATIONAL\` inside a group — **measured**` arrived in the
+    // `D1. \`USAGE NATIONAL\` inside a group, **measured**` arrived in the
     // contents list with its asterisks and backticks intact.
     expect(
-      plainInline("D1. `USAGE NATIONAL` inside a group — **measured**"),
-    ).toBe("D1. USAGE NATIONAL inside a group — measured");
+      plainInline("D1. `USAGE NATIONAL` inside a group, **measured**"),
+    ).toBe("D1. USAGE NATIONAL inside a group, measured");
     expect(plainInline("A [linked](to.md) heading")).toBe("A linked heading");
   });
 
@@ -631,8 +632,8 @@ describe("the source the docs are built from", () => {
  * **A directory rather than a list of names.** The first answer to this was
  * `UNPUBLISHED = [/^audit-\d{4}-\d{2}-\d{2}\.md$/, /^launch-tickets\.md$/]`,
  * which fixed the two files that existed and left the next working paper
- * published by default under whatever it happened to be called — the audit's
- * F22. `docs/working/` is a decision the author makes while writing, and the
+ * published by default under whatever it happened to be called.
+ * `docs/working/` is a decision the author makes while writing, and the
  * guard below turns the old list into a check on where a file is rather than
  * the rule for whether it ships. It still matters with the directory ignored:
  * the papers exist on the author's disk, and a build that runs there must not
@@ -656,7 +657,7 @@ describe("the documents the site does not publish", () => {
    *
    * Asserted against git rather than against the file system: they are on the
    * author's disk and must stay off every commit, which `existsSync` cannot
-   * tell apart. `git ls-files` answers the question that matters — what a clone
+   * tell apart. `git ls-files` answers the question that matters: what a clone
    * gets.
    */
   it("keeps them out of the repository as well as off the site", () => {
@@ -706,7 +707,7 @@ describe("the documents the site does not publish", () => {
    * A denylist is only as good as the names somebody remembered to put in it,
    * and the working paper written next year will have a name nobody predicted.
    * What the old patterns are good for is noticing that a file which is plainly
-   * a working paper has been left where the site would publish it — so they
+   * a working paper has been left where the site would publish it, so they
    * stop the build instead of deciding what ships.
    */
   it("refuses to build when a working paper is filed outside the directory", () => {
@@ -720,20 +721,20 @@ describe("the documents the site does not publish", () => {
   });
 
   /**
-   * F21 was that the builder's comment claimed the README linked the audits by
-   * name and `grep audit-2026 README.md` returned nothing. The links were added
-   * to make the claim true; they are gone again, because the papers are gone.
+   * The builder's comment once claimed the README linked the audits by name,
+   * and `grep audit-2026 README.md` returned nothing. The links were added to
+   * make the claim true; they are gone again, because the papers are gone.
    *
    * This is the assertion that keeps the two consistent: no tracked file may
    * name a path under `docs/working/`, in either direction. A link to a file a
-   * clone does not have is the same defect F21 was, pointing the other way.
+   * clone does not have is that same defect, pointing the other way.
    */
   it("is linked from nothing that ships", () => {
     const tracked = execFileSync("git", ["ls-files"], { encoding: "utf8" })
       .split("\n")
       .filter((file) => file.endsWith(".md"));
 
-    // Naming the directory is fine and necessary — `WORKING_PAPERS` and the
+    // Naming the directory is fine and necessary: `WORKING_PAPERS` and the
     // guard around it have to say what they exclude. A *link* is the defect:
     // it is a path a clone does not have, offered to a reader as one it does.
     const link = /\]\(([^)]*\b(?:docs\/)?working\/[^)]+)\)/g;

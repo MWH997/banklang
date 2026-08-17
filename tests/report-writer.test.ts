@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol } from "./helpers";
 
 /**
- * `report` — COBOL's Report Writer.
+ * `report`: COBOL's Report Writer.
  *
  * `page ... footing ...` on a file paginates, but the program still writes
  * every line itself and counts nothing. A report declares the shape and lets
@@ -151,7 +151,7 @@ describe("the report description", () => {
   /**
    * Report Writer sizes the accumulator from the picture on the SUM entry, not
    * from the field being totalled, whenever that field lives outside the REPORT
-   * SECTION — which here it always does. Giving a total the row's own picture
+   * SECTION, which here it always does. Giving a total the row's own picture
    * therefore sizes it for a single row, and the high-order digit of every
    * subtotal is dropped without a diagnostic, a return code, or a line that
    * fails to balance.
@@ -178,8 +178,8 @@ describe("the report description", () => {
  * and Libraries (5798-DYR)", and it lists `RD`, `PAGE LIMIT`, `CONTROL
  * HEADING`, `PAGE FOOTING`, `SUM`, `COLUMN` and report description entries as
  * features that precompiler supplies. A REPORT SECTION handed straight to
- * IGYCRCTL does not compile, and the job the compiler wrote did exactly that —
- * everything below is what the Installation and Operation manual's own sample
+ * IGYCRCTL does not compile, and the job the compiler wrote did exactly that.
+ * Everything below is what the Installation and Operation manual's own sample
  * JCL says the job needs.
  *
  * GnuCOBOL implements Report Writer natively, which is why the executed tests
@@ -196,7 +196,7 @@ describe("the job a report needs", () => {
     const jcl = result.jcl ?? "";
 
     expect(jcl).toContain("//RWPRE    EXEC PGM=SPCRWCOB");
-    // SYSIN in, RWWORK for working space, SYSINS out — and the compile step
+    // SYSIN in, RWWORK for working space, SYSINS out, and the compile step
     // reads what it wrote rather than the original source.
     expect(jcl).toContain("//RWWORK   DD UNIT=SYSALLDA");
     expect(jcl).toContain("//SYSINS   DD DSN=&&RWOUT");
@@ -364,7 +364,7 @@ entry transaction render(line: StatementLine) {
 /**
  * The description above says what was emitted. It does not say the report
  * paginates, breaks, or adds up, which is the whole reason to hand the work to
- * COBOL rather than write it — so this one is run.
+ * COBOL rather than write it, so this one is run.
  *
  * `-fassign-clause=external` is a local harness flag, not something the
  * generated program depends on: GnuCOBOL's default resolves an unquoted
@@ -450,7 +450,7 @@ describe("executed", () => {
    * The amounts are chosen so that the branch subtotal needs one more digit
    * than any single row: 9,999,999.99 twice is 19,999,999.98, which a total
    * sized from the row's own picture cannot hold. Before the total field was
-   * widened this printed 9,999,999.98 — a report that is wrong, still adds up
+   * widened this printed 9,999,999.98: a report that is wrong, still adds up
    * down the page, and returns zero.
    *
    * It is `zoned` rather than the packed `decimal` a real amount would be
@@ -478,7 +478,7 @@ describe("executed", () => {
    * A divergence, pinned so it cannot be mistaken for working.
    *
    * GnuCOBOL 3.2.0's Report Writer reads a `COMP-3` operand of a SUM clause
-   * from the wrong place — it picks up only the low-order digits, so an amount
+   * from the wrong place, picking up only the low-order digits, so an amount
    * of 1,000,000.00 totals as zero while the same value printed by SOURCE on
    * the line above is correct. Money in a generated program is `COMP-3`, so
    * every total in every report is affected under the local validator and none

@@ -8,7 +8,7 @@
  * produces a run that looks like a pass, and this project treats a green that
  * means nothing as worse than no green at all.
  *
- * Adding a verb is deliberately a three-part change — parse it here, execute it
+ * Adding a verb is deliberately a three-part change: parse it here, execute it
  * in `machine.ts`, and add a case to `tests/cobol-runtime.test.ts` that the
  * differential test then re-checks against GnuCOBOL.
  */
@@ -43,7 +43,7 @@ export type Expr =
   | { kind: "binary"; op: string; left: Expr; right: Expr }
   | { kind: "function"; name: string; args: Expr[]; line: number }
   /**
-   * `FUNCTION CURRENT-DATE(1:8)` — a reference modification of a value that is
+   * `FUNCTION CURRENT-DATE(1:8)`, a reference modification of a value that is
    * not an item, so it cannot be carried on a `Reference` the way `X(1:8)` is.
    */
   | { kind: "slice"; value: Expr; from: Expr; length: Expr | null }
@@ -51,7 +51,7 @@ export type Expr =
    * `ADDRESS OF X`, which is a pointer rather than a value.
    *
    * The generated code tests it against `NULL` to find out whether a program
-   * was entered with a parameter at all — `examples/parm-driven-batch` is
+   * was entered with a parameter at all. `examples/parm-driven-batch` is
    * exactly that question, and a batch that reads an unbound LINKAGE item
    * instead reads whatever the region left there.
    */
@@ -102,7 +102,7 @@ export type Statement =
       verb: "ADD" | "SUBTRACT" | "MULTIPLY" | "DIVIDE";
       /** Everything before the joining word. */
       operands: Expr[];
-      /** `TO`, `FROM`, `BY` or `INTO` — which one decides the direction. */
+      /** `TO`, `FROM`, `BY` or `INTO`: which one decides the direction. */
       joiner: "TO" | "FROM" | "BY" | "INTO" | null;
       /**
        * What follows the joiner.
@@ -215,7 +215,7 @@ export type Statement =
        * The form BankLang's `split` lowers to, and only that form. One
        * delimiter, several receivers, an optional overflow block. `WITH
        * POINTER`, `TALLYING`, `DELIMITED BY ALL` and multiple delimiters raise
-       * rather than being approximated — an UNSTRING that silently does less
+       * rather than being approximated. An UNSTRING that silently does less
        * than it says leaves a record half-parsed with no error anywhere, which
        * is the failure this interpreter exists to catch rather than commit.
        */
@@ -246,7 +246,7 @@ export type Statement =
       /**
        * `INSPECT x CONVERTING a TO b`, which is what `replaceChars` becomes.
        *
-       * Character for character, so the two operands are the same length — the
+       * Character for character, so the two operands are the same length. The
        * typechecker refuses a BankTS `replaceChars` where they are not, and the
        * machine checks again because hand-written COBOL reaches here too.
        */
@@ -258,13 +258,13 @@ export type Statement =
     }
   | {
       /**
-       * `SORT` and `MERGE`, format 1 — the file forms, not the table SORT.
+       * `SORT` and `MERGE`, format 1: the file forms, not the table SORT.
        *
        * One statement kind for both because they differ only in what fills the
        * work file: a sort takes records from `USING` files or an input
        * procedure and orders them; a merge takes records from two or more
        * already-ordered `USING` files and interleaves them. Everything after
-       * that — the keys, `GIVING`, the output procedure — is the same, and two
+       * that (the keys, `GIVING`, the output procedure) is the same, and two
        * near-identical statement shapes would be two places to fix a defect in.
        */
       kind: "sort";
@@ -442,7 +442,7 @@ const SORT_CLAUSES = new Set([
  *
  * That made the four refusals below unreachable, which mattered because of what
  * the author was told instead. `UNSTRING ... WITH POINTER WS-N` reported `WITH
- * is not declared in STMT` — a runtime error, naming a data item nobody wrote,
+ * is not declared in STMT`: a runtime error, naming a data item nobody wrote,
  * for a phrase this interpreter had a considered message about. `TALLYING` and
  * `DELIMITER IN` did the same; `COUNT IN` reached `END is not a statement this
  * interpreter implements`, having eaten `END-UNSTRING` as well.
@@ -827,7 +827,7 @@ export class StatementParser {
      * `GIVING` and `REMAINDER` end a list of receiving fields.
      *
      * Neither is in `TERMINATORS`, so `startsReference` takes both for a data
-     * name — which made `DIVIDE A BY B GIVING Q REMAINDER R` parse as a divide
+     * name, which made `DIVIDE A BY B GIVING Q REMAINDER R` parse as a divide
      * into three fields called B, GIVING and Q, and then fail on a field named
      * GIVING that no program declares. That shape is what every generated
      * rounding mode emits, `HALF_EVEN` among them, so the interpreter refused
@@ -1232,7 +1232,7 @@ export class StatementParser {
    *
    * The counter is *added to* rather than set, which is what the Language
    * Reference specifies and is easy to get wrong from reading the generated
-   * code alone — this compiler always emits `MOVE 0` first, so a `SET`
+   * code alone. This compiler always emits `MOVE 0` first, so a `SET`
    * implementation would agree with `cobc` on every program it produces and
    * disagree on hand-written COBOL the moment one arrived.
    */
@@ -1417,7 +1417,7 @@ export class StatementParser {
     }
     if (operation === "MERGE" && inputProcedure) {
       throw new CobolSyntaxError(
-        `Line ${String(line)}: MERGE has no INPUT PROCEDURE — its input files must already be in key order.`,
+        `Line ${String(line)}: MERGE has no INPUT PROCEDURE, so its input files must already be in key order.`,
       );
     }
     return {
@@ -1568,7 +1568,7 @@ export class StatementParser {
   /**
    * `UNSTRING source DELIMITED BY d INTO a b c`.
    *
-   * Enterprise COBOL allows a great deal more than this — several delimiters
+   * Enterprise COBOL allows a great deal more than this: several delimiters
    * joined by OR, `ALL` to collapse runs, `WITH POINTER` to start part way in,
    * `TALLYING` to count the fields found. None of it is accepted here, because
    * none of it is emitted: `packages/cobol-backend` lowers BankTS's `split` to
@@ -1712,11 +1712,11 @@ export class StatementParser {
       return wrap({ kind: "relation", left, op, right });
     }
 
-    // Neither, so the `IS`/`NOT` belonged to something else — an abbreviated
+    // Neither, so the `IS`/`NOT` belonged to something else: an abbreviated
     // combined relation, or the end of this condition. Give them back.
     this.cursor.position = mark;
 
-    // A bare name is a condition name — an 88 level.
+    // A bare name is a condition name, an 88 level.
     if (left.kind === "ref") {
       return { kind: "condition-name", ref: left.ref };
     }
@@ -1888,8 +1888,8 @@ export class StatementParser {
            * The parentheses after a function name are an argument list or a
            * reference modification of its result, and which one is not known
            * until the `:` is or is not there. `today()` lowers to
-           * `FUNCTION NUMVAL(FUNCTION CURRENT-DATE(1:8))` — no arguments and a
-           * slice — so reading them as arguments failed on the colon, and every
+           * `FUNCTION NUMVAL(FUNCTION CURRENT-DATE(1:8))`, no arguments and a
+           * slice, so reading them as arguments failed on the colon, and every
            * BankTS program that asks the date had no differential cover.
            */
           const first = this.expression();

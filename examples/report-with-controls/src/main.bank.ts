@@ -6,8 +6,8 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 // anything up.
 //
 // That is the reason to have Report Writer at all. A hand-written subtotal is
-// three things a reader has to check — the accumulator, the reset, and the
-// place the reset happens — and a reset in the wrong place gives a report that
+// three things a reader has to check (the accumulator, the reset, and the
+// place the reset happens) and a reset in the wrong place gives a report that
 // is wrong and still balances, which survives review. Here the subtotals, the
 // grand total, the page turns and the repeated headings are all COBOL's, and
 // the program's own statements are `initiate`, `generate`, `terminate`.
@@ -27,7 +27,7 @@ file postingInput sequential input record PostingLine status inputStatus;
 file statementFile sequential output record PostingLine status reportStatus;
 
 // The control field is `branchId`, so Report Writer breaks whenever it changes
-// — which means the input has to arrive in branch order, and the job's sort
+// This means the input has to arrive in branch order, and the job's sort
 // step is what guarantees that. A control break on unsorted input produces a
 // subtotal every time the value changes rather than one per branch.
 report branchSummary on statementFile control branchId page 60 heading 1 firstDetail 5 lastDetail 55 {

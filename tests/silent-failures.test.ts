@@ -8,7 +8,7 @@ import { checked, corpus, flowed } from "./helpers";
  *
  * Each of these compiled, ran, and gave an answer nobody could tell from a
  * correct one. That is the class this compiler exists to prevent, and the
- * 2026-08-05 audit found four of them in code this repository ships.
+ * external audit found four of them in code this repository ships.
  */
 
 const PREAMBLE = `module Silent;
@@ -28,7 +28,7 @@ function ids(result: { diagnostics: { id: string }[] }): string[] {
 
 /**
  * A five-million-record master processed the first million, closed its files,
- * wrote its audit event and ended RC=0 — indistinguishable from a clean night.
+ * wrote its audit event and ended RC=0, indistinguishable from a clean night.
  * The example carrying that loop said in its own comment that the bound "is
  * what stops a corrupt file spinning the job until the operator cancels it",
  * and then gave the safe case and the catastrophic case the same ending.
@@ -129,7 +129,7 @@ entry transaction post(account: Account) {
 /**
  * `+100` is the only "not found". A `-911` deadlock, a `-904` resource that was
  * not available, or a `-805` package that was never bound became a successful
- * reply saying the account does not exist — and in the example that reply was
+ * reply saying the account does not exist, and in the example that reply was
  * then committed.
  */
 describe("a Db2 error", () => {
@@ -195,7 +195,7 @@ entry transaction post(row: Row, idempotencyKey: string<36>) {
   });
 
   /**
-   * A cursor loop leaves on any non-zero SQLCODE, which is right — but leaving
+   * A cursor loop leaves on any non-zero SQLCODE, which is right, but leaving
    * is not enough. A partial result set processed as though it were the whole
    * one is a settlement run that posted half a day and said it posted a day.
    */
@@ -238,8 +238,8 @@ entry transaction post(row: Row, branchId: string<8>, idempotencyKey: string<36>
 
 /**
  * `IF LINK-RESP = 0` is a program that has hard-coded a number CICS never
- * promised. The API Reference names one value — a normal return is
- * `DFHRESP(NORMAL)` — and says the rest are tested "by means of DFHRESP".
+ * promised. The API Reference names one value, a normal return being
+ * `DFHRESP(NORMAL)`, and says the rest are tested "by means of DFHRESP".
  */
 describe("a CICS response", () => {
   const CICS = `${PREAMBLE}
@@ -277,11 +277,11 @@ cics transaction enquire(account: Account) {
 /**
  * The endings that look like success, over every example.
  *
- * Each of these is an audit finding whose fix was proved on one program: F5 the
- * bound that reported RC=0, F6 the record area read after AT END, F7 the Db2
- * error that became "not found", F8 the CICS response compared against a
- * number. A property that only holds for the program a test wrote is not a
- * property of the compiler.
+ * Each of these was found as a defect and fixed against one program: the bound
+ * that reported RC=0, the record area read after AT END, the Db2 error that
+ * became "not found", the CICS response compared against a number. A property
+ * that only holds for the program a test wrote is not a property of the
+ * compiler.
  */
 describe("across the corpus", () => {
   it("compares a CICS response against DFHRESP, never a number", () => {
@@ -297,9 +297,9 @@ describe("across the corpus", () => {
       ).toEqual([]);
     }
 
-    // One, across twenty-three examples. That is thin for a rule the audit
-    // raised as F8, and it is recorded in the 2026-08-06 audit rather
-    // than papered over with a floor the corpus does not meet.
+    // One, across twenty-three examples. That is thin for a rule that was
+    // raised against a real defect, and it is recorded here rather than papered
+    // over with a floor the corpus does not meet.
     checked(responses, 1, "CICS response comparisons");
   });
 

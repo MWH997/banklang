@@ -5,7 +5,7 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 // Step three: the money moves.
 //
 // It reads what the sort step ordered, not what the extract wrote, and the
-// difference matters — the postings arrive in branch and account order, which
+// difference matters: the postings arrive in branch and account order, which
 // is what makes the report's control breaks work and what keeps the ledger's
 // index from being written all over the disk.
 //

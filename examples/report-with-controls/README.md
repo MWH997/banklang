@@ -5,8 +5,8 @@ A printed report where nothing in the source adds anything up.
 ## Why
 
 That is the entire argument for Report Writer. A hand-written subtotal is three
-things a reader has to check — the accumulator, the reset, and the place the
-reset happens — and a reset in the wrong place produces a report that is wrong
+things a reader has to check (the accumulator, the reset, and the place the
+reset happens) and a reset in the wrong place produces a report that is wrong
 and still balances, which is the kind of defect that survives review.
 
 Here the subtotals, the grand total, the page turns and the repeated headings
@@ -25,7 +25,7 @@ missing its grand total, and nothing else says so.
 
 `control branchId` breaks whenever the field changes, so the input has to arrive
 in branch order. On unsorted input this prints a subtotal every time the value
-changes rather than one per branch — see
+changes rather than one per branch. See
 [`end-of-day-settlement`](../end-of-day-settlement/), where the sort step is the
 thing that guarantees it.
 
@@ -51,8 +51,8 @@ GnuCOBOL implements Report Writer, so this example compiles and runs locally.
 
 ## Related
 
-- [docs/divergences.md](../../docs/divergences.md) — where GnuCOBOL and Enterprise COBOL differ
+- [docs/divergences.md](../../docs/divergences.md): where GnuCOBOL and Enterprise COBOL differ
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=report-with-controls) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=report-with-controls). It compiles in your browser, with the generated COBOL beside it.

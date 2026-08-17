@@ -87,7 +87,7 @@ describe("a SQL type from a DCLGEN", () => {
  *
  * `05 RATE-FIELD COMP-1.` is a four-byte float and has no picture, and the
  * importer read "no PIC" as "group". It produced an empty record, reported no
- * problem, and gave the field zero bytes — so `ACCOUNT-ID` declared after it
+ * problem, and gave the field zero bytes, so `ACCOUNT-ID` declared after it
  * landed at offset 0 instead of 4, and every field after that was wrong too.
  *
  * That is the one failure a copybook exists to prevent, and it was silent. It
@@ -96,7 +96,7 @@ describe("a SQL type from a DCLGEN", () => {
  * no picture.
  *
  * There is no correct import for any of these. BankTS has no binary floating
- * point — the same reason DCLGEN refuses `REAL` and `DOUBLE` — and an index or
+ * point, the same reason DCLGEN refuses `REAL` and `DOUBLE`, and an index or
  * a pointer is a run-time address rather than a value a record can carry.
  */
 describe("a copybook field with a usage and no picture", () => {
@@ -156,7 +156,7 @@ describe("a copybook field with a usage and no picture", () => {
  *
  * Columns 1-6 are the sequence area, column 7 is the indicator, and anything
  * past 72 is not part of the program. Reading any of those as code puts a field
- * in the record that is not in the copybook, or drops one that is — and either
+ * in the record that is not in the copybook, or drops one that is, and either
  * moves every offset after it.
  *
  * The importer handles all of this, and nothing asserted it: the mutation lane
@@ -215,7 +215,7 @@ describe("a copybook in reference format", () => {
  * `DECIMAL(15, 2)` carries a comma of its own, so the split is depth-aware.
  * Getting that wrong does not fail: it produces a column called `2)` and loses
  * the one after it, which is a record with the wrong fields at the wrong
- * offsets — read from a real table.
+ * offsets, read from a real table.
  *
  * The mutation lane found the depth counter surviving in both directions, and
  * the checked-in member is the only DCLGEN anything ran over.
@@ -276,7 +276,7 @@ ${pictures}
  *
  * A copybook is a contract about bytes, so `bankc copybook diff` answers one
  * question: same names, same order, same offsets, same lengths. The mutation
- * lane found its comparisons surviving — the record-name test, the total-length
+ * lane found its comparisons surviving: the record-name test, the total-length
  * test and the per-field test each flipped without anything noticing.
  *
  * Each shape below is a different way an import can be wrong, and they have to
@@ -331,7 +331,7 @@ describe("comparing two copybooks", () => {
 
   it("reports every field a widened one moved", () => {
     // Four more bytes in the first field is a new offset for the second, so
-    // both differ — which is the thing a reader has to see.
+    // both differ, which is the thing a reader has to see.
     const diff = diffGeneratedCopybooks(
       ORIGINAL,
       record(
@@ -365,8 +365,8 @@ describe("comparing two copybooks", () => {
  *
  * They are two readers of one format and they disagreed. The importer dropped
  * the sequence area; the inspector dropped only the identification area. So a
- * member carrying sequence numbers in columns 1-6 — which is what a PDS from a
- * real shop is full of — imported, and then could not be inspected or diffed:
+ * member carrying sequence numbers in columns 1-6, which is what a PDS from a
+ * real shop is full of, imported, and then could not be inspected or diffed:
  * `BANK-COPY-008 Not a data description entry: 000200 05 ACCOUNT-ID PIC X(16)`.
  *
  * `compareLayouts` runs both over the customer's own copybook, so the round

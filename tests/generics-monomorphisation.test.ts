@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
  * concrete COBOL: a mangled name per instantiation, a substituted copy of the
  * record or paragraph, and a deep clone of every node underneath it. The end-to-
  * end suite in `tests/generics-inheritance.test.ts` covers the shapes a program
- * usually has — a record over a currency, a function over two currencies — and
+ * usually has (a record over a currency, a function over two currencies) and
  * that left most of the file unmeasured. The 2026-08-10 mutation run scored it
  * at 45.10%, below the 60% floor `tools/mutation-floor.ts` enforces, with 47
  * mutants no test executed at all.
@@ -124,7 +124,7 @@ describe("the name a type argument mangles to", () => {
 
   /**
    * A type argument that is itself an instantiation nests, rather than
-   * flattening to the base name — `Slot<Slot<BDT>>` is a distinct layout from
+   * flattening to the base name: `Slot<Slot<BDT>>` is a distinct layout from
    * `Slot<BDT>` and must not collide with it.
    */
   it("nests an instantiation inside a mangled name", () => {
@@ -138,13 +138,13 @@ describe("the name a type argument mangles to", () => {
   /**
    * An edited type has no encoding here, and must not be asked for one.
    *
-   * `typeToTypeNode` refuses to rebuild an edited type as a type argument —
+   * `typeToTypeNode` refuses to rebuild an edited type as a type argument,
    * correctly, since it renders a value rather than being one and names no
    * storage. What was wrong was the silence: the argument could not be
    * normalised, `instantiateGenericRecord` returned null, and the field was
    * dropped from the record. `Slot<edited<BDT, "credit">>` compiled with no
    * diagnostic and generated no COBOL for the field, while the same edited type
-   * written on a plain field works — so the author had every reason to believe
+   * written on a plain field works, so the author had every reason to believe
    * it had worked here too.
    */
   it("refuses an edited type as a type argument", () => {
@@ -177,7 +177,7 @@ transaction touch(holder: Holder) {
    * A reference with no type arguments contributes its bare name.
    *
    * This is the arm that returns early rather than appending a `$` suffix, and
-   * a mutant that inverts it produces `Account$` — a name that is still unique,
+   * a mutant that inverts it produces `Account$`, a name that is still unique,
    * so nothing but reading the name catches it.
    */
   it("uses a plain record name with no suffix", () => {
@@ -211,7 +211,7 @@ describe("substituting a type parameter into a field type", () => {
    *
    * `substituteType` recurses through the types that own another type. A mutant
    * that stops the recursion leaves `T` in the instantiated record, which the
-   * resolver then reports as an unknown type — so the diagnostics being empty
+   * resolver then reports as an unknown type, so the diagnostics being empty
    * is the assertion that the rewrite went all the way down.
    */
   const NESTED = `${PREAMBLE}

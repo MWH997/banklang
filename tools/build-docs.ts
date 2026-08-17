@@ -3,7 +3,7 @@
  *
  * Forty-two documents, several of them the
  * strongest evidence this project has, readable until now only as raw Markdown
- * on github.com — where the tables are fine, the cross-references work, and
+ * on github.com, where the tables are fine, the cross-references work, and
  * nobody arriving from a link ever reads the second one.
  *
  * **Nothing here rewrites the content.** The Markdown in `docs/` is the source
@@ -18,8 +18,8 @@
  *   GitHub to work on a static site.
  *
  * The sidebar's grouping is read out of the README rather than written again
- * here. The README already groups these documents — start here, the output, the
- * language and the compiler — and a second grouping maintained by hand drifts
+ * here. The README already groups these documents (start here, the output, the
+ * language and the compiler) and a second grouping maintained by hand drifts
  * from the first one silently. A document that exists and is in no README group
  * still gets rendered and appears under "Everything else", so adding a page
  * cannot make it unreachable.
@@ -54,7 +54,7 @@ const DOCS = join(ROOT, "docs");
  *
  * These are working papers: the audits are this project's own criticism of
  * itself and the ticket lists are the plans for fixing it. Neither is written
- * for a visitor who arrived from a link, and neither is in the repository —
+ * for a visitor who arrived from a link, and neither is in the repository:
  * `.gitignore` excludes this directory, so a clone does not contain them and
  * no commit adds them. One of them records rewrites of this repository's own
  * history, which settles the question: the reasoning that is worth publishing
@@ -69,7 +69,7 @@ const DOCS = join(ROOT, "docs");
  * phrase met the pre-publication security checklist. The first answer was a
  * list of two file-name patterns, which fixed the two files that existed and
  * left the next working paper published by default under whatever it happened
- * to be called — a denylist decides what to hide, and the thing you forgot to
+ * to be called. A denylist decides what to hide, and the thing you forgot to
  * name is the thing that gets out.
  *
  * A directory decides instead. A document is published because it is in
@@ -88,11 +88,11 @@ export const WORKING_PAPERS = "working";
 /**
  * The shapes a working paper comes in, used only to catch a misfiled one.
  *
- * Not what decides publication — that is the directory above, and this list
- * existing again as the *rule* is what F22 was about. It is a guard: a document
- * that is plainly a working paper and is not in `docs/working/` stops the build
- * rather than being published, so the failure mode is a red build rather than
- * an audit on the public site.
+ * This is not what decides publication. The directory above is, and a second
+ * copy of that decision as a name pattern is how the two rules drifted apart
+ * last time. Treat it as a guard: a document that is plainly a working paper
+ * and is not in `docs/working/` stops the build instead of being published, so
+ * the failure mode is a red build rather than an audit on the public site.
  */
 const WORKING_PAPER_NAMES = [
   /^audit-\d{4}-\d{2}-\d{2}\.md$/,
@@ -104,7 +104,7 @@ const WORKING_PAPER_NAMES = [
  * True for a path under `docs/working/`, which the site does not render.
  *
  * Takes a path relative to `docs/` or to the repository root, because the two
- * callers hold it each way and the alternative is what F22 also found: the
+ * callers hold it each way. The alternative is what happened before: the
  * builder's rule and `tests/documentation.test.ts`'s were two spellings of one
  * idea, and the test's was the looser of them.
  */
@@ -182,10 +182,10 @@ export function navigation(): NavGroup[] {
     if (row?.[1] && row[2] && group) {
       // A row pointing at a directory means the set of pages in it.
       //
-      // It used to mean nothing — the row was skipped, and every page under
+      // It used to mean nothing: the row was skipped, and every page under
       // `docs/language/` and `docs/adr/` fell through to "Everything else",
       // which is how nineteen of forty-three documents came to sit in the
-      // group named as a leftover (H5). Expanding it here rather than writing
+      // group named as a leftover. Expanding it here rather than writing
       // the nineteen rows out keeps the README the single list, which is the
       // point of parsing it at all, and keeps a new page in either directory
       // filed correctly without anybody remembering to add it.
@@ -267,14 +267,14 @@ const markdown = MarkdownIt({
   typographer: false,
   highlight: (code: string, language: string): string => {
     // The same two highlighters the landing page uses, so a COBOL block reads
-    // identically in both places — including the indicator area, which decides
+    // identically in both places, including the indicator area, which decides
     // whether a line is a comment.
     if (/^(cobol|cbl|jcl)$/i.test(language)) {
       return `<pre class="code"><code>${highlightCobol(code)}</code></pre>`;
     }
     if (/^(ts|typescript|bankts)$/i.test(language)) {
       const block = `<pre class="code"><code>${highlightBankTs(code)}</code></pre>`;
-      // P3: a link, but only where the block is a program rather than a
+      // A link, but only where the block is a program rather than a
       // fragment. Of the 94 BankTS blocks under `docs/`, one parses on its
       // own; a link on the other 93 opens the documentation's own example onto
       // a wall of syntax errors, which is worse than no link.
@@ -321,7 +321,7 @@ export function rewriteLink(href: string, fromFile: string): string {
     );
   }
 
-  // Out of `docs/` but in the repository — the file really is Markdown there,
+  // Out of `docs/` but in the repository: the file really is Markdown there,
   // and sending somebody to GitHub is a better answer than a 404 on a page this
   // site does not render.
   if (escapes) {
@@ -366,7 +366,7 @@ export function renderDoc(file: string): RenderedDoc {
       });
     }
     // A link is an *inline* token, so it is a child of the `inline` token
-    // between `heading_open`/`paragraph_open` and its close — never a top-level
+    // between `heading_open`/`paragraph_open` and its close, never a top-level
     // one. Walking only the top level rewrote nothing, and every `.md` link in
     // the rendered site pointed at a file that is not published.
     for (const child of token.children ?? []) {
@@ -401,10 +401,9 @@ export function renderDoc(file: string): RenderedDoc {
  * A heading as a reader sees it, not as it is written.
  *
  * markdown-it hands back the heading's *source*, so a heading written
- * ``D1. `USAGE NATIONAL` inside a group — **measured**`` arrived in the
- * contents list with its asterisks and backticks intact. Rendering them as
- * emphasis is wrong in a table of contents — it is one line of navigation — so
- * the markup is removed rather than styled.
+ * ``D1. `USAGE NATIONAL` inside a group, **measured**`` arrived in the contents
+ * list with its asterisks and backticks intact. A table of contents is one line
+ * of navigation, so the markup is removed rather than styled.
  */
 export function plainInline(text: string): string {
   return text
@@ -463,11 +462,11 @@ function depthOf(file: string): string {
  * The group labels are not headings.
  *
  * They were `h2`, and the sidebar precedes `<main>` in the document, so every
- * documentation page opened with four level-two headings before its own `h1` —
- * F17, and the reason `tests/site-layout.test.ts` asserting *one* `h1` passed
- * throughout. A screen-reader user moving by heading met "Start here", "The
- * output", "The language and the compiler" and "Everything else" before being
- * told what page they were on.
+ * documentation page opened with four level-two headings before its own `h1`.
+ * That is why `tests/site-layout.test.ts` asserting a single `h1` passed
+ * throughout: there was only ever one. A screen-reader user moving by heading
+ * met "Start here", "The output", "The language and the compiler" and
+ * "Everything else" before being told what page they were on.
  *
  * The other repair the ticket offered was to move the sidebar after `<main>`
  * and place it back with grid. That fixes the order and leaves four headings in
@@ -533,9 +532,10 @@ export function renderPage(doc: RenderedDoc, groups: NavGroup[]): string {
     <link rel="stylesheet" href="${up}/../assets/docs.css" />
 
     <!--
-      D3. Every documentation page shared as a bare link, with nothing for the
-      receiving client to render: no card, no title beyond the URL, no image.
-      Forty-two pages, and the ones people link to are the technical ones.
+      Every documentation page used to share as a bare link, with nothing for
+      the receiving client to render: no card, no title beyond the URL, no
+      image. Forty-two pages, and the ones people link to are the technical
+      ones.
 
       Filled from what the page already has rather than from a second source:
       the title is the document's own heading and the description is the first
@@ -626,17 +626,18 @@ ${group.entries
     file: "index.md",
     title: "Documentation",
     html: `<h1>Documentation</h1>
-<p class="lede">Everything this compiler claims, and what each claim rests on.
-Start with <a href="getting-started.html">Getting started</a> if you want to run
-it, <a href="for-mainframe-engineers.html">For mainframe engineers</a> if you
-want to read the COBOL, and
+<p class="lede">The language, the COBOL it generates, and the evidence behind
+every claim made on this site.</p>
+<p>Three places to start: <a href="getting-started.html">Getting started</a> if
+you want to run it, <a href="for-mainframe-engineers.html">For mainframe
+engineers</a> if you have to review the COBOL, and
 <a href="for-decision-makers.html">For the person deciding</a> if you have to
-accept the risk rather than the output.</p>
+sign off the risk.</p>
 ${cards}`,
     text:
-      "Everything this compiler claims, and what each claim rests on: the " +
-      "generated COBOL, the rules that refuse a program, the numeric model, " +
-      "and how each is verified.",
+      "The language, the COBOL it generates, and the evidence behind every " +
+      "claim: the generated code, the rules that refuse a program, the " +
+      "numeric model, and how each of them is verified.",
     headings: [],
   };
 
@@ -720,7 +721,7 @@ export interface SearchEntry {
  * the numeric model is 6.6 KB, the diagnostics catalogue is 29 KB, and a reader
  * searching for a term that appears past the first page of either got nothing.
  * The whole corpus is 265 KB of text, fetched once on the first keystroke and
- * never on a page that is only read — a quarter of a megabyte to make a
+ * never on a page that is only read: a quarter of a megabyte to make a
  * documentation site searchable is a trade worth making.
  */
 export function searchIndex(groups: NavGroup[], docs: RenderedDoc[]): string {

@@ -10,7 +10,7 @@ import {
  * The defects BankLang claims to prevent, compiled to prove it.
  *
  * The OpenCBS suite is 43 defects real COBOL developers reported on public
- * forums, reconstructed as programs. It is easy — and worthless — to read that
+ * forums, reconstructed as programs. It is easy, and worthless, to read that
  * list and assert that a safer language would have caught most of them. So the
  * rule for the defect-coverage matrix is that nothing may be reported as
  * prevented without a program here that the compiler refuses, and this is where
@@ -22,7 +22,7 @@ import {
  * regressed.
  *
  * **These reproduce the defect, not the upstream COBOL.** Each was written from
- * the defect's own description — the banner comment saying what went wrong and
+ * the defect's own description: the banner comment saying what went wrong and
  * why. A transliteration of the upstream program would only establish that
  * BankTS cannot parse COBOL.
  *
@@ -92,7 +92,7 @@ describe("defects from the OpenCBS suite, against the compiler", () => {
  * The compiler defect horizontal validation found, kept fixed.
  *
  * Writing COBOLEval's `is_prime` from its specification needs a conditional
- * inside a trial-division loop — in a function, because the task is a
+ * inside a trial-division loop, in a function, because the task is a
  * computation rather than a unit of work. That was refused with
  * `BANK-TYPE-007`, while a `switch` in exactly the same position compiled.
  *
@@ -209,7 +209,7 @@ function walk(totals: Totals): bool {
 /**
  * Diagnostics that named an internal AST node instead of the syntax.
  *
- * "A IfStatement is not allowed inside a loop body." — the wrong article in
+ * "A IfStatement is not allowed inside a loop body.": the wrong article in
  * front of a word that appears nowhere in BankTS, in a message whose only job
  * is to tell somebody which line to change.
  */

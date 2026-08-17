@@ -34,7 +34,7 @@ import {
  * Decimal arithmetic and the bytes it is stored in.
  *
  * `packages/cobol-runtime/src/value.ts` scored 37.44% the first time anything
- * measured it — 232 survivors and 52 mutants nothing executed — because every
+ * measured it, with 232 survivors and 52 mutants nothing executed, because every
  * test that reached it did so through whole programs. That exercises the
  * encodings the emitter generates and nothing else, and this file implements
  * rather more: the EBCDIC overpunch, the separate sign at either end, binary at
@@ -165,7 +165,7 @@ describe("the overpunched sign", () => {
   /**
    * GnuCOBOL's default ASCII configuration writes the EBCDIC overpunch, so a
    * signed unseparated DISPLAY field carries its sign in the last digit. No
-   * generated record holds one — money is COMP-3 and counters are COMP — which
+   * generated record holds one: money is COMP-3 and counters are COMP, which
    * is exactly why nothing reached this.
    */
   it("recognises both halves of the overpunch table", () => {
@@ -293,7 +293,7 @@ describe("editing a value for display", () => {
    * `Z` blanks a suppressed position and `*` fills it, and the difference
    * reaches the insertion characters inside the suppressed run. A comma left as
    * a space in an asterisk-protected field is a gap on a cheque exactly where
-   * the protection is supposed to be — this printed `** **1.00` for `1.00`
+   * the protection is supposed to be, this printed `** **1.00` for `1.00`
    * through `PIC **,**9.99` until the picture was measured.
    */
   it("fills a suppressed comma with the protection symbol, not a space", () => {

@@ -6,7 +6,7 @@
  * `packages/cobol-runtime` is the second implementation of this project's
  * semantics, and every differential result depends on it understanding the
  * program it is handed. When it does not, the comparison silently does not
- * happen — which is how `task_func_02` came to pass under `cobc` with no
+ * happen, which is how `task_func_02` came to pass under `cobc` with no
  * differential result at all: the interpreter had no `UNSTRING`, refused the
  * statement, and the harness recorded `differentialAgreement: null`.
  *
@@ -102,7 +102,7 @@ const EXTERNAL = new Set(["EXEC SQL", "EXEC CICS", "EXEC DLI"]);
  * The distinction this file exists to draw is between a verb the interpreter is
  * *missing* and a verb that has nowhere local to run. Eight blind spots read as
  * eight things to build; four of them were `SORT`, `MERGE`, `RELEASE` and
- * `RETURN`, and the other four are these — one driven by a runner that is not
+ * `RETURN`, and the other four are these: one driven by a runner that is not
  * on this machine, three expanded by a precompiler this repository does not
  * ship. Counting them together made the real gap look half the size it was.
  *
@@ -136,7 +136,7 @@ export interface CoverageReport {
   verbs: VerbCoverage[];
   /** Emitted and reachable by a local run: the denominator that matters. */
   local: VerbCoverage[];
-  /** Emitted, not interpreted, not exempt — ordered by how much COBOL uses them. */
+  /** Emitted, not interpreted, not exempt, ordered by how much COBOL uses them. */
   gaps: VerbCoverage[];
   /** Emitted, and outside local execution for a recorded reason. */
   exempt: VerbCoverage[];
@@ -163,15 +163,15 @@ export function interpretedVerbs(cwd = process.cwd()): Set<string> {
  *
  * `freshArtifacts` rather than reading `evidence/`, which holds a bundle for
  * only some examples: measuring there reported zero blind spots while the
- * report-writer and sort programs — the ones emitting `INITIATE`, `GENERATE`,
- * `RELEASE` and `RETURN` — were not in the sample at all. This is the same
+ * report-writer and sort programs, the ones emitting `INITIATE`, `GENERATE`,
+ * `RELEASE` and `RETURN`, were not in the sample at all. This is the same
  * enumeration `pnpm lint:conformance` uses, so the two cannot disagree about
  * what the compiler produces.
  *
  * The benchmark implementations are in the sample too, and adding them was a
  * finding rather than a tidy-up. `SORT` and `MERGE` appear in no example, so
  * the matrix reported four blind spots while two CobolCodeBench tasks passed
- * under `cobc` with no differential result at all — the thing this file was
+ * under `cobc` with no differential result at all, the thing this file was
  * built to make impossible. Coverage measured over a body of code that happens
  * to avoid the gap is not coverage.
  */
@@ -356,7 +356,7 @@ export function renderCoverage(report: CoverageReport): string {
  * Exported so a test can hold it: `main` writes a file and prints, which a
  * test must not do, and the one line that decides whether a build goes red is
  * the line most worth pinning. Mutating `=== 0` to `!== 0` here turns the gate
- * into its own opposite — green on every blind spot, red on none — and nothing
+ * into its own opposite, green on every blind spot and red on none, and nothing
  * in this repository noticed.
  */
 export function exitCodeFor(report: CoverageReport): number {

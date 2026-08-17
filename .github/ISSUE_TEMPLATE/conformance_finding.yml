@@ -9,7 +9,7 @@ body:
 
         Everything here is validated with GnuCOBOL, under a dialect shaped to
         Enterprise COBOL 6.4 and under GnuCOBOL's own default. No IBM Enterprise
-        COBOL validation has been performed, and none is claimed — so the gap
+        COBOL validation has been performed, and none is claimed, so the gap
         between what this compiler emits and what `IGYCRCTL` accepts is exactly
         the thing the project cannot see for itself.
 
@@ -41,7 +41,7 @@ body:
       label: Where it says so
       description: |
         The manual and section, if you have it to hand. A publication number is
-        ideal — SC27-8713-03 is the 6.4 Language Reference. "I have seen this
+        ideal. SC27-8713-03 is the 6.4 Language Reference. "I have seen this
         fail in production" is also an answer.
       placeholder: LR, "FILE STATUS clause" / SC27-8713-03
     validations:

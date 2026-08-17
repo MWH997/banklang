@@ -52,7 +52,7 @@ entry transaction readMaster(account: AccountRecord, summary: RunSummary) {
   }
 
   if masterStatus == "37" {
-    // Opened for a mode the device cannot do — INPUT against a printer, or a
+    // Opened for a mode the device cannot do: INPUT against a printer, or a
     // sequential OPEN of something defined to VSAM as a KSDS.
     log "ACCOUNTMASTER WRONG DEVICE OR ORGANISATION";
     raise "INPUT_WRONG_DEVICE";

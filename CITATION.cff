@@ -1,4 +1,4 @@
-# Citation File Format 1.2.0 — https://citation-file-format.github.io
+# Citation File Format 1.2.0: https://citation-file-format.github.io
 #
 # GitHub reads this to offer a "Cite this repository" button, and Zenodo and
 # similar archives read it for author and licence metadata. The launch
@@ -28,7 +28,7 @@ abstract: >-
   and queues, to readable IBM Enterprise COBOL, a copybook for every record,
   and the JCL to build and run it. Compilation is deterministic: no model
   decides what is generated, and the same input always produces byte-identical
-  output. The compiler refuses to compile financially unsafe programs —
+  output. The compiler refuses to compile financially unsafe programs:
   unbalanced ledger postings, retries with no idempotency key, and money
   movement with no audit trail are compile errors rather than review comments.
   Generated COBOL is validated locally with GnuCOBOL; no IBM Enterprise COBOL

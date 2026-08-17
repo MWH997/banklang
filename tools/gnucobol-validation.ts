@@ -39,8 +39,8 @@ export interface GnucobolValidationSummary {
    *
    * Run for the difference, not for the pass. The default dialect accepts a
    * 31-character word and COBOL 2002 rounding, so a program that compiles there
-   * and not under the IBM configuration is a program the target rejects — which
-   * is exactly the shape of every defect the 2026-08-05 audit found.
+   * and not under the IBM configuration is a program the target rejects, which
+   * is exactly the shape of every defect the external audit found.
    */
   defaultDialectStatus: "passed" | "failed" | "skipped";
   defaultDialectOutput: string | null;
@@ -86,8 +86,8 @@ export function runGnucobolValidation(
   const typechecked = typecheckProgram(parsed.program);
   diagnostics.push(...typechecked.diagnostics);
   // A warning is a hazard the compiler wants recorded, not a reason to refuse
-  // to validate. Stopping on one meant the program most worth compiling here —
-  // the one carrying a known caveat — was the one never compiled.
+  // to validate. Stopping on one meant the program most worth compiling here,
+  // the one carrying a known caveat, was the one never compiled.
   if (
     diagnostics.some((diagnostic) => diagnostic.severity === "error") ||
     !typechecked.program
@@ -150,7 +150,7 @@ export function runGnucobolValidation(
   //
   // Every artifact goes through it now, whether or not it embeds anything: the
   // program opens with a `CBL` statement naming the compiler options its
-  // behaviour depends on, which IBM's compiler reads and GnuCOBOL cannot — it
+  // behaviour depends on, which IBM's compiler reads and GnuCOBOL cannot. It
   // sees `CBL` in column 1 and reports an invalid indicator in column 7. What
   // `precompiled` records is whether a real preprocessor was needed, because
   // that is the claim a reader cares about; removing one line is not the same
@@ -188,7 +188,7 @@ export function runGnucobolValidation(
         }),
       )?.split("\n")[0] ?? null;
     // A batch program that takes entry parameters reads them from the job's
-    // PARM, so it has `PROCEDURE DIVISION USING` — and `cobc -x` refuses to
+    // PARM, so it has `PROCEDURE DIVISION USING`, and `cobc -x` refuses to
     // build an executable out of one ("executable program requested but
     // PROCEDURE/ENTRY has USING clause"), because a Unix process has no
     // parameter list to pass. On z/OS the initiator builds one and the program
@@ -206,7 +206,7 @@ export function runGnucobolValidation(
       // Fixed reference format, which is the only one z/OS reads: columns 8-72,
       // with column 7 the indicator area. GnuCOBOL guesses the format from the
       // first line and will happily read the whole program as free format,
-      // where no column matters — which is what it used to do here, so a
+      // where no column matters, which is what it used to do here, so a
       // program whose every other line ran past column 72 passed local
       // validation and could not have compiled on the target at all.
       "-fixed",

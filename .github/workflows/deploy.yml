@@ -7,8 +7,8 @@ name: deploy
 # would be a second definition of all three that drifts from `ci.yml`. This runs
 # the same `pnpm build:site` a contributor runs and uploads what it produced.
 #
-# `dist/site/_headers` is read by Pages, so the content security policy — which
-# names the sha256 of every inline script on every page — ships with the upload
+# `dist/site/_headers` is read by Pages, so the content security policy, which
+# names the sha256 of every inline script on every page, ships with the upload
 # rather than being configured anywhere a person could forget.
 #
 # Deploys the default branch only. A push that fails `ci.yml` still deploys,
@@ -65,7 +65,7 @@ jobs:
       # Refuse to publish a build that lost the content policy. `build:site`
       # throws when a hash placeholder is unfilled, but an empty or truncated
       # `_headers` would upload silently and every inline script on the site
-      # would stop running — the theme on all of them, and the docs search.
+      # would stop running: the theme on all of them, and the docs search.
       - name: Check the response headers survived the build
         run: |
           test -s dist/site/_headers || { echo "::error::dist/site/_headers is missing or empty."; exit 1; }
@@ -77,7 +77,7 @@ jobs:
       # `npx`, not `cloudflare/wrangler-action`. The action installs its own
       # pinned wrangler into the checkout with the repository's package manager,
       # and pnpm 11 exits non-zero on `workerd`'s ignored build scripts, so the
-      # deploy failed before it started — after adding wrangler to this
+      # deploy failed before it started, after adding wrangler to this
       # repository's dependency tree, which would also have put sixty-one
       # packages into the bill of materials the release publishes.
       #

@@ -1,9 +1,9 @@
 /**
  * Every artifact this repository ships or would ship, as text.
  *
- * Two linters read the same set for two different questions — will the
+ * Two linters read the same set for two different questions. Will the
  * toolchain accept this (`tools/conformance-lint.ts`), and will z/OS do what
- * the program says (`tools/zos-lint.ts`) — and the set is collected once here
+ * the program says (`tools/zos-lint.ts`)? The set is collected once here
  * so that a lane cannot pass by reading fewer artifacts than the other.
  */
 

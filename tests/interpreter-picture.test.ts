@@ -19,7 +19,7 @@ import {
  * The rest matters because this file decides how many bytes a field is and where
  * its digits sit. `tests/cobol-runtime-differential.test.ts` compares this
  * interpreter against `cobc` byte for byte, so a picture read one byte short
- * moves every field after it and the comparison fails somewhere else entirely —
+ * moves every field after it and the comparison fails somewhere else entirely,
  * which is exactly what happened when `SIGN IS LEADING SEPARATE` was ignored and
  * every PARM parameter after the first amount was read from the wrong offset.
  */
@@ -94,7 +94,7 @@ describe("the category a picture describes", () => {
 
   /**
    * On an edited picture the decimal point is a real character, so it occupies
-   * a byte and does not count as a digit — unlike the assumed `V` above.
+   * a byte and does not count as a digit, unlike the assumed `V` above.
    */
   it("counts digits and scale on a numeric-edited picture", () => {
     const picture = parsePicture("ZZ,ZZ9.99");
@@ -105,7 +105,7 @@ describe("the category a picture describes", () => {
   /**
    * A floating sign string of n symbols supplies n-1 digit positions: one of
    * them is spent on the sign itself. `---9` is therefore three digits, not
-   * four — the `9`, plus two of the three dashes.
+   * four: the `9`, plus two of the three dashes.
    */
   it("credits a floating sign string with all but one of its symbols", () => {
     expect(parsePicture("---9").digits).toBe(3);

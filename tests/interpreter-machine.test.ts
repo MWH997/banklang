@@ -24,14 +24,14 @@ const records = (...values: string[]): Uint8Array[] =>
  * Execution paths the interpreter has that no program had ever taken.
  *
  * `packages/cobol-runtime/src/machine.ts` scored 22.17% the first time anything
- * measured it — the lowest of any file in the project, with 603 mutants nothing
+ * measured it: the lowest of any file in the project, with 603 mutants nothing
  * executed. The cause is the same as its neighbours': the lane that covered the
  * runtime globbed the whole package and was cancelled at the three-hour job
  * timeout every time, so no report was ever produced.
  *
  * What the corpus reaches is what the emitter emits. `STRING`, the intrinsic
  * functions and `SORT` are all things the hand-written COBOL in `runtime/` and
- * a migrated program use, and all things this interpreter claims to implement —
+ * a migrated program use, and all things this interpreter claims to implement,
  * so each is a claim with nothing behind it until a program here runs it.
  */
 
@@ -192,7 +192,7 @@ describe("intrinsic functions", () => {
   /**
    * Scaled to a whole number before it is displayed, deliberately. How a
    * `DISPLAY` of a field with an assumed decimal point renders is a question of
-   * its own, and one this suite has no business settling in passing — see D22
+   * its own, and one this suite has no business settling in passing. See D22
    * and D25 in `docs/divergences.md` for the shape such a question takes.
    */
   it("reads a number out of text with NUMVAL", () => {
@@ -227,7 +227,7 @@ describe("intrinsic functions", () => {
  *
  * `tests/runtime-semantics.test.ts` covers the sort forms this interpreter
  * *refuses*. What nothing covered is the sort that works: reading the input
- * into the work file, ordering it, and writing it back out — nor the input and
+ * into the work file, ordering it, and writing it back out, nor the input and
  * output procedures that `RELEASE` and `RETURN` feed.
  */
 const SORT_PREAMBLE = `       IDENTIFICATION DIVISION.
@@ -414,7 +414,7 @@ describe("sequential file handling", () => {
 
   /**
    * Opening a file that is not there is status 35, and the program is expected
-   * to read it and decide — not to fail. A batch step that treats a missing
+   * to read it and decide rather than to fail. A batch step that treats a missing
    * input as an empty one posts nothing and reports success.
    */
   it("reports status 35 for an input file that is not there", () => {
@@ -1079,8 +1079,8 @@ describe("NUMVAL and NUMVAL-C parsing", () => {
  * An indexed file, which is how a real batch program reaches a record by key.
  *
  * Nothing had ever run `START` under this interpreter: the emitter generates
- * sequential access, so the whole comparison table below — six operators, each
- * its own arm — went unexecuted.
+ * sequential access, so the whole comparison table below (six operators, each
+ * its own arm) went unexecuted.
  */
 const INDEXED_PREAMBLE = `       IDENTIFICATION DIVISION.
        PROGRAM-ID. IXRUN.
@@ -1272,7 +1272,7 @@ describe("START on an indexed file", () => {
 describe("what a field holds before a program writes to it", () => {
   /**
    * Storage is initialised by category, not by zeroing the bytes. A numeric
-   * item starts as a valid zero in its own encoding — a packed field zeroed by
+   * item starts as a valid zero in its own encoding: a packed field zeroed by
    * bytes would carry a sign nibble no compiler ever writes, and reading it
    * back is undefined.
    */
@@ -1422,7 +1422,7 @@ describe("file status on operations that cannot work", () => {
    * Closing a file that was never opened is status 42, not success.
    *
    * Reporting `00` told a program that checks its status after every operation
-   * — which is what `BANK-FILE-001` exists to require — that a close it never
+   * which is what `BANK-FILE-001` exists to require, that a close it never
    * had an open for had worked. Confirmed against `cobc`, which reports 42.
    */
   it("reports status 42 for a close with no open", () => {
@@ -1527,7 +1527,7 @@ describe("ROUNDED", () => {
   /**
    * Enterprise COBOL rounds half **away from zero**, not to even and not toward
    * positive. The two directions differ only on a value ending exactly in five,
-   * which is the case a rounding bug hides in — and money is full of them.
+   * which is the case a rounding bug hides in, and money is full of them.
    *
    * Every figure here was taken from `cobc` 3.2.0 before it was asserted.
    */
@@ -1589,7 +1589,7 @@ describe("INTEGER against INTEGER-PART", () => {
    * `INTEGER` is the greatest integer *not above* the value and `INTEGER-PART`
    * truncates toward zero. They agree on every positive number and differ on
    * every negative one with a fraction, which is the only thing that tells them
-   * apart — and the reason a mutant routing one to the other survives until a
+   * apart, and the reason a mutant routing one to the other survives until a
    * negative is tried.
    */
   const cases: [expression: string, expected: string][] = [

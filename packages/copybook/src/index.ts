@@ -97,11 +97,11 @@ export function describeRecordLayout(record: IRRecord): CopybookRecordLayout {
 
   for (const field of record.fields) {
     // A renames is a second name for a run already laid out, so it is not part
-    // of the layout — the emitter writes it as a level-66 after the fields.
+    // of the layout: the emitter writes it as a level-66 after the fields.
     if (field.renames) {
       continue;
     }
-    // A redefining field starts where the field it redefines starts — it is a
+    // A redefining field starts where the field it redefines starts, being a
     // second reading of the same bytes, not the next ones. Reporting it at the
     // running offset put it after the storage it shares.
     //
@@ -165,7 +165,7 @@ export function fieldLength(type: IRType, base = 0): number {
       // Each occurrence is padded to the largest boundary anything inside it
       // demanded, so that every occurrence has the same internal layout. Without
       // it the second one starts on a different boundary from the first and its
-      // fields sit somewhere else — which is why COBOL adds the bytes rather
+      // fields sit somewhere else, which is why COBOL adds the bytes rather
       // than leaving the table ragged.
       const element = fieldLength(type.element, base);
       const boundary = innerAlignmentOf(type.element, base);
@@ -265,7 +265,7 @@ function readCopybookEntries(lines: CopybookSourceLine[]): CopybookEntry[] {
       .join(" ")
       .replace(/\s+/g, " ")
       .replace(/\.$/, "");
-    // The line the entry begins on, which is where a reader looks first — not
+    // The line the entry begins on, which is where a reader looks first, not
     // the line the period happened to fall on after two continuations.
     const at = pending[0]!.line;
     pending = [];
@@ -324,7 +324,7 @@ export function copybookSourceLines(sourceText: string): CopybookSourceLine[] {
    * Columns 1-6 are the sequence area, 7 is the indicator, and 73 onwards is
    * identification. Only columns 8 to 72 are the program.
    *
-   * The importer already dropped the sequence area — `line.slice(6)` — and
+   * The importer already dropped the sequence area (`line.slice(6)`) and
    * this reader dropped only the identification area, so the two disagreed
    * about the same file. A member carrying sequence numbers, which is what a
    * PDS from a real shop is full of, imported and then could not be inspected
@@ -332,7 +332,7 @@ export function copybookSourceLines(sourceText: string): CopybookSourceLine[] {
    * ACCOUNT-ID PIC X(16)`.
    *
    * The indicator is read from the *unsliced* line, because after slicing it
-   * is no longer in column 7 — doing it the other way round read a `/` page
+   * is no longer in column 7. Doing it the other way round read a `/` page
    * eject as the start of a data description entry.
    */
   return sourceText
@@ -341,7 +341,7 @@ export function copybookSourceLines(sourceText: string): CopybookSourceLine[] {
       const program = line.length > 72 ? line.slice(0, 72) : line;
       // Only where columns 1-6 really are a sequence area: all blank, or all
       // digits. Slicing unconditionally cut into a copybook written without
-      // one — `    05  LEGACY-BAL` became `GACY-BAL` — and plenty of them are,
+      // one, so `    05  LEGACY-BAL` became `GACY-BAL`, and plenty of them are,
       // including every copybook this emitter writes into a test.
       const sequenced = /^(?:\s{6}|\d{6})/.test(program);
       return {
@@ -667,7 +667,7 @@ export function renderCopybookLayoutDocument(
  * Bytes a generated picture occupies, for the copybook inspector and diff.
  *
  * This reads what this compiler emits, which is a narrower language than COBOL
- * allows — a general copybook parser is a different and larger job. It has to
+ * allows, because a general copybook parser is a different and larger job. It has to
  * keep up with the emitter, though: it once knew only `PIC X` and `COMP-3`, and
  * every field the numeric-usage, temporal, and edited work added made it throw
  * on the compiler's own output.
@@ -749,7 +749,7 @@ function renderFieldSummary(field: CopybookInspectionField | null): string {
  * redefines nested inside a group is anchored the same way as one at the top.
  * The recursion is why it existed as two half-implementations: the top level
  * carried the anchor and the child loop did not, and a redefines inside a group
- * was reported at the running offset — past the storage it aliases.
+ * was reported at the running offset, past the storage it aliases.
  */
 function walkLayoutFields(
   fields: IRRecord["fields"],
@@ -764,7 +764,7 @@ function walkLayoutFields(
 
   for (const field of fields) {
     // A renames is a second name for a run already laid out, so it is not part
-    // of the layout — the emitter writes it as a level-66 after the fields.
+    // of the layout: the emitter writes it as a level-66 after the fields.
     if (field.renames) {
       continue;
     }
@@ -790,7 +790,7 @@ function walkLayoutFields(
       // The redefinition usually fits inside what it redefines and the record
       // goes on from where it already was. Where it is longer, COBOL extends
       // the storage area rather than overrunning it, so the record ends at the
-      // longest reading of it — reporting the shorter one would leave every
+      // longest reading of it. Reporting the shorter one would leave every
       // later field described at an offset the dataset does not have.
       offset = Math.max(offset, end);
     } else {

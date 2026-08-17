@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  *
  * Both findings below are the same shape: a workflow file is the only record of
  * a decision, nothing reads it, and it drifts. `ci.yml`'s comments are the best
- * account in this repository of what has gone wrong before — which is worth
+ * account in this repository of what has gone wrong before, which is worth
  * having, and is not a check.
  */
 
@@ -28,11 +28,10 @@ function job(source: string, name: string): string {
 }
 
 /**
- * G4. The audit's claim was that "the tool exists and nothing runs it". At the
- * commit it was written against, `scheduled.yml` already had a `citations` job,
- * so the finding was wrong — but the failure mode it names is real and cheap to
- * make impossible, and a script nobody invokes is exactly how
- * `tools/check-citations.ts` would have looked a week after it was written.
+ * A script nobody invokes is exactly how `tools/check-citations.ts` would have
+ * looked a week after it was written. `scheduled.yml` does have a `citations`
+ * job, and the failure mode is cheap enough to make impossible that it is worth
+ * asserting rather than assuming.
  *
  * Both directions, because the placement is a decision rather than an accident.
  */
@@ -50,12 +49,12 @@ describe("the citation check", () => {
 });
 
 /**
- * G5. `if: always()` on the SARIF steps meant a red run re-invoked the compiler
+ * `if: always()` on the SARIF steps meant a red run re-invoked the compiler
  * after the step that had just proved it was broken, and published the result
  * to the Security tab as this commit's verdict.
  *
  * Asserted on the step rather than on the whole file, because `always()` is
- * right elsewhere — the mutation lanes upload their report whatever the score
+ * right elsewhere: the mutation lanes upload their report whatever the score
  * was, which is the point of running them.
  */
 describe("the SARIF report", () => {

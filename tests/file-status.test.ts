@@ -12,15 +12,15 @@ import { checked, corpus, flowed, localCobol } from "./helpers";
  * The file status key, tested after every I/O statement rather than after
  * `OPEN` alone.
  *
- * IBM's guidance is unambiguous — "check the file status key after each input
- * or output request" — and until this existed only `OPEN` was checked. A
+ * IBM's guidance is unambiguous, "check the file status key after each input
+ * or output request", and until this existed only `OPEN` was checked. A
  * `WRITE` that filled the volume, a `CLOSE` that could not write its last
  * buffer, a `DELETE` against a record that had already gone: each set the
  * status, nothing read it, and the batch carried on to a return code of zero.
  * A short output file that reports success is the failure nobody investigates
  * until someone reconciles a month later.
  *
- * The test is on the status *key* — the first character — because "00" is not
+ * The test is on the status *key*, the first character, because "00" is not
  * the only success. Class 0 is successful completion and includes "02" (a
  * duplicate alternate key was written where duplicates are allowed), "04" (a
  * record of a different length from the description), "05" and "07".
@@ -51,7 +51,7 @@ const INDEXED = `file store indexed update record Master key accountId status st
 describe("the condition each check tests", () => {
   /**
    * On the successful-completion group, not on `= "00"`. A check written
-   * `NOT = "00"` stops the job for a status that says the operation worked —
+   * `NOT = "00"` stops the job for a status that says the operation worked,
    * which for an OPTIONAL file created on its first run means a restartable
    * batch could never run its first night.
    *
@@ -200,7 +200,7 @@ describe("which statements are checked", () => {
  *
  * A `varying` record written shorter than its declared minimum is the failure
  * that is inducible without breaking the machine: COBOL refuses the write and
- * sets status 44. Before this check the record simply was not written — no
+ * sets status 44. Before this check the record simply was not written: no
  * message, no return code, an output file short by one record and a job that
  * ended saying it had worked.
  */
@@ -261,7 +261,7 @@ entry transaction emit1(line: FeedLine, note: Note) {
 /**
  * Every I/O statement's status, over every example.
  *
- * The rule is not "OPEN is checked" — it is that no I/O statement is left
+ * The rule is that no I/O statement is left unchecked, rather than merely that
  * unchecked, and the difference only shows on programs nobody wrote for this
  * test. Each file declared in the corpus has to have condition names, and each
  * of its statements a test of them.
@@ -305,7 +305,7 @@ describe("across the corpus", () => {
 
     // Its own floor. The loop above shares this file with one that already
     // states a floor, and the meta-test in tests/feature-coverage.test.ts only
-    // asks the question once per file — so this one was reachable with nothing
+    // asks the question once per file, so this one was reachable with nothing
     // to find and would have passed over an empty corpus.
     checked(statusFields, 20, "file status fields");
   });

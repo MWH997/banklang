@@ -17,7 +17,7 @@ record AccrualCounts {
 }
 
 // The cursor is a declaration, and the OPEN and CLOSE are generated around the
-// loop that reads it. The original could — and in a later release did — return
+// loop that reads it. The original could, and in a later release did, return
 // from inside `2000-FETCH` and leave the cursor open, holding Db2 locks for the
 // rest of the batch window.
 cursor accountsInBranch(keyBranch: string<8>): AccountRow {

@@ -1,16 +1,16 @@
 /**
  * The two kinds of failure that are not diagnostics, told apart.
  *
- * The 2026-08-07 audit's F20 counted 38 `throw new Error` sites across the
- * compiler and found at least one reachable from ordinary input. F1 put a
- * boundary at the CLI so none of them reaches a user as a Node stack trace and
- * a version banner. This is the other half, F3: **which of them is the user's
- * fault, and which is the compiler's.**
+ * There were 38 `throw new Error` sites across the compiler, at least one of
+ * them reachable from ordinary input. A boundary at the CLI stops any of them
+ * reaching a user as a Node stack trace and a version banner. This file is the
+ * other half: **which of them is the user's fault, and which is the
+ * compiler's.**
  *
  * The distinction is not cosmetic. It decides what the message says, what the
  * reader should do next, and whether a stack trace is the right output:
  *
- * - **`BankcError`** is a fault in what the user handed the tool — a copybook
+ * - **`BankcError`** is a fault in what the user handed the tool: a copybook
  *   that is not a copybook, a `job.json` with no steps. It carries a catalogue
  *   identifier, so `bankc explain` answers for it exactly as it does for a
  *   diagnostic the typechecker raised, and a location where there is one. No
@@ -25,14 +25,14 @@
  *
  * `tests/errors.test.ts` holds the rule that keeps this honest: no compiler
  * package throws a bare `Error`. Every failure is classified, because an
- * unclassified one is the shape both halves of F20 came in.
+ * unclassified one is the shape both of those defects came in.
  */
 
 /**
  * A failure the user can fix, with a catalogue entry that says how.
  *
  * The identifier is the same namespace the typechecker's diagnostics use and is
- * held to the same rules — `tests/diagnostic-catalogue.test.ts` requires an
+ * held to the same rules: `tests/diagnostic-catalogue.test.ts` requires an
  * entry, and `tests/feature-coverage.test.ts` requires a test that provokes it.
  * An error message with an identifier nobody can look up is a string.
  */

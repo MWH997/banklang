@@ -22,7 +22,7 @@
    * to submit to, and submitting it would navigate away from the results.
    *
    * This was an `onsubmit="return false"` attribute in the markup, which is an
-   * inline event handler — the one thing a hash-based Content-Security-Policy
+   * inline event handler, the one thing a hash-based Content-Security-Policy
    * cannot allow, because hashes cover script *elements* and handlers are
    * attributes. Dropping `unsafe-inline` from `script-src` with the attribute
    * still there would have left Enter submitting the form on all forty-five
@@ -70,8 +70,8 @@
    * Title matches first, then body matches.
    *
    * Deliberately not a relevance score. A reader searching the documentation of
-   * a compiler is nearly always looking for a page by name — `EIBRESP`,
-   * `rounding`, `BANK-LED-001` — and a title hit is what they meant.
+   * a compiler is nearly always looking for a page by name (`EIBRESP`,
+   * `rounding`, `BANK-LED-001`) and a title hit is what they meant.
    */
   const search = (query) => {
     const needle = query.trim().toLowerCase();

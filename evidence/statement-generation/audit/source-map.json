@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 102,
-      "targetEndLine": 107,
+      "targetStartLine": 104,
+      "targetEndLine": 109,
       "category": "record",
       "symbol": "LedgerEntry"
     },
@@ -47,8 +47,8 @@
         "column": 24
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 103,
-      "targetEndLine": 105,
+      "targetStartLine": 105,
+      "targetEndLine": 107,
       "category": "field",
       "symbol": "entryKind"
     },
@@ -63,8 +63,8 @@
         "column": 25
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 106,
-      "targetEndLine": 106,
+      "targetStartLine": 108,
+      "targetEndLine": 108,
       "category": "field",
       "symbol": "narrative"
     },
@@ -79,8 +79,8 @@
         "column": 15
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 107,
-      "targetEndLine": 107,
+      "targetStartLine": 109,
+      "targetEndLine": 109,
       "category": "field",
       "symbol": "amount"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 108,
-      "targetEndLine": 128,
+      "targetStartLine": 110,
+      "targetEndLine": 130,
       "category": "record",
       "symbol": "Statement"
     },
@@ -111,8 +111,8 @@
         "column": 25
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 109,
-      "targetEndLine": 109,
+      "targetStartLine": 111,
+      "targetEndLine": 111,
       "category": "field",
       "symbol": "accountId"
     },
@@ -127,8 +127,8 @@
         "column": 36
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 110,
-      "targetEndLine": 110,
+      "targetStartLine": 112,
+      "targetEndLine": 112,
       "category": "field",
       "symbol": "holderName"
     },
@@ -143,8 +143,8 @@
         "column": 36
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 111,
-      "targetEndLine": 111,
+      "targetStartLine": 113,
+      "targetEndLine": 113,
       "category": "field",
       "symbol": "nationalId"
     },
@@ -159,8 +159,8 @@
         "column": 25
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 112,
-      "targetEndLine": 116,
+      "targetStartLine": 114,
+      "targetEndLine": 118,
       "category": "field",
       "symbol": "status"
     },
@@ -175,8 +175,8 @@
         "column": 23
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 117,
-      "targetEndLine": 117,
+      "targetStartLine": 119,
+      "targetEndLine": 119,
       "category": "field",
       "symbol": "openingBalance"
     },
@@ -191,8 +191,8 @@
         "column": 23
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 118,
-      "targetEndLine": 118,
+      "targetStartLine": 120,
+      "targetEndLine": 120,
       "category": "field",
       "symbol": "closingBalance"
     },
@@ -207,8 +207,8 @@
         "column": 27
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 119,
-      "targetEndLine": 125,
+      "targetStartLine": 121,
+      "targetEndLine": 127,
       "category": "field",
       "symbol": "lines"
     },
@@ -223,8 +223,8 @@
         "column": 45
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 126,
-      "targetEndLine": 127,
+      "targetStartLine": 128,
+      "targetEndLine": 129,
       "category": "field",
       "symbol": "relationshipManager"
     },
@@ -239,8 +239,8 @@
         "column": 30
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 128,
-      "targetEndLine": 128,
+      "targetStartLine": 130,
+      "targetEndLine": 130,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -255,8 +255,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 129,
-      "targetEndLine": 136,
+      "targetStartLine": 131,
+      "targetEndLine": 138,
       "category": "record",
       "symbol": "AccountMaster"
     },
@@ -271,8 +271,8 @@
         "column": 25
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 130,
-      "targetEndLine": 130,
+      "targetStartLine": 132,
+      "targetEndLine": 132,
       "category": "field",
       "symbol": "accountId"
     },
@@ -287,8 +287,8 @@
         "column": 25
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 131,
-      "targetEndLine": 135,
+      "targetStartLine": 133,
+      "targetEndLine": 137,
       "category": "field",
       "symbol": "status"
     },
@@ -303,8 +303,8 @@
         "column": 16
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 136,
-      "targetEndLine": 136,
+      "targetStartLine": 138,
+      "targetEndLine": 138,
       "category": "field",
       "symbol": "balance"
     },
@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 173,
-      "targetEndLine": 182,
+      "targetStartLine": 199,
+      "targetEndLine": 208,
       "category": "function",
       "symbol": "isStatementable"
     },
@@ -335,8 +335,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 183,
-      "targetEndLine": 195,
+      "targetStartLine": 209,
+      "targetEndLine": 221,
       "category": "function",
       "symbol": "suppressionReason"
     },
@@ -351,8 +351,8 @@
         "column": 2
       },
       "artifact": "cobol/STATEMEN.cbl",
-      "targetStartLine": 196,
-      "targetEndLine": 386,
+      "targetStartLine": 222,
+      "targetEndLine": 415,
       "category": "transaction",
       "symbol": "generateStatement"
     }

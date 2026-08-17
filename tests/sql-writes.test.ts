@@ -107,7 +107,7 @@ describe("the unit of work", () => {
 
   /**
    * CICS owns the syncpoint and commits Db2's work along with everything else,
-   * so an EXEC SQL COMMIT there is not merely redundant — Db2 rejects it at run
+   * so an EXEC SQL COMMIT there is worse than redundant: Db2 rejects it at run
    * time. This is what `BANK-SQL-004` was reserved for.
    */
   it("refuses a commit inside a CICS transaction", () => {
@@ -190,11 +190,11 @@ describe("the step's condition code", () => {
     expect(result.diagnostics).toEqual([]);
     // Held in working storage while the program runs, because RETURN-CODE is a
     // shared special register and every call the program makes overwrites it
-    // with the called program's own — a `returnCode = 4` followed by the audit
+    // with the called program's own, so a `returnCode = 4` followed by the audit
     // call used to reach the operating system as zero.
     expect(cobol).toContain("MOVE 4 TO BANK-RETURN-CODE");
     // It reaches the special register once, in `BANK-MAIN`, after everything
-    // the program performs has returned — which is what makes the ordering a
+    // the program performs has returned, which is what makes the ordering a
     // property of the control flow rather than of where the line happens to
     // sit in the file.
     expect(cobol).toContain(
@@ -275,7 +275,7 @@ entry transaction sweep(row: Row) {
  * statement goes through exactly like the isolation levels and `LOCK TABLE`
  * that the same page had already stopped claiming were missing. Writing it down
  * as a limit the compiler has, when it does not, is the same defect as claiming
- * a feature it lacks — it is just the one nobody checks.
+ * a feature it lacks. It is just the one nobody checks.
  *
  * What makes it work rather than merely pass through is the host-variable
  * resolution, which is the part a raw `EXEC SQL` in hand-written COBOL would

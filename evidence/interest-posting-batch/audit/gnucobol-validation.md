@@ -5,11 +5,11 @@
 | validated-with-gnucobol | yes |
 | backend-profile | gnucobol-local |
 | source-artifact | examples/interest-posting-batch/src/main.bank.ts |
-| source-artifact-sha256 | faccdd6801f0039055b3a674577e71116d324253c9713b79998437625b54a69c |
+| source-artifact-sha256 | ef58c82912d516afa7026a754b713c8eb0a03be6e78df2686dd3c0966c3f5c07 |
 | generated-artifact | evidence/interest-posting-batch/gnucobol/cobol/INTEREST.cbl |
-| generated-artifact-sha256 | 930f64de7fe878b78af3e4da591bcb78aae53638314069383c2f8b0de3b0a8be |
+| generated-artifact-sha256 | 4904d363f504ae6f9e112ac5044467ab3d512bf22a471deee3d28ec80643343c |
 | source-map-artifact | evidence/interest-posting-batch/gnucobol/maps/source-map.json |
-| source-map-artifact-sha256 | 5045400fff9329e38956668dd40c9aee59f264e8705a6f1135a4d619f0b6a87b |
+| source-map-artifact-sha256 | 28fce270288e0b7d30096a741b6bbcfc3352e30605271ea1305527c4d1c63084 |
 | compiler-executable | cobc |
 | compiler-version | cobc (GnuCOBOL) 3.2.0 |
 | compiler-command | cobc -x -conf=tools/banklang-ibm.conf -fixed -Wcolumn-overflow -I evidence/interest-posting-batch/gnucobol/copybooks evidence/interest-posting-batch/gnucobol/cobol/INTEREST-PRE.cbl -o evidence/interest-posting-batch/gnucobol/bin/interest |

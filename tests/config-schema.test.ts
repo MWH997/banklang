@@ -21,7 +21,7 @@ import { SITE_ORIGIN } from "../tools/build-site";
  * The schema `bankc init` points every generated config at.
  *
  * It used to name `banklang.dev`, a domain this project does not own and has
- * never published to, so an editor following the `$schema` line got a 404 —
+ * never published to, so an editor following the `$schema` line got a 404
  * from the first file a new user ever sees. The URL now names this project's
  * own site and `pnpm build:site` writes the document there.
  *

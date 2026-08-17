@@ -18,8 +18,8 @@ import {
  * from `evidence/horizontal/` and regenerating them is the only way to change
  * them. Prose is the other half. The README, the release notes and a launch
  * article each state figures, each was written at a different moment by
- * somebody reading a different file, and the failure mode is not dishonesty —
- * it is a measurement that moved after the sentence quoting it was written, and
+ * somebody reading a different file, and the failure mode is rarely dishonesty.
+ * It is a measurement that moved after the sentence quoting it was written, and
  * nobody re-reads a sentence.
  *
  * Historical release prose is always compared against
@@ -174,7 +174,7 @@ describe("what the README claims", () => {
   const readme = readFileSync("README.md", "utf8").replace(/\s+/g, " ");
 
   /**
-   * "27 of the 31 it emits" — the differential denominator, in prose.
+   * "27 of the 31 it emits": the differential denominator, in prose.
    *
    * This is the number most worth getting wrong: it is the one a sceptical
    * reader checks first, and the temptation is to quote the flattering
@@ -189,7 +189,7 @@ describe("what the README claims", () => {
     // The two numbers and the relation between them, not the noun phrase
     // around them. This asserted `… it emits` verbatim, so tightening the
     // sentence failed a test about a denominator without the denominator
-    // having changed — which teaches the wrong lesson about editing prose.
+    // having changed, which teaches the wrong lesson about editing prose.
     expect(readme).toContain(
       `${String(locallyExecutable)} of the ${String(verbsEmitted)} `,
     );
@@ -258,7 +258,7 @@ describe("what the release notes claim", () => {
    * Every figure the notes state, against the snapshot.
    *
    * Written as a list rather than as separate assertions so that adding a
-   * number to the notes means adding it here — which is the only way this test
+   * number to the notes means adding it here, which is the only way this test
    * keeps meaning something as the notes grow.
    */
   const quoted: [string, string][] = [
@@ -316,7 +316,7 @@ describe("what the release notes claim", () => {
  * The other surfaces here were already held to the snapshot. This one was not,
  * and it is the one written furthest from the evidence: a post is drafted once,
  * published, and then the numbers in it move underneath it. Two of its figures
- * had already gone stale by the time 0.10.0 was cut — the test count, and a
+ * had already gone stale by the time 0.10.0 was cut: the test count, and a
  * sentence that folded a defect BankTS cannot express into the
  * `not-demonstrated` pile.
  *
@@ -420,11 +420,14 @@ describe("the claims no public surface may make", () => {
     `docs/releases/${ROOT.version}.md`,
   ]) {
     it(`${surface} names GnuCOBOL and says IBM validation has not happened`, () => {
-      const text = readFileSync(surface, "utf8");
+      // Whitespace collapsed first. These files are wrapped by Prettier and by
+      // hand, so a regex written against one wrapping fails the next time a
+      // sentence is edited, on a page whose meaning has not moved at all.
+      const text = readFileSync(surface, "utf8").replace(/\s+/g, " ");
       expect(text).toContain("GnuCOBOL");
       // An explicit negative about IBM, not merely the absence of a claim.
       expect(
-        /no ibm enterprise\s+cobol validation|not yet performed/i.test(text),
+        /no ibm enterprise cobol validation|not yet performed/i.test(text),
         `${surface} names GnuCOBOL but never says IBM validation has not happened`,
       ).toBe(true);
     });

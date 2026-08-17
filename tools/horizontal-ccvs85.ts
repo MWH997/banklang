@@ -5,13 +5,13 @@
  *
  * This repository never downloads it and never redistributes it. The suite is a
  * US government validation product with its own distribution terms, and this
- * project has no standing to restate them — so the corpus is `local` in the
+ * project has no standing to restate them, so the corpus is `local` in the
  * registry, the directory is the operator's, and with nothing supplied the lane
  * reports `unavailable` and says exactly what to set.
  *
  * **What it validates, and what it does not.** CCVS85 exercises the COBOL
  * implementation *underneath* BankLang: whether `cobc` handles a construct the
- * way the standard requires. That is worth knowing — every claim this project
+ * way the standard requires. That is worth knowing, because every claim this project
  * makes about executed behaviour rests on the compiler below it, and
  * `docs/divergences.md` exists because those compilers differ. It establishes
  * nothing about BankTS: no CCVS85 test was written in BankTS and none of them
@@ -19,7 +19,7 @@
  *
  * So the applicability map below runs the other way from the semantic corpora.
  * Rather than asking which tests BankTS can express, it asks which of them
- * exercise a construct *the backend actually emits* — because a conformance
+ * exercise a construct *the backend actually emits*, because a conformance
  * failure in a construct this compiler never generates is somebody else's
  * problem, and counting it would misstate the risk to this project either way.
  */
@@ -46,8 +46,8 @@ import { describeEnvironment } from "./horizontal-environment";
 /**
  * Which emitted construct a CCVS85 module bears on.
  *
- * The suite is organised by module — `NC` nucleus, `SQ` sequential I/O, `IX`
- * indexed I/O, and so on — and the file names carry the prefix. The map is from
+ * The suite is organised by module (`NC` nucleus, `SQ` sequential I/O, `IX`
+ * indexed I/O, and so on) and the file names carry the prefix. The map is from
  * that prefix to the BankLang feature it covers, so applicability is decided by
  * what this compiler emits rather than by which tests look interesting.
  */
@@ -177,7 +177,7 @@ export function reportCcvs85(cwd = process.cwd()): Ccvs85Report {
   if (!root) {
     return {
       available: false,
-      location: `not supplied — set ${definition.fetch.envVar} to a local copy`,
+      location: `not supplied; set ${definition.fetch.envVar} to a local copy`,
       corpusFingerprint: null,
       discovered: 0,
       applicable: 0,
@@ -226,7 +226,7 @@ export function reportCcvs85(cwd = process.cwd()): Ccvs85Report {
 export function renderCcvs85(report: Ccvs85Report): string {
   const definition = corpus("ccvs85-local");
   return `${[
-    "# NIST COBOL-85 validation suite — local conformance",
+    "# NIST COBOL-85 validation suite: local conformance",
     "",
     `**Status** ${report.available ? `available at \`${report.location}\`` : report.location}`,
     "",
@@ -249,7 +249,7 @@ export function renderCcvs85(report: Ccvs85Report): string {
     "| --- | --- | --- | --- | --- |",
     ...report.byModule.map(
       (module) =>
-        `| ${module.module} | ${module.name} | ${String(module.files)} | ${module.applicable ? "yes" : "no"} | ${module.emitted.map((name) => `\`${name}\``).join(", ") || "—"} |`,
+        `| ${module.module} | ${module.name} | ${String(module.files)} | ${module.applicable ? "yes" : "no"} | ${module.emitted.map((name) => `\`${name}\``).join(", ") || "none"} |`,
     ),
     "",
     "## Constructs this backend emits that no module above covers",

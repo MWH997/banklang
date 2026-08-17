@@ -9,8 +9,8 @@
  * permission nobody granted it.
  *
  * So the gate below is deliberately conservative in one direction only. An
- * unrecognised licence is never a refusal to *measure* — every file is still
- * read, analysed and counted, and the statistics are this project's own — it is
+ * unrecognised licence is never a refusal to *measure*. Every file is still
+ * read, analysed and counted, and the statistics are this project's own. It is
  * a refusal to *redistribute*. What lands in git for such a corpus is hashes,
  * provenance and numbers.
  *
@@ -157,7 +157,7 @@ const LICENCE_SIGNATURES: { spdx: string; pattern: RegExp }[] = [
  *
  * Null is a legitimate outcome and the caller must treat it as one. Most of the
  * 168 repositories behind X-COBOL have no licence file at all, and that is the
- * finding — not something to paper over with a default.
+ * finding, rather than something to paper over with a default.
  */
 export function detectLicence(text: string): LicenceDetermination {
   for (const signature of LICENCE_SIGNATURES) {

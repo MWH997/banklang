@@ -13,11 +13,11 @@ import { localCobol } from "./helpers";
  *
  * An element of a scalar table could not be assigned to at all: `rates[1] = x`
  * was "not an assignable target", so a table could be declared and read but
- * never filled — which is not a table worth having, since a rate matrix loaded
+ * never filled, which is not a table worth having, since a rate matrix loaded
  * from a file is written a cell at a time.
  *
  * A table of tables is nested `OCCURS`, and COBOL puts every subscript on the
- * innermost data name — `RATES-ITEM (I, J)`, not `RATES (I) (J)` — so the inner
+ * innermost data name (`RATES-ITEM (I, J)`, not `RATES (I) (J)`) so the inner
  * dimension needs a name of its own even though nothing in the source names it.
  */
 
@@ -71,8 +71,8 @@ entry transaction load(book: Book) {
    * Every shape a value can be written into, in one place.
    *
    * The scalar-element case was missing for as long as tables existed, and
-   * nothing noticed because the two neighbouring shapes — a local and a field
-   * of an element — both worked. A list is how that stays fixed.
+   * nothing noticed because the two neighbouring shapes, a local and a field
+   * of an element, both worked. A list is how that stays fixed.
    */
   it("accepts every place a value can go", () => {
     const result = compile(`module Places;
@@ -126,7 +126,7 @@ describe("a table of tables", () => {
 
   /**
    * Three rows of four. Reading left to right, the first bound is the outer
-   * `OCCURS` — wrapping as each bracket is consumed would nest them the other
+   * `OCCURS`, and wrapping as each bracket is consumed would nest them the other
    * way round and silently transpose the table.
    */
   it("nests the OCCURS outermost-first", () => {

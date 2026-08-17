@@ -1,8 +1,8 @@
 /**
  * What was actually measured, pinned so it can be measured again.
  *
- * A validation number without a corpus version is a rumour. Upstream moves —
- * a dataset gains twelve tasks, a repository rewrites a file — and the same
+ * A validation number without a corpus version is a rumour. Upstream moves:
+ * a dataset gains twelve tasks, a repository rewrites a file, and the same
  * command produces a different answer with nothing in the repository to say
  * why. Worse, it produces a *better* answer sometimes, which nobody
  * investigates.
@@ -28,7 +28,7 @@ export interface LockedFile {
 
 export interface LockedCorpus {
   id: string;
-  /** Commit SHA, dataset revision, or DOI — whatever pins this upstream. */
+  /** Commit SHA, dataset revision, or DOI: whatever pins this upstream. */
   revision: string;
   /** ISO date the bytes were retrieved. */
   retrieved: string;
@@ -51,7 +51,7 @@ export function hashBytes(bytes: Uint8Array | string): string {
  * The lock's own hash, which travels with every result row.
  *
  * Serialised through `stableLockJson` rather than hashing the file on disk, so
- * that a reformat — a different indent, a trailing newline — does not change
+ * that a reformat (a different indent, a trailing newline) does not change
  * the identity of a measurement that used the same corpora.
  */
 export function lockHash(lock: CorpusLock): string {

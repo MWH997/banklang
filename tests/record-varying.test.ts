@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { localCobol, parmDriver, unpadded } from "./helpers";
 
 /**
- * `varying <min> to <max> length <field>` — `RECORD IS VARYING IN SIZE`.
+ * `varying <min> to <max> length <field>`: `RECORD IS VARYING IN SIZE`.
  *
  * A fixed-length file pads every record to the longest one it might hold. For a
  * feed whose records differ by hundreds of bytes that is most of the dataset,
@@ -214,8 +214,8 @@ describe("executed", () => {
  * The length field cannot be a member of the record whose length it gives.
  *
  * Inside it, it would be part of the data it is measuring. And the generated
- * `DEPENDING ON` names it bare, which resolves twice — the record is laid out
- * in working storage and again inside the FD — so `cobc` answers "is ambiguous;
+ * `DEPENDING ON` names it bare, which resolves twice, since the record is laid out
+ * in working storage and again inside the FD, so `cobc` answers "is ambiguous;
  * needs qualification" and there is no qualification that fixes it, because the
  * item may not be in the record at all.
  *

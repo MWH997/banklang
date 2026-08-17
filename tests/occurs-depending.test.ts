@@ -14,7 +14,7 @@ import { flowed, localCobol, parmDriver } from "./helpers";
  * The Language Reference gives no latitude: "The behavior is undefined if the
  * value of the object is outside of the range integer-1 through integer-2." The
  * object is what makes the group containing the table variable, so its value
- * decides how long that record is — a count of 30,000 on a table declared
+ * decides how long that record is: a count of 30,000 on a table declared
  * `OCCURS 1 TO 100` makes every group reference to the record run off the end
  * of the storage the record actually has.
  *
@@ -89,7 +89,7 @@ entry transaction run(batch: Batch) {
 
   /**
    * A table is only as long as its count says. Copying to the declared maximum
-   * reads occurrences the record does not have — past the end of the data the
+   * reads occurrences the record does not have, past the end of the data the
    * READ delivered.
    */
   it("copies the occurrences the record has, not the maximum", () => {
@@ -137,7 +137,7 @@ entry transaction run(batch: Batch) {
  *
  * The count is planted the way a caller would supply it. Before the check
  * existed the program took it, and every later group reference to that record
- * was computed from a length the storage does not have — a record described as
+ * was computed from a length the storage does not have: a record described as
  * 2,538 bytes long when 538 were allocated for it.
  */
 describe("executed", () => {

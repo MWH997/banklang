@@ -192,7 +192,7 @@ way and comparing them is a decision rather than an operation.
 
 ## Related pages
 
-- [error-handling.md](error-handling.md) (what an overflow does
-- [target-conformance.md](target-conformance.md)) the eighteen-digit rule, and its citation
-- [divergences.md](divergences.md) (D17, the generated rounding modes
-- [language-reference.md](language-reference.md)) the whole type system
+- [error-handling.md](error-handling.md): what an overflow does
+- [target-conformance.md](target-conformance.md): the eighteen-digit rule, and its citation
+- [divergences.md](divergences.md): D17, the generated rounding modes
+- [language-reference.md](language-reference.md): the whole type system

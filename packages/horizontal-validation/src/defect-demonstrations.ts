@@ -13,13 +13,13 @@
  * compiler refused when the suite last ran.
  *
  * Two honest categories sit beside it. `not-expressible-in-bankts` is
- * prevention by absence — BankTS has no pointer type, so the four pointer
- * defects cannot be written — which is real but is not cleverness, and is
+ * prevention by absence: BankTS has no pointer type, so the four pointer
+ * defects cannot be written, which is real but is not cleverness, and is
  * counted separately so nobody adds it to a safety score. `outside-banklang-model`
  * is for defects about how COBOL source is written or compiled, which a code
  * generator makes unavailable as a side effect rather than as a guarantee.
  *
- * The BankTS here was written from each defect's own description — the banner
+ * The BankTS here was written from each defect's own description: the banner
  * comment naming what went wrong and why. It is not a translation of the
  * upstream COBOL, which would prove nothing about whether the *defect* is
  * caught.
@@ -37,7 +37,7 @@ export interface DefectDemonstration {
    * The BankTS that reproduces the defect's shape.
    *
    * Null when the coverage is `not-expressible-in-bankts` for a reason that is
-   * about a missing *type* rather than a rejected program — there is nothing to
+   * about a missing *type* rather than a rejected program, and there is nothing to
    * write down when the construct has no syntax at all. Those entries name the
    * absent construct in `expectDiagnostic` instead.
    */
@@ -56,7 +56,7 @@ export const DEFECT_DEMONSTRATIONS: DefectDemonstration[] = [
   {
     defect: "DF01",
     summary:
-      "A read whose end-of-file outcome was only handled inside the AT END branch, so the record area was used again after the file ran out — the last record processed twice, with a return code of zero.",
+      "A read whose end-of-file outcome was only handled inside the AT END branch, so the record area was used again after the file ran out: the last record processed twice, with a return code of zero.",
     coverage: "prevented-at-compile-time",
     source: `module Df01;
 
@@ -79,8 +79,8 @@ entry transaction applyOne(trans: Trans) {
   audit("APPLIED", trans.idempotencyKey);
 }
 `,
-    // The outcome the generated status check deliberately lets through — 10 is
-    // the answer to "was there another record", not a failure — has to be
+    // The outcome the generated status check deliberately lets through. 10 is
+    // the answer to "was there another record" rather than a failure, and has to be
     // looked at before the record it left behind is used.
     expectDiagnostic: "BANK-FILE-017",
   },
@@ -125,7 +125,7 @@ function averageRate(s1: Big, s2: Big): Rate {
   return (s1 / (s2 - 1.00)) * 100.00;
 }
 `,
-    // Not a rule about operand order — BankLang has no such rule and does not
+    // Not a rule about operand order: BankLang has no such rule and does not
     // claim one. It refuses the expression because a division's scale cannot be
     // decided by the compiler, so the author has to say what the rounding is.
     // That is what makes the lost precision impossible to write by accident:
@@ -135,7 +135,7 @@ function averageRate(s1: Big, s2: Big): Rate {
   {
     defect: "DF36",
     summary:
-      "The same computation with the rounding written, but rounded early and then multiplied — which is the precision loss the original defect actually suffered.",
+      "The same computation with the rounding written, but rounded early and then multiplied, which is the precision loss the original defect actually suffered.",
     coverage: "prevented-at-compile-time",
     source: `module Df36Rounded;
 

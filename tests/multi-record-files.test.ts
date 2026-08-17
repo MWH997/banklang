@@ -15,12 +15,12 @@ import { runInterpreted } from "../tools/interpret";
 import { runtimePrograms } from "../tools/generated-artifacts";
 
 /**
- * `record Heading, Detail` — several `01` layouts under one `FD`.
+ * `record Heading, Detail`: several `01` layouts under one `FD`.
  *
  * The feature exists because of a measurement rather than because two
  * benchmark tasks wanted it. `evidence/horizontal/xcobol-v2/record-usage.json`:
  * 2,812 of 6,451 file descriptions carry more than one record, and 2,663 of
- * those are opened `OUTPUT` — a report whose heading line and detail lines are
+ * those are opened `OUTPUT`: a report whose heading line and detail lines are
  * different shapes. 143 are opened `INPUT`, across fourteen repositories of
  * which six are parser test suites, and those are the ones BankTS refuses:
  * a `read` cannot know which layout arrived.
@@ -157,7 +157,7 @@ describe("a file carrying several record layouts", () => {
    * The whole point of the differential lane, and it earned its keep here on
    * the first run: the interpreter wrote the record *area* rather than the
    * record, so a short detail line carried the tail of the longer heading
-   * written before it — `A0001   123.45 DUE`, where ` DUE` was four bytes of
+   * written before it, `A0001   123.45 DUE`, where ` DUE` was four bytes of
    * `AMOUNT DUE`. `cobc` wrote the detail's own length. Both now do.
    */
   it.skipIf(!AVAILABLE)("writes each layout's own length, both ways", () => {
@@ -198,7 +198,7 @@ entry transaction touch(alpha: Alpha) {
 
   /**
    * The central rule. A `read` names no layout, so which one arrived is
-   * decided by the data — and a value whose type is a guess is what this
+   * decided by the data, and a value whose type is a guess is what this
    * language exists not to hand back.
    */
   it("refuses several layouts on a file that is read", () => {
@@ -270,7 +270,7 @@ entry transaction touch(alpha: Alpha, gamma: Gamma) {
    * A DD name that is also a data item.
    *
    * `ASSIGN TO FEED` takes the file name from the *contents* of a data item
-   * called `FEED` when one exists — on Enterprise COBOL 6 and on GnuCOBOL
+   * called `FEED` when one exists, on Enterprise COBOL 6 and on GnuCOBOL
    * both. The program compiled, the OPEN failed with status 35, and the two
    * engines disagreed about whether the input file existed at all.
    */

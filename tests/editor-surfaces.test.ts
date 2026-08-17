@@ -22,7 +22,7 @@ import {
  * what a keyword is.
  *
  * Highlighting that lags the lexer is how a supported keyword ends up looking
- * like an undefined name in the editor — which happened to `cursor` and
+ * like an undefined name in the editor, which happened to `cursor` and
  * `sensitive`, both of which the compiler accepted while both highlighters
  * rendered them as plain identifiers. Nothing caught it, because nothing
  * compared the three lists.
@@ -80,7 +80,7 @@ describe("keyword coverage", () => {
  * Every checked-in example must be described in the playground.
  *
  * The playground globs `examples/` at build time, so a new example appears in
- * the picker whether or not anyone wrote a title for it — falling back to a
+ * the picker whether or not anyone wrote a title for it, falling back to a
  * directory name and an empty description, sorted last. The examples that
  * needed explaining most were the ones that had none.
  */
@@ -106,7 +106,7 @@ describe("playground example coverage", () => {
  * It resolves the language server to `<extensionPath>/server/bin.js` and
  * nothing built that file. The directory did not exist. So the extension could
  * only start for a user who had set `banklang.server.path` by hand, and the
- * repository's own status page said it "builds and typechecks in CI" — which
+ * repository's own status page said it "builds and typechecks in CI", which
  * was true, and told nobody anything, because neither of those runs it.
  *
  * The same shape as `pnpm zos:kit`, which built cleanly and threw every time it

@@ -165,7 +165,7 @@ describe("headings", () => {
   });
 
   /**
-   * E3. The `h1` is first.
+   * The `h1` comes first.
    *
    * The sidebar's group labels were `h2` and the sidebar precedes `<main>` in
    * the document, so every documentation page opened with four level-two
@@ -190,8 +190,7 @@ describe("headings", () => {
   });
 
   /**
-   * E2. The editor, the artifact tabs and the summary had no heading of any
-   * kind, so a reader moving by heading went from the page title to the end of
+   * The editor, the artifact tabs and the summary had no heading of any kind, so a reader moving by heading went from the page title to the end of
    * the document. The Run panel already emitted `h3`s, so the pattern existed
    * and had simply not been applied to the frame around it.
    */
@@ -227,9 +226,9 @@ describe("headings", () => {
 });
 
 /**
- * E1. Both CodeMirror instances exposed `role="textbox"` with no accessible
- * name, so a screen-reader user reaching the product's primary interactive
- * surface was told "text box" — WCAG 4.1.2.
+ * Both CodeMirror instances exposed `role="textbox"` with no accessible name,
+ * so a screen-reader user reaching the product's primary interactive surface
+ * was told "text box". WCAG 4.1.2.
  *
  * Asserted against the source rather than a rendered editor: CodeMirror needs
  * layout that jsdom does not provide, and what is being checked is that the
@@ -248,8 +247,8 @@ describe("the playground's editors", () => {
 });
 
 /**
- * E5. `<button id="theme" aria-label="Switch between light and dark">Theme</button>`
- * on four pages: no state, and a label that never changed. Neither a sighted
+ * `<button id="theme" aria-label="Switch between light and dark">Theme</button>`
+ * used to sit on four pages: no state, and a label that never changed. Neither a sighted
  * nor a screen-reader user could tell the current mode from the control.
  *
  * Four copies, because two of these pages are static files and two are
@@ -304,10 +303,10 @@ describe("the theme toggle", () => {
 });
 
 /**
- * E4. `<b>${value}</b>${label}` with the gap supplied by `margin-right`, so
- * `textContent` was `1records` — what a screen reader announces and what a copy
- * and paste produces — and the labels were plurals written at the call sites,
- * so one record read "1 records".
+ * `<b>${value}</b>${label}` with the gap supplied by `margin-right`, so
+ * `textContent` was `1records`: what a screen reader announces and what a copy
+ * and paste produces. The labels were plurals written at the call sites too, so
+ * one record read "1 records".
  */
 describe("the summary chips", () => {
   const text = (html: string): string =>

@@ -139,9 +139,8 @@ eight, and that every word in the program is one Enterprise COBOL has heard of.
 
 `pnpm lint:zos` reads the same artifacts and asks the other question: not
 whether the toolchain will accept the program, but whether z/OS will do what it
-says. The 2026-08-07 audit found two shipped programs that compiled, bound and
-verified, and then aborted on their second `MQCONN` or returned the caller's own
-request unchanged: neither of which is a syntax error, a style violation or a
+says. Two programs once shipped that compiled, bound and verified, and then
+aborted on their second `MQCONN` or returned the caller's own request unchanged: neither of which is a syntax error, a style violation or a
 wrong number. Both are in [target-conformance.md](target-conformance.md).
 
 ---

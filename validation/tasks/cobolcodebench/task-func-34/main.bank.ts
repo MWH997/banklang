@@ -1,8 +1,8 @@
 module TaskFunc34;
 
 // Written from `spec.json`. Specification: read a sales-tax file of zip codes
-// and tax rates from 'task_func34_inp1'; read customers — number, unit price,
-// quantity, address, zip — from 'task_func34_inp2'; compute the subtotal, look
+// and tax rates from 'task_func34_inp1'; read customers (number, unit price,
+// quantity, address, zip) from 'task_func34_inp2'; compute the subtotal, look
 // the rate up by the customer's zip, work out the tax and the total; and write
 // a formatted bill file to 'task_func34_out1'.
 //
@@ -136,7 +136,7 @@ entry transaction billCustomers(
       // `01299` is 012.99: three whole units and two decimals, with no decimal
       // point in the data. The printed column keeps its leading zero, which no
       // edited picture in this language produces, so the text is assembled from
-      // the digits — and then read back as the number, which puts the point
+      // the digits, and then read back as the number, which puts the point
       // where the data means it rather than dividing by a hundred.
       work.priceText = concat(
         substring(customer.customerText, 7, 3),

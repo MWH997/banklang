@@ -8,7 +8,7 @@ import { flowed } from "./helpers";
  *
  * Three commands is not an online program. A real one reaches a dataset through
  * CICS rather than through COBOL file control, passes state through temporary
- * storage, and ends its task naming what runs next — which is what makes a
+ * storage, and ends its task naming what runs next, which is what makes a
  * pseudo-conversation possible at all.
  */
 
@@ -99,7 +99,7 @@ describe("file commands", () => {
    * A write with no key, which is the same defect from the other side.
    *
    * `WRITE` without `RIDFLD` is a command CICS rejects at run time with
-   * `INVREQ` — after the transaction has done everything before it.
+   * `INVREQ`, after the transaction has done everything before it.
    */
   it("requires the key a write addresses", () => {
     expect(
@@ -112,7 +112,7 @@ describe("file commands", () => {
    *
    * The record a `REWRITE` updates is the one the preceding `READ ... UPDATE`
    * is holding, so a key here describes a different operation from the one the
-   * program is doing — and CICS ignores it rather than honouring it.
+   * program is doing, and CICS ignores it rather than honouring it.
    */
   it("refuses a key on a rewrite", () => {
     expect(
@@ -129,7 +129,7 @@ describe("file commands", () => {
    *
    * Without `RESP`, a CICS command that fails abends the task with the
    * condition's own abend code, and the transaction has no chance to say
-   * anything about it — which for a write means an operator seeing `AEIx` and
+   * anything about it, which for a write means an operator seeing `AEIx` and
    * nothing else.
    */
   it("requires a response field on a write", () => {

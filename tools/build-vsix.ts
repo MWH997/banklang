@@ -8,7 +8,7 @@
  * Two things it does that a `vsce package` in the extension's own manifest
  * cannot. It creates the output directory, which vsce does not and fails on.
  * And it reads the archive back, because everything that decides what ends up
- * inside a VSIX — `.vscodeignore`, `--no-dependencies`, `files` — fails open: a
+ * inside a VSIX (`.vscodeignore`, `--no-dependencies`, `files`) fails open: a
  * pattern that has stopped matching packages successfully and ships the source
  * tree, and the log says `DONE`.
  *
@@ -30,7 +30,7 @@ const OUT = join(ROOT, "dist/vsix");
  * What must be in the archive, and what must not.
  *
  * The second list is the one worth having. `src/**` shipping is not a failure
- * anybody notices — the extension still works — but it doubles the download and
+ * anybody notices, since the extension still works, but it doubles the download and
  * publishes the TypeScript alongside a bundle built from it, which then rots.
  */
 export const REQUIRED = [

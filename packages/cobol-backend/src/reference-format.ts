@@ -4,7 +4,7 @@
  * Enterprise COBOL reads a 72-character line. Columns 1-6 are the sequence
  * number area, column 7 is the indicator area, columns 8-11 are Area A and
  * columns 12-72 are Area B; columns 73-80 are the identification area and are
- * not part of the program. There is no compiler option on z/OS that widens it —
+ * not part of the program. There is no compiler option on z/OS that widens it,
  * `SOURCEFORMAT(EXTEND)` is an AIX option, and the Language Reference states the
  * 72-character line without qualification.
  *
@@ -40,7 +40,7 @@ const CONTINUATION_LIMIT = 40;
 /**
  * Break one generated line into as many source lines as reference format needs.
  *
- * A line within the margin is returned untouched, which is nearly all of them —
+ * A line within the margin is returned untouched, which is nearly all of them,
  * this rewrites only what would otherwise be cut off.
  */
 export function toReferenceFormat(line: string): string[] {
@@ -66,7 +66,7 @@ export const JCL_LAST_COLUMN = 71;
 /**
  * Break one generated JCL statement into as many card images as it needs.
  *
- * JCL fields end at column 71 — columns 73-80 are the identification field and
+ * JCL fields end at column 71, since columns 73-80 are the identification field and
  * are ignored, and a non-blank column 72 means something else again. A JOB card
  * naming a program with a long name runs past it, and what the reader loses is
  * the tail of the card: `NOTIFY=&SYSUID` disappears, or worse, an operand is cut
@@ -78,7 +78,7 @@ export const JCL_LAST_COLUMN = 71;
  * what says the statement continues; no character in column 72 is needed, and
  * the JCL Reference warns that one there is ignored on a card ending that way.
  *
- * A comment card (`//*`) is not continued at all — it is broken into further
+ * A comment card (`//*`) is not continued at all. It is broken into further
  * comment cards.
  */
 export function toJclStatement(line: string): string[] {
@@ -89,7 +89,7 @@ export function toJclStatement(line: string): string[] {
     return wrapWords(line.slice(3).trim(), "//*", JCL_LAST_COLUMN);
   }
 
-  // `//NAME OP operands` — the operand field is the only one that continues, so
+  // `//NAME OP operands`: the operand field is the only one that continues, so
   // the name and the operation stay on the first card whatever their length.
   const match = line.match(/^(\/\/\S*\s+\S+\s+)(.*)$/);
   if (!match) {
@@ -277,7 +277,7 @@ function wrapStatement(indent: number, body: string): string[] {
  * The blanks a line starts with, and the hyphen when it continues a literal.
  *
  * Column 7 is the indicator area. Without a hyphen there, the last character of
- * the line before is taken to be followed by a space — which for a literal
+ * the line before is taken to be followed by a space, which for a literal
  * broken at the margin means two literals rather than one, and a DISPLAY that
  * prints half of the message it was given.
  */
@@ -355,7 +355,7 @@ function endOfLiteral(text: string, open: number): number {
  *
  * Only the literal inside it can be broken, so the token is taken apart into
  * whatever comes before the opening quote, the literal, and whatever follows
- * the closing one — `VALUE 'x…x'.` carries its period with it.
+ * the closing one: `VALUE 'x…x'.` carries its period with it.
  */
 function splitLiteralToken(
   token: string,
@@ -387,7 +387,7 @@ function splitLiteralToken(
  * Continue an alphanumeric literal across source lines.
  *
  * Every column of a continued line through column 72 is part of the literal, so
- * a continued line has to be filled to the margin exactly — stopping short pads
+ * a continued line has to be filled to the margin exactly, since stopping short pads
  * the value with the blanks that follow. Each continuation carries a hyphen in
  * the indicator area and reopens the literal with a quote, and only the last
  * one closes it.
@@ -414,7 +414,7 @@ function splitLiteral(
   for (;;) {
     const room = COBOL_LAST_COLUMN - margin - head.length - opener.length;
     // Room for what is left of the literal, its closing quote, and whatever
-    // follows it — a period, a closing bracket — which cannot start a line.
+    // follows it (a period, a closing bracket) which cannot start a line.
     if (rest.length + 1 + after.length <= room) {
       return { lines, tail: `${head}${opener}${rest}${quote}${after}` };
     }

@@ -316,7 +316,7 @@ cics transaction enquiry(request: Request, row: Row) {
  *
  * Under CICS the RETURN ends the task and the GOBACK is never reached. Under a
  * run time where RETURN is an ordinary call it is reached, and without it the
- * transaction runs its whole body a second time — which is how the defect was
+ * transaction runs its whole body a second time, which is how the defect was
  * found, and why the belt and braces are both emitted.
  */
 describe("across the corpus", () => {

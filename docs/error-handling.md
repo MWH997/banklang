@@ -4,8 +4,8 @@ One page for every way a generated program can report that something went wrong,
 and how `on failure` maps onto each. It was spread across four documents.
 
 The rule underneath all of it: **a run that did not do what it was submitted to
-do must not end the way one that did ends.** Every finding in the 2026-08-05
-audit's P1 section was a violation of that single sentence.
+do must not end the way one that did ends.** Every one of the most serious
+findings in the external audit of August 2026 broke that single sentence.
 
 ---
 
@@ -268,8 +268,8 @@ truncated answer, which is what makes stopping safe: the wrong value never
 reaches the ledger.
 
 Without it, the digits truncated are the high-order ones, so an overflowing
-addition does not produce a large wrong number that stands out, it produces a
-plausible small one.
+addition produces a plausible small number rather than a large wrong one that
+stands out.
 
 ## Subscripts
 
@@ -279,6 +279,6 @@ See [for-mainframe-engineers.md](for-mainframe-engineers.md#why-the-bounds-guard
 
 ## Related pages
 
-- [diagnostics.md](diagnostics.md) (every diagnostic the compiler emits
-- [numeric-model.md](numeric-model.md)) overflow, rounding and intermediate results
+- [diagnostics.md](diagnostics.md): every diagnostic the compiler emits
+- [numeric-model.md](numeric-model.md): overflow, rounding and intermediate results
 - [jcl-model.md](jcl-model.md): what `COND=` the generated job writes

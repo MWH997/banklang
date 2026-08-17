@@ -10,8 +10,8 @@
  * language.
  *
  * So this counts the forms. It exists because BankTS already has an operation
- * for each of the four — `substring`, `concat`, `split`, `countOf` and
- * `replaceChars` — and the question worth answering is not "should we build
+ * for each of the four (`substring`, `concat`, `split`, `countOf` and
+ * `replaceChars`) and the question worth answering is not "should we build
  * one" but "how much of what people write does the one we have actually
  * cover". A representability rule that says `supported` when the language
  * covers a third of the uses is the same kind of wrong as one that says
@@ -35,15 +35,15 @@ import { contentDigest, sourceLines } from "./features";
  * same way.
  */
 export interface RefModUsage {
-  /** `FIELD(1:4)` — both bounds literal. */
+  /** `FIELD(1:4)`: both bounds literal. */
   constantBoth: number;
-  /** `FIELD(WS-I:4)` — computed start, literal length. */
+  /** `FIELD(WS-I:4)`: computed start, literal length. */
   dynamicStart: number;
-  /** `FIELD(1:WS-LEN)` — literal start, computed length. */
+  /** `FIELD(1:WS-LEN)`: literal start, computed length. */
   dynamicLength: number;
-  /** `FIELD(WS-I:WS-LEN)` — neither known. */
+  /** `FIELD(WS-I:WS-LEN)`: neither known. */
   dynamicBoth: number;
-  /** `FIELD(WS-I:)` — to the end of the field, a length COBOL infers. */
+  /** `FIELD(WS-I:)`: to the end of the field, a length COBOL infers. */
   openEnded: number;
   total: number;
   files: number;
@@ -83,8 +83,8 @@ export interface UnstringUsage {
    * A statement count answers the wrong question when a corpus gathers 168
    * repositories, because a program copied into five of them is counted five
    * times. This one was: 130 `TALLYING` statements in 5,195 files reads as an
-   * estate pattern, and 126 of them are `NC218A.CBL` — the NIST CCVS85
-   * conformance test for `UNSTRING` — vendored into five language-tool
+   * estate pattern, and 126 of them are `NC218A.CBL`, the NIST CCVS85
+   * conformance test for `UNSTRING`, vendored into five language-tool
    * repositories. Deduplicating is the difference between "a common idiom" and
    * "a conformance suite exercises the clause".
    */
@@ -96,7 +96,7 @@ export interface UnstringUsage {
    *
    * The count is only a *field count* when there are several receivers. With
    * one, the statement is pulling a single field out at a moving pointer and
-   * the tally is how far the scan got — which is pointer machinery rather than
+   * the tally is how far the scan got, which is pointer machinery rather than
    * "how many fields did this line have".
    */
   tallyingSingleReceiver: number;
@@ -229,7 +229,7 @@ export function addStringUsage(text: string, into: StringUsageReport): void {
    *
    * Anchored on a name followed directly by the parenthesis, and requiring the
    * colon, so `PIC X(20)` and `OCCURS 5 TIMES` never match. A subscripted item
-   * carrying a reference modification — `TABLE(I)(1:4)` — matches on the second
+   * carrying a reference modification, `TABLE(I)(1:4)`, matches on the second
    * parenthesis, which is the one holding the colon.
    */
   let refModHere = 0;
@@ -261,7 +261,7 @@ export function addStringUsage(text: string, into: StringUsageReport): void {
    *
    * The lookbehind is what separates them: the character before `STRING` in
    * `UNSTRING` is `N`, which the class rejects. No extra filtering is needed,
-   * and the first version of this had some — a `.filter()` that tested an empty
+   * and the first version of this had some: a `.filter()` that tested an empty
    * string and therefore did nothing at all.
    */
   const strings = [...flat.matchAll(/(?<![A-Z0-9-])STRING\b/g)];

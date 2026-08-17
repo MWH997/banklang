@@ -97,7 +97,7 @@ export interface DefectRow {
  * Where the matrix is kept once it has been derived.
  *
  * The rows are computed from the OpenCBS cache, which is not in the repository
- * — so on a fresh clone `defectMatrix` returned nothing and every consumer
+ * so on a fresh clone `defectMatrix` returned nothing and every consumer
  * silently reported zero defects out of zero. The published page said so in
  * words ("the corpus is not in the local cache"), but the release snapshot did
  * not: it recorded `0 / 0` and `pnpm release:snapshot --check` then failed on
@@ -335,9 +335,9 @@ function renderResults(cwd: string): string {
      * blockers rather than from a number a reader has to interpret.
      *
      * Keyed on applicability rather than on whether the task ran. Some
-     * non-applicable tasks are authored and executed — a benchmark whose
+     * non-applicable tasks are authored and executed, because a benchmark whose
      * expected output is not derivable is best evidenced by running against it
-     * and reading the byte that differs — so listing only what never ran gave
+     * and reading the byte that differs, so listing only what never ran gave
      * a table whose count did not reconcile with the summary above it.
      */
     const results = readJson<
@@ -356,7 +356,7 @@ function renderResults(cwd: string): string {
         }
         const task = row.taskId.split("/").pop() ?? row.taskId;
         // The recorded blocker where there is one, and the applicability
-        // otherwise — the rules produce no blocker entry, so `randomness` and
+        // otherwise. The rules produce no blocker entry, so `randomness` and
         // the like still come from the detail the run wrote.
         const kind =
           blockerFor(task)?.kind ??

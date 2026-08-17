@@ -2,7 +2,7 @@
  * A compilation unit: one or more programs in one source file.
  *
  * The emitter puts a nested program after `END PROGRAM` when a BankTS function
- * has to be `RECURSIVE` — Enterprise COBOL gives a recursive program its own
+ * has to be `RECURSIVE`, because Enterprise COBOL gives a recursive program its own
  * `LOCAL-STORAGE`, and `WORKING-STORAGE` shared across invocations is exactly
  * the defect that made `5!` return `5` before this project ever ran a program.
  * So the unit is a list, not a single program, and each one keeps its own
@@ -29,7 +29,7 @@ export type Organization =
 export interface FileControlEntry {
   /** The name the PROCEDURE DIVISION uses. */
   name: string;
-  /** `ASSIGN TO` — a DD name on z/OS, a filename to GnuCOBOL. */
+  /** `ASSIGN TO`: a DD name on z/OS, a filename to GnuCOBOL. */
   assign: string;
   organization: Organization;
   access: "sequential" | "random" | "dynamic";
@@ -61,7 +61,7 @@ export interface FileDescription {
    * nothing opens it, nothing reads it, and what it holds between `RELEASE` and
    * `RETURN` never reaches `RunResult.files`. A sort work file that did would
    * appear in the differential comparison as an output the compiled side never
-   * produced — GnuCOBOL puts its own in a temporary directory and removes it.
+   * produced. GnuCOBOL puts its own in a temporary directory and removes it.
    */
   sort: boolean;
 }

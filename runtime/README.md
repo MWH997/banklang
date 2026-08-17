@@ -17,7 +17,7 @@ a generated program can be **executed** rather than only compiled.
 The last two are a different kind of stand-in. The others replace software an
 installation owns; these replace a **statement Enterprise COBOL implements and
 GnuCOBOL does not**. `JSON PARSE` and `XML PARSE` compile locally, warn that
-they are unimplemented, and then do nothing at run time — leaving the record
+they are unimplemented, and then do nothing at run time, leaving the record
 untouched with no exception raised, so a program reading a payload runs clean
 and processes an empty record. The precompiler rewrites both into calls on
 these, exactly as it rewrites `EXEC SQL` and `EXEC CICS`. What ships to z/OS
@@ -55,7 +55,7 @@ Both are invisible until the program runs. That is what these programs are for.
 ## Scripted outcomes
 
 `DSNHLI` and `DFHEI1` evaluate nothing, so on their own every statement succeeds
-and every command returns `NORMAL` — which leaves half of every generated
+and every command returns `NORMAL`, which leaves half of every generated
 program unreachable. A test can therefore script what they report:
 
 | File                | Line format            | Meaning                               |
@@ -66,7 +66,7 @@ program unreachable. A test can therefore script what they report:
 | `dli-outcomes.txt`  | `0001 GE`              | DL/I call 1 reports segment not found |
 
 Statements are numbered as the precompiler numbers them, counting only executable
-blocks — a cursor's `DECLARE` is read at precompile time and takes no number.
+blocks, and a cursor's `DECLARE` is read at precompile time and takes no number.
 Commands are numbered in the order the program issues them.
 
 The trailing count on a SQL line is how many calls the entry applies to, `0000`
@@ -96,7 +96,7 @@ caller's business: the stub knows nothing about a row beyond its length and
 where to put it, and whoever writes the script has the copybook.
 
 A rowset `FETCH` delivers several rows in one call, each landing one element
-further along the host-variable array, and `SQLERRD(3)` is set to how many —
+further along the host-variable array, and `SQLERRD(3)` is set to how many,
 zero on the call that ends the cursor, which is what stops the last set being
 processed twice. A statement with no script writes nothing, which is the
 ordinary case and what every test written before this did.
@@ -117,7 +117,7 @@ not that Db2 would hand it those rows.
   all three.
 
 - `CBLTDLI` is not IMS. It evaluates no database, holds no segments, honours no
-  hierarchy, and maintains no position — a `getNext` after a `getUnique` returns
+  hierarchy, and maintains no position, so a `getNext` after a `getUnique` returns
   whatever the script says and nothing about where the previous call left off.
   It puts a status in the PCB so the program's branches can be reached. An IMS
   program is entered by the region with its PCBs rather than started, so the
@@ -127,8 +127,8 @@ not that Db2 would hand it those rows.
 - `BANKMQ` is not IBM MQ. It holds no queue, keeps no message beyond the one
   between a put and the get that follows it, honours no syncpoint, and knows
   nothing of channels, persistence or a queue manager. It contains the six
-  programs the MQI names — `MQCONN`, `MQOPEN`, `MQPUT`, `MQGET`, `MQCLOSE`,
-  `MQDISC` — because nothing outside z/OS supplies them and a generated program
+  programs the MQI names (`MQCONN`, `MQOPEN`, `MQPUT`, `MQGET`, `MQCLOSE`,
+  `MQDISC`) because nothing outside z/OS supplies them and a generated program
   that talks to a queue otherwise fails at bind with an unresolved external,
   which is loud and proves nothing. The completion and reason codes are the ones
   IBM's reference documents, so the branch a program takes locally is the branch
@@ -139,7 +139,7 @@ not that Db2 would hand it those rows.
 - `BANKLEDG` is not a bank ledger. It has no accounting model, no double-entry
   enforcement, no value dating, no concurrency, and no durability. The BankLang
   calling convention has no commit operation, so it treats everything posted
-  since the last rollback as the open unit of work — its own choice, not a
+  since the last rollback as the open unit of work: its own choice rather than a
   BankLang guarantee.
 - `BANKJSON` is not a JSON parser and `BANKXML` is not an XML parser. Each
   scans for what it was asked about: a quoted name at the top level of a
@@ -147,7 +147,7 @@ not that Db2 would hand it those rows.
   between tags. Nesting, arrays, escape sequences, attributes, namespaces,
   entity references and CDATA are past what a stub should pretend to. Name
   matching follows Enterprise COBOL's rule closely enough to be worth executing
-  — case-insensitive, with a hyphen matching a hyphen or an underscore — but it
+  case-insensitive, with a hyphen matching a hyphen or an underscore, but it
   is a scan, not IBM's parser, and a document that exercises anything above will
   behave differently on z/OS. `BANK-TYPE-025` says so on every parse.
 - `DSNHLI` parses no SQL, reads no table, and binds no plan. Every `SQLCODE` it
@@ -173,7 +173,7 @@ COB_LIBRARY_PATH=. ./program
 
 `-fixed` because the generated COBOL is in fixed reference format, which is the
 only one z/OS reads. GnuCOBOL guesses the format from the first line and will
-read a whole program as free format, where no column means anything — so a
+read a whole program as free format, where no column means anything, so a
 program that could not compile on the target passes here without it.
 
 A program containing `JSON PARSE` or `XML PARSE` has to go through the

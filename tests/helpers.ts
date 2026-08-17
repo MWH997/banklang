@@ -19,7 +19,7 @@ import { exampleProjects } from "../tools/example-projects";
  * COBOL's reference format ends a source line at column 72, so a statement
  * wider than that is written across several lines. Where the break falls is a
  * property of the page rather than of the program, and a test asserting what
- * the emitter produced should not have to know it — `tests/reference-format`
+ * the emitter produced should not have to know it, and `tests/reference-format`
  * checks the margin itself, over every artifact, once.
  *
  * Use this when the statement being asserted is long enough to wrap. Assert on
@@ -38,7 +38,7 @@ export function flowed(cobol: string | null | undefined): string {
  * 1 and reports an invalid indicator in column 7, because to it those columns
  * are the sequence number area. The precompiler takes it out, along with the
  * `EXEC SQL`, `EXEC CICS`, `JSON PARSE` and `XML PARSE` the local compiler
- * cannot execute — so this is the same path `tools/gnucobol-validation.ts`
+ * cannot execute, so this is the same path `tools/gnucobol-validation.ts`
  * takes, and a test that skipped it would be compiling something the compiler
  * does not emit.
  */
@@ -77,7 +77,7 @@ export function compileSource(
  * A main program that builds a job's PARM and calls the generated one.
  *
  * A generated batch program takes its scalar entry parameters from the PARM,
- * which is what `PROCEDURE DIVISION USING` is there for — and an executable
+ * which is what `PROCEDURE DIVISION USING` is there for, and an executable
  * cannot have one: `cobc -x` says so ("executable program requested but
  * PROCEDURE/ENTRY has USING clause") and z/OS says the same thing by having the
  * initiator build the parameter list before the program is entered. On z/OS the
@@ -198,7 +198,7 @@ export function compileExample(examplePath = "examples/account-transfer") {
  * Every example, compiled, as one list.
  *
  * A style assertion made against a program written inside the test proves that
- * program. The 2026-08-05 audit's F13 is what that costs: a test asserting one
+ * program and nothing else. Here is what that cost once: a test asserting one
  * literal delimiter compiled a program reaching one of the two branches that
  * emit a boolean, passed, and left `MOVE 'Y'` in a shipped example, its
  * evidence bundle and a golden fixture for as long as the test had existed.
@@ -227,8 +227,8 @@ export function corpus(): { example: string; cobol: string }[] {
  *
  * A loop over a derived collection asserts nothing when the collection is
  * empty, and passes while doing it. That is the defect this repository keeps
- * producing — the 2026-08-05 audit's F13 was a test whose fixture reached one
- * of two branches, and the corpus assertions written to answer it introduced
+ * producing. The delimiter defect above was a test whose fixture reached one of
+ * two branches, and the corpus assertions written to answer it introduced
  * another: `SET <condition> TO TRUE` never matched, because the emitter
  * qualifies the condition (`SET OUTCOME-FOUND OF BALANCE-REPLY TO TRUE`) and
  * the pattern did not allow for it. Zero matches, zero assertions, green.

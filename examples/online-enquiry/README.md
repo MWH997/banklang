@@ -1,7 +1,7 @@
 # Online Enquiry Example
 
 A CICS online transaction that reads an account from Db2 and links to an audit
-program — the shape most real bank enquiry logic actually takes.
+program, the shape most real bank enquiry logic actually takes.
 
 ## What it demonstrates
 
@@ -20,7 +20,7 @@ program — the shape most real bank enquiry logic actually takes.
 
 CICS gives a program one communication area, not one in and one out.
 `DFHCOMMAREA` is the caller's own storage, so the request fields and the reply
-fields are the same block — and the first record parameter of a
+fields are the same block, and the first record parameter of a
 `cics transaction` is that block:
 
 ```cobol
@@ -37,7 +37,7 @@ sent. `BANK-CICS-005` refuses that program.
 
 `AuditEntry` is working storage and is meant to be. It leaves through the
 `link`, not through the commarea, and the transaction writes to the commarea as
-well — which is what tells `BANK-CICS-005` apart from a program with a
+well, which is what tells `BANK-CICS-005` apart from a program with a
 legitimate scratch record.
 
 ## SQL is declared, not assembled
@@ -64,9 +64,9 @@ statement would otherwise silently pick one.
 
 Two rules make the failure paths impossible to skip:
 
-- `BANK-SQL-001` — a body that runs SQL must test `sqlcode`. A row that was not
+- `BANK-SQL-001`: a body that runs SQL must test `sqlcode`. A row that was not
   found otherwise looks identical to one that was.
-- `BANK-CICS-001` — every CICS command must capture `resp`. A failed `LINK`
+- `BANK-CICS-001`: every CICS command must capture `resp`. A failed `LINK`
   otherwise looks like a successful one.
 
 ```cobol
@@ -94,10 +94,10 @@ records that it did:
 runtime, scripting what the runtime reports so the branch each test guards is
 actually taken:
 
-| Scripted               | Executed result                                   |
-| ---------------------- | ------------------------------------------------- |
-| nothing                | `CICS 0002 SYNCPOINT RESP 0` — the link committed |
-| `PGMIDERR` on the link | `CICS 0002 SYNCPOINT ROLLBACK RESP 0`             |
+| Scripted               | Executed result                                  |
+| ---------------------- | ------------------------------------------------ |
+| nothing                | `CICS 0002 SYNCPOINT RESP 0`; the link committed |
+| `PGMIDERR` on the link | `CICS 0002 SYNCPOINT ROLLBACK RESP 0`            |
 
 That is what the `RESP` plumbing is for: the translator copies `EIBRESP` into
 `linkResp` after the call, because CICS returns a response in the EXEC interface
@@ -121,4 +121,4 @@ would produce it.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=online-enquiry) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=online-enquiry). It compiles in your browser, with the generated COBOL beside it.

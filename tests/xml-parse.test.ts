@@ -9,10 +9,10 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol, unpadded } from "./helpers";
 
 /**
- * `xml <text> processing { element "ID" into account.id; }` — `XML PARSE`.
+ * `xml <text> processing { element "ID" into account.id; }`: `XML PARSE`.
  *
  * COBOL's XML reader is event-driven: it calls a procedure once per token of
- * the document — a start tag, its content, an end tag — and the procedure works
+ * the document (a start tag, its content, an end tag) and the procedure works
  * out what to keep by reading the `XML-EVENT` and `XML-TEXT` special registers.
  * There is no form that fills a record, in Enterprise COBOL or in GnuCOBOL.
  *
@@ -129,7 +129,7 @@ describe("the generated handler", () => {
 
   /**
    * And forgets it at the end tag. Without this, content belonging to a parent
-   * is filed under the child that just closed — the defect a hand-written
+   * is filed under the child that just closed, the defect a hand-written
    * handler usually has.
    */
   it("forgets it at the end tag", () => {
@@ -226,7 +226,7 @@ entry transaction ingest(account: Account, message: Message, flags: Flags) {
 
 /**
  * GnuCOBOL compiles `XML PARSE` and its special registers, warns that it is not
- * implemented, and then does nothing — no field is filled, and neither the
+ * implemented, and then does nothing: no field is filled, and neither the
  * exception nor the not-exception branch is taken, so a document that failed
  * looks exactly like one that worked.
  *
@@ -246,7 +246,9 @@ describe("it cannot be checked locally", () => {
     // enter it. What the warning is about is the distance between that scan and
     // what IBM's parser reports.
     expect(warning?.hint).toContain("BANKXML");
-    expect(warning?.hint).toContain("not IBM's parser");
+    // The claim, not one wording of it: the hint has to tell the reader the
+    // local run is a scan and not the parser the target ships.
+    expect(warning?.hint).toMatch(/(?:not|rather than) IBM's parser/);
   });
 
   /**
@@ -291,7 +293,7 @@ describe("it cannot be checked locally", () => {
  * IBM is explicit that "splits in character content might occur at arbitrary
  * points in the XML data stream, even with unsegmented input", and that the
  * register signalling it "may be required for any and all attribute values and
- * element character content". So this is not an edge case for large documents —
+ * element character content". So this is no edge case for large documents:
  * it is the ordinary behaviour of the parser.
  *
  * Moving each fragment straight to its field keeps the last one and loses the
@@ -331,7 +333,7 @@ describe("content split across events", () => {
 
   /**
    * Where the register is not set at all the test is simply never 2, so each
-   * append is followed by an assignment — which still ends up holding
+   * append is followed by an assignment, which still ends up holding
    * everything that was appended.
    */
   it("declares the buffer well past any field that can receive one", () => {

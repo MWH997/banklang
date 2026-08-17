@@ -21,7 +21,7 @@ import {
  *
  * So the property under test is not "produces a legal name". It is "produces
  * *distinct* legal names for a set", which is a property of the set and cannot
- * be tested one name at a time — which is exactly why the defect existed.
+ * be tested one name at a time, which is exactly why the defect existed.
  */
 
 describe("reducing a logical name", () => {
@@ -44,7 +44,7 @@ describe("reducing a logical name", () => {
   });
 
   it("keeps both ends when the plain form is not enough", () => {
-    // `TASKFUNC` — the head alone — is the same for every file of a task.
+    // `TASKFUNC`, the head alone, is the same for every file of a task.
     expect(ddEndsCandidate("TASKFUNC03OUT1")).toBe("TASKOUT1");
     expect(ddEndsCandidate("TASKFUNC03INP")).toBe("TASK3INP");
   });
@@ -90,7 +90,7 @@ describe("allocating a set of DD names", () => {
   });
 
   it("resolves a group larger than the single-digit counter", () => {
-    // The suffix is base-36, so a group of forty still fits — the first
+    // The suffix is base-36, so a group of forty still fits, and the first
     // thirty-six in one character and the rest in two.
     const many = Array.from(
       { length: 40 },
@@ -146,7 +146,7 @@ describe("allocating a set of DD names", () => {
     /*
      * The property the harness actually needs. The caller reads these names out
      * of a JSON object, and a benchmark that reordered its keys must not
-     * silently change which file a DD points at — that would move a
+     * silently change which file a DD points at, because that would move a
      * measurement without moving the corpus.
      */
     const forwards = allocateDdNames([

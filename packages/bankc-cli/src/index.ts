@@ -111,10 +111,10 @@ export interface CliResult {
  * A thrown failure, as a result the caller can print.
  *
  * Five commands caught an error and rendered `error.message`, which threw away
- * the identifier and the line before the reader ever saw them. F3 gave those
- * failures both, so there is one place that spends them — and it says the same
- * thing `bin.ts` says for a throw that gets past every command, so a reader
- * cannot tell which route their error took.
+ * the identifier and the line before the reader ever saw them. Classifying the
+ * failures gave them both back, and this is the one place that spends them. It
+ * says the same thing `bin.ts` says for a throw that gets past every command,
+ * so a reader cannot tell which route their error took.
  */
 export function failureResult(error: unknown): CliResult {
   if (error instanceof BankcError) {
@@ -210,7 +210,7 @@ let commandCwd = process.cwd();
  *
  * `evidence/` is checked in and is what a reader is invited to check the
  * project's claims against, and every report in it named
- * `/Users/<somebody>/Code/banklang/...` — so nobody else could reproduce a byte
+ * `/Users/<somebody>/Code/banklang/...`, so nobody else could reproduce a byte
  * of it, in a project whose first claim is that the same input always produces
  * the same output. The paths are still there and still correct; they are
  * relative to where the command ran, which is what a reader can act on.
@@ -254,7 +254,7 @@ export function runBankc(argv: string[], cwd = process.cwd()): CliResult {
 function dispatch(argv: string[], cwd: string): CliResult {
   // `--version` before `--help`, and before the command switch. It used to fall
   // through to the help text, so `bankc --version` printed a usage message and
-  // exited 0 — which is what every tool that shells out to a compiler reads as
+  // exited 0, which is what every tool that shells out to a compiler reads as
   // "this compiler has no version". A bug report about generated COBOL cannot
   // say which compiler produced it without this.
   if (
@@ -525,12 +525,12 @@ function runEmit(args: string[], cwd: string): CliResult {
 }
 
 /**
- * `bankc analyse <path...>` — read COBOL that already exists and say what is
+ * `bankc analyse <path...>`: read COBOL that already exists and say what is
  * in it.
  *
  * The question a bank asks before any other: what happens to the two thousand
- * programs we already have. The answer starts as a count — how many, how big,
- * what they touch, which ones nobody can follow — and this is that count, with
+ * programs we already have. The answer starts as a count (how many, how big,
+ * what they touch, which ones nobody can follow) and this is that count, with
  * what it does not know printed underneath it.
  *
  * A path may be a file or a directory; a directory is read for `.cbl` and
@@ -607,7 +607,7 @@ function runAnalyse(args: string[], cwd: string): CliResult {
     const path = join(outputRoot, `${name}-paragraphs.md`);
     writeFileSync(
       path,
-      `# ${name} — paragraph graph\n\n${renderParagraphGraph(analysis)}\n`,
+      `# ${name}: paragraph graph\n\n${renderParagraphGraph(analysis)}\n`,
       "utf8",
     );
     written.push(path);
@@ -856,7 +856,7 @@ export function parseJobDescriptor(text: string): JobDescriptor {
 }
 
 /**
- * `bankc job <dir>` — build every program in a job directory, then emit the one
+ * `bankc job <dir>`: build every program in a job directory, then emit the one
  * job stream that runs them.
  *
  * A job directory holds `job.json` and a subdirectory per program, each of them
@@ -1264,7 +1264,7 @@ function runTest(args: string[], cwd: string): CliResult {
  *
  * Separate from `build` on purpose: what `build` writes is what ships, and a
  * test case is not part of the program. It is also the one output that has
- * never been run — see `docs/zunit.md` — so a project
+ * never been run, see `docs/zunit.md`, so a project
  * asks for it rather than receiving it.
  */
 function runZunit(args: string[], cwd: string): CliResult {
@@ -1468,7 +1468,7 @@ function runCopybook(args: string[], cwd: string): CliResult {
  * A DCLGEN member read into a BankTS record.
  *
  * DCLGEN is Db2's own declarations generator, so the member states each
- * column's real SQL type and whether it may be null — two things a copybook
+ * column's real SQL type and whether it may be null, two things a copybook
  * cannot say. A nullable column becomes `nullable<T>`, which is what makes
  * `BANK-TYPE-008` refuse a program that reads one without checking.
  *
@@ -1618,7 +1618,7 @@ function collectCompileDiagnostics(compiled: CompiledProject): Diagnostic[] {
  * error wearing a softer word: a batch warned about its restart hazard
  * (`BANK-FILE-003`) could not be emitted, and neither could a program using a
  * construct that carries a caveat. A warning exists to be read and weighed, not
- * to refuse the work — so warnings are still printed, and the command carries
+ * to refuse the work, so warnings are still printed, and the command carries
  * on.
  */
 function blockingDiagnostics(compiled: CompiledProject): Diagnostic[] {
@@ -1733,7 +1733,7 @@ function compileProject(projectPath: string, cwd: string): CompiledProject {
   const sourceText = readFileSync(sourceFile, "utf8");
   // Parsed under the path as it was typed, not the resolved one. Every
   // diagnostic, every source map entry and every audit report carries this
-  // string, and an absolute path makes all three different on every machine —
+  // string, and an absolute path makes all three different on every machine,
   // in a project whose first claim is that the same input produces the same
   // output. `evidence/` is checked in, so that difference was checked in too.
   const parsed = parseBankTs(sourceText, relativeToCwd(sourceFile, cwd));
@@ -1839,14 +1839,14 @@ const WATCHABLE = new Set([
  * crash.
  *
  * `bankc explain BANK-LED-001 --watch` used to print "Watching for changes",
- * then `ENOENT: no such file or directory, watch '/…/BANK-LED-001'` — the
+ * then `ENOENT: no such file or directory, watch '/…/BANK-LED-001'`. The
  * watcher had taken the diagnostic id for a project path. `bankc doctor
  * --watch` was quieter and worse: it opened a recursive watch on the whole
  * working directory to rerun a command whose answer no `.bank.ts` can change.
  *
  * Neither is a thing to make work. `explain`, `doctor`, `init`, `version`,
- * `copybook`, `dclgen` and `analyse` do not read a project's BankTS — `analyse`
- * reads COBOL — so the honest response is to name the flag, name the command,
+ * `copybook`, `dclgen` and `analyse` do not read a project's BankTS, and `analyse`
+ * reads COBOL, so the honest response is to name the flag, name the command,
  * and say which commands take it.
  */
 export function watchRefusal(argv: string[]): CliResult | null {
@@ -1869,8 +1869,8 @@ export function watchRefusal(argv: string[]): CliResult | null {
  *
  * The convention, as a function: a project is a directory with
  * `src/main.bank.ts` in it, and a path already ending `.bank.ts` names the file
- * directly. Nothing here touches the disk, so callers that only want the path —
- * `watchProject`, deciding which directory to watch — can ask without having to
+ * directly. Nothing here touches the disk, so callers that only want the path,
+ * such as `watchProject` deciding which directory to watch, can ask without having to
  * hold a project that exists.
  */
 function sourceFileFor(projectPath: string, cwd: string): string {
@@ -1885,7 +1885,7 @@ function sourceFileFor(projectPath: string, cwd: string): string {
  *
  * The existence check is here rather than at the `readFileSync` that follows,
  * because what Node says when the file is absent is
- * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'` — an errno,
+ * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'`: an errno,
  * an absolute path, and no statement of what bankc expected. That is the
  * message a first-time user gets for a mistyped directory name, which makes it
  * one of the most-read lines this program has, and it reads like a crash.
@@ -2176,12 +2176,13 @@ function toModuleName(target: string): string {
  * rather than optional. A watch session is the one place where a throw must not
  * end the process: the caller is sitting in front of an editor, and the errors
  * worth watching for are exactly the ones a save can fix. Leaving the caller to
- * remember a `try` around a callback it does not own is how F2 happened.
+ * remember a `try` around a callback it does not own is how a rebuild that
+ * threw once ended the whole session.
  *
  * The `finally` matters as much as the `catch`. Without it a throw left
  * `running` true for the life of the session, so every later change set
  * `pending` and returned and the watcher went silent while still holding the
- * directory open — a worse failure than the crash, because it looks like
+ * directory open, a worse failure than the crash, because it looks like
  * nothing is wrong.
  */
 export function watchProject(
@@ -2195,7 +2196,7 @@ export function watchProject(
   // `sourceFileFor`, not `resolveSourceFile`: this is a path to derive a watch
   // directory from, not a file about to be read. `bankc job <dir> --watch`
   // names a directory of projects, whose own `src/main.bank.ts` is correctly
-  // absent — the fallback below is what that case is for. The build itself
+  // absent, and the fallback below is what that case is for. The build itself
   // runs through `runBankc`, which reports a path that names nothing.
   const sourceFile = sourceFileFor(projectPath, cwd);
 
@@ -2224,8 +2225,8 @@ export function watchProject(
   /*
    * `<project>/src` where there is one, and the named directory otherwise.
    *
-   * `bankc job <directory> --watch` has no `src` of its own — its sources are
-   * one level down, in each step's project — so watching `dirname(sourceFile)`
+   * `bankc job <directory> --watch` has no `src` of its own. Its sources are
+   * one level down, in each step's project, so watching `dirname(sourceFile)`
    * meant watching a path that is not there, and the session ended with a bare
    * ENOENT naming a directory the caller never typed. Watching the directory
    * itself covers every step, and the `.bank.ts` filter below is what keeps the
@@ -2247,7 +2248,7 @@ export function watchProject(
    * The first build of a job compiles every step and takes seconds, and it used
    * to run with nothing watching: a save during it was not queued, not late,
    * just gone, and the session went on reporting the state of a file the reader
-   * had already fixed. The `running` guard is what makes this ordering safe —
+   * had already fixed. The `running` guard is what makes this ordering safe:
    * an event arriving mid-build sets `pending` and is served on the way out.
    */
   run();
@@ -2401,8 +2402,8 @@ function gnucobol(cwd: string): string {
   const probe = spawnSync(executable, ["--version"], { cwd, encoding: "utf8" });
   if (probe.error || probe.status !== 0) {
     return configured
-      ? `not runnable at GNUCOBOL_COBC_PATH=${configured} — \`pnpm test:gnucobol\` and the cobc tests will skip`
-      : "not found — optional; `pnpm test:gnucobol` and the cobc tests skip without it";
+      ? `not runnable at GNUCOBOL_COBC_PATH=${configured}; \`pnpm test:gnucobol\` and the cobc tests will skip`
+      : "not found, and optional; `pnpm test:gnucobol` and the cobc tests skip without it";
   }
   const first = (probe.stdout || "").split("\n")[0]?.trim() ?? "";
   const where = configured ? ` (GNUCOBOL_COBC_PATH=${configured})` : "";
@@ -2415,7 +2416,7 @@ function gnucobol(cwd: string): string {
  * It answers two questions: what is installed, and what this compiler is
  * aiming at. The second half matters as much as the first, because "target"
  * and "validated against" are different facts and this project's whole claim
- * depends on nobody reading one as the other — so the native IBM line is
+ * depends on nobody reading one as the other, so the native IBM line is
  * printed always, states that nothing detected it, and is not conditional on
  * anything a machine could accidentally satisfy.
  *
@@ -2862,7 +2863,7 @@ function writeTestReport(
  *
  * The report goes into a checked-in evidence bundle, and a bundle holding
  * `/Users/somebody/Code/banklang/dist/...` is one nobody else can reproduce
- * byte for byte — which is the whole claim the bundle is there to support.
+ * byte for byte, which is the whole claim the bundle is there to support.
  */
 function summarizeCliResult(result: CliResult, cwd = process.cwd()): string {
   const firstLine =

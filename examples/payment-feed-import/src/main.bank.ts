@@ -5,7 +5,7 @@ type BDT = zoned<13, 2>;
 // The file a counterparty sends: text, one payment a line, no mainframe on the
 // other end of it. Every field is `zoned` or `string` rather than the packed
 // decimal a dataset would carry, because Enterprise COBOL requires a
-// line-sequential record to hold only USAGE DISPLAY items — a packed field here
+// line-sequential record to hold only USAGE DISPLAY items: a packed field here
 // is `BANK-FILE-014` rather than a file nobody can read.
 record PaymentLine {
   payReference: string<16>;

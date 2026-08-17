@@ -13,9 +13,9 @@ import { lintAll } from "../tools/conformance-lint";
  * Two halves. The rules are checked against programs written here to break
  * them, because a rule with no failing case is a rule that might be inert. And
  * then the whole repository is linted, because that is the point of having it:
- * the 2026-08-05 audit found a 31-character COBOL word, a rounding phrase that
+ * the external audit found a 31-character COBOL word, a rounding phrase that
  * is not Enterprise COBOL, and a job whose dataset names could not be
- * catalogued — all three in text that was checked in and read by no test.
+ * catalogued: all three in text that was checked in and read by no test.
  */
 
 /** Reference format, so the fixtures below are the shape a real artifact is. */
@@ -151,9 +151,9 @@ describe("what the linter refuses", () => {
   });
 
   /**
-   * The audit's F13, as a rule rather than as an instance. `MOVE 'Y'` sat two
-   * lines under a `VALUE "N"` in a shipped example, its evidence bundle and a
-   * golden fixture, while a test asserting exactly this passed — because the
+   * The delimiter defect, as a rule rather than as an instance. `MOVE 'Y'` sat
+   * two lines under a `VALUE "N"` in a shipped example, its evidence bundle and
+   * a golden fixture, while a test asserting exactly this passed, because the
    * program it compiled reached the boolean written as a condition and not the
    * boolean written as a literal. Read off the text, there is nothing to miss.
    */
@@ -181,10 +181,10 @@ describe("what the linter refuses", () => {
  *
  * `pnpm test:mutation:lint` was run over the linter for the first time on
  * 2026-08-06 and scored 61.10%, with 247 survivors. They concentrated in these
- * two rules: `unreferenced-item` had no test whatsoever — every mutant
+ * two rules. `unreferenced-item` had no test whatsoever: every mutant
  * survived, including replacing the collection condition with `if (true)` and
- * emptying the loop that reports the findings — and `literal-delimiter` had
- * exactly one, covering the case F13 was found in and nothing else.
+ * emptying the loop that reports the findings. `literal-delimiter` had exactly
+ * one, covering the case the defect was found in and nothing else.
  *
  * A rule that reads text is mostly edge: which lines it skips, where it stops
  * skipping, and which shapes it deliberately lets through. None of that was
@@ -264,7 +264,7 @@ describe("the delimiter rule reads the artifact's own convention", () => {
 
   it("keeps checking after an EXEC block ends", () => {
     // Kills emptying `if (/END-EXEC/) { inExec = false; }`. Left in, the rule
-    // treats the rest of the program as SQL and stops looking — and most of
+    // treats the rest of the program as SQL and stops looking, and most of
     // this corpus has an EXEC SQL block near the top, so the rule would have
     // been dead over exactly the programs it most needs to read.
     const findings = lintCobol(
@@ -410,7 +410,7 @@ describe("the unreferenced-item rule", () => {
   it("does not carry one program's storage into the next", () => {
     // Kills emptying the PROGRAM-ID reset. Without it, a name declared in the
     // first program and used only there is still on the list when the second
-    // program is scanned — and because uses are counted over the whole file,
+    // program is scanned, and because uses are counted over the whole file,
     // the rule stays quiet about a genuinely dead item in the second.
     const findings = lintCobol(
       "x.cbl",
@@ -474,7 +474,7 @@ describe("what the linter accepts", () => {
   /**
    * `ITER` and `TC-WORK-AREA` are IBM's, from a copybook the linter does not
    * have. They are accepted in an artifact that copies the member declaring
-   * them, and nowhere else — the same rule the MQI's names get.
+   * them and nowhere else, the same rule the MQI's names get.
    */
   it("the zUnit info block's fields, where the artifact copies EQAITERC", () => {
     expect(
@@ -519,7 +519,7 @@ describe("what the linter accepts", () => {
   /**
    * The generated zUnit driver's shape, copied from what IBM's own generator
    * produces: apostrophes throughout, because the message text it has to hold
-   * contains a quote. One delimiter, consistently — which is the rule.
+   * contains a quote. One delimiter, consistently, which is the rule.
    */
   it("an artifact that chose the apostrophe and kept to it", () => {
     expect(

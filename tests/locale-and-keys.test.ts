@@ -114,7 +114,7 @@ describe("special names", () => {
   /**
    * The convention swaps the roles of the comma and the point *inside pictures
    * too*, so a grouped amount is written `Z.ZZZ.ZZ9,99`. A picture built the
-   * other way round is not merely printed oddly — the COBOL compiler rejects
+   * other way round is worse than printed oddly: the COBOL compiler rejects
    * it, because the separator would appear more than once.
    */
   it("swaps the separators in an edited picture", () => {
@@ -131,7 +131,7 @@ describe("special names", () => {
  * the literals were not, so under the comma convention a period reached the
  * source where COBOL reads a sentence terminator: `COMPUTE BALANCE = 1234.50`
  * parsed as a COMPUTE of 1234 followed by a statement called `50`, and cobc
- * said so — `unknown statement '50'`. Every program that set the convention and
+ * said so, with `unknown statement '50'`. Every program that set the convention and
  * used a decimal literal failed to compile.
  */
 describe("numeric literals follow the convention too", () => {

@@ -10,7 +10,7 @@ import { runBankc } from "../packages/bankc-cli/src/index";
  * `docs/architecture.md` is where somebody goes to learn what the compiler is
  * made of, and it had drifted badly: it documented `packages/db2`,
  * `packages/cics`, `packages/vsam` and `packages/lsp`, none of which have ever
- * existed, while omitting twelve packages that do — including `cobol-runtime`,
+ * existed, while omitting twelve packages that do, including `cobol-runtime`,
  * the interpreter every example is executed against. A reader following it
  * would have gone looking for a layout nobody built.
  *
@@ -53,8 +53,8 @@ function documentedCommands(): string[] {
 /**
  * The commands `bankc` itself prints, as `<command>` or `<command> <sub>`.
  *
- * The help text lists arguments too — `check <project>`, `fmt <project|
- * file.cbl> [--check]` — and those are not commands. Every argument is written
+ * The help text lists arguments too (`check <project>`, `fmt <project|
+ * file.cbl> [--check]`) and those are not commands. Every argument is written
  * in angle or square brackets and no command is, so the bare lowercase words
  * are the command and the rest is its usage.
  */

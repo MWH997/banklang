@@ -10,7 +10,7 @@ import { compileExample } from "./helpers";
  * moment anything above a declaration grows, a test that names one is asserting
  * the layout of everything before it as well. That test fails for reasons that
  * have nothing to do with the map being right, and is then corrected by
- * copying the new number in — which is not a check at all.
+ * copying the new number in, which is not a check at all.
  */
 describe("source map", () => {
   it("records module, record, field, and function entries", () => {

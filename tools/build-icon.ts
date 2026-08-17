@@ -1,8 +1,8 @@
 /**
  * The extension's marketplace icon, rasterised without a browser.
  *
- * The Visual Studio Marketplace will not take an SVG as an extension icon — it
- * renders publisher-supplied artwork, and an SVG can carry script — so the
+ * The Visual Studio Marketplace will not take an SVG as an extension icon. It
+ * renders publisher-supplied artwork, and an SVG can carry script, so the
  * listing needs a PNG of at least 128x128. The site's mark is an SVG.
  *
  * `tools/build-og.ts` solves the same problem by screenshotting a page and
@@ -39,8 +39,8 @@ const SUPERSAMPLE = 4;
  *
  * Held to `favicon.svg` by a test rather than imported from it: parsing an SVG
  * to find three hex strings is more machinery than the thing it protects, and
- * the failure it protects against — a rebrand that moves the site and leaves
- * the extension on the old blue — is one a comparison catches just as well.
+ * the failure it protects against, a rebrand that moves the site and leaves
+ * the extension on the old blue, is one a comparison catches just as well.
  */
 export const PALETTE = {
   field: "#0d1117",
@@ -83,7 +83,7 @@ const any =
  * `M8 9h7.5a4.2 4.2 0 0 1 0 8.4H8V9Zm0 8.4h8.2a4.3 4.3 0 0 1 0 8.6H8v-8.6Z`
  *
  * Two stacked bowls, each a rectangle closed on the right by a half-circle
- * whose diameter is the rectangle's height — which is what the arc in the path
+ * whose diameter is the rectangle's height, which is what the arc in the path
  * is, so the disc and the box together are exactly the filled region. The B has
  * no counters in this mark; there are no holes to subtract.
  */
@@ -237,7 +237,7 @@ function main(): void {
   const png = renderIcon();
   writeFileSync(ICON_PATH, png);
   console.log(
-    `Wrote ${ICON_PATH.slice(ROOT.length + 1)} — ${String(SIZE)}x${String(SIZE)}, ${String(png.length)} bytes.`,
+    `Wrote ${ICON_PATH.slice(ROOT.length + 1)}: ${String(SIZE)}x${String(SIZE)}, ${String(png.length)} bytes.`,
   );
 }
 

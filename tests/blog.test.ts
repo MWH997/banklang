@@ -23,8 +23,9 @@ import { servedUrl } from "../tools/build-site";
  * `<h1>` somewhere else, a link that rotted when a page moved. All of it is
  * checkable, and none of it is checkable by reading the post again next year.
  *
- * The prose rules that used to live here are in `tests/prose.test.ts` now, and
- * they apply to the documentation and the site copy as well. H2 is why.
+ * The prose rules that used to live here are in `tests/prose.test.ts` now,
+ * where they apply to the documentation and the site copy as well. That file's
+ * header explains why.
  */
 
 const ALL = posts();
@@ -89,11 +90,10 @@ describe("the posts", () => {
 /**
  * House style, the half that is specific to a post.
  *
- * The two prose rules used to live here and to apply to five files. H2 moved
- * the phrase list to `tests/prose.test.ts`, which applies it to the
- * documentation and the site copy as well, and dropped the em-dash rule
- * outright — the reasoning for both is written at the top of that file. What is
- * left here is what is about a post rather than about prose in general.
+ * The two prose rules used to live here and to apply to five files. Both moved
+ * to `tests/prose.test.ts`, which applies them to the documentation and the
+ * site copy as well, and the reasoning is written at the top of that file. What
+ * is left here is what is about a post rather than about prose in general.
  */
 describe("how the posts are written", () => {
   it("says something specific in the first paragraph", () => {
@@ -113,7 +113,7 @@ describe("the rendered pages", () => {
     for (const post of ALL) {
       const page = renderPost(post);
       expect(page, post.slug).toContain('<link rel="canonical"');
-      // D2. The exact URL the host serves, not the file's name. Cloudflare
+      // The exact URL the host serves, not the file's name. Cloudflare
       // Pages answers `/blog/foo.html` with a 308 to `/blog/foo`, so declaring
       // the `.html` form canonical pointed every post at a redirect.
       expect(page, post.slug).toContain(
@@ -153,9 +153,9 @@ describe("the rendered pages", () => {
 });
 
 /**
- * H1. Five essays arguing for a change in how banks build core systems,
- * published with no byline, while `CITATION.cff` held the name, the email and
- * an ORCID and the string "Wahid" appeared nowhere on the built site.
+ * These essays argue for a change in how banks build core systems, and they
+ * went out with no byline, while `CITATION.cff` held the name, the email and an
+ * ORCID. The author's name appeared nowhere on the built site.
  *
  * Required rather than optional front matter, and held to the citation file, so
  * there is one record of who wrote this rather than two that can disagree.
@@ -196,9 +196,9 @@ describe("the byline", () => {
 });
 
 /**
- * H3 and H4. Every post closed with the same italic paragraph about BankLang,
- * which reads as a template in one sitting, and each one dead-ended: no way
- * from one essay to the next, and nothing saying whether a sixth was coming.
+ * Every post used to close with the same italic paragraph about BankLang,
+ * which reads as a template at a glance, and each one dead-ended: no way from
+ * one essay to the next, and nothing saying whether another was coming.
  */
 describe("what follows an essay", () => {
   it("is where to go next, rather than what BankLang is", () => {
@@ -250,8 +250,8 @@ describe("what follows an essay", () => {
 });
 
 /**
- * D5. A section called "Writing" with five essays aimed at engineers, and no
- * way to subscribe to it.
+ * A section called "Writing" with essays aimed at engineers needs a way to
+ * subscribe to it. For a while there was none.
  */
 describe("the feed", () => {
   const FEED = renderFeed(ALL);

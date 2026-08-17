@@ -3,7 +3,7 @@
  *
  * Every generated I/O statement is already followed by a test of the file
  * status, and a status outside class 0 stops the step. That covers the failures
- * — a dataset that is not there, a full volume — and deliberately does not
+ * (a dataset that is not there, a full volume) and deliberately does not
  * cover the statuses a program is *written* to produce: end of file on a read,
  * a key that was not there on a keyed read or a browse, a duplicate key on a
  * write to a KSDS. Those say the request found nothing rather than that the
@@ -20,7 +20,7 @@
  *
  * An operation whose expected statuses are non-empty leaves an **unhandled
  * outcome** on its file. The fact is discharged by looking: a condition that
- * reads that file's status — an `if`, a `while`, a `switch` subject — tells the
+ * reads that file's status (an `if`, a `while`, a `switch` subject) tells the
  * program which of the outcomes happened. The fact is a defect if, while it is
  * still outstanding, the program
  *
@@ -29,7 +29,7 @@
  * - reaches the end of the routine.
  *
  * Deliberately not "tested immediately". The idiomatic drain loop tests the
- * status in the loop condition, which is a test and discharges the fact —
+ * status in the loop condition, which is a test and discharges the fact, so
  * requiring an `if` after every `read` would reject the form the language
  * reference itself teaches. Equally deliberately, a mere *mention* of the
  * status is not enough on its own: it has to be in a condition, because
@@ -40,8 +40,8 @@
  * The other checks in this package flatten the statement tree and look at the
  * list. That cannot answer this question: `read` then `if status` is safe and
  * `if status` then `read` is not, and both flatten to the same two statements.
- * BankTS has no `goto`, so its control flow is a tree — an `if` with two
- * branches, a `while` whose body may run zero times — and a recursive walk that
+ * BankTS has no `goto`, so its control flow is a tree (an `if` with two
+ * branches, a `while` whose body may run zero times) and a recursive walk that
  * merges the states at each join is a sound flow analysis over it without an
  * explicit graph. The merge is the conservative one: a fact is discharged after
  * a branch only if every path through it discharged it.
@@ -56,9 +56,9 @@
  * statement kind nobody thought of is silently a statement with no blocks and
  * no uses, and the rule quietly stops applying to it.
  *
- * It had stopped applying to most of the language. `write trail from line` —
- * the stale record posted straight back out, which is the defect this whole
- * check exists for — was not a use. Neither was `release line` into a sort,
+ * It had stopped applying to most of the language. `write trail from line`,
+ * which posts the stale record straight back out and is the defect this whole
+ * check exists for, was not a use. Neither was `release line` into a sort,
  * `putMessage feedQueue from line` onto a queue, `checkpoint store from
  * master`, a `for each` or a `search` over a table inside the record, `call
  * "SUB" using line`, `json out from line`, an `xml` parse of it, a CICS `link
@@ -68,7 +68,7 @@
  *
  * So the blocks come from `childBlocks`, the IR's own exhaustive accounting of
  * them, and what a statement reads comes from `expressionsOf` and
- * `namesUsedBy` — exhaustive switches over `IRStatement` with no `default`. A
+ * `namesUsedBy`, which are exhaustive switches over `IRStatement` with no `default`. A
  * new statement kind does not compile until somebody has said what it reads.
  */
 
@@ -248,7 +248,7 @@ function childrenOf(expression: IRExpression): IRExpression[] {
  *
  * Exhaustive over `IRStatement`, with no `default`: the return type is not
  * nullable, so a kind nobody has classified does not compile. That is the point
- * — the version with a `default` silently exempted `serialize`, `call using`
+ * of it: the version with a `default` silently exempted `serialize`, `call using`
  * and every cursor argument from a rule that is supposed to hold everywhere.
  */
 function expressionsOf(statement: IRStatement): IRExpression[] {
@@ -331,7 +331,7 @@ function expressionsOf(statement: IRStatement): IRExpression[] {
  * COBOL moves whole records around by naming them, and BankTS keeps that: a
  * `write` says which record it is writing, a `release` says which one it is
  * handing to the sort. None of those is an expression, so none of them was
- * seen — and `read feedIn into line; write trail from line;` is the exact
+ * seen, and `read feedIn into line; write trail from line;` is the exact
  * shape of the defect the rule was written for. It reported nothing.
  *
  * Only the ones that genuinely *read* the record. A `read ... into line` and a
@@ -434,7 +434,7 @@ function report(
       severity: "error",
       message: `${outcome.operation} ${file} can end with status ${describeStatuses(outcome.expected)}, and ${what} without testing ${status}.`,
       span,
-      hint: `Branch on ${status} — \`if ${status} == "00" { ... }\`, or a loop whose condition reads it — before using what the ${outcome.operation} left behind.`,
+      hint: `Branch on ${status}, with \`if ${status} == "00" { ... }\` or a loop whose condition reads it, before using what the ${outcome.operation} left behind.`,
       backendProfile: null,
     }),
   );
@@ -459,7 +459,7 @@ function clone(state: State): State {
 /**
  * Applies one expression to the state: what it tests, and what it uses.
  *
- * Both at once, because a condition can do both — `if feedStatus == "00" AND
+ * Both at once, because a condition can do both: `if feedStatus == "00" AND
  * account.balance > 0` tests the status and reads the record it filled, and
  * that is safe. So the test is applied first and only a use with no
  * accompanying test is reported.
@@ -521,7 +521,7 @@ function apply(
  * Walks one block, in order, updating the state as it goes.
  *
  * Returns the state at the end of the block. A `raise` or a `return` ends the
- * path, and the state it ends with is the caller's business — an outcome
+ * path, and the state it ends with is the caller's business. An outcome
  * pending at a `raise` is not a defect, because the transaction is abandoning
  * its work rather than carrying on with a stale record.
  */
@@ -587,7 +587,7 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
 
       case "IfStatement": {
         // The condition is a test. Whatever it reads is discharged on both
-        // paths, because the program has looked at it before choosing one —
+        // paths, because the program has looked at it before choosing one,
         // and a condition that reads the *record* without reading the status
         // is the defect, which is why this goes through `observe`.
         observe(
@@ -658,7 +658,7 @@ function walkBlock(walk: Walk, block: IRBlock, incoming: State): State {
  * Walks blocks that may or may not run, from the state at the head.
  *
  * Each from the same incoming state, because they are alternatives rather than
- * a sequence, and the result merged back into the head state — a `for each`
+ * a sequence, and the result merged back into the head state. A `for each`
  * body may run zero times and a `not found` branch may not be taken, so
  * anything the head still owed is still owed afterwards.
  */
@@ -709,7 +709,7 @@ export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
     // The recovery path, which the body's own walk never reaches: control
     // arrives from a `raise` anywhere inside it, so nothing the body owed is
     // known here and nothing it discharged is either. Walked from scratch, for
-    // the operations the handler itself performs — a handler that reads a file
+    // the operations the handler itself performs: a handler that reads a file
     // and posts what it found owes the same answer the body would.
     if (transaction.failureHandler) {
       routine(
@@ -724,7 +724,7 @@ export function checkFileOutcomes(program: IRProgram): Diagnostic[] {
   }
 
   // A file error handler is a `USE AFTER STANDARD ERROR` declarative, which
-  // COBOL runs only when the statement had no phrase of its own — and every
+  // COBOL runs only when the statement had no phrase of its own, and every
   // one of these outcomes has one. So a handler does not discharge them, and
   // its own body is walked like any other routine would be.
   for (const handler of program.fileErrorHandlers) {

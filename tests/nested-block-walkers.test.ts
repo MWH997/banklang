@@ -17,7 +17,7 @@ import { compile } from "../packages/compiler/src/index";
  * did. So a `while` loop inside a `switch` branch was named and never declared,
  * the emitter referenced the counter four times, and `cobc` said
  * `'CLASSIFY-LOOP-1' is not defined`. The compiler reported no diagnostic at
- * all — it emitted a program no COBOL compiler accepts and called it clean.
+ * all: it emitted a program no COBOL compiler accepts and called it clean.
  *
  * Nothing caught it because no example in the corpus puts a loop inside a
  * `switch`. That is what these are for: every combination of a
@@ -26,13 +26,13 @@ import { compile } from "../packages/compiler/src/index";
  *
  * The assertion is deliberately not "the counter is declared". It is that
  * **every data name the program refers to is declared**, because the defect was
- * never about counters specifically — it was about two walkers disagreeing, and
+ * never about counters specifically. It was about two walkers disagreeing, and
  * the next disagreement will be about something else.
  */
 
 /**
  * A transaction rather than a function, because a function's every block has to
- * end with a `return` or an `if` (`BANK-TYPE-004`) — which rules out ending one
+ * end with a `return` or an `if` (`BANK-TYPE-004`) which rules out ending one
  * with the loop these probes exist to nest.
  */
 const PRELUDE = `module NestedWalkers;
@@ -198,7 +198,7 @@ ${DECLARING_BODY}
  * The guard against the next disagreement.
  *
  * The six walkers are migrated onto `childBlocks`, which is one `switch` over
- * every statement kind with no `default` — so a kind added with a block and
+ * every statement kind with no `default`, so a kind added with a block and
  * forgotten there is a type error. That property is worth keeping, and it is
  * lost the moment somebody writes a seventh walker with its own list.
  *
@@ -245,7 +245,7 @@ describe("nothing in the backend keeps its own list of block-carrying kinds", ()
    * was handled, and it found the nested blocks by looking up seven property
    * names on the statement object. `atEndOfPage` was one of the seven and the
    * lookup was never called for a file statement, so `write ... on page { ... }`
-   * was a block the rule did not enter — a read inside one left an outcome
+   * was a block the rule did not enter: a read inside one left an outcome
    * outstanding and the compiler said the program was clean.
    */
   it("is what the file-outcome walk uses too", () => {

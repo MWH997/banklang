@@ -5,7 +5,7 @@ import { compile } from "../packages/compiler/src/index";
 import { inspectGeneratedCopybook } from "../packages/copybook/src/index";
 
 /**
- * `national<n>` — `PIC N(n) USAGE NATIONAL`.
+ * `national<n>`: `PIC N(n) USAGE NATIONAL`.
  *
  * This is a storage declaration, and the reason to have it is arithmetic: a
  * national character is two bytes, so a record holding one does not line up if
@@ -15,7 +15,7 @@ import { inspectGeneratedCopybook } from "../packages/copybook/src/index";
  * It is deliberately not a text type. GnuCOBOL calls its own handling of
  * `USAGE NATIONAL` unfinished and implements neither `NATIONAL-OF` nor
  * `DISPLAY-OF`, so a conversion between an alphanumeric and a national is the
- * one thing this compiler will not emit — the bytes it produced would differ
+ * one thing this compiler will not emit, because the bytes it produced would differ
  * between GnuCOBOL and Enterprise COBOL.
  *
  * It is also the one place the compiler emits a layout its own validator reads
@@ -214,8 +214,8 @@ entry transaction store(name: CustomerName) {
 
 /**
  * The layout this compiler reports is Enterprise COBOL's, because that is the
- * backend it targets. GnuCOBOL 3.2.0 — the compiler every other feature in this
- * repository is validated against — reads it differently:
+ * backend it targets. GnuCOBOL 3.2.0, the compiler every other feature in this
+ * repository is validated against, reads it differently:
  *
  * ```cobol
  * 01  H.

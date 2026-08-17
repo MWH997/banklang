@@ -72,8 +72,8 @@ describe("formatting generated COBOL", () => {
 
       // And the program runs the same. This is the property that matters, and
       // it is stronger than byte-identity: it says the formatter changed the
-      // layout and nothing else. Two of the corpus are not interpretable —
-      // Report Writer and a LINAGE print file — and are checked on the margin
+      // layout and nothing else. Two of the corpus are not interpretable,
+      // Report Writer and a LINAGE print file, and are checked on the margin
       // alone.
       let before;
       try {

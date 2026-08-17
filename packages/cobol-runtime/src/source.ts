@@ -42,8 +42,8 @@ const INDICATOR = 6;
  *
  * `CBL` and `PROCESS` carry the options the program is compiled under. The
  * emitter writes two `CBL` lines at the top of every program and they say what
- * `ARITH`, `TRUNC` and `NUMPROC` are set to. Those settings matter — see
- * `docs/numeric-model.md` — but they are read by `optionsOf` rather than
+ * `ARITH`, `TRUNC` and `NUMPROC` are set to. Those settings matter, and
+ * `docs/numeric-model.md` covers them, but they are read by `optionsOf` rather than
  * executed, so they do not belong in the statement stream.
  */
 const DIRECTIVE = /^\s{0,6}(CBL|PROCESS)\s/i;
@@ -127,7 +127,7 @@ export const AREA_A_END = 11;
  */
 const WORD = /^[A-Za-z0-9]+(?:-+[A-Za-z0-9]+)*/;
 
-/** `12`, `12.34`, `.5` — a sign is a separate token. */
+/** `12`, `12.34`, `.5`, where a sign is a separate token. */
 const NUMBER = /^(?:\d+(?:\.\d+)?|\.\d+)/;
 
 /** Two-character operators, longest first so `>=` never lexes as `>` then `=`. */
@@ -182,7 +182,7 @@ export function tokenize(lines: SourceLine[]): Token[] {
       rest = rest.trimStart();
       // The continuation of a literal re-opens with a quote, and that quote is
       // not part of the value. Reading it as data closed the literal on the
-      // spot and turned the rest of the sentence into program text — which is
+      // spot and turned the rest of the sentence into program text, which is
       // how `"ARITHMETIC OVERFLOW ACCOUNTS-READ OF RUN" "-SUMMARY"` first
       // arrived here as a subtraction.
       if (rest.startsWith(pendingLiteral.quote)) {
@@ -218,7 +218,7 @@ export function tokenize(lines: SourceLine[]): Token[] {
       }
 
       // A comma or semicolon *followed by a space* is a separator and carries
-      // no meaning — `CALL "X" USING A, B` and `USING A B` are the same
+      // no meaning: `CALL "X" USING A, B` and `USING A B` are the same
       // program. One with no space after it is part of a picture string, where
       // `PIC ZZ,ZZ9.99` needs it kept. That distinction is COBOL's own rule for
       // the separator comma, and it is what lets every list below be parsed by
@@ -267,7 +267,7 @@ export function tokenize(lines: SourceLine[]): Token[] {
       }
 
       const word = WORD.exec(rest);
-      // A bare run of digits is a number, not a word — but `9ABC` cannot occur
+      // A bare run of digits is a number, not a word, and `9ABC` cannot occur
       // and `01` as a level number must stay lexable as both, so the number
       // rule is tried first and only wins when the whole match is digits.
       const number = NUMBER.exec(rest);

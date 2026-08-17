@@ -31,7 +31,7 @@
       *>
       *> What running against this proves: the program links, reaches
       *> its SQL call sites in the expected order, and takes the branch
-      *> its SQLCODE test selects — so a not-found path, and the end of
+      *> its SQLCODE test selects, so a not-found path, and the end of
       *> a cursor, are executed rather than assumed.
       *>
       *> What it does NOT prove: anything about the SQL itself. No
@@ -218,7 +218,7 @@
 
       *> Every call, not only the ones that succeeded. A FETCH that ends
       *> the cursor still reports how many rows came with it, and the
-      *> script simply has none for that call — so this writes nothing
+      *> script simply has none for that call, so this writes nothing
       *> and sets the count to zero. Delivering only on success left the
       *> previous call's count in SQLERRD(3), and a rowset loop read the
       *> same set of rows a second time before it stopped.
@@ -240,7 +240,7 @@
 
       *> First entry for this statement that still has calls left. A
       *> finite entry is spent as it is used, so a later entry for the
-      *> same statement takes over — which is how a cursor runs out of
+      *> same statement takes over, which is how a cursor runs out of
       *> rows.
        APPLY-OUTCOME.
            PERFORM VARYING WS-INDEX FROM 1 BY 1

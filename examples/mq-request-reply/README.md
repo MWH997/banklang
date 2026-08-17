@@ -24,7 +24,7 @@ required, which is why `getMessage` has an `else`.
 
 **Everything is under syncpoint.** The get asks `MQGMO-SYNCPOINT` and the put
 asks `MQPMO-SYNCPOINT`, so the reply and the ledger posting commit together or
-not at all — a payment released before its posting is committed is one the
+not at all: a payment released before its posting is committed is one the
 downstream system acts on and the bank has not recorded.
 
 That is also why this example needs no restart record: an uncommitted get goes
@@ -38,14 +38,14 @@ connects to a queue manager rather than to a queue, so the two `connectQueue`
 statements produce one `MQCONN` between them and the two `disconnectQueue`
 statements produce one `MQDISC`. IBM's Application Programming Reference says a
 second `MQCONN` naming a manager already connected returns the same handle "with
-completion code MQCC_WARNING and reason code MQRC_ALREADY_CONNECTED" — and
+completion code MQCC_WARNING and reason code MQRC_ALREADY_CONNECTED", and
 `MQCC-WARNING` is not `MQCC-OK`, so a connect per queue would end this step with
 RC 12 on the second queue, before reading a message. Nothing local sees that:
 the reference MQI now models it, but a queue manager is not there to disagree.
 
 ## What it costs on z/OS
 
-MQ needs no precompiler — the MQI is plain `CALL`s — but the generated job asks
+MQ needs no precompiler, since the MQI is plain `CALL`s, but the generated job asks
 for three things it would not otherwise have: `MQM.SCSQCOBC` on SYSLIB so
 `COPY CMQV` resolves at compile time, `MQM.SCSQLOAD` on SYSLIB so `MQCONN` and
 the rest resolve to the stub at link time, and `MQM.SCSQANLE` with
@@ -61,8 +61,8 @@ documents and holds one message between a put and a get. **It is not IBM MQ.**
 
 ## Related
 
-- [docs/language-reference.md](../../docs/language-reference.md) — the `queue` declaration
+- [docs/language-reference.md](../../docs/language-reference.md): the `queue` declaration
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=mq-request-reply) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=mq-request-reply). It compiles in your browser, with the generated COBOL beside it.

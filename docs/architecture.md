@@ -1,6 +1,10 @@
-# BankLang Architecture
+# Architecture
 
-## 1. Architecture overview
+How a BankTS module becomes COBOL: the stages it passes through, the package
+that owns each one, and the entry point to call if you want the whole thing from
+your own code.
+
+## 1. Overview
 
 BankLang is a deterministic compiler toolchain.
 

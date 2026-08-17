@@ -4,7 +4,7 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed } from "./helpers";
 
 /**
- * `INSPECT`, `UNSTRING`, and `SEARCH` — the three the string and table work
+ * `INSPECT`, `UNSTRING`, and `SEARCH`: the three the string and table work
  * left out.
  *
  * Each does something a program could only fake before: counting or replacing

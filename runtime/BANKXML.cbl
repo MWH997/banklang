@@ -2,7 +2,7 @@
       *>
       *> Enterprise COBOL implements XML PARSE. GnuCOBOL 3.2.0 compiles
       *> it, warns that it is not implemented, and does nothing at run
-      *> time — so the handler section the compiler generated is never
+      *> time, so the handler section the compiler generated is never
       *> entered, no exception is raised, and the record keeps whatever
       *> it held. Every local signal says the program worked.
       *>
@@ -18,10 +18,10 @@
       *> The registers cannot be used locally either. GnuCOBOL 3.2
       *> reserves XML-EVENT, XML-TEXT and XML-INFORMATION as special
       *> registers, but XML-TEXT is a zero-length one that only a real
-      *> XML PARSE sets — a MOVE to it ends the run with a segmentation
-      *> fault. The precompiler therefore points the generated handler
-      *> at fields of its own, which is the same substitution it makes
-      *> for EXEC SQL and EXEC CICS.
+      *> XML PARSE sets, so a MOVE to it ends the run with a
+      *> segmentation fault. The precompiler therefore points the
+      *> generated handler at fields of its own, which is the same
+      *> substitution it makes for EXEC SQL and EXEC CICS.
       *>
       *> Events reported: START-OF-ELEMENT, CONTENT-CHARACTERS,
       *> END-OF-ELEMENT. A real parser reports many more, and a
@@ -37,7 +37,7 @@
       *> stub should pretend to. What running against it proves is that
       *> the handler is reached, that its EVALUATE selects the branch
       *> the document asks for, and that the record is populated from
-      *> the text — not anything about z/OS.
+      *> the text, and nothing about z/OS.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. BANKXML.
 

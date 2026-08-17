@@ -6,7 +6,7 @@
  * a visual seam. What is here is only what a document needs and a landing page
  * does not: a three-column shell, prose measure, tables, and the search box.
  *
- * Every pair used here is already measured — `site.css` says where. Nothing in
+ * Every pair used here is already measured, and `site.css` says where. Nothing in
  * this file introduces a new colour.
  */
 
@@ -52,7 +52,7 @@
 
 /* Not an `h2`, which is what these were. The sidebar precedes `<main>` in the
    document, so every documentation page opened with four level-two headings
-   before its own `h1` — F17. The group name is still announced, through the
+   before its own `h1`. The group name is still announced, through the
    `aria-labelledby` on the list it labels, which is what it was doing here. */
 /*
  * 0.78rem rather than 0.72. Uppercased and letter-spaced text reads smaller
@@ -212,8 +212,8 @@
   max-width: 46rem;
 
   /*
-   * `site.css` styles bare `main` for the landing page — `margin: 0 auto` and
-   * its own horizontal padding — and this element is a `main`. Inherited into a
+   * `site.css` styles bare `main` for the landing page, with `margin: 0 auto` and
+   * its own horizontal padding, and this element is a `main`. Inherited into a
    * grid item, `margin: auto` switches off `justify-self: stretch`, so the
    * column stopped constraining it and it sized to its own max-content instead:
    * 691px of prose inside a 343px track on a phone, clipped by the body's
@@ -415,7 +415,7 @@
  * The header wraps rather than clipping its last item.
  *
  * Five items at the landing page's 1.25rem gap come to a few pixels over 390,
- * so the contents button sat half off the screen — visible at 375 because the
+ * so the contents button sat half off the screen, visible at 375 because the
  * row wrapped, invisible at 390 because it did not quite. The gap closes before
  * the row does.
  */
@@ -428,7 +428,7 @@
  * On a narrow screen the navigation gets a row of its own.
  *
  * Left to `flex-wrap` alone it stayed beside the wordmark and overflowed
- * whenever there was *nearly* enough room — it wrapped correctly at 365px and
+ * whenever there was *nearly* enough room: it wrapped correctly at 365px and
  * clipped its last two items at 380. Giving it the full width makes the
  * behaviour the same at every size below the breakpoint instead of depending
  * on where the items happen to land.

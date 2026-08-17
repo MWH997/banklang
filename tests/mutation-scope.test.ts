@@ -7,15 +7,15 @@ import { describe, expect, it } from "vitest";
  *
  * A lane runs an allowlist, for a stated and good reason: "does this test read
  * generated COBOL?" has a short, stable answer, and a blocklist grows a hole
- * every time a suite is added. The allowlist's own failure is quieter — an
+ * every time a suite is added. The allowlist's own failure is quieter: an
  * entry that stops matching costs nothing visible. A renamed or deleted suite
  * drops out of the lane, the run still finishes, the score falls a little, and
  * nothing says why.
  *
  * **What this deliberately does not check.** The first version of this file
  * asserted that any suite importing a mutated package must be in that package's
- * lane. It flagged nineteen — `transactions`, `type-system`, `numeric`,
- * `jcl` — which import the emitter to compile a program and then assert about
+ * lane. It flagged nineteen (`transactions`, `type-system`, `numeric`,
+ * `jcl`) which import the emitter to compile a program and then assert about
  * semantics. Running them in the formatting lane would cost a full run each and
  * kill nothing, which is what `vitest.mutation-emitter.config.ts` says in its
  * own header. "Imports the package" is not a proxy for "can kill a mutant
@@ -24,7 +24,7 @@ import { describe, expect, it } from "vitest";
  *
  * The reason this file exists at all: `tests/cobol-ir-names.test.ts` was written
  * to kill mutants in `packages/cobol-ir/src/index.ts`, passed 21 assertions in
- * CI, and moved that file's score by **-0.10** — because the lane never loaded
+ * CI, and moved that file's score by **-0.10**, because the lane never loaded
  * it. Adding it took the file from 44.12% to 80.38%. Nothing failed in between.
  */
 
@@ -55,8 +55,8 @@ const STRYKER = [
  * skip.
  *
  * The lanes are two shapes: the emitter and lint lanes use `include`, the rules
- * lane uses `exclude`. Both go stale the same way — a renamed suite silently
- * drops out of an allowlist, and silently rejoins a blocklist — so both lists
+ * lane uses `exclude`. Both go stale the same way: a renamed suite silently
+ * drops out of an allowlist, and silently rejoins a blocklist, so both lists
  * are checked, and neither shape is assumed.
  */
 function namedTests(config: string): string[] {
@@ -145,7 +145,7 @@ describe("every mutation lane", () => {
  *
  * The three lanes added on 2026-08-08 were written from the shape of an
  * existing config and left out `plugins`. Stryker exited with "Cannot find
- * TestRunner plugin vitest" — before running a single mutant, and with no
+ * TestRunner plugin vitest", before running a single mutant, and with no
  * score to be below any threshold. In the scheduled workflow that is a red
  * step among five green ones, which is the kind of thing that gets muted.
  */

@@ -12,8 +12,8 @@ import { describe, expect, it } from "vitest";
  * file described a setup nobody had, and the untracked one held a setup nobody
  * could reproduce.
  *
- * That is the failure worth catching: not a missing value — `.env` is private
- * and must stay that way — but a **key** that exists locally and is documented
+ * That is the failure worth catching. Not a missing value, since `.env` is private
+ * and must stay that way, but a **key** that exists locally and is documented
  * nowhere, which is a setup step the next person has to guess at.
  *
  * Skips when there is no `.env`, which is CI and a fresh clone. A skipped run
@@ -72,7 +72,7 @@ describe("a working .env, where one exists", () => {
 
       expect(
         undocumented,
-        "these are set locally and documented in no tracked file — add them to .env.example, with empty values",
+        "these are set locally and documented in no tracked file; add them to .env.example, with empty values",
       ).toEqual([]);
     },
   );

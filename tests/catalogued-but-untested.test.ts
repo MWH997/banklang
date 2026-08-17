@@ -14,7 +14,7 @@ import {
  * implemented is named by some test. Five were not: `BANK-TYPE-000`,
  * `BANK-TYPE-014`, `BANK-DEC-004`, `BANK-LED-004` and `BANK-FILE-012`. A rule
  * with no test that fails when you break it is a comment, and a catalogue entry
- * with no test is a promise nobody checked — which is worse, because it is
+ * with no test is a promise nobody checked, which is worse, because it is
  * printed by `bankc explain` as though it were a guarantee.
  *
  * Written together here because they were found together, and because what they
@@ -40,7 +40,7 @@ describe("BANK-TYPE-000", () => {
   /**
    * The typechecker asked to check nothing.
    *
-   * Unreachable through `compile`, which stops at the parse errors — so it is
+   * Unreachable through `compile`, which stops at the parse errors, so it is
    * provoked at the boundary it defends. It exists because a null program
    * reaching the typechecker used to be a crash rather than a diagnostic, and a
    * compiler that throws on bad input is one whose error handling is the stack
@@ -62,7 +62,7 @@ describe("BANK-TYPE-014", () => {
    *
    * Generics are monomorphised, so each distinct type argument is another copy
    * of the code. The cap exists because a generic that calls itself at a new
-   * type argument expands until memory runs out — and it fires here for the
+   * type argument expands until memory runs out, and it fires here for the
    * other reason, which is why the message reports the cap rather than
    * claiming a non-termination it cannot prove. Provoking it takes 201 types,
    * because a language whose type arguments are inferred rather than written
@@ -110,7 +110,7 @@ describe("BANK-DEC-004", () => {
    *
    * Multiplication adds the operand scales and the integer digits, and COBOL
    * truncates the high-order end of an overflow silently under
-   * `NUMPROC(NOPFD)` — so the answer is not merely wrong, it is a plausible
+   * `NUMPROC(NOPFD)`, so the answer is worse than wrong: it is a plausible
    * smaller number.
    */
   it("refuses a product that cannot fit its receiver", () => {
@@ -177,7 +177,7 @@ describe("BANK-FILE-012", () => {
    *
    * A DD name is one to eight characters and the dataset name is derived from
    * it, so `settlementExtract` and `settlementReport` are one DD allocated
-   * twice — and in a job of several steps, one step's output written over the
+   * twice, and in a job of several steps, one step's output written over the
    * dataset the next step reads, under a name that looks deliberate.
    */
   it("refuses two files that share a DD name", () => {

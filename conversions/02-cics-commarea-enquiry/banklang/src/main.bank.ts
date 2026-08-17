@@ -29,7 +29,7 @@ cics transaction enquireAccount(commarea: CommareaLayout, row: AccountRow) {
   // The original had two branches where there are three. `SQLCODE = 0` was
   // "found" and everything else was "01", so a deadlock (-911), a resource
   // that was not available (-904) and a package that was never bound (-805)
-  // all reached the terminal as "account not found" — and the operator saw a
+  // all reached the terminal as "account not found", and the operator saw a
   // customer enquiry that worked, for an account that exists.
   //
   // `BANK-SQL-007` refuses a program that cannot tell those apart.

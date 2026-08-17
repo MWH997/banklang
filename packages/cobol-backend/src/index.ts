@@ -65,7 +65,7 @@ import type {
  * `planStatementNames` did, so a `while` loop inside a `switch` branch was
  * given a counter name and never a counter declaration. The emitter then
  * referenced a field in no `WORKING-STORAGE` entry and `cobc` answered
- * `'CLASSIFY-LOOP-1' is not defined` — a program this compiler called clean
+ * `'CLASSIFY-LOOP-1' is not defined`: a program this compiler called clean
  * that no COBOL compiler will accept.
  *
  * `childBlocks` is a `switch` over every statement kind with no `default`, so a
@@ -123,8 +123,8 @@ const FILE_STATUS_PICTURE = "PIC X(2)";
 /**
  * Condition names for the file status key, which is how COBOL reads one.
  *
- * The generated checks used to be reference modification —
- * `IF FEED-STATUS(1:1) NOT = "0" AND FEED-STATUS NOT = "10"` — which is
+ * The generated checks used to be reference modification,
+ * `IF FEED-STATUS(1:1) NOT = "0" AND FEED-STATUS NOT = "10"`, which is
  * correct, unreadable, and the last thing a COBOL programmer would write. The
  * language has 88-levels for exactly this, the emitter already uses them for
  * enums, and file status is where they matter most: it is the one field a
@@ -153,8 +153,8 @@ const FILE_STATUS_NAMES: Record<string, string> = {
  * One COBOL word assembled from a base name and the suffixes the backend adds
  * to it, kept inside the 30 characters Enterprise COBOL allows.
  *
- * Every generated name that is not simply the user's own — `-RESULT`, `-P1`,
- * `-EXIT`, `-IDX`, a host variable's `-H2` — is built here rather than by
+ * Every generated name that is not simply the user's own (`-RESULT`, `-P1`,
+ * `-EXIT`, `-IDX`, a host variable's `-H2`) is built here rather than by
  * string concatenation, because concatenation is what produced
  * `IS-ELIGIBLE-FOR-INTEREST-RESULT`: a base already at the limit with seven
  * more characters stuck on the end, accepted by GnuCOBOL's default dialect and
@@ -190,7 +190,7 @@ const FAILURE_CODE_FIELD = "BANK-FAILURE-CODE";
  * set to the value of the RETURN-CODE special register in the called program".
  * Every generated transaction ends by calling BANKAUDT, so a `returnCode = 8`
  * set anywhere before that was overwritten with the audit program's zero, and
- * the job reported success on a run the program had already condemned — with
+ * the job reported success on a run the program had already condemned, with
  * every `COND=(4,LT)` step after it running on that basis.
  *
  * Held here and moved into `RETURN-CODE` on the way out, after the last call.
@@ -262,8 +262,8 @@ let abendParagraphUsed = false;
 /**
  * Declared return type of the routine being emitted.
  *
- * A `return round(...)` has no target to read a scale from — the receiving
- * field is the routine's own result cell — and rounding is decided by the
+ * A `return round(...)` has no target to read a scale from (the receiving
+ * field is the routine's own result cell), and rounding is decided by the
  * receiver, so the type has to travel with the emission rather than with the
  * expression.
  */
@@ -321,7 +321,7 @@ let currentFunctions = new Map<string, IRFunction>();
  * Records of the program being emitted, keyed by name.
  *
  * A statement carries the name of the record it touches rather than the record,
- * so this is how the emitter asks a question about the declaration — such as
+ * so this is how the emitter asks a question about the declaration, such as
  * whether the field being assigned is the count some table's length depends on.
  */
 let currentRecords = new Map<string, IRRecord>();
@@ -386,8 +386,8 @@ const MAIN_PARAGRAPH = "BANK-MAIN";
 /**
  * The one paragraph a failure with nowhere else to go ends the step from.
  *
- * Reached only from places that are not inside a routine — a `USE AFTER
- * STANDARD ERROR` declarative, an XML handler section — because everywhere else
+ * Reached only from places that are not inside a routine (a `USE AFTER
+ * STANDARD ERROR` declarative, an XML handler section) because everywhere else
  * a failure jumps to the enclosing routine's own exit and lets whatever
  * `on failure` handler exists run first.
  */
@@ -446,16 +446,16 @@ function findEntryTransaction(program: IRProgram): IRTransaction | null {
  *
  * A batch program's input has to come from somewhere. Record parameters do not:
  * a record a batch entry declares is a buffer it fills from a file, and it
- * starts empty by design. A scalar does — a run date, a branch code, the
- * idempotency key — and there was no convention for one at all, so the
+ * starts empty by design. A scalar does (a run date, a branch code, the
+ * idempotency key) and there was no convention for one at all, so the
  * generated program left it in uninitialised working storage and moved it
  * straight into the audit correlation.
  *
  * The convention is the one z/OS has: `PROCEDURE DIVISION USING` a parameter
  * list whose first halfword is the length of what follows, positional, each
- * parameter occupying its declared width. A CICS transaction is excluded — it
+ * parameter occupying its declared width. A CICS transaction is excluded: it
  * is passed a COMMAREA and is started by a transaction identifier, not by an
- * EXEC statement — and so is an IMS program, which the region enters with its
+ * EXEC statement. So is an IMS program, which the region enters with its
  * PCBs.
  *
  * See `docs/jcl-model.md` for the PARM string a job supplies, and
@@ -481,7 +481,7 @@ export function batchParmFields(program: IRProgram): BatchParmField[] {
   // DIVISION, so there is no parameter list left for a PARM to arrive on. It
   // used to get one anyway: the linkage group was declared, the USING clause
   // named the PCBs instead, and the program read a PARM area whose address
-  // nothing had set — then rejected it and ended the step with return code 12.
+  // nothing had set, then rejected it and ended the step with return code 12.
   if (!transaction || transaction.isCics || program.databases.length > 0) {
     return [];
   }
@@ -544,7 +544,7 @@ function parmWidth(type: IRType): number {
   switch (type.kind) {
     case "decimal":
     case "currency":
-      // One position for the separate sign, then every digit — unless the type
+      // One position for the separate sign, then every digit, unless the type
       // has no sign to separate.
       return type.kind === "decimal" && type.usage === "unsigned"
         ? type.precision
@@ -654,7 +654,7 @@ function failureParagraphName(name: string): string {
  * They used to be declared only when a `fail` statement appeared somewhere in
  * the program, and written from anywhere: an OCCURS guard, an overflow, a
  * failed OPEN. A program that declared no failure of its own but had a
- * generated guard therefore moved into a field it never declared — and a
+ * generated guard therefore moved into a field it never declared, and a
  * contained program, which cannot see its container's ordinary working storage,
  * did it whether the container declared one or not.
  *
@@ -663,7 +663,7 @@ function failureParagraphName(name: string): string {
  * the register rather than any one program. Neither carries a VALUE clause.
  * IBM honours VALUE on an elementary EXTERNAL item and GnuCOBOL ignores it,
  * leaving the storage at LOW-VALUES, so a program relying on it would start
- * from a different state on the two targets — `BANK-FAILURE-CODE NOT = SPACES`
+ * from a different state on the two targets: `BANK-FAILURE-CODE NOT = SPACES`
  * being true before anything had failed. `BANK-MAIN` sets both instead.
  */
 const FAILURE_REGISTERS = [
@@ -697,8 +697,8 @@ export interface GeneratedName {
  * this one by hand.
  *
  * The scopes are the ones COBOL actually requires uniqueness in. A `05` under
- * one `01` may share a name with a `05` under another — a reference qualified
- * with `OF` resolves it, and the backend qualifies — so fields are scoped to
+ * one `01` may share a name with a `05` under another (a reference qualified
+ * with `OF` resolves it, and the backend qualifies) so fields are scoped to
  * their group rather than to the program. Everything at `01` level shares one
  * namespace, and that is where a routine's `-P1` and `-RESULT` cells collide.
  */
@@ -802,7 +802,7 @@ export function collectGeneratedNames(program: IRProgram): GeneratedName[] {
         // declare is qualified with the owner in each, so `scratch` in `feeOn`
         // and in `levyOn` are `FEE-ON-SCRATCH` and `LEVY-ON-SCRATCH` and never
         // collide. What it does not resolve is two locals of *one* routine
-        // arriving at the same word — the plan counts distinct bare names, so
+        // arriving at the same word: the plan counts distinct bare names, so
         // it sees one and qualifies neither.
         //
         // The name here is the unplanned one, because this list also feeds
@@ -827,7 +827,7 @@ function collectDataNames(program: IRProgram): Set<string> {
  * Two BankTS names that arrive at one COBOL word.
  *
  * `fitCobolWord` abbreviates a name to the 30 characters the target allows, and
- * it is deterministic and stateless — it cannot know what else the program
+ * it is deterministic and stateless: it cannot know what else the program
  * declares. So two names can reach the same word, and then the program declares
  * one name twice and every reference to it is ambiguous. GnuCOBOL says
  * `'…' is ambiguous; needs qualification` and refuses; Enterprise COBOL does the
@@ -835,7 +835,7 @@ function collectDataNames(program: IRProgram): Set<string> {
  * diagnostic, and wrote COBOL that would not compile.
  *
  * Paragraph names are checked in a namespace of their own, because that is what
- * COBOL gives them — and `paragraphName` already moves a paragraph out of the
+ * COBOL gives them, and `paragraphName` already moves a paragraph out of the
  * way of a data name of the same word, so the rule here is the one it applies.
  */
 export function checkCobolNameCollisions(program: IRProgram): Diagnostic[] {
@@ -876,7 +876,7 @@ export function checkCobolNameCollisions(program: IRProgram): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   for (const bucket of byWord.values()) {
     // Distinct source names only. One name reaching the same word twice is the
-    // same declaration seen twice, not a collision — a file's record layout is
+    // same declaration seen twice, not a collision: a file's record layout is
     // walked once per file, and a parameter shares its function's span.
     const distinct = [...new Set(bucket.map((entry) => entry.symbol))].sort();
     if (distinct.length < 2) {
@@ -932,7 +932,7 @@ const COBOL_COMPARISONS: Record<string, string> = {
  * The Language Reference defines exactly one rounding behaviour: "When ROUNDED
  * is specified, the least significant digit of the resultant identifier is
  * increased by 1 whenever the most significant digit of the excess is greater
- * than or equal to 5" — half up, away from zero. Omitting the phrase truncates
+ * than or equal to 5": half up, away from zero. Omitting the phrase truncates
  * towards zero, which is `DOWN`.
  *
  * There is no `MODE IS` sub-phrase. `ROUNDED MODE IS NEAREST-EVEN` is COBOL
@@ -1078,7 +1078,7 @@ export function emitCobol(
   // What the source map records, which is not the same as where the file is
   // written. A bundle built at `/Users/somebody/banklang/evidence/x` recorded
   // that absolute path in every entry, so the checked-in evidence could not be
-  // reproduced byte for byte on any other machine — in a project whose first
+  // reproduced byte for byte on any other machine, in a project whose first
   // claim is that the same input always produces the same output. Recorded
   // relative to the bundle's own root, a source map is the same file wherever
   // it was built.
@@ -1248,8 +1248,8 @@ export function emitCobol(
       if (reports.length > 0) {
         // A report file is QSAM and takes the same blocking and recording mode
         // as any other. IBM's own worked example in the file description entry
-        // documentation carries all three — `FD SAMPLE-REPORT BLOCK CONTAINS 0
-        // RECORDS ... RECORDING MODE IS F ... REPORT IS SAMPLE-REP` — and what
+        // documentation carries all three (`FD SAMPLE-REPORT BLOCK CONTAINS 0
+        // RECORDS ... RECORDING MODE IS F ... REPORT IS SAMPLE-REP`) and what
         // `REPORT IS` removes is the 01 record description, not the clauses
         // that describe the dataset. Without them the file defaults to
         // unblocked, and an unblocked dataset of 132-character print lines
@@ -1353,8 +1353,8 @@ export function emitCobol(
     // than FD because the sort owns its blocking and record handling.
     for (const sorted of sortedFiles(program)) {
       // The SD is named after the destination and laid out as the *source*.
-      // With an output procedure the two are allowed to differ — the sort
-      // returns source records and the procedure writes whatever it likes — so
+      // With an output procedure the two are allowed to differ (the sort
+      // returns source records and the procedure writes whatever it likes) so
       // taking the layout from the destination would describe the wrong bytes.
       const record = sortRecordOf(program, sorted);
       if (!record) {
@@ -1381,13 +1381,13 @@ export function emitCobol(
   if (program.sql.length > 0) {
     addLine(`           EXEC SQL INCLUDE SQLCA END-EXEC.`);
     // Every host variable an SQL statement references has to be declared in a
-    // declare section. The SQLCA include stays outside it — it is not a host
-    // variable — and so does DECLARE CURSOR, which is a statement rather than a
+    // declare section. The SQLCA include stays outside it (it is not a host
+    // variable) and so does DECLARE CURSOR, which is a statement rather than a
     // declaration and is emitted after the section closes.
     addLine(`           EXEC SQL BEGIN DECLARE SECTION END-EXEC.`);
     // The one place generated working storage carries no VALUE, and
     // deliberately. IBM's syntax for a COBOL host variable does allow one, but
-    // DCLGEN — IBM's own generator for exactly these declarations — emits
+    // DCLGEN, IBM's own generator for exactly these declarations, emits
     // none, and a declare section is read by the Db2 precompiler before any
     // compiler sees it. Every host variable here is loaded by a `MOVE`
     // immediately above the `EXEC SQL` that reads it, so there is no path that
@@ -1411,7 +1411,7 @@ export function emitCobol(
     }
     // Closed here rather than after every other declaration in the program. A
     // declare section holds host variables and nothing else, and the one this
-    // emitter opened used to run to the end of working storage — so the ledger
+    // emitter opened used to run to the end of working storage, so the ledger
     // and audit interface groups, the file status fields, the rounding work
     // fields and the MQ control blocks were all inside it, described to Db2 as
     // variables the SQL might name. The records an SQL statement does name open
@@ -1429,7 +1429,7 @@ export function emitCobol(
       if (statement.form === "cursor" && statement.rowset !== null) {
         // How many rows the last FETCH actually returned, and where in the
         // rowset the loop is. Both are the program's own counters rather than
-        // host variables, so they sit outside the declare section — but the
+        // host variables, so they sit outside the declare section, while the
         // arrays the rows land in are host variables and go inside one.
         addLine(
           `       01  ${rowsetCountName(statement.name).padEnd(20)} PIC 9(9) COMP VALUE ZERO.`,
@@ -1557,7 +1557,7 @@ export function emitCobol(
     );
     // How many queues on this manager are open. It is what makes MQDISC happen
     // once, after the last of them is closed, in whatever order the program
-    // closes them — a second MQDISC would be issued against a handle the first
+    // closes them: a second MQDISC would be issued against a handle the first
     // one invalidated.
     addLine(
       `       01  ${mqManagerName(index, "OPENS").padEnd(20)} PIC S9(4) BINARY VALUE 0.`,
@@ -1585,7 +1585,7 @@ export function emitCobol(
       );
     }
     // The control blocks themselves. Each copybook declares its structure at
-    // level 10, so it is copied under an 01 of this queue's own — which is also
+    // level 10, so it is copied under an 01 of this queue's own, which is also
     // what makes `MQOD OF <queue>-MQOD` resolve in a program with two queues.
     addLine(`       01  ${mqName(queue.name, "MQOD")}.`);
     addLine(`           COPY CMQODV.`);
@@ -1673,7 +1673,7 @@ export function emitCobol(
   const shareRecords = program.functions.some((fn) => fn.isNested);
   const recordLayouts: CopybookRecordLayout[] = [];
   // The records an SQL statement reads a row into. Their fields are host
-  // variables, so each one needs a declare section of its own — Db2 requires
+  // variables, so each one needs a declare section of its own: Db2 requires
   // every host variable to be declared in one, and nothing else may be.
   const sqlResultRecords = new Set(
     program.sql.flatMap((statement) =>
@@ -1862,7 +1862,7 @@ export function emitCobol(
 
   // A record parameter is a reference cell rather than storage of its own. The
   // caller points it at the record being passed, so one paragraph can run over
-  // any record whose layout begins with the declared one — which is exactly
+  // any record whose layout begins with the declared one, which is exactly
   // what `extends` guarantees.
   const recordParameterCells = collectRecordParameterCells(program);
   const cicsTransactions = program.transactions.filter(
@@ -1892,7 +1892,7 @@ export function emitCobol(
   // A halfword length ahead of the text is what z/OS puts there and what the
   // program is entered with; there is no other way in for a batch program's
   // input. Without this the entry transaction's parameters were working storage
-  // nothing ever wrote — so `POST-ACCOUNTS-P3`, the idempotency key that
+  // nothing ever wrote, so `POST-ACCOUNTS-P3`, the idempotency key that
   // satisfies BANK-TXN-001, was whatever the region left in that storage.
   if (parmFields.length > 0) {
     addLine(`       01  ${PARM_GROUP}.`);
@@ -1904,7 +1904,7 @@ export function emitCobol(
   }
 
   // The I/O PCB comes first, always. A batch program needs it to make system
-  // service calls, so `CMPAT=YES` is what IBM says to specify — and with it the
+  // service calls, so `CMPAT=YES` is what IBM says to specify, and with it the
   // region passes the I/O PCB ahead of every database PCB. Omitting it does not
   // fail to compile: it shifts every DB PCB by one, so the program reads the
   // I/O PCB as its first database and works on whatever that memory holds.
@@ -1912,7 +1912,7 @@ export function emitCobol(
   // Every field, in IMS's order, because that is what a PCB mask is: a
   // description of storage the region owns. In DB batch only the status code is
   // populated, but the mask is not a list of the fields this program happens to
-  // read — a short one is a description that stops being true the moment
+  // read: a short one is a description that stops being true the moment
   // anything is added to the end of it.
   if (program.databases.length > 0) {
     addLine(`       01  ${IO_PCB_NAME}.`);
@@ -1935,7 +1935,7 @@ export function emitCobol(
     );
     // The extended time stamp. Its time is twelve packed digits carrying no
     // sign, and its UTC offset is four bits of attributes ahead of a packed
-    // value, so neither is a COBOL numeric picture — X is what describes the
+    // value, so neither is a COBOL numeric picture. X is what describes the
     // bytes without claiming they are something COBOL can compute on.
     addLine(`           05  ${IO_PCB_NAME}-TIMESTAMP.`);
     addLine(
@@ -2017,7 +2017,7 @@ export function emitCobol(
 
   // DECLARATIVES come first and are the only thing allowed to precede the
   // program's own paragraphs. A USE procedure runs when an operation on its
-  // file fails, whatever the operation and wherever it was written — which is
+  // file fails, whatever the operation and wherever it was written, which is
   // what covers the statements that did not think to check the status.
   if (program.fileErrorHandlers.length > 0) {
     addLine(`       DECLARATIVES.`);
@@ -2088,7 +2088,7 @@ export function emitCobol(
         // loading the CWA"). Ending the task is something CICS does, not
         // something COBOL does: without the GOBACK this paragraph falls
         // through into the next one, and under a run time where RETURN is an
-        // ordinary call — which is what the conformance harness has — the
+        // ordinary call, which is what the conformance harness has, the
         // transaction ran its whole body a second time.
         addLine(`           EXEC CICS RETURN END-EXEC`);
         addLine(`           GOBACK.`);
@@ -2219,7 +2219,7 @@ export function emitCobol(
     symbol: program.moduleName,
   });
 
-  // Nested functions are contained programs, so they go inside the container —
+  // Nested functions are contained programs, so they go inside the container,
   // before its END PROGRAM, and before any sibling. That containment is the
   // feature: a contained program reads the container's GLOBAL records without
   // being passed them.
@@ -2293,7 +2293,7 @@ export function emitCobol(
  * inside 44, which the JCL Reference requires and the previous emitter did not
  * meet: it turned the build path into a name by replacing the slashes, so
  * `dist/cobol/BATCH-INTEREST-ACCRUAL.cbl` became
- * `DIST.COBOL.BATCHINTERESTACCRUAL` — a 20-character middle qualifier, and a
+ * `DIST.COBOL.BATCHINTERESTACCRUAL`: a 20-character middle qualifier, and a
  * JCL error before the compiler was ever reached.
  *
  * They are placeholders for a site's own standards, and `docs/jcl-model.md`
@@ -2319,8 +2319,8 @@ const JCL_UNIX_PREFIX = "/u/banklang";
 /**
  * Where Enterprise COBOL and Language Environment are installed.
  *
- * The values IBM's own cataloged procedures default to — `IGYWCL PROC
- * LNGPRFX='IGY.V6R4M0', LIBPRFX='CEE'` — because a site that has moved them
+ * The values IBM's own cataloged procedures default to (`IGYWCL PROC
+ * LNGPRFX='IGY.V6R4M0', LIBPRFX='CEE'`) because a site that has moved them
  * knows it has, and a site that has not gets a job that runs.
  */
 const JCL_COMPILER_PREFIX = "IGY.V6R4M0";
@@ -2364,7 +2364,7 @@ export function emitJcl(
   // A step ahead of the compiler means the compiler reads that step's output
   // rather than the source library, and it means the expanded form is the only
   // one available: a cataloged procedure has no step to put a translator in
-  // front of. This is not a preference — it is what the program needs.
+  // front of. This is what the program needs rather than a preference.
   const preprocessed = needsReportWriter || needsCics || needsDb2;
   const expanded = options.mode === "expanded" || preprocessed;
 
@@ -2395,7 +2395,7 @@ export function emitJcl(
 
   // Every step after the first is bypassed when an earlier one failed. Without
   // it a failed compile still reaches the run step, which then executes
-  // whatever load module the library already held — the previous version — and
+  // whatever load module the library already held, the previous version, and
   // the job ends with a return code that says it worked.
   //
   // `COND=(4,LT)` is what BankLang used to write everywhere; IBM's own
@@ -2519,7 +2519,7 @@ export function emitJcl(
   if (needsDb2) {
     lines.push(
       // IKJEFT01 here, unlike the run step: a BIND that only warns returns 4,
-      // and IKJEFT1B stops the moment anything returns non-zero — so the plan
+      // and IKJEFT1B stops the moment anything returns non-zero, so the plan
       // below would not be bound because the package warned. The step
       // allocates no datasets, so nothing turns on its abend behaviour.
       "//BIND     EXEC PGM=IKJEFT01,REGION=0M,COND=(4,LT)",
@@ -2601,7 +2601,7 @@ export interface JobProgramStep {
  *
  * Not a `SORT` statement inside a program: a separate step running the sort
  * product, which is how a real night does it. The reason is operational rather
- * than aesthetic — a sort that runs as its own step can be restarted on its
+ * than aesthetic: a sort that runs as its own step can be restarted on its
  * own, its work datasets are sized against that step's region, and the file it
  * produces is on disk for the next step to be rerun against without redoing
  * the extract.
@@ -2761,9 +2761,9 @@ export function emitJobJcl(
  * job that compiles, links and runs one program; `bankc job` emits the stream a
  * night actually runs, where four programs and a sort share one job and the
  * datasets one step writes are the ones the next step reads. The step differs
- * only in its name and its `COND`, and everything else — the DSN a file
+ * only in its name and its `COND`, and everything else (the DSN a file
  * resolves to, the disposition an output takes, whether Db2 means the step runs
- * under IKJEFT1B rather than EXEC PGM — has to be identical in both, or the
+ * under IKJEFT1B rather than EXEC PGM) has to be identical in both, or the
  * job that runs a program is not running the program that was built.
  */
 function runStepLines(
@@ -2801,8 +2801,8 @@ function runStepLines(
     // subsystem under a plan. Started directly it gets no thread at all and
     // fails on its first SQL statement.
     // IKJEFT1B rather than IKJEFT01, for the abend. Both return the program's
-    // code — DSN puts the highest value from the RUN subcommand in register
-    // 15 — but under IKJEFT01 a program that abends does not abend the step:
+    // code. DSN puts the highest value from the RUN subcommand in register
+    // 15, but under IKJEFT01 a program that abends does not abend the step:
     // TSO catches it and the step ends *normally* with condition code 12.
     // A step that ended normally takes the normal disposition, so the DELETE
     // on the output datasets below would not be honoured and a half-written
@@ -2824,8 +2824,8 @@ function runStepLines(
       `//${step} EXEC PGM=${moduleName}${parmFields.length > 0 ? `,PARM='${parmTemplate}'` : ""},`,
       `//             REGION=0M${cond}`,
       // Without STEPLIB the module that was just written to the load library
-      // is not on any search the step makes, and the step ends S806 — module
-      // not found — having compiled and linked perfectly.
+      // is not on any search the step makes, and the step ends S806, module
+      // not found, having compiled and linked perfectly.
       `//STEPLIB  DD DISP=SHR,DSN=${JCL_LOAD_LIBRARY}`,
       `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN`,
       `//         DD DISP=SHR,DSN=${JCL_LE_PREFIX}.SCEERUN2`,
@@ -2865,8 +2865,8 @@ function runStepLines(
     );
   }
   // The sort product spills to work datasets, and three is the customary
-  // allocation. A merge needs none — its inputs already arrive in order — so
-  // this asks for a real SORT rather than for a SortStatement.
+  // allocation. A merge needs none, because its inputs already arrive in order,
+  // so this asks for a real SORT rather than for a SortStatement.
   //
   // Derived here rather than declared by the caller: the program is in hand,
   // and a job whose work datasets depend on a caller remembering to say so is
@@ -2966,11 +2966,11 @@ function runStepLines(
  *
  * A program needing the CICS translator, the Db2 precompiler, or the Report
  * Writer precompiler has a step ahead of the compiler, and IGYWCL has nowhere
- * to put one — so the steps are written here instead. Every DD comes from
+ * to put one, so the steps are written here instead. Every DD comes from
  * IGYWCL as the Programming Guide prints it: the three STEPLIB libraries, the
  * fifteen SYSUT work files and SYSMDECK, `REGION=0M` on both steps, the two LE
  * link libraries on the binder's SYSLIB, `PGM=IEWBLINK`, and
- * `COND=(8,LT,COBOL)` rather than 4 — a compile that only warned still produces
+ * `COND=(8,LT,COBOL)` rather than 4: a compile that only warned still produces
  * an object module worth binding.
  */
 function expandedCompileAndLink(
@@ -3099,7 +3099,7 @@ function readsSysin(program: IRProgram): boolean {
  *
  * `RECORDING MODE` says which record format the dataset has. The compiler works
  * it out from the RECORD clause when it is omitted, so stating it changes
- * nothing the compiler does — it changes what the FD tells the next person to
+ * nothing the compiler does. It changes what the FD tells the next person to
  * read it, which is the whole reason an FD has clauses at all.
  *
  * Neither applies to VSAM: blocking is not a concept there, and the Language
@@ -3121,7 +3121,7 @@ function qsamClauses(file: IRFile): string[] {
  *
  * Written out rather than uppercased, because one of the four is two words.
  * `file.organization.toUpperCase()` is what this was, and it would have emitted
- * `ORGANIZATION IS LINESEQUENTIAL` — which is not a clause Enterprise COBOL or
+ * `ORGANIZATION IS LINESEQUENTIAL`, which is not a clause Enterprise COBOL or
  * GnuCOBOL accepts, and which no test would have caught until something tried
  * to compile it.
  */
@@ -3183,7 +3183,7 @@ function emitFileControlEntry(
   // never written a position, so the dataset does not exist yet; without this
   // the OPEN fails with status 35 and the job dies on the run that had nothing
   // to resume from. OPTIONAL is what COBOL has for a file that may legitimately
-  // be absent — it is created on an OPEN I-O. Any other missing file is a
+  // be absent, since it is created on an OPEN I-O. Any other missing file is a
   // genuine failure and still stops the job.
   const optional = isRestartFile ? "OPTIONAL " : "";
   addLine(
@@ -3321,7 +3321,7 @@ function fileRecordName(file: IRFile): string {
  * The `01` name of a layout other than the file's first.
  *
  * The record type's own name is in it, so a reader of the generated COBOL can
- * see which BankTS record each `01` came from — and so two files carrying the
+ * see which BankTS record each `01` came from, and so two files carrying the
  * same layout do not collide on one name.
  */
 function fileAlternateRecordName(file: IRFile, record: IRRecord): string {
@@ -3350,7 +3350,7 @@ function fileLayoutRecordName(
  *
  * Exported because the playground's Input panel keys a seeded dataset by the
  * name the generated `SELECT` assigns to, and a second spelling of this rule
- * would put the reader's records under a DD the program never opens — which
+ * would put the reader's records under a DD the program never opens, which
  * reads as a program that ignored its input.
  */
 export function toDdName(fileName: string): string {
@@ -3364,7 +3364,7 @@ export function toDdName(fileName: string): string {
  * `BANKAUDT`; a generated zUnit stub declares the same groups in its LINKAGE
  * SECTION to read what the program sent. Two descriptions of one layout is how
  * a stub ends up comparing the account against the first 32 bytes of something
- * else, so there is one — and `bytes` is here because the zUnit configuration
+ * else, so there is one. `bytes` is here because the zUnit configuration
  * has to state the parameter's length in the `lengths` attribute, which nothing
  * checks at run time.
  */
@@ -3572,8 +3572,8 @@ function emitField(
   // stays as the maximum, because the storage still has to be reserved.
   //
   // The count is qualified by the group it belongs to. It is a field of the
-  // same record, which is where COBOL expects it — a header count followed by
-  // the table it counts — and that record is laid out in working storage and
+  // same record, which is where COBOL expects it (a header count followed by
+  // the table it counts) and that record is laid out in working storage and
   // again inside every FD holding it, so the bare name exists twice and both
   // compilers reject it as ambiguous. The Language Reference allows the
   // qualification: "All data-names used in the OCCURS clause can be qualified;
@@ -3731,7 +3731,7 @@ function enumConditionName(fieldName: string, member: string): string {
 /**
  * The level-88 to `SET`, when an assignment sets an enum field to a member.
  *
- * Only a record field, and only qualified by the group it sits in — which is
+ * Only a record field, and only qualified by the group it sits in, which is
  * exactly the qualification the equivalent `MOVE` already carries, and it is
  * needed for the same reason: the same record is emitted in working storage and
  * again inside every `FD` that holds it, so an unqualified condition name is
@@ -3836,7 +3836,7 @@ function emitRecursiveProgram(
   // The failure registers, which cannot go in LOCAL-STORAGE: the Language
   // Reference says "data items defined in the LOCAL-STORAGE SECTION cannot
   // specify the EXTERNAL clause", and per-invocation storage is the wrong place
-  // for them anyway — a failure raised three levels down has to be visible to
+  // for them anyway: a failure raised three levels down has to be visible to
   // the caller that tests for it.
   addLine(`       WORKING-STORAGE SECTION.`);
   for (const line of FAILURE_REGISTERS) {
@@ -3911,7 +3911,7 @@ function emitRecursiveProgram(
   inContainedProgram = true;
   // A contained program has an exit paragraph like any other routine, so a
   // guard inside it has somewhere to go. Without one the failure path fell
-  // through to `GO TO BANK-ABEND`, which is a paragraph of the *container* —
+  // through to `GO TO BANK-ABEND`, which is a paragraph of the *container*:
   // storage and paragraphs a separate program cannot see, and a compile error
   // rather than a wrong answer only because the name happened not to exist.
   currentExitLabel = exitParagraphName(fn.name);
@@ -3938,7 +3938,7 @@ function emitRecursiveProgram(
  *
  * The difference from a sibling is what it can see. A contained program reads
  * the container's `GLOBAL` items directly, so the module's records are in scope
- * without being passed — which is the whole reason to write one rather than
+ * without being passed, which is the whole reason to write one rather than
  * take another parameter. `COMMON` lets the container's other contained
  * programs call it too.
  *
@@ -4054,7 +4054,7 @@ function emitFunctionBody(
   currentReturnType = fn.returnType;
   // Every routine has an exit paragraph and every caller performs it THRU that
   // paragraph, whether or not the routine can raise. A `GO TO` out of the
-  // middle of a body — a raise, a failed OPEN, an overflow — then always lands
+  // middle of a body (a raise, a failed OPEN, an overflow) then always lands
   // inside the range the caller performed, and there is one shape to read
   // rather than two. It also costs nothing when nothing jumps: `EXIT` is a
   // paragraph that does nothing, and falling into it is the same as falling
@@ -4261,7 +4261,7 @@ function emitStatement(
  *
  * The shape is the standard COBOL one for a body with an early exit: a wrapper
  * that performs the body THRU its exit paragraph, then inspects the outcome.
- * Performing THRU matters — a `GO TO` out of a plain `PERFORM` range leaves the
+ * Performing THRU matters: a `GO TO` out of a plain `PERFORM` range leaves the
  * flow of control undefined.
  *
  *     POST-TRANSFER.
@@ -4288,8 +4288,8 @@ function emitFailingTransaction(
   );
   addLine(`           END-IF`);
   // After the handler, not before it, and on both paths. A transaction that
-  // failed still owes its caller an answer — the return code field the handler
-  // just set is the answer — and a writeback the failure path skipped would
+  // failed still owes its caller an answer (the return code field the handler
+  // just set is the answer) and a writeback the failure path skipped would
   // hand back the request unchanged, which is the outcome that reads as
   // success. See `emitCommareaExit`.
   emitCommareaExit(transaction, addLine);
@@ -4324,7 +4324,7 @@ function emitFailingTransaction(
   } else {
     // Nothing in the program says what to do about this. Leaving it here is
     // what a raise used to do: the body stops where it failed, the wrapper
-    // returns, and the step ends with return code zero — a transaction that
+    // returns, and the step ends with return code zero: a transaction that
     // abandoned its work reported the same success as one that finished it.
     // An operator gets the code that was raised and a return code that says
     // the step did not do what it was submitted to do.
@@ -4608,7 +4608,7 @@ function emitTransactionBranch(
  *
  * Terminating is only half of it. The loop used to end on the bound exactly as
  * it ended on the condition, so a five-million-record master processed the
- * first million, closed its files, wrote its audit event and ended RC=0 —
+ * first million, closed its files, wrote its audit event and ended RC=0,
  * indistinguishable from a clean night. The example carrying that loop said in
  * its own comment that the bound "is what stops a corrupt file spinning the job
  * until the operator cancels it", and then gave the safe case and the
@@ -4626,7 +4626,7 @@ function emitWhileStatement(
   /**
    * True inside a transaction, whose body may contain effects a function body
    * may not. Without this a `debit`, an `audit`, or a CICS command inside a
-   * `while` reached the function-body emitter and threw — every other loop and
+   * `while` reached the function-body emitter and threw. Every other loop and
    * branch already carried the flag, and this one did not.
    */
   inTransaction: boolean,
@@ -4660,7 +4660,7 @@ function emitWhileStatement(
   // condition is still true, which is the bound stopping work that had not
   // finished. A loop that ended because its condition went false on the same
   // iteration is the ordinary case and says nothing. Re-evaluating costs
-  // nothing here — a `while` condition is an expression, and one holding a call
+  // nothing here: a `while` condition is an expression, and one holding a call
   // could not have been written into the `PERFORM UNTIL` above either.
   addLine(
     `${indent}IF ${counter} >= ${statement.limit} AND (${renderCondition(statement.condition)})`,
@@ -4702,7 +4702,7 @@ function emitConsoleStatement(
       return;
     default:
       // A card from the job's SYSIN, which is a different mechanism from the
-      // PARM on the EXEC statement — the comment here used to say PARM, and the
+      // PARM on the EXEC statement. The comment here used to say PARM, and the
       // generated job allocated no SYSIN at all, so the statement read from a
       // DD that was not there. The PARM is `BANK-ACCEPT-PARM`'s job; this reads
       // a line of control input, and the run step allocates SYSIN for it.
@@ -4848,7 +4848,7 @@ function checkpointCounterName(fileName: string): string {
  * On the first character rather than on `NOT = "00"`, because "00" is not the
  * only success. The first character is the status key: 0 is successful
  * completion, and the rest of the class says what was unusual about it. "05" is
- * an OPTIONAL file that was not there and has been created — which is the
+ * an OPTIONAL file that was not there and has been created, which is the
  * ordinary first run of a batch that keeps a restart position, and stopping the
  * job for it would mean a restartable batch could never run its first night.
  * "07" is a tape-oriented CLOSE option on a device that is not tape.
@@ -4867,8 +4867,8 @@ function openFailed(status: string): string {
  * particular statement legitimately produces and the program is written to
  * branch on: end of file on a read, a key that was not there on a keyed read or
  * a browse, a duplicate key on a write to a KSDS. Those say the request found
- * nothing, not that the file is broken, and the program handles them itself —
- * treating them as failures would stop the job at the ordinary end of a batch
+ * nothing, not that the file is broken, and the program handles them itself.
+ * Treating them as failures would stop the job at the ordinary end of a batch
  * loop.
  */
 function ioFailed(status: string, expected: string[]): string {
@@ -4963,7 +4963,7 @@ function emitOpenFileCleanup(
  *
  * `USING` and `GIVING` let the sort open, read, write, and close the files
  * itself, which is the form a program wants when it has nothing to do to the
- * records on the way through. The alternative — input and output procedures —
+ * records on the way through. The alternative, input and output procedures,
  * exists for when it does, and is not in the subset.
  */
 function emitSortStatement(
@@ -4983,7 +4983,7 @@ function emitSortStatement(
   addLine(`${indent}         ${keys}`);
 
   // "If the DUPLICATES phrase is not specified, the order of these records is
-  // undefined" — Language Reference, SORT format 1. A compiler that promises a
+  // undefined": Language Reference, SORT format 1. A compiler that promises a
   // deterministic build must not emit a statement whose *output* order the
   // target leaves open, so the phrase is always emitted. Two records with equal
   // keys then come back in the order they were released or read, on any
@@ -5017,8 +5017,8 @@ function emitSortStatement(
     addLine(`${indent}    GIVING ${fileCobolName(statement.output)}`);
   }
 
-  // The sort product reports its outcome in SORT-RETURN — 0, or 16 for a sort
-  // that did not complete — and IBM's guidance is to test it after every SORT
+  // The sort product reports its outcome in SORT-RETURN (0, or 16 for a sort
+  // that did not complete) and IBM's guidance is to test it after every SORT
   // and MERGE, because what a program does having ignored it is undefined. A
   // failed sort leaves the output file short or empty, so a batch that carries
   // on writes a plausible-looking result from part of its input.
@@ -5034,8 +5034,8 @@ function emitSortStatement(
   // SORT-RETURN is not the whole story for the files the sort opens itself.
   // Under NOFASTSRT the sort does not check open, close, or I/O errors on a
   // USING or GIVING file, and IBM's guidance for a program that declares a file
-  // status and no ERROR declarative — which is every program this compiler
-  // emits — is to test the status key as well as SORT-RETURN. The status is
+  // status and no ERROR declarative, which is every program this compiler
+  // emits, is to test the status key as well as SORT-RETURN. The status is
   // set either way; without this nothing reads it.
   //
   // A file handled by a procedure is not tested here, because the procedure
@@ -5043,12 +5043,12 @@ function emitSortStatement(
   //
   // `NOT = SPACES` first, and it is not belt and braces. The status key is
   // declared `VALUE SPACES` and only an I/O operation ever writes it, so spaces
-  // means the sort reported nothing through it — which is what GnuCOBOL 3.2.0
+  // means the sort reported nothing through it, which is what GnuCOBOL 3.2.0
   // does for a USING or GIVING file, successful or not (divergence D27). Left
   // out, every successful sort under GnuCOBOL displayed "SORT FAILED" and ended
   // the step with return code 16: two of the three sort programs in this
   // repository did exactly that while their output files were correct. On the
-  // target, where the key is set, this changes nothing — "00" is not spaces.
+  // target, where the key is set, this changes nothing: "00" is not spaces.
   const unchecked = [
     ...(statement.inputProcedure ? [] : statement.inputs),
     ...(statement.outputProcedure ? [] : [statement.output]),
@@ -5071,8 +5071,8 @@ function emitSortStatement(
  * The sections a sort's procedures become.
  *
  * They are emitted at the end of the program, after the last GOBACK, because a
- * section placed in the flow of control would be run again on the way past —
- * an INPUT PROCEDURE is entered by SORT and by nothing else.
+ * section placed in the flow of control would be run again on the way past.
+ * An INPUT PROCEDURE is entered by SORT and by nothing else.
  *
  * The loop and the end-of-data test are generated. Hand-writing them is where
  * this shape is usually got wrong: a RETURN whose AT END is forgotten reads the
@@ -5272,7 +5272,7 @@ function emitSortRecordMapping(
   }
 }
 
-/** `RELEASE` — the statement an input procedure exists for. */
+/** `RELEASE`: the statement an input procedure exists for. */
 function emitReleaseStatement(
   statement: IRReleaseStatement,
   addLine: (line?: string) => void,
@@ -5304,7 +5304,7 @@ function emitSplitStatement(
   // transferred", so a receiver it never reaches is left holding whatever was
   // in it. Nothing clears one. In a read loop that is the previous record's
   // value: split `AAA-BBB-CCC` and then `XXX-YYY` into three fields, and the
-  // third still reads CCC — a value that belongs to a record already
+  // third still reads CCC: a value that belongs to a record already
   // processed, in a field the program believes it just filled.
   //
   // Every target is a `string<n>`, so spaces are what an unfilled one means.
@@ -5320,7 +5320,7 @@ function emitSplitStatement(
   // value that is a prefix of the one it was given.
   //
   // Reported rather than raised, because taking the first parts of a longer
-  // field is a thing a program may mean to do — but a return code of 4 says the
+  // field is a thing a program may mean to do, but a return code of 4 says the
   // run was not the ordinary one, without stopping a job that is fine.
   addLine(`${indent}    ON OVERFLOW`);
   addLine(
@@ -5421,7 +5421,7 @@ function emitReportGroup(
  * The picture and the source of one printed column.
  *
  * A literal prints itself and the picture is its own width. A field or a total
- * prints the value, so the picture comes from the field's type — which is why
+ * prints the value, so the picture comes from the field's type, which is why
  * an amount reaches a report readable: a `COMP-3` balance cannot be printed,
  * and its edited picture is generated from its own precision and scale rather
  * than counted out by hand.
@@ -5445,7 +5445,7 @@ function reportColumnClause(
 }
 
 /**
- * The picture a `sum` column prints its total with — wider than the field it
+ * The picture a `sum` column prints its total with, wider than the field it
  * totals, because a total is bigger than a row.
  *
  * Report Writer takes the internal total field's precision from the *picture of
@@ -5453,7 +5453,7 @@ function reportColumnClause(
  * SECTION, which is always the case here: the values come from the record in
  * working storage. Printing a total with the row's own picture therefore sizes
  * the accumulator for one row. A branch of two postings of 9,999,999.99 then
- * totals 9,999,999.98 instead of 19,999,999.98 — the high-order digit is gone,
+ * totals 9,999,999.98 instead of 19,999,999.98: the high-order digit is gone,
  * the columns still line up, the step ends with return code zero, and the only
  * way to notice is to add the report up by hand.
  *
@@ -5564,7 +5564,7 @@ let inSortProcedure = false;
  * It changes what "fail the step" has to be. `GOBACK` in the outermost program
  * returns to the operating system, so a guard that sets a return code and goes
  * back ends the job; in a contained program it returns to the *container*,
- * which carries straight on — and then overwrites the return code with its own
+ * which carries straight on, and then overwrites the return code with its own
  * on the way out. An overflow inside a nested function reported itself to the
  * job log and the step still ended with return code zero.
  */
@@ -5586,7 +5586,7 @@ let inContainedProgram = false;
  * written at the point of failure, which had two consequences. The `GOBACK` sat
  * inside a range the caller had performed, so a transaction with an
  * `on failure` handler ran the handler for a bounds violation and skipped it
- * for an arithmetic overflow — the same program treating two failures
+ * for an arithmetic overflow: the same program treating two failures
  * differently for no reason anybody chose. And it wrote `RETURN-CODE` directly
  * while every other path set `BANK-RETURN-CODE`, so the program carried two
  * return-code conventions.
@@ -5611,8 +5611,8 @@ function emitStepFailure(
  *
  * The enclosing routine's exit when there is one, so the caller's `PERFORM
  * ... THRU` still ends where it expects to and a declared `on failure` handler
- * runs. Where there is no enclosing routine — a file error declarative, an XML
- * handler section, both entered by the run time rather than performed — there
+ * runs. Where there is no enclosing routine (a file error declarative, an XML
+ * handler section, both entered by the run time rather than performed) there
  * is nothing to return to, and `BANK-ABEND` is the paragraph that ends the
  * program. Asking for it is what causes it to be emitted.
  */
@@ -5667,7 +5667,7 @@ let currentReportRecord: IRRecord | null = null;
  * `JSON GENERATE` / `XML GENERATE`, and the `PARSE` that reads one back.
  *
  * COBOL matches the document against the group's own field names, so nothing
- * here describes the shape — the record is the schema, in both directions.
+ * here describes the shape: the record is the schema, in both directions.
  *
  * Generating writes into a fixed field and space-fills the rest, which is why
  * `count` matters: it is the only way the caller can tell the text from the
@@ -5709,7 +5709,7 @@ function emitSerializeStatement(
   // conditions do not terminate it, set JSON-STATUS, and "might result in the
   // receiver being partially modified". So a document whose names do not match
   // the record leaves the statement completing normally, the exception branch
-  // untaken, and the record holding some fields and not others — which is the
+  // untaken, and the record holding some fields and not others, which is the
   // shape of a record that parsed cleanly.
   //
   // Reported rather than raised, because a nonexception condition is not always
@@ -5770,7 +5770,7 @@ function xmlParseStatements(program: IRProgram): {
   };
 
   // Transactions first, then functions, which is the order the statements are
-  // emitted in — the handler's name has to match the one the statement wrote.
+  // emitted in: the handler's name has to match the one the statement wrote.
   for (const transaction of program.transactions) {
     owner = {
       inTransaction: true,
@@ -5898,7 +5898,7 @@ const DLI_FUNCTIONS: Record<IRDliStatement["operation"], string> = {
   getUnique: "GU  ",
   getNext: "GN  ",
   // A get-hold retrieves the segment *and* holds it, which is the only thing
-  // that makes a later REPL or DLET legal — without it DL/I answers DJ.
+  // that makes a later REPL or DLET legal. Without it DL/I answers DJ.
   getHoldUnique: "GHU ",
   getHoldNext: "GHN ",
   insertSegment: "ISRT",
@@ -5948,7 +5948,7 @@ function unqualifiedSsaName(database: string): string {
  * One `CALL "CBLTDLI"`.
  *
  * DL/I takes a function code, the PCB the region passed in, the segment area,
- * and — for a qualified read — a search argument. A `getNext` deliberately
+ * and, for a qualified read, a search argument. A `getNext` deliberately
  * passes no argument: it walks from wherever the last call left the position,
  * which is what makes it the next one.
  *
@@ -6014,7 +6014,7 @@ function mqName(queue: string, part: string): string {
  * Working-storage names for one queue manager's connection.
  *
  * Numbered rather than named after the manager, because a queue manager name
- * may hold `.`, `_`, `/` and `%` — none of which is a COBOL word character —
+ * may hold `.`, `_`, `/` and `%`, none of which is a COBOL word character,
  * and because two names that differ past the 30th character would produce one
  * COBOL word between them. The number is the manager's position in declaration
  * order, and the `MOVE` that loads `MGRNAME` sits directly above the `MQCONN`
@@ -6066,8 +6066,8 @@ function mqField(queue: string, structure: string, field?: string): string {
  * number with no context.
  *
  * `MQCC-WARNING` is treated as a failure here, as it is in IBM's samples. It
- * means the call did something other than what was asked — a truncated message,
- * a converted one — and a banking program that carries on with a message it
+ * means the call did something other than what was asked (a truncated message,
+ * a converted one) and a banking program that carries on with a message it
  * only partly received is the defect this whole check exists to prevent.
  *
  * `MQRC-ALREADY-CONNECTED` is the one warning that is not. IBM's Application
@@ -6258,8 +6258,8 @@ function emitQueueStatement(
         );
       }
 
-      // Three outcomes, not two. A message, an empty queue — which is the
-      // ordinary end of a drain and not a failure — and everything else, which
+      // Three outcomes, not two. A message, an empty queue (which is the
+      // ordinary end of a drain and not a failure) and everything else, which
       // is. Folding the empty queue in with the failures stops a batch every
       // time it finishes its work; folding it in with success processes the
       // message area again, holding the last message read.
@@ -6311,8 +6311,8 @@ function emitQueueStatement(
      * There is no `MQCMIT` here, and that is not an omission.
      *
      * It looks like one to anybody who knows MQ, which is why this comment
-     * exists — the 2026-08-07 audit checked it and recorded it under "not a
-     * problem", and the next reviewer should not have to repeat the lookup.
+     * exists. It has been checked against the manual and recorded as correct,
+     * and the next reviewer should not have to repeat the lookup.
      *
      * IBM MQ Application Programming Reference, MQDISC usage note 2a: where the
      * unit of work is coordinated by the queue manager, "the queue manager
@@ -6397,8 +6397,8 @@ function emitProgramCallStatement(
 /**
  * `XML PARSE`, and the handler section that reads the document.
  *
- * COBOL calls the procedure once per token — a start tag, its content, an end
- * tag — and the procedure decides what to keep by reading `XML-EVENT` and
+ * COBOL calls the procedure once per token (a start tag, its content, an end
+ * tag) and the procedure decides what to keep by reading `XML-EVENT` and
  * `XML-TEXT`. Writing that by hand is where an XML reader goes wrong, so the
  * bindings are declared and this generates the machine: remember the element a
  * start tag opened, move the content of the ones that were named, forget it
@@ -6449,7 +6449,7 @@ function emitXmlHandlerSection(
   // continued in a later event and 1 on the last piece, so the field is only
   // assigned once the whole value is in hand. Where the register is not set at
   // all the test is simply never 2, and each append is followed by an
-  // assignment — which still ends holding everything appended.
+  // assignment, which still ends holding everything appended.
   addLine(`               STRING XML-TEXT DELIMITED BY SIZE INTO ${name}-BUF`);
   addLine(`                   WITH POINTER ${name}-PTR`);
   addLine(`               END-STRING`);
@@ -6504,7 +6504,7 @@ function emitSearchStatement(
     reference: `${table} (${index})`,
   };
 
-  // SEARCH ALL bisects, so it sets the index itself — a SET before it would be
+  // SEARCH ALL bisects, so it sets the index itself. A SET before it would be
   // discarded, and writing one would suggest the starting point mattered.
   if (!statement.sorted) {
     addLine(`${indent}SET ${index} TO 1`);
@@ -6662,7 +6662,7 @@ function emitFileStatement(
     case "close":
       addLine(`${indent}CLOSE ${file}`);
       // A CLOSE fails on a file that was never opened, and on an output file
-      // whose last buffer could not be written — which is the one that matters,
+      // whose last buffer could not be written, which is the one that matters,
       // because the records the program thinks it wrote are the ones missing.
       check("CLOSE");
       addLine(`${indent}MOVE "N" TO ${fileOpenFlagName(statement.fileName)}`);
@@ -6686,8 +6686,8 @@ function emitFileStatement(
       );
       addLine(`${indent}END-READ`);
       // End of file, or a key that was not there, is what the program's own
-      // test is for. Anything else — a data check, a dataset that is not the
-      // shape the FD describes — ends the loop just as quietly, halfway through
+      // test is for. Anything else (a data check, a dataset that is not the
+      // shape the FD describes) ends the loop just as quietly, halfway through
       // the file, and the job reports success on the records it did read.
       check("READ", [indexed ? "23" : "10"]);
       return;
@@ -6717,7 +6717,7 @@ function emitFileStatement(
       addLine(`${indent}END-START`);
       // A key past the end of the file is the answer to a browse that found
       // nothing, and the program tests for it. A file that is not open, or a
-      // sequence error, is not — and a browse that never positioned reads from
+      // sequence error, is not, and a browse that never positioned reads from
       // wherever the file happened to be left.
       check("START", ["23"]);
       return;
@@ -6761,7 +6761,7 @@ function emitFileStatement(
       // The failure this catches is the one a batch never notices: the volume
       // filling, or a record outside the declared length range. The write does
       // not happen, the loop carries on, and the output file is short by
-      // however many records were left — with a return code of zero on it.
+      // however many records were left, with a return code of zero on it.
       check("WRITE", indexed ? ["22"] : []);
       return;
     }
@@ -6804,9 +6804,9 @@ function emitFileStatement(
  * The two phrases of a READ: what a miss sets, and what a hit copies.
  *
  * The copy out of the record area belongs in the success phrase. After AT END
- * the Language Reference leaves the record area undefined — "the contents of the
+ * the Language Reference leaves the record area undefined: "the contents of the
  * record area are undefined and the file position indicator is set to indicate
- * that no valid next record has been established" — so moves out of it after a
+ * that no valid next record has been established", so moves out of it after a
  * read that found nothing read whatever is there. GnuCOBOL leaves the last
  * record sitting in the buffer, so locally they read the previous record and
  * every test passes; on the target they read undefined storage, and under
@@ -6865,7 +6865,7 @@ function emitRecordFieldMapping(
     if (field.arrayLength !== null) {
       // A table whose length depends on a count is only as long as the count
       // says. Copying to the declared maximum reads occurrences the record
-      // does not have — past the end of the data the READ actually delivered.
+      // does not have, past the end of the data the READ actually delivered.
       const bound = field.dependingOn
         ? `${toCobolFieldName(field.dependingOn)} OF ${destination}`
         : `${field.arrayLength}`;
@@ -6913,7 +6913,7 @@ function occursCounts(fields: IRMappedField[]): Map<string, number> {
  * the value of the object is outside of the range integer-1 through integer-2."
  * The object decides how long the group containing the table is, so a count of
  * 30,000 on a table declared `OCCURS 1 TO 100` makes every group reference to
- * that record — a move, a write, a copybook-shaped `CALL` — run off the end of
+ * that record (a move, a write, a copybook-shaped `CALL`) run off the end of
  * the storage the record actually has.
  *
  * It matters most exactly where it is least controlled: the count usually
@@ -6939,8 +6939,8 @@ function emitOccursCountGuard(
     addLine(`${indent}    MOVE ${bound} TO ${reference}`);
   } else {
     // Through the one failure path, which sets the return code as well as the
-    // failure name. Jumping to the routine's exit directly — which is what this
-    // used to do whenever there was a routine to jump to — left the step ending
+    // failure name. Jumping to the routine's exit directly, which is what this
+    // used to do whenever there was a routine to jump to, left the step ending
     // with return code zero after a record the program could not address.
     emitStepFailure(addLine, `${indent}    `, 12, BOUNDS_FAILURE_CODE);
   }
@@ -6973,8 +6973,8 @@ function layoutRecordNameFor(
  * Names for the statements that need storage or a section of their own.
  *
  * Derived from the routine holding the statement and its ordinal among the
- * statements of that kind in that routine — not from where it sits in the
- * source file. `WS-LOOP-34-3` renamed itself when somebody added a blank line
+ * statements of that kind in that routine, rather than from where it sits in
+ * the source file. `WS-LOOP-34-3` renamed itself when somebody added a blank line
  * above it, so a diff of two generated programs showed every one of its
  * references changing and a name in a dump said nothing about which loop it
  * belonged to.
@@ -7030,7 +7030,7 @@ function planStatementNames(program: IRProgram): Map<object, string> {
  * The name planned for a statement.
  *
  * A statement reached without a plan is a routine the planner does not walk,
- * which would be a defect rather than something to name on the spot — so the
+ * which would be a defect rather than something to name on the spot, so the
  * fallback is deliberate and visible.
  */
 function statementName(statement: object, fallback: string): string {
@@ -7091,11 +7091,11 @@ function emitBoundsChecks(
  * expression could be, reached only from the right-hand side of an assignment,
  * and it leaked at every seam: the subscript on an assignment's *target* was
  * unguarded, so `book.bands[at].cap = ...` with `at` past the end wrote over
- * whatever followed the table — a neighbouring field of the same record, which
+ * whatever followed the table: a neighbouring field of the same record, which
  * then held a value nothing in the program had assigned to it. So were the
  * subscripts in an `if` condition, in a `log`, and in every statement inside a
- * sort procedure. Kinds the switch had never been extended for — the numeric,
- * string, and temporal calls — dropped their arguments' subscripts too.
+ * sort procedure. Kinds the switch had never been extended for (the numeric,
+ * string, and temporal calls) dropped their arguments' subscripts too.
  *
  * Walking the statement's own data instead means a subscript is guarded because
  * it is there, not because someone remembered to add its context to a list, and
@@ -7332,7 +7332,7 @@ function emitComputeInto(
   targetType?: IRType,
 ): void {
   // Subscripts are guarded once per statement, before anything it evaluates,
-  // rather than here — an assignment's target is subscripted too, and this is
+  // rather than here: an assignment's target is subscripted too, and this is
   // reached only for the value being assigned.
   emitCallsIn(expression, addLine, indent);
 
@@ -7383,7 +7383,7 @@ function emitComputeInto(
 
   // A copy is a MOVE. `COMPUTE X = Y` is legal and does the same thing, and it
   // reads to a COBOL programmer as arithmetic that turned out to have nothing
-  // in it — the compiler having reached for its general case rather than the
+  // in it, the compiler having reached for its general case rather than the
   // statement that says what is happening.
   //
   // The two are told apart by the same test that decides whether a computation
@@ -7409,8 +7409,8 @@ function emitComputeInto(
 /**
  * The receiving field of a rounding, and the value being rounded into it.
  *
- * Rounding is decided by the receiver — that is what `ROUNDED` attaches to in
- * COBOL and what BankTS copies — so the generated sequence needs the receiver's
+ * Rounding is decided by the receiver (that is what `ROUNDED` attaches to in
+ * COBOL and what BankTS copies) so the generated sequence needs the receiver's
  * scale, not the expression's. Where the declared target type is known it wins;
  * a `return` uses the routine's return type, which the emitter tracks.
  */
@@ -7480,7 +7480,7 @@ function numericShapeOf(
  *
  * Two of the seven modes are phrases the compiler already performs: `HALF_UP`
  * is what `ROUNDED` means, and `DOWN` is what leaving it off means. The other
- * five have no phrase at all — `ROUNDED MODE IS` is COBOL 2002 — so they are
+ * five have no phrase at all, since `ROUNDED MODE IS` is COBOL 2002, so they are
  * built out of the two primitives COBOL does have.
  *
  * The construction is the same in every case. Truncate towards zero into a work
@@ -7488,8 +7488,8 @@ function numericShapeOf(
  * discarded; then step the last place by one when the mode says to. Written
  * that way the tie test is on the real discarded digits rather than on a
  * comparison of the stored result with something, which is what makes
- * `HALF_EVEN` — banker's rounding, and the default for interest in most
- * jurisdictions — provable rather than asserted. `tests/rounding-oracle.test.ts`
+ * `HALF_EVEN` (banker's rounding, and the default for interest in most
+ * jurisdictions) provable rather than asserted. `tests/rounding-oracle.test.ts`
  * proves each mode against an exact decimal oracle.
  *
  * Division is the exception, and it is why `DIVIDE ... REMAINDER` exists: a
@@ -7740,7 +7740,7 @@ function scaleFactorLiteral(scale: number): string {
  * occurs, truncation rules apply and the value of the affected resultant
  * identifier is computed." Truncation here is of the *high-order* digits, so a
  * balance of `decimal<9, 2>` receiving 9,999,999.99 + 9,999,999.99 was left
- * holding 9,999,999.98 — ten million short, with nothing said and a return code
+ * holding 9,999,999.98: ten million short, with nothing said and a return code
  * of zero. Two amounts a field can each hold do not add up to one it can.
  *
  * Division by zero raises the same condition, so the guard covers that too: the
@@ -7788,7 +7788,7 @@ function emitCompute(
  *
  * Naming a value cannot: an identifier, a field, or a literal already fits the
  * type it was declared with, and moving one into a field of the same type is
- * exact. Combining values can, and so can rounding — 9.99 rounded to one place
+ * exact. Combining values can, and so can rounding: 9.99 rounded to one place
  * carries into a digit that may not be there.
  *
  * The test is deliberately on the shape of the expression rather than on a
@@ -7854,7 +7854,7 @@ function resolveIdentifier(name: string): string {
  * The commarea a CICS transaction was passed, and the check that it exists.
  *
  * `DFHCOMMAREA` is the caller's storage, and it is only addressable when the
- * caller passed one — `EIBCALEN` is how a program knows. Reading it when
+ * caller passed one, and `EIBCALEN` is how a program knows. Reading it when
  * `EIBCALEN` is zero addresses whatever happens to be there, which is a storage
  * violation rather than an empty record, so IBM's guidance is to test first
  * always.
@@ -7877,7 +7877,7 @@ function emitCommareaEntry(
   // EIBCALEN matches what it expects, because a discrepancy risks a storage
   // violation. A caller that passes ten bytes to a program whose record is
   // seventy-two leaves the MOVE below reading sixty-two bytes of whatever
-  // follows the commarea — which is somebody else's storage, and reads clean.
+  // follows the commarea, which is somebody else's storage, and reads clean.
   //
   // Zero is the same test: no commarea where one is required is a broken
   // contract rather than an empty request, and returning quietly would make it
@@ -7911,7 +7911,7 @@ function emitCommareaExit(
  * parameter.
  *
  * CICS gives a program one communication area, not one in and one out, so this
- * is both the input and the answer — moved in by `emitCommareaEntry` and back
+ * is both the input and the answer, moved in by `emitCommareaEntry` and back
  * out by `emitCommareaExit`. Every other record parameter is working storage,
  * which the region reclaims when the task ends, so a result computed into one
  * of those never reaches the caller. `BANK-CICS-005` refuses that program;
@@ -7947,16 +7947,16 @@ function restartedFiles(program: IRProgram): string[] {
 /**
  * The files a program keeps its restart position in.
  *
- * Exported because the answer belongs here — it is the same set `SELECT
- * OPTIONAL` is written for, since the first run of a job has no position yet —
+ * Exported because the answer belongs here. It is the same set `SELECT
+ * OPTIONAL` is written for, since the first run of a job has no position yet,
  * and a second spelling of it elsewhere is exactly how it went wrong.
  *
  * The playground decides whether to offer an entry record by asking whether
  * anything else already fills it, and "the program opens a file it does not
  * write to" was the test. A restart control file passes that test and fills
  * nothing: it is written by the program's own checkpoint and read for one
- * position. Adding one to `branch-accrual-cursor` for B4 silently took away the
- * panel that supplies its branch and its rate, so the run accrued interest at
+ * position. Adding one to `branch-accrual-cursor` silently took away the panel
+ * that supplies its branch and its rate, so the run accrued interest at
  * zero per cent on every account and the corpus check that catches a surface
  * doing nothing cannot see a surface that is not there.
  */
@@ -8205,7 +8205,7 @@ let cursorNames = new Set<string>();
  * The assign name on a sort-work file's SELECT.
  *
  * `ASSIGN TO` is required on the SELECT and the name is then **treated as
- * documentation** — IBM's own example assigns two SD files to the same name.
+ * documentation**: IBM's own example assigns two SD files to the same name.
  * Nothing is allocated for it and no DD statement answers to it.
  *
  * So it deliberately is not `SORTWK01`. That is the DD the sort product reads
@@ -8237,7 +8237,7 @@ function sortedFiles(program: IRProgram): string[] {
  * The record a sort moves, which is the one it reads.
  *
  * The SD is named after the destination file, and it used to be *laid out* as
- * the destination's record too — which is only right when `GIVING` writes it. A
+ * the destination's record too, which is only right when `GIVING` writes it. A
  * sort with an output procedure returns source records and the procedure writes
  * the destination itself, so the two records are allowed to differ and the SD
  * has to describe the source. Falls back to the destination for a statement
@@ -8345,9 +8345,9 @@ function sortProcedureEndFlag(
  * Qualified by the record when two records declare a table of the same name.
  * An index-name is not a data-name and cannot be qualified at the point of use,
  * so two `INDEXED BY LINES-FLD-IDX` clauses in one program are two definitions
- * of one name. Enterprise COBOL takes it — the Language Reference lists
+ * of one name. Enterprise COBOL takes it (the Language Reference lists
  * "acceptance of nonunique index-names that are not referenced" as an IBM
- * extension — and stops taking it the day a `SEARCH` names one, which is the
+ * extension) and stops taking it the day a `SEARCH` names one, which is the
  * day somebody adds a search to a program that compiled for years.
  */
 function tableIndexName(fieldName: string, recordName?: string | null): string {
@@ -8406,7 +8406,7 @@ function cursorRowCounter(cursorName: string): string {
 /**
  * Which row a scrolled loop is on, as a host variable Db2 reads.
  *
- * Signed, because Db2 counts a negative `ABSOLUTE` position from the last row —
+ * Signed, because Db2 counts a negative `ABSOLUTE` position from the last row,
  * which is how a backward loop with no start position begins at the end without
  * the program having to know how many rows there are.
  */
@@ -8456,7 +8456,7 @@ function rowsetArrayName(cursorName: string, fieldName: string): string {
  *
  * One array per column, each an elementary item with its own `OCCURS`, which
  * is what the Application Programming and SQL Guide's syntax diagram for a
- * COBOL host-variable array shows — a level in the range 2 to 48 with a
+ * COBOL host-variable array shows: a level in the range 2 to 48 with a
  * picture and an `OCCURS` of 1 to 32767. A group with the `OCCURS` on the
  * group instead is a host structure array, which a multiple-row FETCH does not
  * take, and Db2 answers `UNDECLARED HOST VARIABLE ARRAY`.
@@ -8548,8 +8548,8 @@ function emitExecSql(
 /**
  * `DECLARE ... CURSOR FOR ...`, one per declared cursor.
  *
- * A cursor declaration is not an executable statement — Db2 reads it at
- * precompile time — so it sits in WORKING-STORAGE next to the host variables it
+ * A cursor declaration is not an executable statement, since Db2 reads it at
+ * precompile time, so it sits in WORKING-STORAGE next to the host variables it
  * names rather than in the paragraph that opens the cursor.
  *
  * The row's destination is deliberately absent here. `DECLARE CURSOR` may not
@@ -8572,7 +8572,7 @@ function emitCursorDeclarations(
         //
         // `INSENSITIVE` is written rather than left out. Db2's default is
         // `ASENSITIVE`, which resolves to insensitive or to sensitive dynamic
-        // depending on the statement — so a scrollable cursor with no keyword
+        // depending on the statement, so a scrollable cursor with no keyword
         // may or may not see other units of work's committed changes, decided
         // per query. A statement screen paging over a result set that moves
         // underneath shows a row twice or never, and the program cannot tell.
@@ -8584,7 +8584,7 @@ function emitCursorDeclarations(
       addLine,
       // Area B. `EXEC SQL` is a statement wherever it stands, and Area A holds
       // division, section and paragraph headers, FD and SD entries, and level
-      // 01 and 77 indicators — nothing else. This block used to open in column
+      // 01 and 77 indicators, and nothing else. This block used to open in column
       // 8, alongside the `01` entries around it, which reads as though it were
       // one of them.
       "           ",
@@ -8631,7 +8631,7 @@ function emitCursorLoopStatement(
    *
    *   - past the last row, `ABSOLUTE` beyond the end answers +100;
    *   - going backward off the front, position reaches 0, which the SQL
-   *     Reference defines as before the first row — also +100;
+   *     Reference defines as before the first row, also +100;
    *   - a negative start counts from the end, so `backward` with no `from`
    *     begins at -1, the last row, without the program knowing the count.
    *
@@ -8686,7 +8686,7 @@ function emitCursorLoopStatement(
   // rows"; `-911` is a deadlock the thread lost, `-904` a resource that was not
   // available, `-805` a package that was never bound. Leaving the loop on one
   // of those and carrying on processes a partial result set as though it were
-  // the whole one — which for a settlement run is a day half posted, reported
+  // the whole one, which for a settlement run is a day half posted, reported
   // as a day posted.
   //
   // The failure is recorded here and acted on after the CLOSE rather than
@@ -8721,9 +8721,9 @@ function emitCursorLoopStatement(
     addLine(`${indent}    END-IF`);
     // `SQLERRD(3)` is how many rows the FETCH returned, which on the last
     // rowset is fewer than were asked for. The Application Programming and SQL
-    // Guide is explicit that `+100` arrives *with* that last partial rowset —
+    // Guide is explicit that `+100` arrives *with* that last partial rowset:
     // "when the last row has been retrieved, the program must still process
-    // the rows in the last rowset through that last row" — so the rows are
+    // the rows in the last rowset through that last row", so the rows are
     // processed first and the `+100` is acted on at the bottom of the loop.
     // Leaving on the `+100` where a single-row fetch would is a batch that
     // silently drops up to one rowset of work off the end of every run.
@@ -8846,7 +8846,7 @@ function emitReturnStatement(
  *
  * `INTEGER-OF-DATE` converts YYYYMMDD to a day number and `DATE-OF-INTEGER`
  * converts back, so adding thirty days is addition on the day number rather
- * than on the digits — which is the difference between the 2nd of March and the
+ * than on the digits, which is the difference between the 2nd of March and the
  * 61st of January.
  */
 /**
@@ -8897,7 +8897,7 @@ function renderNumericCall(expression: IRNumericCallExpression): string {
     case "textLength":
       // The declared width of a COBOL field is fixed, so LENGTH would answer a
       // question nobody asked. This is what the field actually holds, trailing
-      // spaces excluded — the length a variable-length feed needs to write.
+      // spaces excluded: the length a variable-length feed needs to write.
       return `FUNCTION STORED-CHAR-LENGTH(${first})`;
   }
 }
@@ -8925,7 +8925,7 @@ function renderTemporalCall(expression: IRTemporalCallExpression): string {
  *
  * `trim`, `upper`, and `lower` are intrinsic functions. `substring` is
  * reference modification, `s(start:length)`, which is why its bounds have to be
- * written as literals — a COBOL field has a fixed length and the compiler has to
+ * written as literals: a COBOL field has a fixed length and the compiler has to
  * know it. `concat` and `now` build a value rather than name one, so they cannot
  * appear inline; `emitStringAssignment` handles those.
  */
@@ -9041,7 +9041,7 @@ function emitStringAssignment(
  * reached the source where COBOL reads a sentence terminator: `COMPUTE BALANCE
  * = 1234.50` parsed as a COMPUTE of 1234 followed by a statement called `50`.
  * Every program that set the convention and used a decimal literal failed to
- * compile — loudly, but only for whoever tried to build it.
+ * compile, loudly, but only for whoever tried to build it.
  */
 function renderNumericLiteral(text: string): string {
   // Only a bare number. The same clause carries string literals and enum
@@ -9070,7 +9070,7 @@ function renderExpression(expression: IRExpression): string {
     case "StringLiteral":
       // Enterprise COBOL has no zero-length literal. `""` in BankTS means an
       // empty field, and the figurative constant for an empty alphanumeric
-      // field is SPACES — which is also what the field holds after a MOVE of
+      // field is SPACES, which is also what the field holds after a MOVE of
       // anything shorter than it, so a comparison against `""` finds a blank
       // field and a comparison against `"\"\""` would find nothing. GnuCOBOL
       // takes the literal and warns; IGYCRCTL rejects it.
@@ -9101,8 +9101,8 @@ function renderExpression(expression: IRExpression): string {
     case "EnumMember":
       return `"${expression.member}"`;
     case "IndexAccess": {
-      // COBOL subscripts the innermost name with every dimension at once —
-      // `RATE-ITEM (I, J)`, not `RATE (I) (J)` — so a chain of index accesses
+      // COBOL subscripts the innermost name with every dimension at once,
+      // `RATE-ITEM (I, J)` and not `RATE (I) (J)`, so a chain of index accesses
       // collapses into one reference.
       const subscripts: string[] = [];
       let target: IRExpression = expression;
@@ -9243,8 +9243,8 @@ function renderCondition(expression: IRExpression): string {
  * The API Reference describes `RESP(xxx)` as leaving "a value that corresponds
  * to the condition that might be raised, or to a normal return, that is,
  * `xxx=DFHRESP(NORMAL)`. You can test this value by means of DFHRESP." The
- * numeric value is the translator's, not the API's — `DFHRESP` is a built-in
- * function it resolves — so a program that writes the number has hard-coded
+ * numeric value is the translator's, not the API's (`DFHRESP` is a built-in
+ * function it resolves) so a program that writes the number has hard-coded
  * something CICS never promised, and a reviewer reads `IF LINK-RESP = 0` as
  * somebody who has not written CICS before.
  *
@@ -9326,7 +9326,7 @@ function collectFunctionLocals(block: IRBlock): IRLetStatement[] {
  * Grouped by the shape of the arithmetic rather than by the statement, so ten
  * roundings of `decimal<16, 2>` from a `decimal<16, 4>` product share one set of
  * fields instead of emitting ten. The signature is built from the pictures, so
- * the grouping — and therefore the numbering — is a function of the program and
+ * the grouping, and therefore the numbering, is a function of the program and
  * not of the order anything was walked in.
  */
 interface RoundingGroup {
@@ -9402,7 +9402,7 @@ function planRoundingGroups(
   }
 
   // Numbered by signature rather than by position, so adding a blank line to
-  // the source cannot rename a field — the same reason loop counters are named
+  // the source cannot rename a field, the same reason loop counters are named
   // for their routine rather than for their line.
   return new Map(
     [...shapes.entries()]
@@ -9575,7 +9575,7 @@ function localOwners(
  * The WORKING-STORAGE field each routine's locals are emitted as.
  *
  * Every local becomes an 01 item, so two routines that both declare `scratch`
- * used to emit two `01 SCRATCH` items — with different PICTUREs if the two
+ * used to emit two `01 SCRATCH` items, with different PICTUREs if the two
  * locals had different types. A name only one routine declares keeps it, which
  * is what a COBOL maintainer reading the BankTS source expects to find; a name
  * more than one routine declares is qualified with its owner, the same way
@@ -9643,15 +9643,15 @@ function toJclJobName(moduleName: string): string {
 /**
  * The same picture, with the initial value a generated 01 item should carry.
  *
- * Storage the compiler invents for itself — a routine's result, its parameters,
- * its locals — is written before it is read on every path the emitter
+ * Storage the compiler invents for itself (a routine's result, its parameters,
+ * its locals) is written before it is read on every path the emitter
  * generates. It was still declared with no `VALUE`, and a reviewer reading
  *
  *     01  VALIDATE-AMOUNT-RESULT PIC X(1) VALUE "N".
  *     01  VALIDATE-AMOUNT-P1   PIC S9(16)V99 COMP-3.
  *
  * cannot tell whether the second line is a considered decision or an
- * oversight — the field beside it is initialised and this one is not. Under
+ * oversight: the field beside it is initialised and this one is not. Under
  * `WORKING-STORAGE` with no `VALUE` the item starts as whatever the compiler
  * left there, and for a `COMP-3` field that is not reliably a valid packed
  * number: a program that reads one before writing it can abend on a data
@@ -9727,7 +9727,7 @@ function formatCobolType(type: IRType): string {
  * It goes through the same emitter the program does. A flat list of pictures
  * was not the same record: it dropped `REDEFINES`, `OCCURS`, `SYNCHRONIZED`,
  * the nested groups, and the 88-levels. Under `copybookMode: "copy"` the
- * program's storage *is* the copybook, so those omissions were not cosmetic —
+ * program's storage *is* the copybook, so those omissions were not cosmetic:
  * a redefining field took storage of its own and pushed every later field
  * along, a table collapsed to a single element, and an aligned field lost the
  * slack bytes the layout report accounts for.

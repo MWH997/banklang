@@ -1,11 +1,11 @@
 /**
  * What the program is given before it runs.
  *
- * The 2026-08-07 audit's F4: the Run tab executed every program against
- * zero-initialised storage, so `account-posting` — the example whose entire
- * subject is a balanced transfer — posted 0.00 against 0.00 on the feature sold
- * as "read the postings it made rather than take the compiler's word for them".
- * The one case that proves nothing.
+ * The Run tab used to execute every program against zero-initialised storage,
+ * so `account-posting`, the example whose entire subject is a balanced
+ * transfer, posted 0.00 against 0.00 on the feature sold as "read the postings
+ * it made rather than take the compiler's word for them". The one case that
+ * proves nothing.
  *
  * A program on z/OS is given its input by the job around it: a dataset the step
  * allocates, the PARM on the `EXEC` card, or a caller's communication area.
@@ -13,13 +13,13 @@
  * the panel makes each editable:
  *
  * - **The entry record.** A generated batch program holds its transaction's
- *   record parameter in WORKING-STORAGE. Nothing in the program fills it — on a
+ *   record parameter in WORKING-STORAGE. Nothing in the program fills it: on a
  *   real system a caller, a PARM or a dataset does, and here the panel does. It
  *   is labelled as what it is, because a reader who thinks the program produced
  *   these numbers by itself has learnt something untrue.
  * - **An input dataset.** Where the program opens a file, its records are built
  *   from the same layout the compiler reports, at the same offsets, in the same
- *   encoding — packed decimal included.
+ *   encoding, packed decimal included.
  * - **The PARM.** A program with `PROCEDURE DIVISION USING` is entered with a
  *   parameter area; `run.ts` already builds one, and this is what goes in it.
  *
@@ -30,13 +30,13 @@
  * follows for the seeded records CI executes.
  *
  * The PARM follows that rule through `batchParmFields`, which is the emitter's
- * own account of the parameter area — the list `emitParmParagraph` generates
+ * own account of the parameter area, the list `emitParmParagraph` generates
  * the parsing code from. It was briefly a single opaque `X(512)` seeded blank,
  * on the reasoning that the layout inside a PARM is the program's own
  * convention. It is not: it is this compiler's, and it is already exported.
  * The cost of guessing was that all four PARM-driven examples failed their own
  * length check on the first statement, ended the step with return code 12, and
- * never reached the dataset seeded beside them — the same empty answer B2
+ * never reached the dataset seeded beside them: the same empty answer this file
  * exists to stop giving, on the one example whose subject is the PARM.
  */
 
@@ -84,7 +84,7 @@ export interface ProgramInputs {
    * Why there is nothing to fill, where that is the case.
    *
    * A program that reads no dataset, takes no PARM and holds no entry record
-   * has no input path at all — on z/OS either. Saying so is the point: the
+   * has no input path at all, on z/OS either. Saying so is the point: the
    * numbers being zero is then a fact about the example rather than about the
    * browser, and the reader is not left to guess which.
    */
@@ -113,7 +113,7 @@ function scaleOf(picture: string): number {
  * The leading symbol decides it, not whether a `9` appears anywhere: a
  * `string<9>` is `X(9)`, and asking "does this contain a 9" seeds it with an
  * amount and then writes that amount into an alphanumeric field. An edited
- * picture — `ZZ,ZZ9.99`, `-(16)9.99` — leads with its editing symbol and is
+ * picture (`ZZ,ZZ9.99`, `-(16)9.99`) leads with its editing symbol and is
  * text as far as writing into it goes, which is what it should be.
  *
  * The `PIC ` prefix is optional because the layout report includes it and the
@@ -212,7 +212,7 @@ export function buildRecord(
  * One field's bytes, in the encoding its picture and usage describe.
  *
  * Separated from `buildRecord` because a Db2 row is delivered one host
- * variable at a time rather than as a contiguous record — the `INTO` list can
+ * variable at a time rather than as a contiguous record: the `INTO` list can
  * name three fields of a record and the FETCH writes each one on its own.
  */
 export function encodeField(
@@ -249,7 +249,7 @@ function parmInputField(field: BatchParmField): InputField {
     // layout report gives a record's pictures and the panel shows both.
     picture: field.picture,
     // A PARM is characters someone types on an EXEC statement, so every field
-    // in it is DISPLAY — a number included, which is why the program tests it
+    // in it is DISPLAY, a number included, which is why the program tests it
     // with `IS NUMERIC` before it computes on it.
     usage: "DISPLAY",
     bytes: field.width,
@@ -261,8 +261,8 @@ function parmInputField(field: BatchParmField): InputField {
  * The PARM as the characters a job step passes.
  *
  * Positional, each parameter occupying its declared width. A numeric parameter
- * is written as zoned decimal — every digit, no decimal point, with a separate
- * leading sign where the type has one — because that is the picture the linkage
+ * is written as zoned decimal, every digit, no decimal point, with a separate
+ * leading sign where the type has one, because that is the picture the linkage
  * group declares. Writing `1200.00` into `S9(16)V99` instead would fail the
  * program's own `IS NUMERIC` test, which is the point of that test.
  */
@@ -281,7 +281,7 @@ export interface CursorRows {
  * The statement numbers the script is keyed by are assigned by the precompiler,
  * and `run.ts` is where the precompiled text exists. Deriving them from the
  * order the `EXEC SQL` statements appear in would be a second implementation of
- * the precompiler's numbering — the mistake the PARM already made once.
+ * the precompiler's numbering, the mistake the PARM already made once.
  */
 export function cursorRowsOf(
   surfaces: readonly InputSurface[],
@@ -410,7 +410,7 @@ function seedFor(field: InputField, index: number): string {
   }
   // Two different accounts for the two legs of a transfer. Seeding both from
   // one rule gave `account-posting` a debit and a credit on the same account,
-  // which nets to zero — a balanced journal that demonstrates nothing, which is
+  // which nets to zero: a balanced journal that demonstrates nothing, which is
   // the shape of answer this whole panel exists to stop giving.
   if (/^CREDIT|BENEFICIARY|^TO-/.test(name)) {
     return `ACC-${String(index + 2).padStart(10, "0")}`;
@@ -450,7 +450,7 @@ function seedRecord(
  * Record variables a keyed read takes its key from.
  *
  * `read accountMaster into master key statement.accountId` asks the file for
- * one record, and the key comes out of `statement` — a parameter the program
+ * one record, and the key comes out of `statement`, a parameter the program
  * never writes. The rule below excludes every record parameter of a
  * file-reading program on the grounds that the file fills them, which is true
  * of `master` and false of `statement`: `statement-generation` ran with a blank
@@ -659,7 +659,7 @@ export function inputsFor(
   // are the totals and the progress it keeps while it runs, and seeding those
   // would start the run with a count somebody typed. A CICS transaction is
   // given a communication area, which the program copies over its own record on
-  // entry — anything put there is overwritten before the first statement that
+  // entry, so anything put there is overwritten before the first statement that
   // reads it. A queue-driven program is the same case: `getMessage ... into
   // request` writes the message over the record before anything reads it, so a
   // seeded one is a form the reader fills in and the program discards. That is
@@ -668,8 +668,8 @@ export function inputsFor(
   //
   // A restart control file is not one of those. It is written by the program's
   // own checkpoint and read for one position, and it fills nothing a reader
-  // would otherwise have to supply — so counting it here took the branch and
-  // the rate away from `branch-accrual-cursor` the moment B4 gave it a
+  // would otherwise have to supply. Counting it here took the branch and the
+  // rate away from `branch-accrual-cursor` the moment that example gained a
   // checkpoint, and the run accrued interest at zero per cent on every account.
   // `restartControlFiles` is the emitter's own answer, which is the same set it
   // writes `SELECT OPTIONAL` for.
@@ -710,7 +710,7 @@ export function inputsFor(
     }
   }
 
-  // A PARM is a string on the EXEC card, and the program parses it — with code
+  // A PARM is a string on the EXEC card, and the program parses it, with code
   // this compiler generated, from this list. `batchParmFields` is what
   // `emitParmParagraph` writes the length check and the MOVEs from, so a panel
   // built on it writes exactly what the program reads, and one field per
@@ -751,7 +751,7 @@ export function inputsFor(
       continue;
     }
     // In the order the `INTO` names them, which is the order the generated
-    // FETCH passes them to DSNHLI — the positions the script is keyed by.
+    // FETCH passes them to DSNHLI, the positions the script is keyed by.
     const fields = fetchedFields(cursor, layout);
     if (fields.length === 0) {
       continue;
@@ -802,7 +802,7 @@ export function inputsFor(
  *
  * The first branch used to be missing, so a module with no transaction at all
  * was told that "its transaction takes no record" and that "whatever it
- * computes, it computes from constants" — two sentences about a program that
+ * computes, it computes from constants": two sentences about a program that
  * has no entry point and computes nothing. Wrong in the specific way this
  * panel exists to avoid: confidently, and about the program rather than about
  * the browser.
@@ -815,7 +815,7 @@ function reasonFor(program: IRProgram): string {
     return "This module declares records and functions and no transaction, so it has no entry point: there is nothing for a job step to start, and nothing to give it. The COBOL beside it is a module for another program to call.";
   }
   if (entry.isCics) {
-    return `${entry.name} is a CICS transaction. Its input is the communication area the caller passes, which a region supplies and this panel does not — the Run tab executes it against an empty one.`;
+    return `${entry.name} is a CICS transaction. Its input is the communication area the caller passes, which a region supplies and this panel does not, so the Run tab executes it against an empty one.`;
   }
   const queue = program.queues.find((each) => each.direction === "input");
   if (queue) {

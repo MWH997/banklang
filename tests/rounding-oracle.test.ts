@@ -20,7 +20,7 @@ import { localCobol } from "./helpers";
  * Reading that COBOL cannot tell a correct sequence from one that is off by a
  * unit at the tie, and neither can a test that asserts the text of it. The only
  * honest check is to run it over inputs chosen to land on and around every
- * boundary and compare each answer against arithmetic done exactly — which
+ * boundary and compare each answer against arithmetic done exactly, which
  * here is a rational, held in two BigInts, rounded by the rule the mode names.
  *
  * Both shapes are covered, because they are different code. A multiplication
@@ -151,7 +151,7 @@ function expectedQuotient(
  * The operand pairs each case is run over.
  *
  * Chosen rather than random. What a rounding rule can get wrong is the tie and
- * the values either side of it, the sign of the excess, and zero — so every
+ * the values either side of it, the sign of the excess, and zero, so every
  * pair here either lands exactly on half a unit in the last place, one unit
  * away from it in each direction, or on a boundary a mode treats specially.
  * Random inputs would mostly land nowhere near any of them.
@@ -210,7 +210,7 @@ const SCALE = 2;
  * One program per mode and shape, computing every case and logging the answer.
  *
  * One compile and one run for a hundred-odd comparisons, rather than a process
- * per case — the point is coverage of the boundaries, and a test nobody runs
+ * per case. The point is coverage of the boundaries, and a test nobody runs
  * because it takes four minutes covers nothing.
  */
 function programFor(

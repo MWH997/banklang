@@ -1,5 +1,10 @@
 # Roadmap
 
+Where the project has been, version by version, and what is still to come. Items
+marked **done** have shipped; the rest are plans, and one of them says it has
+not been started. The current release is 0.10.0. For what is missing today, and
+what each gap costs, read [status-and-limits.md](status-and-limits.md) instead.
+
 ## v0.1: Compiler credibility
 
 Theme: deterministic compiler skeleton.
@@ -100,13 +105,14 @@ Theme: legacy-estate relevance.
 
 Deliverables:
 
-- COBOL inventory tools (**done**, `bankc analyse`
-- SQL extractor) **done**
-- CICS extractor (**done**
-- paragraph graph) **done**, as Mermaid
-- copybook dependency graph (**done**, nested `COPY` references, missing and
-  ambiguous members, `REPLACING` metadata and cycles as Mermaid and JSON
-- skeleton migration output) not started, and the least certain of the six: a
+- COBOL inventory tools: **done**, `bankc analyse`
+- SQL extractor: **done**
+- CICS extractor: **done**
+- paragraph graph: **done**, as Mermaid
+- copybook dependency graph: **done**, covering nested `COPY` references,
+  missing and ambiguous members, `REPLACING` metadata and cycles, as Mermaid
+  and JSON
+- skeleton migration output: not started, and the least certain of the six. A
   skeleton that is wrong in a way a reader trusts is worse than none
 
 See [migration-analysis.md](migration-analysis.md).
@@ -117,13 +123,14 @@ Theme: the second program of each kind, rather than the first.
 
 Db2, in the order a batch meets them:
 
-- ~~`WITH HOLD` cursors~~ (done, `cursor ... hold`, with `BANK-SQL-008`
-- ~~multi-row `FETCH`~~) done, `cursor ... rowset n`
-- ~~isolation level on a statement~~ (never missing: the SQL is passed through
-- ~~savepoints~~) the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
-- ~~`LOCK TABLE`~~ (the same
-- ~~`GET DIAGNOSTICS`~~) never missing either: an ordinary statement in a
-  `sql` declaration, with host variables resolved like any other
+- ~~`WITH HOLD` cursors~~: done, `cursor ... hold`, with `BANK-SQL-008`
+- ~~multi-row `FETCH`~~: done, `cursor ... rowset n`
+- ~~isolation level on a statement~~: never missing, because the SQL is passed
+  through
+- ~~savepoints~~: the same, with `BANK-SQL-009` keeping `commit` out of raw SQL
+- ~~`LOCK TABLE`~~: the same
+- ~~`GET DIAGNOSTICS`~~: never missing either. An ordinary statement in a `sql`
+  declaration, with host variables resolved like any other
 - ~~scrollable cursors~~: done 2026-08-07, and it was the one that needed
   syntax rather than pass-through. `cursor ... scroll` emits
   `INSENSITIVE SCROLL CURSOR`, and `for each ... from n backward` walks the

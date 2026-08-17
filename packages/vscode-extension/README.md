@@ -1,14 +1,14 @@
 # BankLang for VS Code
 
-Write banking logic in **BankTS** — a small banking language whose types are
-TypeScript's — and get **IBM Enterprise COBOL** out. This extension
+Write banking logic in **BankTS**, a small banking language whose types are
+TypeScript's, and get **IBM Enterprise COBOL** out. This extension
 puts the compiler in the editor: the same diagnostics, the same formatter, and
 hover that tells you which COBOL lines a line of BankTS produces.
 
 The compiler refuses to compile financially unsafe programs. An unbalanced
 ledger posting, a retry with no idempotency key, money moving with no audit
 trail: these are compile errors, not review comments. This extension is where
-you see them — while typing, rather than in a pipeline.
+you see them, while typing rather than in a pipeline.
 
 **[banklang.mwhassan.com](https://banklang.mwhassan.com)** ·
 **[Try it in the browser](https://banklang.mwhassan.com/playground/)** ·
@@ -19,13 +19,13 @@ you see them — while typing, rather than in a pipeline.
 - **Diagnostics from the real compiler**, not a second implementation that
   drifts from it. The extension bundles the compiler and runs it on every
   keystroke, so what the editor underlines is what `bankc` fails on. That
-  includes the banking rules — `BANK-TXN-001` (a transaction with no
+  includes the banking rules: `BANK-TXN-001` (a transaction with no
   idempotency key), `BANK-AUD-001` and `BANK-AUD-002` (money moved without an
   audit record), `BANK-LED-001` (a posting that does not balance),
-  `BANK-SEC-001`, `BANK-FILE-001` — each with the catalogue's explanation and
+  `BANK-SEC-001` and `BANK-FILE-001`, each with the catalogue's explanation and
   its fix.
 - **Hover.** On a diagnostic, why it fires and what to write instead. On a clean
-  line, the range of generated COBOL that line is responsible for — the
+  line, the range of generated COBOL that line is responsible for, and the
   traceability a reviewer asks for, without leaving the source.
 - **Format on save**, through the compiler's own formatter, so formatting is one
   decision rather than an editor setting per person.
@@ -52,7 +52,7 @@ repository itself.
 ## What this does not claim
 
 Generated COBOL is validated locally with **GnuCOBOL**. **No IBM Enterprise
-COBOL validation is claimed** — no program here has been compiled by IBM's
+COBOL validation is claimed**: no program here has been compiled by IBM's
 compiler or run on z/OS. The generator targets Enterprise COBOL 6.4 and cites
 the manual for every construct it emits, and that is a different statement from
 having run it. See

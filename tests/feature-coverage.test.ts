@@ -13,15 +13,15 @@ import { checked, corpus } from "./helpers";
 /**
  * No feature may rest on a single example.
  *
- * The 2026-08-05 audit's §5.5: "no feature may be represented by exactly one
- * fixture. Each needs at minimum a benign case, a boundary case, and a failure
- * case." A construct with one test has one shape proved, and the shape that was
- * chosen is the one the author already had in mind — which is exactly how
+ * The external audit set the rule: "no feature may be represented by exactly
+ * one fixture. Each needs at minimum a benign case, a boundary case, and a
+ * failure case." A construct with one test has one shape proved, and the shape that was
+ * chosen is the one the author already had in mind, which is exactly how
  * `ROUNDED MODE IS NEAREST-EVEN` survived two years of a green suite.
  *
  * These are meta-tests: they read the suite rather than the compiler, and they
  * fail when the suite stops covering something rather than when the compiler
- * breaks. That makes them annoying in the right way — a new statement kind
+ * breaks. That makes them annoying in the right way: a new statement kind
  * cannot be merged with one happy-path test.
  */
 
@@ -94,7 +94,7 @@ describe("every statement kind", () => {
   for (const statement of statements) {
     /**
      * Two occurrences, because one is a single example. The check is textual
-     * and therefore loose — it counts how often the suite writes the keyword —
+     * and therefore loose, counting how often the suite writes the keyword,
      * which is the right level for a meta-test: it cannot tell a good second
      * test from a bad one, and it can tell one from none.
      */
@@ -115,7 +115,7 @@ describe("every statement kind", () => {
  * Every diagnostic the catalogue documents must have a test that provokes it.
  *
  * A rule nothing tests is a comment. The catalogue is the product's promise, so
- * this is the coverage that matters most — more than line coverage of the
+ * this is the coverage that matters most, more than line coverage of the
  * emitter, which can be high while every safety rule is unproved.
  */
 describe("every implemented diagnostic", () => {
@@ -154,8 +154,8 @@ describe("evidence grades", () => {
    *
    * These are the strongest evidence the project has: somebody worked out the
    * closing balances on paper and the test says what they must be. Everything
-   * else that is executed is executed differentially — the same program under
-   * `cobc` and under the interpreter, required to agree — which catches a
+   * else that is executed is executed differentially: the same program under
+   * `cobc` and under the interpreter, required to agree, which catches a
    * defect that compiles but cannot catch one that is wrong the same way twice.
    * Losing one of these three is a real regression and this is what says so.
    */
@@ -220,13 +220,13 @@ describe("evidence grades", () => {
  * that: a rule that is on the page and names a check that does not exist reads
  * as checked and is not.
  *
- * It also encodes what the 2026-08-05 audit's F13 taught, which no meta-test
- * caught the first time. A conformance-linter rule runs over every emitted
- * artifact, the checked-in fixtures and the evidence bundles, so it is
- * corpus-wide by construction. A rule checked by a hand-fixtured test is only
- * as good as the one program that test compiles — and F13's delimiter test
- * compiled a program that reached one of the two branches emitting a boolean,
- * passed, and left `MOVE 'Y'` in a shipped example for as long as it was there.
+ * It also encodes what the delimiter defect taught, which no meta-test caught
+ * the first time. A conformance-linter rule runs over every emitted artifact,
+ * the checked-in fixtures and the evidence bundles, so it is corpus-wide by
+ * construction. A rule checked by a hand-fixtured test is only as good as the
+ * one program that test compiles: the delimiter test compiled a program that
+ * reached one of the two branches emitting a boolean, passed, and left
+ * `MOVE 'Y'` in a shipped example for as long as it was there.
  * So a test named here has to assert over the corpus rather than over one
  * program it wrote itself.
  */
@@ -242,7 +242,7 @@ describe("the generated-code standards", () => {
     .flatMap((cell) => cell.split(/,\s*/).map((part) => part.trim()))
     // Unbackticked here rather than at each use. Leaving the backticks on made
     // the corpus loop below select nothing, so it asserted over an empty list
-    // and passed — the same shape of defect this whole file exists to catch.
+    // and passed, the same shape of defect this whole file exists to catch.
     .map((check) => check.replace(/`/g, "").replace(/ skips them$/, ""));
 
   const named = [...new Set(checks)];
@@ -258,7 +258,7 @@ describe("the generated-code standards", () => {
 
   /**
    * Every check is either a rule the linter can report or a test file that
-   * exists. "review" is neither, and neither is "and others" — both name a
+   * exists. "review" is neither, and neither is "and others": both name a
    * hope rather than something that fails.
    */
   for (const check of named) {
@@ -285,7 +285,7 @@ describe("the generated-code standards", () => {
       const source = readFileSync(file, "utf8");
       expect(
         source.includes("corpus("),
-        `${file} is named as the check for a generated-code standard but never reads the corpus. One hand-written program proves one shape — which is how F13 survived.`,
+        `${file} is named as the check for a generated-code standard but never reads the corpus. One hand-written program proves one shape, which is how the delimiter defect survived.`,
       ).toBe(true);
     });
   }
@@ -339,7 +339,7 @@ describe("the target-conformance page", () => {
  * Every test that reads the corpus says how much of it it looked at.
  *
  * The recurring defect in this repository is an assertion that runs, passes,
- * and checks nothing. Six have been found: F13's delimiter test, the
+ * and checks nothing. Six have been found: the delimiter test, the
  * `Checked by` loop directly above this one, an enum regex that missed the
  * qualified `SET x OF y TO TRUE` and so matched zero of twenty-three examples,
  * a floor set from a corpus that did not meet it, a framing test named "counts
@@ -347,7 +347,7 @@ describe("the target-conformance page", () => {
  * conformance rule with no test at all. Every one of them was green.
  *
  * A corpus loop is where this is easiest to write by accident, because the loop
- * still executes — over nothing. `checked(count, atLeast, what)` in
+ * still executes, over nothing. `checked(count, atLeast, what)` in
  * `tests/helpers.ts` is the countermeasure, and this is what makes using it not
  * optional: a test that reaches for `corpus()` and never states a floor is
  * asserting over however much it happened to find, which may be none of it.
@@ -370,7 +370,7 @@ describe("every corpus assertion", () => {
    * A call with an argument, rather than the two characters `checked(`.
    *
    * The second version of this check stripped string literals as well, so that
-   * the assertion message below — which also names `checked()` — could not
+   * the assertion message below, which also names `checked()`, could not
    * satisfy the rule out of its own failure text. Lexing TypeScript with a
    * regular expression went wrong immediately, swallowing whole statements
    * between adjacent string arguments. Requiring an argument is the cheap way
@@ -384,7 +384,7 @@ describe("every corpus assertion", () => {
    *
    * Matched on the import as well as the call. `corpus(` alone is a name, and
    * `packages/horizontal-validation` exports a `corpus(id)` that looks up an
-   * external corpus definition — a different function with a different job, in
+   * external corpus definition, a different function with a different job, in
    * a test that walks no collection at all. Requiring only the name meant that
    * test was told to declare a floor for a loop it does not have, which is
    * ceremony rather than a check, and the way those get satisfied is by adding
@@ -427,14 +427,14 @@ describe("every corpus assertion", () => {
  *
  * `PIC S9(16)V99` and `PIC S9(16)V9(2)` are the same picture; so are `PIC X`
  * and `PIC X(1)`. Enterprise COBOL takes either, and a program carrying both
- * reads as two people's work — the audit's F14, which was reported fixed
- * because the one spelling it named had gone.
+ * reads as two people's work. This was reported fixed once because the one
+ * spelling that had been named had gone.
  *
  * Both were still being emitted: the PARM field builder wrote the fractional
  * run as a repeat count where `decimalPicture` writes it out, the rounding work
  * field wrote its own, and a boolean result cell was `PIC X` where every other
  * alphanumeric picture carries a count. Nothing caught it because no test
- * compared two examples against each other — every one of them read a single
+ * compared two examples against each other, and every one of them read a single
  * artifact and found it self-consistent.
  *
  * Normalising to (symbol, count) pairs is what makes the comparison possible:
@@ -444,7 +444,7 @@ describe("every PICTURE in the corpus", () => {
   /**
    * `S9(16)V99` becomes `Sx1 9x16 Vx1 9x2`, which `S9(16)V9(2)` also becomes.
    *
-   * The character class is the PICTURE symbols the Language Reference lists —
+   * The character class is the PICTURE symbols the Language Reference lists,
    * digits among them, `9` and `0` being symbols rather than counts.
    */
   const normalise = (picture: string): string =>

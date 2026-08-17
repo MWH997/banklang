@@ -8,7 +8,7 @@ the case it used to get wrong.
 Every loop in BankTS carries a limit, because an unbounded `PERFORM UNTIL` over
 a corrupt file spins until an operator cancels the job. The limit was reached
 silently: the program read its first million records, closed its files, wrote
-its audit event and ended with return code zero — a night that accrued a fifth
+its audit event and ended with return code zero: a night that accrued a fifth
 of the book and reported success.
 
 ## What to look at
@@ -36,8 +36,8 @@ and it fails the step.
 
 ## Related
 
-- [docs/error-handling.md](../../docs/error-handling.md) — what a failure writes
+- [docs/error-handling.md](../../docs/error-handling.md): what a failure writes
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=high-volume-master) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=high-volume-master). It compiles in your browser, with the generated COBOL beside it.

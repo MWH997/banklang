@@ -4,7 +4,7 @@
  * The rule this file exists to enforce: generated COBOL is never scored against
  * reference COBOL by similarity. Two programs can differ in every line and
  * compute the same thing, and BankLang's output differs from a hand-written
- * solution by construction — it names paragraphs differently, orders working
+ * solution by construction. It names paragraphs differently, orders working
  * storage differently, and writes out banker's rounding as an EVALUATE where a
  * person would write ROUNDED. A text score would measure style.
  *
@@ -16,7 +16,7 @@
  * Trailing whitespace on a line is one: a COBOL `WRITE` from a fixed-length
  * record pads to the record length, and whether the benchmark's expected file
  * kept that padding is a property of how the benchmark's author saved the file.
- * Line endings are another. Nothing else is normalised — a differing digit, a
+ * Line endings are another. Nothing else is normalised: a differing digit, a
  * differing field width, a missing record and a differently-rounded penny all
  * fail, which is the entire point.
  */
@@ -32,7 +32,7 @@ export interface Difference {
  *
  * The anti-contamination protocol says an implementation is written from the
  * prose and the inputs and nothing else. That makes a benchmark unmatchable
- * whenever its expected output contains words found in neither — a column
+ * whenever its expected output contains words found in neither: a column
  * heading nobody described, or, in CobolCodeBench's weather task, the label
  * `MAXIMAM TEMP:` with the misspelling that only the reference solution knows.
  *
@@ -65,7 +65,7 @@ export function isOracleDerivable(
  *
  * The defect this exists for. `[A-Z]{4,}` matches no accented letter, so an
  * input of `Váquéz` contributed no word at all while an output of `Vaquez`
- * contributed one — and the function reported a correctly transliterated name
+ * contributed one, and the function reported a correctly transliterated name
  * as a literal the benchmark had invented. CobolCodeBench's task_func_47 spent
  * a phase misfiled as an oracle problem on the strength of it; its actual
  * obstacle is that a BankTS `string<n>` is n single-byte characters and `é` is

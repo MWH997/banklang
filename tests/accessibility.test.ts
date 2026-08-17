@@ -16,33 +16,33 @@ import { renderLanding, siteContent, SITE_ORIGIN } from "../tools/build-site";
 /**
  * Every page template, read by axe-core.
  *
- * E6, and the half of Epic E that matters. E1 to E5 were five specific defects
- * — two unlabelled editors, an `h1` outside `<main>`, a docs sidebar whose
- * group labels preceded the page heading, stat chips reading `1records`, and a
- * theme toggle with no state — and fixing five defects fixes five defects. This
- * is what stops the next five, because the next five will be a different five
- * and nobody is going to find them by looking.
+ * Five specific defects were found here by hand: two unlabelled editors, an
+ * `h1` outside `<main>`, a docs sidebar whose group labels preceded the page
+ * heading, stat chips reading `1records`, and a theme toggle with no state.
+ * Fixing five defects fixes five defects. This file is what stops the next
+ * five, because the next five will be a different five and nobody is going to
+ * find them by looking.
  *
  * **jsdom rather than a real browser.** The ticket said a Vitest browser test,
  * and that would additionally catch contrast and anything that depends on
  * layout. It also means Playwright in `devDependencies`, a browser download in
- * CI, and an install script running arbitrary code — and `pnpm-workspace.yaml`
- * takes install scripts one decision at a time on purpose. Every defect Epic E
- * found is structural: a name, a role, a heading order, a state. jsdom sees all
- * of those and `axe-core` is the same rule set either way.
+ * CI, and an install script running arbitrary code, and `pnpm-workspace.yaml`
+ * takes install scripts one decision at a time on purpose. Every one of those
+ * five defects is structural: a name, a role, a heading order, a state. jsdom
+ * sees all of them and `axe-core` is the same rule set either way.
  *
  * What is given up is `color-contrast`, which needs a layout engine and is
  * turned off below rather than left to fail silently. `tests/site-layout.test.ts`
  * holds the measured geometry, from a real browser, by hand, and
- * `tests/contrast.test.ts` computes every ratio in the palette from the tokens
- * — which is the half axe would have given back, and more of it: axe reads
- * text, and the failure that was actually on this site was the outline of the
+ * `tests/contrast.test.ts` computes every ratio in the palette from the
+ * tokens, which is the half axe would have given back and more of it. Axe reads
+ * text, and the failure actually on this site was the outline of the
  * documentation search box under SC 1.4.11.
  *
  * **The playground is audited as it is served, not as it ends up.** Its two
- * editors are inserted by CodeMirror at run time, so the names E1 gives them
+ * editors are inserted by CodeMirror at run time, so the names it gives them
  * through `EditorView.contentAttributes` are not in this DOM. Everything the
- * page ships — the tablist, the pickers, the landmarks, the headings — is.
+ * page ships is: the tablist, the pickers, the landmarks, the headings.
  */
 
 /** Rules that need a rendering engine, and would report nothing useful here. */
@@ -52,9 +52,9 @@ const NEEDS_LAYOUT = ["color-contrast"];
  * The standards the pages are held to.
  *
  * WCAG 2.2 AA, which is what the EU Accessibility Act and the UK public sector
- * regulations both name, plus axe's own best-practice set — the second is where
+ * regulations both name, plus axe's own best-practice set. The second is where
  * "the page has one main landmark" and "headings are in order" live, and those
- * are exactly the two E2 and E3 were about.
+ * are exactly the two that were wrong.
  */
 const STANDARD = [
   "wcag2a",
@@ -137,7 +137,7 @@ const PAGES: { name: string; html: () => string }[] = [
       // `renderPage`, not `renderDoc`: the second is the article, and a
       // fragment has no `<title>`, no `lang` and no landmarks to be outside of.
       // Auditing it reports three defects the page does not have and hides the
-      // sidebar, which is where E3's was.
+      // sidebar, which is where the heading-order defect was.
       return renderPage(renderDoc(page), navigation());
     },
   },

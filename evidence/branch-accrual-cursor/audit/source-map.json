@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 91,
-      "targetEndLine": 94,
+      "targetStartLine": 93,
+      "targetEndLine": 96,
       "category": "record",
       "symbol": "AccrualRequest"
     },
@@ -47,8 +47,8 @@
         "column": 23
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 92,
-      "targetEndLine": 92,
+      "targetStartLine": 94,
+      "targetEndLine": 94,
       "category": "field",
       "symbol": "branchId"
     },
@@ -63,8 +63,8 @@
         "column": 30
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 93,
-      "targetEndLine": 93,
+      "targetStartLine": 95,
+      "targetEndLine": 95,
       "category": "field",
       "symbol": "accrualRate"
     },
@@ -79,8 +79,8 @@
         "column": 30
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 94,
-      "targetEndLine": 94,
+      "targetStartLine": 96,
+      "targetEndLine": 96,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -95,8 +95,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 96,
-      "targetEndLine": 99,
+      "targetStartLine": 98,
+      "targetEndLine": 101,
       "category": "record",
       "symbol": "AccountBalanceRow"
     },
@@ -111,8 +111,8 @@
         "column": 28
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 97,
-      "targetEndLine": 97,
+      "targetStartLine": 99,
+      "targetEndLine": 99,
       "category": "field",
       "symbol": "rowAccountId"
     },
@@ -127,8 +127,8 @@
         "column": 19
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 98,
-      "targetEndLine": 98,
+      "targetStartLine": 100,
+      "targetEndLine": 100,
       "category": "field",
       "symbol": "rowBalance"
     },
@@ -143,8 +143,8 @@
         "column": 24
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 99,
-      "targetEndLine": 99,
+      "targetStartLine": 101,
+      "targetEndLine": 101,
       "category": "field",
       "symbol": "rowStatus"
     },
@@ -159,8 +159,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 101,
-      "targetEndLine": 106,
+      "targetStartLine": 103,
+      "targetEndLine": 108,
       "category": "record",
       "symbol": "AccrualSummary"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 102,
-      "targetEndLine": 102,
+      "targetStartLine": 104,
+      "targetEndLine": 104,
       "category": "field",
       "symbol": "summaryBranchId"
     },
@@ -191,8 +191,8 @@
         "column": 31
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 103,
-      "targetEndLine": 103,
+      "targetStartLine": 105,
+      "targetEndLine": 105,
       "category": "field",
       "symbol": "accountsRead"
     },
@@ -207,8 +207,8 @@
         "column": 34
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 104,
-      "targetEndLine": 104,
+      "targetStartLine": 106,
+      "targetEndLine": 106,
       "category": "field",
       "symbol": "accountsAccrued"
     },
@@ -223,8 +223,8 @@
         "column": 23
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 105,
-      "targetEndLine": 105,
+      "targetStartLine": 107,
+      "targetEndLine": 107,
       "category": "field",
       "symbol": "interestPosted"
     },
@@ -239,8 +239,8 @@
         "column": 30
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 106,
-      "targetEndLine": 106,
+      "targetStartLine": 108,
+      "targetEndLine": 108,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -255,8 +255,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 107,
-      "targetEndLine": 109,
+      "targetStartLine": 109,
+      "targetEndLine": 111,
       "category": "record",
       "symbol": "RestartPoint"
     },
@@ -271,8 +271,8 @@
         "column": 22
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 108,
-      "targetEndLine": 108,
+      "targetStartLine": 110,
+      "targetEndLine": 110,
       "category": "field",
       "symbol": "jobName"
     },
@@ -287,8 +287,8 @@
         "column": 29
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 109,
-      "targetEndLine": 109,
+      "targetStartLine": 111,
+      "targetEndLine": 111,
       "category": "field",
       "symbol": "lastAccountId"
     },
@@ -303,8 +303,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 154,
-      "targetEndLine": 183,
+      "targetStartLine": 180,
+      "targetEndLine": 209,
       "category": "function",
       "symbol": "interestOn"
     },
@@ -319,8 +319,8 @@
         "column": 2
       },
       "artifact": "cobol/BRANCHAC.cbl",
-      "targetStartLine": 184,
-      "targetEndLine": 366,
+      "targetStartLine": 210,
+      "targetEndLine": 396,
       "category": "transaction",
       "symbol": "accrueBranch"
     }

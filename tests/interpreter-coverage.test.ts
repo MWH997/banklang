@@ -19,7 +19,7 @@ import {
  * interpreter executes. Until this file existed it was a readout: somebody had
  * to run it and read the number. That is how `SORT` and `MERGE` stayed
  * unexecutable while three benchmark tasks passed under `cobc` alone, and it is
- * how the next one would too — a backend change that starts emitting a new
+ * how the next one would too: a backend change that starts emitting a new
  * locally executable verb reopens the hole silently.
  *
  * So the measurement is an assertion. A verb is allowed out of the differential
@@ -112,8 +112,8 @@ describe("every locally executable verb the backend emits", () => {
  * The verdict, and the report it is written from, on inputs this repository
  * does not currently produce.
  *
- * Every branch below is one the live measurement never takes — there are no
- * blind spots, there are exemptions, and there is external COBOL — so nothing
+ * Every branch below is one the live measurement never takes. There are no
+ * blind spots, there are exemptions, and there is external COBOL, so nothing
  * exercised them and mutation put twenty of this file's mutants in code no
  * test reached. The branches that matter most are exactly those: a gate is
  * only a gate on the day the answer changes.

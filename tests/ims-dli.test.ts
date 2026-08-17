@@ -13,7 +13,7 @@ import { flowed, localCobol, unpadded } from "./helpers";
  *
  * An IMS program does not open a database or read it with file control. The
  * region hands it a PCB, and every operation is a call carrying a function
- * code, that PCB, a segment area, and — for a qualified read — a search
+ * code, that PCB, a segment area, and, for a qualified read, a search
  * argument built to a fixed byte layout.
  *
  * The two characters DL/I leaves in the PCB are the whole error model. That is
@@ -70,7 +70,7 @@ describe("the program the region enters", () => {
 
   /**
    * The I/O PCB comes first, always. A batch program needs it for system
-   * service calls, so `CMPAT=YES` is what IBM says to specify — and with it the
+   * service calls, so `CMPAT=YES` is what IBM says to specify, and with it the
    * region passes the I/O PCB ahead of every database PCB.
    *
    * Omitting it does not fail to compile. It shifts every database PCB by one,
@@ -99,7 +99,7 @@ describe("the program the region enters", () => {
    *
    * The trailing group is the extended time stamp, whose time is twelve packed
    * digits carrying no sign and whose UTC offset is four bits of attributes
-   * ahead of a packed value — neither is a COBOL numeric picture.
+   * ahead of a packed value, and neither is a COBOL numeric picture.
    */
   it("describes the whole I/O PCB, not the part it reads", () => {
     const text = result.cobol ?? "";
@@ -174,7 +174,7 @@ describe("each operation is its own function code", () => {
   }
 
   /**
-   * A unique read is qualified — segment, field, value. A next read and an
+   * A unique read is qualified: segment, field, value. A next read and an
    * insert take an *unqualified* argument naming the segment: without one, `GN`
    * returns the next segment of any type in hierarchical order, and `ISRT` has
    * nothing telling DL/I what to insert. Only `REPL` and `DLET` take none,
@@ -321,7 +321,7 @@ entry transaction lookup(other: Other, idempotencyKey: string<36>) {
 });
 
 /**
- * Run against `runtime/CBLTDLI.cbl`, which is **not IMS** — it evaluates no
+ * Run against `runtime/CBLTDLI.cbl`, which is **not IMS**. It evaluates no
  * database and holds no segments. What running establishes is that the program
  * reaches its calls in order, and that the branch guarded by the PCB status is
  * taken when an outcome is scripted. It establishes nothing about what IMS

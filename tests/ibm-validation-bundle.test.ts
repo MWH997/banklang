@@ -18,7 +18,7 @@ import { IBM_RESULT_PATH } from "../tools/horizontal-report";
 /**
  * The gate that decides whether this repository may say an IBM run happened.
  *
- * The project's standing limit — everything ends at GnuCOBOL — was a sentence
+ * The project's standing limit, that everything ends at GnuCOBOL, was a sentence
  * typed into the website, the README, the validation page and thirteen evidence
  * bundles. Every one of those was correct and every one of them was a promise
  * that somebody would keep typing it. This suite is the other arrangement: the

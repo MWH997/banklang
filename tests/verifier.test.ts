@@ -6,7 +6,7 @@ import { compareExactBytes } from "../packages/verifier/src/index";
  * The comparison behind "the same input always produces byte-identical output".
  *
  * Twenty-three lines, one function, and it scored **0%** in the tools mutation
- * lane with all twelve of its mutants uncovered — because the only suite that
+ * lane with all twelve of its mutants uncovered, because the only suite that
  * exercises it is `tests/determinism.test.ts`, which the lane excludes for
  * spawning a build. So the check that decides whether two compilations agree
  * was itself unchecked, and any of the twelve ways of getting it wrong would
@@ -74,7 +74,7 @@ describe("comparing two compilations byte for byte", () => {
   });
 
   it("does not treat a zero byte as absent", () => {
-    // `left.every` skips holes in sparse arrays, and 0 is falsy — neither is a
+    // `left.every` skips holes in sparse arrays, and 0 is falsy, so neither is a
     // reason to consider two outputs equal.
     expect(compareExactBytes(bytes(0, 0), bytes(0, 0)).identical).toBe(true);
     expect(compareExactBytes(bytes(0, 0), bytes(0, 1)).identical).toBe(false);

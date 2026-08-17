@@ -243,7 +243,7 @@ function cobolNameForEntry(
         return null;
       }
       // A recursive function and a contained one are both separate programs,
-      // so the anchor is the PROGRAM-ID rather than a paragraph name — and a
+      // so the anchor is the PROGRAM-ID rather than a paragraph name, and a
       // PROGRAM-ID is eight characters with the hyphens taken out, which a
       // paragraph name is not.
       //

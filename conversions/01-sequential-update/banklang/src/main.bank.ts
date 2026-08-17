@@ -121,7 +121,7 @@ entry transaction updateAccounts(trans: TransRecord, master: MasterRecord, rejec
 
       // The original never looked at this either. A master file that runs out
       // before the transaction file leaves `master` holding the record before
-      // it, and every remaining transaction is applied to that account —
+      // it, and every remaining transaction is applied to that account,
       // silently, with a return code of zero. BANK-FILE-017.
       if masterInStatus != "00" {
         log "MASTIN READ FAILED, STATUS ", masterInStatus;

@@ -8,7 +8,7 @@
  * Db2 estate has to a schema anybody agrees on.
  *
  * Reading one gives two things a copybook cannot. The SQL type is the column's
- * real type rather than a guess from a picture — `DATE` is a date and not ten
+ * real type rather than a guess from a picture: `DATE` is a date and not ten
  * characters that happen to look like one. And `NOT NULL` is stated, so a
  * column that may be null becomes `nullable<T>` and the compiler makes the
  * program check before reading it, which is the defect `BANK-TYPE-008` exists
@@ -60,8 +60,8 @@ export interface DclgenImport {
  * One SQL type, in the terms BankTS has words for.
  *
  * Each entry is Table 109's row for that type. Where the table's equivalent is
- * a form BankTS has no declaration for — a varying-length string, a graphic
- * string, floating point — the column is reported rather than approximated: a
+ * a form BankTS has no declaration for (a varying-length string, a graphic
+ * string, floating point) the column is reported rather than approximated: a
  * host variable of the wrong shape is one Db2 refuses at bind time if you are
  * lucky and fills with something else if you are not.
  */
@@ -115,7 +115,7 @@ export function bankTsTypeForSql(sqlType: string): {
     return {
       text: "",
       problem:
-        "A graphic string is `PIC G(n) USAGE DISPLAY-1`, which BankTS's `national` is not — national is USAGE NATIONAL.",
+        "A graphic string is `PIC G(n) USAGE DISPLAY-1`, which BankTS's `national` is not, because national is USAGE NATIONAL.",
     };
   }
   if (/^(?:REAL|DOUBLE|FLOAT|DECFLOAT)/.test(type)) {

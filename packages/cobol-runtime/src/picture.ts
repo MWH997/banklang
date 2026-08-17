@@ -31,7 +31,7 @@ export type Category =
  * `embedded` is the default and the only one a picture string can express on
  * its own: the sign is overpunched onto a digit. The other two come from the
  * `SIGN IS [LEADING|TRAILING] SEPARATE` clause, which spends a whole byte on a
- * `+` or `-` — and so makes the item one byte longer than its digits.
+ * `+` or `-`, and so makes the item one byte longer than its digits.
  *
  * This matters beyond arithmetic. The compiler declares every numeric PARM
  * parameter `SIGN IS LEADING SEPARATE`, because a PARM is characters somebody

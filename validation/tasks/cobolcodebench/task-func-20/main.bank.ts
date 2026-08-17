@@ -8,7 +8,7 @@ module TaskFunc20;
 // Forty characters for a thirty-one character record. The last line of the
 // input carries a tab and a space past the credit score and has no newline
 // after it, and a record narrower than the line it reads is the other half of
-// divergence D23 — the trailing filler is what keeps the read whole.
+// divergence D23: the trailing filler is what keeps the read whole.
 record CustomerLine {
   custName: string<20>;
   custAge: unsigned<2, 0>;

@@ -12,7 +12,7 @@ import { localCobol } from "./helpers";
  * `call <name> using <record> on error { ... };` and `cancel <name>;`
  *
  * A dynamic `CALL`: the module is named by a value, not written into the
- * source. That is how a bank dispatches — a product code selects the module
+ * source. That is how a bank dispatches: a product code selects the module
  * that prices it, and a new product ships as a new load module without
  * relinking anything that calls it.
  *
@@ -187,8 +187,8 @@ entry transaction price(request: Request, payload: Payload, codes: Codes) {
   });
 
   /**
-   * The compiler cannot know whether the module is there — that is the nature
-   * of a dynamic call — so it insists the program says what to do when it is
+   * The compiler cannot know whether the module is there, which is the nature
+   * of a dynamic call, so it insists the program says what to do when it is
    * not.
    */
   it("warns about a call with no failure path", () => {

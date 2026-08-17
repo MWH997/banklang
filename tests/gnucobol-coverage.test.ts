@@ -96,7 +96,7 @@ const cases: [string, string][] = [
   [
     // The record is not called `V`. `RECORDING MODE IS V` is on the FD of
     // every QSAM file, and GnuCOBOL will not then accept `V` as a data name in
-    // the same program — Enterprise COBOL will, `V` being nowhere in its
+    // the same program. Enterprise COBOL will, `V` being nowhere in its
     // reserved word table, so this is the local compiler being the stricter of
     // the two rather than a construct the target refuses.
     "varying",
@@ -114,7 +114,7 @@ const cases: [string, string][] = [
 
 /**
  * Statements GnuCOBOL 3.2.0 compiles, warns it has not implemented, and then
- * does nothing about at run time — which the precompiler rewrites into calls
+ * does nothing about at run time, which the precompiler rewrites into calls
  * so the local build can execute them, exactly as it does for `EXEC SQL` and
  * `EXEC CICS`. What ships to z/OS keeps the statement.
  */
@@ -173,7 +173,7 @@ describe("every construct, under GnuCOBOL", () => {
 
   /**
    * The artifact itself, untranslated, is what z/OS gets. Every construct that
-   * warns here is one the local compiler does not implement — and each has to
+   * warns here is one the local compiler does not implement, and each has to
    * be accounted for: either the precompiler rewrites it, or it is on the
    * divergence list with a reason.
    */
@@ -181,7 +181,7 @@ describe("every construct, under GnuCOBOL", () => {
     const warned = new Set<string>();
     for (const [name, source] of cases) {
       // Only the compiler-option statement is taken out. Translating the rest
-      // would answer a different question — the point here is which constructs
+      // would answer a different question. The point here is which constructs
       // GnuCOBOL does not implement in the artifact as it ships.
       const cobol = withoutCompilerOptions(compile(source).cobol ?? "");
       const file = join(dir, `check-${name}.cbl`);

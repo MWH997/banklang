@@ -9,14 +9,14 @@ import { compile } from "../packages/compiler/src/index";
 import { localCobol } from "./helpers";
 
 /**
- * `search sorted` — COBOL `SEARCH ALL`, a binary search.
+ * `search sorted`: COBOL `SEARCH ALL`, a binary search.
  *
  * A linear scan of a rate table with a thousand bands reads five hundred rows
  * to find one; bisecting reads ten. COBOL will do it only if the declaration
  * says the table is ordered, and only on equality against that key.
  *
  * The check matters more than a type error usually does. `SEARCH ALL` on a
- * table that is not actually sorted does not fall back to scanning it — it
+ * table that is not actually sorted does not fall back to scanning it. It
  * returns the wrong row, or reports no match on a row that is there.
  */
 

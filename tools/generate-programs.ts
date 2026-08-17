@@ -1,15 +1,15 @@
 /**
  * Random valid BankTS programs, for the property the compiler actually claims.
  *
- * The 2026-08-05 audit's §5.3. Every hand-written test is a shape somebody
- * thought of, and the defect that mattered most — a 31-character COBOL word —
- * was in a shape nobody thought of, because every fixture had short names. A
+ * Every hand-written test is a shape somebody thought of, and the defect that
+ * mattered most, a 31-character COBOL word, was in a shape nobody thought of,
+ * because every fixture had short names. A
  * generator does not know what anyone had in mind.
  *
  * What it generates is *valid* input: the point is not to fuzz the parser but
  * to reach corners of the emitter that a curated suite does not. So every
  * program here compiles with no diagnostics by construction, and what is
- * asserted is what comes out — that it obeys the target's rules and that `cobc`
+ * asserted is what comes out: that it obeys the target's rules and that `cobc`
  * accepts it under the IBM-shaped dialect.
  *
  * Deterministic, because a property test that cannot be rerun is a bug report
@@ -70,7 +70,7 @@ function identifier(random: Random, length: number, prefix: string): string {
   let name = prefix;
   while (name.length < length) {
     // A capital every few characters, so the name has word boundaries for the
-    // COBOL name generator to hyphenate at — which is where abbreviation and
+    // COBOL name generator to hyphenate at, which is where abbreviation and
     // the 30-character limit interact.
     const letter = letters[random.next() % letters.length]!;
     name +=

@@ -3,7 +3,7 @@ name: scheduled
 # The checks that are too slow for a pull request and too valuable to run by
 # hand. Mutation testing takes about an hour; the citation check needs the
 # network and depends on IBM not retiring a topic, and the advisory check
-# depends on what was published this week — none of which is something a commit
+# depends on what was published this week, none of which is something a commit
 # can cause, or should be blamed for. What they share is that their answer can
 # change while the code does not, which is exactly what a per-push check cannot
 # see.
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`
@@ -225,9 +225,9 @@ jobs:
   #
   # Here rather than in `ci.yml` because it downloads about 500MB from three
   # hosts and none of it can be caused by a pull request. The framework itself
-  # *is* checked on every push — `tests/horizontal-validation.test.ts` and
+  # *is* checked on every push: `tests/horizontal-validation.test.ts` and
   # `tests/horizontal-defects.test.ts` run in the ordinary suite from
-  # checked-in fixtures and read no corpus — so what runs here is the part that
+  # checked-in fixtures and read no corpus, so what runs here is the part that
   # needs the corpora.
   #
   # `workflow_dispatch` and the weekly schedule only. The corpora are pinned by
@@ -315,7 +315,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`
@@ -336,7 +336,7 @@ jobs:
       # not something a pull request caused and not something a pull request
       # should be blocked by. It is, however, the first thing anyone evaluating
       # this repository will run, and `pnpm-workspace.yaml` pins two transitive
-      # packages to keep the answer clean — a pin that goes stale silently is
+      # packages to keep the answer clean, because a pin that goes stale silently is
       # worse than no pin.
       - name: Check for published advisories
         id: check
@@ -361,7 +361,7 @@ jobs:
               "",
               `Run: ${url}`,
               "",
-              "Every dependency here is a build or test tool — none is shipped in generated COBOL. That is a reason to judge severity, not a reason to leave it: check whether the patched version is past the `minimumReleaseAge` window and raise the pin in `pnpm-workspace.yaml`, rather than adding an exemption for the package the policy just stopped.",
+              "Every dependency here is a build or test tool, and none is shipped in generated COBOL. That is a reason to judge severity, not a reason to leave it: check whether the patched version is past the `minimumReleaseAge` window and raise the pin in `pnpm-workspace.yaml`, rather than adding an exemption for the package the policy just stopped.",
             ].join("\n");
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -394,7 +394,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`
@@ -436,7 +436,7 @@ jobs:
               "",
               `Run: ${url}`,
               "",
-              "A `BROKEN` line means the page is gone or resolved to a product shell. A `MOVED` line means the page is still there under a different heading, which may or may not still support the claim it was cited for — read it before running `pnpm docs:citations --write`.",
+              "A `BROKEN` line means the page is gone or resolved to a product shell. A `MOVED` line means the page is still there under a different heading, which may or may not still support the claim it was cited for, so read it before running `pnpm docs:citations --write`.",
             ].join("\n");
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,

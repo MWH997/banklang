@@ -33,14 +33,14 @@ function rateFor(balance: MoneyBDT): Rate {
 //      one field the dividend, the quotient and the remainder. The Language
 //      Reference defines the remainder as "the result of subtracting the
 //      product of the quotient and the divisor from the dividend" and says the
-//      quotient is stored in the GIVING identifier first — so by the time the
+//      quotient is stored in the GIVING identifier first, so by the time the
 //      remainder is worked out, the field the definition calls the dividend
 //      holds the quotient. What the statement leaves behind is not something
 //      the manual pins down, and the parity test that decides which way every
 //      tie goes rests on it.
 //   2. `IF WS-EXCESS > WS-HALF` compares a signed field against a positive
-//      constant. On a negative interest — a debit balance, which the 1998 memo
-//      is about — the excess is negative, both tests are false whatever it was,
+//      constant. On a negative interest, a debit balance, which the 1998 memo
+//      is about, the excess is negative, both tests are false whatever it was,
 //      and the rounding quietly becomes truncation toward zero.
 //
 // Neither had ever produced a number that looked wrong.

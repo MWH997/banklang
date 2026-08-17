@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { compile } from "../packages/compiler/src/index";
 
 /**
- * `BANK-FILE-017` — a file operation whose outcome the program never looked at.
+ * `BANK-FILE-017`: a file operation whose outcome the program never looked at.
  *
  * The largest known safety gap in this compiler, and the second attempt at it.
  * The first read "a declared status must be referenced somewhere", which is not
@@ -13,7 +13,7 @@ import { compile } from "../packages/compiler/src/index";
  *
  * What is checked now is flow-sensitive and about the outcome rather than the
  * field. An operation that can end with a status the generated check lets
- * through — end of file, no such record, a duplicate key — leaves an outstanding
+ * through (end of file, no such record, a duplicate key) leaves an outstanding
  * fact. Using the record it filled, operating on the file again, or leaving the
  * routine with the fact outstanding is the defect. Comparing the status
  * discharges it, wherever that comparison is written.
@@ -407,7 +407,7 @@ entry transaction handle(line: Feed, master: Master) {
    * A file with no declared status is somebody else's diagnostic.
    *
    * `BANK-FILE-001` says the file has no status field, and this rule cannot say
-   * anything at all about a file whose outcome has nowhere to land — so it must
+   * anything at all about a file whose outcome has nowhere to land, so it must
    * not add a second, more confusing report on top.
    */
   it("a file with no status at all", () => {
@@ -697,7 +697,7 @@ describe("the statements that use a record", () => {
    * The status is tested *after* the use, and the `close` is gone.
    *
    * Both matter. With the test after it, the only thing left that can report is
-   * the use itself — every one of these read `close feedIn;` at the end, and a
+   * the use itself: every one of these read `close feedIn;` at the end, and a
    * close on a pending file reports on its own, so mutating the use detection
    * away left them all passing. That is how "the record it read is used" came
    * to be checked by no test at all.
@@ -912,11 +912,11 @@ describe("every operation that leaves an outcome", () => {
 /**
  * The record moved out by name rather than read through an expression.
  *
- * COBOL hands whole records to things — a file, a sort, a queue, another
- * program — by naming them, and none of that goes through an expression. So
- * none of it counted, and `read feedIn into line; write trail from line;` — the
+ * COBOL hands whole records to things (a file, a sort, a queue, another
+ * program) by naming them, and none of that goes through an expression. So
+ * none of it counted, and `read feedIn into line; write trail from line;`, the
  * stale record posted straight back out, which is the defect the rule was
- * written for and the one OpenCBS records five times over — reported nothing.
+ * written for and the one OpenCBS records five times over, reported nothing.
  */
 describe("the record a statement names", () => {
   it("counts a write of it to another file", () => {
@@ -961,12 +961,12 @@ describe("the record a statement names", () => {
    * arm load-bearing. `amend` is read and tested, so it owes nothing. `feedIn`
    * is then read and its record handed straight to `rewrite amend from line`,
    * which publishes bytes that may be the previous record, end-of-file
-   * leftovers, or nothing at all — and the `if` that follows discharges
+   * leftovers, or nothing at all, and the `if` that follows discharges
    * `feedIn` only *after* the damage.
    *
    * Without `rewrite` in the accounting this program reports nothing at all:
    * the use is invisible and the later test clears the outcome. Found by
-   * mutation — the arm survived every test in this file, and the comment above
+   * mutation: the arm survived every test in this file, and the comment above
    * this pair used to claim no program could tell the difference.
    */
   it("counts a rewrite of one file that names another's stale record", () => {
@@ -1606,7 +1606,7 @@ describe("blocks a statement runs", () => {
  * The two handlers, which run outside the flow the body's walk describes.
  *
  * A transaction's `on failure` block is entered from a `raise` anywhere inside
- * the body, so nothing the body owed is known there — but the handler's own
+ * the body, so nothing the body owed is known there, but the handler's own
  * operations are its own, and a recovery path that reads a file and posts what
  * it found owes exactly the answer the body would. Neither handler was walked.
  */
@@ -1691,7 +1691,7 @@ describe("merging the state at a join", () => {
 
   /**
    * One branch discharges it and there is no `else`, so the other path arrives
-   * with it still outstanding — and the merge has to keep it. Mutating the
+   * with it still outstanding, and the merge has to keep it. Mutating the
    * merge to return the first state left every earlier case passing, because
    * every earlier case had the same answer on both paths.
    */
@@ -1726,7 +1726,7 @@ describe("merging the state at a join", () => {
 
   /**
    * A branch that ends the path arrives at the join with nothing at all, so the
-   * merge takes the other path's state wholesale — the `!existing` arm, which
+   * merge takes the other path's state wholesale: the `!existing` arm, which
    * no earlier case reached.
    */
   it("keeps an outcome from the path that did not end", () => {
@@ -1742,8 +1742,8 @@ describe("merging the state at a join", () => {
 
   /**
    * A switch whose *first* case leaves an outcome outstanding and whose last
-   * discharges nothing of the sort. Merging only the last branch's state — or
-   * dropping the merge back into the head state — loses it.
+   * discharges nothing of the sort. Merging only the last branch's state, or
+   * dropping the merge back into the head state, loses it.
    */
   it("keeps an outcome an earlier case left outstanding", () => {
     expect(

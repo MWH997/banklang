@@ -460,7 +460,7 @@ runner("shared generic instantiations", () => {
 
 /**
  * The reference Db2 and CICS runtimes evaluate nothing: they replay outcomes a
- * test scripts. That is a real limit — a scripted SQLCODE 100 says nothing
+ * test scripts. That is a real limit: a scripted SQLCODE 100 says nothing
  * about what Db2 would return for that query. What it does establish is the
  * half the generated program is responsible for: that the branch guarded by
  * `sqlcode == 0` or by a `resp` test is reached and taken, which until now was
@@ -539,7 +539,7 @@ runner("executed against the reference Db2 and CICS runtimes", () => {
 /**
  * A cursor loop, executed.
  *
- * Statement 1 is the OPEN, 2 the FETCH, 3 the CLOSE — the DECLARE is read at
+ * Statement 1 is the OPEN, 2 the FETCH, 3 the CLOSE, since the DECLARE is read at
  * precompile time and takes no number. Scripting how many fetches succeed is
  * what makes the loop's own decisions observable: when it stops, whether it
  * closes, and whether the bound holds when the rows never run out.
@@ -551,12 +551,12 @@ runner("executed against the reference Db2 and CICS runtimes", () => {
  * anything.
  */
 /**
- * A rowset fetch, executed — and the partial last set it must still process.
+ * A rowset fetch, executed, and the partial last set it must still process.
  *
  * This is what `docs/divergences.md` D19a said had never happened: "no rowset
  * loop in this repository has been executed", because `runtime/DSNHLI.cbl`
  * wrote no host variables and could not set `SQLERRD(3)`, so the loop saw no
- * rows and left. It could — it is passed the SQLCA — and now does.
+ * rows and left. It could, being passed the SQLCA, and now does.
  *
  * Three rows over a rowset of two is one full set and one partial one. The
  * Application Programming and SQL Guide: "when the last row has been
@@ -665,9 +665,9 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
   /*
    * The statement numbers are the precompiler's, in source order: 1 is the
    * OPEN, 2 the FETCH, 3 the COMMIT the checkpoint takes, and 4 the CLOSE. The
-   * COMMIT arrived with B4 — a cursor loop that posts to the ledger has to
-   * checkpoint, and a checkpoint in a program with SQL commits — and the CLOSE
-   * moved from 3 to 4 with it.
+   * COMMIT arrived with the checkpoint: a cursor loop that posts to the ledger
+   * has to checkpoint, and a checkpoint in a program with SQL commits. The
+   * CLOSE moved from 3 to 4 with it.
    */
   it("opens, fetches until the rows run out, and closes", () => {
     const result = runCursor("cursor-rows", [
@@ -699,11 +699,11 @@ runner("cursor loops executed against the reference Db2 runtime", () => {
   });
 
   /**
-   * B4. The checkpoint commits inside the loop, and the loop goes on fetching.
+   * The checkpoint commits inside the loop, and the loop goes on fetching.
    *
    * This is the case the `hold` on the declaration is for, and the reason
    * `BANK-SQL-008` now reads a checkpoint as a commit. Without `WITH HOLD` Db2
-   * closes the cursor at that commit and the next `FETCH` answers `-501` —
+   * closes the cursor at that commit and the next `FETCH` answers `-501`,
    * after a hundred accounts have been accrued and committed. Nothing local
    * models cursor invalidation, so what is executed here is the half that can
    * be: that exactly one commit is taken at the hundredth row, that it is

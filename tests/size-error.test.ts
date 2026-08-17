@@ -9,13 +9,13 @@ import { compile } from "../packages/compiler/src/index";
 import { checked, corpus, flowed, localCobol, unpadded } from "./helpers";
 
 /**
- * `ON SIZE ERROR` — what COBOL does when a result does not fit.
+ * `ON SIZE ERROR`: what COBOL does when a result does not fit.
  *
  * The Language Reference leaves no room: "If the ON SIZE ERROR phrase is not
  * specified and a size error condition occurs, truncation rules apply and the
  * value of the affected resultant identifier is computed." The digits truncated
  * are the high-order ones, so an overflowing addition does not produce a large
- * wrong number that stands out — it produces a plausible small one.
+ * wrong number that stands out. It produces a plausible small one.
  *
  * Two amounts a field can each hold do not add up to one it can, and a bank's
  * arithmetic is nearly all additions of amounts of the same declared width. So
@@ -79,7 +79,7 @@ describe("a computation that cannot", () => {
  *
  * `GOBACK` in the outermost program returns to the operating system; in a
  * contained program it returns to the *container*, which used to carry straight
- * on and then overwrite the return code with its own on the way out — so an
+ * on and then overwrite the return code with its own on the way out, so an
  * overflow inside a nested function reported itself to the job log and the step
  * still ended with zero.
  *
@@ -225,9 +225,9 @@ describe("across the corpus", () => {
   /**
    * A raise never ends the step with return code zero.
    *
-   * Where the failure is tested depends on where it was raised — inside a
+   * Where the failure is tested depends on where it was raised: inside a
    * routine it goes to that routine's exit, across a `CALL` it is read back
-   * from the register — so asserting on the call site is asserting on a shape.
+   * from the register, so asserting on the call site is asserting on a shape.
    * What holds everywhere is the property those shapes exist for: a program
    * that can name a failure can also fail the step, and the two counts move
    * together. The audit's whole silent-failure class is programs where they

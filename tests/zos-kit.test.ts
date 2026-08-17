@@ -12,7 +12,7 @@ import { buildZosKit } from "../tools/zos-kit";
  * `pnpm zos:kit` is the documented way to get every artifact onto a mainframe,
  * and it had stopped building: two examples that each declare a
  * `TransferRequest` of their own put two different records under one member
- * name, and the tool refused — correctly, and for every run, with no test to
+ * name, and the tool refused, correctly and for every run, with no test to
  * notice. A command a document tells someone to run has to run.
  */
 
@@ -30,7 +30,7 @@ describe("the z/OS kit", () => {
    * These examples are independent programs rather than one application, and
    * several declare an `AccountRecord` of their own with different fields. One
    * flat library would ship one program's record under another program's name,
-   * so each program's copybooks go to a library of its own — and two records
+   * so each program's copybooks go to a library of its own, and two records
    * clashing *inside* one program is still refused.
    */
   it("gives each program its own copybook library", () => {

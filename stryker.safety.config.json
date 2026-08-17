@@ -33,6 +33,6 @@
   "ignoreStatic": true,
   "concurrency": 8,
   "incremental": false,
-  "_incremental_comment": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and this lane exists to measure whether the *tests* are worth anything — so a test-only change must re-measure.",
+  "_incremental_comment": "Off, deliberately. Stryker's incremental cache is keyed on the code it mutates, and this lane exists to measure whether the *tests* are worth anything, so a test-only change must re-measure.",
   "tempDirName": ".stryker-tmp-safety"
 }

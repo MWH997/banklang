@@ -1,13 +1,13 @@
 /**
  * Which COBOL constructs a program actually contains.
  *
- * `analyseCobol` answers questions about a program's *shape* — its paragraphs,
+ * `analyseCobol` answers questions about a program's *shape*: its paragraphs,
  * its files, what it performs and what it jumps to. This answers a different
  * question, and one it could not: which of COBOL's several hundred features are
  * in here at all.
  *
  * It was added for horizontal validation, where the question being asked is
- * "what does real COBOL contain, and how much of it can BankTS represent?" —
+ * "what does real COBOL contain, and how much of it can BankTS represent?",
  * and answering that over five thousand files needs a feature vector per file
  * rather than a prose report. It is general, not benchmark-specific: `bankc
  * analyse` prints these counts too, because an estate's inventory is exactly
@@ -34,9 +34,9 @@ export interface FeatureDefinition {
 /**
  * Every feature this detector knows, with the pattern that finds it.
  *
- * Two rules held throughout. A pattern never relies on `\b` at a hyphen —
+ * Two rules held throughout. A pattern never relies on `\b` at a hyphen,
  * COBOL treats `-` as a word character and a regular expression does not, so
- * `\bCOMP\b` matches inside `WS-COMP-CODE` — hence the `(?<![A-Z0-9-])` and
+ * because `\bCOMP\b` matches inside `WS-COMP-CODE`, hence the `(?<![A-Z0-9-])` and
  * `(?![A-Z0-9-])` guards. And a clause is matched with the syntax that must
  * accompany it, so `OCCURS` needs a following count or `DEPENDING`, which keeps
  * the word inside a `DISPLAY 'NO OCCURS FOUND'` from being counted.
@@ -424,7 +424,7 @@ export type FeatureCounts = Record<string, number>;
  *
  * z/OS reads columns 8 through 72 and treats column 7 as the indicator area.
  * Much of what is on GitHub is written free-format instead, and reading a
- * free-format file as fixed silently discards everything past column 72 —
+ * free-format file as fixed silently discards everything past column 72, so
  * which, on a file whose lines run to 200 characters, is most of the program.
  * Getting this wrong does not fail; it under-reports, which is worse.
  *
@@ -450,7 +450,7 @@ export function isFixedFormat(lines: string[]): boolean {
  * The lines a compiler would read, uppercased, with comments removed.
  *
  * Returned as lines rather than one string so that patterns anchored with `^`
- * — the level numbers, the `RD` entry, the continuation indicator — mean what
+ * the level numbers, the `RD` entry and the continuation indicator mean what
  * they say.
  */
 export function sourceLines(text: string): string[] {
@@ -515,7 +515,7 @@ export function featureNames(counts: FeatureCounts): string[] {
  * A short, stable digest of a file's bytes, for deduplicating a corpus.
  *
  * FNV-1a rather than SHA-256 because this package runs in the browser and must
- * stay free of Node built-ins — `tests/browser-safety.test.ts` is what keeps
+ * stay free of Node built-ins, and `tests/browser-safety.test.ts` is what keeps
  * that true. Collisions do not matter here: this is used to answer "how many
  * *distinct* files does this pattern actually occur in", where two files with
  * the same digest are, in every case measured, the same file vendored twice.

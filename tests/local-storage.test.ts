@@ -15,7 +15,7 @@ import { localCobol, unpadded } from "./helpers";
  * which makes two questions the emitter has to answer and used to get wrong:
  * which locals get storage at all, and what happens when two routines pick the
  * same name. Both defects produced COBOL that no compiler would accept, so they
- * were caught at validation rather than in production — but they were caught by
+ * were caught at validation rather than in production, but they were caught by
  * GnuCOBOL, not by this project.
  */
 
@@ -61,7 +61,7 @@ function expectCobcAccepts(cobol: string): void {
 
 describe("local storage", () => {
   /**
-   * Two routines each declaring `scratch` emitted two `01 SCRATCH` items — with
+   * Two routines each declaring `scratch` emitted two `01 SCRATCH` items, with
    * different PICTUREs when the two locals had different types. Every reference
    * was then ambiguous.
    */

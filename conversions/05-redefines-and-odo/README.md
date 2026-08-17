@@ -1,8 +1,8 @@
-# 05 — A copybook with REDEFINES and OCCURS DEPENDING ON
+# 05. A copybook with REDEFINES and OCCURS DEPENDING ON
 
 The customer master record, imported rather than retyped.
 
-Written for this repository in period style — see the
+Written for this repository in period style. See the
 [provenance note](../README.md#provenance).
 
 ## The original
@@ -57,7 +57,7 @@ record CustomerRecord {
 
 **The importer writes nothing unless the record it produced lays out byte for
 byte like the copybook it read.** It re-renders what it wrote, compares the two
-layouts field by field, and refuses the whole file if they differ — because a
+layouts field by field, and refuses the whole file if they differ, because a
 record that is one byte short is a record every program sharing the copybook
 disagrees with, and it compiles.
 
@@ -65,7 +65,7 @@ That check is not decoration. Building this conversion is what found two real
 defects in the importer:
 
 - **`FILLER` was refused outright**, which is the correct answer to "can this be
-  laid out short?" and a useless answer to "can this copybook be imported?" —
+  laid out short?" and a useless answer to "can this copybook be imported?".
   no real copybook could be. `reserved <n>;` is what BankTS says now, and it
   counts bytes rather than digits: a `PIC S9(9) COMP-3` filler is nine digits
   and five bytes.
@@ -87,7 +87,7 @@ records that as a manual step rather than pretending it was automatic.
 ## The program
 
 [`banklang/src/main.bank.ts`](banklang/src/main.bank.ts) reads the file, chooses
-the variant, and walks the table to the count the record carries — so the
+the variant, and walks the table to the count the record carries, so the
 imported record is a record and not a picture of one.
 
 ## What the compiler generated

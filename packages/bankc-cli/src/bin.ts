@@ -17,31 +17,31 @@ function write(result: { stdout: string; stderr: string; exitCode: number }) {
  * What the user is told about a thrown error.
  *
  * Everything the compiler *means* to report comes back as a `CliResult` with a
- * message and an exit code. The rest are thrown — a job with no steps, two
+ * message and an exit code. The rest are thrown: a job with no steps, two
  * programs whose names collapse to one load module, a copybook the parser
- * cannot read — and there are dozens of them across the packages. With no
+ * cannot read, and there are dozens of them across the packages. With no
  * boundary here Node printed the stack, the whole `node:internal` frame list
  * and its own version banner, and exited 1 anyway: the message the compiler
  * wrote was the second line of forty, and the first thing a new user saw was a
  * crash rather than a compiler telling them something.
  *
- * F3 then split the throws in two, and this is where the split is spent.
+ * The throws are classified in two, and this is where that split is spent.
  *
  * A `BankcError` is the reader's file: it prints with its catalogue identifier
  * and where it is, and points at `bankc explain`, which is the same path a
  * diagnostic from the typechecker takes. No stack, because there is nothing in
- * this program's control flow for them to read — they have a line to look at.
+ * this program's control flow for them to read: they have a line to look at.
  *
  * A `CompilerInvariant` is bankc's own: something the typechecker accepted
  * reached a place with no case for it. Nothing the reader does to their program
  * fixes that, so it says so and prints the stack without being asked, because
  * the stack is the bug report.
  *
- * Anything else keeps the original behaviour — the message, and the stack
+ * Anything else keeps the original behaviour: the message, and the stack
  * behind `--debug`.
  *
  * Separate from `fail` because the same text is owed to a `--watch` session,
- * where exiting is precisely the wrong response. See F2 below.
+ * where exiting is precisely the wrong response. See the rebuild handler below.
  */
 function describe(error: unknown): string {
   if (error instanceof BankcError) {
@@ -94,12 +94,12 @@ if (refusal) {
         process.stdout.write("\n");
       },
       /*
-       * F2. A rebuild that throws must not end the session.
+       * A rebuild that throws must not end the session.
        *
        * The boundary below cannot see this one: by the time a file changes,
        * the `try` has long returned and the rebuild is running inside the
        * watcher's callback, where a throw is an uncaught exception and Node
-       * ends the process. The user loses the watch over a typo in a copybook —
+       * ends the process. The user loses the watch over a typo in a copybook,
        * the case `--watch` exists to shorten.
        *
        * Reported exactly as a one-shot run reports it, then back to waiting.

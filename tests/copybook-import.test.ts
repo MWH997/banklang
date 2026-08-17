@@ -19,9 +19,9 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
 /**
  * A production copybook read back into a BankTS record.
  *
- * The 2026-08-05 audit called this "the single most valuable missing feature —
- * the difference between a greenfield toy and works with our estate", and set
- * the target itself: import a real copybook, emit a BankTS record, regenerate
+ * The external audit called this "the single most valuable missing feature, the
+ * difference between a greenfield toy and works with our estate", and set the
+ * target itself: import a real copybook, emit a BankTS record, regenerate
  * the copybook, and compare. Every bank's records already exist, in copybooks
  * that other programs share, and a language that can only describe records it
  * invented cannot be used on the same data as the programs beside it.
@@ -29,7 +29,7 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
  * The round trip is what makes it safe rather than approximate. A field read at
  * the wrong length moves every field after it, and a record laid out
  * differently from the one the rest of the estate uses is a program reading
- * somebody else's data — so an import that does not survive the comparison is
+ * somebody else's data, so an import that does not survive the comparison is
  * refused rather than written.
  */
 
@@ -73,7 +73,7 @@ describe("a copybook nobody generated", () => {
 
   /**
    * `PIC 9(08)` carries no sign and occupies eight bytes. BankTS's `zoned` is
-   * `SIGN IS TRAILING SEPARATE`, which is nine — so before `unsigned` existed
+   * `SIGN IS TRAILING SEPARATE`, which is nine, so before `unsigned` existed
    * there was no way to import one without moving every field after it.
    */
   it("tells the two display forms apart", () => {
@@ -87,9 +87,9 @@ describe("a copybook nobody generated", () => {
   });
 
   /**
-   * The target the audit set. Not byte-identical text — spacing is not part of
+   * The target the audit set. Not byte-identical text, because spacing is not part of
    * the contract and a copybook nobody generated will not match this emitter's
-   * columns — but identical in every way a program can observe: the same
+   * columns, but identical in every way a program can observe: the same
    * fields, in the same order, at the same offsets, with the same lengths and
    * the same pictures.
    */
@@ -211,7 +211,7 @@ describe("what the importer refuses", () => {
  *
  * The importer used to refuse one outright, which is the right answer to the
  * question "can this be laid out short?" and a useless answer to the question
- * "can this copybook be imported?" — no real record could be. `reserved <n>;`
+ * "can this copybook be imported?", no real record could be. `reserved <n>;`
  * is what BankTS says instead, and it counts bytes rather than digits: a
  * `PIC S9(9) COMP-3` FILLER is nine digits and five bytes, and reserving nine
  * would move every field after it four bytes along.

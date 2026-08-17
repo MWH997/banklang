@@ -1,6 +1,6 @@
 module TaskFunc04;
 
-// Written from `spec.json` — the prose, the input files and the expected output
+// Written from `spec.json`: the prose, the input files and the expected output
 // file. The benchmark's own COBOL is in the gitignored `validation/sealed/`,
 // which the authoring path does not read.
 //

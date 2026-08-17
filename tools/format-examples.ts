@@ -9,7 +9,7 @@ import { exampleProjects } from "./example-projects";
  * Used by `pnpm fmt` and `pnpm fmt:check`, and by the formatting step in CI.
  *
  * The conversions are here as well as the examples. They were not, so
- * `conversions/01-sequential-update` had never been through the formatter — and
+ * `conversions/01-sequential-update` had never been through the formatter, and
  * more to the point neither had the two clauses only the conversions use.
  * `bankc fmt` silently dropped `redefines` and `depending on`, which is a
  * different record laid out differently, and no check could see it because no

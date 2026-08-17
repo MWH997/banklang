@@ -2,12 +2,13 @@
  * A checker that reads generated artifacts and asks what z/OS will do with them.
  *
  * This is a different question from the one `packages/conformance-lint` asks,
- * and the 2026-08-07 audit exists because nothing was asking it. Every check
+ * nothing here was asking it until two shipped programs proved it had to be
+ * asked. Every check
  * this repository had answers "will the toolchain accept this": the conformance
  * linter reads house style and the Language Reference's limits, `cobc` reads
  * syntax, and the differential runtime reads arithmetic. All three pass on a
  * program that compiles cleanly, binds cleanly, and then aborts on its second
- * `MQCONN` — or computes a balance and returns the caller's own request
+ * `MQCONN`, or computes a balance and returns the caller's own request
  * unchanged.
  *
  * Both of those shipped. Neither was a syntax error, a style violation or a
@@ -15,7 +16,7 @@
  * than what its source says, on a platform this repository cannot run. So the
  * rules here are about **behaviour on the target**, they cite the manual that
  * describes that behaviour, and they read the emitted text rather than the
- * emitter — because a check written from the same belief as the emitter agrees
+ * emitter, because a check written from the same belief as the emitter agrees
  * with the emitter, including where the emitter is wrong.
  *
  * Seeded with the two defects the audit found and meant to grow. A rule arrives
@@ -107,8 +108,8 @@ interface MqConnect {
  * and reason code MQRC_ALREADY_CONNECTED."
  *
  * Two things follow, and this compiler got both wrong. A second connection to
- * one queue manager does not exist — the handle you are given back is the one
- * you already had — so a program that keeps two handles for one manager is
+ * one queue manager does not exist. The handle you are given back is the one
+ * you already had, so a program that keeps two handles for one manager is
  * keeping the same handle twice and will disconnect the first while the second
  * is still in use. And a completion-code test that treats `MQCC_WARNING` as
  * failure aborts a program that is connected and working, which is what
@@ -134,7 +135,7 @@ function mqConnections(file: string, statements: Statement[]): ZosFinding[] {
           file,
           line: connect.statement.line,
           rule: "mq-connection-per-manager",
-          message: `MQCONN opens ${connect.handle} on queue manager ${connect.manager}, which is already held by ${first}. A second connection to one queue manager returns the handle the first call returned, so these are one handle under two names — and the first MQDISC ends both.`,
+          message: `MQCONN opens ${connect.handle} on queue manager ${connect.manager}, which is already held by ${first}. A second connection to one queue manager returns the handle the first call returned, so these are one handle under two names, and the first MQDISC ends both.`,
           citation: 'MQ, "MQCONN", usage note 3',
         });
       }
@@ -158,7 +159,7 @@ function mqConnections(file: string, statements: Statement[]): ZosFinding[] {
 /**
  * Every `CALL "MQCONN"` in the artifact, with the queue manager it names.
  *
- * The name is a field rather than a literal — `MQCONN` takes an `MQCHAR48` — so
+ * The name is a field rather than a literal, since `MQCONN` takes an `MQCHAR48`, so
  * it is resolved back to the last literal moved into that field before the
  * call. A field with no literal move before it is left null: a manager name
  * read from a parameter is a program this rule cannot answer for, and guessing
@@ -255,7 +256,7 @@ function compCodeTest(
  * bound, it ran, and the enquiry answered with the question.
  *
  * `BANK-CICS-005` refuses that shape in the source. This is the same rule read
- * off the artifact, which is what catches it arriving by some other route —
+ * off the artifact, which is what catches it arriving by some other route:
  * from a copybook-imported layout, or from a future emitter that picks the
  * record differently.
  *
@@ -265,7 +266,7 @@ function compCodeTest(
  *
  * **The early exit is not a finding.** A generated transaction jumps to its
  * exit paragraph when a called paragraph sets the failure code, which skips the
- * write-back — and that path ends in `EXEC CICS ABEND`, where the task is
+ * write-back, and that path ends in `EXEC CICS ABEND`, where the task is
  * ending and the caller reads nothing. Reporting it would be reporting the
  * abend path for not filling in an answer nobody receives.
  */
@@ -305,7 +306,7 @@ function cicsCommareaAnswered(
  * The names subordinate to `01 <record>`, so a write to a field counts.
  *
  * Everything this linter reads is generated, and the emitter qualifies every
- * reference — `MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA` — so matching the
+ * reference (`MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA`) so matching the
  * record name alone happens to work today. It is the wrong thing to depend on.
  * An unqualified `MOVE WS-A TO CA-BALANCE` is legal COBOL that fills the reply
  * record, and matching only the record name reports that program as never

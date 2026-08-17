@@ -28,7 +28,7 @@ import { flowed } from "./helpers";
  * The organization a payment feed, a reconciliation extract or an import from
  * anything that is not a mainframe actually has. Enterprise COBOL 6.4 has it as
  * `ORGANIZATION IS LINE SEQUENTIAL` for files in the z/OS UNIX file system, and
- * it carries restrictions the other three organizations do not — restrictions
+ * it carries restrictions the other three organizations do not: restrictions
  * that are the interesting part of this feature rather than an afterthought.
  *
  * The one worth reading twice: a record may hold only `USAGE DISPLAY` items,
@@ -384,7 +384,7 @@ function unused(): bool {
  * every byte of the boundary is a decision: where a record ends, whether
  * trailing blanks survive, whether the last line has a delimiter. Both of those
  * disagreements actually happened the first time this ran, and both were in the
- * harness rather than the compiler — which is exactly what a differential lane
+ * harness rather than the compiler, which is exactly what a differential lane
  * is for.
  */
 describe("executing a line-sequential program", () => {
@@ -489,7 +489,7 @@ entry transaction copyFeed(line: FeedLine, out: OutLine, idempotencyKey: string<
      * record area is filled with spaces", which reads as delivering it.
      *
      * The generated loop tests `status == "00"` before using what it read, so
-     * the record is skipped rather than processed as garbage — which is the
+     * the record is skipped rather than processed as garbage, which is the
      * safe end of the difference. `docs/divergences.md` records it, and a
      * program must not depend on a file whose last line lacks a delimiter.
      */
@@ -509,7 +509,7 @@ entry transaction copyFeed(line: FeedLine, out: OutLine, idempotencyKey: string<
      * remainder of the record area is filled with spaces."
      *
      * So a four-character line arrives as `ACC1` followed by sixteen spaces,
-     * and the account field — ten characters wide — comes back padded. Only
+     * and the account field, ten characters wide, comes back padded. Only
      * `cobc` is asserted here: the amount field's bytes are spaces, which is
      * not a valid zoned number, and the two engines disagree about what moving
      * one does. That disagreement is recorded in `docs/divergences.md` rather

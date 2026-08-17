@@ -19,7 +19,7 @@
  * makefile, not a `pip install`. The archives are unpacked and read. The only
  * external programs this repository ever runs are `cobc` and the COBOL the
  * benchmark itself supplies as a test driver, and those run through the harness
- * in a scratch directory with a built environment — see
+ * in a scratch directory with a built environment. See
  * `packages/horizontal-validation/src/safety.ts`.
  */
 

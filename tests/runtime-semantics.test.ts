@@ -7,7 +7,7 @@ import { runCobol } from "../packages/cobol-runtime/src/index";
  *
  * `tests/cobol-runtime-differential.test.ts` is the real check on this
  * interpreter: every example run under it and under `cobc`, compared. What it
- * cannot check is anything the generated corpus never emits — and the reference
+ * cannot check is anything the generated corpus never emits, and the reference
  * runtime in `runtime/` is hand-written COBOL that uses rather more of the
  * language than the emitter does. Each of these was found by writing such a
  * program and watching the two disagree.
@@ -47,7 +47,7 @@ describe("REDEFINES at the 01 level", () => {
 `),
     ).toEqual([
       // 1234.56 packed into four bytes is 01 23 45 6C, so the last byte is
-      // 0x6C — ordinal 109, counting the collating sequence from one. Moved
+      // 0x6C, ordinal 109, counting the collating sequence from one. Moved
       // into a picture of its own first: how wide a DISPLAY of a bare
       // intrinsic comes out is implementation-defined, and D22 records it.
       "ORD=0109",
@@ -122,7 +122,7 @@ describe("the collating-sequence intrinsics", () => {
 
   /**
    * A `MOVE` of an alphanumeric intrinsic used to be pushed through the
-   * arithmetic path, which threw "not implemented" for every one of them —
+   * arithmetic path, which threw "not implemented" for every one of them.
    * `TRIM` included, outside the `DISPLAY` and `STRING` statements that ask for
    * their text directly.
    */
@@ -153,9 +153,9 @@ describe("the collating-sequence intrinsics", () => {
  * and compares. What it cannot reach is the COBOL a person might hand the
  * playground: a `RETURN` with no `AT END`, a `RELEASE` outside a procedure, a
  * `COLLATING SEQUENCE` phrase whose ordering this interpreter does not
- * implement. Each of those has a wrong answer that looks like a right one —
+ * implement. Each of those has a wrong answer that looks like a right one,
  * a loop that never ends, a record quietly dropped, an order the target would
- * not produce — so each is refused by name instead.
+ * not produce, so each is refused by name instead.
  */
 describe("sort forms the interpreter refuses", () => {
   const PREAMBLE = `       IDENTIFICATION DIVISION.

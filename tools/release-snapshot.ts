@@ -136,8 +136,8 @@ interface VitestReport {
  * How many test files there are, and how many tests.
  *
  * `testResults.length`, not `numTotalTestSuites`. The second counts `describe`
- * blocks — this repository has around eight hundred of them across a hundred
- * and fifty files — and reporting that as a file count overstates the suite by
+ * blocks, and this repository has around eight hundred of them across a hundred
+ * and fifty files, so reporting that as a file count overstates the suite by
  * a factor of five in the one document written to be quoted.
  */
 function testCounts(cwd: string): { files: number; tests: number } {
@@ -158,7 +158,7 @@ function testCounts(cwd: string): { files: number; tests: number } {
      * expected here.
      *
      * `tests/release-claims.test.ts` asserts that the snapshot on disk matches
-     * the evidence. The moment a lane is re-run, that assertion fails — and
+     * the evidence. The moment a lane is re-run, that assertion fails, and
      * the fix is to regenerate the snapshot, which is this program. Refusing
      * to run because of it would make the snapshot impossible to update, which
      * is a deadlock rather than a safeguard.
@@ -427,7 +427,7 @@ function main(argv: string[]): number {
   mkdirSync(resolve(cwd, SNAPSHOT_ROOT), { recursive: true });
   writeFileSync(path, render(snapshot), "utf8");
   process.stdout.write(
-    `Wrote ${snapshotPath(version)} — ${String(snapshot.tests.tests)} tests, ` +
+    `Wrote ${snapshotPath(version)}: ${String(snapshot.tests.tests)} tests, ` +
       `${String(snapshot.differential.locallyExecutable)} locally executable verbs, ` +
       `${String(snapshot.openCbs.preventedAtCompileTime)} / ${String(snapshot.openCbs.total)} defects prevented.\n`,
   );

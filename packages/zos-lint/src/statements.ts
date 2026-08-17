@@ -8,14 +8,14 @@
  * sees half a statement and answers about the half it saw.
  *
  * **How a continuation is recognised.** Reference format puts a continuation
- * four columns past the line it continues, and so does a nested statement — the
+ * four columns past the line it continues, and so does a nested statement, so the
  * indent alone cannot tell them apart. What can is the first word: the emitter
  * writes one statement per call to `addLine`, so a deeper line that does not
  * begin with a word that starts a statement is the tail of the one above it.
  *
  * That is a heuristic and it is worth saying which way it fails. A continuation
  * beginning with a statement word would be split, and each half read as a
- * statement of its own — which loses the operands after the break rather than
+ * statement of its own, which loses the operands after the break rather than
  * inventing any, so a rule goes quiet rather than reporting something that is
  * not there. `tests/zos-lint.test.ts` holds the reconstruction against wrapped
  * output from the corpus, which is the only place this can be checked honestly.

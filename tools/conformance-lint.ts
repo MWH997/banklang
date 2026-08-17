@@ -4,7 +4,7 @@
  * Three sets of artifacts, for three different reasons.
  *
  * Fresh output, because that is what the compiler produces today. The checked-in
- * fixtures, because a golden file that holds a defect freezes it — the audit
+ * fixtures, because a golden file that holds a defect freezes it. Two real
  * found `IS-ELIGIBLE-FOR-INTEREST-RESULT`, a 31-character COBOL word, sitting in
  * `tests/fixtures/batch-interest-accrual.cbl`, where every run of the test suite
  * had compared it against itself and agreed. And the `evidence/` bundles,

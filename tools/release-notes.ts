@@ -1,15 +1,15 @@
 /**
  * The release body, taken from the changelog.
  *
- * R2 asks for a tag "matching the changelog, with generated release notes".
- * GitHub's own `--generate-notes` writes a list of merged pull requests, which
+ * A release wants a tag matching the changelog, with generated notes. GitHub's
+ * own `--generate-notes` writes a list of merged pull requests, which
  * is a different document: it records what happened to the repository, not what
  * changed for somebody using it. This repository already writes the second one
  * by hand, in Common Changelog form, and the release should be that.
  *
  * The check that matters is the refusal. A release cut before the changelog's
  * `## [Unreleased]` heading has been turned into a version is a release whose
- * notes are somebody else's — the previous version's, or empty — and nobody
+ * notes are somebody else's, the previous version's or empty, and nobody
  * reads their own release page carefully enough to notice.
  *
  * Usage: pnpm release:notes 0.9.0
@@ -64,7 +64,7 @@ export function notesFor(version: string, changelog?: string): string {
    * This is the failure the whole file exists for, and it is not a crash: the
    * notes extract cleanly, they are simply the wrong ones. Everything written
    * since the last release stays in Unreleased and never appears on any release
-   * page — it is not in the one being cut, and by the next one it is old news
+   * page. It is not in the one being cut, and by the next one it is old news
    * nobody re-reads. Keep a Changelog's answer is to fold Unreleased into the
    * version at release time, so refusing is the same instruction.
    *
@@ -79,7 +79,7 @@ export function notesFor(version: string, changelog?: string): string {
   );
   if (index === newest && unreleased !== -1 && bodyOf(unreleased) !== "") {
     throw new Error(
-      `CHANGELOG.md still has entries under Unreleased. Releasing ${version} now publishes notes that leave every one of them out — fold them into ${version}, or release the next version instead.`,
+      `CHANGELOG.md still has entries under Unreleased. Releasing ${version} now publishes notes that leave every one of them out. Fold them into ${version}, or release the next version instead.`,
     );
   }
 

@@ -41,7 +41,7 @@ The status is not decoration. Each `OPEN` is followed by a test of it:
 
 An `OPEN` that failed is not recoverable by carrying on: every read afterwards
 fails too, and a batch that ignores it writes an empty output file and returns
-zero — which looks exactly like a night with nothing to post.
+zero, which looks exactly like a night with nothing to post.
 
 The test is on the first character rather than on `= "00"` because "00" is not
 the only success. The first character is the status key, and 0 is successful
@@ -61,8 +61,8 @@ while accountInputStatus == "00" limit 1000000 {
 }
 ```
 
-The iteration that reaches end of file still runs its body — the `while`
-condition is not tested again until the body finishes — so an unguarded write
+The iteration that reaches end of file still runs its body, because the `while`
+condition is not tested again until the body finishes, so an unguarded write
 appends one trailing record holding the previous one's values. The `limit` is
 mandatory (`BANK-TXN-004`): it is what stops a corrupt file spinning the job
 until an operator cancels it.
@@ -113,4 +113,4 @@ validation is claimed.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-file-batch) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-file-batch). It compiles in your browser, with the generated COBOL beside it.

@@ -6,7 +6,7 @@
 # why the cache rules below look the way they do. Pages does not serve `.html`:
 # `/docs/glossary.html` is answered with a 308 to `/docs/glossary`, and
 # `/docs/index.html` with a 308 to `/docs/`. A rule written as `/*.html`
-# therefore matches only the redirect, never the page — it was here, and the
+# therefore matches only the redirect, never the page. It was here, and the
 # fifty-one pages it was written for never saw it.
 #
 # **Where two rules match one request and set the same header, the values are
@@ -16,7 +16,7 @@
 
 /*
   # The site is one origin's worth of static files. Its own markup fetches
-  # nothing off-host — `tests/site.test.ts` asserts that — and it takes no input
+  # nothing off-host, which `tests/site.test.ts` asserts, and it takes no input
   # and sets no cookie, so everything below can be `self` and the ones that need
   # nothing at all can be `none`.
   #
@@ -45,16 +45,16 @@
   #
   # Allowing the host was half of it. The report was refused with a 404 for a
   # while afterwards, because the account's Web Analytics site carried an empty
-  # ruleset — the beacon was being injected while the collector accepted data
-  # for no host — and enabling automatic installation on that site is what
+  # ruleset: the beacon was being injected while the collector accepted data
+  # for no host, and enabling automatic installation on that site is what
   # created the rule and turned the 404 into a 204. That half lives in the
   # Cloudflare account rather than in this file, so a future 404 here is a
   # setting to check and not a change to this policy.
   #
-  # `script-src` has no `unsafe-inline`. Every page carries an inline script —
+  # `script-src` has no `unsafe-inline`. Every page carries an inline script:
   # the theme is read from `localStorage` and stamped on `<html>` before first
   # paint, and moving it to a file makes it asynchronous and makes the page
-  # flash the wrong theme — so each one is allowed by the sha256 of its own
+  # flash the wrong theme, so each one is allowed by the sha256 of its own
   # body, filled into the placeholder on the policy line below by
   # `tools/build-site.ts`, which reads them off the built pages. A hash covers a
   # script *element* and not an event-handler attribute, which is why the
@@ -81,7 +81,7 @@
 /playground/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# These are copied under fixed names — `site.css` stays `site.css` — so
+# These are copied under fixed names, and `site.css` stays `site.css`, so
 # `immutable` here would pin a returning visitor to the stylesheet they first
 # saw. A day, revalidated, is the most that is safe.
 /assets/*
@@ -89,7 +89,7 @@
 
 # Preview deployments. Cloudflare serves every build on `<hash>.<project>.pages.dev`
 # as well as on the custom domain, and without this the same pages are indexed
-# twice under two hostnames — with the preview outranking the real one often
+# twice under two hostnames, with the preview outranking the real one often
 # enough to matter. The launch checklist asked for it.
 #
 # The placeholder syntax is Cloudflare's: `:project` matches one label, because
@@ -98,8 +98,8 @@
 # every *actual* preview is `<hash>.<project>.pages.dev` or
 # `<branch>.<project>.pages.dev`, which has one more label and matches only the
 # second. With the first rule alone the production alias was excluded and every
-# per-build preview — the ones a pull request creates, which is what this is for
-# — was left indexable. Both patterns are Cloudflare's own documented pair.
+# per-build preview, the ones a pull request creates and what this is for,
+# was left indexable. Both patterns are Cloudflare's own documented pair.
 https://:project.pages.dev/*
   X-Robots-Tag: noindex
 

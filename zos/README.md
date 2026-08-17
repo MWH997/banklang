@@ -6,7 +6,7 @@ package, or started in a CICS region. That is the project's standing limit and
 this directory does not change it.
 
 What it does is make the gap a bounded task rather than an open question. The
-compiler cannot close it from here — that needs a machine nobody working on this
+compiler cannot close it from here, because that needs a machine nobody working on this
 repository has. Someone with access can close it in an afternoon.
 
 ## Why the gap matters
@@ -29,7 +29,7 @@ Anything found here is a real defect in this compiler, not in the runner.
 
 ## The one place they are already known to disagree
 
-`USAGE NATIONAL` is not a "could differ" — it is measured. GnuCOBOL 3.2.0
+`USAGE NATIONAL` is measured rather than a "could differ". GnuCOBOL 3.2.0
 allocates **four bytes per national character inside a group**, where Enterprise
 COBOL holds each in two bytes of UTF-16. Standalone at the 01 level GnuCOBOL
 allocates two, which is an inconsistency in GnuCOBOL rather than a rule. It also
@@ -68,7 +68,7 @@ operand of a `SUM` clause from the wrong place, picking up only its low-order
 digits. A `PIC S9(7)V99 COMP-3` holding 1,000,000.00 totals as **zero**; one
 holding 9,999,999.99 totals as 999.99. The same field read by a `SOURCE` clause
 on the line above prints correctly, so the report shows right details under a
-wrong total. It reproduces in a hand-written program with no BankLang involved —
+wrong total. It reproduces in a hand-written program with no BankLang involved,
 two fields of the same value and picture, differing only in `USAGE`:
 
 ```cobol
@@ -89,14 +89,14 @@ accumulates correctly. **Report totals are the first thing to check on z/OS.**
 **A report file will not bind to a DD name.** GnuCOBOL's default `assign_clause`
 resolves an unquoted `ASSIGN TO <name>` on a file carrying `REPORT IS` to
 report-section storage rather than to the DD name, so the output lands in a file
-named after a printed value — a filename like `        0.00`. It reproduces in a
+named after a printed value, a filename like `        0.00`. It reproduces in a
 hand-written program with no BankLang involved. Compile with
 `-fassign-clause=external` (or `=ibm`) to bind it. On z/OS the DD comes from the
 JCL and the question does not arise.
 
 **`JSON PARSE` and `XML PARSE` compile and do nothing.** GnuCOBOL warns
 `-Wpending` that neither is implemented, then leaves the record untouched and
-raises no exception — so a program reading a payload runs clean and processes an
+raises no exception, so a program reading a payload runs clean and processes an
 empty record. The local build works around it the way it already did for
 `EXEC SQL` and `EXEC CICS`: the precompiler rewrites both statements into calls
 on `BANKJSON` and `BANKXML`, reference stubs in `runtime/`, and the translated
@@ -139,10 +139,10 @@ Then, in order:
    conformance suite uses, and compare the output records byte for byte.
 5. **Run the zUnit case.** `TZUNITTE`, whose job compiles the driver and submits
    it through `EQAPPLAY`. Compile `ZUNITTES` with `TEST` first and put both in
-   the same load library — that is what the runner intercepts the program's
+   the same load library, which is what the runner intercepts the program's
    calls through. This is the one artifact in the bundle nothing here has ever
    run, which makes it the most valuable thing in it: it settles divergence
-   **D21** — whether a runner accepts `noPlaybackData="true"` — and it is the
+   **D21**, whether a runner accepts `noPlaybackData="true"`, and it is the
    only way to learn anything about **D20**, the info block whose layout is
    behind a copybook this repository does not have.
 
@@ -156,8 +156,8 @@ fixed.
 
 The other is `dist/zos/result-template.json`, written beside the bundle by
 `pnpm zos:kit`. It carries the manifest's own hash, so the file says which bytes
-were run, and one entry per case with the return code and — for the programs
-that execute — whether the output matched. Fill it in, set `executed` to `true`,
+were run, and one entry per case with the return code and, for the programs
+that execute, whether the output matched. Fill it in, set `executed` to `true`,
 and commit it as `evidence/ibm/result.json`.
 
 That path is wired in rather than conventional: it is what `ibmValidationStatus`
@@ -176,5 +176,5 @@ Note which cases the bundle asks only to _compile_. A program with `EXEC CICS`,
 repository cannot ship, so `manifest.json` marks it `compile` and the schema
 will not let a compile be reported as an execution.
 
-Until such a result exists, every claim in this repository stops at GnuCOBOL —
+Until such a result exists, every claim in this repository stops at GnuCOBOL,
 and now that is enforced rather than remembered.

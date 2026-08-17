@@ -12,7 +12,7 @@ import { checked, corpus, flowed, localCobol, parmDriver } from "./helpers";
  * Computed subscripts, and every place one can appear.
  *
  * COBOL does not check subscripts. An index past the end of a table addresses
- * whatever storage follows it, which inside a record is the next field — so an
+ * whatever storage follows it, which inside a record is the next field, so an
  * out-of-range *write* does not fail, it quietly changes a different field of
  * the same record.
  *
@@ -211,7 +211,7 @@ entry transaction go(book: Book, at: Count) {
  *
  * `bands` is ten elements and `total` is declared straight after it, so index
  * 11 addresses `total`. Before the target of an assignment was guarded, this
- * set `total` to 999.00 — a field the program never assigns — and exited zero.
+ * set `total` to 999.00, a field the program never assigns, and exited zero.
  */
 describe("executed", () => {
   const available =

@@ -126,7 +126,7 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
   }
 
   // A warning rather than an error: the compiler cannot tell whether the job is
-  // rerunnable by other means — a consumed-and-recreated input, a small enough
+  // rerunnable by other means: a consumed-and-recreated input, a small enough
   // window, an operator procedure. It reports the hazard it can see and leaves
   // the judgement where the knowledge is.
   return [
@@ -153,7 +153,7 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
  * exact about the difference: "A ROLLBACK statement closes all open cursors. A
  * COMMIT statement ... closes cursors that are not declared WITH HOLD and
  * leaves open those cursors that are declared WITH HOLD." So `hold` saves a
- * commit and saves nothing from a rollback — and under CICS the manual says the
+ * commit and saves nothing from a rollback, and under CICS the manual says the
  * same again, that "SYNCPOINT ROLLBACK closes all cursors".
  *
  * Either way the next `FETCH` answers `-501`, cursor not open, after the loop
@@ -163,13 +163,12 @@ function checkRestartable(transaction: IRTransaction): Diagnostic[] {
  * program is right: either the statement does not belong in the loop or the
  * cursor needs `hold`, and for a rollback only the first is available.
  *
- * **A checkpoint is a commit.** It was not looked at here, and that was the
- * whole of B4: `examples/branch-accrual-cursor` warned about having no
- * checkpoint, and adding one produced `EXEC SQL COMMIT` inside a loop over a
- * cursor with no `WITH HOLD` — a program that compiles, binds, processes and
- * commits part of a result set, and then abends `-501` on the fetch after its
- * first commit. Every local check passed on it, which is the shape of A1 and
- * A2 again. `emitCheckpointStatement` writes that `COMMIT` under
+ * **A checkpoint is a commit.** It was not looked at here, and the result was
+ * that `examples/branch-accrual-cursor` warned about having no checkpoint, and
+ * adding one produced `EXEC SQL COMMIT` inside a loop over a cursor with no
+ * `WITH HOLD`: a program that compiles, binds, processes and commits part of a
+ * result set, and then abends `-501` on the fetch after its first commit.
+ * Every local check passed on it. `emitCheckpointStatement` writes that `COMMIT` under
  * `commitsSql`, and this reads the same flag.
  */
 function checkHeldCursors(
@@ -472,8 +471,8 @@ function diagnostic(
 /**
  * Every rounding the backend can actually generate, and only those.
  *
- * Enterprise COBOL has one rounding phrase — `ROUNDED`, which is half up away
- * from zero — and truncation when it is left off. The other five BankTS modes
+ * Enterprise COBOL has one rounding phrase, `ROUNDED`, which is half up away
+ * from zero, and truncation when it is left off. The other five BankTS modes
  * are generated arithmetic, and generated arithmetic has two preconditions the
  * compiler can check before it emits anything:
  *
@@ -483,7 +482,7 @@ function diagnostic(
  *    and lose the rounding entirely, with nothing said.
  * 2. A rounded division is generated from `DIVIDE ... REMAINDER`, and the
  *    remainder has to fit a field. When it does not, the tie test would be run
- *    against a truncated remainder — which is exactly the class of silently
+ *    against a truncated remainder, which is exactly the class of silently
  *    wrong answer this compiler exists to refuse.
  */
 function checkRoundingIsGeneratable(program: IRProgram): Diagnostic[] {

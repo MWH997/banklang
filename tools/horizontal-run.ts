@@ -125,8 +125,8 @@ function describeBlocker(task: string): string | null {
  * `packages/horizontal-validation/src/dd-names.ts` for why that matters: the
  * per-name version collapsed every file of nineteen tasks onto `TASKFUNC`.
  *
- * A task's BankTS declares files whose own DD names — derived by the backend
- * from the BankTS file name — must match what this returns. The mapping is
+ * A task's BankTS declares files whose own DD names, derived by the backend
+ * from the BankTS file name, must match what this returns. The mapping is
  * printed by `pnpm horizontal:dd <task>` so an implementation can be written
  * against it without anybody guessing.
  */
@@ -147,8 +147,8 @@ export function taskDdNames(task: {
  *
  * Every early return records the stage that stopped it. The order matters: a
  * task that fails `bankc check` is never reported as a semantic mismatch, and a
- * task whose oracle cannot be derived is still compiled and run — the run is
- * what proves the BankTS was real — before the comparison is recorded as
+ * task whose oracle cannot be derived is still compiled and run, since the run is
+ * what proves the BankTS was real, before the comparison is recorded as
  * unmatchable.
  */
 export function runTask(task: LoadedTask, cwd: string): TaskResult {
@@ -239,7 +239,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
   // ---- conformance ---------------------------------------------------
   // With `knownPrograms`, exactly as `pnpm lint:conformance` runs it. Without
   // it every generated program fails `call-resolvable` on its own `CALL
-  // "BANKAUDT"` — the audit module is part of the reference runtime and is
+  // "BANKAUDT"`. The audit module is part of the reference runtime and is
   // supplied to the binder, not missing.
   const findings = lintCobol(sourceFile, compiled.cobol, {
     knownPrograms: runtimePrograms(cwd),
@@ -282,7 +282,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
    * A program entered with a parameter list needs something to build one.
    *
    * A BankTS entry transaction takes its scalar parameters from the job's PARM,
-   * so it has `PROCEDURE DIVISION USING` — and `cobc -x` refuses to make an
+   * so it has `PROCEDURE DIVISION USING`, and `cobc -x` refuses to make an
    * executable out of one, because a Unix process has no parameter list. On
    * z/OS the initiator builds it; here the driver does, exactly as the
    * differential lane already does for the examples.
@@ -401,7 +401,7 @@ export function runTask(task: LoadedTask, cwd: string): TaskResult {
     return finish(
       engines(),
       "oracle-not-derivable",
-      `The expected output contains ${JSON.stringify(oracle.invented.slice(0, 5))}, which appears in neither the specification nor the input data, so no spec-only implementation could match it. First difference — ${differences[0]?.where}: expected ${JSON.stringify(differences[0]?.expected)}, got ${JSON.stringify(differences[0]?.actual)}.`,
+      `The expected output contains ${JSON.stringify(oracle.invented.slice(0, 5))}, which appears in neither the specification nor the input data, so no spec-only implementation could match it. First difference at ${differences[0]?.where}: expected ${JSON.stringify(differences[0]?.expected)}, got ${JSON.stringify(differences[0]?.actual)}.`,
     );
   }
   return finish(

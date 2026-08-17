@@ -84,8 +84,8 @@ export interface CompileResult {
 /**
  * True when any diagnostic would stop the compiler.
  *
- * A warning reports a hazard the compiler cannot rule out — an uninstantiated
- * generic, a posting loop with no checkpoint — and a program carrying one is
+ * A warning reports a hazard the compiler cannot rule out (an uninstantiated
+ * generic, a posting loop with no checkpoint) and a program carrying one is
  * still a program. Treating every diagnostic as fatal meant a warning silently
  * produced no COBOL, which is a worse outcome than the thing being warned about.
  */
@@ -168,8 +168,8 @@ export function compile(
   // the way to a successful compile would make a hazard the compiler found
   // invisible to everyone downstream of it.
   //
-  // Lowering reports nothing of its own — it forwards the typechecker's list so
-  // that a caller which bails on `!ir.program` still has something to print — so
+  // Lowering reports nothing of its own. It forwards the typechecker's list so
+  // that a caller which bails on `!ir.program` still has something to print, so
   // adding both would report every typechecker warning twice.
   const diagnostics = [
     ...parsed.diagnostics,

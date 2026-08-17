@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { compile } from "../packages/compiler/src/index";
 
 /**
- * `log`, `accept`, and `reset` — `DISPLAY`, `ACCEPT`, and `INITIALIZE`.
+ * `log`, `accept`, and `reset`: `DISPLAY`, `ACCEPT`, and `INITIALIZE`.
  *
  * The job log is the operator's only view of what happened between the return
  * code and an abend, and a job parameter is how the same program runs a

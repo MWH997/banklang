@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol } from "./helpers";
 
 /**
- * The arithmetic COBOL already knows how to do — including the two it knows
+ * The arithmetic COBOL already knows how to do, including the two it knows
  * because it was written for this industry.
  *
  * `ANNUITY` is the repayment factor of a loan and `PRESENT-VALUE` discounts a
@@ -187,7 +187,7 @@ entry transaction quote(bounds: Bounds) {
 
 /**
  * The arithmetic is the claim, so the arithmetic is what gets run. £100,000 at
- * 0.5% a month over 240 months is a payment of £716.43 — the number a mortgage
+ * 0.5% a month over 240 months is a payment of £716.43, the number a mortgage
  * calculator gives, produced here by COBOL rather than by this compiler.
  */
 describe("executed", () => {

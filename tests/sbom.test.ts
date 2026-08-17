@@ -23,7 +23,7 @@ import {
 /**
  * The Software Bill of Materials, held to being one.
  *
- * R2. A BOM is read by a machine in somebody else's security function, months
+ * A BOM is read by a machine in somebody else's security function, months
  * after anybody here looked at it, and every way it can be wrong is quiet: a
  * dangling edge makes a scanner report a smaller tree rather than an error, a
  * missing licence becomes a review ticket, a drifted specification version
@@ -31,14 +31,14 @@ import {
  *
  * Nothing here asserts a literal that the generator also produces. What is
  * checked is either an invariant of the format or a comparison against the file
- * the BOM duplicates — `package.json`, `pnpm-lock.yaml`, `CITATION.cff`.
+ * the BOM duplicates: `package.json`, `pnpm-lock.yaml`, `CITATION.cff`.
  */
 
 let bom: Bom;
 
 beforeAll(() => {
   // This platform only. Every assertion below is one that holds whatever is in
-  // the pnpm store — the store-dependent half is `strict`, and that is the CI
+  // the pnpm store. The store-dependent half is `strict`, and that is the CI
   // job's business because only a resolved matrix can satisfy it.
   bom = generate(false);
 }, 120_000);
@@ -81,7 +81,7 @@ describe("the bill of materials this project hands out", () => {
   /**
    * pnpm presents the workspace as one application carrying the union of every
    * project's dependencies, rather than as a component per package. That is a
-   * reasonable model — there is one thing here to deploy — but it means a
+   * reasonable model, since there is one thing here to deploy, but it means a
    * workspace project pnpm failed to read would drop out of the BOM without
    * changing its shape. So the union is checked against the manifests.
    */
@@ -147,7 +147,7 @@ describe("the licence column, which is why the command is wrapped", () => {
    *
    * CI found this on 2026-08-07: `@napi-rs/wasm-runtime` and the `@emnapi/*`
    * packages beneath it are the WebAssembly fallback for the native bundlers.
-   * They carry no `os` and no `cpu` — they run anywhere — but they are optional,
+   * They carry no `os` and no `cpu`, so they run anywhere, but they are optional,
    * so a machine whose native binary resolved never downloads them. Five of them
    * reached the BOM with no licence and the platform rule did not excuse them,
    * on Linux, where every developer here had been running macOS.
@@ -165,8 +165,8 @@ describe("the licence column, which is why the command is wrapped", () => {
   });
 
   /**
-   * The alternative was a list of name prefixes — `@esbuild/`, `@rolldown/`,
-   * `lightningcss-` — which goes stale the first time a dependency ships a
+   * The alternative was a list of name prefixes (`@esbuild/`, `@rolldown/`,
+   * `lightningcss-`) which goes stale the first time a dependency ships a
    * native binary under a name nobody predicted, and goes stale silently:
    * the BOM keeps generating, with one more component of unknown licence.
    */
@@ -202,7 +202,7 @@ describe("the licence column, which is why the command is wrapped", () => {
    * pnpm writes `licenses[].license.id`, which CycloneDX defines as an SPDX
    * identifier, and drops anything that is not one instead of writing it to
    * `license.name`. Every component in this tree that is *not* open source
-   * declares `SEE LICENSE IN LICENSE.txt` — so before `repairLicences`, the ten
+   * declares `SEE LICENSE IN LICENSE.txt`, so before `repairLicences`, the ten
    * proprietary components were exactly the ten the BOM said nothing about.
    */
   it("carries a licence for every package on disk that declares one", () => {
@@ -398,8 +398,8 @@ describe("what problems() catches", () => {
 /**
  * The supply-chain policy, held to being configured rather than described.
  *
- * Found by the pre-publication audit on 2026-08-07. Three files — this
- * workspace's own manifest, the scheduled advisory job, and `tools/sbom.ts` —
+ * Found by a pre-publication sweep. Three files, this
+ * workspace's own manifest, the scheduled advisory job, and `tools/sbom.ts`,
  * described a `minimumReleaseAge` policy the repository held, and the
  * repository held a comment about one. `pnpm config get minimumReleaseAge`
  * answered `undefined`.
@@ -407,7 +407,7 @@ describe("what problems() catches", () => {
  * The protection was real, because pnpm 11 turns it on at 1440 minutes by
  * itself. That is the part worth stating precisely: a default is a control
  * somebody else owns. A pnpm release that lowers it, or a contributor on the
- * version before the setting existed, gets none of it — and every document here
+ * version before the setting existed, gets none of it, and every document here
  * would go on saying the policy was in force.
  */
 describe("the release-age policy the documentation describes", () => {

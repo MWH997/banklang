@@ -72,9 +72,9 @@ if movementFeedStatus == "00" {
 
 End of file is an answer rather than a failure, so the generated status check
 lets it through. Without the test the last movement would be written to the
-extract twice — the record area still holds it — and the trailer's totals would
+extract twice, because the record area still holds it, and the trailer's totals would
 say so while the job ended with return code zero. `BANK-FILE-017`.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=settlement-bill-file) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=settlement-bill-file). It compiles in your browser, with the generated COBOL beside it.

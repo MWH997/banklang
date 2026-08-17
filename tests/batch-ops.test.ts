@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol, unpadded } from "./helpers";
 
 /**
- * `sort`, `merge`, and `checkpoint` — ordering a batch's input and surviving its
+ * `sort`, `merge`, and `checkpoint`: ordering a batch's input and surviving its
  * failure.
  */
 
@@ -88,7 +88,7 @@ describe("sort and merge", () => {
    * assigns two SD files to the same name.
    *
    * It is deliberately not `SORTWK01`, which is the DD the sort product reads
-   * for its first work dataset — a different thing that the job does allocate.
+   * for its first work dataset, a different thing that the job does allocate.
    * Naming it that would read as though the SD were bound to it, and anyone who
    * changed one to match the other would find that neither mattered.
    */
@@ -156,7 +156,7 @@ entry transaction order(posting: Posting) {
    * sort is for: order the detail records, then write a report line.
    *
    * The record a sort moves is the one it *reads*. That used to be the
-   * destination's record and every file had to hold it — including when an
+   * destination's record and every file had to hold it, including when an
    * output procedure was present, which is exactly when the sort does not write
    * the destination at all. CobolCodeBench's task_func_37 was recorded as a
    * language gap on the strength of it.
@@ -343,7 +343,7 @@ CHECKPOINT
 });
 
 /**
- * `restart <file> into <record> { ... } else { ... }` — the half of
+ * `restart <file> into <record> { ... } else { ... }`: the half of
  * checkpoint/restart that makes the other half worth writing.
  *
  * A position written down and never read back leaves the rerun starting at the
@@ -472,7 +472,7 @@ entry transaction post(posting: Posting, point: RestartPoint) {
  * The write, which is now a keyed replacement rather than an append.
  *
  * Each checkpoint replaces the last, so a restart reads one record and knows it
- * is the furthest point that was committed — rather than reading a growing
+ * is the furthest point that was committed, rather than reading a growing
  * stream of them and having to work out which is newest.
  */
 describe("what a checkpoint writes", () => {

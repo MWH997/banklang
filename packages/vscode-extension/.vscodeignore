@@ -2,7 +2,7 @@
 #
 # The extension and the language server are bundled by esbuild into
 # `dist/extension.cjs` and `server/bin.js`, and `vsce package --no-dependencies`
-# is what makes that the whole of it — without the flag, vsce copies
+# is what makes that the whole of it, because without the flag, vsce copies
 # `node_modules` in as well and ships a second, unbundled copy of every runtime
 # dependency alongside the bundle that already contains them.
 #
