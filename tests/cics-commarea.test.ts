@@ -10,7 +10,7 @@ import { flowed, unpadded } from "./helpers";
  * Three defects lived here together, and every test passed while they did.
  *
  * The transaction's first record parameter is working storage, and **nothing
- * moved the commarea into it** — the program read uninitialised bytes for its
+ * moved the commarea into it**, so the program read uninitialised bytes for its
  * input. Nothing moved it back either, so a caller expecting updated data got
  * whatever it sent. And there was no `EIBCALEN` test, so a call with no
  * commarea would have addressed storage belonging to something else, which is a
@@ -46,7 +46,7 @@ describe("a CICS transaction", () => {
    * length "matches what the program expects", because a discrepancy risks a
    * storage violation. A caller passing ten bytes to a program whose record is
    * seventy-two leaves the MOVE reading sixty-two bytes of whatever follows the
-   * commarea — somebody else's storage, read clean. Testing against the length
+   * commarea, somebody else's storage, read clean. Testing against the length
    * of the record covers the short commarea and the absent one together.
    */
   it("tests EIBCALEN before touching the commarea", () => {
@@ -83,7 +83,7 @@ describe("a CICS transaction", () => {
 
     // The write-back is the last thing the transaction does. `EXEC CICS RETURN`
     // is `BANK-MAIN`'s, after the PERFORM, because `BANK-MAIN` is the only
-    // paragraph that ends the program — so the two are ordered by control flow
+    // paragraph that ends the program, so the two are ordered by control flow
     // rather than by which line of the file they sit on.
     expect(body).toContain("MOVE REQUEST TO DFHCOMMAREA");
     expect(text.indexOf("PERFORM ENQUIRE THRU ENQUIRE-EXIT")).toBeLessThan(
@@ -158,7 +158,7 @@ describe("the EXEC interface block", () => {
 
 /**
  * Host variables must be declared in an SQL declare section. The markers are
- * not statements — Db2 removes them — so translating one into a call would put
+ * not statements, since Db2 removes them, so translating one into a call would put
  * an executable statement in the DATA DIVISION, where none may appear.
  */
 describe("the SQL declare section", () => {
@@ -215,7 +215,7 @@ entry transaction enquire(row: Row, idempotencyKey: string<36>) {
 /**
  * An `OPEN` that failed is not recoverable by carrying on: every read
  * afterwards fails too, and a batch that ignores it writes an empty output file
- * and returns zero — which looks exactly like a run that had nothing to do.
+ * and returns zero, which looks exactly like a run that had nothing to do.
  *
  * The language already requires a file to declare a status field
  * (`BANK-FILE-001`) and then never tested it. Convention is to check after
@@ -275,7 +275,7 @@ entry transaction run(row: Row, idempotencyKey: string<36>) {
  * area was that nothing said so. The backend moves the *first* record parameter
  * in and back out; every other record parameter is working storage, which the
  * region reclaims when the task ends. So `accountEnquiry(request, row, reply)`
- * — three records, the answer computed into the third — ended with
+ * (three records, the answer computed into the third) ended with
  * `MOVE ENQUIRY-REQUEST TO DFHCOMMAREA` and handed the caller back the bytes it
  * had sent. That is `examples/online-enquiry` as it shipped, and every test
  * passed: the reference runtime supplies no commarea, so nothing read one.
@@ -345,7 +345,7 @@ cics transaction enquire(commarea: Commarea, auditEntry: AuditEntry) {
 
   /**
    * A transaction that assigns to no record parameter is doing side-effecting
-   * work — writing a queue, posting a ledger entry — and has no result to lose.
+   * work, such as writing a queue or posting a ledger entry, and has no result to lose.
    * `execute ... into row` is not an assignment for this purpose: it fills a
    * row from Db2, and answering through a file or a queue is legitimate.
    */
@@ -417,7 +417,7 @@ cics transaction enquire(commarea: Commarea) {
  * The write-back on the path where the transaction failed.
  *
  * `emitFailingTransaction` is a separate path from the ordinary one, and it did
- * not write the commarea back at all — so a transaction with an `on failure`
+ * not write the commarea back at all, so a transaction with an `on failure`
  * handler returned the caller's own request no matter what either the body or
  * the handler had set. The handler exists to record what went wrong; a return
  * code it writes into the commarea and the caller never sees is the same defect

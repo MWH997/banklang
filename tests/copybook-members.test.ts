@@ -20,7 +20,7 @@ import { compileSource, localCobol } from "./helpers";
  * identifying name".
  *
  * The compiler used to write `COPY ACCOUNT-RECORD.` while the bundle shipped
- * that copybook as `ACCOUNTR` — two rules, derived separately, that never met.
+ * that copybook as `ACCOUNTR`: two rules, derived separately, that never met.
  * On a PDS the compiler would look for a member called `ACCOUNT-`, which no
  * library can hold, so `copy` mode had never resolved on z/OS.
  */
@@ -113,7 +113,7 @@ entry transaction go(a: AccountRecord, b: BalanceRow) {
  *
  * `copy` mode had never been compiled anywhere: no example sets it, so the
  * GnuCOBOL gate never reached it, and the `COPY` the program emitted and the
- * file the compiler wrote were free to drift apart — which they had. With the
+ * file the compiler wrote were free to drift apart, which they had. With the
  * copybook written under any other name, `cobc` says
  * `TRANSFER: No such file or directory`.
  */

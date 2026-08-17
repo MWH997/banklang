@@ -2,11 +2,11 @@
  * Rebuild every checked-in evidence bundle from the compiler as it stands.
  *
  * The bundles are what a reader is invited to check the project's claims
- * against, and they were maintained by hand. Nothing kept them in step: by the
- * 2026-08-05 audit they held copybooks written before the reference-format
- * work, dataset names that could not be catalogued, and a 31-character COBOL
- * word — artifacts no version of this compiler would produce, presented as
- * evidence of what it produces.
+ * against, and they were maintained by hand. Nothing kept them in step, so by
+ * the time anybody looked they held copybooks written before the
+ * reference-format work, dataset names that could not be catalogued, and a
+ * 31-character COBOL word: artifacts no version of this compiler would
+ * produce, presented as evidence of what it produces.
  *
  * `pnpm evidence:refresh` regenerates them all, and
  * `pnpm lint:conformance` reads them afterwards. A bundle is now a build
@@ -84,7 +84,7 @@ export function refreshEvidence(cwd = process.cwd()): string[] {
    *
    * Every subdirectory of `evidence/` used to be taken for one, and the
    * horizontal-validation programme then put `horizontal/` and
-   * `horizontal-history/` there — results and summaries, not a compiled
+   * `horizontal-history/` there: results and summaries, not a compiled
    * example. `pnpm evidence:refresh` has crashed on them ever since, reading
    * `examples/horizontal/src/main.bank.ts`, and because it crashed part-way
    * through a sorted list the five bundles after `branch-accrual-cursor` were
@@ -118,8 +118,8 @@ export function refreshEvidence(cwd = process.cwd()): string[] {
     }
 
     // The zUnit case, for a project that declares tests. `bankc test` does not
-    // write one — what `build` writes is what ships, and a test case is not
-    // part of the program — so it is asked for separately here, because a
+    // write one. What `build` writes is what ships, and a test case is not
+    // part of the program, so it is asked for separately here, because a
     // bundle is what a reader checks the claims against and the claim is that
     // the case is generated.
     const zunit = runBankc(["zunit", project, "--out", target], cwd);

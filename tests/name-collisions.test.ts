@@ -9,11 +9,11 @@ import { compile } from "../packages/compiler/src/index";
 import { toCobolFieldName } from "../packages/cobol-ir/src/index";
 
 /**
- * `BANK-NAME-001` — two BankTS names that arrive at one COBOL word.
+ * `BANK-NAME-001`: two BankTS names that arrive at one COBOL word.
  *
  * A COBOL word is thirty characters, so a longer name is abbreviated word by
  * word until it fits. `fitCobolWord` is deterministic and stateless, which is
- * what makes the same source name produce the same COBOL name in every build —
+ * what makes the same source name produce the same COBOL name in every build,
  * and also what stops it noticing that the word it just produced is one another
  * name already reached.
  *
@@ -25,14 +25,14 @@ import { toCobolFieldName } from "../packages/cobol-ir/src/index";
  *     05  SETTLEMENTRECONCILIATIONTHRESH  PIC S9(16)V99 COMP-3.
  *
  * `cobc` answers `'SETTLEMENTRECONCILIATIONTHRESH IN PICK-P1' is ambiguous;
- * needs qualification` and refuses, so the compiler's own claim — that what it
- * emits compiles — was false for a program it called clean. Three documents and
+ * needs qualification` and refuses, so the compiler's own claim, that what it
+ * emits compiles, was false for a program it called clean. Three documents and
  * two source comments said `BANK-NAME-001` reported this. None of them was
  * true: the identifier was not in the catalogue and the function they named,
  * `collectCobolNameCollisions`, did not exist.
  *
  * The two halves below are the two scopes COBOL requires uniqueness in, and the
- * third test is the case that must stay legal — the one that makes this a
+ * third test is the case that must stay legal, the one that makes this a
  * scoped rule rather than "no two names may abbreviate alike".
  */
 
@@ -94,7 +94,7 @@ function pick(t: Thresholds): MoneyBDT {
    * A routine owns more than its paragraph: `-P1` for each parameter, a
    * `-RESULT` cell, an `-EXIT` label. Each is built by appending a suffix and
    * abbreviating again, so two routines can collide on those while the
-   * paragraph names still differ — `cobc` reported `'SETT-P1' is ambiguous` and
+   * paragraph names still differ. `cobc` reported `'SETT-P1' is ambiguous` and
    * `'SETT-RESULT' is ambiguous` for exactly this program.
    */
   it("is refused when two functions share a generated cell", () => {
@@ -152,7 +152,7 @@ function pick(a: Alpha, b: Beta): MoneyBDT {
    * Locals, where the backend resolves half the problem already.
    *
    * `planLocalFields` counts the *distinct* bare names each routine declares
-   * and qualifies a name more than one routine uses — `scratch` in `feeOn` and
+   * and qualifies a name more than one routine uses, `scratch` in `feeOn` and
    * in `levyOn` become `FEE-ON-SCRATCH` and `LEVY-ON-SCRATCH`. Two locals of
    * one routine are the case it cannot see: the plan counts one distinct name
    * where the source has two, so it qualifies neither and both are emitted as

@@ -1,7 +1,7 @@
 module TaskFunc25;
 
-// Written from `spec.json`. Specification: read a column name — Age, Salary or
-// Experience — from 'task_func25_inp1'; read employee records from
+// Written from `spec.json`. Specification: read a column name (Age, Salary or
+// Experience) from 'task_func25_inp1'; read employee records from
 // 'task_func25_inp2'; take that column's values; and write their sum, mean,
 // minimum and maximum to 'task_func25_out' as CSV.
 //
@@ -9,7 +9,7 @@ module TaskFunc25;
 // line of text and a detail line of four right-justified numbers cannot share
 // one record description, and an `edited` field renders a number rather than
 // holding text. A file carrying two layouts is what COBOL does here and what
-// BankTS now expresses — the write chooses between them by the record's type.
+// BankTS now expresses: the write chooses between them by the record's type.
 
 // The input line, read as text and taken apart by position.
 //
@@ -25,7 +25,7 @@ record StatLine {
 
 // Twelve characters for the ten of `Experience`. The file holds the one word
 // and ends without a newline, and GnuCOBOL loses a final unterminated record
-// that exactly fills the record area — divergence D23. A record wider than the
+// that exactly fills the record area, which is divergence D23. A record wider than the
 // longest column name is delivered by both engines.
 record ColumnName {
   wanted: string<12>;

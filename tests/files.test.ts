@@ -224,7 +224,7 @@ describe("file COBOL emission", () => {
  *
  * Both replace the record the last `read` returned, so on a sequentially
  * accessed file they need one. Without it the operation **is not performed and
- * the status is 92** — no abend, no exception, so a program that does not test
+ * the status is 92**: no abend, no exception, so a program that does not test
  * the status carries on believing it updated something.
  *
  * Only sequential and relative files: an indexed file is `ACCESS MODE IS
@@ -301,7 +301,7 @@ ${body}
    * The branch shapes the walk used to skip.
    *
    * This check walks the body, and until 2026-08-07 it walked it with a list of
-   * property names that did not include `otherwise` — a `switch`'s `else`
+   * property names that did not include `otherwise`, a `switch`'s `else`
    * branch. An update in one was never examined, so the check reported nothing
    * and the program passed. That is the worse direction for a rule to be wrong
    * in: a missing diagnostic looks exactly like a clean program.
@@ -371,7 +371,7 @@ file feed sequential update record AccountRecord status feedStatus;`,
  * record is removed by leaving it out of the file the next program writes.
  *
  * GnuCOBOL compiles the statement, which is exactly why nothing local caught
- * it — the generated program passed every check here and would have been
+ * it: the generated program passed every check here and would have been
  * rejected by IGYCRCTL.
  */
 describe("deleting from a sequential file", () => {

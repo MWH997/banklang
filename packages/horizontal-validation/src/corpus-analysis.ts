@@ -13,7 +13,7 @@
  *
  * The third is a statement about language scope and nothing else. No file here
  * has an expected output, so nothing here can establish that any program
- * computes anything correctly — and a reader of the report is told so in the
+ * computes anything correctly, and a reader of the report is told so in the
  * same breath as the number.
  */
 

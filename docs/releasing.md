@@ -1,4 +1,4 @@
-# Release Checklist
+# Releasing
 
 Use this before cutting or publishing a release.
 

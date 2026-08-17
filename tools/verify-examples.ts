@@ -11,7 +11,7 @@
  *
  * `tools/example-projects.ts` exists because the same mistake had already been
  * made five times. This is that enumeration applied to the one place still
- * doing it by hand — and `tests/example-corpus.test.ts` holds the workflow to
+ * doing it by hand, and `tests/example-corpus.test.ts` holds the workflow to
  * calling this rather than writing a seventh.
  *
  * Usage: pnpm examples:verify

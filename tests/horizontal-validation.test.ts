@@ -43,15 +43,15 @@ import {
  * None of these tests reads `validation/cache/`. That is the whole design: the
  * corpora are fetched by hand into an ignored directory, and a suite that
  * needed them would be a suite that fails on a fresh clone and on every CI
- * runner. What is checked here is the machinery — the rules that decide what
+ * runner. What is checked here is the machinery: the rules that decide what
  * BankTS can express, the arithmetic that reports it, and the guards that stop
  * an untrusted corpus writing where it likes.
  *
  * The rules themselves are the part most worth pinning. A support rule quietly
  * flipping to `supported` would raise every representability figure this
- * project publishes, and the one that did exactly that — line-sequential files,
- * marked supported on the strength of COBOL that the emitter never produced —
- * is what these tests exist to catch next time.
+ * project publishes. The one that did exactly that was line-sequential files,
+ * marked supported on the strength of COBOL the emitter never produced, and
+ * that is what these tests exist to catch next time.
  */
 
 describe("the corpus registry", () => {
@@ -334,7 +334,7 @@ describe("the arithmetic that reports a run", () => {
     /*
      * The whole tally from a known set, because these numbers are published.
      * Mutation testing found `result.ts` the thinnest file in the package at
-     * the point this phase changed what it computes — and a counter nothing
+     * the point this phase changed what it computes, and a counter nothing
      * asserts is a counter that can be quietly wrong in the flattering
      * direction, which is the specific failure this package exists to prevent.
      */
@@ -473,7 +473,7 @@ describe("comparing a run against its oracle", () => {
     /*
      * The defect that misfiled a task for a whole phase. `[A-Z]{4,}` matches no
      * accented letter, so an input of `Váquéz` contributed no word while an
-     * output of `Vaquez` contributed one — and the correct answer was reported
+     * output of `Vaquez` contributed one, and the correct answer was reported
      * as a literal the benchmark had invented. CobolCodeBench's task_func_47 is
      * this exact shape, and its actual obstacle is the character model rather
      * than the oracle.
@@ -530,8 +530,8 @@ describe("what BankTS can express", () => {
      * The regression this file is most for, in its second form.
      *
      * This rule said `supported` once on the strength of `LINE SEQUENTIAL`
-     * appearing in the repository — in five hand-written reference modules
-     * under `runtime/`, never from the emitter — and it inflated the X-COBOL
+     * appearing in the repository, in five hand-written reference modules
+     * under `runtime/` rather than from the emitter, and it inflated the X-COBOL
      * figure by 155 files. It is `supported` again now, and the difference is
      * that the compiler backs it.
      *
@@ -755,7 +755,7 @@ describe("the COBOL feature detector", () => {
 
   it("reads free-format source rather than truncating it at column 72", () => {
     // Much of what is on GitHub is free format, and reading it as fixed throws
-    // away everything past column 72 — which under-reports rather than fails.
+    // away everything past column 72, which under-reports rather than fails.
     const free = `IDENTIFICATION DIVISION.\nPROGRAM-ID. X.\nPROCEDURE DIVISION.\n    INSPECT WS-A TALLYING WS-N FOR ALL "X".\n`;
     expect(detectFeatures(free)["inspect"]).toBe(1);
   });

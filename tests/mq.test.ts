@@ -10,7 +10,7 @@ import { precompile } from "../packages/precompiler/src/index";
 import { flowed, localCobol } from "./helpers";
 
 /**
- * IBM MQ — the message queue interface.
+ * IBM MQ: the message queue interface.
  *
  * A queue is not a file. Nothing opens it with file control: the program
  * connects to a queue manager, opens the queue as an *object* described by an
@@ -65,7 +65,7 @@ describe("the declaration", () => {
 
   /**
    * Each structure is copied under an 01 of this queue's own. The copybooks
-   * declare their groups at level 10 with fixed names — `MQOD`, `MQMD` — so a
+   * declare their groups at level 10 with fixed names (`MQOD`, `MQMD`) so a
    * program with two queues has two of each, and every reference has to be
    * qualified or it will not compile. IBM's own samples copy each once and
    * reference it bare, which is why the ambiguity does not arise there.
@@ -165,7 +165,7 @@ describe("connecting and opening", () => {
   /**
    * The defect this replaced. `MQCONN` naming a queue manager the program is
    * already connected to returns the handle it gave the first time with
-   * `MQCC-WARNING` and `MQRC-ALREADY-CONNECTED` — not `MQCC-OK` — so a program
+   * `MQCC-WARNING` and `MQRC-ALREADY-CONNECTED` rather than `MQCC-OK`, so a program
    * that connected once per queue failed its own completion-code test on the
    * second queue and ended the step with RC 12 before reading a message.
    * Nothing local could see it: the reference MQI returned a fresh handle and
@@ -178,7 +178,7 @@ describe("connecting and opening", () => {
   disconnectQueue paymentOut;
   disconnectQueue paymentIn;`).cobol,
     );
-    // Two queues, so two opens and two closes — and every MQCONN and MQDISC
+    // Two queues, so two opens and two closes, and every MQCONN and MQDISC
     // between them behind the count, so exactly one of each runs. The pairing
     // is the assertion: an unguarded call site is the defect returning.
     expect(both.match(/CALL "MQOPEN"/g)).toHaveLength(2);
@@ -193,8 +193,8 @@ describe("connecting and opening", () => {
 
   /**
    * The count is what carries that across the two statements. `connectQueue`
-   * cannot know statically whether an earlier one has already run — it may sit
-   * behind a condition or inside a loop — so the test is made at run time.
+   * cannot know statically whether an earlier one has already run, since it may sit
+   * behind a condition or inside a loop, so the test is made at run time.
    */
   it("counts the open queues on a manager to decide", () => {
     expect(text).toContain("IF BANK-MQM-1-OPENS = 0");
@@ -382,7 +382,7 @@ entry transaction t(r: R) {
 });
 
 /**
- * The job. MQ needs no precompiler — the MQI is plain `CALL`s — but the
+ * The job. MQ needs no precompiler, since the MQI is plain `CALL`s, but the
  * copybooks have to resolve at compile time and the stub has to resolve at
  * link time, or the job produces nothing that can run.
  */
@@ -478,7 +478,7 @@ describe("executed against the reference MQI", () => {
    * Two queues on one manager, which is the shape `examples/mq-request-reply`
    * has and the shape that was broken. The reference MQI answers a second
    * MQCONN naming a manager it is already connected to the way IBM documents
-   * it — MQCC-WARNING with reason 2002 — so a program that connected per queue
+   * it, MQCC-WARNING with reason 2002, so a program that connected per queue
    * ends here with RC 12 and `MQCONN FAILED` on stdout rather than a message.
    */
   it.skipIf(!available)("drains a queue with a reply queue beside it", () => {

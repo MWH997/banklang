@@ -3,11 +3,11 @@
 Where GnuCOBOL and IBM Enterprise COBOL disagree, and where BankLang and the
 target disagree. Numbered so they can be cited.
 
-This is the repository's best evidence that its claims are bounded, and it used
-to be buried in `zos/README.md`. Every entry is one of three kinds:
+This is the repository's best evidence that its claims are bounded. Every entry
+is one of three kinds:
 
-- **Measured** (reproduced, with the reproduction here.
-- **Suspected**) a place the two compilers plausibly differ, not yet checked.
+- **Measured**: reproduced, with the reproduction here.
+- **Suspected**: a place the two compilers plausibly differ, not yet checked.
 - **Deliberate**: BankLang not doing what the target could do, on purpose.
 
 Local validation is GnuCOBOL 3.2.0 under `tools/banklang-ibm.conf`. Nothing in

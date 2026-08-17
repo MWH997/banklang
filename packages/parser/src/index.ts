@@ -840,8 +840,8 @@ class Parser {
     }
 
     // `test <name> for <transaction> { ... }`, matched contextually so `test`
-    // stays a usable field name. Copybooks are full of them — TEST-FLAG,
-    // TEST-IND — and a word reserved for a declaration nothing compiles would
+    // stays a usable field name. Copybooks are full of them (TEST-FLAG,
+    // TEST-IND) and a word reserved for a declaration nothing compiles would
     // be the worst trade in the keyword table.
     if (
       this.current.kind === "identifier" &&
@@ -1018,7 +1018,7 @@ class Parser {
     const parameters = this.parseParameters();
     this.expectPunctuation(")", "Expected `)` after parameter list.");
 
-    // `cursor accountsInBranch(...) hold : AccountRow { ... }` — after the
+    // `cursor accountsInBranch(...) hold : AccountRow { ... }`, after the
     // parameters, because it is a property of the cursor rather than of what it
     // returns, and before the result type so the `:` still introduces one.
     const hold = form === "cursor" && this.matchKeyword("hold");
@@ -1482,7 +1482,7 @@ class Parser {
    *
    * The segment and key names are literals because they name things in the DBD
    * rather than in this program, and they have to match it character for
-   * character — a DL/I search argument is eight bytes of name, not a reference
+   * character: a DL/I search argument is eight bytes of name, not a reference
    * the compiler can resolve.
    */
   /**
@@ -1496,7 +1496,7 @@ class Parser {
    * `getMessage q into r { ... } else { ... };`
    *
    * A `getMessage` carries both branches because an empty queue is not a
-   * failure — MQ reports it as `MQRC-NO-MSG-AVAILABLE`, which is the ordinary
+   * failure. MQ reports it as `MQRC-NO-MSG-AVAILABLE`, which is the ordinary
    * end of a drain loop. Making the branch mandatory is the same decision the
    * keyed read on a file made, and for the same reason: without it the program
    * carries on with whatever the message area held from the last message.
@@ -1834,7 +1834,7 @@ class Parser {
       "Expected the record type name.",
     );
 
-    // `record Heading, Detail` — COBOL's several 01 entries under one FD. The
+    // `record Heading, Detail`: COBOL's several 01 entries under one FD. The
     // comma cannot be confused with the one in `alternate a, b`: that list is
     // introduced by its own word.
     const alternateRecordTypeNames: { name: string; span: SourceSpan }[] = [];
@@ -1881,7 +1881,7 @@ class Parser {
       } while (this.matchPunctuation(","));
     }
 
-    // `page 60 footing 55 top 3 bottom 3` — the LINAGE clause of a print file.
+    // `page 60 footing 55 top 3 bottom 3`: the LINAGE clause of a print file.
     // Matched contextually so `page`, `footing`, `top`, and `bottom` stay
     // usable as ordinary names.
     let linage: FileLinageNode | null = null;
@@ -1917,7 +1917,7 @@ class Parser {
       };
     }
 
-    // `varying <min> to <max> length <field>` — a record whose written length
+    // `varying <min> to <max> length <field>`: a record whose written length
     // is decided per record rather than padded to the longest one.
     let recordVarying: {
       min: number;
@@ -2114,7 +2114,7 @@ class Parser {
     const renames: RenamesDeclarationNode[] = [];
 
     while (!this.is("eof") && !this.matchPunctuation("}")) {
-      // `wholeDate renames yearPart through dayPart;` — a level-66 regrouping.
+      // `wholeDate renames yearPart through dayPart;`: a level-66 regrouping.
       // Recognised by the second token, because there is no `:` and no type:
       // a RENAMES entry has no picture of its own, only a span of bytes.
       if (
@@ -2131,7 +2131,7 @@ class Parser {
         continue;
       }
 
-      // `reserved 20;` — bytes the record has and nothing names. Recognised
+      // `reserved 20;`: bytes the record has and nothing names. Recognised
       // here rather than in `parseFieldDeclaration` because it has no name and
       // no type: the count is the whole declaration.
       //
@@ -2232,7 +2232,7 @@ class Parser {
     };
   }
 
-  /** `reserved <n>;` — `FILLER PIC X(n)`, with no name to reach it by. */
+  /** `reserved <n>;`: `FILLER PIC X(n)`, with no name to reach it by. */
   private parseReservedSlot(index: number): FieldDeclarationNode | null {
     const keyword = this.expectKeyword(
       "reserved",
@@ -2284,7 +2284,7 @@ class Parser {
 
   private parseFieldDeclaration(): FieldDeclarationNode | null {
     // `sensitive` is a modifier unless it is the name being declared, which the
-    // `:` after it settles — a field really can be called `sensitive`.
+    // `:` after it settles: a field really can be called `sensitive`.
     const modifierToken =
       this.isKeyword("sensitive") &&
       !(this.next.kind === "punctuation" && this.next.text === ":")
@@ -2464,7 +2464,7 @@ class Parser {
    * A name, or a record field: `payload` or `message.body`.
    *
    * Several statements take a place to put something rather than a value to
-   * read, and a place is one of those two forms — not an arbitrary expression,
+   * read, and a place is one of those two forms, never an arbitrary expression,
    * because COBOL has to be given a field it can name.
    */
   private parseFieldReference(
@@ -4893,7 +4893,7 @@ class Parser {
         const precisionToken = this.expectNumber("Expected digit count.");
         // A binary field is a whole number: a counter, a subscript, or a code.
         // The two display forms are general numbers and carry a scale like any
-        // other — `zoned` with a separate trailing sign, `unsigned` with none.
+        // other: `zoned` with a separate trailing sign, `unsigned` with none.
         let scaleToken = null;
         if (usage === "zoned" || usage === "unsigned") {
           this.expectPunctuation(
@@ -5103,7 +5103,7 @@ class Parser {
    * Parses `<Money>` after a type name.
    *
    * A type position never contains a comparison, so consuming `<` here is
-   * unambiguous — unlike a call site, which is why generic functions infer
+   * unambiguous, unlike a call site, which is why generic functions infer
    * their arguments instead of taking them explicitly.
    */
   private parseTypeArguments(): TypeNode[] {
@@ -5195,7 +5195,7 @@ class Parser {
    * A name being *declared* or *selected*, which may be a reserved word.
    *
    * Every keyword this language reserves is a word some copybook uses as a
-   * field name — `type`, `date`, `currency`, `error`, `record`, `file`,
+   * field name: `type`, `date`, `currency`, `error`, `record`, `file`,
    * `transaction`. Reserving them for the whole source text would mean a real
    * record could not be described at all, and the point of the language is to
    * describe real records.
@@ -5205,8 +5205,8 @@ class Parser {
    * there, so a keyword read here is a name and only a name.
    *
    * Deliberately not used for a parameter or a local. Those are read as bare
-   * identifiers in expressions, where a keyword really is a keyword — `log` is
-   * a statement — so accepting one at the declaration would allow a name that
+   * identifiers in expressions, where a keyword really is a keyword and `log` is
+   * a statement, so accepting one at the declaration would allow a name that
    * could be declared and never read. A record field is always reached through
    * `.`, which is why the copybook case is the one that works.
    */
@@ -5337,7 +5337,7 @@ class Parser {
    *
    * Every recovery routine below stops on the token it wants to resume at, and
    * a parse that failed without consuming anything can leave that same token
-   * current — so the loop that called it would recover to exactly where it
+   * current, so the loop that called it would recover to exactly where it
    * started, and do it again forever. The compiler ran out of memory rather
    * than reporting a syntax error, which is the worst way to be told about one.
    *

@@ -73,7 +73,7 @@ transaction post(request: Request) {
    *
    * The register itself is not part of that. Every program declares one,
    * because a subscript outside its table, an overflow or a failed OPEN is a
-   * failure the source never declared — and gating the declaration on a
+   * failure the source never declared, and gating the declaration on a
    * declared `raise` is how a generated guard came to write into a field its
    * program had never described.
    */
@@ -257,7 +257,7 @@ transaction post(request: Request) {
    * Every routine is performed THRU its exit, whether or not it was declared
    * able to raise. A `GO TO` out of the middle of a plain `PERFORM` range
    * leaves the flow of control undefined, and what puts one there is usually a
-   * generated guard rather than a `raise` anybody wrote — an overflow, a failed
+   * generated guard rather than a `raise` anybody wrote: an overflow, a failed
    * READ, a subscript outside its table. One shape for every call site, so the
    * one that can jump is not the exception nobody remembered.
    */
@@ -453,8 +453,7 @@ entry transaction two(request: Request) {
  * The exit convention, over every example rather than the one written above.
  *
  * `PERFORM ... THRU ...-EXIT` and a single terminating paragraph are the whole
- * of the audit F4 fix, and a fix proved on one program is proved for one
- * program. Every generated paragraph in the corpus is read here instead.
+ * of that fix, and a fix proved on one program is proved for one program. Every generated paragraph in the corpus is read here instead.
  */
 describe("across the corpus", () => {
   it("ends the program only in BANK-MAIN", () => {

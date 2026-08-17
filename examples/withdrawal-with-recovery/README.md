@@ -64,7 +64,7 @@ paragraph:
 ```
 
 The cell describes the base record's fields, and those fields sit at the same
-offsets in the derived record — which is exactly what `extends` guarantees. The
+offsets in the derived record, which is exactly what `extends` guarantees. The
 callee reads the caller's storage, so the closing balance in the executed test
 is the proof that it read the right record and not a stale group item.
 
@@ -112,7 +112,7 @@ jump, and the caller has to test for it:
 control undefined.
 
 The failure paragraph asks the ledger to unwind before the handler runs. BankLang
-does not own the ledger, so it does not invent compensating postings — it sends
+does not own the ledger, so it does not invent compensating postings. It sends
 `ROLLBK` and lets the institution's program decide what that means:
 
 ```cobol
@@ -155,10 +155,10 @@ program rather than by reading it.
 ## Limits
 
 The run above is against the reference runtime in `runtime/`, which is a set of
-small COBOL programs in this repository — not IBM software. It establishes that
+small COBOL programs in this repository rather than IBM software. It establishes that
 the generated program executes and computes correctly. It establishes nothing
 about Db2, CICS, or any real ledger. See [`runtime/README.md`](../../runtime/README.md).
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=withdrawal-with-recovery) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=withdrawal-with-recovery). It compiles in your browser, with the generated COBOL beside it.

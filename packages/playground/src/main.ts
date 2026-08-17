@@ -125,8 +125,8 @@ let activeCopybook = 0;
 /**
  * What the Input tab is holding, and the shape it was built for.
  *
- * Rebuilt when the program's input surfaces change — a renamed record, a file
- * added — and kept across every other recompilation, because a panel that
+ * Rebuilt when the program's input surfaces change (a renamed record, a file
+ * added) and kept across every other recompilation, because a panel that
  * resets on each keystroke is one nobody can type into.
  */
 let inputs: ProgramInputs | null = null;
@@ -138,9 +138,9 @@ const readonlyLanguage = new Compartment();
  * What a screen reader is told these two boxes are.
  *
  * CodeMirror renders its editable area as `role="textbox"` with no name at
- * all, so both of them announced as "text box" — F15, WCAG 4.1.2, on the
- * product's primary interactive surface and on the pane holding the output the
- * whole page exists to show. `contentAttributes` is where a name goes: it is
+ * all, so both of them announced as "text box". WCAG 4.1.2, on the product's
+ * primary interactive surface and on the pane holding the output the whole page
+ * exists to show. `contentAttributes` is where a name goes: it is
  * put on the contenteditable element itself rather than on a wrapper, which is
  * the element with the role.
  *
@@ -322,10 +322,9 @@ function renderOutput(): void {
 /* ------------------------------------------------------------------ *
  * What the program is given.
  *
- * B2, closing the 2026-08-07 audit's F4. Every run used to start from
- * zero-initialised storage, so `account-posting` — the example whose subject is
- * a balanced transfer — posted 0.00 against 0.00 on the feature sold as "read
- * the postings it made". This is the job around the program: the record a
+ * Every run used to start from zero-initialised storage, so `account-posting`,
+ * the example whose subject is a balanced transfer, posted 0.00 against 0.00 on
+ * the feature sold as "read the postings it made". This is the job around the program: the record a
  * caller would have filled, the dataset a step would have allocated, the PARM
  * on the EXEC card.
  * ------------------------------------------------------------------ */
@@ -464,7 +463,7 @@ let lastRun: { cobol: string; outcome: RunOutcome } | null = null;
  *
  * D4's other half. `./run` pulls in `@banklang/cobol-runtime`, the precompiler
  * and eight `runtime/*.cbl` files as text, and every one of them was in the
- * first download — including for a reader who opens the page, looks at the
+ * first download, including for a reader who opens the page, looks at the
  * COBOL, and leaves. None of it is needed until somebody asks for a run, and
  * `renderRun` is the only thing that asks.
  *
@@ -862,7 +861,7 @@ function setTrace(entry: SourceMapEntry | null): void {
  *
  * A link is a promise that the page will show what the sender saw. BankTS is
  * pre-1.0 and its syntax may change, so a link written today can be a program
- * that no longer parses — and the failure mode worth avoiding is not an error,
+ * that no longer parses, and the failure mode worth avoiding is not an error,
  * it is the *silent* one: the same characters compiling to something else, or
  * decoding into a mangled program that the reader assumes is what was sent.
  *
@@ -957,7 +956,7 @@ function boot(): void {
   const link = readUrl();
 
   // A deep link naming an example opens that example, and says so in the
-  // picker — otherwise the reader arrives at a program the picker claims is a
+  // picker, since otherwise the reader arrives at a program the picker claims is a
   // different one.
   const named = link.example
     ? ALL_EXAMPLES.find((item) => item.id === link.example)
@@ -1093,7 +1092,7 @@ function boot(): void {
     );
   });
 
-  // P4: a link to exactly this program, rather than asking the reader to
+  // A link to exactly this program, rather than asking the reader to
   // select the address bar and hope the hash came with it.
   $("#share").addEventListener("click", () => {
     if (!sourceView) {
@@ -1172,14 +1171,14 @@ function boot(): void {
   /*
    * The theme, shared with the rest of the site through the same key.
    *
-   * E5. The button said "Theme" whatever was on, with no `aria-pressed` and a
+   * The button said "Theme" whatever was on, with no `aria-pressed` and a
    * constant label, so neither a sighted nor a screen-reader user could tell
    * the current mode from the control.
    *
    * A toggle button, which is what it is: the label names the thing being
-   * toggled and `aria-pressed` says whether it is on. The ticket's other
-   * suggestion was a label naming the destination — "Dark" while light, "Light"
-   * while dark — and the two cannot both be right: a control whose label is
+   * toggled and `aria-pressed` says whether it is on. The other candidate was a
+   * label naming the destination, "Dark" while light and "Light" while dark,
+   * and the two cannot both be right: a control whose label is
    * where it takes you is an action, and `aria-pressed` on an action button
    * announces a state the label contradicts.
    *

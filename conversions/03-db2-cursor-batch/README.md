@@ -1,9 +1,9 @@
-# 03 — A Db2 cursor batch
+# 03. A Db2 cursor batch
 
 Read every account in a branch and post interest. The branch arrives on the
 PARM.
 
-Written for this repository in period style — see the
+Written for this repository in period style. See the
 [provenance note](../README.md#provenance).
 
 ## The original
@@ -15,7 +15,7 @@ Written for this repository in period style — see the
 ```
 
 Unbounded, and it exits on exactly one value. A `-911` leaves `SQLCODE` at -911
-and the loop fetches again — against a cursor Db2 has already closed under it —
+and the loop fetches again, against a cursor Db2 has already closed under it,
 and again, until an operator cancels the job. A `-904` does the same.
 
 ```cobol
@@ -103,6 +103,6 @@ BANK-FILE-003  Transaction accrueBranch posts to the ledger inside a loop
 
 It is a warning rather than an error because the compiler cannot tell whether
 the job is rerunnable by other means. The original had no restart position
-either — this conversion does not add one, and the warning is the record of
+either, and this conversion does not add one, and the warning is the record of
 that. [`parm-driven-batch`](../../examples/parm-driven-batch/) shows what adding
 one looks like.

@@ -4,12 +4,12 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, unpadded } from "./helpers";
 
 /**
- * `edited<T, "style">` — numeric-edited items, which is how a mainframe program
+ * `edited<T, "style">`: numeric-edited items, which is how a mainframe program
  * puts a number in front of a person.
  *
  * A statement whose amounts cannot be printed is not a statement. The picture is
  * generated from the value's own precision and scale rather than written out, so
- * nobody counts Z's, and assignment into the field is the formatting step —
+ * nobody counts Z's, and assignment into the field is the formatting step,
  * which is exactly what a COBOL `MOVE` into a numeric-edited item does.
  */
 

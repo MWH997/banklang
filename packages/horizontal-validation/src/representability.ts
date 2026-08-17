@@ -1,5 +1,5 @@
 /**
- * Whether BankTS can express what a COBOL program does — decided by rule.
+ * Whether BankTS can express what a COBOL program does, decided by rule.
  *
  * This is the file that turns 5,195 real programs into a number, so it is also
  * the file where that number could most easily be made up. Three constraints
@@ -11,7 +11,7 @@
  * programs it moves.
  *
  * A verdict is about *language scope*, never about correctness. "Fully
- * representable" means every construct in the file has a BankTS equivalent —
+ * representable" means every construct in the file has a BankTS equivalent,
  * not that a translation would compute the same answer, which nothing static
  * can establish and which this project does not claim.
  *
@@ -19,7 +19,7 @@
  * constructs BankTS refuses *because of what it is for*: a language that exists
  * to make banking arithmetic auditable does not get IEEE floating point, and a
  * language whose control flow must be reviewable does not get `ALTER`. Every
- * such row carries the reason, and `desirable` is answered honestly — several
+ * such row carries the reason, and `desirable` is answered honestly. Several
  * of these would be nice to have and are still excluded.
  */
 
@@ -255,7 +255,7 @@ export const SUPPORT_RULES: SupportRule[] = [
   {
     feature: "reference-modification",
     support: "adaptation",
-    note: "`substring(text, start, length)` takes constant bounds only — every out-of-range constant is `BANK-TYPE-003` at compile time and a computed bound is refused outright. That covers 194 of the 661 corpus files using reference modification; the other 451 use at least one dynamic bound and have to be restructured.",
+    note: "`substring(text, start, length)` takes constant bounds only, so every out-of-range constant is `BANK-TYPE-003` at compile time and a computed bound is refused outright. That covers 194 of the 661 corpus files using reference modification; the other 451 use at least one dynamic bound and have to be restructured.",
     desirable: true,
   },
   {
@@ -327,7 +327,7 @@ export const SUPPORT_RULES: SupportRule[] = [
      * Implemented 2026-08-08, and this row is the record of both halves.
      *
      * It said `supported` first on the strength of `LINE SEQUENTIAL` appearing
-     * in this repository — in five hand-written reference modules under
+     * in this repository, in five hand-written reference modules under
      * `runtime/`, never from the emitter. Horizontal validation caught that by
      * trying to implement a CobolCodeBench task and finding nowhere to put the
      * input, and the row was corrected to `unsupported-not-yet-implemented`.
@@ -380,7 +380,7 @@ export const SUPPORT_RULES: SupportRule[] = [
   {
     feature: "screen-section",
     support: "unsupported-by-design",
-    note: "SCREEN SECTION is a character terminal form, and is not part of Enterprise COBOL on z/OS at all — a 3270 screen is CICS BMS. Outside the target.",
+    note: "SCREEN SECTION is a character terminal form, and is not part of Enterprise COBOL on z/OS at all, since a 3270 screen is CICS BMS. Outside the target.",
     desirable: false,
   },
 
@@ -400,7 +400,7 @@ export const SUPPORT_RULES: SupportRule[] = [
   {
     feature: "exec-dli",
     support: "adaptation",
-    note: "IMS is expressed in call form — `getUnique`, `getNext` and the rest — rather than as EXEC DLI, so a command-form program is rewritten into calls.",
+    note: "IMS is expressed in call form, with `getUnique`, `getNext` and the rest, rather than as EXEC DLI, so a command-form program is rewritten into calls.",
     desirable: true,
   },
   {
@@ -472,8 +472,8 @@ export interface RepresentabilityVerdict {
  * Precedence is deliberate and is the pessimistic order: a single by-design
  * exclusion outranks any amount of supported material, because a program
  * containing `ALTER` is not one BankTS can express regardless of what else is
- * in it. Reporting the optimistic answer — "94% of its constructs are
- * supported" — would be the kind of number that reads as a migration estimate
+ * in it. Reporting the optimistic answer, "94% of its constructs are
+ * supported", would be the kind of number that reads as a migration estimate
  * and is not one.
  *
  * A feature with no rule makes the verdict `unknown` rather than being ignored.
@@ -495,8 +495,8 @@ export function classifyProgram(
    * This returned `fully-representable` until X-COBOL was measured, on the
    * reasoning that a file containing nothing unsupported contains nothing
    * unsupported. That is true and it is not what the verdict is read as. The
-   * corpus holds short teaching fragments — one is six lines whose only
-   * statement is `ADD 0 TO ZERO GIVING RETURN-CODE` — and eighty-four of them
+   * corpus holds short teaching fragments. One is six lines whose only
+   * statement is `ADD 0 TO ZERO GIVING RETURN-CODE`, and eighty-four of them
    * were being counted into the headline as programs whose every construct
    * BankTS supports. The detector had simply learned nothing about them.
    *

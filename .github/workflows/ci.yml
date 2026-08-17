@@ -19,7 +19,7 @@ env:
   GNUCOBOL_VERSION: "3.2"
 
 # Read-only by default. `security-events: write` is what the SARIF upload needs
-# and `actions: read` is what its telemetry reads — without the second it still
+# and `actions: read` is what its telemetry reads; without the second it still
 # uploads, then logs "Resource not accessible by integration" as an annotation
 # on an otherwise clean run, which is noise indistinguishable from a fault.
 permissions:
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`
@@ -90,7 +90,7 @@ jobs:
       # Not `if: always()`, which is what this was. On a red run that re-invoked
       # the compiler after the step that had just proved it was broken, and
       # published its findings to the Security tab as though they were this
-      # commit's verdict — from a build that had already failed, possibly at
+      # commit's verdict, from a build that had already failed, possibly at
       # `pnpm test`, possibly inside the checker itself. Findings uploaded from
       # a run nobody trusts are worse than no findings.
       #
@@ -118,7 +118,7 @@ jobs:
       # job before this one runs.
       #
       # Building the site also builds the playground, which bundles the
-      # compiler for the browser — so this still catches anything that
+      # compiler for the browser, so this still catches anything that
       # accidentally introduces a Node-only dependency into the compiler core.
       - name: Build the site
         run: pnpm build:site
@@ -131,7 +131,7 @@ jobs:
           retention-days: 14
 
       # R4. Packaging reads the archive back and fails if the bundle, the
-      # server or the icon is missing from it, or if the source tree got in —
+      # server or the icon is missing from it, or if the source tree got in,
       # every one of which packages successfully and prints DONE.
       - name: Package the VS Code extension
         run: pnpm build:vsix
@@ -147,15 +147,15 @@ jobs:
       # release attaches it, and the alternative is that the first CI run of
       # `zos:kit` happens on the day of a release, which is the day it must not
       # fail. It is also the cheapest possible regression test on the emitted
-      # COBOL — the bundle is every example's program, copybooks and JCL, and
+      # COBOL. The bundle is every example's program, copybooks and JCL, and
       # generating it exercises the whole backend.
       - name: Build the z/OS conformance bundle
         run: pnpm zos:kit
 
       # The identical invocation `release.yml` archives with, run here on every
       # push so that release day is not the first time it runs. It is
-      # GNU-tar-specific — `--sort` does not exist in the bsdtar a macOS
-      # workstation has — so a developer cannot exercise it locally, which is
+      # GNU-tar-specific, since `--sort` does not exist in the bsdtar a macOS
+      # workstation has, so a developer cannot exercise it locally, which is
       # exactly the kind of step that is discovered to be broken at the worst
       # moment. `--sort=name` with a fixed mtime and owner because the bundle
       # is byte-identical across generations, and an archive that is not would
@@ -178,7 +178,7 @@ jobs:
   # R2. The inventory a bank's security function asks for before anything else.
   #
   # A job of its own, in parallel, for two reasons. It resolves the prebuilt
-  # binaries for every platform — about a gigabyte, and the only way the BOM
+  # binaries for every platform, about a gigabyte, and the only way the BOM
   # names a licence for all of them; see the measurement in `tools/sbom.ts`.
   # And it deliberately does not use `cache: "pnpm"`, because that store would
   # then carry every platform's binaries into every other job's cache.
@@ -193,7 +193,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`

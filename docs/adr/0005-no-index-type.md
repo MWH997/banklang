@@ -85,8 +85,8 @@ it on the same terms.
 
 ## Related
 
-- [ADR-0001](0001-bankts-restricted-language.md) (what BankTS refuses and why
-- [docs/validation/horizontal-validation.md](../validation/horizontal-validation.md)
-  ) where the corpus figures come from
-- `packages/horizontal-validation/src/representability.ts`, the `usage-index`
+- [ADR-0001](0001-bankts-restricted-language.md): what BankTS refuses and why
+- [docs/validation/horizontal-validation.md](../validation/horizontal-validation.md):
+  where the corpus figures come from
+- `packages/horizontal-validation/src/representability.ts`: the `usage-index`
   row this decision fixes

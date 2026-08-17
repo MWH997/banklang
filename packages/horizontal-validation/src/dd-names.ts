@@ -1,8 +1,8 @@
 /**
  * Turning a set of logical file names into legal, distinct DD names.
  *
- * A benchmark names its files the way a Unix program does — `input.txt`,
- * `task_func03_out1` — and a COBOL file is reached through a DD name, which is
+ * A benchmark names its files the way a Unix program does (`input.txt`,
+ * `task_func03_out1`) and a COBOL file is reached through a DD name, which is
  * one to eight alphanumeric characters. Something has to map between them, and
  * the something has to be a function of *the whole set* rather than of each
  * name alone.
@@ -16,7 +16,7 @@
  * `TASKFUNC` is exactly eight characters, so the truncation landed precisely at
  * the end of the shared prefix and threw away every character that
  * distinguished the three files. Nineteen of CobolCodeBench's forty-six tasks
- * name their files that way, and all nineteen became unrunnable — a run whose
+ * name their files that way, and all nineteen became unrunnable: a run whose
  * three files are one file measures nothing. The largest single blocker in the
  * benchmark was this function.
  *
@@ -32,7 +32,7 @@ const DD_LIMIT = 8;
  * A logical name reduced to the alphabet a DD name allows.
  *
  * Everything that is not a letter or a digit goes, and what is left is
- * uppercased. Unicode survives only in so far as it is `[A-Za-z0-9]` — a name
+ * uppercased. Unicode survives only in so far as it is `[A-Za-z0-9]`, so a name
  * of entirely non-ASCII characters reduces to nothing, which `allocate` then
  * has to give a name to rather than crash on.
  */
@@ -85,7 +85,7 @@ export function ddEndsCandidate(base: string): string {
  * Deterministic in the strong sense the validation harness needs: the answer
  * depends on the *set* of names and nothing else. The input is sorted before
  * anything is allocated, so the order the caller happened to read the files in
- * — a JSON object's key order, a directory listing — cannot change a name.
+ * (a JSON object's key order, a directory listing) cannot change a name.
  *
  * Three rounds, each disturbing less than the next. A name whose first eight
  * characters are already unique in the set keeps them, which is the case for
@@ -99,7 +99,7 @@ export function ddEndsCandidate(base: string): string {
  * run than `TASK7F3A`. The counter is base-36, so a group of more than ten
  * still fits in one character.
  *
- * A name that reduces to nothing — punctuation only, or non-ASCII only — is
+ * A name that reduces to nothing, punctuation only or non-ASCII only, is
  * given `DD` and the same treatment, because refusing it would make the harness
  * fail on a corpus rather than measure it.
  */

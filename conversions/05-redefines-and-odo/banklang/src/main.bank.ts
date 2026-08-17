@@ -76,7 +76,7 @@ entry transaction readCustomers(customer: CustomerRecord, totals: ReadTotals) {
 
       // `CM-PERSONAL` and `CM-CORPORATE` were 88-levels on `CM-KIND`. BankTS
       // has `enum` for a field with a fixed set of values, and the importer
-      // does not turn 88s into one — it would have to decide that the levels
+      // does not turn 88s into one: it would have to decide that the levels
       // it saw are the whole set, and a copybook does not say so. The test is
       // written out here instead, against the same letters.
       if customer.cmKind == "P" {

@@ -17,7 +17,7 @@ entry transaction postOne(account: string<16>, amount: MoneyBDT, idempotencyKey:
 // them. Nothing of it reaches the COBOL that ships.
 //
 // What a test may say is what a zUnit driver can see. It runs in its own
-// program, so this program's WORKING-STORAGE is not reachable — `given` is the
+// program, so this program's WORKING-STORAGE is not reachable. `given` is the
 // PARM the step is started with, and `expect` is the calls it makes, in order.
 test postsBothLegs for postOne {
   given account = "0001234567890123";

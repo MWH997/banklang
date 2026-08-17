@@ -12,7 +12,7 @@ packages:
 # system's keychain, to hold a marketplace token; it is deprecated upstream, and
 # publishing happens in CI from `VSCE_PAT` in the environment. `@vscode/vsce-sign`
 # unpacks a signing binary used when publishing, which is a step this repository
-# does not perform — `vsce package` does not touch it. If publishing ever moves
+# does not perform, and `vsce package` does not touch it. If publishing ever moves
 # to a workstation, turn the signer on there and read what it fetches first.
 allowBuilds:
   esbuild: true
@@ -25,7 +25,7 @@ allowBuilds:
 #
 # **Written out rather than left to the default.** pnpm 11 turns this on at 1440
 # minutes on its own, and until 2026-08-07 that default was the whole of the
-# protection here — three files described a policy this workspace held, and this
+# protection here: three files described a policy this workspace held, and this
 # one held a comment about it. A default is a control somebody else can change:
 # a pnpm release that lowers it, or a contributor on pnpm 10 where the setting
 # did not exist, silently gets none of this, and nothing in the repository would
@@ -42,7 +42,7 @@ minimumReleaseAge: 1440
 # otherwise pull in the day it is published.
 #
 # When a fresh version arrives as a transitive dependency, pnpm offers to add it
-# to `minimumReleaseAgeExclude` — an exemption for the one package the policy
+# to `minimumReleaseAgeExclude`, an exemption for the one package the policy
 # just stopped, which is the opposite of what the policy is for. Naming a
 # version that is already past the cutoff keeps the check meaning something.
 #
@@ -52,8 +52,8 @@ minimumReleaseAge: 1440
 overrides:
   vite: 8.1.5
   # Stryker reaches qs through typed-rest-client, four levels down, and pins a
-  # line with a `stringify` DoS (GHSA-q8mj-m7cp-5q26). Nothing here calls it —
-  # the mutation runners talk to no HTTP service — but "unreachable" is an
+  # line with a `stringify` DoS (GHSA-q8mj-m7cp-5q26). Nothing here calls it,
+  # since the mutation runners talk to no HTTP service, but "unreachable" is an
   # argument that has to be re-made every time somebody scans this repository,
   # and the patched release is a patch bump on the same line.
   qs: ^6.15.3

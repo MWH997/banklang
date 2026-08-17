@@ -1,20 +1,25 @@
-# Banking Safety Specification
+# Diagnostics
 
-## 1. Diagnostic philosophy
+Every message the compiler can produce, what causes it, and what to do about it.
+From the command line, `bankc explain BANK-LED-001` prints any entry below.
 
-BankLang must catch banking and mainframe hazards before COBOL is generated.
+## 1. What a diagnostic is
 
-Diagnostics are product features. They should be stable, documented, and useful.
+The point of a diagnostic here is to catch a banking or mainframe hazard before
+any COBOL is generated, so these are treated as a product feature: stable,
+documented, and specific enough to act on. No message can be emitted without an
+entry in this catalogue. `tests/diagnostic-catalogue.test.ts` reads the compiler
+source for identifiers and fails on any that is undocumented.
 
-Every diagnostic has:
+Every diagnostic carries:
 
-- ID
-- severity
-- title
-- explanation
-- source span
-- backend profile
-- remediation hint
+- an identifier
+- a severity
+- a title
+- an explanation
+- the span of source that caused it
+- the backend profile it applies to
+- a remediation hint
 
 ## 2. Diagnostic ID namespaces
 
@@ -39,9 +44,9 @@ BANK-JOB-*    job descriptor
 Two of these are not about a BankTS program at all. `BANK-COPY-008` through
 `BANK-COPY-012` are about a copybook or a DCLGEN member handed to the compiler,
 and `BANK-JOB-*` is about a `job.json`. They carry identifiers for the same
-reason everything else here does: before the 2026-08-07 audit's F3 they were
-`throw new Error`, and a message with no identifier is one nobody can look up,
-count or link to.
+reason everything else here does. They used to be plain `throw new Error`
+calls, and a message with no identifier is one nobody can look up, count or
+link to.
 
 ## 3. Syntax and type diagnostics
 

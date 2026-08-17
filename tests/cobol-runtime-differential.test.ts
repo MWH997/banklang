@@ -37,12 +37,12 @@ import {
  * `packages/cobol-runtime` exists so the playground can run what it compiles.
  * On its own that is a second implementation of this project's semantics
  * written by the same hand as the first, which is worth exactly nothing as
- * evidence — a shared misreading of the Language Reference would agree with
+ * evidence, since a shared misreading of the Language Reference would agree with
  * itself perfectly.
  *
  * So every program is run twice: once compiled by `cobc` and executed as a
  * native binary against `runtime/`, and once interpreted. Then the two are
- * compared on everything a reader of the playground would look at — the return
+ * compared on everything a reader of the playground would look at: the return
  * code, what the program displayed, the ledger journal, the closing balances,
  * and the audit log. A difference in any of them fails here.
  *
@@ -75,7 +75,7 @@ function panelParm(source: string, sourceFile: string): string {
  *
  * Unscripted, `runtime/DSNHLI.cbl` succeeds every FETCH, so a cursor loop only
  * ends by reaching its own bound. Both sides did that and agreed on return code
- * 12 — the same shape of empty agreement the empty PARM produced. Running the
+ * 12, the same shape of empty agreement the empty PARM produced. Running the
  * panel's row count through both is what makes the browser's answer for
  * `branch-accrual-cursor` a checked one.
  */
@@ -111,7 +111,7 @@ function compare(project: string): Comparison {
   // The PARM is the playground's own, built by `packages/playground/src/inputs`
   // from the emitter's account of the parameter area. It used to be empty here,
   // which meant both sides failed the length check on the first statement and
-  // agreed on return code 12 — so the generated parsing was compared, but only
+  // agreed on return code 12, so the generated parsing was compared, but only
   // on the path that never reaches it. A real PARM puts the separate sign, the
   // numeric class test and every offset in the linkage group under `cobc` as
   // well, and makes what the Input tab writes the thing being checked.
@@ -146,8 +146,8 @@ describe("the interpreter and GnuCOBOL, on the same program", () => {
    *
    * Two runs that both refuse the PARM agree perfectly and check nothing, which
    * is what this lane did for every PARM-driven example until the Input panel
-   * had a PARM to give it. The refusal is easy to fall back into — an empty
-   * default, a seed that stops matching the parameter list — and it fails
+   * had a PARM to give it. The refusal is easy to fall back into: an empty
+   * default, or a seed that stops matching the parameter list, and it fails
    * silently, by passing.
    *
    * Asserted on the interpreted side, which needs no `cobc`: the per-project
@@ -163,7 +163,7 @@ describe("the interpreter and GnuCOBOL, on the same program", () => {
       const cobol = generatedCobol(source, sourceFile);
 
       // `batchParmFields`, not `takesParm`. The lexical test is true of any
-      // `PROCEDURE DIVISION USING`, and an IMS program's names its PCBs — the
+      // `PROCEDURE DIVISION USING`, and an IMS program's names its PCBs, so the
       // region passes those, not a job step, and there is no PARM to build.
       const program = compile(source, { sourceFile }).program;
       if (!program || batchParmFields(program).length === 0) {
@@ -198,7 +198,7 @@ describe("the interpreter and GnuCOBOL, on the same program", () => {
    * The cursor lane, held open for the same reason.
    *
    * An unscripted cursor ends by exhausting its own bound, which both sides do
-   * identically — agreement that says nothing about whether end of data is
+   * identically: agreement that says nothing about whether end of data is
    * handled, because end of data never arrives. The script has to reach the
    * FETCH's statement number to do anything at all, and that number comes from
    * the precompiler; if the pattern that reads it back ever stops matching,

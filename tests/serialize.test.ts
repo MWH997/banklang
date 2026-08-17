@@ -9,10 +9,10 @@ import { compile } from "../packages/compiler/src/index";
 import { flowed, localCobol } from "./helpers";
 
 /**
- * `json` and `xml` — COBOL `JSON GENERATE` and `XML GENERATE`.
+ * `json` and `xml`: COBOL `JSON GENERATE` and `XML GENERATE`.
  *
- * A batch that has to hand a record to something outside the estate — a queue,
- * a gateway, a file a distributed system reads — otherwise builds the text by
+ * A batch that has to hand a record to something outside the estate (a queue,
+ * a gateway, a file a distributed system reads) otherwise builds the text by
  * hand with `STRING`, which is where the quoting and the escaping go wrong.
  *
  * COBOL builds the document from the group's own field names, so nothing in the
@@ -276,7 +276,7 @@ ${body}
 });
 
 /**
- * `json <text> into <record>` — `JSON PARSE`, the same statement reversed.
+ * `json <text> into <record>`: `JSON PARSE`, the same statement reversed.
  *
  * This is the one construct in the compiler whose COBOL the local validator
  * accepts and then does not run, so it carries a warning rather than being
@@ -354,7 +354,9 @@ entry transaction ingest(card: Card, message: Message) {
     // build executes one, which is why the warning is about what the stub does
     // not attempt rather than about a statement that did nothing at all.
     expect(warning?.hint).toContain("BANKJSON");
-    expect(warning?.hint).toContain("not IBM's parser");
+    // The claim, not one wording of it: the hint has to tell the reader the
+    // local run is a scan and not the parser the target ships.
+    expect(warning?.hint).toMatch(/(?:not|rather than) IBM's parser/);
   });
 
   it("says nothing about a program that only generates", () => {
@@ -365,7 +367,7 @@ entry transaction ingest(card: Card, message: Message) {
 });
 
 /**
- * `XML PARSE` has no form that fills a record — in Enterprise COBOL as in
+ * `XML PARSE` has no form that fills a record, in Enterprise COBOL as in
  * GnuCOBOL it is event-driven, and the handler moves what it recognises itself.
  * There is no COBOL for `xml payload into account` to become.
  */
@@ -412,7 +414,7 @@ entry transaction publish(ledger: Ledger) {
  * A `JSON PARSE` has two ways to go wrong and `ON EXCEPTION` catches one.
  *
  * Exception conditions terminate the statement and set JSON-CODE. Nonexception
- * conditions do not terminate it, set JSON-STATUS, and — in IBM's words — "might
+ * conditions do not terminate it, set JSON-STATUS, and, in IBM's words, "might
  * result in the receiver being partially modified". So a document whose names do
  * not line up with the record leaves the statement completing normally, the
  * exception branch untaken, and the record holding some fields and not others.

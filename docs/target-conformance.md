@@ -24,17 +24,16 @@ than the other:
 - **Fresh output**, emitted from every example, because that is what the
   compiler does today.
 - **The checked-in fixtures**, because a golden file that holds a defect freezes
-  it. Two of the 2026-08-05 audit's findings were sitting in
-  `tests/fixtures/`, where every run of the suite compared each against itself
-  and agreed.
+  it. Two real defects were once sitting in `tests/fixtures/`, where every run
+  of the suite compared each against itself and agreed.
 - **The evidence bundles**, because they are what a reader is invited to check
   the claims against.
 
 Manuals, as extracted in `vendor-docs/`:
 
 - **LR**: Enterprise COBOL for z/OS 6.4 Language Reference
-- **PG** (Enterprise COBOL for z/OS 6.4 Programming Guide
-- **JCL**) z/OS MVS JCL Reference
+- **PG**: Enterprise COBOL for z/OS 6.4 Programming Guide
+- **JCL**: z/OS MVS JCL Reference
 - **MQ**: IBM MQ for z/OS Application Programming Reference
 - **CICS**: CICS TS for z/OS: Developing CICS Applications
 
@@ -67,7 +66,7 @@ Manuals, as extracted in `vendor-docs/`:
 
 Enterprise COBOL takes either delimiter, so nothing here is refused by the
 target. It is in the linter because it is refused by a _reviewer_, and because
-the 2026-08-05 audit's F13 came back: `MOVE 'Y'` two lines under a `VALUE "N"`
+this has already been got wrong once: `MOVE 'Y'` two lines under a `VALUE "N"`
 survived in a shipped example, its evidence bundle and a golden fixture, while a
 test asserting exactly this passed. The test's program reached the boolean
 written as a condition, which emits `IF … MOVE "Y" … ELSE MOVE "N"`, and never
@@ -135,9 +134,9 @@ the review.
 The rules above are all about whether the toolchain will accept the text. This
 section is about what happens when it does.
 
-`packages/zos-lint` exists because the 2026-08-07 audit found two shipped
-programs that could not do what they claimed on the target, and **every check in
-this repository passed on both**. The conformance linter read their style, `cobc`
+`packages/zos-lint` exists because two shipped programs turned out to be unable
+to do what they claimed on the target, and **every check in this repository
+passed on both**. The conformance linter read their style, `cobc`
 read their syntax, the differential runtime read their arithmetic, and the
 examples verified. None of those asks "this program aborts on connect" or "this
 reply is discarded", because none of them is a question about behaviour.
@@ -197,6 +196,6 @@ with a machine.
 
 ## Related pages
 
-- [generated-code-standards.md](generated-code-standards.md), the house style, and what checks each rule
-- [divergences.md](divergences.md) (GnuCOBOL against Enterprise COBOL
-- [verification.md](verification.md)) the whole testing strategy
+- [generated-code-standards.md](generated-code-standards.md): the house style, and what checks each rule
+- [divergences.md](divergences.md): GnuCOBOL against Enterprise COBOL
+- [verification.md](verification.md): the whole testing strategy

@@ -2,9 +2,9 @@ name: release
 
 # R2, the half a workflow can do.
 #
-# Publishing a release is four claims — this is the code at that version, these
+# Publishing a release is four claims: this is the code at that version, these
 # are the changes, this is what is inside it, and this artifact came from that
-# code — and three of them can be made mechanically. What cannot is the tag
+# code. Three of them can be made mechanically. What cannot is the tag
 # itself: a signature needs a key that belongs to a person, not to a runner.
 # So this refuses to publish an unsigned tag rather than pretending it signed
 # one.
@@ -13,7 +13,7 @@ name: release
 #
 #   1. Rename `## [Unreleased]` in CHANGELOG.md to `## [X.Y.Z] - YYYY-MM-DD`.
 #   2. Check `version` in package.json, CITATION.cff and the extension manifest
-#      agree — `pnpm test` fails if they do not.
+#      agree, and `pnpm test` fails if they do not.
 #   3. `git tag -s vX.Y.Z -m "X.Y.Z"` and push that tag alone.
 #
 # Everything below then runs on its own.
@@ -40,7 +40,7 @@ jobs:
     # cannot ask for more than the calling job holds. This file's default is
     # `contents: read`, so the SARIF upload's `security-events: write` was an
     # escalation and the whole run ended as `startup_failure` before a single
-    # job began — no logs, no annotation, just "a workflow file issue".
+    # job began: no logs, no annotation, just "a workflow file issue".
     #
     # Nothing caught it because nothing had run it: the release workflow only
     # triggers on a tag, and until 0.10.0 this repository had never had one.
@@ -76,7 +76,7 @@ jobs:
 
       # An unsigned tag is a release anybody with push access could have made
       # and nobody can attribute. GitHub verifies the signature server-side, so
-      # the answer comes from the API rather than from a key on the runner —
+      # the answer comes from the API rather than from a key on the runner,
       # which also means this cannot be satisfied by a runner holding a key.
       #
       # A lightweight tag has no object to sign at all, and reads here as
@@ -101,7 +101,7 @@ jobs:
           fi
           echo "$TAG is signed and verified."
 
-      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH —
+      # Before `setup-node`, because its `cache: "pnpm"` needs pnpm on PATH,
       # and through the action rather than `npm install -g`, which would run
       # under whatever Node the runner image happens to ship rather than the
       # version this repository pins. The version comes from `packageManager`
@@ -130,7 +130,7 @@ jobs:
 
       # The bundle somebody with z/OS access runs. Attached to the release so
       # that closing the native-IBM gap does not first require Node, pnpm and a
-      # clone — the reader most likely to have a mainframe is the reader least
+      # clone, since the reader most likely to have a mainframe is the reader least
       # likely to want a JavaScript toolchain.
       #
       # No separate checksum file. Every one of the bundle's members carries a

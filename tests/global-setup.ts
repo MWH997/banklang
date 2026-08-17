@@ -6,7 +6,7 @@ import { prepareRuntime } from "../tools/conformance";
  * The only thing it does is build the reference runtime in `runtime/`, whose
  * six modules every executed conformance test calls into. They are the same for
  * the whole run, so building them per test was six `cobc` invocations of
- * repeated work each — most of what those tests spent their time on, and enough
+ * repeated work each, most of what those tests spent their time on, and enough
  * that a loaded runner pushed them past the default timeout. A suite that
  * reports a compiler defect because the machine was busy is worse than a slow
  * suite.

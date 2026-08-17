@@ -11,7 +11,7 @@
  *
  * So a snapshot is taken before a language change lands, under a name, and kept
  * in `evidence/horizontal-history/`. The delta table in the results page is
- * computed from those files rather than written by hand — which matters, because
+ * computed from those files rather than written by hand, which matters, because
  * "line-sequential moved 155 files" is exactly the kind of claim that gets
  * rounded up in the retelling.
  *
@@ -57,7 +57,7 @@ export function snapshotIndex(cwd = process.cwd()): SnapshotIndexEntry[] {
 /**
  * Copy the current evidence under a label.
  *
- * The label names *the change that follows*, not the state — `line-sequential`
+ * The label names *the change that follows* rather than the state, so `line-sequential`
  * is "what the numbers were before line-sequential existed". That reads
  * correctly in the delta table, which is the only place these files are used.
  */

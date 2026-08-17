@@ -49,7 +49,7 @@ validation/cache/
 # Working papers: this project's audits of itself and its ticket lists.
 #
 # They are the record of how the work was decided and they stay out of the
-# public repository — one of them documents rewrites of this repository's own
+# public repository, and one of them documents rewrites of this repository's own
 # history, which is not a thing to publish. Kept on disk, referenced by date in
 # commit messages where the reasoning matters, and never tracked.
 #
@@ -61,7 +61,7 @@ docs/working/
 # The benchmarks' own COBOL, held apart from the specifications.
 #
 # `tools/horizontal-materialise.ts` splits every semantic benchmark record into
-# a spec — prose, inputs, expected outputs — and the reference solution. The
+# a spec (prose, inputs, expected outputs) and the reference solution. The
 # spec is committed and is what a BankTS implementation is written from; this is
 # the other half, and it is derived from the ignored cache rather than authored,
 # so nothing is lost by keeping it out. Its absence from git is what makes the

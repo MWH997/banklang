@@ -12,14 +12,14 @@ import {
  * The gate that stops one untested file hiding inside a passing average.
  *
  * Stryker applies `thresholds.break` to the aggregate. The emitter lane scored
- * 61.65 against a break of 60 and the build was green — while
+ * 61.65 against a break of 60 and the build was green, while
  * `packages/cobol-ir/src/index.ts` inside it scored 44.12, with 81 surviving
  * mutants and 33 lines no test reaches. Two files at 67 and 72 carried it, and
  * nothing in the run said so.
  *
  * **The scorer is held to Stryker's own output, not to arithmetic that looks
  * right.** The first version counted `Ignored` mutants in the denominator and
- * put `cobol-ir` at 10.30% where the tool said 44.12 — 670 of its 874 mutants
+ * put `cobol-ir` at 10.30% where the tool said 44.12: 670 of its 874 mutants
  * are ignored by config. A gate that disagrees with the tool it gates will be
  * argued with and then switched off, so these three cases are the three files
  * the emitter lane really produced, with the percentages it really printed.
@@ -104,7 +104,7 @@ describe("the per-file floor", () => {
   };
 
   it("fails the file the aggregate would have carried", () => {
-    // The aggregate here is 65% — above the lane's break of 60 — while
+    // The aggregate here is 65%, above the lane's break of 60, while
     // `carried.ts` is at 40. That is the emitter lane's shape exactly.
     const aggregate = scoreFile([
       ...report.files["good.ts"].mutants,
@@ -137,7 +137,7 @@ describe("the per-file floor", () => {
    * `packages/config/src/schema.ts` is 38 mutants, all `Ignored`: it builds a
    * JSON schema, so it is string literals, and the lanes exclude
    * `StringLiteral` and `Regex` because changing a message is not a behaviour
-   * change worth a test. This gate failed the build on it — the mirror of the
+   * change worth a test. This gate failed the build on it, the mirror of the
    * aggregate hiding a bad file, and just as wrong.
    */
   it("does not fail a file whose mutants were all excluded", () => {

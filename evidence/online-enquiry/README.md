@@ -6,9 +6,9 @@ Generated artifacts for the CICS + Db2 example.
 
 Embedded SQL requires the Db2 precompiler and CICS commands require the CICS
 translator, so a plain COBOL compiler rejects both. BankLang's own precompiler
-performs the equivalent translation — `EXEC SQL INCLUDE SQLCA` expands to the
+performs the equivalent translation: `EXEC SQL INCLUDE SQLCA` expands to the
 SQLCA, and each block becomes a runtime call passing every data item it
-referenced — after which the program compiles with GnuCOBOL.
+referenced, after which the program compiles with GnuCOBOL.
 
 **What that proves:** the surrounding COBOL is valid, every host variable and
 data name resolves, and SQLCA fields such as `SQLCODE` are declared and usable.

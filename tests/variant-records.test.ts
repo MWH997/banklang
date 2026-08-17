@@ -4,7 +4,7 @@ import { compile } from "../packages/compiler/src/index";
 import { unpadded } from "./helpers";
 
 /**
- * `redefines` and `depending on` — the two clauses a real copybook is built on.
+ * `redefines` and `depending on`: the two clauses a real copybook is built on.
  *
  * The variant record is how a legacy layout says "this area means different
  * things depending on the record type", and `OCCURS ... DEPENDING ON` is what
@@ -102,7 +102,7 @@ describe("redefines", () => {
 
   /**
    * COBOL requires the redefinitions of an area to follow its description with
-   * nothing in between that takes storage of its own — "REDEFINES must follow
+   * nothing in between that takes storage of its own: "REDEFINES must follow
    * the original definition", as GnuCOBOL puts it, and the Language Reference
    * says the same. The compiler used to accept it and lay the redefinition out
    * at the intervening field's offset, so the emitted program did not compile
@@ -144,7 +144,7 @@ describe("redefines", () => {
   });
 
   /**
-   * Neither end of a redefinition may vary in length — the area's size has to
+   * Neither end of a redefinition may vary in length, since the area's size has to
    * be known to lay out what follows. The compiler used to emit
    * `REDEFINES ... OCCURS 1 TO n DEPENDING ON`, which GnuCOBOL rejects as
    * "cannot be variable length" and no COBOL accepts.
@@ -204,7 +204,7 @@ describe("occurs depending on", () => {
    * A field after a varying table is *variably located*: its position is the
    * start of the table plus the count times the entry, so it moves every time
    * the count does. The copybook can only state the offset it has when the
-   * table is full — an offset no other record has — and the layout report said
+   * table is full, an offset no other record has, and the layout report said
    * exactly that, with nothing to say it was one value of many.
    *
    * IBM calls this complex ODO and permits it. GnuCOBOL refuses it outright, so
@@ -237,8 +237,8 @@ entry transaction load1(legacy: LegacyRecord) {
  * Where a redefining field is reported.
  *
  * It re-reads the bytes the field it redefines occupies, so it starts where
- * that field starts. The layout report put it at the running offset — after the
- * storage it shares — so a copybook checked against a real dataset had the
+ * that field starts. The layout report put it at the running offset, past the
+ * storage it shares, so a copybook checked against a real dataset had the
  * redefinition pointing at the field beyond it.
  */
 describe("the offset a redefines is reported at", () => {
@@ -273,7 +273,7 @@ entry transaction touch1(master: Master) {
    * The layout walker carried the anchor for a record's own fields and not for
    * the fields of a group inside it, so a redefines nested in a group was
    * reported forty bytes past the storage it aliases while its neighbours were
-   * right — the shape that gets read as a plausible layout rather than a bug.
+   * right: the shape that gets read as a plausible layout rather than a bug.
    */
   it("is the start of what it redefines when the redefines is inside a group", () => {
     const result = compile(`module Variant;

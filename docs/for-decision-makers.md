@@ -61,9 +61,11 @@ Those are compile errors, so the build stops and produces no artifact. A warning
 or a lint rule would leave somebody to decide whether to act on it.
 
 The three above are a retry that posts twice, money moving with no audit trail,
-and a ledger that does not balance. There are more than ninety diagnostics, each
-one documented with an explanation and a remediation, and each one provoked by a
-test that fails if the rule stops working.
+and a ledger that does not balance. There are more than a hundred diagnostics,
+each one documented with an explanation and a remediation, and each one provoked
+by at least one test. Whether those tests would notice the rule itself being
+weakened is a different question, and the mutation scores below are what this
+project has to say about it.
 
 **Why this is the interesting part.** Every one of those defects is normally
 caught by a person: a reviewer who knows to look, a tester who thinks of the

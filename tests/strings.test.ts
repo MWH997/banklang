@@ -7,7 +7,7 @@ import { unpadded } from "./helpers";
  * String handling: `trim`, `upper`, `lower`, `substring`, `concat`, and `now`.
  *
  * Without these a program cannot assemble a narrative, parse a composite key,
- * or mask a card number — and masking is what the `sensitive` declassification
+ * or mask a card number, and masking is what the `sensitive` declassification
  * rule rests on, which until now could only be a stub returning `"****"`.
  *
  * Every result has a length the compiler can name, because a COBOL field has a
@@ -190,8 +190,8 @@ describe("now", () => {
  *
  * The backend knew and raised an internal invariant, which reaches the author
  * as a stack trace rather than a diagnostic:
- * `toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable way to parse a
- * rate written in thousandths — crashed `bankc` while a benchmark task was
+ * `toNumber(concat("0.", substring(rate, 7, 3)))`, a reasonable way to parse a
+ * rate written in thousandths, crashed `bankc` while a benchmark task was
  * being written. An internal invariant is for what cannot happen.
  */
 describe("a value-building call written where no statement can go", () => {

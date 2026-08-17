@@ -12,7 +12,7 @@ import {
  *
  * Mutation testing asks one question: if this line were wrong, would anything
  * fail? A test that cannot answer it for the mutated code costs a full run of
- * itself per mutant and contributes nothing — so what is left out is everything
+ * itself per mutant and contributes nothing, so what is left out is everything
  * that does not exercise the typechecker or the semantic analyser:
  *
  * - the repository-hygiene tests (`conversions`, `documentation`,

@@ -11,8 +11,8 @@ import { verificationPlan } from "../tools/verify-examples";
  *
  * `tools/example-projects.ts` was written because five tools had each walked
  * `examples/` by hand and each had assumed every entry is one directory holding
- * one program. `end-of-day-settlement` is not — a night is four programs and a
- * sort in one stream — so all five broke on the day it was added.
+ * one program. `end-of-day-settlement` is not, since a night is four programs and a
+ * sort in one stream, so all five broke on the day it was added.
  *
  * CI was the sixth, and nobody noticed for a month because the branch that
  * added the job has not been pushed. Its `Verify every example` step ran

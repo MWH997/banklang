@@ -113,7 +113,7 @@ export function parseIbmResult(text: string, path: string): IbmResult {
     raw = JSON.parse(text);
   } catch (error) {
     throw new IbmResultError(
-      `${path}: not valid JSON — ${error instanceof Error ? error.message : String(error)}`,
+      `${path}: not valid JSON, ${error instanceof Error ? error.message : String(error)}`,
     );
   }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
@@ -231,7 +231,7 @@ export function ibmClaimSentence(status: IbmValidationStatus): string {
   }
   return (
     `Native IBM Enterprise COBOL validation: ${status.compiler} ` +
-    `${status.compilerVersion} on ${status.platform}, ${status.date} — ` +
+    `${status.compilerVersion} on ${status.platform}, ${status.date}. ` +
     `${status.compiled} compiled, ${status.executed} executed, ` +
     `${status.matched} matched expected output, ${status.failed} failed.`
   );
@@ -242,7 +242,7 @@ export function ibmClaimSentence(status: IbmValidationStatus): string {
  *
  * `text` is the file's bytes or null when there is no file. Passing the bytes
  * rather than a path keeps this usable from the browser bundle and from a test
- * that never touches the filesystem — and keeps the decision in one function
+ * that never touches the filesystem, and keeps the decision in one function
  * rather than one per caller.
  */
 export function ibmValidationStatus(text: string | null): IbmValidationStatus {
@@ -260,7 +260,7 @@ export function ibmValidationStatus(text: string | null): IbmValidationStatus {
     // result file nobody can parse is not evidence of a run.
     return {
       performed: false,
-      reason: `the imported IBM result could not be read — ${
+      reason: `the imported IBM result could not be read: ${
         error instanceof Error ? error.message : String(error)
       }`,
     };

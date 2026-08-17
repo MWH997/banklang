@@ -6,7 +6,7 @@
     <title>BankLang: a banking language that compiles to IBM COBOL</title>
     <meta
       name="description"
-      content="Write banking logic in BankTS, which has TypeScript's type syntax and statements of its own for transactions, files, cursors and queues, and get readable IBM Enterprise COBOL. The compiler refuses to compile financially unsafe programs: unbalanced ledger postings, retries that post twice, money moving with no audit trail."
+      content="COBOL handles money well and knows nothing about bookkeeping. BankLang is a compiler for banking programs: you write BankTS, it emits IBM Enterprise COBOL, and it refuses to build a program whose debits and credits do not match."
     />
     <link rel="canonical" href="{{ORIGIN}}/" />
     <link
@@ -26,7 +26,7 @@
     />
     <meta
       property="og:description"
-      content="It refuses to compile financially unsafe programs. Unbalanced postings, missing idempotency keys and money movement with no audit trail are compile errors."
+      content="A compiler that refuses to build a banking program whose debits and credits do not match, whose retry can post twice, or whose money moves with no audit trail."
     />
     <meta property="og:image" content="{{ORIGIN}}/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -59,43 +59,48 @@
 {{HEADER}}
 
     <main>
-      <!-- 1. What it is. -->
+      <!-- 1. What it is, in words anyone can follow. -->
       <section id="what" class="hero">
-        <h1>A compiler from a small banking language to readable IBM COBOL.</h1>
+        <h1>Write your banking logic. Get COBOL the mainframe team can read.</h1>
         <p class="lede">
-          You write <strong>BankTS</strong>. Its types are TypeScript's
-          (<code>decimal&lt;18, 2&gt;</code>, <code>string&lt;16&gt;</code>) and
-          its statements are its own: <code>transaction</code>,
-          <code>file</code>, <code>cursor</code>, <code>queue</code>. It emits
-          IBM Enterprise COBOL, a copybook for every record, and the JCL to build
-          and run it. No model decides what is generated, and the same input
-          always produces byte-identical output.
+          BankLang is a compiler. You write the program in
+          <strong>BankTS</strong>, a small language that borrows TypeScript's
+          syntax, and it emits IBM Enterprise COBOL, a copybook for every
+          record, and the job that builds and runs it. No model is involved
+          anywhere in that: the same input produces byte-identical output every
+          time.
+        </p>
+        <p class="lede lede--secondary">
+          COBOL handles money itself well: amounts are packed decimal, exact to
+          the penny. What it has no concept of is bookkeeping. A transfer that
+          debits one account and credits another a different amount is, to a
+          COBOL compiler, two perfectly correct statements. BankLang knows they
+          are the two halves of one posting, and refuses to build the program.
         </p>
 
         <div class="cta">
           <a class="button button--primary" href="/playground/"
             >Try it in your browser</a
           >
-          <a class="button" href="https://github.com/MWH997/banklang" rel="noopener"
-            >Read the code</a
+          <a class="button" href="/docs/for-mainframe-engineers.html"
+            >Read the COBOL it writes</a
           >
         </div>
 
         <p class="caveat">
-          <strong>Validated with GnuCOBOL, not IBM.</strong> No IBM Enterprise
-          COBOL validation has been performed, and none is claimed.
-          <a
-            href="/docs/status-and-limits.html"
-            >What that leaves open →</a
-          >
+          <strong>Tested against GnuCOBOL, not IBM's compiler.</strong> Every
+          example is compiled by GnuCOBOL, an open-source COBOL, set up to
+          imitate IBM Enterprise COBOL 6.4. Nothing here has run on a mainframe.
+          <a href="/docs/status-and-limits.html">What that leaves open →</a>
         </p>
       </section>
 
-      <!-- 2. The refusal. The claim nobody else makes. -->
+      <!-- 2. The refusal, which is the claim nobody else makes. -->
       <section class="band">
         <h2>It refuses to compile unsafe programs</h2>
         <p class="section-lede">
-          The build fails and produces no artifact, the way a type error does.
+          This transfer has three things wrong with it. The build fails and
+          writes no output, the way a type error would.
         </p>
 
         <div class="split">
@@ -118,23 +123,56 @@
         </p>
 
         <p>
-          A retry that posts twice, money moving with no audit trail, and a
-          ledger that does not balance. Each is normally caught by a person: a
-          reviewer who knows to look, an auditor reconciling afterwards. There
-          are <strong>{{SAFETY_RULE_COUNT}}</strong> such rules, among
-          <strong>{{DIAGNOSTIC_COUNT}}</strong> diagnostics in all. Each is
-          documented with an explanation and a remediation, and each one is
-          provoked by a test that fails if the rule stops working.
+          Those three complaints, in plain terms: nothing stops the transfer
+          being applied twice if the caller sends it again after a timeout;
+          nothing writes down that it happened; and the amount taken out does
+          not match the amount paid in. Each of these is caught today by a
+          person, when it is caught at all. A reviewer who knows to look, a
+          tester who thinks of the retry, an auditor reconciling at the end of
+          the month.
+        </p>
+        <p>
+          There are <strong>{{SAFETY_RULE_COUNT}}</strong> rules of this kind,
+          out of <strong>{{DIAGNOSTIC_COUNT}}</strong> checks in all. Every one
+          has a written explanation, a suggested fix, and at least one test that
+          provokes it. How well those tests would notice a rule being weakened
+          is measured with mutation testing rather than asserted, and the score
+          is published even though it is not yet high enough.
         </p>
       </section>
 
-      <!-- 3. The output. Where a mainframe engineer decides. -->
+      <!-- 3. Why a compiler at all. The part a non-technical reader needs. -->
       <section class="band band--alt">
+        <h2>Why generate COBOL instead of replacing it</h2>
+        <p>
+          Banks keep balances, interest and settlement in COBOL programs that
+          have been running for decades. The hard part of replacing them is
+          exactness: thirty years of small, specific rules live in that code and
+          in no other document, so a rewrite has to rediscover all of them
+          before it can switch over. That is where the big programmes usually
+          stall.
+        </p>
+        <p>
+          Between keeping the COBOL forever and replacing it there is a duller
+          third option: keep producing COBOL, and change what produces it. The
+          mainframe goes on running COBOL. The people who sign the code off go
+          on reading COBOL. What changes is the language a developer writes in,
+          and whether the expensive mistakes are still possible in it.
+        </p>
+        <p class="more">
+          <a href="/blog/why-banks-still-run-cobol.html"
+            >Why the rewrites keep stalling →</a
+          >
+        </p>
+      </section>
+
+      <!-- 4. The output. Where a mainframe engineer decides. -->
+      <section class="band">
         <h2>The COBOL it produces</h2>
         <p class="section-lede">
-          Enterprise COBOL has one rounding phrase, and <code>ROUNDED</code> is
-          half-up away from zero. Banker's rounding is arithmetic this compiler
-          writes out.
+          Interest is a balance times a rate, rounded. Which way you round
+          decides who ends up a penny short, so the compiler makes you say which
+          rule to apply and then writes the arithmetic out.
         </p>
 
         <div class="split split--code">
@@ -149,21 +187,40 @@
         </div>
 
         <p>
-          That sequence is executed and compared against exact arithmetic over
-          every boundary case, for a product and for a quotient, in all seven
-          rounding modes. The overflow branch is not decoration: storing a
-          scale-6 product in a scale-2 field would discard four digits, and the
-          compiler will not do that silently.
+          Enterprise COBOL offers one rounding phrase, <code>ROUNDED</code>,
+          which rounds a half away from zero. Banker's rounding, where a half
+          goes to the even digit, has to be written out as arithmetic. Those
+          lines are executed and compared against exact arithmetic at every
+          boundary case, for a product and for a quotient, in all seven rounding
+          modes.
+        </p>
+        <p>
+          Scale is part of the type here, so the rounding is required rather
+          than available. A balance times a rate has six decimal places and
+          money holds two, which makes the product a different type from the
+          field it is going into. <code>round</code> is what converts it, and
+          naming the mode is how the program says what becomes of the other
+          four digits.
+        </p>
+        <p>
+          The <code>ON SIZE ERROR</code> branch answers a different question: a
+          result too large for the field at all. COBOL discards the high-order
+          digits in that case, so an overflow arrives as a plausible small
+          number rather than an obviously wrong one. The generated branch ends
+          the step instead.
+        </p>
+        <p class="more">
+          <a href="/docs/numeric-model.html">How the arithmetic is defined →</a>
         </p>
       </section>
 
-      <!-- 4. A conversion. The only question a bank actually asks. -->
-      <section class="band">
+      <!-- 5. A conversion. The only question a bank actually asks. -->
+      <section class="band band--alt">
         <h2>What happens to the COBOL you already have</h2>
         <p class="section-lede">
-          A classic sequential update: read a transaction file, apply each
-          posting, write a new master and a reject file. Every estate has thirty
-          of these.
+          Nobody starts from nothing. This is the classic sequential master
+          update: read last night's transactions, apply each one, write out the
+          new balances and a file of the ones that failed.
         </p>
 
         <div class="split split--code">
@@ -178,13 +235,23 @@
         </div>
 
         <p>
-          Four <code>SELECT</code> statements with no <code>FILE STATUS</code>
-          clause between them, and one <code>OPEN</code> whose outcome nothing
-          tests. A missing input gives file status 35 and the first read hits
-          <code>AT END</code>: the job ends with return code 0 having processed
-          nothing. The layouts are unchanged, field for field, so the same
-          datasets are read by the same DD names. What changes is everything the
-          original left implicit.
+          The original opens four files in one statement and never learns
+          whether any of them opened. Not one of the four
+          <code>SELECT</code> statements declares a <code>FILE STATUS</code>
+          field, so there is nowhere for a failure to be reported. A missing
+          input gives file status 35, the first read hits <code>AT END</code>,
+          and the step closes its files and ends with return code zero. A night
+          that applied nothing looks exactly like a night that had nothing to
+          apply.
+        </p>
+        <p>
+          The BankTS declares the same four files and gives each one a status
+          the program has to handle. Record layouts are untouched, field for
+          field, so the same datasets are read under the same DD names, and
+          nothing about the data changes. What changes is that the step now
+          ends with 12 when a file failed and 4 when it applied nothing, so the
+          next step's <code>COND=</code> can tell those apart from a good
+          night.
         </p>
         <p class="more">
           <a href="https://github.com/MWH997/banklang/tree/main/conversions" rel="noopener"
@@ -193,47 +260,64 @@
         </p>
       </section>
 
-      <!-- 5. What it is not. Leading with limits is what makes the rest believable. -->
-      <section class="band band--alt">
+      <!-- 6. What it is not. Leading with limits is what makes the rest believable. -->
+      <section class="band">
         <h2>What it is not</h2>
         <ul class="limits">
           <li>
-            <strong>It has never run on z/OS.</strong> Every example compiles
-            with GnuCOBOL, under a dialect configured to Enterprise COBOL 6.4
-            and under GnuCOBOL's own default. GnuCOBOL is not IBM's compiler.
+            <strong>It has never run on a mainframe.</strong> Every example
+            compiles with GnuCOBOL, under a dialect configured to Enterprise
+            COBOL 6.4 and under GnuCOBOL's own default. GnuCOBOL is a good
+            open-source compiler, and the places where it and IBM's disagree
+            are <a href="/docs/divergences.html">written down</a>.
           </li>
           <li>
-            <strong>No money has moved through it.</strong> No institution has
-            used it. There is no production deployment and no pilot.
+            <strong>No money has moved through it.</strong> No bank has used it.
+            There is no production deployment and no pilot.
           </li>
           <li>
             <strong>It covers a narrow subset.</strong> Batch and CICS programs
-            against QSAM, VSAM and Db2, with a ledger and audit calling
-            convention it defines itself. It does not replace a core banking
-            package.
+            reading QSAM, VSAM and Db2, with a ledger and audit interface it
+            defines itself. It does not replace a core banking package.
           </li>
           <li>
             <strong
-              >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are
-              executed</strong
-            >
-            against a reference runtime in the repository, and
-            {{ASSERTED_COUNT}} of those have expected balances somebody worked
-            out by hand. The rest are run twice and compared against each other,
-            which catches a defect that compiles and would not catch one that is
-            wrong the same way twice. The grades are generated, not asserted.
+              >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are actually
+              run</strong
+            >, against a reference runtime kept in the repository.
+            {{ASSERTED_COUNT}} of those are checked against balances somebody
+            worked out by hand. The rest are run twice, by two independent
+            implementations, and compared: that catches a program that is wrong
+            and would not catch one that is wrong the same way twice.
           </li>
         </ul>
         <p class="more">
-          <a
-            href="/docs/status-and-limits.html"
+          <a href="/docs/status-and-limits.html"
             >The full list, with what each limit costs →</a
           >
-          <a
-            href="/docs/for-decision-makers.html"
-            >For the person deciding →</a
-          >
         </p>
+      </section>
+
+      <!-- 7. Three routes in, because three different people arrive here. -->
+      <section class="band band--alt">
+        <h2>Where to start</h2>
+        <ul class="routes">
+          <li>
+            <a href="/docs/getting-started.html">Getting started</a> takes about
+            thirty minutes, from cloning the repository to reading generated
+            COBOL and knowing why it looks the way it does.
+          </li>
+          <li>
+            <a href="/docs/for-mainframe-engineers.html">For mainframe engineers</a>
+            walks through a generated program construct by construct, for
+            whoever has to accept the output.
+          </li>
+          <li>
+            <a href="/docs/for-decision-makers.html">For the person deciding</a>
+            sets out the risk, the evidence behind each claim, and what it would
+            cost to find out for yourself.
+          </li>
+        </ul>
       </section>
     </main>
 
@@ -256,8 +340,8 @@
         >
       </p>
       <p class="muted">
-        Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
-        Enterprise COBOL validation is claimed. MIT licensed.
+        Generated COBOL is compiled with GnuCOBOL in CI. No IBM Enterprise COBOL
+        validation is claimed. MIT licensed.
       </p>
     </footer>
 

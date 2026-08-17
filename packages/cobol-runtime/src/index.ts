@@ -4,7 +4,7 @@
  * The playground compiles BankTS to COBOL in the browser and then has nothing
  * to run it with: `cobc` is a native toolchain and z/OS is not on the internet.
  * This package closes that gap by interpreting the COBOL the compiler just
- * emitted — the same characters shown in the output pane, read in fixed
+ * emitted: the same characters shown in the output pane, read in fixed
  * reference format, laid out byte for byte, and executed.
  *
  * **What a green run here establishes, and what it does not.**
@@ -12,7 +12,7 @@
  * It establishes that the generated program's own logic does what the BankTS
  * said: the balances, the audit events, the branch taken on a file status, the
  * return code. It is a second implementation of the same semantics, which is
- * worth having — two implementations disagreeing is how a defect surfaces.
+ * worth having, because two implementations disagreeing is how a defect surfaces.
  *
  * It establishes nothing about IBM Enterprise COBOL, and nothing about
  * GnuCOBOL. This is not a COBOL compiler and does not aspire to be one. What

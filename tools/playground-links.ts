@@ -2,16 +2,16 @@
  * Puts a playground link in every example's README, and checks the ones in the
  * documentation.
  *
- * P3 asked for "every fenced BankTS block in `docs/`" to become an
- * open-in-playground link. Measured, that is the wrong target: of the 94 `ts`
- * blocks under `docs/`, exactly **one** parses on its own. The rest are
- * fragments — a record, a clause, three lines of a transaction — written to
- * show a construct, not to be run. A link on each of the other 93 opens the
+ * The obvious target is "every fenced BankTS block in `docs/`", and measuring
+ * shows it is the wrong one: of the 94 `ts` blocks under `docs/`, exactly
+ * **one** parses on its own. The rest are fragments, a record or a clause or
+ * three lines of a transaction, written to show a construct rather than to be
+ * run. A link on each of the other 93 opens the
  * documentation's own example onto a wall of syntax errors, which is worse
  * than no link at all.
  *
  * So the rule is: a block gets a link when it compiles as a program. What that
- * catches is the whole-module examples, and it stays correct by construction —
+ * catches is the whole-module examples, and it stays correct by construction,
  * a block that stops parsing loses its link rather than keeping a broken one.
  *
  * The examples are the other half, and they are linked by **name** rather than
@@ -75,7 +75,7 @@ function readable(path: string): boolean {
 
 /** The link line an example's README carries. */
 export function linkLine(id: string): string {
-  return `${MARKER}\n\n[Open this program in the playground](${SITE_ORIGIN}/playground/#example=${id}) — it compiles in your browser, with the generated COBOL beside it.`;
+  return `${MARKER}\n\n[Open this program in the playground](${SITE_ORIGIN}/playground/#example=${id}). It compiles in your browser, with the generated COBOL beside it.`;
 }
 
 /**

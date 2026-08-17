@@ -5,8 +5,8 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 // Request/reply over MQ: take a payment instruction off one queue, do the
 // work, put the answer on another.
 //
-// The shape matters more than the payload. A get has three outcomes — a
-// message, an empty queue, and a failure — and folding the empty queue in with
+// The shape matters more than the payload. A get has three outcomes (a
+// message, an empty queue, and a failure) and folding the empty queue in with
 // the failures stops a drain every time it finishes its work, while folding it
 // in with success reprocesses whatever the message area was still holding.
 // Both branches are required here for that reason.
@@ -100,7 +100,7 @@ entry transaction drainPayments(request: PaymentRequest, reply: ReplyMessage, to
         raise "REPLY_UNDELIVERABLE";
       }
     } else {
-      // 2033 is MQRC_NO_MSG_AVAILABLE — the ordinary end of a drain.
+      // 2033 is MQRC_NO_MSG_AVAILABLE, the ordinary end of a drain.
       log "QUEUE EMPTY";
     };
   }

@@ -23,7 +23,7 @@ const CLEAN = readFileSync("examples/account-posting/src/main.bank.ts", "utf8");
  * The zero-based line a construct is written on, found rather than counted.
  *
  * A hard-coded line number couples the test to an example's layout, so a
- * comment added to `account-posting` silently moves what is being hovered — and
+ * comment added to `account-posting` silently moves what is being hovered, and
  * the assertion still passes or fails for a reason that has nothing to do with
  * the language server.
  */
@@ -142,7 +142,7 @@ describe("language server diagnostics", () => {
     // both from zero, so the range starts at line 9, character 12.
     //
     // The column used to be asserted as `toBeGreaterThanOrEqual(0)`, which is
-    // true of every number the conversion can produce except one — and the one
+    // true of every number the conversion can produce except one, and the one
     // it excluded, a negative column, is not the failure worth guarding. An
     // off-by-one that reported the wrong column, which is what the conversion
     // exists to get right, satisfied it.

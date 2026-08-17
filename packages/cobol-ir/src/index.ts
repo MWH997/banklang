@@ -6,7 +6,7 @@ import type { IRType } from "../../ir/src/index";
  * The Language Reference defines a user-defined word as "a character string of
  * not more than 30 characters that forms a user-defined word", and the compiler
  * enforces it. GnuCOBOL's default dialect does not, which is how
- * `IS-ELIGIBLE-FOR-INTEREST-RESULT` — 31 characters — reached a shipped example
+ * `IS-ELIGIBLE-FOR-INTEREST-RESULT`, at 31 characters, reached a shipped example
  * and a checked-in golden fixture with every local gate green.
  */
 export const MAX_COBOL_WORD_LENGTH = 30;
@@ -51,8 +51,8 @@ export function fitCobolWord(
   // again, which is the right rule when there are several words to trade off.
   // With one word there is nothing to trade: it was cut to four characters and
   // the other twenty-six were thrown away. `settlementreconciliationthreshold`
-  // — a legal BankTS identifier, no camel humps for `rawCobolName` to split on
-  // — became `SETT`, and any other name sharing those four letters collided
+  // `settlementreconciliationthreshold`, a legal BankTS identifier with no
+  // camel humps for `rawCobolName` to split on, became `SETT`, and any other
   // with it. Found by mutation testing: nothing exercised this branch.
   if (segments.length === 1) {
     return word.slice(0, limit);
@@ -70,7 +70,7 @@ export function fitCobolWord(
     if (longest === -1) {
       // Every segment is already at the floor. Cutting the tail would take the
       // suffix off, and the suffix is what tells a routine from its parameter
-      // cell, its result field and its exit paragraph — so a long enough
+      // cell, its result field and its exit paragraph, so a long enough
       // function name gave all four the same 30-character word, and the
       // program declared it twice and performed the wrong one. Segments come
       // out of the middle instead, where a long name carries least, and the
@@ -91,7 +91,7 @@ function rawCobolName(name: string): string {
     name
       .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
       // A digit starts a word of its own. `WS-TIER-1-RATE` is how the name is
-      // written on an estate, and it is what a copybook holds — so without this
+      // written on an estate, and it is what a copybook holds, so without this
       // `CM-ADDR-LINE-1` imports as `cmAddrLine1` and comes back out as
       // `CM-ADDR-LINE1`, a different name for the same field. The importer's
       // round-trip check is what found it.
@@ -117,7 +117,7 @@ function rawCobolName(name: string): string {
  *
  * The truncation is also where two modules become one. `ACCOUNT-TRANSFER-IN`
  * and `ACCOUNT-TRANSFER-OUT` are one external name, so a library holding both
- * resolves every call to whichever was bound last — which is why
+ * resolves every call to whichever was bound last, which is why
  * `BANK-JOB-005` refuses a job whose steps build two programs agreeing over
  * those eight characters. A program compiled on its own has nothing to collide
  * with, so a job is the only place the clash is visible.
@@ -721,7 +721,7 @@ function avoidReserved(name: string): string {
  * The PDS member name a record's copybook is held under.
  *
  * A member name is one to eight characters of letters, digits, and the national
- * characters — no hyphens — and that is also all the compiler looks at: "when
+ * characters, no hyphens, and that is also all the compiler looks at: "when
  * the compiler searches for COPY members in PDS or PDSE datasets ... only the
  * first eight characters of text-name are used as the identifying name". So
  * `COPY ACCOUNT-RECORD` on a PDS looks for a member called `ACCOUNT-`, which no
@@ -804,8 +804,8 @@ export const EDIT_STYLES: readonly EditStyle[] = [
 /**
  * A numeric-edited picture, built from the value's own precision and scale.
  *
- * The leading digit positions suppress — `Z` blanks them, `*` fills them, which
- * is cheque protection — and the last integer position stays `9` so a zero
+ * The leading digit positions suppress (`Z` blanks them, `*` fills them, which
+ * is cheque protection) and the last integer position stays `9` so a zero
  * amount prints as `0.00` rather than as nothing. Decimals never suppress: an
  * amount is read to the penny, and a blank penny column is a defect.
  *
@@ -821,7 +821,7 @@ export function editedPicture(
    *
    * `DECIMAL-POINT IS COMMA` swaps the roles of the comma and the point
    * *inside pictures too*, so a grouped amount is written `Z.ZZZ.ZZ9,99`. A
-   * picture built the other way round is not merely printed oddly — the COBOL
+   * picture built the other way round is worse than printed oddly: the COBOL
    * compiler rejects it, because the separator would then appear more than
    * once.
    */
@@ -903,7 +903,7 @@ export function toCobolPicture(type: IRType): string {
  * are arranged. Money is `packed` because COMP-3 is what a ledger is stored in.
  * A counter or a subscript is `binary`, which is a halfword or fullword the
  * hardware adds to directly. `display` is zoned decimal, one byte per digit,
- * which is what a great deal of legacy input arrives as — and the reason this
+ * which is what a great deal of legacy input arrives as, and the reason this
  * distinction exists at all is that a compiler that only knows COMP-3 cannot
  * read an existing estate's copybooks.
  */
@@ -931,7 +931,7 @@ export function decimalPicture(
   // `decimal<2, 2>` has no integer digits, and `9(0)` is not a picture: the
   // compiler answers "number or constant in parentheses must be greater than
   // zero". `SV99` is what a value entirely below the decimal point is written
-  // as — a rate, a fraction — and it was unreachable from any hand-written
+  // as, for a rate or a fraction, and it was unreachable from any hand-written
   // fixture, because every one of them had at least one integer digit.
   const wholePart = integerDigits > 0 ? `9(${integerDigits})` : "";
   const digits =
@@ -978,7 +978,7 @@ export const MAX_COMPAT_DIGITS = 18;
  * is larger.
  *
  * Its magnitude is bounded: the quotient is truncated at the receiver's scale,
- * so what is left over is below one unit in that last place times the divisor —
+ * so what is left over is below one unit in that last place times the divisor,
  * `|r| < |b| * 10^-s`. That is the receiver's scale fewer integer digits than
  * the divisor itself needs, which is what makes the field fit at all for two
  * eighteen-digit money values.
@@ -1011,7 +1011,7 @@ export function divisionRemainderShape(
  *
  * Not the item's own width. IBM's slack-byte algorithm divides by 2 for a
  * binary item of four digits or fewer and by 4 for one of **five digits or
- * more** — there is no eight for binary, which is reserved for
+ * more**. There is no eight for binary, which is reserved for
  * `COMPUTATIONAL-2`. So a doubleword binary occupies eight bytes and still
  * aligns on a fullword.
  *

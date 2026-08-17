@@ -8,7 +8,7 @@ module SettlementBillFile;
 // The variant is chosen by the record's type at each `write`, so a detail
 // cannot reach a header's fields and a short layout writes its own length
 // rather than the record area's. A file that is *read* still carries one
-// layout — see `BANK-FILE-015`, and the reasoning in `docs/language/files.md`.
+// layout: see `BANK-FILE-015`, and the reasoning in `docs/language/files.md`.
 type GBP = currency<"GBP", 18, 2>;
 
 // The feed this run settles, one movement per line.
@@ -71,7 +71,7 @@ entry transaction writeExtract(movement: MovementLine, header: ExtractHeader, de
 
     // End of file is an answer rather than a failure, and the generated check
     // lets it through for this to decide about. Without the test the last
-    // movement would be written twice — the record area still holds it.
+    // movement would be written twice, because the record area still holds it.
     // BANK-FILE-017.
     if movementFeedStatus == "00" {
       detail.detailTag = "D";

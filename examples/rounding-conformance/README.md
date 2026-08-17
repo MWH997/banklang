@@ -8,8 +8,8 @@ read side by side against the COBOL that produced them.
 Enterprise COBOL has one rounding phrase. `ROUNDED` is half-up away from zero,
 there is no `MODE IS` sub-phrase, and `NEAREST-EVEN` appears in no column of the
 Language Reference's Appendix E. BankLang emitted `ROUNDED MODE IS NEAREST-EVEN`
-for two years because GnuCOBOL's default dialect — a superset of every COBOL it
-knows — accepted it.
+for two years because GnuCOBOL's default dialect, a superset of every COBOL it
+knows, accepted it.
 
 Five of the seven modes are therefore arithmetic this compiler writes out.
 
@@ -27,7 +27,7 @@ CEILING   -1.00     FLOOR     -1.01
 ```
 
 `UP` and `CEILING` agree on the positive tie and disagree on the negative one,
-which is why the run does both — one sample would make them look like synonyms.
+which is why the run does both: one sample would make them look like synonyms.
 
 ## Where the proof is
 
@@ -42,8 +42,8 @@ held in two BigInts.
 
 ## Related
 
-- [docs/numeric-model.md](../../docs/numeric-model.md) — the whole rounding model
+- [docs/numeric-model.md](../../docs/numeric-model.md): the whole rounding model
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=rounding-conformance) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=rounding-conformance). It compiles in your browser, with the generated COBOL beside it.

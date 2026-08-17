@@ -16,16 +16,16 @@ import { SITE_ORIGIN } from "../tools/build-site";
 /**
  * Links from what a reader is reading into the thing that runs it.
  *
- * P3 asked for every fenced BankTS block in `docs/` to become an
- * open-in-playground link. Measured, that is the wrong target: of the 94 `ts`
- * blocks under `docs/`, **one** parses on its own. The rest are fragments — a
- * record, a clause, three lines of a transaction — written to show a construct.
+ * The obvious target is every fenced BankTS block in `docs/`, and measuring
+ * shows it is the wrong one: of the 94 `ts` blocks under `docs/`, **one**
+ * parses on its own. The rest are fragments, a record or a clause or three
+ * lines of a transaction, written to show a construct.
  * A link on the other 93 opens the documentation's own example onto a wall of
  * syntax errors, which is a worse experience than no link and a worse
  * impression than no site.
  *
  * So the rule became: a block gets a link when it is a program. These check
- * that the rule is applied and that it stays true — a block that stops parsing
+ * that the rule is applied and that it stays true: a block that stops parsing
  * loses its link rather than keeping a broken one.
  */
 
@@ -174,7 +174,7 @@ describe("the playground page itself", () => {
   );
 
   it("carries the site's header rather than its own", () => {
-    // P1: a visitor must be able to move between landing, playground and docs
+    // A visitor must be able to move between landing, playground and docs
     // without leaving the domain. The only outbound links used to be three raw
     // GitHub URLs.
     expect(html).toContain('<a class="wordmark" href="/">BankLang</a>');
@@ -203,7 +203,8 @@ describe("the playground page itself", () => {
   });
 
   it("says what the panes are, before a reader has to guess", () => {
-    // P2: a first-time visitor sees two panes of code and no instruction.
+    // Without this a first-time visitor sees two panes of code and no
+    // instruction.
     expect(html).toContain('class="howto"');
     expect(html).toMatch(/Edit this/);
   });
@@ -222,8 +223,8 @@ describe("the landing page reaches the playground where it matters", () => {
   );
 
   it("deep-links the refusal example from the section that shows it", () => {
-    // P2 again: the program the landing page prints diagnostics for is the one
-    // worth opening, and it was reachable only by finding it in a dropdown.
+    // The program the landing page prints diagnostics for is the one worth
+    // opening, and it was once reachable only by finding it in a dropdown.
     expect(html).toContain("/playground/#example=unsafe-posting");
   });
 

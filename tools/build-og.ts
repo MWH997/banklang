@@ -1,9 +1,9 @@
 /**
  * Write the Open Graph card's HTML, from real compiler output.
  *
- * L3 asks for an image "generated from real compiler output rather than mocked
- * up". This is the first half: `packages/site/src/og.html` is filled from the
- * compiler and written to `dist/og/index.html`. The second half is a browser
+ * The card is generated from real compiler output rather than mocked up, which
+ * takes two halves. This is the first: `packages/site/src/og.html` is filled
+ * from the compiler and written to `dist/og/index.html`. The second half is a browser
  * screenshotting it at 1200x630 into `packages/site/src/og.png`, which is
  * checked in because a build should not need a browser.
  *
@@ -24,7 +24,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  * The lines that fit the card, which is a fixed box rather than a page.
  *
  * Dedented first. Generated COBOL is in fixed reference format, so every line
- * of a paragraph starts in column 12 — eleven columns of margin the card does
+ * of a paragraph starts in column 12, eleven columns of margin the card does
  * not have, and the first attempt spent half the pane on them and truncated
  * every line to compensate. The margin is meaningful in a `.cbl` and is noise
  * in a 1200-pixel card.

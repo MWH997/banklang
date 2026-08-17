@@ -5,8 +5,8 @@
  *   pnpm horizontal:analyse xcobol-v2      one of them
  *
  * This is the horizontal lane that needs no oracle and makes no correctness
- * claim. It runs `packages/migration-analysis` — the same reader `bankc analyse`
- * uses, not a second one — over every COBOL file the corpus holds, records
+ * claim. It runs `packages/migration-analysis`, the same reader `bankc analyse`
+ * uses rather than a second one, over every COBOL file the corpus holds, records
  * which constructs each file contains, and applies the representability rules
  * in `packages/horizontal-validation` to say what BankTS could express.
  *
@@ -14,9 +14,9 @@
  * ranked by real-world frequency*, which is a to-do list ordered by evidence
  * rather than by whoever asked most recently.
  *
- * **What lands in git.** For a corpus marked `derived-only` — X-COBOL, whose
+ * **What lands in git.** For a corpus marked `derived-only` (X-COBOL, whose
  * CC-BY licence covers the compilation rather than the 168 repositories it
- * gathers — the evidence bundle carries measurements, hashes and provenance,
+ * licence forbids redistribution) the evidence bundle carries measurements,
  * and never a line of the corpus itself.
  */
 
@@ -75,7 +75,7 @@ function walk(root: string): string[] {
  * under two levels of `COBOL_Files/`, so provenance is the path segment holding
  * the `@` rather than the first one. Taking the first segment reported all
  * 5,195 files as coming from one repository called `COBOL_Files`, which is a
- * provenance record that attributes nothing — and provenance is the entire
+ * provenance record that attributes nothing, and provenance is the entire
  * reason this corpus's material stays in the cache while its measurements are
  * published.
  *
@@ -111,7 +111,7 @@ export function analyseCorpus(
     }
     // Latin-1 rather than UTF-8. Real mainframe source that has been through a
     // codepage conversion carries bytes that are not valid UTF-8, and reading
-    // it as UTF-8 replaces them with U+FFFD — which changes the text being
+    // it as UTF-8 replaces them with U+FFFD, which changes the text being
     // measured. Latin-1 is total: every byte maps to a character, so nothing is
     // silently substituted.
     const text = readFileSync(join(root, path)).toString("latin1");
@@ -139,7 +139,7 @@ export function renderAnalysis(analysis: CorpusAnalysis): string {
       : `${String(count)} / ${String(analysis.discovered)} (${((count / analysis.discovered) * 100).toFixed(1)}%)`;
 
   const lines = [
-    `# ${definition.name} — horizontal coverage`,
+    `# ${definition.name}: horizontal coverage`,
     "",
     `**Upstream** ${definition.upstream}`,
     "",
@@ -206,7 +206,7 @@ export function renderAnalysis(analysis: CorpusAnalysis): string {
  *
  * `files.json` carries one row per file: its path inside the corpus, the sha256
  * of the bytes measured, the repository it came from and the constructs found.
- * That is provenance and measurement — it is what makes a number checkable —
+ * That is provenance and measurement, which is what makes a number checkable,
  * and it is not the corpus. No COBOL is copied out of the cache.
  */
 export function writeEvidence(

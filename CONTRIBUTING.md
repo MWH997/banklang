@@ -1,6 +1,19 @@
 # Contributing
 
-BankLang changes should be small, deterministic, and reviewable.
+Thanks for looking. Changes here should be small, deterministic and reviewable,
+and this page is the whole of what is expected.
+
+**Before you write code:** open an issue, or comment on an existing one, so the
+approach can be agreed first. That is worth more here than in most projects,
+because a change to what the compiler emits changes bytes that somebody
+elsewhere has already reviewed and signed off.
+
+- Something is wrong: [bug report](https://github.com/MWH997/banklang/issues/new?template=bug_report.yml)
+- The generated COBOL is wrong for the target:
+  [conformance finding](https://github.com/MWH997/banklang/issues/new?template=conformance_finding.yml)
+- Something is missing: [feature request](https://github.com/MWH997/banklang/issues/new?template=feature_request.yml)
+- A security problem: report it privately, through
+  [SECURITY.md](SECURITY.md)
 
 ## Toolchain
 

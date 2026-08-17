@@ -13,7 +13,7 @@ import { runBankc } from "../packages/bankc-cli/src/index";
 /**
  * Reading COBOL that already exists.
  *
- * The 2026-08-05 audit's §4.4, and the only thing on its missing list that
+ * Asked for by the external audit, and the only thing on its missing list that
  * generates nothing. The tests are written against the conversions' originals
  * rather than against fragments, because a reader that works on a fragment and
  * not on a program is a reader that works on nothing.
@@ -58,8 +58,8 @@ describe("a sequential update", () => {
   });
 
   /**
-   * A paragraph name may start with a digit — `1000-READ-TRANS` is the house
-   * style on half the estates there are — so `PERFORM 1000-READ-TRANS` must
+   * A paragraph name may start with a digit, and `1000-READ-TRANS` is the house
+   * style on half the estates there are, so `PERFORM 1000-READ-TRANS` must
    * not be read as the `PERFORM n TIMES` form.
    */
   it("reads a performed paragraph whose name starts with a digit", () => {
@@ -127,7 +127,7 @@ describe("a paragraph inside DECLARATIVES", () => {
   /**
    * Nothing performs a declarative and nothing falls into one: the runtime
    * enters it when the condition happens. Counting one as dead code would have
-   * somebody delete the program's error handling — and reading the entry point
+   * somebody delete the program's error handling, and reading the entry point
    * as the first paragraph in the division rather than the first after
    * `END DECLARATIVES` reported the entry point itself as dead.
    */
@@ -258,10 +258,9 @@ describe("bankc analyse", () => {
 /**
  * What first contact with somebody else's COBOL found.
  *
- * G4 asked for a benchmark corpus of third-party COBOL. Before any of it could
- * be converted, the analyser was run over one — AWS's CardDemo, Apache-2.0,
- * thirty-one CICS and batch programs — and it got two things wrong on code
- * nobody here had written. Both are shapes that never occur in this
+ * Before any third-party COBOL could be converted, the analyser was run over a
+ * benchmark corpus: AWS's CardDemo, Apache-2.0, thirty-one CICS and batch
+ * programs. It got two things wrong on code nobody here had written. Both are shapes that never occur in this
  * repository's own conversions, which is exactly why they survived: every
  * original in `conversions/` was written by the author of the reader.
  *
@@ -272,7 +271,7 @@ describe("COBOL written by somebody else", () => {
    * A COBOL clause continues across lines, so `PROGRAM-ID.` and the name it
    * introduces need not share one. Nine of CardDemo's thirty-one programs
    * write the name underneath, and all nine came out of the report with no
-   * name at all — an estate inventory where a third of the rows say `?`.
+   * name at all: an estate inventory where a third of the rows say `?`.
    */
   it("finds a program name written on the line after PROGRAM-ID", () => {
     const analysis = analyseCobol(
@@ -372,7 +371,7 @@ describe("COBOL written by somebody else", () => {
  * mutants, most of them on the branches below.
  *
  * These are fragments on purpose, and they do not replace the whole-program
- * tests — they pin the individual decisions those programs happen not to make.
+ * tests. They pin the individual decisions those programs happen not to make.
  * The property that matters is the one the header names: a live paragraph must
  * never be reported dead, because that is the defect that gets code deleted.
  */
@@ -504,7 +503,7 @@ describe("which paragraphs are unreachable", () => {
  *
  * `describeRisks` is six guards over an analysis, reached through
  * `renderInventory`, and the conversions' originals exercise some of them and
- * never the others — so the mutation lane found each guard surviving in both
+ * never the others, so the mutation lane found each guard surviving in both
  * directions. A guard that cannot be observed to fire is a risk the report may
  * silently stop naming.
  *
@@ -552,7 +551,7 @@ ${paragraphs}`;
 
   /**
    * Risk lines only. Every report also carries `describeLimits()`, which is a
-   * bulleted list too — filtering on the bullet alone counted "what this tool
+   * bulleted list too, and filtering on the bullet alone counted "what this tool
    * does not know" as a risk the program carries.
    */
   const risksOf = (source: string, artifact: string) =>
@@ -701,7 +700,7 @@ ${fileControl}
   /**
    * `ASSIGN TO [comment-]...[S-]ddname`. A DD name is one to eight
    * alphanumeric characters and cannot contain a hyphen, so the ddname is the
-   * last part — `UT-S-MASTER` is the DD `MASTER`, not `S-MASTER`. The
+   * last part: `UT-S-MASTER` is the DD `MASTER`, not `S-MASTER`. The
    * conversions' own originals use bare names, so nothing here saw it.
    */
   it("reads the DD name out of a qualified assignment-name", () => {

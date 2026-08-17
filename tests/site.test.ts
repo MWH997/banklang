@@ -31,9 +31,9 @@ import {
 /**
  * The landing page, held to the compiler.
  *
- * The 2026-08-06 audit's central finding was that the project has no front
- * door. This is that page — and the failure mode a landing page has is that it
- * ages into a claim the software stopped making. A screenshot of some COBOL
+ * The project had no front door for a long time, and this is that page. The
+ * failure mode a landing page has is that it ages into a claim the software
+ * stopped making. A screenshot of some COBOL
  * pasted in eighteen months ago is worse than no page, because it is a specific
  * false statement about what the compiler emits.
  *
@@ -91,8 +91,8 @@ describe("the landing page's code is the compiler's code", () => {
 
   /**
    * The sentence is about a retry that posts twice, money moving with no audit
-   * trail, and a ledger that does not balance — and it printed the size of the
-   * whole catalogue, which is mostly the type system and the parser. Ninety-odd
+   * trail, and a ledger that does not balance. It used to print the size of the
+   * whole catalogue, which is mostly the type system and the parser: ninety-odd
    * where the claim was sixteen.
    *
    * Asserted against the classifier rather than a number written here, so the
@@ -108,7 +108,7 @@ describe("the landing page's code is the compiler's code", () => {
     expect(CONTENT.safetyRuleCount).toBeGreaterThanOrEqual(10);
     expect(CONTENT.safetyRuleCount).toBeLessThan(CONTENT.diagnosticCount / 2);
     expect(PAGE).toContain(
-      `<strong>${CONTENT.safetyRuleCount}</strong> such rules`,
+      `<strong>${CONTENT.safetyRuleCount}</strong> rules of this kind`,
     );
 
     // The families it is and is not drawn from, named rather than counted, so
@@ -123,12 +123,12 @@ describe("the landing page's code is the compiler's code", () => {
 });
 
 /**
- * B5. The conversion exhibit argued from what was not on screen.
+ * The conversion exhibit used to argue from what was not on screen.
  *
  * It showed six lines from `0000-MAIN.` under a paragraph saying "no
  * `FILE STATUS` field declared for any of them", and a reader who has written
  * COBOL assumes the clauses are in the `FILE-CONTROL` paragraph that is not
- * being shown — because that is exactly where they would be. The argument was
+ * being shown, because that is exactly where they would be. The argument was
  * sound and the exhibit did not support it.
  */
 describe("the conversion exhibit", () => {
@@ -171,8 +171,8 @@ describe("the conversion exhibit", () => {
  * The four page shells carry the same navigation.
  *
  * Landing, documentation, blog and playground are rendered by four different
- * things — a template, `build-docs.ts`, `build-blog.ts`, and a Vite entry — so
- * a nav item added to one is added to one. The theme control is already held
+ * things: a template, `build-docs.ts`, `build-blog.ts`, and a Vite entry. So a
+ * nav item added to one is added to one. The theme control is already held
  * together this way; the links were not, and a reader who follows a nav item on
  * the homepage and cannot find it in the docs has been given a site that is
  * three sites.
@@ -216,13 +216,25 @@ describe("every page shell carries the same navigation", () => {
 });
 
 describe("the landing page", () => {
-  it("says validation is GnuCOBOL and not IBM", () => {
-    expect(PAGE).toContain("No IBM Enterprise\n          COBOL validation");
+  /**
+   * The caveat has to be on the first screen, above everything it qualifies.
+   *
+   * Asserted as two facts in the hero rather than as an exact string, because
+   * the previous version of this pinned one hand-wrapped line of markup and
+   * broke on a reflow that changed nothing a reader sees.
+   */
+  it("says on the first screen that validation is GnuCOBOL and not IBM", () => {
+    const hero = /<section id="what"[\s\S]*?<\/section>/.exec(PAGE)?.[0] ?? "";
+    expect(hero).toMatch(/GnuCOBOL/);
+    expect(hero.replace(/\s+/g, " ")).toMatch(
+      /not IBM's compiler|not IBM|never (?:been )?run on a mainframe/,
+    );
+    expect(hero).toContain("status-and-limits");
   });
 
   /**
    * D6. At 1280px each column of a `.split` is 470px and the rounding sample
-   * is 624px, so a quarter of the widest line sat behind an inner scrollbar —
+   * is 624px, so a quarter of the widest line sat behind an inner scrollbar,
    * and the lines that were cut were the banker's-rounding arithmetic the
    * section exists to show.
    *
@@ -288,7 +300,7 @@ describe("the landing page", () => {
    * The scripts this page ships, and the whole of what they do.
    *
    * Three blocks: the pre-paint theme read, the theme toggle, and the menu
-   * button. Nothing else, and nothing fetched — the budget for this page is
+   * button. Nothing else, and nothing fetched: the budget for this page is
    * that it arrives and is readable before anything has to run.
    *
    * The menu button is the third because the navigation is a disclosure below
@@ -308,7 +320,7 @@ describe("the landing page", () => {
   });
 
   it("is small enough to arrive before the reader decides", () => {
-    // L2: under 50 KB gzipped, for the page and its stylesheet together.
+    // Under 50 KB gzipped, for the page and its stylesheet together.
     const css = readFileSync("packages/site/src/site.css", "utf8");
     const total =
       gzipSync(Buffer.from(PAGE)).length + gzipSync(Buffer.from(css)).length;
@@ -349,8 +361,8 @@ describe("the response headers", () => {
    * Both hostname shapes, because a placeholder in the host stops at the first
    * period.
    *
-   * `https://:project.pages.dev/*` matches `banklang.pages.dev` — the
-   * production alias — and nothing else. Every preview Cloudflare builds is
+   * `https://:project.pages.dev/*` matches `banklang.pages.dev`, the
+   * production alias, and nothing else. Every preview Cloudflare builds is
    * `<hash>.<project>.pages.dev` or `<branch>.<project>.pages.dev`, one label
    * longer, and was indexable with only the first rule present. Previews are
    * the entire reason this block exists.
@@ -424,8 +436,8 @@ describe("the response headers", () => {
    *
    * Cloudflare Pages serves `404.html` with a real 404 status when the build
    * carries one. Without it, every unmatched address was answered with the
-   * landing page and a **200** — `/contributing` and `/definitely-not-a-page`
-   * both came back as the home page, measured against the live site — which
+   * landing page and a **200**. `/contributing` and `/definitely-not-a-page`
+   * both came back as the home page, measured against the live site, which
    * invites a crawler to index an unbounded set of duplicates.
    *
    * The scripts are the landing page's own bytes, so the policy already allows
@@ -517,7 +529,7 @@ describe("the response headers", () => {
 
   /**
    * A hash covers a script element. It does not cover an event-handler
-   * attribute, and no `'unsafe-hashes'` is granted here — so an `onclick` or an
+   * attribute, and no `'unsafe-hashes'` is granted here, so an `onclick` or an
    * `onsubmit` anywhere in the markup is a control that silently stops working
    * on the deployed site and goes on working locally.
    *
@@ -549,7 +561,7 @@ describe("the response headers", () => {
 
   /**
    * The placeholder is substituted with `String.replace`, which takes the
-   * first occurrence — and the first draft of the comment explaining the
+   * first occurrence, and the first draft of the comment explaining the
    * placeholder named it, so the hashes went into a comment and the policy
    * shipped the literal token. A source expression nothing matches is not a
    * loud failure: it is every inline script on every page refusing to run.
@@ -607,12 +619,12 @@ describe("the response headers", () => {
   });
 
   /**
-   * F11's finding, applied to the one file it was never applied to.
+   * The redirect problem, applied to the one file it was never applied to.
    *
    * `_headers` matches the request URL, and Cloudflare Pages does not serve
    * `.html`: `/docs/glossary.html` is answered with a 308 to `/docs/glossary`.
    * So the `/*.html` block that carried the HTML cache policy matched the
-   * redirect and never the page, for all fifty-one of them. D2 derived every
+   * redirect and never the page, for all fifty-one of them. The fix derived every
    * canonical, `og:url` and sitemap entry through `servedPath` and left this
    * file written in file paths.
    *

@@ -17,13 +17,13 @@ import {
  * `packages/cobol-runtime/src/index.ts` scored 35.71% the first time anything
  * measured it. The reason is plain once looked at: `journalOf`, `balancesOf` and
  * `auditOf` had no test at all. `tools/interpret.ts` was their only caller, and
- * a tool is not a test — nothing failed when they were wrong.
+ * a tool is not a test, and nothing failed when they were wrong.
  *
  * They are worth holding because of what reads them. The conformance check
  * compares what this interpreter says a program posted against what `cobc` says,
  * and `balancesOf` here has to match `readBalances` in `tools/conformance.ts`
  * exactly. A difference in how the *file is read* would be reported as a
- * difference in what the program *did* — the comparison would fail, and it would
+ * difference in what the program *did*: the comparison would fail, and it would
  * point at the compiler.
  */
 
@@ -51,7 +51,7 @@ describe("choosing the program to enter", () => {
    * Nothing to enter is a compiler invariant, not a run that produces nothing.
    *
    * A run that returns an empty result here would look exactly like a program
-   * that did nothing — which is the answer a caller would then report.
+   * that did nothing, which is the answer a caller would then report.
    */
   it("refuses a request with no program in it", () => {
     expect(() => runCobol({ sources: [] })).toThrow(CompilerInvariant);

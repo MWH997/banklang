@@ -1,7 +1,7 @@
 # BankLang Playground
 
-A browser playground that runs the **real compiler** — the same packages the CLI
-uses — entirely client-side. There is no backend, no API, and no network call
+A browser playground that runs the **real compiler**, the same packages the CLI
+uses, entirely client-side. There is no backend, no API, and no network call
 during compilation.
 
 This is possible because the compiler core has no Node dependencies. Only
@@ -21,7 +21,7 @@ pnpm playground:budget    # what the bundle weighs, against what it may
 
 The bundle is a compiler, so it is large: about 222 kB compressed in the first
 download, and about 36 kB more when **Run** is first opened.
-`tools/bundle-budget.ts` holds the ceiling, and `pnpm build:site` runs it — over
+`tools/bundle-budget.ts` holds the ceiling, and `pnpm build:site` runs it, over
 budget stops the build rather than printing a warning past it, which is what
 Vite's own "(!) Some chunks are larger than 500 kB" had been doing on every
 build for as long as there has been a playground.
@@ -63,7 +63,7 @@ bytes.
   record a caller would have filled, the dataset a job step would have
   allocated, the PARM on the EXEC card, or the rows Db2 answers a cursor with.
   Records are built at the offsets the compiler's own layout report gives, in
-  the encoding it gives — packed decimal included — and the PARM from
+  the encoding it gives, packed decimal included, and the PARM from
   `batchParmFields`, which is the list the emitter generates the parsing code
   from, so what the program reads in the browser is what it would read on z/OS. A program with none of those says so, and says
   which of four situations it is in, rather than showing a ledger of zeroes and
@@ -79,7 +79,7 @@ bytes.
   A cursor is offered the same way a dataset is: the fields its `INTO` names,
   and a row per record. `runtime/DSNHLI.cbl` writes those rows into the host
   variables the generated `FETCH` passes it, so `branch-accrual-cursor` accrues
-  interest on accounts rather than reading empty ones — and when the rows run
+  interest on accounts rather than reading empty ones, and when the rows run
   out the cursor gets end of data, which is how its loop finishes instead of
   running to its declared bound. It is still a stub: it parses no SQL and binds
   no plan, and [`docs/divergences.md`](../../docs/divergences.md) says what that
@@ -92,7 +92,7 @@ bytes.
 ## Deploying
 
 The build output is a static bundle in `dist/`, with a relative `base`, so it
-can be served from any path — including a sub-route of a larger site.
+can be served from any path, including a sub-route of a larger site.
 
 For Cloudflare Pages or Workers static assets:
 

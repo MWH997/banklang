@@ -6,15 +6,15 @@ import tseslint from "typescript-eslint";
  * Static analysis, which this repository did without for too long.
  *
  * `pnpm lint` used to be `prettier --check`. TypeScript caught types, Prettier
- * caught whitespace, and the space between them was unwatched — which is where
+ * caught whitespace, and the space between them was unwatched, which is where
  * a duplicate `case "RaiseStatement"` sat in the formatter until esbuild
  * happened to mention it while bundling the language server. TypeScript does
  * not flag a duplicate case: the exhaustiveness check over `never` is satisfied
  * by the first one.
  *
- * Type-checked rules rather than syntactic ones. The rules worth having here —
+ * Type-checked rules rather than syntactic ones. The rules worth having here, the ones about
  * a floating promise, a condition that is always true, a comparison between
- * types that cannot be equal — all need the checker, and the project already
+ * types that cannot be equal, all need the checker, and the project already
  * pays for a full typecheck.
  *
  * `recommendedTypeChecked` and not `stylisticTypeChecked`. The stylistic set
@@ -59,9 +59,9 @@ export default tseslint.config(
     files: ["**/*.ts"],
     languageOptions: {
       parserOptions: {
-        // Named rather than discovered. There is no root `tsconfig.json` — the
+        // Named rather than discovered. There is no root `tsconfig.json`, and the
         // compiler options live in `tsconfig.base.json`, which the typecheck
-        // script passes explicitly — so the project service has nothing to find
+        // script passes explicitly, so the project service has nothing to find
         // by convention. The extension is excluded from that file and builds
         // under its own, so both are listed.
         project: [
@@ -88,8 +88,8 @@ export default tseslint.config(
        * The fourth. It spent one release off, and this is why it is back.
        *
        * On its first run it reported forty-two findings and not one was a
-       * defect: thirty guarded an index access — `line[7]`, `match[1]`,
-       * `MQ_STRUCTURE_LINES[name]`, `program.transactions[0]` — which
+       * defect: thirty guarded an index access (`line[7]`, `match[1]`,,
+       * `MQ_STRUCTURE_LINES[name]`, `program.transactions[0]`) which
        * TypeScript typed as always present because `noUncheckedIndexedAccess`
        * was off. Acting on it would have deleted the guards that make those
        * safe. Turning the flag on made the types honest, at the cost of 366

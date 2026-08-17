@@ -4,7 +4,7 @@
  * Everything downstream of `tools/horizontal.ts` reads file names, program text
  * and expected output out of an archive somebody else published. A benchmark
  * that names its output file `../../packages/parser/src/index.ts` is not a
- * far-fetched attack — it is one careless `os.path.join` in an upstream
+ * far-fetched attack. It is one careless `os.path.join` in an upstream
  * generator away, and this harness writes files where a manifest tells it to.
  *
  * So paths from a corpus are resolved through `safeJoin` and nothing else, and
@@ -29,7 +29,7 @@ export class UnsafePathError extends Error {}
  * kind that passes review and fails in use.
  *
  * The trailing separator on `root` matters: without it, a sibling directory
- * whose name merely starts with the root's — `/tmp/run` and `/tmp/run-evil` —
+ * whose name merely starts with the root's, `/tmp/run` against `/tmp/run-evil`,
  * passes a `startsWith` test.
  */
 export function safeJoin(root: string, candidate: string): string {
@@ -90,7 +90,7 @@ export function sanitizedEnv(
  *
  * A benchmark task that loops forever is a benchmark task, not an incident: the
  * harness records `timeout` against it and moves on. The output cap is the same
- * idea for a program that prints in a loop — without it the first such task
+ * idea for a program that prints in a loop. Without it the first such task
  * fills memory and takes the whole run with it.
  */
 export const EXTERNAL_TIMEOUT_MS = 30_000;

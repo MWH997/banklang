@@ -4,7 +4,7 @@
  *   pnpm horizontal:materialise
  *
  * Both semantic corpora ship the answer next to the question. CobolCodeBench
- * carries `canonical_solution` — the full COBOL — and `complete_prompt`, which
+ * carries `canonical_solution`, the full COBOL, and `complete_prompt`, which
  * is a COBOL skeleton. COBOLEval carries a COBOL `prompt` and the COBOL test
  * drivers. If a BankTS implementation were written with those on screen, the
  * benchmark would measure transliteration, and a transliteration score says
@@ -18,14 +18,14 @@
  *
  * The spec is what an implementation is written from and is the only half
  * committed. The sealed half is derived from the ignored cache, is itself
- * ignored, and is read by the evaluator — never by the author.
+ * ignored, and is read by the evaluator rather than by the author.
  *
  * **What this does and does not guarantee.** It guarantees that the normal path
  * to writing an implementation does not show the reference, that the committed
  * material contains none of it, and that anybody reproducing this can see
  * exactly which bytes were on the authoring side of the line. It does not
- * guarantee that the agent which wrote the BankTS never read the sealed file —
- * no repository layout can. That limit is stated in
+ * guarantee that the agent which wrote the BankTS never read the sealed file,
+ * and no repository layout can. That limit is stated in
  * `docs/validation/horizontal-validation.md` rather than glossed: development
  * here is AI-assisted and says so, and what is model-free is compilation and
  * scoring.
@@ -74,7 +74,7 @@ function text(record: Record<string, unknown>, field: string): string {
  *
  * `inputs` is a string containing an object of file name to contents. A record
  * whose inner JSON does not parse is a malformed upstream record and is
- * reported as one rather than silently becoming an empty file set — a task with
+ * reported as one rather than silently becoming an empty file set: a task with
  * no inputs would "pass" by writing nothing.
  */
 function nestedFiles(
@@ -119,8 +119,8 @@ export interface Materialised {
 /**
  * CobolCodeBench: prose in, files out, and the reference sealed away.
  *
- * The behavioural oracle is the benchmark's own `outputs` — the exact bytes it
- * expects each file to hold — so the reference COBOL is not needed to score a
+ * The behavioural oracle is the benchmark's own `outputs`, the exact bytes it
+ * expects each file to hold, so the reference COBOL is not needed to score a
  * run at all. It is sealed rather than discarded only so a failure can be
  * investigated against what the benchmark's author intended.
  */
@@ -196,7 +196,7 @@ export function materialiseCobolCodeBench(cwd = process.cwd()): Materialised {
  * data layout the benchmark's test drivers call the program with lives in the
  * same file as a LINKAGE SECTION. Both are needed to implement the task and
  * neither is a solution, so the comment text and the LINKAGE declaration are
- * extracted into the spec while the rest of the prompt — the skeleton — is
+ * extracted into the spec while the rest of the prompt, the skeleton, is
  * sealed with the drivers.
  *
  * The LINKAGE is what makes most of this corpus inapplicable, and it has to be
@@ -359,7 +359,7 @@ function main(): number {
       `${result.corpus.padEnd(16)} ${String(result.written)} / ${String(result.discovered)} materialised into ${relative(cwd, resolve(cwd, TASKS_ROOT, result.corpus))}\n`,
     );
     for (const bad of result.malformed) {
-      process.stdout.write(`  malformed upstream: ${bad.id} — ${bad.why}\n`);
+      process.stdout.write(`  malformed upstream: ${bad.id}: ${bad.why}\n`);
     }
   }
   return 0;

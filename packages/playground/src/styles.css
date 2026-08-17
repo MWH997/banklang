@@ -76,7 +76,7 @@ body {
   color: var(--text);
   /*
    * A column, so the editor takes whatever the header and footer leave. The
-   * height used to be `calc(100vh - 132px)` — a measurement of the header
+   * height used to be `calc(100vh - 132px)`, a measurement of the header
    * taken once by hand, which is right until somebody edits the header. Adding
    * one line to it silently pushed the footer off the bottom of the screen.
    */
@@ -457,7 +457,7 @@ body {
  *
  * Each pane gets a viewport-relative height rather than growing to its
  * content: the 2026-08-06 audit measured the output pane at 1227px on a phone,
- * which works and is not designed — a reader scrolls past a screen and a half
+ * which works and is not designed: a reader scrolls past a screen and a half
  * of generated COBOL to reach the diagnostics that are the point of the page.
  */
 @media (max-width: 900px) {
@@ -483,7 +483,7 @@ body {
  * `max-height` and `.editor` a `flex: 1`, but `#output-panel` sits between them
  * and was a plain block: the flex chain broke there, the editor grew to its
  * content, and at 390px the generated COBOL was 1227px tall inside a 591px pane
- * with `overflow: visible` — painting over the trace bar and the footer below
+ * with `overflow: visible`, painting over the trace bar and the footer below
  * it. Measured again on 2026-08-07 and still doing it, at 360, 390 and 768.
  */
 #output-panel {
@@ -1040,7 +1040,7 @@ select[hidden] {
  * about a balanced transfer posted 0.00 against 0.00.
  *
  * A form rather than a text area of bytes. The fields are the copybook's, in
- * the copybook's order, with the picture beside each one — because the point
+ * the copybook's order, with the picture beside each one, because the point
  * being made is that this is a fixed-length record at fixed offsets, and a
  * free-text blob would hide exactly that.
  */

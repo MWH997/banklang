@@ -3,7 +3,7 @@
  *
  * Every number here is a scaled integer: `units` counted in `10^-scale`. There
  * is no binary floating point anywhere in this file, for the same reason there
- * is none in the compiler — `0.1 + 0.2` is not `0.3`, and a ledger that is out
+ * is none in the compiler: `0.1 + 0.2` is not `0.3`, and a ledger that is out
  * by a hundredth of a penny is out.
  *
  * The encodings are the ones z/Architecture defines and GnuCOBOL reproduces.
@@ -201,7 +201,7 @@ export function encodeNumeric(
   switch (usage) {
     case "display": {
       // A separate sign takes the first or last byte, and the digits take the
-      // rest — so where the digits start depends on which end it is at.
+      // rest, so where the digits start depends on which end it is at.
       const separate = signIsSeparate(picture);
       const leading = separate && picture.sign === "leading-separate";
       const start = offset + (leading ? 1 : 0);
@@ -356,7 +356,7 @@ export function decodeNumeric(
  * Implemented for the symbols the compiler and `runtime/` actually use: a
  * floating sign string, `Z` suppression, `9`, the decimal point, and the comma.
  * Anything else raises rather than being approximated, because an edited field
- * is what a program prints — a wrong one is a wrong report, and a wrong report
+ * is what a program prints, and a wrong one is a wrong report, and a wrong report
  * that looks plausible is the worst outcome available.
  */
 export function edit(value: Decimal, picture: Picture): string {
@@ -382,9 +382,9 @@ export function edit(value: Decimal, picture: Picture): string {
   let suppressing = true;
   const pointAt = mask.indexOf(".");
 
-  // What a suppressed position is filled with. `Z` blanks it; `*` — check
-  // protection, written on a cheque so a suppressed amount cannot be altered —
-  // fills it with an asterisk, *including the simple insertion characters
+  // What a suppressed position is filled with. `Z` blanks it. `*` is check
+  // protection, written on a cheque so a suppressed amount cannot be altered,
+  // and fills it with an asterisk, *including the simple insertion characters
   // inside the suppressed run. `PIC **,**9.99` on 1.00 is `*****1.00`, not
   // `** **1.00`: a gap there is a space where the protection is supposed to be,
   // which is precisely the alteration the asterisk exists to prevent.

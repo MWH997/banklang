@@ -25,15 +25,15 @@ import { explainDiagnostic } from "../packages/diagnostics/src/index";
 /**
  * The failures that are not diagnostics, and which of them is whose fault.
  *
- * F3. The 2026-08-07 audit counted 38 `throw new Error` sites across the
- * compiler; F1 stopped them reaching a user as a Node stack trace, and this is
- * the triage. A throw is either the reader's file — a copybook that is not a
- * copybook, a `job.json` with no steps — or bankc's own, and the two want
+ * There were 38 `throw new Error` sites across the compiler. A boundary in
+ * `bin.ts` stops any of them reaching a user as a Node stack trace, and this is
+ * the triage behind it. A throw is either the reader's file (a copybook that is
+ * not a copybook, a `job.json` with no steps) or bankc's own, and the two want
  * completely different output.
  *
  * The rule below is the one that makes the triage stick: no compiler package
- * throws a bare `Error`. An unclassified failure is exactly the shape both
- * halves of F20 arrived in.
+ * throws a bare `Error`. An unclassified failure is exactly the shape those
+ * defects arrived in.
  */
 
 function sourceFiles(dir: string): string[] {
@@ -49,7 +49,7 @@ function sourceFiles(dir: string): string[] {
 describe("every failure is classified", () => {
   /**
    * `packages/diagnostics/src/errors.ts` names the thing it forbids in its own
-   * prose, so it is read as code rather than as text — the same trick
+   * prose, so it is read as code rather than as text, the same trick
    * `tests/feature-coverage.test.ts` needed when its check passed over itself.
    */
   const code = (file: string) =>
@@ -104,7 +104,7 @@ describe("every failure is classified", () => {
  * What a reader gets, at the boundary.
  *
  * Spawned rather than called: `runBankc` returns before `bin.ts` decides how to
- * print a throw, and how it prints is the whole of F3.
+ * print a throw, and how it prints is the whole point here.
  */
 describe("the CLI boundary", () => {
   function bankc(args: string[], cwd: string) {
@@ -302,8 +302,8 @@ describe("BANK-JOB-004", () => {
  * Both are decided while the job stream is being written, because both are
  * about how the steps sit together: a program built on its own has nothing to
  * collide with, and a sort has no files to check until the programs around it
- * have declared theirs. They are the reader's own all the same — one renames a
- * project, the other fixes a name in `job.json` — so they carry identifiers
+ * have declared theirs. They are the reader's own all the same: one renames a
+ * project, the other fixes a name in `job.json`, so they carry identifiers
  * rather than reading as compiler defects, which is what they did for a day
  * when this triage was first applied by pattern rather than by reading.
  */
@@ -385,7 +385,7 @@ describe("BANK-JOB-006", () => {
  * The other half of the triage.
  *
  * A `CompilerInvariant` is a state the typechecker is supposed to make
- * impossible, so there is no program that reaches one — which is the point, and
+ * impossible, so there is no program that reaches one, which is the point, and
  * also why the class itself is what gets tested rather than a way of provoking
  * it. What matters is that it is a distinct type, so `bin.ts` can tell it apart
  * and say whose defect it is.
@@ -401,12 +401,12 @@ describe("a compiler invariant", () => {
 });
 
 /**
- * F2. A throw during a rebuild ends the build, not the session.
+ * A throw during a rebuild ends the build, not the session.
  *
  * The boundary in `bin.ts` cannot reach this one. By the time a file changes,
  * its `try` has long returned and the rebuild is running inside the watcher's
  * callback, where a throw is an uncaught exception: Node prints it and ends the
- * process, and the user loses the watch over a typo — which is the case
+ * process, and the user loses the watch over a typo, which is the case
  * `--watch` exists to shorten.
  *
  * The colliding job from BANK-JOB-005 is the provocation, because it is a real
@@ -452,7 +452,7 @@ describe("the watch loop", () => {
    * On macOS a recursive watch is an FSEvents stream, and the stream is
    * registered asynchronously: a change made in the first moments after
    * `watch()` returns can be dropped outright rather than delivered late. On a
-   * loaded machine — 128 test files across several forks — that window is wide
+   * loaded machine, with 128 test files across several forks, that window is wide
    * enough to hit, and when it is hit no timeout is long enough, because there
    * is no event still in flight to wait for. Saving again on each poll is what
    * a reader does when nothing happens, and it keeps the assertion on the
@@ -520,7 +520,7 @@ describe("the watch loop", () => {
    * with nothing watching: a change saved during it was not queued and not
    * delivered late, it was never seen at all, and the session went on reporting
    * a failure the reader had already fixed. That is the same shape as the
-   * `running` guard this file's first test is about — the watch goes quiet
+   * `running` guard this file's first test is about, and the watch goes quiet
    * while still looking like it is working.
    *
    * Asserted against the source, because provoking it needs a change to land

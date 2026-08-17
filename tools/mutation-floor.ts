@@ -3,7 +3,7 @@
  *
  * Stryker's `thresholds.break` is applied to the aggregate, and an aggregate
  * hides exactly the file you most want to know about. The emitter lane scored
- * 61.65 against a break of 60 and passed — while `packages/cobol-ir/src/index.ts`
+ * 61.65 against a break of 60 and passed, while `packages/cobol-ir/src/index.ts`
  * inside it scored **44.12**, with 81 surviving mutants and 33 lines no test
  * reaches. Two files at 67 and 72 carried it. Nothing in the run said so, and
  * the build was green.
@@ -46,12 +46,12 @@ export interface FileScore {
  * reports one number while the run reports another.
  *
  * Detected is killed plus timed-out. The denominator is detected plus survived
- * plus no-coverage — an uncovered mutant counts *against* the score, because no
+ * plus no-coverage, because an uncovered mutant counts *against* the score, since no
  * test ran it, which is the point. `Ignored`, `CompileError` and `RuntimeError`
  * are excluded: they are mutants that were never a fair test of anything.
  *
  * The first version of this counted `Ignored` in the denominator and scored
- * `cobol-ir/src/index.ts` at 10.30% where Stryker said 44.12% — 670 of its 874
+ * `cobol-ir/src/index.ts` at 10.30% where Stryker said 44.12%: 670 of its 874
  * mutants are ignored by config. A gate whose number disagrees with the tool it
  * gates is worse than no gate, so `tests/mutation-floor.test.ts` holds this
  * function to the three figures the emitter lane actually printed.
@@ -96,7 +96,7 @@ export function scores(report: MutationReport): FileScore[] {
  * lanes exclude `StringLiteral` and `Regex` mutations because changing a
  * message is not a behaviour change worth a test. Scoring it 0% and failing
  * the build was this gate reporting a configuration decision as an untested
- * file — the same class of wrong as the aggregate hiding a bad one.
+ * file, the same class of wrong as the aggregate hiding a bad one.
  *
  * A file with *no mutants at all* still counts against the floor. That is a
  * file the lane's `mutate` globs never reached, which is a real gap.

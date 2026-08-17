@@ -2,7 +2,7 @@
       *>
       *> Nothing outside z/OS supplies MQCONN, MQOPEN, MQPUT, MQGET,
       *> MQCLOSE or MQDISC, so a generated program that talks to a queue
-      *> cannot be linked locally at all — it fails at bind with an
+      *> cannot be linked locally at all: it fails at bind with an
       *> unresolved external, which is loud but proves nothing about the
       *> program. These exist so the local build can run one.
       *>
@@ -11,8 +11,8 @@
       *> sets a completion code and a reason code and returns; the
       *> message a `put` was given is held in this program's own storage
       *> and handed back by the next `get`, one deep. That is enough to
-      *> reach every branch a generated program has — a message, an
-      *> empty queue, and a failure — and nothing more.
+      *> reach every branch a generated program has (a message, an
+      *> empty queue, and a failure) and nothing more.
       *>
       *> The completion and reason codes are the ones IBM's Application
       *> Programming Reference documents, so the branch the program
@@ -20,8 +20,8 @@
       *> 0, MQCC-FAILED is 2, 2033 (MQRC-NO-MSG-AVAILABLE) really is an
       *> empty queue, and 2002 (MQRC-ALREADY-CONNECTED) really is a
       *> second MQCONN to a queue manager already connected. The failure
-      *> paths are reached by calling out of order — a get before an
-      *> open, a disconnect before a connect — which is how a generated
+      *> paths are reached by calling out of order: a get before an
+      *> open, a disconnect before a connect, which is how a generated
       *> program reaches them too.
       *>
       *> What running against this proves: the MQI call sequence is the

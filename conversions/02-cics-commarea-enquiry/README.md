@@ -1,9 +1,9 @@
-# 02 — A CICS enquiry with a COMMAREA
+# 02. A CICS enquiry with a COMMAREA
 
 Linked to with an account number, answers with a balance and a two-character
 return code. The shape of half the online estate.
 
-Written for this repository in period style — see the
+Written for this repository in period style. See the
 [provenance note](../README.md#provenance).
 
 ## The original
@@ -20,7 +20,7 @@ Written for this repository in period style — see the
 ```
 
 Two branches where there are three. `SQLCODE = 0` is "found" and _everything
-else_ is `'01'` — so a deadlock (-911), a resource that was not available
+else_ is `'01'`, so a deadlock (-911), a resource that was not available
 (-904) and a package that was never bound (-805) all reach the terminal as
 "account not found". The teller sees a customer who does not exist, for an
 account that does.
@@ -77,7 +77,7 @@ The BankTS in between is 39 lines.
 
 <!-- /measurements -->
 
-No file operations either side — this is an online program, and the numbers that
+No file operations either side, because this is an online program, and the numbers that
 matter here are in the table above rather than in the count.
 
 ## What changed about what it does

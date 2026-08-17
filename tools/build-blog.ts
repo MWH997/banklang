@@ -7,7 +7,7 @@
  * BankLang, and it has to be readable without any of that context.
  *
  * Posts are ordinary Markdown with a small front matter block. Nothing here
- * rewrites the content — the same rule the documentation build follows — and
+ * rewrites the content, which is the same rule the documentation build follows, and
  * the same two syntax highlighters are used, so a COBOL block reads identically
  * on a blog post, a documentation page and the landing page.
  *
@@ -21,8 +21,9 @@
  *
  * `tests/blog.test.ts` holds all of it, including a description short enough for
  * a search result. The house prose rules are in `tests/prose.test.ts`, which
- * applies them to the documentation and the site copy too — they were enforced
- * on these five files and on nothing else, which is what F26 was about.
+ * applies them to the documentation and the site copy too. For a while they
+ * were enforced on these files and on nothing else, which taught a reader the
+ * opposite of what the rule was for.
  *
  * Usage: `pnpm build:blog`, or `pnpm build:site`, which calls it.
  */
@@ -67,10 +68,10 @@ export interface PostMeta {
   /**
    * Who wrote it.
    *
-   * F25: five essays arguing for a change in how banks build core systems,
-   * published with no byline at all, while `CITATION.cff` carried the full
-   * identity — name, email and ORCID — and the string "Wahid" appeared zero
-   * times on the built site. Held to that file by `tests/blog.test.ts`, so
+   * These essays argue for a change in how banks build core systems, and they
+   * went out with no byline at all, while `CITATION.cff` carried the full
+   * identity: name, email and ORCID. The author's name appeared zero times on
+   * the built site. Held to that file by `tests/blog.test.ts`, so
    * there is one place the author is recorded and the byline cannot drift from
    * the citation metadata.
    */
@@ -78,18 +79,18 @@ export interface PostMeta {
   /**
    * Two other posts, by slug.
    *
-   * F28: each post dead-ended. Written per post rather than computed, because
-   * "newest two" is a list nobody chose and the pairs that are worth reading
-   * together are not the ones that were published together.
+   * Each post used to dead-end. Written per post rather than computed, because
+   * "newest two" is a list nobody chose, and the pairs worth reading together
+   * are not the ones that happened to be published together.
    */
   related: string[];
   /**
    * The documentation page this essay is the argument for, under `docs/`.
    *
    * The title comes from the page's own heading rather than being written
-   * again here. Each post used to close with an italic paragraph about
-   * BankLang that carried the same link — F27, the template — and this is
-   * where that link went.
+   * again here. Each post used to close with the same italic paragraph about
+   * BankLang carrying the same link, which read as a template, and this is
+   * where that link went instead.
    */
   reading: string;
 }
@@ -157,9 +158,9 @@ export function parseFrontMatter(source: string): {
       fields.set(field[1], (field[2] ?? "").replace(/^"|"$/g, "").trim());
     }
   }
-  // `author`, `related` and `reading` are required rather than optional, which
-  // is the whole of H1's "so this cannot be half-applied": an optional byline
-  // is one four posts have and the fifth does not.
+  // `author`, `related` and `reading` are required rather than optional, so
+  // the convention cannot be half-applied: an optional byline is one that four
+  // posts have and the fifth does not.
   for (const required of [
     "title",
     "description",
@@ -406,9 +407,8 @@ ${NAV_SCRIPT}
 /**
  * What follows the essay.
  *
- * It used to be one paragraph, identical on all five posts, saying what
- * BankLang is and inviting the reader to try it — F27, and visible as a
- * template in a single sitting. What a reader who has finished an essay wants
+ * It used to be one paragraph, identical on every post, saying what BankLang
+ * is and inviting the reader to try it. It read as a template at a glance. What a reader who has finished an essay wants
  * is the next thing to read, so that is what is there: the two posts this one
  * was written beside, and the documentation page it is the argument for.
  *
@@ -533,16 +533,16 @@ ${all
   .join("\n")}
       </ul>
       <!--
-        F28. Five posts on five consecutive days and then nothing reads as a
-        launch batch, and a reader deciding whether this project exists in a
-        year reads the blog for exactly that. The honest answer is not a
-        schedule nobody will keep.
+        Posts on consecutive days and then nothing reads as a launch batch, and
+        a reader deciding whether this project will still exist in a year reads
+        the blog for exactly that signal. Saying so beats promising a schedule
+        nobody will keep.
       -->
       <p class="post__cadence">
-        These went out together, and what follows them will not: a post here is
-        written when something has been finished and is worth the argument,
-        which is a few times a year rather than weekly.
-        <a href="feed.xml">The feed</a> is how to hear about the next one.
+        These went out together. Later ones will not: something gets written
+        here when it is finished and worth arguing about, which works out at a
+        few times a year. <a href="feed.xml">The feed</a> is how to hear about
+        the next one.
       </p>
     </main>`,
   });
@@ -600,7 +600,7 @@ ${items.join("\n")}
 /**
  * `/about/`, rendered from `CITATION.cff`.
  *
- * F25. The byline on each post has to land somewhere, and the somewhere has to
+ * The byline on each post has to land somewhere, and the somewhere has to
  * answer the first question `docs/for-decision-makers.md` exists for and does
  * not answer: who wrote this. Everything on it is generated from the citation
  * metadata, so there is one record of the identity rather than two.
@@ -620,19 +620,18 @@ export function renderAbout(): string {
       </p>
       <div class="post__body">
         <p>
-          It is a deterministic compiler from BankTS, a small banking language
-          with TypeScript's type syntax, to readable IBM Enterprise COBOL. The
-          design and the decisions are mine; much of the implementation was
-          written with an AI coding assistant under review. That is how it was
-          written rather than what it does, and nothing in the compiler is a
-          model.
+          It compiles BankTS, a small banking language, into IBM Enterprise
+          COBOL. The design and the decisions are mine. Much of the
+          implementation was written with an AI coding assistant, under review.
+          That describes how the compiler was built; there is no model inside
+          it, at build time or at run time.
         </p>
         <p>
-          It has never run on z/OS. Generated COBOL is validated locally with
-          GnuCOBOL under a configuration shaped towards Enterprise COBOL 6.4,
-          and
-          <a href="../docs/status-and-limits.html">the limits are written down</a>
-          rather than left for a reader to discover.
+          It has never run on z/OS. Generated COBOL is compiled locally with
+          GnuCOBOL, configured to look like Enterprise COBOL 6.4, and
+          <a href="../docs/status-and-limits.html">the limits are all written
+          down</a>
+          so that nobody has to discover them the hard way.
         </p>
         <h2>Getting in touch</h2>
         <ul>

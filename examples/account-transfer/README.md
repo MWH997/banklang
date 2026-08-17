@@ -58,4 +58,4 @@ language grows more features.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-transfer) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=account-transfer). It compiles in your browser, with the generated COBOL beside it.

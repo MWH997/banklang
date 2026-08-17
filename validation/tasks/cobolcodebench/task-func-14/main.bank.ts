@@ -21,7 +21,7 @@ record CsvParts {
 // expressible at all. BankTS's `date` is a closed type: `today()` and
 // `accept date` produce one, two of them compare, and nothing converts a number
 // or a string into one. A `date` redefining eight characters is how COBOL has
-// always done it — the same bytes, read as a date — so a date parsed out of a
+// always done it, the same bytes read as a date, so a date parsed out of a
 // feed can be compared with the clock.
 record Stamp {
   stampDigits: string<8>;
@@ -90,7 +90,7 @@ entry transaction todaysRows(
   close task4Inp;
 
   // A selection sort over the kept rows. The table is bounded at a hundred, so
-  // both loops are, which is what lets them be written at all — `sort` is the
+  // both loops are, which is what lets them be written at all. `sort` is the
   // statement for ordering a file, and these rows are in storage.
   let outer: decimal<9, 0> = 1;
 

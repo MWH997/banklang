@@ -1,7 +1,7 @@
 /**
  * Horizontal validation: this compiler against COBOL nobody wrote for it.
  *
- * Everything else in this repository is vertical — tests written for BankLang,
+ * Everything else in this repository is vertical: tests written for BankLang,
  * measuring BankLang against what their author expected. This package holds the
  * other axis: independent corpora, their licences, the rules that decide what
  * BankTS can express, and the arithmetic that reports the answer without

@@ -9,40 +9,31 @@ import { isWorkingPaper } from "../tools/build-docs";
 /**
  * House style, applied to everything a reader reads.
  *
- * H2, closing the 2026-08-07 audit's F26. `tests/blog.test.ts` held two prose
- * rules and held them on five files: no em dashes, and a list of phrases that
- * read as filler. Measured across the repository, the first was enforced on
- * five files and absent from roughly two hundred:
+ * Four rules: a list of phrases that read as filler, two shapes of
+ * self-answering negative, and no em dashes. All of them over the same
+ * surfaces, which is the part that took the longest to get right.
  *
- * | Surface                    | em dashes |
- * | -------------------------- | --------: |
- * | All five blog posts        |         0 |
- * | `README.md`                |         8 |
- * | `packages/site/src` (HTML) |         4 |
- * | `CHANGELOG.md`             |        44 |
- * | `packages/*` comments      |       615 |
- * | `docs/*.md`                |       620 |
+ * The dash rule was held on the blog posts alone for a while, while the
+ * documentation carried 620 of them and the site's own markup carried four.
+ * Enforcing a rule on six files out of two hundred teaches a reader that the
+ * blog is punctuated by different hands from the docs, which is the inference
+ * the rule existed to prevent. Extending it meant reading all 685 instances in
+ * the documentation and the posts and replacing each with the punctuation the
+ * sentence actually wanted: a colon where the dash introduced an explanation,
+ * parentheses where a pair of them bracketed an aside, a full stop where what
+ * followed could stand on its own. Three of the documents are generated, so
+ * those were fixed in the generators, along with the site's markup, the page
+ * titles and the strings the playground renders.
  *
- * The audit's own framing was: extend it, or drop it and stop drawing the
- * distinction. It was dropped in August, on the reasoning that enforcing it on
- * the six posts while the documentation carried 620 of them was the worst of
- * the three options, and that extending it meant a mechanical rewrite of prose
- * that was already good.
+ * That rewrite is also where the bracket rule at the bottom of this file comes
+ * from. Thirty-three list items came out of it with an open bracket on one
+ * bullet and its partner on the next, and they shipped, because nothing was
+ * reading punctuation.
  *
- * **It has since been extended, and the rewrite was not mechanical.** Every one
- * of the 685 in the documentation and the posts was read and replaced with the
- * punctuation the sentence wanted: a colon where the dash introduced an
- * explanation, parentheses where a pair of them bracketed an aside, a full stop
- * where what followed could stand on its own. Three of the documents are
- * generated, so those were fixed in the generators. So were the site's own
- * markup, the page titles and the strings the playground renders.
- *
- * What is held here is therefore both checks, over the same surfaces: the
- * phrase list, the two shapes of self-answering negative, and the dash. Code
- * comments are deliberately outside it, and the reason is the one the August
- * entry gave: they are written for whoever is reading the code, the objection
- * is about what a visitor to the site reads, and a rule reaching into every
- * comment in the repository is the mechanical rewrite that was rightly refused.
+ * Code comments are deliberately outside all of this. They are written for
+ * whoever is reading the code, the objection these rules answer is about what a
+ * visitor to the site reads, and a rule reaching into every comment in the
+ * repository is a mechanical rewrite of prose that is already doing its job.
  */
 
 const FORBIDDEN = [
@@ -123,9 +114,23 @@ function markdownUnder(root: string): string[] {
  * Working papers are excluded for the reason they are excluded from the site:
  * an audit is a record of what was written on a day, and editing one to satisfy
  * a style rule added later is editing the history it exists to hold. The
- * 2026-08-05 audit uses "leverage", and it should go on using it.
+ * earliest of them uses "leverage", and it should go on using it.
+ *
+ * The example, conversion and evidence READMEs were outside this for a long
+ * time, and it showed: `docs/` had been swept clean of em dashes while a
+ * hundred and twenty sat in the pages a reader reaches by clicking an example.
+ * They are the same prose, written for the same reader, so they are held to the
+ * same rules. `runtime/`, `zos/` and the two package READMEs are here for the
+ * same reason.
+ *
+ * `CHANGELOG.md` is deliberately not: Common Changelog puts an em dash between
+ * a version and its date, three tests match on that form, and the file is a
+ * record rather than an argument.
  */
 function proseSurfaces(): { name: string; text: string }[] {
+  const readmesUnder = (root: string): string[] =>
+    markdownUnder(root).filter((file) => file.endsWith("README.md"));
+
   const files = [
     ...markdownUnder("docs").filter(
       (file) => !isWorkingPaper(file.replace(/\\/g, "/")),
@@ -134,6 +139,13 @@ function proseSurfaces(): { name: string; text: string }[] {
     "CONTRIBUTING.md",
     "packages/site/src/index.html",
     "packages/playground/index.html",
+    ...readmesUnder("examples"),
+    ...readmesUnder("conversions"),
+    ...readmesUnder("evidence"),
+    "runtime/README.md",
+    "zos/README.md",
+    "packages/playground/README.md",
+    "packages/vscode-extension/README.md",
   ];
 
   return [
@@ -184,7 +196,7 @@ describe("everything written for a reader", () => {
    * translation. It is that the compiler refuses…". Set up a negative, then
    * deliver the real claim in a second short sentence starting "It is".
    *
-   * `FORBIDDEN` cannot catch it, because there is no phrase to list — every
+   * `FORBIDDEN` cannot catch it, because there is no phrase to list. Every
    * instance is different words in the same shape, which is exactly why it
    * reads as a mannerism. Twelve of them were spread across the README, the
    * landing page, four of the six blog posts and the documentation, and once
@@ -193,7 +205,7 @@ describe("everything written for a reader", () => {
    * The rule is narrow on purpose. A negation is fine; so is a short sentence.
    * What is caught here is the pair, and only where the second sentence opens
    * with a bare pronoun and a copula, which is the form with no information in
-   * it — "It is", "That is", "They are". Rewriting one is usually a matter of
+   * it: "It is", "That is", "They are". Rewriting one is usually a matter of
    * putting the claim first and letting "rather than" carry the contrast.
    */
   it("does not set up a negative and answer it in the next sentence", () => {
@@ -219,13 +231,20 @@ describe("everything written for a reader", () => {
    * "not X but Y" and "not X: Y" are both left alone. The objection is to the
    * pronoun-and-copula restatement, which carries no information the first
    * clause did not, and not to contrast.
+   *
+   * The auxiliary form is caught too. Written with `do` rather than `be` it is
+   * the same mannerism and the same splice, and it read as clean for as long as
+   * this only matched a copula: "an out-of-range write does not fail, it
+   * quietly changes a different field", "the compiler does not evaluate it, it
+   * compares the expressions". A rule that catches one spelling of a tic and
+   * not the other just moves the tic.
    */
   it("does not answer its own negative with a comma and a pronoun", () => {
     // The trailing `(?!\s+not\b)` excludes a list of negatives, which is a
     // different shape and a correct one: "they are not implementations, they
     // are not secure, and they write plain files".
     const SPLICE =
-      /\b(?:is|are|was|were)\s+not\s+[^.;:!?]{3,70},\s+(?:it|that|they|this)\s+(?:is|are|was|were)\b(?!\s+not\b)/gi;
+      /\b(?:is|are|was|were|does|do|did)\s+not\s+[^.;:!?,]{3,70},\s+(?:it|that|they|this)\s+(?:\w+ly\s+)?(?:is|are|was|were|does|do|did|[a-z]+s)\b(?!\s+not\b)/gi;
     const found: string[] = [];
     for (const surface of SURFACES) {
       for (const [hit] of surface.text.matchAll(SPLICE)) {
@@ -248,7 +267,7 @@ describe("everything written for a reader", () => {
    * It has now been extended, which is what makes the rule defensible: 685 in
    * the documentation and the posts, and every one in the site's own markup and
    * in the strings the playground renders, rewritten as the punctuation the
-   * sentence actually wanted — a colon where the dash introduced an
+   * sentence actually wanted: a colon where the dash introduced an
    * explanation, parentheses where a pair of them bracketed an aside, a full
    * stop where the clause after it could stand alone.
    *
@@ -276,5 +295,80 @@ describe("everything written for a reader", () => {
       }
     }
     expect(found).toEqual([]);
+  });
+
+  /**
+   * Every list item closes the brackets it opens.
+   *
+   * This is the damage the dash removal left behind, and it went unnoticed for
+   * a release because nothing reads punctuation. Replacing each dash by hand,
+   * across thirty-odd "Related pages" lists, turned pairs like
+   *
+   *     - [divergences.md](divergences.md) (what is known not to be proved
+   *     - [verification.md](verification.md)) what is checked, and how
+   *
+   * into exactly that: an open bracket on one bullet and its partner on the
+   * next, which renders as literal parentheses in the middle of two unrelated
+   * sentences. Thirty-three of them shipped to the site.
+   *
+   * Held over every published Markdown file, not only the pages
+   * `proseSurfaces()` covers, because an example's README is read by whoever is
+   * reading that example. Working papers are out for the reason they are out of
+   * everything else here. Fenced blocks are excluded: COBOL and JCL open
+   * brackets that Markdown never closes.
+   */
+  it("closes every bracket a list item opens", () => {
+    const unbalanced: string[] = [];
+    const published = [
+      ...markdownUnder("docs").filter(
+        (file) => !isWorkingPaper(file.replace(/\\/g, "/")),
+      ),
+      ...markdownUnder("examples"),
+    ];
+    for (const file of published) {
+      const lines = readFileSync(file, "utf8").split("\n");
+
+      // Fenced blocks blanked in place, so line numbers stay true.
+      let fenced = false;
+      const prose = lines.map((line) => {
+        if (line.trimStart().startsWith("```")) {
+          fenced = !fenced;
+          return "";
+        }
+        return fenced ? "" : line;
+      });
+
+      // A list item runs from its bullet to the next bullet or a blank line.
+      let item: string[] = [];
+      let at = 0;
+      const check = (): void => {
+        if (item.length === 0) {
+          return;
+        }
+        // A link target is not prose, and its brackets are not the author's.
+        const text = item.join(" ").replace(/\]\([^)\s]*\)/g, "]");
+        const opens = (text.match(/\(/g) ?? []).length;
+        const closes = (text.match(/\)/g) ?? []).length;
+        if (opens !== closes) {
+          unbalanced.push(`${file}:${String(at + 1)}: ${item[0]!.trim()}`);
+        }
+        item = [];
+      };
+
+      prose.forEach((line, index) => {
+        if (/^\s*(?:[-*+]|\d+\.) /.test(line)) {
+          check();
+          item = [line];
+          at = index;
+        } else if (item.length > 0 && line.trim() !== "") {
+          item.push(line);
+        } else {
+          check();
+        }
+      });
+      check();
+    }
+
+    expect(unbalanced).toEqual([]);
   });
 });

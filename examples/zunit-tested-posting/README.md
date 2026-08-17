@@ -7,7 +7,7 @@ down.
 
 Everything else in `examples/` is about what the compiler emits. This one is
 about what it emits **alongside** the program: three artifacts that run on z/OS
-and report pass or fail — a `.bzucfg` configuration, a COBOL test case program,
+and report pass or fail: a `.bzucfg` configuration, a COBOL test case program,
 and the job that submits them.
 
 ```bash
@@ -36,7 +36,7 @@ test postsBothLegs for postOne {
 ```
 
 `given` is the PARM the step is started with. `expect` is the calls the program
-makes, **in order** — a debit then a credit is not a credit then a debit, and
+makes, **in order**, so a debit then a credit is not a credit then a debit, and
 the generated driver checks each call against the expectation of that position.
 A run that makes fewer calls than the test expected fails, and so does one that
 makes more.
@@ -62,7 +62,7 @@ against it. A `test` declaration compiles to nothing.
 ## What this has not been through
 
 No generated case in this repository has been **run**. The driver compiles under
-GnuCOBOL, which is narrower evidence than it sounds — `COPY EQAITERC` resolves
+GnuCOBOL, which is narrower evidence than it sounds, because `COPY EQAITERC` resolves
 locally to a stand-in declaring the two fields the driver names, because IBM's
 copybook is not here. [zunit-integration.md](../../docs/zunit.md)
 records where every shape in the artifacts came from, and which two values are
@@ -71,11 +71,11 @@ inferred rather than observed.
 ## Related
 
 - [docs/zunit.md](../../docs/zunit.md)
-- [parm-driven-batch](../parm-driven-batch/README.md) — the PARM convention the
+- [parm-driven-batch](../parm-driven-batch/README.md): the PARM convention the
   `given` values arrive through
-- [account-posting](../account-posting/README.md) — the ledger and audit calls
+- [account-posting](../account-posting/README.md): the ledger and audit calls
   the expectations are about
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=zunit-tested-posting) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=zunit-tested-posting). It compiles in your browser, with the generated COBOL beside it.

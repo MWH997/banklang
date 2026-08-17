@@ -9,15 +9,15 @@ import { differentialProjects, NOT_INTERPRETED } from "./interpret";
 /**
  * What each example's evidence actually establishes, counted.
  *
- * The three grades are not new — the repository has always had them — but
+ * The three grades are not new, since the repository has always had them, but
  * nothing named them, so a feature could slide from "executed" to "compiles
- * only" without anything showing. The 2026-08-05 audit's §5.9 asks for the
- * counts in CI, where a drop becomes a diff in a file somebody reviews rather
- * than an absence nobody notices.
+ * only" without anything showing. The external audit asked for the counts in
+ * CI, where a drop becomes a diff in a file somebody reviews rather than an
+ * absence nobody notices.
  *
  * The grades are ordered by what they rule out:
  *
- * - **executed** — the generated program is linked against the reference
+ * - **executed**: the generated program is linked against the reference
  *   runtime in `runtime/` and run, and a test asserts on the ledger it wrote,
  *   the balances it left, and the branches it took. This is the only grade that
  *   catches a defect that compiles.
@@ -27,12 +27,12 @@ import { differentialProjects, NOT_INTERPRETED } from "./interpret";
  *   because the expectation came from arithmetic somebody did on paper. A
  *   *differential* one runs the same program under `cobc` and under
  *   `packages/cobol-runtime` and requires the two to agree, which catches a
- *   defect that compiles without anybody having to predict the answer — but
+ *   defect that compiles without anybody having to predict the answer, though
  *   would not catch a program that is wrong in the same way twice.
- * - **compiled** — `cobc` accepts it under `tools/banklang-ibm.conf`, a
+ * - **compiled**: `cobc` accepts it under `tools/banklang-ibm.conf`, a
  *   GnuCOBOL dialect shaped to Enterprise COBOL 6.4. It rules out a program the
  *   target would reject; it says nothing about what the program computes.
- * - **emitted** — artifacts are produced and pass the conformance linter, and
+ * - **emitted**: artifacts are produced and pass the conformance linter, and
  *   nothing local compiles them. A CICS program needs the translator and a Db2
  *   program needs the precompiler, neither of which exists off z/OS.
  *

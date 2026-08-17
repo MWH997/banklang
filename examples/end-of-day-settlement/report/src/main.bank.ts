@@ -78,7 +78,7 @@ entry transaction printSettlement(posted: PostedItem, line: ReportLine, state: R
 
     if postedStatus == "00" {
       // The control break. It works because the sort step put the records in
-      // branch order — on unsorted input this prints a total every time the
+      // branch order. On unsorted input this prints a total every time the
       // branch changes, which is a report that is wrong and still balances.
       if posted.postedBranchId != state.branchOnHand {
         if state.branchOnHand != "" {
@@ -105,7 +105,7 @@ entry transaction printSettlement(posted: PostedItem, line: ReportLine, state: R
 
   // The last branch has no successor to trigger its break, so its total is
   // printed here. Leaving this out loses one branch from the report and
-  // nothing says so — the grand total still agrees with the ledger.
+  // nothing says so, the grand total still agrees with the ledger.
   if state.branchOnHand != "" {
     reset line;
     line.lineLabel = "BRANCH TOTAL";

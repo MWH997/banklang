@@ -16,9 +16,9 @@ import { checked, compileExample, corpus } from "./helpers";
  * The pass that reads emitted COBOL for what z/OS will do with it.
  *
  * Two halves, like the conformance linter's tests. The rules are checked
- * against the programs this compiler actually shipped — reproduced here from
- * the 2026-08-07 audit, because the emitter no longer produces either shape and
- * a rule whose failing case is hypothetical is a rule that might be inert. Then
+ * against the programs this compiler actually shipped, reproduced here because
+ * the emitter no longer produces either shape and a rule whose failing case is
+ * hypothetical is a rule that might be inert. Then
  * the whole corpus is read, because a lane that reports nothing and a lane that
  * reads nothing look identical from the outside.
  */
@@ -52,7 +52,7 @@ const PAIRED_CONNECTS = `       PROCEDURE DIVISION.
  * `examples/online-enquiry` as it was emitted before A2.
  *
  * The transaction reads the commarea into `ENQUIRY-REQUEST`, computes into
- * `BALANCE-REPLY`, and moves `ENQUIRY-REQUEST` back — so the caller is handed
+ * `BALANCE-REPLY`, and moves `ENQUIRY-REQUEST` back, so the caller is handed
  * the question it asked. Every line of it is valid Enterprise COBOL.
  */
 const UNANSWERED_COMMAREA = `       LINKAGE SECTION.
@@ -389,7 +389,7 @@ ${body}
    * A write to a *field* counts, qualified or not.
    *
    * Everything this linter reads is generated, and the emitter qualifies every
-   * reference — `MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA` — so matching the
+   * reference (`MOVE 0.00 TO CA-BALANCE OF ENQUIRY-COMMAREA`) so matching the
    * record name alone worked by accident. An unqualified `MOVE WS-A TO
    * RP-RESULT` is legal COBOL that fills the reply, and the rule reported it as
    * never answering: a linter whose false positive is "you did the thing you
@@ -411,8 +411,8 @@ ${body}
 /**
  * How a statement is put back together before any rule reads it.
  *
- * Every rule here asks a question that spans a wrap — `CALL "MQCONN" USING`
- * carries four operands and the fourth is regularly on the next line — so the
+ * Every rule here asks a question that spans a wrap. `CALL "MQCONN" USING`
+ * carries four operands and the fourth is regularly on the next line, so the
  * reconstruction in `statements.ts` is what all of them stand on. The mutation
  * lane found its comment and blank-line skipping surviving, and the
  * checked-in artifacts are all emitter output, which never wraps in the places

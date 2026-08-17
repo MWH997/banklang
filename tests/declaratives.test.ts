@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { compile } from "../packages/compiler/src/index";
 
 /**
- * `on error <file>` — COBOL's `DECLARATIVES` and `USE AFTER ERROR`.
+ * `on error <file>`: COBOL's `DECLARATIVES` and `USE AFTER ERROR`.
  *
  * A file status check covers the statement that thought to look. This covers
  * the ones that did not, whatever the operation and wherever it was written,

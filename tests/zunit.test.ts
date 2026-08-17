@@ -16,15 +16,15 @@ import { unpadded } from "./helpers";
 /**
  * The zUnit generator.
  *
- * The 2026-08-05 audit's §4.5, and the last of its seven missing features to be
- * built. It was documented as blocked for a while on not having IBM's schema,
+ * The last of the seven features the external audit found missing, and the last
+ * to be built. It was documented as blocked for a while on not having IBM's schema,
  * and the block was real: an artifact that looks like a zUnit test case and is
  * not one is worse than none, because somebody uploads it and submits it.
  *
  * What unblocked it was test cases IBM's own generator produced, published in
- * public repositories. Every assertion here that fixes a shape — the namespace,
+ * public repositories. Every assertion here that fixes a shape (the namespace,
  * the element order, the attribute names, the entry point naming, the call to
- * `BZUASSRT` — is checking this generator against those, and
+ * `BZUASSRT`) is checking this generator against those, and
  * `docs/zunit.md` cites each one.
  */
 
@@ -199,7 +199,7 @@ describe("the driver", () => {
 
   /**
    * A call that never arrives has to fail the test. Counting only inside the
-   * stub cannot see that, because a stub that is never entered runs no code —
+   * stub cannot see that, because a stub that is never entered runs no code,
    * so the driver reads the count after the program returns.
    */
   it("refuses a run that made fewer calls than the test expected", () => {
@@ -228,7 +228,7 @@ describe("the driver", () => {
 
   /**
    * A test name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
-   * modification of no characters — an abend under SSRANGE and undefined
+   * modification of no characters: an abend under SSRANGE and undefined
    * without it. IBM's own generated cases carry the same exposure; this one
    * does not.
    */
@@ -263,7 +263,7 @@ describe("the job", () => {
   /**
    * The interception is the z/OS Debugger's, so the program under test has to
    * carry its hooks. A program compiled without `TEST` runs and calls the real
-   * ledger — the failure this line exists to prevent is a test that passes by
+   * ledger, and the failure this line exists to prevent is a test that passes by
    * posting to production.
    */
   it("says the program under test needs TEST", () => {
@@ -428,7 +428,7 @@ test aNameFarTooLongToBeAGeneratedCobolWord for go {
 
   /**
    * A configuration naming no test is one the runner ends having done nothing,
-   * with a return code that reads as success — which is what a green pipeline
+   * with a return code that reads as success, which is what a green pipeline
    * is built out of. Nothing is written for one.
    */
   it("refuses a case for a program that declares no tests", () => {
@@ -492,7 +492,7 @@ describe("bankc zunit", () => {
  * stand-in declaring the two fields the driver names, because IBM's own
  * copybook is not here. What this establishes is that the driver's syntax is
  * accepted and every name in it resolves. It establishes nothing about the info
- * block's layout, and the driver has never been run — see divergence D20.
+ * block's layout, and the driver has never been run. See divergence D20.
  */
 describe("GnuCOBOL", () => {
   it("accepts the generated driver", () => {
@@ -531,13 +531,13 @@ describe("GnuCOBOL", () => {
  * The other shape: a test that expects no call to anything.
  *
  * Every assertion above runs against one program, whose test expects a debit, a
- * credit and an audit — so `stubbed` is never empty, and the tools mutation lane
+ * credit and an audit, so `stubbed` is never empty, and the tools mutation lane
  * found the consequence: `if (stubbed.length > 0)` survives mutation at six
  * places in the generator, because nothing ever took the other branch. The
  * generator scored **40.83%** with 126 surviving mutants.
  *
  * `stubbed` is driven by what the *test* expects, not by what the program does.
- * So this program audits — `BANK-AUD-001` requires it — while its test asserts
+ * So this program audits, because `BANK-AUD-001` requires it, while its test asserts
  * only that the transaction runs. A generated case with no stubs must still be
  * a valid case: a configuration, a driver that enters the program, and a job.
  */
@@ -572,7 +572,7 @@ test acceptsAPositiveAmount for check {
    *
    * Named as a list rather than as absences, because "does not contain
    * BANKLEDG" is satisfied by a driver that emits a call counter for zero
-   * stubs — which is what flipping `if (stubbed.length > 0)` actually does,
+   * stubs, which is what flipping `if (stubbed.length > 0)` actually does,
    * and why the first version of this test killed no mutants at all.
    */
   const programsIn = (driver: string) =>
@@ -607,7 +607,7 @@ test acceptsAPositiveAmount for check {
    * The stub bookkeeping, all of it, in both directions.
    *
    * `if (stubbed.length > 0)` guards five places, and only one of them adds a
-   * nested program — the other four add storage and statements, which is why
+   * nested program. The other four add storage and statements, which is why
    * asserting the program list killed one mutant and left the rest. The
    * counters, the group index, the record pointer and the `PERFORM CHECK-…`
    * calls exist to check expectations against stubs; with no stub they are
@@ -665,8 +665,8 @@ test acceptsAPositiveAmount for check {
 /**
  * The PARM group, which a batch program has and a record-driven one does not.
  *
- * `if (parmFields.length > 0)` guards two places — the storage and the
- * statements that fill it — and every test above uses a program whose entry
+ * `if (parmFields.length > 0)` guards two places, the storage and the
+ * statements that fill it, and every test above uses a program whose entry
  * transaction takes scalars, so the guard was never seen false. A batch
  * program's PARM *is* the scalar parameters of its entry transaction, so a
  * transaction taking a record has none, and `BANK-TEST-003` means such a test

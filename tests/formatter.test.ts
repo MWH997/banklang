@@ -11,7 +11,7 @@ import { exampleProjects } from "../tools/example-projects";
  *
  * The formatter rewrites somebody's source, so "works on some programs" is not
  * a property worth having. The corpus was `examples/` alone, and the tools
- * mutation lane found 72 mutants in the formatter that no test reaches — the
+ * mutation lane found 72 mutants in the formatter that no test reaches, the
  * comment emitter, `reserved` slots, generic parameters, and five statement
  * kinds among them. The conversions carry constructs the examples do not:
  * a Db2 cursor, `REDEFINES`, an `OCCURS DEPENDING ON`.
@@ -178,7 +178,7 @@ function f(a: M): bool {
    * comparison every program passes: the formatter printed nothing at all for
    * seventeen of the thirty statement kinds, so running `pnpm fmt` deleted
    * every `log`, `commit`, `rollback`, `checkpoint`, `restart`, `getMessage`,
-   * `initiate` and `on error` handler from a program — and the result still
+   * `initiate` and `on error` handler from a program, and the result still
    * parsed, still had the same declarations, and still passed here.
    *
    * Spans are excluded because formatting moves lines, which is its job.
@@ -222,14 +222,14 @@ function f(a: M): bool {
  *
  * The corpus is every BankTS project in the repository, and it still does not
  * contain a DL/I `database`, a `json`/`xml` payload statement, a `split`, or a
- * generic record — the mutation lane reported 68 mutants in this file that no
+ * generic record. The mutation lane reported 68 mutants in this file that no
  * test reaches, most of them the `case` arms for those.
  *
  * The property is the one the corpus tests assert, applied to sources written
  * for the purpose: formatting must not change what the program means, and
  * formatting twice must equal formatting once. Round-tripping through the
  * parser is what catches a printer that emits something the parser cannot read
- * back — which is exactly what `database` did.
+ * back, which is exactly what `database` did.
  */
 describe("formatting a construct no example contains", () => {
   const withoutSpans = (value: unknown): string =>

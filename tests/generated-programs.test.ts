@@ -18,9 +18,9 @@ import { localCobol } from "./helpers";
 /**
  * Random valid programs, held to the target's rules.
  *
- * The 2026-08-05 audit's §5.3. Every hand-written fixture is a shape somebody
- * thought of, and the finding that mattered most — a COBOL word one character
- * over the limit — lived in a shape nobody had: every fixture used short names.
+ * Every hand-written fixture is a shape somebody thought of, and the finding
+ * that mattered most, a COBOL word one character over the limit, lived in a
+ * shape nobody had: every fixture used short names.
  * A generator does not know what anyone had in mind, so it reaches corners a
  * curated suite does not.
  *
@@ -28,7 +28,7 @@ import { localCobol } from "./helpers";
  *
  * 1. The program compiles with no errors. It is generated to, so a failure here
  *    is the generator's or the compiler's, and either is worth knowing.
- * 2. The emitted COBOL and JCL pass the conformance linter — which reads them
+ * 2. The emitted COBOL and JCL pass the conformance linter, which reads them
  *    as text and knows nothing about how they were produced. That independence
  *    is the point: a checker written from the same belief as the emitter agrees
  *    with the emitter, including where the emitter is wrong.

@@ -22,7 +22,7 @@
  *   - an arithmetic the supplied input cannot produce.
  *
  * Difficulty is not ambiguity. Several of the entries below were reached by
- * authoring the task, running it, and reading the one byte that differed —
+ * authoring the task, running it, and reading the one byte that differed:
  * task_func_55 is still authored and still executed for exactly that reason,
  * and its fixture stays in the tree so the evidence can be re-run.
  */
@@ -44,7 +44,7 @@ export interface TaskBlocker {
   /**
    * What was actually observed, and where.
    *
-   * A diagnostic id, a measured property of the fixture, a byte that differs —
+   * A diagnostic id, a measured property of the fixture, a byte that differs:
    * something a person can reproduce and disagree with. Required: an entry
    * without it is an opinion.
    */
@@ -70,7 +70,7 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The specification requires the three numbers to be validated as positive and an error displayed otherwise; the supplied input is `0,2,3` and the oracle instead computes 0! and prints six permutations in an order the specification does not state.",
     evidence:
-      "Input contains 0, which the specification calls invalid. Expected `task_func03_out1` is `0000000009`, which is 0!+2!+3!. Expected `task_func03_out2` orders the permutations by position (1,2,3) (1,3,2) (2,3,1) (2,1,3) (3,2,1) (3,1,2) — one of six possible orders, none of them named.",
+      "Input contains 0, which the specification calls invalid. Expected `task_func03_out1` is `0000000009`, which is 0!+2!+3!. Expected `task_func03_out2` orders the permutations by position (1,2,3) (1,3,2) (2,3,1) (2,1,3) (3,2,1) (3,1,2), one of six possible orders, none of them named.",
   },
   {
     task: "task_func_08",
@@ -86,13 +86,13 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The specification says each detail line shows the country and population 'separated by a colon and space' and the expected output has no colon; the list of valid countries is left to the implementer and the oracle requires a specific one; and every population loses its leading digit.",
     evidence:
-      "Expected `India                 31002651` against input `India               331002651` — no colon, and 331002651 truncated to 31002651. Afghanistan and Japan are dropped, which requires the reference's own country table.",
+      "Expected `India                 31002651` against input `India               331002651`, with no colon, and 331002651 truncated to 31002651. Afghanistan and Japan are dropped, which requires the reference's own country table.",
   },
   {
     task: "task_func_11",
     kind: "benchmark-ambiguous",
     reason:
-      "The expected output lays the filename out in a fixed column the specification never states, and the column is too narrow for one of the inputs — `anthertest@file.docx` runs straight into the next field, so the file literally contains `docxis`.",
+      "The expected output lays the filename out in a fixed column the specification never states, and the column is too narrow for one of the inputs: `anthertest@file.docx` runs straight into the next field, so the file literally contains `docxis`.",
     evidence:
       "Expected output contains `docxis`, present in neither the specification nor the input data.",
   },
@@ -102,13 +102,13 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The specification says to sort the records by patient name and to use a sort file for it; the expected output is in the input's own order.",
     evidence:
-      "Expected order is Palekit, Nikhil, Somesh, Panit — the order of the input file. Sorted ascending by name it would be Nikhil, Palekit, Panit, Somesh. The per-patient totals are right either way, so the ordering is the whole of the difference.",
+      "Expected order is Palekit, Nikhil, Somesh, Panit, which is the order of the input file. Sorted ascending by name it would be Nikhil, Palekit, Panit, Somesh. The per-patient totals are right either way, so the ordering is the whole of the difference.",
   },
   {
     task: "task_func_15",
     kind: "benchmark-ambiguous",
     reason:
-      "The expected output pairs each animal with a list of foods — meat, fish, grass, seeds, sugarcane and eleven more — that exists only inside the reference solution. The specification does not give the table and the input files are empty.",
+      "The expected output pairs each animal with a list of foods (meat, fish, grass, seeds, sugarcane and eleven more) that exists only inside the reference solution. The specification does not give the table and the input files are empty.",
     evidence:
       "Seventeen literals in the expected output appear in neither the specification nor the inputs.",
   },
@@ -156,13 +156,13 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The expected output omits one of the words that meets its own criterion and orders the rest by nothing the specification states.",
     evidence:
-      "`in` occurs twice in the input and is absent from the expected output, while `a`, `IT` and `Bangalore` — also twice — are present. The three present are in neither input order (`a` comes first in the text) nor alphabetical order.",
+      "`in` occurs twice in the input and is absent from the expected output, while `a`, `IT` and `Bangalore`, also twice, are present. The three present are in neither input order (`a` comes first in the text) nor alphabetical order.",
   },
   {
     task: "task_func_31",
     kind: "benchmark-ambiguous",
     reason:
-      'The specification asks for the values written "with an appropriate label" and the oracle requires three specific labels, two of them misspelled — `MAXIMAM`, `MINIMAM`, `AVERGE`. A correct program cannot guess a typo.',
+      'The specification asks for the values written "with an appropriate label" and the oracle requires three specific labels, two of them misspelled: `MAXIMAM`, `MINIMAM`, `AVERGE`. A correct program cannot guess a typo.',
     evidence:
       "`MAXIMAM`, `MINIMAM` and `AVERGE` appear in the expected output and nowhere in the contract.",
   },
@@ -178,7 +178,7 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     task: "task_func_39",
     kind: "benchmark-ambiguous",
     reason:
-      "The report's column headings — `ERROR DESCRIPTION`, `ERR VALUE`, and the rule beneath them — are in the oracle and not in the specification.",
+      "The report's column headings, `ERROR DESCRIPTION`, `ERR VALUE` and the rule beneath them, are in the oracle and not in the specification.",
     evidence: "`DESCRIPTION` and `RANGE` present in the oracle only.",
   },
   {
@@ -195,7 +195,7 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The expected output's final record carries a character the input cannot produce.",
     evidence:
-      "Authored, compiled and executed — the fixture is in the tree and runs. Both engines agree on all five records and every one matches except the last: expected `016730`, six characters, where the corresponding input record is `01673`. No threshold makes a five-digit value six digits long.",
+      "Authored, compiled and executed: the fixture is in the tree and runs. Both engines agree on all five records and every one matches except the last: expected `016730`, six characters, where the corresponding input record is `01673`. No threshold makes a five-digit value six digits long.",
   },
 
   /* ---------------------------------------------------------------- *
@@ -208,13 +208,13 @@ export const TASK_BLOCKERS: TaskBlocker[] = [
     reason:
       "The specification asks for the minimum, maximum and sum of the numbers on each line; the expected output holds the *first* number, the *last* number and the sum. No correct implementation of the stated contract can produce it.",
     evidence:
-      "Line two of the input is `3,2,18,45,6`. Its minimum is 2 and its maximum is 45; the expected line is `0003.00     0006.00     000074.00` — first, last, and a correct sum. Line one, `1,3,4,5`, is the same rule and cannot tell the two apart because its first and last happen to be its minimum and maximum. The overall figures follow: minimum 1 is the first number of the file and maximum 6 is the last.\n\nThis task was previously recorded as the corpus\u2019s one genuine case of a variable-arity split — four numbers on one line and five on the next, against a `split` whose receivers are named at compile time. That is still true of the input and is no longer the blocker: the oracle would be unreachable with any splitting mechanism.\n\nThe splitting question is now measured separately. `evidence/horizontal/xcobol-v2/string-usage.json` records 130 of 622 `UNSTRING` statements carrying `TALLYING`, which is COBOL\u2019s way of saying how many receivers were filled — a bounded, deterministic count over a fixed set of receivers rather than an unbounded list. That is external justification for a `counting` clause on `split`, and it is the case for one; it is no longer entangled with this task.",
+      "Line two of the input is `3,2,18,45,6`. Its minimum is 2 and its maximum is 45; the expected line is `0003.00     0006.00     000074.00`: first, last, and a correct sum. Line one, `1,3,4,5`, is the same rule and cannot tell the two apart because its first and last happen to be its minimum and maximum. The overall figures follow: minimum 1 is the first number of the file and maximum 6 is the last.\n\nThis task was previously recorded as the corpus\u2019s one genuine case of a variable-arity split, four numbers on one line and five on the next, against a `split` whose receivers are named at compile time. That is still true of the input and is no longer the blocker: the oracle would be unreachable with any splitting mechanism.\n\nThe splitting question is now measured separately. `evidence/horizontal/xcobol-v2/string-usage.json` records 130 of 622 `UNSTRING` statements carrying `TALLYING`, which is COBOL\u2019s way of saying how many receivers were filled, a bounded and deterministic count over a fixed set of receivers rather than an unbounded list. That is external justification for a `counting` clause on `split`, and it is the case for one; it is no longer entangled with this task.",
   },
   {
     task: "task_func_47",
     kind: "language-gap",
     reason:
-      "Transliterating accented names — `Téa` to `Tea` — is exactly what `replaceChars` does, character for character. The obstacle is the character model rather than the operation: the input is UTF-8, where `é` is two bytes, and a BankTS `string<n>` is n single-byte characters, so a character-for-character conversion cannot line up.",
+      "Transliterating accented names, `Téa` to `Tea`, is exactly what `replaceChars` does, character for character. The obstacle is the character model rather than the operation: the input is UTF-8, where `é` is two bytes, and a BankTS `string<n>` is n single-byte characters, so a character-for-character conversion cannot line up.",
     evidence:
       "Input `Téa\\nVáquéz\\n…` against expected `Tea\\nVaquez\\n…`. `string<n>` emits `PIC X(n)`, one byte per position; `Váquéz` occupies eight bytes and six characters. Note the earlier classification of this task as an oracle problem was a defect in `isOracleDerivable`, now fixed: the specification is complete.",
   },

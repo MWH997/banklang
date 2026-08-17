@@ -36,8 +36,8 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 ```
 
 `HALF_EVEN` is banker's rounding, the usual choice for interest because it does
-not bias upward across many postings. Enterprise COBOL has no phrase for it —
-`ROUNDED` is half-up away from zero and there is nothing else — so the compiler
+not bias upward across many postings. Enterprise COBOL has no phrase for it, since
+`ROUNDED` is half-up away from zero and there is nothing else, so the compiler
 writes the arithmetic out: the truncated value, the excess truncation
 discarded, and a step of one unit in the last place taken only when the excess
 is over half, or exactly half onto an odd digit.
@@ -159,4 +159,4 @@ ledger.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=interest-posting-batch) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=interest-posting-batch). It compiles in your browser, with the generated COBOL beside it.

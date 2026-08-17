@@ -68,7 +68,7 @@ ${body}
 
 describe("cursor declarations", () => {
   /**
-   * `DECLARE CURSOR` may not carry an INTO — Db2 puts the row's destination on
+   * `DECLARE CURSOR` may not carry an INTO, since Db2 puts the row's destination on
    * the FETCH, which is where the row actually arrives. Writing it on the
    * SELECT is how the query reads, so the compiler moves it.
    */
@@ -284,7 +284,7 @@ describe("banking checks see inside loops", () => {
   /**
    * `flattenStatements` descended only into `if`, so a transaction whose only
    * posting was inside a loop had, as far as the double-entry check could see,
-   * no postings at all — and balanced trivially.
+   * no postings at all, and balanced trivially.
    */
   it("reports an unbalanced posting made inside a cursor loop", () => {
     const result = txn(`    debit(row.rowAccountId, row.rowBalance);`);
@@ -330,8 +330,8 @@ entry transaction drain(account: Account) {
  *
  * Db2's Application Programming and SQL Guide: "A held cursor does not close
  * after a commit operation. A cursor that is not held closes after a commit
- * operation." A long batch has to commit inside its own loop — otherwise the
- * log fills and the locks accumulate until nothing else can read the table —
+ * operation." A long batch has to commit inside its own loop, because otherwise the
+ * log fills and the locks accumulate until nothing else can read the table,
  * and the next `FETCH` over a closed cursor answers `-501`, having already
  * processed and committed part of the result set.
  */
@@ -407,11 +407,11 @@ ${commit}
    * The Application Programming and SQL Guide: "A ROLLBACK statement closes all
    * open cursors. A COMMIT statement ... closes cursors that are not declared
    * WITH HOLD and leaves open those cursors that are declared WITH HOLD." The
-   * CICS section says it again — "SYNCPOINT ROLLBACK closes all cursors".
+   * CICS section says it again: "SYNCPOINT ROLLBACK closes all cursors".
    *
    * This pair exists because mutation testing found it. Replacing
    * `operation === "commit"` with `true` in the rule survived the whole suite,
-   * which meant nothing distinguished the two verbs — and the correct answer
+   * which meant nothing distinguished the two verbs, and the correct answer
    * turned out to be that the rule was too narrow rather than the test.
    */
   it("refuses a rollback inside the loop even when the cursor is held", () => {
@@ -450,13 +450,12 @@ ${commit}
   /**
    * A checkpoint is a commit, and this rule could not see one.
    *
-   * B4 asked for a checkpoint on `examples/branch-accrual-cursor`, which posts
-   * to the ledger inside a cursor loop and warned about having no restart
-   * position. Adding one produced `EXEC SQL COMMIT` inside a loop over a cursor
+   * `examples/branch-accrual-cursor` posts to the ledger inside a cursor loop
+   * and warned about having no restart position, so it was given a checkpoint. Adding one produced `EXEC SQL COMMIT` inside a loop over a cursor
    * with no `WITH HOLD`: a program that binds, processes and commits part of a
    * result set, and then abends `-501` on the fetch after its first commit,
-   * with every local check green. That is the shape of A1 and A2 again, and
-   * this rule existed and was looking at the wrong statement.
+   * with every local check green. This rule existed and was looking at the
+   * wrong statement.
    *
    * `emitCheckpointStatement` writes the `COMMIT` under `commitsSql`, and the
    * rule reads the same flag. A checkpoint in a program with no SQL at all
@@ -708,7 +707,7 @@ entry transaction walk(row: AccountRow, totals: RunTotals, branchId: string<8>) 
  * The unit-of-work verbs, and the route around the rules attached to them.
  *
  * BankLang passes SQL through verbatim, so `LOCK TABLE`, `SAVEPOINT`,
- * `ROLLBACK TO SAVEPOINT` and an isolation clause all already work — but so did
+ * `ROLLBACK TO SAVEPOINT` and an isolation clause all already work, and so did
  * a raw `COMMIT`, which skips `BANK-SQL-004`. The Application Programming and
  * SQL Guide: "IMS and CICS environments do not allow those SQL statements;
  * however, IMS and CICS do allow ROLLBACK TO SAVEPOINT."
@@ -787,7 +786,7 @@ entry transaction go(account: Account) {
  * rather than something to pass through.
  *
  * None of this has been run against Db2. What is asserted is the text, against
- * the SQL Reference — the same standard of evidence as everything else here
+ * the SQL Reference, the same standard of evidence as everything else here
  * that a precompiler would see before a compiler does.
  */
 
@@ -833,7 +832,7 @@ describe("a cursor declared scrollable", () => {
    * `INSENSITIVE` is written, not left to Db2.
    *
    * Db2's default is `ASENSITIVE`, which resolves to insensitive or to
-   * sensitive dynamic depending on the statement — so the same source could
+   * sensitive dynamic depending on the statement, so the same source could
    * page over a fixed result set or over one changing underneath, decided per
    * query. A reader seeing the same transaction on two pages, or never seeing
    * it, is not detectable from inside the program.
@@ -855,7 +854,7 @@ describe("a cursor declared scrollable", () => {
 
     expect(errors(result)).toEqual([]);
     // Both clauses do not fit one fixed-format line, so the emitter continues
-    // it — which is why this compares the flowed text rather than the raw.
+    // it, which is why this compares the flowed text rather than the raw.
     expect(flowed(result.cobol)).toContain(
       flowed("DECLARE STATEMENT-PAGE INSENSITIVE SCROLL CURSOR WITH HOLD FOR"),
     );
@@ -921,7 +920,7 @@ describe("where a scrolled loop starts, and which way it goes", () => {
    * `backward` with no `from` begins at -1.
    *
    * The SQL Reference counts a negative `ABSOLUTE` from the end, so -1 is the
-   * last row — which means the program reads the most recent rows without
+   * last row, which means the program reads the most recent rows without
    * knowing, or asking Db2, how many there are.
    */
   it("starts at the last row when told to go backward from nowhere", () => {
@@ -948,7 +947,7 @@ describe("where a scrolled loop starts, and which way it goes", () => {
    *
    * Past the last row, `ABSOLUTE` answers +100. Going backward off the front,
    * the position reaches 0, which the SQL Reference defines as before the first
-   * row — also +100. So the existing exit on a non-zero SQLCODE covers both,
+   * row, also +100. So the existing exit on a non-zero SQLCODE covers both,
    * and there is no row count to get wrong.
    */
   it("leaves on Db2's answer, not on a computed end", () => {
@@ -1005,8 +1004,8 @@ describe("what a scrollable cursor refuses", () => {
   });
 
   /**
-   * A rowset fetch on a scrollable cursor is a real Db2 statement — `FETCH
-   * ROWSET STARTING AT ABSOLUTE n` — and a different one from what this emits.
+   * A rowset fetch on a scrollable cursor is a real Db2 statement (`FETCH
+   * ROWSET STARTING AT ABSOLUTE n`) and a different one from what this emits.
    * Refused on the declaration rather than at the loop, so a cursor declared
    * both ways and never read is still caught.
    */
@@ -1051,7 +1050,7 @@ entry transaction showPage(request: Request) {
 describe("the words scroll, from and backward", () => {
   /**
    * Contextual, like `limit`. Making them reserved would break every existing
-   * program with a field called `from` — which for a transfer record is the
+   * program with a field called `from`, which for a transfer record is the
    * obvious name for one.
    */
   it("stay usable as field names", () => {
@@ -1075,7 +1074,7 @@ entry transaction move(transfer: Transfer, idempotencyKey: string<36>) {
  * The formatter, which is the only thing here that has to write the syntax back
  * out.
  *
- * A clause the printer does not know about is not a formatting bug — it is data
+ * A clause the printer does not know about is not a formatting bug. It is data
  * loss. `pnpm fmt` rewrites every example in place, so a dropped `scroll` would
  * turn a scrollable cursor into a forward-only one in the source, silently, and
  * the next compile would be a `BANK-SQL-010` nobody wrote.
@@ -1107,7 +1106,7 @@ entry transaction showPage(request: Request, row: TxnRow) {
 
     const formatted = formatBankTs(source);
     expect(formatted.diagnostics).toEqual([]);
-    // Already formatted, so the printer reproduced it exactly — which is the
+    // Already formatted, so the printer reproduced it exactly, which is the
     // whole assertion. Anything dropped would show as a change.
     expect(formatted.unchanged).toBe(true);
     expect(formatBankTs(formatted.text).text).toBe(formatted.text);

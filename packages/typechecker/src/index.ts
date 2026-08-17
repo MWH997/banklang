@@ -98,7 +98,7 @@ export interface DecimalType {
    *
    * Usage is representation, not meaning. Two numbers with the same precision
    * and scale are the same value whatever bytes hold them, so usage takes no
-   * part in type compatibility — only in the picture and the byte count.
+   * part in type compatibility, only in the picture and the byte count.
    */
   usage?: NumericUsage;
 }
@@ -112,7 +112,7 @@ export interface StringType {
    */
   literal?: boolean;
   /**
-   * `national<n>` — `PIC N(n) USAGE NATIONAL`, two bytes to a character.
+   * `national<n>`: `PIC N(n) USAGE NATIONAL`, two bytes to a character.
    *
    * A different storage width is a different record layout, so a national and
    * an alphanumeric of the same character count are not the same type. Mixing
@@ -174,11 +174,11 @@ export type ResolvedType =
  *
  * A date is nominally typed: it may be compared with another date but not with
  * an amount, and not with a plain integer that happens to have eight digits.
- * The storage is the mainframe convention — `PIC 9(8)` as YYYYMMDD — precisely
+ * The storage is the mainframe convention, `PIC 9(8)` as YYYYMMDD, precisely
  * so that comparison and sorting are the ordinary numeric ones.
  */
 /**
- * `edited<T, "style">` — a rendering of a number, not a number.
+ * `edited<T, "style">`: a rendering of a number, not a number.
  *
  * It carries the precision and scale of what it renders so the picture can be
  * generated. Assignment from the inner type is the formatting step, which is
@@ -212,18 +212,18 @@ export interface ResolvedField {
   redefines: string | null;
   /** The field holding how much of this table the record uses. */
   dependingOn: string | null;
-  /** `ASCENDING KEY` — the field the table is ordered by, for a binary search. */
+  /** `ASCENDING KEY`: the field the table is ordered by, for a binary search. */
   ascendingKey: string | null;
   /** True when the field is aligned on its natural boundary. */
   synchronized: boolean;
-  /** `JUSTIFIED RIGHT` — right-align an alphanumeric value in the field. */
+  /** `JUSTIFIED RIGHT`: right-align an alphanumeric value in the field. */
   justified: boolean;
-  /** `BLANK WHEN ZERO` — print spaces rather than zeros. */
+  /** `BLANK WHEN ZERO`: print spaces rather than zeros. */
   blankWhenZero: boolean;
-  /** `VALUE` — the compile-time literal the field starts as, as COBOL spells it. */
+  /** `VALUE`: the compile-time literal the field starts as, as COBOL spells it. */
   initialValue: string | null;
   /**
-   * `RENAMES` — the run of fields this one is a second name for.
+   * `RENAMES`: the run of fields this one is a second name for.
    *
    * It is a field so that `legacy.wholeDate` resolves like any other, and it
    * carries no storage: the emitters skip it in the record's own entries and
@@ -233,7 +233,7 @@ export interface ResolvedField {
   /** Restricted data: it must not reach an audit event or the ledger journal. */
   sensitive: boolean;
   /**
-   * `reserved <n>;` — space the record has and nothing names.
+   * `reserved <n>;`: space the record has and nothing names.
    *
    * It is a field so that the layout has it, and it is never put in scope so
    * that nothing can name it: COBOL's `FILLER` is not a name, and a slot a
@@ -262,7 +262,7 @@ export interface ResolvedFunction {
   locals: ResolvedLocal[];
   returnType: ResolvedType;
   body: BlockNode;
-  /** `nested function` — a COBOL contained program rather than a paragraph. */
+  /** `nested function`: a COBOL contained program rather than a paragraph. */
   isNested: boolean;
 }
 
@@ -306,7 +306,7 @@ export interface ResolvedFile {
   keyField: ResolvedField | null;
   /** Alternate record keys, which allow duplicates. */
   alternateKeys: ResolvedField[];
-  /** `LINAGE` — page depth, for a print file that paginates. */
+  /** `LINAGE`: page depth, for a print file that paginates. */
   linage: ResolvedFileLinage | null;
   mode: "input" | "output" | "update";
   record: ResolvedRecord;
@@ -316,12 +316,12 @@ export interface ResolvedFile {
    * Empty for almost every file. Non-empty only for an output file, because
    * that is the one case where the variant is decided by the program: a `write`
    * names the record it is writing and its type says which layout that is. A
-   * `read` has no such name — the variant is decided by the data — so a file
+   * `read` has no such name, because the variant is decided by the data, so a file
    * that is read declares one record and `BANK-FILE-015` says why.
    */
   alternateRecords: ResolvedRecord[];
   statusName: string | null;
-  /** `RECORD IS VARYING` — the bounds, and the field holding the used length. */
+  /** `RECORD IS VARYING`: the bounds, and the field holding the used length. */
   recordVarying: { min: number; max: number; lengthName: string } | null;
 }
 
@@ -371,16 +371,16 @@ export interface ResolvedSql {
   result: ResolvedRecord | null;
   /** `statement` is run with `execute`; `cursor` is read with a bounded loop. */
   form: "statement" | "cursor";
-  /** `WITH HOLD` — the cursor survives a commit. */
+  /** `WITH HOLD`: the cursor survives a commit. */
   hold: boolean;
-  /** `rowset <n>` — rows per FETCH, or null for one at a time. */
+  /** `rowset <n>`: rows per FETCH, or null for one at a time. */
   rowset: number | null;
-  /** `scroll` — `INSENSITIVE SCROLL`, readable from any row and backward. */
+  /** `scroll`: `INSENSITIVE SCROLL`, readable from any row and backward. */
   scroll: boolean;
   text: string;
   /**
    * A cursor's SELECT with its `INTO` clause removed, and that clause on its
-   * own. `DECLARE CURSOR` may not carry an `INTO` — Db2 puts the row's
+   * own. `DECLARE CURSOR` may not carry an `INTO`, because Db2 puts the row's
    * destination on the `FETCH`, which is where the row actually arrives.
    * Writing it on the SELECT is how the query reads, so the author writes it
    * there and the compiler moves it to the statement that needs it.
@@ -439,7 +439,7 @@ export type ResolvedTestExpectation =
  * The generated driver has no expressions in it: every value is a literal in a
  * `MOVE` or in the `IF` that compares one. Anything else would need the test to
  * evaluate something at run time, on the mainframe, in a program written to
- * check another program — which is where a test framework starts being the
+ * check another program, which is where a test framework starts being the
  * thing that needs testing.
  */
 export type ResolvedTestLiteral =
@@ -539,7 +539,7 @@ export function typecheckProgram(program: ProgramNode | null): TypeCheckResult {
   recordBases = new Map();
 
   // Pass 0: index the generic declarations. They are templates, not types, so
-  // they are never resolved directly — only their instantiations are.
+  // they are never resolved directly, only their instantiations are.
   for (const declaration of program.declarations) {
     if (
       declaration.kind === "RecordDeclaration" &&
@@ -798,7 +798,7 @@ const TEST_NAME_LIMIT = 25;
  * The checks here are all about what a zUnit driver can reach. It is a separate
  * program: it starts the program under test through its entry point, so it can
  * supply the LINKAGE the step is started with and intercept the modules the
- * program calls — and it cannot see a single byte of that program's
+ * program calls, and it cannot see a single byte of that program's
  * WORKING-STORAGE. A test that asked for anything else would generate an
  * artifact that compiles, uploads, runs, and reports a pass it never checked.
  */
@@ -1187,7 +1187,7 @@ function drainInstantiations(
   // Monomorphisation has no fixed point to reach on its own: a generic that
   // instantiates itself at a new type argument each time expands until memory
   // runs out. The cap stops that, and it also stops a program with more
-  // instantiations than anyone would want to compile — which is why what it
+  // instantiations than anyone would want to compile, which is why what it
   // reports is the cap rather than a claim about termination it cannot make.
   const limit = 200;
   let expanded = 0;
@@ -1263,7 +1263,7 @@ function checkSingleEntryPoint(
  * Reports a `nested function` that can reach itself.
  *
  * COBOL forbids `LOCAL-STORAGE` in a contained program, so a nested function's
- * locals sit in `WORKING-STORAGE` — one copy, shared by every invocation. A
+ * locals sit in `WORKING-STORAGE`: one copy, shared by every invocation. A
  * recursive one would therefore overwrite its own locals on the way down and
  * read the innermost call's values on the way back out: it compiles, it runs,
  * and it returns the wrong number. An ordinary recursive function is emitted as
@@ -1434,7 +1434,7 @@ function resolveSql(
   // -926 there, and `BANK-FILE-003`, which is about where a batch can be
   // restarted from. The Application Programming and SQL Guide is explicit that
   // "IMS and CICS environments do not allow those SQL statements; however, IMS
-  // and CICS do allow ROLLBACK TO SAVEPOINT" — so the savepoint form is left
+  // and CICS do allow ROLLBACK TO SAVEPOINT", so the savepoint form is left
   // alone, and it is the one this rule exists to keep usable.
   const unitOfWork = /^\s*(COMMIT|ROLLBACK)\b(?!\s+TO\s+SAVEPOINT\b)/.exec(
     upper,
@@ -1499,7 +1499,7 @@ function resolveSql(
 
   /*
    * Checked on the declaration rather than where it is read, because a cursor
-   * declared both ways is wrong whether anything reads it or not — and a
+   * declared both ways is wrong whether anything reads it or not, and a
    * declaration nothing reads is exactly the one nobody looks at again.
    */
   if (declaration.scroll && declaration.rowset !== null) {
@@ -1540,7 +1540,7 @@ function resolveSql(
  * Splits a cursor's SELECT from the `INTO` clause that names where a row lands.
  *
  * A cursor with nowhere to put a row is not a cursor anyone can read, so both
- * halves of that binding — a result record and an `INTO` — are required rather
+ * halves of that binding, a result record and an `INTO`, are required rather
  * than defaulted. Defaulting would mean binding the SELECT list to the record's
  * fields positionally, and this compiler does not parse SQL well enough to know
  * whether that lines up.
@@ -1720,7 +1720,7 @@ function resolveFile(
       );
     }
     // The footing is where END-OF-PAGE is signalled, so it has to be a line
-    // that exists — past the end it would never be reached.
+    // that exists, since past the end it would never be reached.
     if (
       linage.footingAt !== null &&
       (linage.footingAt < 1 || linage.footingAt > linage.lines)
@@ -1772,13 +1772,13 @@ function resolveFile(
 }
 
 /**
- * `record Heading, Detail` — the further layouts one file carries.
+ * `record Heading, Detail`: the further layouts one file carries.
  *
  * COBOL puts several `01` entries under one `FD`; they share one record area
  * whose length is the longest of them, and each `WRITE` names the one it is
  * writing. The pattern is everywhere: 2,812 of the 6,451 file descriptions in
  * the X-COBOL corpus declare more than one record and 2,663 of those are opened
- * `OUTPUT` — a report whose heading line and detail lines are different shapes,
+ * `OUTPUT`: a report whose heading line and detail lines are different shapes,
  * which is exactly what `task_func_25` and `task_func_34` describe.
  *
  * Three rules keep it safe, and each of them is a thing COBOL will let you do
@@ -1789,7 +1789,7 @@ function resolveFile(
  *    names nothing: which layout arrived is decided by the data, and handing
  *    back a value whose type is a guess is the whole failure mode this
  *    restriction exists to prevent. Narrowing a record read from a file would
- *    need a discriminator field, and the corpus does not justify it — 143 of
+ *    need a discriminator field, and the corpus does not justify it: 143 of
  *    6,451 file descriptions read a multi-record file, across fourteen
  *    repositories of which six are parser test suites.
  * 2. **Distinct types.** Two layouts of the same type are one layout written
@@ -1905,7 +1905,7 @@ function resolveTransaction(
   }
 
   // A transaction is a program entry point, so its record parameters live in
-  // working storage — one COBOL group per record *type*. Two parameters of the
+  // working storage, one COBOL group per record *type*. Two parameters of the
   // same type would therefore be two names for one piece of storage: writing
   // through either would be visible through the other, silently. A function is
   // different: its record parameters are LINKAGE cells the caller rebinds, so
@@ -1991,7 +1991,7 @@ function resolveTransaction(
  * fills a record called `reply` and never touches its commarea therefore
  * returns control having changed nothing the caller can see. The caller reads
  * back the bytes it sent, which is a plausible-looking answer rather than a
- * failure — an account enquiry that reports the balance it was asked with.
+ * failure: an account enquiry that reports the balance it was asked with.
  *
  * The test is deliberately narrow, so that it fires on that shape and on
  * nothing else. Only explicit assignment counts: `execute ... into row` fills a
@@ -2038,7 +2038,7 @@ function checkCommareaAnswered(
       severity: "error",
       message: `${declaration.name} assigns to ${stranded.name} and never to ${commarea.name}, its commarea, so the result never reaches the caller.`,
       span: stranded.span,
-      hint: `Put the fields the caller reads on ${commarea.name} and assign them there. A record that leaves through a \`link\` or a \`writeQueue\` is fine — assign the commarea as well.`,
+      hint: `Put the fields the caller reads on ${commarea.name} and assign them there. A record that leaves through a \`link\` or a \`writeQueue\` is fine; assign the commarea as well.`,
       backendProfile: null,
     }),
   );
@@ -2211,7 +2211,7 @@ function validateRaiseStatement(
  * A statement named as the author wrote it, not as the parser stored it.
  *
  * Three diagnostics interpolated `statement.kind` straight into their message
- * and produced "A IfStatement is not allowed inside a loop body." — the wrong
+ * and produced "A IfStatement is not allowed inside a loop body.": the wrong
  * article in front of a word that appears nowhere in BankTS, in a message whose
  * whole job is to tell somebody which line to change. `IfStatement` is this
  * compiler's internal name for the node; the reader wrote `if`.
@@ -2383,7 +2383,7 @@ function validateTransactionBody(
  *
  * `inTransaction` decides which statements its branches may hold, and it exists
  * because this validator used to be reachable only from a transaction. A
- * function's loop body reaches it too now — see the call sites — and a
+ * function's loop body reaches it too now, see the call sites, and a
  * function's branch must not gain `ledger` and `audit` on the way past.
  */
 function validateTransactionBranch(
@@ -2765,7 +2765,7 @@ function validateCicsStatement(
   // And a rewrite is addressed by nothing: it updates the record the preceding
   // `READ ... UPDATE` is holding. A key here describes a different operation
   // from the one the program is doing, and CICS ignores it rather than
-  // honouring it — so the program reads as though it addressed a record it did
+  // honouring it, so the program reads as though it addressed a record it did
   // not, which is how a rewrite ends up on whatever the last read left.
   if (statement.operation === "rewriteFile" && statement.key) {
     diagnostics.push(
@@ -3216,7 +3216,7 @@ function validateForEachStatement(
  * `commit;` and `rollback;`.
  *
  * Inside a CICS transaction, CICS owns the syncpoint and commits Db2's work
- * along with everything else, so an `EXEC SQL COMMIT` is not merely redundant —
+ * along with everything else, so an `EXEC SQL COMMIT` is worse than redundant:
  * Db2 rejects it at run time. That is exactly the ambiguity `BANK-SQL-004` was
  * reserved for.
  */
@@ -3237,7 +3237,7 @@ function validateForEachStatement(
  * `sort <inputs> into <output> on <keys>;`
  *
  * Every file named has to exist and be usable in the direction the statement
- * needs it, and every key has to be a field of the record being sorted — a key
+ * needs it, and every key has to be a field of the record being sorted. A key
  * that is not in the record sorts on nothing.
  */
 /** True when the body being checked writes a restart point. */
@@ -3245,7 +3245,7 @@ function validateForEachStatement(
  * The record a `release` may name, or null outside a sort input procedure.
  *
  * `RELEASE` hands a record to a sort that is running, so it means nothing
- * anywhere else — COBOL rejects it outright.
+ * anywhere else, and COBOL rejects it outright.
  */
 let sortInputRecord: string | null = null;
 
@@ -3269,7 +3269,7 @@ let sortInputRecord: string | null = null;
  *
  * The handler runs when an I/O operation on that file fails, whatever the
  * operation and wherever it was written, so it needs a file that exists and at
- * most one handler for it — COBOL allows a file in only one `USE` procedure.
+ * most one handler for it, since COBOL allows a file in only one `USE` block.
  */
 function validateFileErrorHandlers(
   handlers: ResolvedFileErrorHandler[],
@@ -3434,7 +3434,7 @@ function validateCheckpointStatement(
  * Keyed and opened for update, because the position has to survive being read
  * back. A sequential output file is rewritten from the start by the next OPEN,
  * so a rerun that dies before its own first checkpoint destroys the position it
- * was resuming from and the run after that starts from the beginning — which is
+ * was resuming from and the run after that starts from the beginning, which is
  * the failure the whole mechanism exists to prevent. A single keyed record,
  * rewritten in place, has no such window.
  */
@@ -3596,7 +3596,7 @@ function validateSortStatement(
    * The record the sort moves is the one it reads.
    *
    * This used to be the *output* file's record, and every file the statement
-   * touched had to hold it — including when an output procedure was present,
+   * touched had to hold it, including when an output procedure was present,
    * which is when the sort does not write the output file at all. COBOL's
    * `SORT ... OUTPUT PROCEDURE` returns records from the SD and the procedure
    * writes whatever it likes, so requiring the destination to match the source
@@ -3886,7 +3886,7 @@ function validateSplitStatement(
  *
  * The rule that matters most is about restricted data, and it points in only
  * one direction. Generating puts a record into text that leaves the program, so
- * a `sensitive` field would be a card number written into a payload in clear —
+ * a `sensitive` field would be a card number written into a payload in clear:
  * the same escape `BANK-AUD-002` covers for an audit event. Parsing is the
  * reverse: text arriving from outside is written into the record, and a field
  * marked `sensitive` is exactly where restricted data belongs.
@@ -3973,7 +3973,7 @@ function validateSerializeStatement(
           severity: "error",
           message: `${source.name} carries restricted data in ${restricted.map((field) => field.name).join(", ")}, so it cannot be generated as ${statement.format}.`,
           span: statement.source.span,
-          hint: "Serialised text leaves the program. Copy the fields that may leave into a record without them — a masked value derived through a function is the declassification point.",
+          hint: "Serialised text leaves the program. Copy the fields that may leave into a record without them. A masked value derived through a function is the declassification point.",
           backendProfile: null,
         }),
       );
@@ -3981,8 +3981,8 @@ function validateSerializeStatement(
   }
 
   // `XML PARSE` has no form that fills a record. In Enterprise COBOL, as in
-  // GnuCOBOL, it is event-driven — `XML PARSE <text> PROCESSING PROCEDURE
-  // <para>` — and the handler walks XML-EVENT and XML-TEXT itself, moving what
+  // GnuCOBOL, it is event-driven (`XML PARSE <text> PROCESSING PROCEDURE
+  // <para>`) and the handler walks XML-EVENT and XML-TEXT itself, moving what
   // it recognises. There is no COBOL for `xml payload into account` to become,
   // so the compiler says what does exist rather than emitting something no
   // compiler accepts.
@@ -3993,7 +3993,7 @@ function validateSerializeStatement(
         severity: "error",
         message: "xml has no form that parses into a record.",
         span: statement.span,
-        hint: "`JSON PARSE` fills a record from a document; `XML PARSE` does not — it is event-driven, and the handler moves what it recognises itself. Use `json <text> into <record>`, or take the document apart with `split` and `substring`.",
+        hint: "`JSON PARSE` fills a record from a document; `XML PARSE` does not, being event-driven, and the handler moves what it recognises itself. Use `json <text> into <record>`, or take the document apart with `split` and `substring`.",
         backendProfile: "ibm-enterprise-cobol-zos",
       }),
     );
@@ -4010,7 +4010,7 @@ function validateSerializeStatement(
         severity: "warning",
         message: `${statement.format} parse cannot be checked locally.`,
         span: statement.span,
-        hint: `Enterprise COBOL implements \`${statement.format.toUpperCase()} PARSE\`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler into BANKJSON — a scan, not IBM's parser. The record is populated and JSON-STATUS is set, but nesting, arrays and escape sequences are past what the stub attempts. Verify the program on z/OS before relying on what it reads — see runtime/README.md and zos/README.md.`,
+        hint: `Enterprise COBOL implements \`${statement.format.toUpperCase()} PARSE\`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler into BANKJSON, a scan rather than IBM's parser. The record is populated and JSON-STATUS is set, but nesting, arrays and escape sequences are past what the stub attempts. Verify the program on z/OS before relying on what it reads: see runtime/README.md and zos/README.md.`,
         backendProfile: "ibm-enterprise-cobol-zos",
       }),
     );
@@ -4022,7 +4022,7 @@ function validateSerializeStatement(
  *
  * The document is text and each binding names a field to put an element in.
  * COBOL hands the content over as characters, so a field it can be moved into
- * is text or a number — anything else has no defined conversion and would be a
+ * is text or a number, since anything else has no defined conversion and would
  * silent misread of the document.
  */
 function validateXmlParseStatement(
@@ -4119,7 +4119,7 @@ function validateXmlParseStatement(
       severity: "warning",
       message: "xml parse cannot be checked locally.",
       span: statement.span,
-      hint: "Enterprise COBOL implements `XML PARSE`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler, which drives the generated handler from BANKXML — a scan, not IBM's parser. The handler is entered and the fields are filled, but attributes, namespaces, entity references and CDATA are past what the stub attempts. Verify the program on z/OS — see runtime/README.md and zos/README.md.",
+      hint: "Enterprise COBOL implements `XML PARSE`; GnuCOBOL 3.2.0 does not, so the local build runs it through the precompiler, which drives the generated handler from BANKXML, a scan rather than IBM's parser. The handler is entered and the fields are filled, but attributes, namespaces, entity references and CDATA are past what the stub attempts. Verify the program on z/OS: see runtime/README.md and zos/README.md.",
       backendProfile: "ibm-enterprise-cobol-zos",
     }),
   );
@@ -4146,14 +4146,14 @@ function validateXmlParseStatement(
  * line-sequential files": *"Records written to line-sequential files must
  * contain only USAGE DISPLAY and DISPLAY-1 items. Zoned decimal data items
  * must be unsigned or declared with the SEPARATE phrase of the SIGN clause if
- * signed."* The Language Reference puts it as a property of the organization —
+ * signed."* The Language Reference puts it as a property of the organization,
  * a record in such a file "can consist only of printable characters".
  *
  * It matters because BankTS's default is exactly the thing that is forbidden.
  * `decimal<18,2>` lowers to `COMP-3`, and packed decimal is two digits a byte
  * with a sign nibble: not printable, not DISPLAY, and written into a text file
  * it produces bytes that are neither the number nor valid text. The failure is
- * silent — the WRITE succeeds and the file is wrong — which is the shape of
+ * silent (the WRITE succeeds and the file is wrong) which is the shape of
  * defect this language exists to move to compile time.
  *
  * `zoned` and `unsigned` are the two usages that satisfy it. `zoned` renders as
@@ -4269,7 +4269,7 @@ function validateRecordVarying(
   };
 
   // The depending item lives outside the record whose length it gives. Inside
-  // it, it would be part of the data it is measuring — and the generated
+  // it, it would be part of the data it is measuring, and the generated
   // `DEPENDING ON` names it bare, which resolves twice, because the record is
   // laid out in working storage and again inside the FD. Both compilers reject
   // that: cobc with "is ambiguous; needs qualification", and there is no
@@ -4282,7 +4282,7 @@ function validateRecordVarying(
   ) {
     return reject(
       `${varying.lengthName} is a field of ${declaration.recordTypeName}, so it cannot be the length ${declaration.name} varies by.`,
-      `Declare the length outside the record — the field that says how much of a record is in use is not part of the record it measures.`,
+      `Declare the length outside the record: the field that says how much of a record is in use is not part of the record it measures.`,
     );
   }
 
@@ -4360,7 +4360,7 @@ function validateSearchStatement(
   }
 
   // COBOL will bisect a table only if the declaration says it is ordered, and
-  // only on equality against that key — anything else has no ordering to cut in
+  // only on equality against that key: anything else has no ordering to cut in
   // half. Both are checked here rather than found later as a wrong answer.
   if (statement.sorted) {
     const key = searchedTableKey(statement.array, scope, recordMap);
@@ -4784,14 +4784,14 @@ function validateWhileStatement(
      * A branch, on the same terms a `for each` body has always allowed one.
      *
      * Rejecting it here was an oversight rather than a rule: `switch` was
-     * permitted and `if` was not, and the read-ahead a file loop needs — read,
-     * then act only if the read found something — could not be written at all.
+     * permitted and `if` was not, and the read-ahead a file loop needs (read,
+     * then act only if the read found something) could not be written at all.
      * What the diagnostic is actually for is keeping `return` out of a loop,
      * and `inLoopBody` still does that inside the branch.
      *
      * **And it was fixed for transactions only.** The guard read
      * `inTransaction && …`, so a plain `function` still could not put an `if`
-     * inside a `while` while `switch` in the same position compiled — the exact
+     * inside a `while` while `switch` in the same position compiled: the exact
      * inconsistency the paragraph above describes, left standing in the other
      * half of the language. Nothing in this repository noticed, because every
      * example that loops over a branch is a transaction.
@@ -4940,7 +4940,7 @@ function validateAssignStatement(
  * `start accountMaster key account.customerId` is a browse on the alternate
  * index over `customerId`. COBOL takes the key of reference from the data item
  * the START names and every subsequent READ NEXT follows that index, so the
- * field in the expression is the whole declaration — there is no separate
+ * field in the expression is the whole declaration, and there is no separate
  * syntax to add. Returns null when the expression is anything else, which
  * leaves the primary key as the one to check against.
  */
@@ -5084,7 +5084,7 @@ function validateFileStatement(
       );
     } else {
       // A browse may walk an alternate index, and that is nearly always why the
-      // alternate exists — an account file read by customer. COBOL decides the
+      // alternate exists, an account file read by customer. COBOL decides the
       // key of reference from the field the START names, so naming an alternate
       // key's own field is how the program asks for it. A `read ... key` still
       // has to be the primary: READ with a KEY names a random read, and Db2 is
@@ -5187,7 +5187,7 @@ function validateFileStatement(
 
   // The layouts the file carries, and the one being written has to be one of
   // them. With several, the record variable's *type* is what chooses the
-  // variant — a `write bills from heading` writes the heading layout and a
+  // variant: a `write bills from heading` writes the heading layout and a
   // `write bills from detail` writes the detail one, and neither can reach the
   // other's fields. That is the whole narrowing mechanism, and it holds because
   // the choice is made where the type is known.
@@ -5342,13 +5342,13 @@ let sensitiveLocals = new Set<string>();
  *
  * Reads a field's own marking, follows locals through `sensitiveLocals`, and
  * treats any operand of a computation as carrying the whole expression's
- * sensitivity — an amount derived from a restricted value is still derived from
+ * sensitivity: an amount derived from a restricted value is still derived from
  * it.
  *
  * A call is deliberately not followed. Passing a restricted value into a
  * function is the declassification point: `maskPan(card.number)` is untainted,
  * and the compiler does not check that `maskPan` masks anything. That is a
- * stated limit rather than an oversight — following taint across a call would
+ * stated limit rather than an oversight, because following taint across a call
  * need per-function summaries, and a language with no closures and no higher
  * order functions can express masking no other way.
  */
@@ -5547,7 +5547,7 @@ const DAY_COUNT: ResolvedType = {
  * and `toNumber`.
  *
  * Each is a COBOL intrinsic, so the checking here is about arity and about
- * what the intrinsic will accept — not about the arithmetic, which COBOL does.
+ * what the intrinsic will accept, rather than about the arithmetic COBOL does.
  *
  * `annuity`, `presentValue`, and `toNumber` come back `rounded`, meaning they
  * take the scale of whatever they are assigned to. That is not a shortcut: a
@@ -5652,7 +5652,7 @@ function inferNumericCall(
         );
       }
       // A count, whose width is the receiving field's business rather than
-      // this function's — the same reason `round` takes the target's scale.
+      // this function's, the same reason `round` takes the target's scale.
       return { ...rounded, scale: 0 };
     }
     case "abs":
@@ -5665,7 +5665,7 @@ function inferNumericCall(
         );
       }
       // `integerPart` drops the fraction, so it comes back rounded and takes
-      // the target's scale — usually zero, which is the point of asking.
+      // the target's scale, usually zero, which is the point of asking.
       return expression.operation === "abs" ? args[0]! : rounded;
     }
     case "sign": {
@@ -5681,8 +5681,8 @@ function inferNumericCall(
     }
     case "mod":
     case "rem": {
-      // COBOL's MOD and REM are defined on integers, and a check digit — the
-      // reason to have them — is integer arithmetic.
+      // COBOL's MOD and REM are defined on integers, and a check digit, the
+      // reason to have them, is integer arithmetic.
       for (const argument of args) {
         if (!argument || !isDecimalType(argument) || argument.scale !== 0) {
           return reject(
@@ -6155,7 +6155,7 @@ function declaredByteLength(type: ResolvedType): number {
  *
  * A renames adds nothing: it is a second name for fields already counted. A
  * redefines usually adds nothing either, because it re-reads storage that is
- * already there — but COBOL permits a redefinition longer than what it
+ * already there, though COBOL permits a redefinition longer than what it
  * redefines and then extends the storage area, so the run has to grow by the
  * overhang. Counting nothing for it makes the record shorter here than the one
  * the emitter lays out, and a `renames` over such a run would name fewer bytes
@@ -6225,7 +6225,7 @@ function validateVariantFields(
           }),
         );
       } else if (!redefinable.has(field.redefines)) {
-        // Enterprise COBOL and GnuCOBOL both reject this outright — "REDEFINES
+        // Enterprise COBOL and GnuCOBOL both reject this outright: "REDEFINES
         // must follow the original definition". Left to itself the layout
         // reports the redefinition at the last field's offset instead of the
         // one it names, so the copybook describes the alternate reading at a
@@ -6324,7 +6324,7 @@ function validateVariantFields(
       // start of the table plus the count times the entry, so it moves every
       // time the count does. The copybook and the layout report can only state
       // the offset it has when the table is full, which is an offset the
-      // dataset does not have on any other record — and a copybook that names a
+      // dataset does not have on any other record, and a copybook that names a
       // byte position nothing is at is worse than no copybook.
       //
       // IBM calls this complex ODO and permits it. GnuCOBOL refuses it outright
@@ -6393,7 +6393,7 @@ function validateVariantFields(
           severity: "warning",
           message: `${field.name} is national, so its layout cannot be checked locally.`,
           span: field.span,
-          hint: "Enterprise COBOL holds a national character in two bytes (UTF-16), which is the width reported here. GnuCOBOL 3.2.0 allocates four inside a group and warns that its USAGE NATIONAL handling is unfinished, so every field after this one sits at a different offset there. Verify the record on z/OS before relying on it — see zos/README.md.",
+          hint: "Enterprise COBOL holds a national character in two bytes (UTF-16), which is the width reported here. GnuCOBOL 3.2.0 allocates four inside a group and warns that its USAGE NATIONAL handling is unfinished, so every field after this one sits at a different offset there. Verify the record on z/OS before relying on it: see zos/README.md.",
           backendProfile: "ibm-enterprise-cobol-zos",
         }),
       );
@@ -6786,7 +6786,7 @@ function validateBlock(
       continue;
     }
 
-    // A guard clause — `if <bad> { raise "..."; }` with no else — reads as a
+    // A guard clause, `if <bad> { raise "..."; }` with no else, reads as a
     // precondition, not as a branch that has to produce a value. The block
     // continues after it, because control only reaches the next statement when
     // the guard did not fire.
@@ -7530,14 +7530,14 @@ let declaredReports = new Map<string, ResolvedReport>();
  * Reports a `replaceSegment` or `deleteSegment` with no get-hold before it.
  *
  * DL/I will not update a segment the program has not held. `REPL` or `DLET`
- * after a plain `getUnique` comes back `DJ` — no preceding get-hold — and the
+ * after a plain `getUnique` comes back `DJ`, no preceding get-hold, and the
  * update silently does not happen, because the status is the only thing that
  * says so.
  *
  * A hold earlier in an enclosing block covers a branch inside it, because every
  * path through the branch has already passed the hold. A hold *inside* a branch
  * does not travel back out, because the path that skipped the branch reaches
- * the update unheld — which is the case worth catching.
+ * the update unheld, which is the case worth catching.
  */
 function reportUnheldDliUpdates(
   program: ProgramNode,
@@ -7602,7 +7602,7 @@ function reportUnheldDliUpdates(
  *
  * Both replace the record the last `read` returned, so on a sequentially
  * accessed file they need one: without it the operation is not performed and
- * the status is 92 — no abend, no exception, and a program that does not test
+ * the status is 92: no abend, no exception, and a program that does not test
  * the status carries on believing it updated something.
  *
  * Only sequential and relative files, because those are the ones the backend
@@ -7803,7 +7803,7 @@ function resolveQueue(
  *
  * The completion code and reason code the MQI leaves are the entire error
  * model, so a queue with nowhere to read them from is a program that cannot
- * tell a message it got from an empty queue — and an empty queue is the
+ * tell a message it got from an empty queue, and an empty queue is the
  * ordinary end of a drain loop, not a failure.
  *
  * The direction on the declaration decides which calls are allowed, because it
@@ -7902,7 +7902,7 @@ function validateQueueStatement(
  *
  * The status DL/I leaves in the PCB is the entire error model, so a database
  * with nowhere to read it from is a program that cannot tell a segment it found
- * from one it did not — which, for a `getUnique` that missed, means working on
+ * from one it did not, which, for a `getUnique` that missed, means working on
  * whatever the segment area held last.
  */
 function validateDliStatement(
@@ -7999,8 +7999,8 @@ function validateDliStatement(
  * The checks are the ones that decide whether the generated COBOL means
  * anything: the file has to exist and be written rather than read, a control
  * field has to be a field of its record, and a `generate` has to have a detail
- * group to name. The rest of the report — where a column sits, how deep a page
- * is — is COBOL's own business once the names resolve.
+ * group to name. The rest of the report (where a column sits, how deep a page
+ * is) is COBOL's own business once the names resolve.
  */
 function resolveReport(
   declaration: ReportDeclarationNode,
@@ -8141,8 +8141,8 @@ function resolveReport(
  * something the compiler can see: a written number, a written string, a boolean,
  * or an enum member. Anything computed belongs in the program, where it can be.
  *
- * A `REDEFINES` field is refused outright. It has no storage of its own — it is
- * a second reading of another field's bytes — so a VALUE on it would either be
+ * A `REDEFINES` field is refused outright. It has no storage of its own, being
+ * a second reading of another field's bytes, so a VALUE on it would either be
  * ignored or overwrite a value that field set, and neither is what was meant.
  */
 function resolveInitialValue(
@@ -8278,7 +8278,7 @@ function resolveInitialValue(
  *
  * What COBOL does require is that the thing totalled be numeric. A report field
  * is printed through an edited picture, but the item it accumulates has to be
- * something `ADD` accepts — so a `string` cannot be totalled, and neither can
+ * something `ADD` accepts, so a `string` cannot be totalled, and neither can
  * an already-edited field, which is a display form rather than a number.
  */
 function validateReportSums(
@@ -8323,7 +8323,7 @@ function validateReportSums(
             severity: "error",
             message: `Report ${declaration.name} totals ${source.field}, which is ${describeType(field.type)}.`,
             span: column.span,
-            hint: "`sum` accumulates with COBOL's ADD, so it totals a numeric field — a decimal or a currency amount.",
+            hint: "`sum` accumulates with COBOL's ADD, so it totals a numeric field, a decimal or a currency amount.",
             backendProfile: null,
           }),
         );
@@ -8338,7 +8338,7 @@ function validateReportSums(
  * The program name is a value, so the only thing the compiler can check is that
  * it is text short enough to be one: a COBOL load module name is eight
  * characters, and a longer field would be truncated to something that does not
- * exist. What it cannot check is whether the module is there — that is the
+ * exist. What it cannot check is whether the module is there, which is the
  * whole nature of a dynamic call, and the reason `on error` matters.
  */
 function validateProgramCallStatement(
@@ -8517,12 +8517,12 @@ let sqlCodeTested = false;
  * `+100` is the only "not found". Negative is an error: `-911` is a deadlock the
  * thread lost, `-904` a resource that was not available, `-805` a package that
  * was never bound. A body whose only test is `sqlcode == 0` turns every one of
- * those into the else branch — and in an enquiry that else branch says the
+ * those into the else branch, and in an enquiry that else branch says the
  * account does not exist, which is a customer-facing lie, and behind a posting
  * decision it is an incident.
  *
- * A test separates them when it orders `sqlcode` against a value — `< 0`,
- * `> 0`, `>= 0` — or compares it for equality against a negative literal.
+ * A test separates them when it orders `sqlcode` against a value (`< 0`,
+ * `> 0`, `>= 0`) or compares it for equality against a negative literal.
  * `sqlcode != 0` does not: it puts `+100` and `-911` on the same side.
  */
 let sqlCodeFailureTested = false;
@@ -8533,7 +8533,7 @@ let sqlCodeFailureTested = false;
  * The API Reference gives one value a name a program may write: a normal return
  * is `DFHRESP(NORMAL)`, and `DFHRESP` is a translator built-in that resolves
  * the rest. The numbers behind the other conditions are the translator's, not
- * the API's — nothing in the manual promises them — so a program comparing a
+ * the API's, and nothing in the manual promises them, so a program comparing a
  * response against `27` has hard-coded something it was never given, and it
  * reads to a CICS reviewer as somebody who has not seen `DFHRESP` before.
  *
@@ -8659,7 +8659,7 @@ function declareCicsRespSymbols(
  * all the COBOL compiler looks at when it resolves a `COPY` from a PDS. So
  * `AccountRecord` and `AccountRow` are both `ACCOUNTR`: one copybook overwrites
  * the other in the library, and every program that copies either gets whichever
- * was written last — a record with the same name and different fields at
+ * was written last: a record with the same name and different fields at
  * different offsets, which is the one kind of layout error a copybook exists to
  * prevent.
  *
@@ -8700,7 +8700,7 @@ function checkCopybookMemberNames(
  *
  * The same eight-character truncation as a copybook member, and the same class
  * of defect one step further out. `settlementExtract` and `settlementReport`
- * are both `SETTLEME`, so the generated job allocates one DD twice — and since
+ * are both `SETTLEME`, so the generated job allocates one DD twice, and since
  * the dataset name is derived from it too, the report's output is written over
  * the extract's input under a name that looks deliberate.
  *
@@ -8739,15 +8739,15 @@ function checkDdNames(files: ResolvedFile[], diagnostics: Diagnostic[]): void {
  * `concat`, `now`, `countOf` and `replaceChars` build a value rather than name
  * one.
  *
- * Each lowers to a COBOL statement — `STRING`, `INSPECT`, a `CURRENT-DATE`
- * sequence — into a field of its own, so it can be the whole right-hand side of
+ * Each lowers to a COBOL statement (`STRING`, `INSPECT`, a `CURRENT-DATE`
+ * sequence) into a field of its own, so it can be the whole right-hand side of
  * an assignment, the whole initialiser of a local, or the whole returned
  * expression, and nothing else. There is no COBOL expression to nest one in.
  *
  * The backend already knew that and raised a `CompilerInvariant` when it
  * happened, which reaches the author as a stack trace rather than a diagnostic:
- * `toNumber(concat("0.", substring(rate, 7, 3)))` — a reasonable thing to write
- * — crashed `bankc`. An internal invariant is for something that cannot happen,
+ * `toNumber(concat("0.", substring(rate, 7, 3)))`, a reasonable thing to write,
+ * crashed `bankc`. An internal invariant is for something that cannot happen,
  * and this can.
  */
 const STATEMENT_LOWERED = new Set(["concat", "now", "countOf", "replaceChars"]);
@@ -8807,7 +8807,7 @@ function checkStatementLoweredPosition(
       severity: "error",
       message: `${operation} builds a value and cannot be nested inside another expression.`,
       span: expression.span,
-      hint: `Give it a field of its own first — \`let built = ${operation}(...);\` — and use \`built\` where the call was.`,
+      hint: `Give it a field of its own first, \`let built = ${operation}(...);\`, and use \`built\` where the call was.`,
       backendProfile: null,
     }),
   );
@@ -8816,7 +8816,7 @@ function checkStatementLoweredPosition(
 /**
  * A DD name that is also the name of a data item.
  *
- * `ASSIGN TO FEED` names an environment variable — unless a data item called
+ * `ASSIGN TO FEED` names an environment variable, unless a data item called
  * `FEED` exists, in which case both Enterprise COBOL 6 and GnuCOBOL read the
  * *contents* of that item as the file name. The program compiles. At run time
  * the item holds whatever the program put in it, the OPEN looks for a dataset
@@ -8824,7 +8824,7 @@ function checkStatementLoweredPosition(
  *
  * A record type is the collision that happens: `record Feed` becomes the
  * working-storage group `FEED`, and `file feed` assigns to DD `FEED`. Found by
- * running a program that had both — the interpreter, which resolves the DD by
+ * running a program that had both: the interpreter, which resolves the DD by
  * name, read the file correctly while `cobc` reported 35, so the two engines
  * disagreed about whether the input existed.
  */
@@ -8935,7 +8935,7 @@ function checkSqlCodeHandled(
         message:
           "SQLCODE is tested, but nothing here tells a Db2 error from a row that was not found.",
         span,
-        hint: "`+100` is the only not-found. Add a branch on `sqlcode < 0` — a deadlock (-911), a resource that was not available (-904), or a package that was never bound (-805) must not become the same answer as an account that does not exist.",
+        hint: "`+100` is the only not-found. Add a branch on `sqlcode < 0`: a deadlock (-911), a resource that was not available (-904), or a package that was never bound (-805) must not become the same answer as an account that does not exist.",
         backendProfile: null,
       }),
     );
@@ -10137,7 +10137,7 @@ function validateNumericPrecision(
   // Enterprise COBOL's compiler limits give "PICTURE clause, numeric item digit
   // positions: with ARITH(COMPAT) 18, with ARITH(EXTEND) 31". COMPAT is the
   // default and what the generated jobs compile under, so eighteen is the
-  // ceiling — and it is a limit on the picture, so it applies whatever the
+  // ceiling, and it is a limit on the picture, so it applies whatever the
   // usage. A wider field emitted a PICTURE the compiler rejects outright: a
   // build nobody can run, from a program this compiler said was fine.
   if (precision > MAX_NUMERIC_DIGITS) {

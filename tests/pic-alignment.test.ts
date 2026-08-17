@@ -135,7 +135,7 @@ describe("the margin", () => {
 /**
  * The REPORT SECTION is not data description. An `01` there may carry `TYPE IS
  * PAGE HEADING` with no name at all, and `COLUMN 1 PIC X(22)` puts a number
- * where a name goes — read as "name, then clause" it became
+ * where a name goes, and read as "name, then clause" it became
  * `01  TYPE            IS PAGE HEADING.`
  */
 describe("the report section", () => {

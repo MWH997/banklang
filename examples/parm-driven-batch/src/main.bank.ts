@@ -4,7 +4,7 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 
 // A settlement run needs three things from whoever submitted it: which day it
 // is for, which branch, and the key that makes a rerun idempotent. None of them
-// is in the data — they are the job's parameters, and until the PARM convention
+// is in the data. They are the job's parameters, and until the PARM convention
 // existed the compiler declared them in working storage and nothing ever wrote
 // to them, so the idempotency key satisfying BANK-TXN-001 was whatever the
 // region had left there.

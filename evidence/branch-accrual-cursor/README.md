@@ -35,7 +35,7 @@ This example is also **executed**. See
 
 - `cobol/BRANCH-ACCRUAL-CURSOR.cbl` holds all four Db2 statements a cursor
   needs: the `DECLARE` in `WORKING-STORAGE`, and the `OPEN`, `FETCH`, and
-  `CLOSE` around the loop. Only the loop appears in the source — the `OPEN` and
+  `CLOSE` around the loop. Only the loop appears in the source; the `OPEN` and
   the `CLOSE` are generated, so a cursor cannot be left open.
 - The `DECLARE` carries no `INTO`, because `DECLARE CURSOR` may not. The clause
   the author wrote on the SELECT is on the `FETCH`, which is where a row

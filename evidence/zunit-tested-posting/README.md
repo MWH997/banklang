@@ -43,5 +43,5 @@ pnpm evidence:refresh
 ## Notes
 
 No IBM validation claim is made here. The bundle records local deterministic
-outputs only — and the zUnit case is narrower still: it has never been run,
+outputs only, and the zUnit case is narrower still: it has never been run,
 locally or on z/OS. See divergences D20 and D21.

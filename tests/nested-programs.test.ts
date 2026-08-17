@@ -9,11 +9,11 @@ import { compile } from "../packages/compiler/src/index";
 import { localCobol, unpadded } from "./helpers";
 
 /**
- * `nested function` — a COBOL contained program.
+ * `nested function`: a COBOL contained program.
  *
  * An ordinary function is a paragraph the program `PERFORM`s, sharing all its
  * storage. A nested one is a program inside the program: its own working
- * storage, a real `CALL` boundary, and — the reason to write one — it reads the
+ * storage, a real `CALL` boundary, and, the reason to write one, it reads the
  * module's records directly, because the container declares them `GLOBAL`.
  *
  * That is the difference from the sibling programs a recursive function already
@@ -56,7 +56,7 @@ ${body}
  * became was `ADDUP` and its paragraph `ADD-UP-BODY`, so nothing in its lines
  * carried the bare name and every program with one reported `BANK-GEN-006`.
  *
- * The fixture below is called `accrued` — a single word, with no hyphens to
+ * The fixture below is called `accrued`, a single word, with no hyphens to
  * take out, so the two spellings coincide and the entry anchored by luck. Any
  * name written the way the rest of the language writes names did not.
  */
@@ -160,7 +160,7 @@ entry transaction post(position: Position) {
  * COBOL forbids LOCAL-STORAGE in a contained program, so a nested function's
  * locals are one copy shared by every invocation. A recursive one would
  * overwrite them on the way down and read the innermost call's values on the
- * way back out — it compiles, it runs, and it returns the wrong number.
+ * way back out. It compiles, it runs, and it returns the wrong number.
  */
 describe("it cannot recurse", () => {
   it("reports a nested function that calls itself", () => {
@@ -262,7 +262,7 @@ describe("executed", () => {
     const ran = spawnSync("./program", [], { cwd: dir, encoding: "utf8" });
     expect(ran.status, ran.stderr).toBe(0);
 
-    // 1000.00 + (1000.00 * 5.00 / 100) — computed inside the contained program
+    // 1000.00 + (1000.00 * 5.00 / 100), computed inside the contained program
     // from a record it was never passed.
     expect(ran.stdout).toContain("1050.00");
   });

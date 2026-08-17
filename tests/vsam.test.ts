@@ -8,7 +8,7 @@ import { flowed } from "./helpers";
  * `readNext` browse.
  *
  * With only `open`, `read`, `write`, and `close`, and files that were either
- * input or output, a master file update — the archetypal batch program — could
+ * input or output, a master file update, the archetypal batch program, could
  * not be written at all. Updating a record in place means finding it first,
  * which needs one file open for both.
  */
@@ -41,7 +41,7 @@ entry transaction apply1(master: AccountMaster, amount: BDT) {
 ${body}
   // Every fixture here ends by testing the status, because BANK-FILE-017
   // requires the outcome of a keyed operation to be looked at before the file
-  // is closed — a close overwrites the status, and 23 means the record the
+  // is closed, since a close overwrites the status, and 23 means the record the
   // program is about to use is the one before it.
   if masterStatus == "00" {
     log "APPLIED ", masterStatus;
@@ -78,7 +78,7 @@ entry transaction apply1(master: AccountMaster, amount: BDT) {
 ${body}
   // Every fixture here ends by testing the status, because BANK-FILE-017
   // requires the outcome of a keyed operation to be looked at before the file
-  // is closed — a close overwrites the status, and 23 means the record the
+  // is closed, since a close overwrites the status, and 23 means the record the
   // program is about to use is the one before it.
   if masterStatus == "00" {
     log "APPLIED ", masterStatus;

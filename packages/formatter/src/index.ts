@@ -239,7 +239,7 @@ function printDeclaration(
     }
 
     case "FileDeclaration": {
-      // `record Heading, Detail` — the several 01 entries one FD carries.
+      // `record Heading, Detail`: the several 01 entries one FD carries.
       const layouts = [
         declaration.recordTypeName,
         ...declaration.alternateRecordTypeNames.map((entry) => entry.name),
@@ -284,13 +284,13 @@ function printDeclaration(
        *
        * This printed neither: it dropped the `pcb` keyword and wrote
        * `key ACCTID` where the source said `key "ACCTID"`. The result was not
-       * a program that meant something else — it was a file that no longer
+       * a program that meant something else. It was a file that no longer
        * parsed, failing with `Expected \`pcb\` after the database name` on the
        * next build. `bankc fmt` destroying the source it was handed is the
        * worst outcome available to it.
        *
        * A DL/I database is reached through a PCB the region passes in, so the
-       * keyword is not decoration, and the segment and key are DBD names —
+       * keyword is not decoration, and the segment and key are DBD names, so
        * quoted, because they are the database's spelling and not BankTS
        * identifiers.
        */
@@ -447,7 +447,7 @@ function printField(field: FieldDeclarationNode, printer: Printer): void {
   /*
    * `redefines` and `depending on` are part of the declaration, not decoration.
    *
-   * They were not printed, so `bankc fmt` deleted them — and the result parsed
+   * They were not printed, so `bankc fmt` deleted them, and the result parsed
    * with no diagnostics, because a field without `redefines` is a perfectly
    * good field. It is a different record: a redefinition is a second reading of
    * storage that already exists, and dropping it makes the field new storage,
@@ -571,7 +571,7 @@ function printStatement(
       // one the formatter deletes. `readNext ... into`, `rewrite ... from`,
       // `advancing` and `on page` were all missing, and running the formatter
       // over a browse silently turned `readNext accountMaster into account`
-      // into `readNext accountMaster` — which then would not parse, so the
+      // into `readNext accountMaster`, which then would not parse, so the
       // damage was at least loud. `write ... advancing page` parses perfectly
       // well without the `advancing`, and quietly writes over the last line.
       const clause =
@@ -855,7 +855,7 @@ function printStatement(
  *
  * `never` makes this a compile error rather than a run-time one: a statement
  * kind added to the AST and not to the printer will not typecheck. The throw is
- * the belt to that brace, because the alternative is what actually happened —
+ * the belt to that brace, because the alternative is what actually happened:
  * every switch here simply fell through, printed nothing, and the formatter
  * deleted the statement from the source. `pnpm fmt` silently removed every
  * `log`, `commit`, `rollback`, `checkpoint`, `restart`, `getMessage`, `initiate`

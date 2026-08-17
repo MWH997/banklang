@@ -8,8 +8,8 @@
  *
  * Two tables:
  *
- * Appendix E, "Reserved words", has three columns. Only the first — words
- * "reserved for function implemented in Enterprise COBOL" — is the target's
+ * Appendix E, "Reserved words", has three columns. Only the first, the words
+ * "reserved for function implemented in Enterprise COBOL", is the target's
  * vocabulary. The second is 85 Standard words for function Enterprise COBOL
  * does not implement, and the third is words that "might be reserved in a
  * future release", which includes the 2002 Standard. `NEAREST-EVEN` is in none
@@ -17,7 +17,7 @@
  * compiled locally and named a word Enterprise COBOL has never heard of.
  *
  * Table 59, "Table of functions", is the intrinsic function names. They are not
- * reserved words — a program may declare a data item called `LENGTH` — but they
+ * reserved words, since a program may declare a data item called `LENGTH`, but they
  * are words a generated program may use, so the linter has to know them.
  *
  *   pnpm tsx tools/extract-ibm-words.ts
@@ -34,7 +34,7 @@ const OUTPUT = "packages/conformance-lint/src/ibm-words.ts";
  * Words in the leftmost column of Appendix E's table.
  *
  * The three columns are told apart by where the X sits, and the column
- * positions differ from page to page — the extracted text alternates between
+ * positions differ from page to page, and the extracted text alternates between
  * two indentations. Each page reprints the header, so the header on the page
  * above a row is what says which column that row's X is in.
  */
@@ -129,7 +129,7 @@ export function renderIbmWords(text: string): string {
     ` * Generated from ${LANGUAGE_REFERENCE} by tools/extract-ibm-words.ts.`,
     " * Do not edit by hand: run the extractor, and review the diff.",
     " *",
-    " * RESERVED_WORDS is the leftmost column of Appendix E, Table 83 — the words",
+    " * RESERVED_WORDS is the leftmost column of Appendix E, Table 83: the words",
     " * reserved for function Enterprise COBOL actually implements. It is not the",
     " * whole table. The 85 Standard words it does not implement and the words that",
     " * might be reserved in a future release are deliberately excluded, because a",

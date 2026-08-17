@@ -19,7 +19,7 @@ import { runInterpreted } from "../tools/interpret";
  *
  * These were the last locally executable verbs the interpreter could not
  * execute, and three CobolCodeBench tasks passed under `cobc` with no
- * differential result at all because of it — the exact shape of unchecked green
+ * differential result at all because of it, the exact shape of unchecked green
  * that `packages/cobol-runtime` exists to make impossible. Two of those three
  * were also ending with return code 16 while writing correct output, and
  * nothing noticed for as long as only one engine ran them.
@@ -34,7 +34,7 @@ import { runInterpreted } from "../tools/interpret";
  * SEQUENCE phrase Enterprise COBOL orders alphanumeric keys in EBCDIC; both
  * engines here order them in ASCII. Agreement below is agreement about ASCII
  * ordering, and divergence D11 is where that is written down. The numeric cases
- * are unaffected — a numeric key is compared as a number on any target.
+ * are unaffected, since a numeric key is compared as a number on any target.
  */
 
 const AVAILABLE = hasCobc();

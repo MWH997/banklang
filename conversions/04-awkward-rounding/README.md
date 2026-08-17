@@ -1,9 +1,9 @@
-# 04 — An interest calculation with awkward rounding
+# 04. An interest calculation with awkward rounding
 
 Tiered rates, and banker's rounding written out by hand because COBOL's
 `ROUNDED` is half-up.
 
-Written for this repository in period style — see the
+Written for this repository in period style. See the
 [provenance note](../README.md#provenance).
 
 ## The original
@@ -36,7 +36,7 @@ wrong.
 the dividend, the quotient and the remainder. The Language Reference defines the
 remainder as "the result of subtracting the product of the quotient and the
 divisor from the dividend", and says the quotient is stored in the `GIVING`
-identifier first — so by the time the remainder is worked out, the field the
+identifier first, so by the time the remainder is worked out, the field the
 definition calls the dividend is holding the quotient. What the statement leaves
 behind is not something the manual pins down, and which way every tie goes rests
 on it.
@@ -44,7 +44,7 @@ on it.
 **Every negative amount is truncated toward zero.**
 `IF WS-EXCESS > WS-HALF` compares a signed field against `+0.005000`. On a debit
 balance the gross is negative, so the excess is negative, so both tests are
-false whatever it was — no rounding step is taken and the value is truncated.
+false whatever it was, no rounding step is taken and the value is truncated.
 The 1998 memo the header refers to is specifically about which way the
 half-penny goes on a debit.
 
@@ -88,7 +88,7 @@ needs no second field to hold a remainder in.
 
 By execution rather than by review. [`tests/rounding-oracle.test.ts`](../../tests/rounding-oracle.test.ts)
 runs the generated sequence over inputs chosen to land on and around every
-boundary — an exact tie, one unit either side, both signs, zero — and compares
+boundary (an exact tie, one unit either side, both signs, zero) and compares
 each answer against a rational held in two BigInts. Inverting the parity test
 makes it say 1.01 where the oracle says 1.00, and the test fails.
 

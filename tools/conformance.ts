@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 /*
  * `spawnSync(..., { encoding: "utf8" })` is typed as returning a string for
  * `stdout` and `stderr`, and returns null for both when the child could not be
- * spawned at all — no such binary, no permission. The guards below are for that
+ * spawned at all: no such binary, no permission. The guards below are for that
  * case, and the rule cannot see it because @types/node does not say it.
  */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
@@ -43,7 +43,7 @@ export const RUNTIME_PROGRAMS = [
   "DFHEI1",
   // The IMS language interface and the MQ API stand-ins. `runtime/README.md`
   // has listed both as part of the reference runtime since they were written,
-  // and this list did not — so a generated program calling `CBLTDLI` or
+  // and this list did not, so a generated program calling `CBLTDLI` or
   // `MQCONN` could be compiled but never linked, and no test noticed because
   // no test ran one.
   "CBLTDLI",
@@ -128,7 +128,7 @@ export interface ConformanceOptions {
    * `cobc -x` refuses to build an executable out of one: a Unix process has no
    * parameter list. On z/OS the initiator builds one and the program is still a
    * main program, so the local equivalent is a driver that supplies the area
-   * and calls it — which is what a job step does.
+   * and calls it, which is what a job step does.
    *
    * Until this existed, no program taking a PARM had ever been executed by this
    * repository. `tools/gnucobol-validation.ts` compiled them as modules and
@@ -175,7 +175,7 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
   mkdirSync(workDir, { recursive: true });
 
   // Embedded SQL and CICS have to be translated before any compiler will read
-  // them, exactly as on z/OS — and every artifact opens with the `CBL`
+  // them, exactly as on z/OS, and every artifact opens with the `CBL`
   // statement naming its compiler options, which IBM's compiler reads and
   // GnuCOBOL cannot. So everything goes through the precompiler, which is the
   // same path `tools/gnucobol-validation.ts` takes.
@@ -255,8 +255,8 @@ export function runConformance(options: ConformanceOptions): ConformanceRun {
     COB_LIBRARY_PATH: `${workDir}:${runtimeDir}`,
     // GnuCOBOL resolves `CALL "NAME"` by looking for a module file called
     // `NAME`, so a runtime file holding several programs is unreachable by
-    // every name but its own. `runtime/BANKMQ.cbl` is six programs — MQCONN,
-    // MQOPEN, MQPUT, MQGET, MQCLOSE, MQDISC — and building it produces one
+    // every name but its own. `runtime/BANKMQ.cbl` is six programs (MQCONN,
+    // MQOPEN, MQPUT, MQGET, MQCLOSE, MQDISC) and building it produces one
     // module exporting all six, which nothing then looked inside.
     // `COB_PRE_LOAD` loads the modules up front so their entry points are
     // found by name. Until this was set, `examples/mq-request-reply` compiled
@@ -313,7 +313,7 @@ const MODULE_EXTENSION = process.platform === "darwin" ? "dylib" : "so";
  * These six modules are the same for every run: nothing a test does can change
  * `runtime/*.cbl`. Rebuilding them into each test's working directory cost six
  * `cobc` invocations per test, which is most of what a conformance test spent
- * its time on — around 1.8s of a 2.2s test, against a 5s timeout. That margin
+ * its time on, around 1.8s of a 2.2s test, against a 5s timeout. That margin
  * held only while the runner scheduled these files with little else beside
  * them; on a loaded runner the tests began timing out, which is a suite that
  * reports a compiler defect when the machine was merely busy.
@@ -346,7 +346,7 @@ let runtimeModuleDir: string | undefined;
  * while it happens.
  *
  * The cache makes the build a once-per-machine cost, but *something* has to pay
- * it, and without this it is whichever conformance test runs first — on a cold
+ * it, and without this it is whichever conformance test runs first. On a cold
  * CI runner, a test that normally takes half a second and now also compiles six
  * modules. Doing it here moves the cost outside every test's clock, which is
  * the difference between a slow first test and a flaky one.
@@ -467,7 +467,7 @@ export function buildRecord(
 
     // `COMP` is a two's-complement big-endian halfword, fullword or doubleword,
     // not characters. Written as text it produced a record whose binary fields
-    // held digits, which is not a number any compiler would read back — a seed
+    // held digits, which is not a number any compiler would read back: a seed
     // no test could have been right about.
     if (field.usage === "COMP") {
       encodeBinary(Number(value), scaleOf(field.picture), field.bytes).copy(

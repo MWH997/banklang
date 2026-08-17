@@ -5,8 +5,8 @@ site changes.
 
 The job is meant to be submittable rather than filled in, and every step, DD and
 parameter in it comes from IBM's own cataloged procedures as the Programming
-Guide prints them rather than from this compiler's memory of them. Before the
-2026-08-05 audit it was neither: the compile step had no `STEPLIB` and none of
+Guide prints them rather than from this compiler's memory of them. It did not
+always work that way: the compile step had no `STEPLIB` and none of
 the sixteen work files, the link-edit ran `PGM=IEWL` with no LE libraries, the
 run step had no `STEPLIB` at all (so a job that compiled and linked perfectly
 ended S806), and the dataset names were built by turning the build path into
@@ -218,6 +218,6 @@ For a Db2 program the PARM goes on the `DSN RUN` subcommand instead.
 
 ## Related pages
 
-- [for-mainframe-engineers.md](for-mainframe-engineers.md) (reading the generated COBOL
-- [error-handling.md](error-handling.md)) what each return code means
-- [target-conformance.md](target-conformance.md), the JCL rules and their citations
+- [for-mainframe-engineers.md](for-mainframe-engineers.md): reading the generated COBOL
+- [error-handling.md](error-handling.md): what each return code means
+- [target-conformance.md](target-conformance.md): the JCL rules and their citations

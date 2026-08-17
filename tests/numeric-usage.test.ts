@@ -8,7 +8,7 @@ import { flowed, unpadded } from "./helpers";
  *
  * A value's precision and scale say what it means; its usage says how the bytes
  * are arranged. Every number this compiler emitted used to be `COMP-3`, which
- * meant it could not represent — and therefore could not read — most fields in
+ * meant it could not represent, and therefore could not read, most fields in
  * an existing estate's copybooks: the halfword counters, the fullword
  * sequence numbers, and the zoned decimal that much legacy input arrives as.
  *
@@ -85,7 +85,7 @@ entry transaction settle(master: LegacyMaster) {
 describe("zoned decimal fields", () => {
   /**
    * One byte per digit, with the sign kept separate so the field reads as plain
-   * text — which is what a file another system or a person reads needs.
+   * text, which is what a file another system or a person reads needs.
    */
   it("emits a display picture with a separate sign", () => {
     expect(flowed(txn("").cobol)).toContain(

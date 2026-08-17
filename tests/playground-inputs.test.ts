@@ -20,10 +20,10 @@ import { checked } from "./helpers";
 /**
  * The Input panel, and what it makes the Run tab worth reading.
  *
- * B2, closing the 2026-08-07 audit's F4. Every program used to execute against
- * zero-initialised storage, so `account-posting` — the example whose whole
- * subject is a balanced transfer — posted 0.00 against 0.00 on the feature sold
- * as "read the postings it made rather than take the compiler's word for them".
+ * Every program used to execute against zero-initialised storage, so
+ * `account-posting`, the example whose whole subject is a balanced transfer,
+ * posted 0.00 against 0.00 on the feature sold as "read the postings it made
+ * rather than take the compiler's word for them".
  * The one case that proves nothing, on the landing page's primary call to
  * action.
  */
@@ -92,7 +92,7 @@ function parmOf(inputs: ProgramInputs): string | undefined {
  * in the executed conformance lane. This one builds the same records for the
  * browser. Two encoders that disagree would have the playground and CI running
  * different programs while reporting the same thing, which is the quiet kind of
- * wrong — so they are compared rather than each trusted.
+ * wrong, so they are compared rather than each trusted.
  */
 describe("packed decimal, in the browser", () => {
   it.each([
@@ -137,7 +137,7 @@ describe("a record built from the compiler's layout", () => {
    * The numeric path no example takes.
    *
    * Money is `COMP-3` and it has its own branch, so a `binary` or `zoned` field
-   * is the only way into `packNumeric` — and no record in the corpus has one.
+   * is the only way into `packNumeric`, and no record in the corpus has one.
    * The guard on that branch was anchored as `/^[S9VP(),0-9]+$/`, which the
    * layout report's `PIC S9(9)` never matches, so the branch was unreachable
    * and such a field would have been written as characters into an item the
@@ -201,7 +201,7 @@ entry transaction count(counter: Counter) {
  * The finding itself, as a test.
  *
  * `account-posting` holds its request in WORKING-STORAGE and nothing in the
- * program fills it — on z/OS a caller, a PARM or a dataset does. The panel is
+ * program fills it: on z/OS a caller, a PARM or a dataset does. The panel is
  * that caller, and this is the assertion the ticket asked for: a non-zero
  * journal that balances.
  */
@@ -262,9 +262,9 @@ describe("a program that reads a dataset", () => {
   });
 
   /**
-   * The same request the executed conformance suite runs under GnuCOBOL — a
+   * The same request the executed conformance suite runs under GnuCOBOL, and a
    * 1200.00 withdrawal from a 5000.00 balance with a 500.00 floor, which is
-   * permitted — reaching the same journal in the browser. Two runtimes, one
+   * permitted, reaching the same journal in the browser. Two runtimes, one
    * program, one answer.
    */
   it("posts the withdrawal the conformance suite posts", () => {
@@ -293,7 +293,7 @@ describe("what Db2 answers", () => {
 
   /**
    * In the order the `INTO` names them, which is the order the generated FETCH
-   * passes them — the positions the row script is keyed by. Layout order would
+   * passes them, the positions the row script is keyed by. Layout order would
    * be right only while the two happen to coincide.
    */
   it("offers the fields the cursor's INTO names, in that order", () => {
@@ -344,8 +344,8 @@ describe("what Db2 answers", () => {
  * A program with no input path says so, and says which kind of none it is.
  *
  * Their numbers being uninteresting is then a fact about the program rather
- * than about the browser, which is the distinction F4 was really about — but
- * only if the sentence is true of that program. Every example without a surface
+ * than about the browser, which is the distinction that matters here, and it
+ * holds only while the sentence is true of that program. Every example without a surface
  * is listed here, because the one that was left out of this table was the one
  * being told something false: `account-transfer` declares a record and a
  * function and no transaction, and was informed that its transaction took no
@@ -388,7 +388,7 @@ describe("a program with nothing to fill in", () => {
  * and the MOVEs from. The panel offered one opaque `X(512)` seeded blank
  * instead, so all four PARM-driven examples reached their own length check on
  * the first statement, printed `PARM IS +0000 BYTES, n REQUIRED`, and ended
- * with return code 12 — three of them without ever opening the dataset the
+ * with return code 12, three of them without ever opening the dataset the
  * panel had seeded beside it.
  */
 describe("the PARM", () => {
@@ -444,7 +444,7 @@ describe("the PARM", () => {
  * Every example, seeded and run.
  *
  * The panel has to be right about what a program can be given for all of them,
- * not for the two this file names — a surface keyed by a DD the program does
+ * not for the two this file names: a surface keyed by a DD the program does
  * not open is a panel a reader fills in and a program that ignores it.
  */
 describe("every example", () => {
@@ -468,7 +468,7 @@ describe("every example", () => {
     const supplied = results.filter(
       ({ inputs }) => inputs.surfaces.length > 0,
     ).length;
-    // Was zero before B2, which is the whole of F4.
+    // This was zero before the Input panel existed, which was the whole defect.
     expect(supplied).toBeGreaterThan(results.length / 2);
   });
 
@@ -495,10 +495,10 @@ describe("every example", () => {
    * clothes. Each surface is removed in turn and the run compared: if the two
    * agree byte for byte, the panel was offering something inert.
    *
-   * This is the check that was missing. It finds, in one pass, everything B2
-   * shipped with: the PARM seeded blank so the program refused it, the MQ
+   * This is the check that was missing. It finds, in one pass, everything the
+   * Input panel shipped with: the PARM seeded blank so the program refused it, the MQ
    * request record the get overwrites, and `branch-accrual-cursor`, whose
-   * cursor nothing bounded — every FETCH succeeded, the loop ran to its own
+   * cursor nothing bounded: every FETCH succeeded, the loop ran to its own
    * 5000-row limit and ended the step with return code 12, and the branch the
    * panel had seeded never reached the summary. There are no exemptions: every
    * surface the panel offers changes what the program does.

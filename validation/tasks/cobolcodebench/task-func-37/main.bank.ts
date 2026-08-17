@@ -2,7 +2,7 @@ module TaskFunc37;
 
 // Written from `spec.json`. Specification: read records from 'task_func37_inp',
 // drop the ones whose quantity is not positive, sort the rest ascending on the
-// department field, reformat them, and write them to 'task_func37_out' — using
+// department field, reformat them, and write them to 'task_func37_out', using
 // an input procedure to filter and an output procedure to reformat.
 
 // Twenty characters for a fourteen character record: the input ends without a

@@ -14,7 +14,7 @@ enum EnquiryOutcome {
 
 // The commarea, field for field: what the caller passes in and what it reads
 // back out. CICS gives a program one communication area, not one in and one
-// out — `DFHCOMMAREA` is the caller's own storage, so the request fields and
+// out. `DFHCOMMAREA` is the caller's own storage, so the request fields and
 // the reply fields are the same block, and the transaction answers by writing
 // into the record it was asked with.
 //
@@ -56,14 +56,14 @@ function isAvailable(status: string<8>): bool {
 
 // An online transaction: input arrives through the COMMAREA and control
 // returns to CICS rather than to a caller. The first record parameter is the
-// commarea — `MOVE DFHCOMMAREA TO ENQUIRY-COMMAREA` on entry, `MOVE
-// ENQUIRY-COMMAREA TO DFHCOMMAREA` on the way out — so it is the one place an
+// commarea (`MOVE DFHCOMMAREA TO ENQUIRY-COMMAREA` on entry, `MOVE
+// ENQUIRY-COMMAREA TO DFHCOMMAREA` on the way out) so it is the one place an
 // answer can go. Anything else is working storage, and the task ends with it.
 cics transaction accountEnquiry(enquiry: EnquiryCommarea, row: AccountBalanceRow, auditEntry: AuditEntry) {
   execute fetchAccount(enquiry.caAccountId) into row;
 
   // Three outcomes, not two. `+100` is the only "no such account"; a negative
-  // SQLCODE is Db2 saying the question was never answered — a deadlock the
+  // SQLCODE is Db2 saying the question was never answered: a deadlock the
   // thread lost (-911), a resource that was not available (-904), a package
   // that was never bound (-805). Collapsing those into the not-found branch is
   // BANK-SQL-007, and it is what turns an outage into a customer being told

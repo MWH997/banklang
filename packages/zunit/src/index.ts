@@ -4,7 +4,7 @@
  * IBM's z/OS Automated Unit Testing Framework runs a COBOL program on the
  * mainframe and reports pass or fail. A test case is three artifacts, not one:
  * a `.bzucfg` configuration in XML, a COBOL *test case program* that drives the
- * program under test, and — when the data was recorded from a real run — a
+ * program under test, and, when the data was recorded from a real run, a
  * playback file. This module writes the first two and the JCL that runs them.
  * It writes no playback file: everything a generated case supplies is written
  * into the driver, which is the "supplied" rather than the "recorded" route.
@@ -82,9 +82,9 @@ const RUNNER_NAMESPACE = "http://www.ibm.com/zUnit/4.0.0.0/TestRunner";
  * Compiler options the test case program is translated with.
  *
  * Copied from IBM's generated cases, and every one of them matters. `TEST` is
- * what puts the hooks in that the runner intercepts calls through — it is the
+ * what puts the hooks in that the runner intercepts calls through. It is the
  * z/OS Debugger's mechanism, which is why the info block comes from a copybook
- * named `EQAITERC` — and `PGMN(LU)` is what allows `TEST_<NAME>` to be a
+ * named `EQAITERC`, and `PGMN(LU)` is what allows `TEST_<NAME>` to be a
  * program-name at all: under `PGMNAME(COMPAT)` it would be truncated to eight
  * characters with the underscore rejected.
  *
@@ -102,7 +102,7 @@ const ASSERT_PREFIX = "AZU";
  * The load module and member name of the generated test case.
  *
  * `T` in front of the program's own name, truncated to the eight characters a
- * member name has — the rule IBM's editor follows, which turned `LGICDB01`
+ * member name has, the rule IBM's editor follows, which turned `LGICDB01`
  * into `TLGICDB0`. Two programs whose names agree in seven characters produce
  * one member, exactly as two programs agreeing in eight produce one load
  * module; `BANK-NAME-001` is what refuses the second case.
@@ -177,7 +177,7 @@ function expectedModule(kind: "ledger" | "audit"): string {
  * IBM's editor writes a UUID here and the same UUID into the driver's
  * `BZU_INIT`, and the two have to agree. A random one would make the artifact
  * different on every build of an unchanged program, which is the one thing this
- * compiler promises never to do — so it is a hash of what the case is about,
+ * compiler promises never to do, so it is a hash of what the case is about,
  * shaped as a version 4 UUID because that is what the attribute holds.
  */
 function testCaseId(programName: string, tests: IRTest[]): string {
@@ -227,8 +227,8 @@ function xmlAttribute(value: string): string {
  * The `.bzucfg`, in the element order the observed configurations use.
  *
  * `runner:options`, then the test case and its tests, then one
- * `runner:intercept` per module — the program under test first, with
- * `stub="false"`, then each stubbed module with `stub="true"` — then
+ * `runner:intercept` per module: the program under test first, with
+ * `stub="false"`, then each stubbed module with `stub="true"`, then
  * `runner:playback` and `runner:fileAttributes`.
  */
 function renderConfiguration(
@@ -296,7 +296,7 @@ function entryName(test: IRTest): string {
   return `TEST_${testName(test)}`;
 }
 
-/** `1 CALL`, `2 CALLS` — a count read by whoever the failure lands on. */
+/** `1 CALL`, `2 CALLS`: a count read by whoever the failure lands on. */
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "S"}`;
 }
@@ -371,7 +371,7 @@ function renderDriver(
   // The same alignment the emitter's own output gets, from the same pass. The
   // driver declares a commarea of its own and hand-padded it to a fixed
   // column, so a name past that column left one unaligned line in the middle
-  // of an otherwise square record — the defect `pic-alignment` reports.
+  // of an otherwise square record, the defect `pic-alignment` reports.
   return `${alignPictureColumns(lines).join("\n")}\n`;
 }
 
@@ -536,7 +536,7 @@ function emitTestProgram(
   addLine(`           INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR`);
   addLine(`               CHARACTERS BEFORE INITIAL SPACE`);
   // A name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
-  // modification of no characters — which SSRANGE abends on and which is
+  // modification of no characters, which SSRANGE abends on and which is
   // undefined without it. One character is a space, so every comparison below
   // falls to its WHEN OTHER, which is the right answer for a test with no name.
   addLine(`           IF AZ-TEST-LEN = 0`);
@@ -640,8 +640,8 @@ function emitTestProgram(
  *
  * The configuration carries a `runner:intercept` for that program, and the
  * runner calls these two entries around it. There is nothing for them to do
- * here — the PARM is built by the driver and the results are checked through
- * the stubs — but a named entry point the runner calls and cannot find is a
+ * here. The PARM is built by the driver and the results are checked through
+ * the stubs, but a named entry point the runner calls and cannot find is a
  * failed run, so both are written.
  */
 function emitProgramCallback(
@@ -706,7 +706,7 @@ function emitInitProgram(
   addLine(`           INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR`);
   addLine(`               CHARACTERS BEFORE INITIAL SPACE`);
   // A name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
-  // modification of no characters — which SSRANGE abends on and which is
+  // modification of no characters, which SSRANGE abends on and which is
   // undefined without it. One character is a space, so every comparison below
   // falls to its WHEN OTHER, which is the right answer for a test with no name.
   addLine(`           IF AZ-TEST-LEN = 0`);
@@ -735,7 +735,7 @@ function emitTermProgram(addLine: (line?: string) => void): void {
   addLine(`           INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR`);
   addLine(`               CHARACTERS BEFORE INITIAL SPACE`);
   // A name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
-  // modification of no characters — which SSRANGE abends on and which is
+  // modification of no characters, which SSRANGE abends on and which is
   // undefined without it. One character is a space, so every comparison below
   // falls to its WHEN OTHER, which is the right answer for a test with no name.
   addLine(`           IF AZ-TEST-LEN = 0`);
@@ -797,7 +797,7 @@ function emitStubProgram(
   addLine(`           INSPECT AZ-TEST TALLYING AZ-TEST-LEN FOR`);
   addLine(`               CHARACTERS BEFORE INITIAL SPACE`);
   // A name of all spaces tallies zero, and `AZ-TEST(1:0)` is a reference
-  // modification of no characters — which SSRANGE abends on and which is
+  // modification of no characters, which SSRANGE abends on and which is
   // undefined without it. One character is a space, so every comparison below
   // falls to its WHEN OTHER, which is the right answer for a test with no name.
   addLine(`           IF AZ-TEST-LEN = 0`);
@@ -978,7 +978,7 @@ function emitCounterProgram(
 /**
  * The job: compile the test case program, then hand it to the runner.
  *
- * `EQAPPLAY` is the cataloged procedure the runner is submitted through — the
+ * `EQAPPLAY` is the cataloged procedure the runner is submitted through, the
  * name observed in a working pipeline, where the older documentation says
  * `BZUPPLAY`. `PRM='STOP=E,REPORT=XML'` is the parameter that pipeline passes:
  * stop on error, and write the report as XML so something other than a person

@@ -147,7 +147,7 @@ saying what it does not know is the part that matters most.
 
 ## Related pages
 
-- [conversions/](../conversions/) (the same programs, converted, and the
+- [conversions/](../conversions/): the same programs, converted, and the
   licence table for third-party corpora
-- [toolchain.md](toolchain.md)) the rest of the CLI
-- [roadmap.md](roadmap.md), what is planned
+- [toolchain.md](toolchain.md): the rest of the CLI
+- [roadmap.md](roadmap.md): what is planned

@@ -11,7 +11,7 @@ import { unpadded } from "./helpers";
  *
  * The compiler emitted `.cpy` files and then inlined every record anyway, so
  * nothing ever copied them. In a real shop the copybook is the contract between
- * programs, and a program that does not `COPY` it can drift from it silently —
+ * programs, and a program that does not `COPY` it can drift from it silently,
  * which is the defect the copybook exists to prevent.
  *
  * `inline` stays the default, because a self-contained artifact is what the
@@ -61,7 +61,7 @@ describe("inline mode", () => {
   });
 
   /**
-   * The binder's SYSLIB is always there — that is how a static `CALL` is
+   * The binder's SYSLIB is always there, which is how a static `CALL` is
    * resolved. What an inline program does not need is a copybook library on the
    * compile step, because it has no COPY statement to resolve.
    */

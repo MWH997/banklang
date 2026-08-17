@@ -1,8 +1,8 @@
 /**
  * Line up each `PIC` clause against the longest name it sits beside.
  *
- * The emitter padded every data name to a fixed column — twenty characters for
- * a level 01, twenty-four for a subordinate entry — which is what a person
+ * The emitter padded every data name to a fixed column (twenty characters for
+ * a level 01, twenty-four for a subordinate entry) which is what a person
  * would do by eye, and a name longer than the column simply overran it:
  *
  *     01  BANK-FAILURE-CODE    PIC X(32) EXTERNAL.
@@ -54,8 +54,8 @@ interface Entry {
 /**
  * A level number, a name, and at least one clause after it.
  *
- * The clause need not end on this line. An entry wide enough to wrap — a
- * picture carrying `SIGN IS LEADING SEPARATE` — is still one of its group's
+ * The clause need not end on this line. An entry wide enough to wrap, such as a
+ * picture carrying `SIGN IS LEADING SEPARATE`, is still one of its group's
  * fields, and leaving it out put a single unaligned line in the middle of an
  * otherwise square record. Its first line is padded like any other, and
  * `alignRun` will not move it past the margin.
@@ -153,14 +153,14 @@ export function alignPictureColumns(lines: string[]): string[] {
       if (!position) {
         // A clause of the entry above, on a line of its own: the `INDEXED BY`
         // under an `OCCURS`, a `COPY` under a group. It carries no name to
-        // align and must not split the fields on either side of it — that is
+        // align and must not split the fields on either side of it, which is
         // what put a record's `05`s into two columns either side of a table.
         const continuation = continuationIndent(output[cursor]!);
         if (continuation !== null && continuation > first.indent) {
           continue;
         }
-        // Anything else — a comment, a blank line, an `FD`, a section header,
-        // the PROCEDURE DIVISION — ends the run.
+        // Anything else (a comment, a blank line, an `FD`, a section header,
+        // the PROCEDURE DIVISION) ends the run.
         break;
       }
       // Subordinate to the run: a column of its own, stepped over so that the

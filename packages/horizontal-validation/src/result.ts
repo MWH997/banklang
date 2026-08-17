@@ -8,7 +8,7 @@
  * `formatRate` refuses to render one without its denominator attached.
  *
  * There are four rates rather than two, and the extra pair is the harder
- * lesson. `pass / applicable` was 4/4 for a phase — while `applicable` meant
+ * lesson. `pass / applicable` was 4/4 for a phase, while `applicable` meant
  * "somebody has written one", so the rate could not have been anything else,
  * and twenty-eight tasks sat in a bucket that carried no verdict at all. A
  * denominator computed from its own numerator is not a denominator, so
@@ -52,7 +52,7 @@ export type Outcome =
    * A failure, counted against the score, and named apart from
    * `semantic-mismatch` because it is a different fact about the world. Ten of
    * CobolCodeBench's 46 tasks expect literal text that appears in neither the
-   * specification nor the input data — `MAXIMAM TEMP:`, complete with the
+   * specification nor the input data: `MAXIMAM TEMP:`, complete with the
    * misspelling, or a lookup table of foods that exists only inside the
    * reference solution. Under the anti-contamination rule those bytes are
    * unavailable when the implementation is written, so the task cannot be
@@ -76,7 +76,7 @@ export type Outcome =
    *
    * Named for what happened rather than for a judgement about it. It used to be
    * `skipped`, which read as "and correctly so" and covered both a task BankTS
-   * cannot express and a task nobody had got round to — the applicability axis
+   * cannot express and a task nobody had got round to, so the applicability axis
    * now carries that distinction, and this says only that no run took place.
    */
   | "not-executed"
@@ -319,7 +319,7 @@ export function checkTallyIsComplete(tally: CorpusTally): string[] {
    * The guard against relabelling a task to shrink the denominator.
    *
    * Every category other than `applicable` is a claim that a conforming BankTS
-   * program could not match this task — because the language cannot express it,
+   * program could not match this task, either because the language cannot express it,
    * or because the benchmark's own expectation is not derivable from its own
    * contract. A task in one of those categories that then *passes* refutes the
    * claim, and the run says so rather than quietly banking the pass.

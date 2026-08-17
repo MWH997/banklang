@@ -16,7 +16,7 @@ import { typecheckProgram } from "../packages/typechecker/src/index";
  *
  * The loader answers with a config and a list of problems rather than throwing,
  * so a malformed field falls back to its default and the reader is told which
- * one. That makes every branch a pair — the value taken, and the default kept —
+ * one. That makes every branch a pair, the value taken and the default kept,
  * and the tools mutation lane found most of them surviving: the type checks,
  * the empty-string checks, and the card-width boundary.
  */
@@ -44,7 +44,7 @@ describe("a malformed banklang.json", () => {
   });
 
   it("treats an empty string as absent rather than as a path", () => {
-    // `""` is a string, so only the length check catches it — and an empty
+    // `""` is a string, so only the length check catches it, and an empty
     // `outDir` would write the generated program into the project root.
     expect(configFor('{"entry":""}').problems.join()).toMatch(/"entry"/);
     expect(configFor('{"outDir":""}').problems.join()).toMatch(/"outDir"/);
@@ -88,7 +88,7 @@ describe("a malformed banklang.json", () => {
  *
  * `CEEOPTS` is read as cards: columns 1 to 71 are the option text. The loader
  * refuses an option longer than **69**, which looks like an off-by-two against
- * that sentence until you look at the emitter — it writes each option indented
+ * that sentence until you look at the emitter: it writes each option indented
  * by two spaces, so 2 + 69 is exactly 71.
  *
  * Those two numbers live in different packages and must agree. Asserted through

@@ -7,8 +7,8 @@ import { notesFor } from "../tools/release-notes";
 /**
  * The release body.
  *
- * R2 asks for a tag "matching the changelog". The way that goes wrong is not a
- * crash — it is a release page carrying the previous version's notes, or
+ * A release wants a tag matching the changelog. The way that goes wrong is
+ * never a crash: it is a release page carrying the previous version's notes, or
  * nothing, or notes that leave out everything written since they were drafted.
  * So most of what follows is about refusing rather than extracting.
  */
@@ -122,7 +122,7 @@ describe("the notes a release is published with", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toBe(
-        `CHANGELOG.md still has entries under Unreleased. Releasing ${version} now publishes notes that leave every one of them out — fold them into ${version}, or release the next version instead.`,
+        `CHANGELOG.md still has entries under Unreleased. Releasing ${version} now publishes notes that leave every one of them out. Fold them into ${version}, or release the next version instead.`,
       );
     }
   });

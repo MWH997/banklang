@@ -164,8 +164,8 @@ describe("restricted data may not be reclassified", () => {
 
   /**
    * Passing a restricted value into a function is the declassification point.
-   * The compiler does not check that `maskPan` masks anything — see the stated
-   * limit in the language reference — but it does make the boundary explicit
+   * The compiler does not check that `maskPan` masks anything. See the stated
+   * limit in the language reference. It does make the boundary explicit
    * rather than letting a bare copy pass.
    */
   it("treats a function result as unrestricted", () => {
@@ -179,7 +179,7 @@ describe("restricted data may not be reclassified", () => {
 describe("restricted data may still be used", () => {
   /**
    * `cardExtract` rather than `customerOutput`, which folds to the DD name
-   * `CUSTOMER` — the same eight characters as the `Customer` record's COBOL
+   * `CUSTOMER`, the same eight characters as the `Customer` record's COBOL
    * group. `ASSIGN TO CUSTOMER` then takes the file name from that group's
    * contents on both compilers, and the OPEN fails with file status 35.
    * `BANK-FILE-016`.

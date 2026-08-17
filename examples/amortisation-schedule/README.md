@@ -86,4 +86,4 @@ validation is claimed.
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=amortisation-schedule) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=amortisation-schedule). It compiles in your browser, with the generated COBOL beside it.

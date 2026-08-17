@@ -7,7 +7,7 @@
  * `cobc`, loaded alongside the reference runtime from `runtime/`, and executed
  * by `packages/cobol-runtime`.
  *
- * The runtime programs are the same files CI compiles and links — not a
+ * The runtime programs are the same files CI compiles and links, rather than a
  * JavaScript imitation of a ledger. `BANKLEDG` holds the balances, `BANKAUDT`
  * appends the audit log, `DSNHLI` and `DFHEI1` answer the SQL and CICS calls.
  * A JavaScript stand-in would have been far less work and would have meant that
@@ -62,7 +62,7 @@ const PARM_LENGTH = 512;
  *
  * An empty `parm` is a job step started with no `PARM=`: length zero and blank
  * data, which is what the program's own validation is written to reject. The
- * Input panel is what fills it, so a reader can see both — the refusal, and the
+ * Input panel is what fills it, so a reader can see both: the refusal, and the
  * run it was refusing on behalf of.
  */
 function parmDriver(program: string, parm: string): string {
@@ -105,7 +105,7 @@ function parmMoves(text: string): string[] {
 
   for (let at = 0; at < text.length;) {
     // Measured after doubling any quote, because that is what lands on the
-    // line — a reader may well type one into the panel.
+    // line, since a reader may well type one into the panel.
     let taken = 0;
     let literal = "";
     while (at + taken < text.length) {
@@ -149,7 +149,7 @@ const END_OF_DATA = "02000";
  * it. Matching on that pair is reading the number it chose.
  *
  * Without this every FETCH succeeded, because DSNHLI succeeds anything it has
- * no script for. A cursor loop then ended only by reaching its own bound —
+ * no script for. A cursor loop then ended only by reaching its own bound,
  * `branch-accrual-cursor` read 5000 empty rows and ended the step with return
  * code 12, which reads as a broken program rather than as an unscripted stub.
  */
@@ -197,7 +197,7 @@ export function sqlOutcomesFor(
  *
  * A single-row `FETCH` takes one row per call. A rowset `FETCH ... FOR n ROWS`
  * takes up to n at a time into host-variable arrays, so the same rows are one
- * call per set — and `SQLERRD(3)` tells the loop how many arrived, which is
+ * call per set, and `SQLERRD(3)` tells the loop how many arrived, which is
  * what makes the last, partial set the one it must still process.
  */
 function callsOf(cursor: CursorRows): Uint8Array[][][] {
@@ -212,7 +212,7 @@ function callsOf(cursor: CursorRows): Uint8Array[][][] {
 /**
  * The rows themselves, as the lines `runtime/DSNHLI.cbl` reads.
  *
- * `stmt call row var len hex` — which statement, which call of it, which row
+ * `stmt call row var len hex`: which statement, which call of it, which row
  * that call delivers, which host variable of that row by its position in the
  * generated CALL, how many bytes, and the bytes. Hex because a row carries
  * packed decimal as often as text and a byte of packed decimal is not something
@@ -331,7 +331,7 @@ const decoder = new TextDecoder();
  *
  * A compiled unit is not always one program. A recursive function is emitted as
  * a second, sibling `RECURSIVE` program, and that one has `PROCEDURE DIVISION
- * USING` for its arguments — so asking the whole file whether it takes a PARM
+ * USING` for its arguments, so asking the whole file whether it takes a PARM
  * answered yes for every program that merely contained a recursive helper.
  * `amortisation-schedule` was then wrapped in the PARM driver it does not want,
  * the driver became the entry point, and the entry record had nowhere to land:
@@ -460,7 +460,7 @@ function message(error: unknown): string {
  *
  * A dataset nothing supplied is not there, so the `OPEN INPUT` returns file
  * status 35 and the program takes its failure path. That is a real path and
- * worth seeing — it is what `examples/failed-open` is about — but a reader who
+ * worth seeing, and it is what `examples/failed-open` is about, but a reader who
  * does not know why is looking at a program that appears broken. The Run tab
  * says which datasets were missing rather than leaving them to work it out.
  *

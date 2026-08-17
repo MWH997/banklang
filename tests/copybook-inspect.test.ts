@@ -34,7 +34,7 @@ describe("copybook inspection", () => {
  * The inspector reads what this compiler emits, and has to keep up with it.
  *
  * It once knew only `PIC X` and `COMP-3`. Every field the numeric-usage,
- * temporal, and edited work added made it throw on the compiler's own output —
+ * temporal, and edited work added made it throw on the compiler's own output.
  * `bankc` copybook inspect and diff were broken for any program using a
  * `binary`, a `zoned`, a date, or an edited field, and nothing noticed because
  * no example used one.

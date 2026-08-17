@@ -80,7 +80,7 @@ describe("every surface that states BankLang's version", () => {
    *
    * Every package here is `private: true` and all but the extension omit
    * `version` entirely, which is the right shape: the repository is the unit of
-   * release. This catches the case where one of them grows a version field —
+   * release. This catches the case where one of them grows a version field,
    * at which point it either tracks the release or it is a second number
    * nobody reconciles.
    */

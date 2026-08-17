@@ -9,7 +9,7 @@ import { compile } from "../packages/compiler/src/index";
 import { localCobol, unpadded } from "./helpers";
 
 /**
- * `processed: binary<9> = 0;` — a COBOL `VALUE` clause.
+ * `processed: binary<9> = 0;`: a COBOL `VALUE` clause.
  *
  * Working storage starts as whatever the region left there unless a field says
  * otherwise, so a counter with no initial value starts at an unpredictable
@@ -129,8 +129,8 @@ entry transaction run(counters: Counters) {
   });
 
   /**
-   * A redefining field has no storage of its own — only a second reading of
-   * another field's bytes — so a value on it would either be ignored or
+   * A redefining field has no storage of its own, only a second reading of
+   * another field's bytes, so a value on it would either be ignored or
    * overwrite one the other field set.
    */
   it("a value on a redefining field", () => {

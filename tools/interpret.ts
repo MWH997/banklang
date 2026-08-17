@@ -36,7 +36,7 @@ import {
   type ConformanceRun,
 } from "./conformance";
 
-/** The reference runtime, precompiled once — it never changes within a run. */
+/** The reference runtime, precompiled once, since it never changes within a run. */
 let runtimeSources: string[] | null = null;
 
 function runtime(): string[] {
@@ -119,7 +119,7 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
   // getting it wrong is not a small error. A LINE SEQUENTIAL file's records end
   // at a newline; splitting one at a fixed width puts the newline inside record
   // two and shifts every record after it by a byte. That is exactly what
-  // happened the first time a line-sequential program was run through here —
+  // happened the first time a line-sequential program was run through here,
   // `cobc` produced the right file and the interpreter produced a shifted one,
   // and the difference was reported as a semantic divergence in the compiler
   // rather than in this harness.
@@ -148,7 +148,7 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
   }
   // The same rows `runConformance` writes beside the compiled program. Both
   // sides being answered from one script is the only thing that makes their
-  // agreement mean anything — two stubs told different stories would disagree
+  // agreement mean anything, because two stubs told different stories would disagree
   // about the program rather than about themselves.
   if (options.sqlRows?.length) {
     files.set("sql-rows.txt", lineRecords(`${options.sqlRows.join("\n")}\n`));
@@ -182,7 +182,7 @@ export function runInterpreted(options: ConformanceOptions): InterpretedRun {
      * A line-sequential file is records *and* the delimiters between them.
      *
      * The interpreter holds a file as a list of records, which is right, and
-     * this used to flatten them by concatenation — correct for a fixed-length
+     * this used to flatten them by concatenation, correct for a fixed-length
      * dataset, where the record length is the boundary, and wrong for a text
      * file, where the newline is. Every record ran into the next one, and the
      * comparison against `cobc` reported it as a semantic divergence in the
@@ -225,7 +225,7 @@ function linesOf(run: RunResult, file: string): string[] {
  *
  * Through the interpreter's own parser rather than a regex over the generated
  * text. The regex version summed the elementary `PICTURE`s under the FD and
- * matched none whose clauses came between the picture and the period — so a
+ * matched none whose clauses came between the picture and the period, so a
  * record holding a `zoned` field, whose entry is `PIC S9(5) SIGN IS TRAILING
  * SEPARATE.`, was measured six bytes short. A fixed dataset split at the wrong
  * boundary produces records that are individually plausible and collectively
@@ -320,8 +320,8 @@ export function parmDriver(program: string, parm = ""): string {
  * This used to refuse anything past 40 characters, which was safe only because
  * nothing ever asked: the differential lane supplied every PARM-driven example
  * an empty PARM, so both sides took the length check's refusal path and agreed
- * on return code 12. The parsing this compiler generates — the numeric class
- * test, the separate sign, the offsets inside the linkage group — was never
+ * on return code 12. The parsing this compiler generates (the numeric class
+ * test, the separate sign, the offsets inside the linkage group) was never
  * compared against a real compiler at all. Every real PARM in the corpus is
  * longer than 40 characters.
  */

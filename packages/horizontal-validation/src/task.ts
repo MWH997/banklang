@@ -31,13 +31,13 @@
  * So applicability is now a property of the *task*: its requirements against
  * the language's capabilities, decidable before anybody writes a line. Whether
  * an implementation exists is [`Authoring`](./result.ts), separately, and the
- * two are reported separately — `applicable + unauthored` is a real state and
+ * two are reported separately. `applicable + unauthored` is a real state and
  * the one that says there is work to do.
  *
  * `unsupported-by-design` and `unsupported-not-yet-implemented` are kept apart
  * because they say opposite things about the project. The first is BankTS
- * working as intended — a banking language declining IEEE floating point is not
- * a gap — and the second is a to-do list. Collapsing them would let every
+ * working as intended, since a banking language declining IEEE floating point is not
+ * a gap, and the second is a to-do list. Collapsing them would let every
  * missing feature be relabelled a principle.
  *
  * `benchmark-ambiguous` is a statement about the benchmark and needs evidence
@@ -95,7 +95,7 @@ export interface SpecOnlyTask {
  *
  * Written to a sibling directory that the authoring process does not read, and
  * used by the evaluator only where the benchmark's own expected outputs are not
- * a sufficient oracle — which, for CobolCodeBench, they are.
+ * a sufficient oracle, which, for CobolCodeBench, they are.
  */
 export interface SealedTask {
   id: string;
@@ -130,8 +130,8 @@ export class MalformedTaskError extends Error {}
  * A task read off disk, checked rather than trusted.
  *
  * A manifest is JSON somebody else's generator wrote. Every field is verified
- * here — including that the file names inside `inputs` and `expectedOutputs`
- * are plain names rather than paths — so a malformed record fails loudly at the
+ * here, including that the file names inside `inputs` and `expectedOutputs`
+ * are plain names rather than paths, so a malformed record fails loudly at the
  * boundary instead of producing a run whose results are quietly meaningless.
  */
 export function parseSpecOnlyTask(

@@ -9,12 +9,12 @@ import { compile } from "../packages/compiler/src/index";
 import { checked, corpus, flowed, localCobol } from "./helpers";
 
 /**
- * `SET <condition> TO TRUE` — what the level-88 names are for.
+ * `SET <condition> TO TRUE`: what the level-88 names are for.
  *
  * The 88s were always generated; nothing ever used them to set the field.
  * `MOVE "CLOSED" TO STATUS-FLD OF ACCOUNT` repeats the spelling of the member
- * in the procedure division, where it can drift from the 88 that defines it —
- * rename the member and the `MOVE` still compiles, still runs, and now writes a
+ * in the procedure division, where it can drift from the 88 that defines it.
+ * Rename the member and the `MOVE` still compiles, still runs, and now writes a
  * value no condition matches.
  *
  * `SET STATUS-FLD-CLOSED OF ACCOUNT TO TRUE` names the condition instead, so
@@ -113,7 +113,7 @@ entry transaction shift(account: Account, mirror: Mirror) {
 
 /**
  * Testing a field is the other half, and it was still comparing the member's
- * spelling as a literal — the construct the level-88 exists to replace. The
+ * spelling as a literal, the construct the level-88 exists to replace. The
  * condition name says which state is being asked about; a string comparison
  * repeats the spelling in the procedure division and has to be kept in step
  * with the 88 by hand.
@@ -228,7 +228,7 @@ entry transaction shift(account: Account, mirror: Mirror) {
  *
  * The condition names are what `SET ... TO TRUE` writes through, so a member
  * without one is a member the program can only reach by spelling its literal
- * again in the procedure division — which is the drift the 88s exist to stop.
+ * again in the procedure division, which is the drift the 88s exist to stop.
  */
 describe("across the corpus", () => {
   it("declares a condition name for every enum member", () => {
@@ -237,7 +237,7 @@ describe("across the corpus", () => {
       // `SET X TO TRUE` names a condition; every one of them has to be
       // declared as an 88 somewhere in the same program.
       // Qualified, because the emitter writes `SET CA-OUTCOME-FOUND OF
-      // ENQUIRY-COMMAREA TO TRUE` — a record is emitted in working storage and
+      // ENQUIRY-COMMAREA TO TRUE`: a record is emitted in working storage and
       // again inside every FD that holds it, so the condition needs its group.
       // Without the `OF` the pattern matched nothing at all and this loop
       // asserted nothing, in every example, silently.

@@ -1,12 +1,12 @@
 /**
  * What the playground is allowed to weigh.
  *
- * The 2026-08-07 audit's F12: `dist/assets/index-*.js` is 879 kB unsplit, Vite
- * prints "(!) Some chunks are larger than 500 kB after minification" on every
- * build, and nothing reads it. This is the target of the home page's primary
- * call to action — parser, typechecker, IR, backend, precompiler, COBOL
- * runtime, CodeMirror and eight `?raw` runtime programs are all in the first
- * download, including for a reader who only opens the COBOL tab.
+ * `dist/assets/index-*.js` is 879 kB unsplit, Vite prints "(!) Some chunks are
+ * larger than 500 kB after minification" on every build, and nothing reads it.
+ * This bundle is the target of the home page's primary call to action: parser,
+ * typechecker, IR, backend, precompiler, COBOL runtime, CodeMirror and eight
+ * `?raw` runtime programs are all in the first download, including for a reader
+ * who only opens the COBOL tab.
  *
  * A warning nobody acts on is not a check, and the reason the bundle got here
  * is that nothing ever said no. This does.
@@ -17,8 +17,8 @@
  * browser parses and it grows for reasons compression hides.
  *
  * **The budget is a ratchet, and it only ever goes down.** When D4's split
- * lands — dynamic `import()` for the COBOL runtime and the `?raw` programs, so
- * they arrive when **Run** is first opened — this file is where the win is
+ * lands, with dynamic `import()` for the COBOL runtime and the `?raw` programs, so
+ * they arrive when **Run** is first opened, and this file is where the win is
  * banked. A build well under budget says so and names the number to write,
  * rather than failing: a build that breaks because it got *smaller* teaches
  * people to change the number without reading it.
@@ -35,14 +35,14 @@ import { pathToFileURL } from "node:url";
  * What the browser downloads before the playground is usable.
  *
  * 222 kB of it today, of which the compiler is most. The budget is what that
- * measures plus room for a dependency bump — close enough that adding a library
+ * measures plus room for a dependency bump, close enough that adding a library
  * to the initial download is a decision somebody makes on purpose.
  *
- * B2's Input panel spent about 4 kB of the first headroom this had, which is
+ * The Input panel spent about 4 kB of the first headroom this had, which is
  * what the number is for: it was a decision, it was measured, and the figure
  * moved with a reason rather than because a build went red.
  *
- * D4's split then took 36 kB back out. The interpreter, the precompiler and the
+ * Splitting the bundle then took 36 kB back out. The interpreter, the precompiler and the
  * eight `runtime/*.cbl` programs are fetched when **Run** is first opened, so a
  * reader who comes for the COBOL and leaves never downloads them. The ceiling
  * came down with the win rather than being left where it was, which is the only
@@ -66,7 +66,7 @@ export const TOTAL_GZIP = 274 * 1024;
  *
  * Deliberately looser than the gzip figure. Minified JavaScript compresses
  * about 3.5:1 and a change that moves this without moving the compressed size
- * is one that added repetition — generated tables, duplicated helpers — which
+ * is one that added repetition (generated tables, duplicated helpers) which
  * is worth a look but is not a download anybody waits for.
  */
 export const FIRST_LOAD_BYTES = 830 * 1024;

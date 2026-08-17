@@ -9,8 +9,8 @@ import { checked, compileExample, corpus, flowed, unpadded } from "./helpers";
  * What makes a generated program read as one.
  *
  * None of this is wrong COBOL. All of it is why a reviewer says "this was
- * generated" instead of "this is fine", and the 2026-08-05 audit listed twelve
- * of them. A compiler whose whole claim is that its output goes into
+ * generated" instead of "this is fine", and the external audit listed twelve of
+ * them. A compiler whose whole claim is that its output goes into
  * production has to produce output a production reviewer accepts.
  */
 
@@ -78,7 +78,7 @@ describe("the program prologue", () => {
  * control would have entered at the first paragraph, compared an
  * uninitialised field, fallen through the exit and run off the end.
  *
- * It affected `account-transfer` and `batch-interest-accrual` — the README's
+ * It affected `account-transfer` and `batch-interest-accrual`, the README's
  * first and fourth rows, and the playground's default program.
  */
 /** An example's generated job, which `compileExample` does not ask for. */
@@ -151,8 +151,8 @@ describe("a prologue entry too long for one line", () => {
  * Storage the compiler invents for itself, and the value it starts at.
  *
  * The Language Reference: "If the initial value is not explicitly specified,
- * the value is unpredictable." Half the rule was already followed — a boolean
- * result got `VALUE "N"` — and the packed field declared directly beneath it
+ * the value is unpredictable." Half the rule was already followed, since a boolean
+ * result got `VALUE "N"`, and the packed field declared directly beneath it
  * got nothing, which is what makes an omission read as a decision. A `COMP-3`
  * field is the worst case: unset storage is not reliably a valid packed
  * number, so reaching one before writing it abends on a data exception.
@@ -312,7 +312,7 @@ entry transaction go(account: Account, flag: bool) {
    * emits `IF ... MOVE "Y" ... ELSE MOVE "N"`, and through a literal, which
    * emits the `MOVE` on its own. Only the first was provoked, so the second
    * kept writing `MOVE 'Y'` two lines under a `VALUE "N"` for as long as the
-   * rule had been in the suite — in a shipped example, its evidence bundle and
+   * rule had been in the suite, in a shipped example, its evidence bundle and
    * its golden fixture. Every way of writing a boolean literal is here now:
    * a local, a field, and a return.
    */
@@ -368,8 +368,8 @@ entry transaction go(account: Account) {
   /**
    * An index-name cannot be qualified where it is used, so two `INDEXED BY
    * LINES-IDX` clauses are two definitions of one name. Enterprise COBOL takes
-   * it as an extension — "acceptance of nonunique index-names that are not
-   * referenced" — and stops the day a `SEARCH` names one.
+   * it as an extension, "acceptance of nonunique index-names that are not
+   * referenced", and stops the day a `SEARCH` names one.
    */
   it("qualify an index shared by two records", () => {
     const result = compile(`module Tables;
@@ -412,7 +412,7 @@ entry transaction go(row: Row, idempotencyKey: string<36>) {
   /**
    * A declare section holds host variables and nothing else. The one this
    * emitter opened used to run to the end of working storage, so the ledger and
-   * audit interface groups were inside it — described to Db2 as variables the
+   * audit interface groups were inside it, described to Db2 as variables the
    * SQL might name.
    */
   it("holds the host variables and closes", () => {
@@ -460,7 +460,7 @@ cics transaction enquire(account: Account) {
  *
  * GnuCOBOL's default dialect takes it and warns that a SPACE will be assumed;
  * `IGYCRCTL` rejects it outright. An empty alphanumeric field in COBOL holds
- * spaces — that is what a MOVE of anything shorter leaves behind — so `SPACES`
+ * spaces, which is what a MOVE of anything shorter leaves behind, so `SPACES`
  * is not a substitution for `""` but the only thing it can mean.
  */
 describe("an empty string literal", () => {
@@ -485,9 +485,9 @@ entry transaction blank(account: Account) {
 /**
  * The house style, over every example rather than one program each.
  *
- * This block is the audit F13 lesson written as structure. Every assertion
- * above compiles a program written here, which proves that program; each of
- * these reads everything the compiler is asked to produce. The delimiter rule
+ * This block is the delimiter defect's lesson written as structure. Every
+ * assertion above compiles a program written here, which proves that program;
+ * each of these reads everything the compiler is asked to produce. The delimiter rule
  * had a test of the first kind for as long as it had existed, and `MOVE 'Y'`
  * sat in a shipped example the whole time.
  */
@@ -579,7 +579,7 @@ describe("across the corpus", () => {
    * group may be the program's own data model, and every record a BankTS
    * module declares becomes both working storage and a copybook, so an
    * unreferenced group is not by itself wrong. Here the compiler's own output
-   * is in hand, so the question can be asked exactly — the group is thirty-
+   * is in hand, so the question can be asked exactly: the group is thirty-
    * eight bytes of ledger storage, and four examples carried it while calling
    * nothing but the audit trail.
    */

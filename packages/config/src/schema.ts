@@ -12,7 +12,7 @@ import {
  * `bankc init` writes a `$schema` line into every generated config, so an
  * editor fetches this and offers completion and validation for a file most
  * people will otherwise fill in by guessing. That only works if the document is
- * actually served — the URL used to name a domain this project does not own,
+ * actually served. The URL used to name a domain this project does not own,
  * where nothing has ever been published, so every generated config pointed an
  * editor at a 404.
  *

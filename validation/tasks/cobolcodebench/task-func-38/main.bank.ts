@@ -5,8 +5,8 @@ module TaskFunc38;
 // order.
 //
 // The specification also names a second output file listing duplicate
-// transaction numbers. It is not in this task's output contract — the benchmark
-// supplies no expected content for it and the harness allocates no DD — so it
+// transaction numbers. It is not in this task's output contract: the benchmark
+// supplies no expected content for it and the harness allocates no DD, so it
 // is not written. Producing a file nothing has allocated would fail the open,
 // which is a worse answer than saying so here.
 

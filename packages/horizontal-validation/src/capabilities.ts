@@ -3,7 +3,7 @@
  *
  * This table exists because of one bug, and it is worth naming precisely. The
  * representability rules said `inspect` was `unsupported-not-yet-implemented`
- * with the note "No BankTS syntax" — while `countOf` lowered to `INSPECT ...
+ * with the note "No BankTS syntax", while `countOf` lowered to `INSPECT ...
  * TALLYING` and `replaceChars` to `INSPECT ... CONVERTING`, and had done
  * throughout. Correcting one word moved 182 of X-COBOL's 5,195 files. Nothing
  * in the repository could have caught it, because the compiler's capability and
@@ -22,8 +22,8 @@
  *     which is exactly and only the `inspect` failure.
  *
  * What this deliberately does *not* do is infer the verdict. A construct with a
- * BankTS equivalent may still be `adaptation` — `substring` takes constant
- * bounds where COBOL takes computed ones — and that judgement stays in
+ * BankTS equivalent may still be `adaptation`, since `substring` takes constant
+ * bounds where COBOL takes computed ones, and that judgement stays in
  * `representability.ts` where the reasoning lives. The registry rules out one
  * specific lie: "BankTS has no way to say this" when it plainly does.
  */
@@ -35,7 +35,7 @@ export interface Capability {
    * A complete BankTS program exercising it.
    *
    * Complete rather than a fragment, because the check is that the compiler
-   * accepts it and emits something — which a fragment cannot establish.
+   * accepts it and emits something, which a fragment cannot establish.
    */
   probe: string;
   /**
@@ -47,7 +47,7 @@ export interface Capability {
    * The `packages/migration-analysis` feature this construct corresponds to.
    *
    * Null where the emitted COBOL is not something the corpus analyser detects
-   * as a feature — a real case, and one that has to be stated rather than left
+   * as a feature: a real case, and one that has to be stated rather than left
    * to look like an omission.
    */
   feature: string | null;
@@ -58,7 +58,7 @@ export interface Capability {
    * `differential` is the strong claim: both `cobc` and
    * `packages/cobol-runtime` run the construct and agree. `gnucobol-only` says
    * the compiled side runs it and the interpreter cannot, so nothing is being
-   * compared. `compile-only` says neither runs it here — Report Writer needs a
+   * compared. `compile-only` says neither runs it here: Report Writer needs a
    * precompiler this repository does not ship. `external-subsystem` says it
    * needs Db2, a CICS region or IMS, and the reference modules under `runtime/`
    * stand in for them rather than being them.
@@ -249,7 +249,7 @@ entry transaction order(posting: Posting, idempotencyKey: string<36>) {
      * Ordering a file into a differently shaped one, which is most of what a
      * batch sort is for. Registered separately from `sort` because the two are
      * different claims: `sort` says the statement exists, and this says the
-     * destination need not hold the record the sort moves — which was refused
+     * destination need not hold the record the sort moves, which was refused
      * until 2026-08-09 and is why `task_func_37` was recorded as a language
      * gap.
      */

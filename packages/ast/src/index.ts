@@ -86,7 +86,7 @@ export interface StringTypeNode extends NodeBase {
   kind: "StringType";
   length: number;
   /**
-   * `national<n>` — `PIC N(n) USAGE NATIONAL`, two bytes per character.
+   * `national<n>`: `PIC N(n) USAGE NATIONAL`, two bytes per character.
    *
    * A field kept in UTF-16 rather than the code page. It is a flag on the
    * string type rather than a type of its own because everything else about it
@@ -132,7 +132,7 @@ export interface TypeParameterNode extends NodeBase {
 }
 
 /**
- * `currency<"BDT", 18, 2>` — a decimal that is nominally typed by its currency
+ * `currency<"BDT", 18, 2>`: a decimal that is nominally typed by its currency
  * code, so two currencies cannot be combined without an explicit conversion.
  */
 export interface CurrencyTypeNode extends NodeBase {
@@ -143,7 +143,7 @@ export interface CurrencyTypeNode extends NodeBase {
 }
 
 /**
- * `edited<T, "style">` — a field formatted for a human to read.
+ * `edited<T, "style">`: a field formatted for a human to read.
  *
  * COBOL calls these numeric-edited items, and a `MOVE` into one performs the
  * editing: zero suppression, thousands separators, and the sign convention the
@@ -162,13 +162,13 @@ export interface EditedTypeNode extends NodeBase {
   styleSpan: SourceSpan;
 }
 
-/** `nullable<T>` — a value that must be checked before it can be used. */
+/** `nullable<T>`: a value that must be checked before it can be used. */
 export interface NullableTypeNode extends NodeBase {
   kind: "NullableType";
   inner: TypeNode;
 }
 
-/** `T[n]` — a statically bounded array, lowering to COBOL `OCCURS`. */
+/** `T[n]`: a statically bounded array, lowering to COBOL `OCCURS`. */
 export interface ArrayTypeNode extends NodeBase {
   kind: "ArrayType";
   element: TypeNode;
@@ -204,12 +204,12 @@ export interface SqlDeclarationNode extends NodeBase {
    * Db2 statements: `DECLARE`, `OPEN`, `FETCH`, `CLOSE`.
    */
   /**
-   * `WITH HOLD` — a cursor that survives a commit.
+   * `WITH HOLD`: a cursor that survives a commit.
    *
    * Db2's Application Programming Guide: "A held cursor does not close after a
    * commit operation. A cursor that is not held closes after a commit
-   * operation." A batch that commits inside its own cursor loop — which is what
-   * a long run has to do, to stop the log filling and the locks accumulating —
+   * operation." A batch that commits inside its own cursor loop (which is what
+   * a long run has to do, to stop the log filling and the locks accumulating)
    * loses its position without this, and the next `FETCH` answers -501.
    *
    * Db2 does not close a held cursor on its own and a thread holding an open
@@ -218,7 +218,7 @@ export interface SqlDeclarationNode extends NodeBase {
    */
   hold: boolean;
   /**
-   * `rowset <n>` — `WITH ROWSET POSITIONING`, and a `FETCH ... FOR n ROWS`.
+   * `rowset <n>`: `WITH ROWSET POSITIONING`, and a `FETCH ... FOR n ROWS`.
    *
    * One `FETCH` per row is one call into Db2 per row. A rowset fetch takes n at
    * a time into host-variable arrays, which for a million-row batch is the
@@ -230,7 +230,7 @@ export interface SqlDeclarationNode extends NodeBase {
    */
   rowset: number | null;
   /**
-   * `scroll` — `INSENSITIVE SCROLL CURSOR`, which can be read from any row.
+   * `scroll`: `INSENSITIVE SCROLL CURSOR`, which can be read from any row.
    *
    * An ordinary cursor goes forward, once. A scrollable one can start at a
    * given row and can go backward, which is what paging is: a statement screen
@@ -239,7 +239,7 @@ export interface SqlDeclarationNode extends NodeBase {
    *
    * **`INSENSITIVE` is not a default this leaves to Db2.** Without a
    * sensitivity keyword Db2 chooses `ASENSITIVE`, which resolves to insensitive
-   * or to *sensitive dynamic* depending on the statement — and a sensitive
+   * or to *sensitive dynamic* depending on the statement, and a sensitive
    * cursor sees rows committed by other units of work after it opened. Paging
    * over a result set that is changing underneath is how a reader sees the same
    * transaction on two pages, or never sees it at all, and neither is
@@ -272,7 +272,7 @@ export interface SqlStatementNode extends NodeBase {
  * Reading a cursor is a loop over rows the database supplies, so the language
  * gives it the same shape as any other loop and the same mandatory bound. The
  * `OPEN` and the `CLOSE` are generated around the body rather than written, so
- * a cursor cannot be left open — the defect that holds Db2 locks for the rest of
+ * a cursor cannot be left open: the defect that holds Db2 locks for the rest of
  * a batch window.
  */
 export interface CursorLoopStatementNode extends NodeBase {
@@ -287,7 +287,7 @@ export interface CursorLoopStatementNode extends NodeBase {
   limit: number;
   limitSpan: SourceSpan;
   /**
-   * `from <expression>` — the row the loop starts at, counting from 1.
+   * `from <expression>`: the row the loop starts at, counting from 1.
    *
    * Null for an ordinary loop, which starts at the first row. Requires the
    * cursor to be declared `scroll`, because a forward-only cursor has no way to
@@ -299,7 +299,7 @@ export interface CursorLoopStatementNode extends NodeBase {
   start: ExpressionNode | null;
   startSpan: SourceSpan | null;
   /**
-   * `backward` — read towards the first row rather than away from it.
+   * `backward`: read towards the first row rather than away from it.
    *
    * With no `from`, the loop starts at the last row. Requires `scroll` for the
    * same reason.
@@ -326,7 +326,7 @@ export interface FieldDeclarationNode extends NodeBase {
   name: string;
   type: TypeNode;
   /**
-   * `processed: binary<9> = 0;` — a COBOL `VALUE` clause.
+   * `processed: binary<9> = 0;`, a COBOL `VALUE` clause.
    *
    * Working storage starts as whatever the region left there unless a field
    * says otherwise, so a counter with no initial value is a counter that starts
@@ -339,7 +339,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   initialValue: ExpressionNode | null;
   /**
-   * `sensitive nationalId: string<20>` — restricted data that must not reach a
+   * `sensitive nationalId: string<20>`, restricted data that must not reach a
    * log.
    *
    * Marked on the field rather than inferred from its name, because whether a
@@ -350,20 +350,20 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   sensitive: boolean;
   /**
-   * `reserved <n>;` — bytes the record has and nothing names, emitted as
+   * `reserved <n>;`, bytes the record has and nothing names, emitted as
    * `FILLER PIC X(n)`.
    *
    * Every copybook on an estate has them, so a record language without one
    * cannot describe the records it has to interoperate with: the importer
    * refused such a copybook rather than laying it out short, which is the right
-   * answer and a useless one. A reserved slot is deliberately unreachable —
-   * nothing can read it, assign to it, or move a record through it — because
+   * answer and a useless one. A reserved slot is deliberately unreachable
+   * (nothing can read it, assign to it, or move a record through it) because
    * COBOL's `FILLER` is not a name, and a program able to write to one would be
    * writing into space the layout says belongs to nobody.
    */
   reserved: boolean;
   /**
-   * `redefines otherField` — a second reading of storage another field already
+   * `redefines otherField`: a second reading of storage another field already
    * occupies.
    *
    * The variant record is how a legacy copybook says "this area means different
@@ -374,7 +374,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   redefines: string | null;
   /**
-   * `occurs depending on countField` — a table whose used length is a field.
+   * `occurs depending on countField`: a table whose used length is a field.
    *
    * A fixed `OCCURS` reserves the maximum every time. `OCCURS ... DEPENDING ON`
    * says how much of it this record actually uses, which is what makes a
@@ -382,7 +382,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   dependingOn: string | null;
   /**
-   * `ascending <field>` — the key a table is ordered by, for a binary search.
+   * `ascending <field>`: the key a table is ordered by, for a binary search.
    *
    * COBOL will bisect a table only if the declaration says it is ordered, which
    * is a promise the program has to keep: `SEARCH ALL` on a table that is not
@@ -390,7 +390,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   ascendingKey: string | null;
   /**
-   * `sync` — align the field on its natural boundary.
+   * `sync`: align the field on its natural boundary.
    *
    * A `SYNCHRONIZED` binary field starts on a halfword, fullword, or doubleword
    * boundary, and the compiler inserts slack bytes before it to get there. That
@@ -400,7 +400,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   synchronized: boolean;
   /**
-   * `justified` — right-align the value in the field.
+   * `justified`: right-align the value in the field.
    *
    * COBOL moves an alphanumeric value left-aligned and pads on the right.
    * `JUSTIFIED RIGHT` reverses that, which is how a code or a reference is put
@@ -409,7 +409,7 @@ export interface FieldDeclarationNode extends NodeBase {
    */
   justified: boolean;
   /**
-   * `blankWhenZero` — print spaces rather than zeros for a zero value.
+   * `blankWhenZero`: print spaces rather than zeros for a zero value.
    *
    * A statement line with no movement should be blank, not `0.00`, and this is
    * how a report says so without a conditional. Numeric and numeric-edited
@@ -419,7 +419,7 @@ export interface FieldDeclarationNode extends NodeBase {
 }
 
 /**
- * `page 60 footing 55 top 3 bottom 3` — the `LINAGE` clause of a print file.
+ * `page 60 footing 55 top 3 bottom 3`: the `LINAGE` clause of a print file.
  *
  * It is what makes a report paginate: COBOL counts the lines written and
  * signals `AT END-OF-PAGE` when the footing line is reached, which is where a
@@ -437,7 +437,7 @@ export interface FileLinageNode {
 }
 
 /**
- * `wholeDate renames yearPart through dayPart;` — a level-66 regrouping.
+ * `wholeDate renames yearPart through dayPart;`: a level-66 regrouping.
  *
  * A legacy copybook splits a date into year, month, and day and then wants to
  * move all three at once. `RENAMES` gives that run of fields a second name
@@ -457,7 +457,7 @@ export interface RecordDeclarationNode extends NodeBase {
   name: string;
   typeParameters: TypeParameterNode[];
   /**
-   * `record Savings extends Account` — the base record whose fields are laid
+   * `record Savings extends Account`: the base record whose fields are laid
    * out first, so a derived record's leading storage matches the base byte for
    * byte and a copybook cut for the base still reads correctly.
    */
@@ -547,14 +547,14 @@ export interface RoundedExpressionNode extends NodeBase {
   isDivision: boolean;
 }
 
-/** `Status.ACTIVE` — a member of a declared enum. */
+/** `Status.ACTIVE`: a member of a declared enum. */
 export interface EnumMemberNode extends NodeBase {
   kind: "EnumMember";
   enumName: string;
   member: string;
 }
 
-/** `statement.entries[index]` — element access on a bounded array. */
+/** `statement.entries[index]`: element access on a bounded array. */
 export interface IndexAccessNode extends NodeBase {
   kind: "IndexAccess";
   /**
@@ -583,7 +583,7 @@ export interface NullableCheckNode extends NodeBase {
  *
  * Date arithmetic is not ordinary arithmetic: adding one to 20260131 does not
  * give the first of February. These lower to the COBOL intrinsic functions that
- * know the calendar — `INTEGER-OF-DATE`, `DATE-OF-INTEGER`, `CURRENT-DATE` —
+ * know the calendar (`INTEGER-OF-DATE`, `DATE-OF-INTEGER`, `CURRENT-DATE`)
  * rather than to `+` on the stored digits, which is why the language offers
  * them instead of letting a date be added to.
  */
@@ -601,7 +601,7 @@ export interface TemporalCallNode extends NodeBase {
  * series of cash flows: they are COBOL intrinsics, not something this compiler
  * computes, and a bank that reimplements either in a loop gets the rounding
  * wrong. `mod` is what a check digit is. `isNumeric` is how a batch decides
- * whether a field from a flat file can be converted at all, before it tries —
+ * whether a field from a flat file can be converted at all, before it tries,
  * which is the difference between rejecting a record and abending on it.
  */
 export interface NumericCallNode extends NodeBase {
@@ -630,7 +630,7 @@ export interface NumericCallNode extends NodeBase {
  * COBOL builds strings with `STRING`, takes them apart with reference
  * modification, and folds case with intrinsic functions. Without these a
  * program cannot assemble a narrative, parse a composite key, or mask a card
- * number — and masking is what the `sensitive` declassification rule rests on.
+ * number, and masking is what the `sensitive` declassification rule rests on.
  */
 export interface StringCallNode extends NodeBase {
   kind: "StringCall";
@@ -764,7 +764,7 @@ export interface SwitchStatementNode extends NodeBase {
  *
  * `rewrite` and `delete` update a record in place, which needs the file open
  * for both reading and writing. `start` positions a browse and `readNext` walks
- * it — together the most common VSAM pattern there is, and the reason a master
+ * it, together the most common VSAM pattern there is, and the reason a master
  * file update was unwritable without them.
  */
 export type FileOperation =
@@ -785,7 +785,7 @@ export type FileOperation =
  * reconciliation extract or an import from anything that is not a mainframe
  * actually looks like. Enterprise COBOL 6.4 has it as `ORGANIZATION IS LINE
  * SEQUENTIAL` (Language Reference, format 4) for files in the z/OS UNIX file
- * system, and it carries restrictions the other three do not — see
+ * system, and it carries restrictions the other three do not. See
  * `docs/language/files.md` and the checks in the typechecker.
  */
 export type FileOrganization =
@@ -806,14 +806,14 @@ export interface FileStatementNode extends NodeBase {
   /** Key expression for a keyed read on an indexed file. */
   key: ExpressionNode | null;
   /**
-   * `advancing <n>` or `advancing page` — `WRITE ... AFTER ADVANCING`.
+   * `advancing <n>` or `advancing page`: `WRITE ... AFTER ADVANCING`.
    *
    * A report line is written after spacing rather than on top of the last one,
    * and a new page is how a heading starts one.
    */
   advancing: number | "page" | null;
   /**
-   * `on page { ... }` — `AT END-OF-PAGE`.
+   * `on page { ... }`: `AT END-OF-PAGE`.
    *
    * COBOL signals it when the write reaches the file's footing line, which is
    * where a report writes its totals and the next page's heading. It needs the
@@ -860,8 +860,8 @@ export type StatementNode =
  *
  * The source-level twin of the IR's `childBlocks`, and it exists for the same
  * reason. The typechecker had its own version that read a fixed list of
- * property names, and that list was missing `otherwise` — a `switch`'s `else`
- * branch — along with sort procedures and the `on error` blocks. Two checks
+ * property names, and that list was missing `otherwise` (a `switch`'s `else`
+ * branch) along with sort procedures and the `on error` blocks. Two checks
  * walk with it, and both were wrong in the quiet direction: a `release` in a
  * `switch` else branch was reported as missing, and a `rewrite` in one was
  * never checked for the read that has to precede it (`BANK-FILE-010`), so a
@@ -976,7 +976,7 @@ export interface ReturnStatementNode extends NodeBase {
 }
 
 /**
- * `raise "INSUFFICIENT_FUNDS";` — abandons the rest of the body and runs the
+ * `raise "INSUFFICIENT_FUNDS";`: abandons the rest of the body and runs the
  * enclosing `on failure` handler.
  *
  * The code is a literal rather than an expression so that every failure a
@@ -990,7 +990,7 @@ export interface RaiseStatementNode extends NodeBase {
 }
 
 /**
- * `on failure { ... }` — the handler that runs when the body raises.
+ * `on failure { ... }`: the handler that runs when the body raises.
  *
  * A handler is declared once, before the statements it covers, so the recovery
  * path is impossible to miss when reading the transaction top to bottom.
@@ -1020,13 +1020,13 @@ export interface FunctionDeclarationNode extends NodeBase {
   returnType: TypeNode;
   body: BlockNode;
   /**
-   * `nested function` — a COBOL contained program rather than a paragraph.
+   * `nested function`: a COBOL contained program rather than a paragraph.
    *
    * An ordinary function is a paragraph the program `PERFORM`s, sharing all its
    * storage. A nested one is a program inside the program: it has its own
    * storage and a real `CALL` boundary, and it reads the module's records
    * directly because they are emitted `GLOBAL` in the container. That is what
-   * it buys — a unit with its own working storage that still sees the shared
+   * it buys: a unit with its own working storage that still sees the shared
    * record, without the parameter plumbing a separate module would need.
    *
    * It cannot recurse. COBOL forbids `LOCAL-STORAGE` in a contained program,
@@ -1043,7 +1043,7 @@ export interface FunctionDeclarationNode extends NodeBase {
  * missing file status as BANK-FILE-001 rather than a syntax error.
  */
 /**
- * `on error <file> { ... }` — a DECLARATIVES handler for a file.
+ * `on error <file> { ... }`: a DECLARATIVES handler for a file.
  *
  * COBOL runs a `USE AFTER ERROR` procedure when an I/O operation on the file
  * fails, whatever the operation and wherever it was written. A file status
@@ -1071,7 +1071,7 @@ export interface FileDeclarationNode extends NodeBase {
    * descriptions in the X-COBOL corpus declare more than one, and 2,663 of
    * those are opened `OUTPUT`: a report or a feed whose heading line and detail
    * lines are different shapes. That is what this is for, and it is the whole
-   * of what it is for — a file read with more than one layout is refused, since
+   * of what it is for: a file read with more than one layout is refused, since
    * a `read` cannot know which of them arrived.
    */
   alternateRecordTypeNames: { name: string; span: SourceSpan }[];
@@ -1079,34 +1079,34 @@ export interface FileDeclarationNode extends NodeBase {
   /** Record key field, required for an indexed file. */
   keyField: string | null;
   /**
-   * `alternate <field>, <field>` — alternate record keys.
+   * `alternate <field>, <field>`: alternate record keys.
    *
    * A KSDS is read by its primary key and browsed by any of its alternates. A
    * program that can only name the primary cannot open a file whose alternate
-   * index is the whole reason it exists — an account file read by customer, say.
+   * index is the whole reason it exists, an account file read by customer, say.
    * Alternates allow duplicates; the primary does not.
    */
   alternateKeys: string[];
-  /** `page ...` — page depth, for a print file that paginates. */
+  /** `page ...`: page depth, for a print file that paginates. */
   linage: FileLinageNode | null;
   /**
-   * `varying <min> to <max> length <field>` — a variable-length record.
+   * `varying <min> to <max> length <field>`: a variable-length record.
    *
    * A fixed-length file pads every record to the longest one it might hold,
    * which for a feed whose records differ by hundreds of bytes is most of the
    * dataset. `RECORD IS VARYING` writes only what the record uses, and the
-   * length field is how the program says how much that is — set before a write,
+   * length field is how the program says how much that is: set before a write,
    * read after a read.
    */
   recordVarying: { min: number; max: number; lengthName: string } | null;
 }
 
 /**
- * `report <name> on <file> ...` — a COBOL `RD` in the REPORT SECTION.
+ * `report <name> on <file> ...`: a COBOL `RD` in the REPORT SECTION.
  *
  * `page ... footing ...` on a file paginates: the program still writes every
  * line itself and counts nothing. A report declares the *shape* and lets the
- * compiler run it — headings repeated on each page, a footing at each change of
+ * compiler run it: headings repeated on each page, a footing at each change of
  * a control field, and totals that accumulate without a variable to forget to
  * clear. That last part is the reason to have it: a hand-written subtotal that
  * is reset in the wrong place is a report that is wrong and still balances.
@@ -1146,8 +1146,8 @@ export type ReportGroupType =
  * One report group: what COBOL prints, and when.
  *
  * A `detail` is printed by `generate`. Everything else the compiler prints on
- * its own — a page heading when the page turns, a control footing when the
- * named field changes — which is exactly the bookkeeping a hand-written report
+ * its own: a page heading when the page turns, a control footing when the
+ * named field changes, which is exactly the bookkeeping a hand-written report
  * gets wrong.
  */
 export interface ReportGroupNode extends NodeBase {
@@ -1167,7 +1167,7 @@ export interface ReportLineNode extends NodeBase {
 }
 
 /**
- * `column <n> <source>` — one field of a printed line.
+ * `column <n> <source>`: one field of a printed line.
  *
  * The source is a literal, a field the report reads when it prints, `sum` of a
  * field, or the page number. `SUM` is the one that carries its weight: COBOL
@@ -1183,7 +1183,7 @@ export interface ReportColumnNode extends NodeBase {
 /**
  * What one column prints.
  *
- * A field is named bare — `column 1 branch;` — and resolved against the record
+ * A field is named bare (`column 1 branch;`) and resolved against the record
  * the report's file holds. Nothing else would mean anything: a report is
  * declared at the top level, where no transaction's variables are in scope, and
  * the record is the only thing it reads.
@@ -1203,7 +1203,7 @@ export type ReportSourceNode =
  * argument.
  *
  * The segment and key names live on the declaration because the search argument
- * is built from them and does not change per call — which is also what stops
+ * is built from them and does not change per call, which is also what stops
  * every statement having to repeat an eight-character name that must match the
  * DBD exactly.
  */
@@ -1223,8 +1223,8 @@ export interface DatabaseDeclarationNode extends NodeBase {
  * `getUnique <db> into <record> key <value>;` and the rest of DL/I.
  *
  * Each becomes one `CALL "CBLTDLI"`. The status the call leaves in the PCB is
- * the whole error model — spaces mean it worked, `GE` means not found, `GB`
- * means the end of the database — which is why a database, like a file, has to
+ * the whole error model: spaces mean it worked, `GE` means not found, `GB`
+ * means the end of the database, which is why a database, like a file, has to
  * declare somewhere to read it from.
  */
 export interface DliStatementNode extends NodeBase {
@@ -1255,7 +1255,7 @@ export interface DliStatementNode extends NodeBase {
  * and a reason code coming back.
  *
  * The manager and queue names live on the declaration for the same reason the
- * DL/I segment name does — they are built into the object descriptor once, and
+ * DL/I segment name does: they are built into the object descriptor once, and
  * each is 48 characters, which is what `MQOD-OBJECTNAME` and the `MQCONN`
  * queue-manager name carry.
  */
@@ -1335,9 +1335,9 @@ export interface TransactionDeclarationNode extends NodeBase {
  * `link` calls another program, `syncpoint` and `rollback` end the unit of
  * work, `readFile` / `writeFile` / `rewriteFile` reach a VSAM dataset through
  * CICS rather than through COBOL file control, `writeQueue` / `readQueue` use
- * temporary storage — the scratchpad an online transaction passes state through
- * — and `returnTransid` hands control back to CICS naming what runs next, which
- * is how a pseudo-conversation continues.
+ * temporary storage, the scratchpad an online transaction passes state
+ * through, and `returnTransid` hands control back to CICS naming what runs
+ * next, which is how a pseudo-conversation continues.
  */
 export type CicsOperation =
   | "link"
@@ -1351,7 +1351,7 @@ export type CicsOperation =
   | "returnTransid";
 
 /**
- * `returnCode = 4;` — the step's condition code.
+ * `returnCode = 4;`: the step's condition code.
  *
  * How a batch job tells the next step's `COND=` what happened: 0 ran clean, 4
  * found nothing or warned, 8 failed. Without it every step reports success and
@@ -1361,8 +1361,8 @@ export type CicsOperation =
  * `split source by "," into first, second, third;`
  *
  * COBOL takes a field apart with `UNSTRING`, which is a statement because it
- * writes several receivers at once. Parsing a composite key — a branch, an
- * account, and a suffix in one field — is what legacy input constantly asks for.
+ * writes several receivers at once. Parsing a composite key (a branch, an
+ * account, and a suffix in one field) is what legacy input constantly asks for.
  */
 /**
  * `sort accountInput into sortedAccounts on accountId, branchId;`
@@ -1397,7 +1397,7 @@ export interface CheckpointStatementNode extends NodeBase {
  * The other half of a checkpoint, and the half that makes it worth anything: a
  * position written down and never read back is a rerun that still starts at the
  * beginning. This reads the position the last run committed and gives the
- * program somewhere to resume from — and, when there is none, somewhere to
+ * program somewhere to resume from and, when there is none, somewhere to
  * start fresh.
  *
  * The key field of `recordName` has to hold the key of the position being
@@ -1443,7 +1443,7 @@ export interface SortStatementNode extends NodeBase {
 }
 
 /**
- * `release <record>;` — hands a record to the sort from an input procedure.
+ * `release <record>;`: hands a record to the sort from an input procedure.
  *
  * It is the statement an input procedure exists for: the records it does not
  * release are the ones it filters out.
@@ -1464,7 +1464,7 @@ export interface SplitStatementNode extends NodeBase {
  * `xml <text> processing { element "ID" into account.id; } on error { ... };`
  *
  * `XML PARSE` is event-driven: COBOL calls a procedure once per token of the
- * document — a start tag, its content, an end tag — and the procedure decides
+ * document (a start tag, its content, an end tag), and the procedure decides
  * what to keep by reading the `XML-EVENT` and `XML-TEXT` special registers.
  *
  * Writing that state machine by hand is where an XML reader goes wrong, so the
@@ -1480,7 +1480,7 @@ export interface XmlParseStatementNode extends NodeBase {
   onError: BlockNode | null;
 }
 
-/** `element "BALANCE" into account.balance;` — one element, one field. */
+/** `element "BALANCE" into account.balance;`: one element, one field. */
 export interface XmlBindingNode extends NodeBase {
   kind: "XmlBinding";
   element: string;
@@ -1492,7 +1492,7 @@ export interface XmlBindingNode extends NodeBase {
  * `call <name> using <record> on error { ... };` and `cancel <name>;`
  *
  * A dynamic `CALL`: the program being called is named by a *value*, not written
- * into the source. That is how a bank dispatches — a product code selects the
+ * into the source. That is how a bank dispatches: a product code selects the
  * module that prices it, and a new product ships as a new load module without
  * relinking anything that calls it.
  *
@@ -1501,7 +1501,7 @@ export interface XmlBindingNode extends NodeBase {
  * the middle of a batch, and without a handler that is an abend rather than a
  * rejected record.
  *
- * `CANCEL` drops the loaded module so the next call gets it fresh — which
+ * `CANCEL` drops the loaded module so the next call gets it fresh, which
  * matters when its working storage is state the caller does not want carried
  * from one invocation to the next.
  */
@@ -1532,8 +1532,8 @@ export interface ReportStatementNode extends NodeBase {
  * `json <target> from <record> count <length> on error { ... };`
  *
  * `JSON GENERATE` and `XML GENERATE`. A mainframe batch that has to hand a
- * record to something outside the estate — a queue, an API gateway, a file a
- * distributed system reads — otherwise builds the text by hand with `STRING`,
+ * record to something outside the estate (a queue, an API gateway, a file a
+ * distributed system reads) otherwise builds the text by hand with `STRING`,
  * which is where the quoting and the escaping go wrong.
  *
  * `count` is the length actually generated: the target is a fixed COBOL field,
@@ -1574,12 +1574,12 @@ export interface SearchStatementNode extends NodeBase {
   /** Runs when no element matched. Required: a search that can fail must say so. */
   notFound: BlockNode;
   /**
-   * `search sorted` — COBOL `SEARCH ALL`, a binary search.
+   * `search sorted`: COBOL `SEARCH ALL`, a binary search.
    *
    * A linear scan of a rate table with a thousand bands reads five hundred rows
    * to find one; a binary search reads ten. COBOL will do it only if the table
    * says it is ordered, which is what `ascending` on the declaration is for, and
-   * only on equality against that key — anything else has no ordering to
+   * only on equality against that key: anything else has no ordering to
    * bisect on.
    */
   sorted: boolean;
@@ -1588,7 +1588,7 @@ export interface SearchStatementNode extends NodeBase {
 /**
  * `log "MESSAGE", value;` and `accept parameter into field;`
  *
- * `DISPLAY` is how a batch program talks to the job log — the operator's only
+ * `DISPLAY` is how a batch program talks to the job log, the operator's only
  * view of what happened between the return code and the abend. `ACCEPT` reads
  * what the job passed it: a run date, a cycle number, a mode.
  */
@@ -1603,7 +1603,7 @@ export interface ConsoleStatementNode extends NodeBase {
 }
 
 /**
- * `reset record;` — set every field to its type's empty value.
+ * `reset record;`: set every field to its type's empty value.
  *
  * `INITIALIZE` clears a group in one statement: alphanumerics to spaces,
  * numerics to zero. Doing it field by field is the same thing written out, and
@@ -1620,7 +1620,7 @@ export interface ReturnCodeStatementNode extends NodeBase {
 }
 
 /**
- * `commit;` and `rollback;` — the unit of work, in a batch Db2 program.
+ * `commit;` and `rollback;`: the unit of work, in a batch Db2 program.
  *
  * Deliberately not available inside a `cics transaction`: there, CICS owns the
  * syncpoint and commits Db2's work along with everything else, so an
@@ -1649,7 +1649,7 @@ export interface CicsStatementNode extends NodeBase {
 }
 
 /**
- * `test postsBothLegs for postAccounts { ... }` — a zUnit test case.
+ * `test postsBothLegs for postAccounts { ... }`: a zUnit test case.
  *
  * The one declaration that is not compiled into the program. It describes a run
  * of the program under IBM's z/OS Automated Unit Testing Framework: what the
@@ -1678,14 +1678,14 @@ export interface TestDeclarationNode extends NodeBase {
 export type TestStepNode =
   TestGivenNode | TestExpectLedgerNode | TestExpectAuditNode;
 
-/** `given runDate = 20260805;` — one field of the step's PARM. */
+/** `given runDate = 20260805;`: one field of the step's PARM. */
 export interface TestGivenNode extends NodeBase {
   kind: "TestGiven";
   parameter: string;
   value: ExpressionNode;
 }
 
-/** `expect debit("0001", 100.00);` — the next call the ledger receives. */
+/** `expect debit("0001", 100.00);`: the next call the ledger receives. */
 export interface TestExpectLedgerNode extends NodeBase {
   kind: "TestExpectLedger";
   operation: "debit" | "credit";
@@ -1693,7 +1693,7 @@ export interface TestExpectLedgerNode extends NodeBase {
   amount: ExpressionNode;
 }
 
-/** `expect audit("POSTED", "IDEM-1");` — the next call the audit trail gets. */
+/** `expect audit("POSTED", "IDEM-1");`: the next call the audit trail gets. */
 export interface TestExpectAuditNode extends NodeBase {
   kind: "TestExpectAudit";
   event: ExpressionNode;

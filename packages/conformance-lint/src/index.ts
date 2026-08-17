@@ -4,9 +4,9 @@
  * It knows nothing about how they were produced. That is the point: every rule
  * the emitter breaks, it breaks because somebody believed something about the
  * target that is not true, and a check written from the same belief agrees with
- * it. The 2026-08-05 audit found a 31-character data name, a rounding phrase
+ * it. The external audit found a 31-character data name, a rounding phrase
  * that is not Enterprise COBOL, and a job whose dataset names could not be
- * catalogued — three defects in emitted text, none of which any test read the
+ * catalogued: three defects in emitted text, none of which any test read the
  * emitted text to look for.
  *
  * Every rule cites the manual it comes from. A rule nobody can trace to IBM is
@@ -187,7 +187,7 @@ const PROGRAM_TEXT_WORDS = new Set([
   "COMP-3",
   "COMP-4",
   "COMP-5",
-  // `RECORDING MODE IS F` — the mode indicators are values of the clause
+  // `RECORDING MODE IS F`: the mode indicators are values of the clause
   // rather than words of the language, and Appendix E does not list them.
   "F",
   "U",
@@ -231,7 +231,7 @@ const LINKLIST_PROGRAMS = new Set([
 /**
  * Lint one artifact, chosen by its extension.
  *
- * `.cbl` and `.cpy` are read as COBOL — a copybook is a fragment rather than a
+ * `.cbl` and `.cpy` are read as COBOL. A copybook is a fragment rather than a
  * program, so the rules that need a whole program are skipped for one.
  */
 export function lintArtifact(
@@ -254,14 +254,14 @@ export function lintArtifact(
  * Report Writer is not part of Enterprise COBOL. The Language Reference lists
  * `RD`, `PAGE LIMIT`, `CONTROL HEADING`, `SUM`, `COLUMN` and the rest as
  * features "supported with the optional IBM COBOL Report Writer Precompiler and
- * Libraries (5798-DYR)", so none of them appears in Appendix E — and a
+ * Libraries (5798-DYR)", so none of them appears in Appendix E, and a
  * vocabulary rule that reads Appendix E therefore reports every line of a
  * REPORT SECTION.
  *
  * Which is the correct answer for a program handed straight to `IGYCRCTL`. The
  * generated job for such a program runs `SPCRWCOB` first and the compiler reads
  * what that wrote, so these are accepted only in an artifact that has a REPORT
- * SECTION — the same condition the emitter uses to decide the job needs the
+ * SECTION, the same condition the emitter uses to decide the job needs the
  * precompiler at all.
  */
 const REPORT_WRITER_WORDS = new Set([
@@ -311,7 +311,7 @@ const REPORT_WRITER_WORDS = new Set([
  * `COPY CMQV` and its siblings, which the queue manager supplies in
  * `MQM.SCSQCOBC` and the generated job puts on SYSLIB. The linter reads one
  * artifact at a time and cannot expand a copybook it does not have, so the
- * names are accepted by their prefix — and only where the artifact copies the
+ * names are accepted by their prefix, and only where the artifact copies the
  * library that defines them. Every MQI name begins `MQ`, which is why the
  * prefix is a rule rather than a guess.
  */
@@ -325,7 +325,7 @@ function copiesMqDefinitions(text: string): boolean {
  * A generated test case declares `01 AZ-INFO-BLOCK. COPY EQAITERC.`, which is
  * what IBM's own generator writes and what resolves on z/OS from the IDz
  * copybook library. The linter reads one artifact at a time and cannot expand a
- * copybook it does not have, so the fields the driver names are accepted — and
+ * copybook it does not have, so the fields the driver names are accepted, and
  * only in an artifact that copies the member defining them.
  *
  * Named one by one rather than by a prefix, unlike the MQI's: there are two of
@@ -342,7 +342,7 @@ const ZUNIT_INFO_BLOCK_FIELDS = new Set(["ITER", "TC-WORK-AREA"]);
  * The column a `CBL` or `PROCESS` statement begins in, or null for other lines.
  *
  * Read from the whole line rather than from Area B, because the statement may
- * begin in column 1 — before the sequence number area that ordinary source
+ * begin in column 1, before the sequence number area that ordinary source
  * reserves.
  */
 function processStatementColumn(line: string): number | null {
@@ -360,7 +360,7 @@ function processStatementColumn(line: string): number | null {
  * The MQI entry points, which the binder resolves out of the MQ stub.
  *
  * They are not in the artifact and they are not one of the runtime programs
- * this repository ships, so `call-resolvable` reports them — correctly, for a
+ * this repository ships, so `call-resolvable` reports them, correctly, for a
  * link-edit that was given only the load library. The generated job puts
  * `MQM.SCSQLOAD` on SYSLIB precisely so these resolve, and it does that for an
  * artifact that copies the MQ definitions, which is the same condition used
@@ -425,8 +425,8 @@ export function lintCobol(
     // The Language Reference: it "can be preceded by a sequence number in
     // columns 1 through 6", "PROCESS or CBL can begin in column 8 or after; if
     // a sequence number is not specified, PROCESS or CBL can begin in column 1
-    // or after", it "must end before or at column 72" — which the line-length
-    // rule above has already checked — and it "must be placed before any
+    // or after", it "must end before or at column 72", which the line-length
+    // rule above has already checked, and it "must be placed before any
     // comment lines or other compiler-directing statements".
     const processColumn = processStatementColumn(line);
     if (processColumn !== null) {
@@ -497,7 +497,7 @@ export function lintCobol(
 
     // The text between EXEC and END-EXEC is SQL, CICS or DL/I. A precompiler
     // reads it, COBOL's rules do not describe it, and a Db2 column name may be
-    // 128 characters where a COBOL word may be 30 — so the rules below stop at
+    // 128 characters where a COBOL word may be 30, so the rules below stop at
     // the delimiters rather than reporting on a language they do not know.
     const wasInExec = inExec;
     if (/\bEXEC\s+(?:SQL|CICS|DLI)\b/.test(content)) {
@@ -590,12 +590,13 @@ export function lintCobol(
       );
     }
 
-    // The vocabulary rule, and the one that would have found F1.
+    // The vocabulary rule, and the one that would have caught the worst defect
+    // an outside reader has found here.
     //
     // Every word in a generated program is either a name it declares or a word
     // Enterprise COBOL has a meaning for. `ROUNDED MODE IS NEAREST-EVEN`
     // compiled under GnuCOBOL's default dialect and read like COBOL, and
-    // `NEAREST-EVEN` is in no column of Appendix E at all — not reserved, not
+    // `NEAREST-EVEN` is in no column of Appendix E at all: not reserved, not
     // an unimplemented Standard word, not a word that might be reserved later.
     // A checker that only asks whether the compiler in front of it accepted the
     // text cannot tell that; one that asks whether the target has ever heard of
@@ -638,7 +639,7 @@ export function lintCobol(
  * The emitter pads to a column computed from the longest name among an
  * entry's siblings; this reads the finished text and checks that the entries
  * of one group agree about where their clauses start. A fixed column that a
- * long name overran is what this replaced, and the failure was invisible —
+ * long name overran is what this replaced, and the failure was invisible:
  * every artifact compiled, and the block simply stopped lining up.
  *
  * Only entries that *can* reach the column are compared. One whose clause is
@@ -779,7 +780,7 @@ function pictureAlignment(file: string, lines: string[]): ConformanceFinding[] {
  *
  * The Language Reference is plain about what that means: "If the initial value
  * is not explicitly specified, the value is unpredictable." For a `COMP-3`
- * field it is worse than unpredictable — unset storage is not reliably a valid
+ * field it is worse than unpredictable, because unset storage is not reliably a valid
  * packed number, so a program that reaches one before writing it abends on a
  * data exception rather than computing something wrong.
  *
@@ -795,8 +796,8 @@ function pictureAlignment(file: string, lines: string[]): ConformanceFinding[] {
  *   only legal on a condition-name.
  * - **`FILE SECTION`** describes a record area the file fills, and the LR
  *   forbids `VALUE` in it outright.
- * - **An SQL declare section** holds host variables, and DCLGEN — IBM's own
- *   generator for exactly those declarations — writes none.
+ * - **An SQL declare section** holds host variables, and DCLGEN, IBM's own
+ *   generator for exactly those declarations, writes none.
  *
  * Elementary only, like `unreferenced-item`: a level-01 group is the program's
  * data model, and its subordinate entries carry their own values.
@@ -879,7 +880,7 @@ function uninitialisedStorage(
       return;
     }
     // A numeric-edited item takes only an alphanumeric literal in a VALUE, and
-    // the value is not edited on the way in — so there is nothing safe to put
+    // the value is not edited on the way in, so there is nothing safe to put
     // there. Those are filled by the MOVE that does the editing.
     if (/[ZB*+\-CR/,]/.test(pictureStringOf(entry.text) ?? "")) {
       return;
@@ -904,17 +905,16 @@ function pictureStringOf(entry: string): string | null {
 /**
  * Two delimiters for the alphanumeric literals of one artifact.
  *
- * Enterprise COBOL accepts both, so this is style rather than conformance —
- * but it is the style a reviewer reads as machine-generated, which is what the
- * 2026-08-05 audit's F13 was about, and a rule is the only thing that keeps it
- * fixed. `MOVE 'Y'` two lines under a `VALUE "N"` survived a suite that already
+ * Enterprise COBOL accepts both, so this is style rather than conformance. It
+ * is also the style a reviewer reads as machine-generated, and a rule is the
+ * only thing that keeps it fixed. `MOVE 'Y'` two lines under a `VALUE "N"` survived a suite that already
  * had a test for exactly this, because the test's program reached one of the
  * two ways a boolean is written and not the other.
  *
  * Phrased over the text rather than over any one emitter: whichever delimiter
  * the artifact uses most is the one it has chosen, and a literal written with
  * the other one is reported. A literal whose text *contains* the chosen
- * delimiter is exempt — switching is one of the two ways COBOL allows that
+ * delimiter is exempt: switching is one of the two ways COBOL allows that
  * character to appear, the other being to double it, and neither is wrong. That
  * exemption is what lets the generated zUnit driver hold `AZU2001W THE TEST "`
  * in apostrophes, which is the shape IBM's own generator produces.
@@ -990,7 +990,7 @@ function mixedLiteralDelimiters(
  * bounds status and copy index in a program with a table it never subscripts.
  *
  * Scoped to *elementary* level-01 items, which is what a text-only checker can
- * decide. A level-01 group may be the program's own data model — every record a
+ * decide. A level-01 group may be the program's own data model, since every record a
  * BankTS module declares becomes both working storage and a copybook, so
  * `TRANSFER-REQUEST` is unreferenced in a program that only validates an amount
  * and is still the point of that program. Nothing in the text tells those apart
@@ -1141,7 +1141,7 @@ function duplicateDeclarations(
       return;
     }
     // In a REPORT SECTION the word after a level number is a Report Writer
-    // clause — `05 LINE PLUS 1`, `10 COLUMN 32` — rather than a name anybody
+    // clause (`05 LINE PLUS 1`, `10 COLUMN 32`) rather than a name anybody
     // chose, so it repeats by design.
     if (hasReportSection && REPORT_WRITER_WORDS.has(name)) {
       return;
@@ -1366,8 +1366,8 @@ function requiredDds(
   }
   if (step.program !== "" && !LINKLIST_PROGRAMS.has(step.program)) {
     // A program the job has just built is not on any search the step makes
-    // unless the job says where it is. Without it the step ends S806 — module
-    // not found — having compiled and linked perfectly.
+    // unless the job says where it is. Without it the step ends S806, module
+    // not found, having compiled and linked perfectly.
     return missing(["STEPLIB"], 'JCL, "STEPLIB DD statement"');
   }
   return [];
@@ -1417,7 +1417,7 @@ function unresolvedCalls(
  *
  * The vocabulary rule asks whether a word is a name or a word of the language,
  * so a name this misses is reported as a word Enterprise COBOL has never heard
- * of — which is a false alarm, and a linter that cries wolf is one whose output
+ * of, which is a false alarm, and a linter that cries wolf is one whose output
  * gets skimmed. Every place a program can name something is here.
  */
 function declaredNames(lines: string[]): Set<string> {
@@ -1489,8 +1489,8 @@ function areaAEntry(content: string): boolean {
  * Every user-defined-word-shaped token outside a literal.
  *
  * Loose on purpose. Anything at all made of letters, digits and hyphens is
- * checked against the 30-character limit, because nothing in COBOL — not a
- * word, not a picture string, not a figurative constant — is allowed to be
+ * checked against the 30-character limit, because nothing in COBOL (not a
+ * word, not a picture string, not a figurative constant) is allowed to be
  * longer than that in the positions a generated program puts them.
  */
 function userDefinedWords(content: string): string[] {
@@ -1500,7 +1500,7 @@ function userDefinedWords(content: string): string[] {
 /**
  * The words on a line that have to mean something to the target.
  *
- * Numbers are not words — a level number, a subscript, a picture repeat count
+ * Numbers are not words: a level number, a subscript, a picture repeat count
  * and an OCCURS bound are all values. A word that is entirely digits is
  * dropped, and so is one that names a qualified reference's subscript, because
  * neither is a word the reserved-word table has anything to say about.
@@ -1542,7 +1542,7 @@ function literals(content: string): string[] {
  * The line with every literal replaced by a blank.
  *
  * A literal wider than the margin is written across lines, so the last quote on
- * a line may open a literal that the next one closes — leaving this line with
+ * a line may open a literal that the next one closes, leaving this line with
  * an odd number of quotes and text after the last one that is not code. What
  * follows an unmatched quote is dropped rather than tokenised, which is why
  * `DISPLAY "ARITHMETIC OVERFLOW ...` does not report `ARITHMETIC` as a word

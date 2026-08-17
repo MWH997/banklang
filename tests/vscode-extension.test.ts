@@ -20,9 +20,9 @@ import { FORBIDDEN, REQUIRED, problems } from "../tools/build-vsix";
 /**
  * The extension as a published thing, rather than as source that compiles.
  *
- * R4. It has been built and typechecked in CI since it was written, and until
- * now had never been packaged — so every field a marketplace listing is made of
- * was either absent or unexamined. What follows holds the manifest, the icon and
+ * It has been built and typechecked in CI since it was written, and for a long
+ * time was never packaged, so every field a marketplace listing is made of was
+ * either absent or unexamined. What follows holds the manifest, the icon and
  * the listing copy to the repository they describe.
  *
  * Packaging itself is a CI step (`pnpm build:vsix`), not a test: it needs vsce
@@ -113,7 +113,7 @@ describe("the extension manifest, as a marketplace listing", () => {
  * The listing copy.
  *
  * A marketplace page is read by people who have not seen the repository, which
- * makes it the surface where an overclaim does the most damage — and the one
+ * makes it the surface where an overclaim does the most damage, and the one
  * furthest from anything that would catch it.
  */
 describe("the listing", () => {
@@ -234,7 +234,7 @@ describe("the icon", () => {
  * What goes in the archive.
  *
  * `pnpm build:vsix` reads the packaged file and applies these; these check the
- * rules themselves, which the packaging step cannot — a `problems()` that
+ * rules themselves, which the packaging step cannot: a `problems()` that
  * returns nothing whatever it is given would let every green package through.
  */
 describe("the rules the packaged extension is held to", () => {

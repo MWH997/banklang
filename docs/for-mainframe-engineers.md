@@ -1,8 +1,8 @@
 # For mainframe engineers
 
-You are the person who has to accept this output. Everything else in this
-repository is written for someone curious about compilers; this page is written
-for you, and it reads the generated COBOL with you, construct by construct.
+You are the person who has to accept this output. This page reads the generated
+COBOL with you, construct by construct, and explains why each part of it looks
+the way it does.
 
 The short version: BankLang is a source-to-source compiler. It takes a
 restricted, statically typed language and emits IBM Enterprise COBOL for z/OS
@@ -17,7 +17,7 @@ The rest of this page is why it looks the way it does.
 ## Read a whole program first
 
 `evidence/account-file-batch/cobol/ACCOUNTF.cbl` is a batch program that reads a
-sequential master, posts to the ledger and writes an advice file. It is 200-odd
+sequential master, posts to the ledger and writes an advice file. It runs to a few hundred
 lines and it is the honest sample: not a hello-world, and not the biggest thing
 here either.
 
@@ -42,9 +42,11 @@ Every program opens with one, and it is generated rather than written:
       *>
       *> ENTRY
       *>   A batch program, started by EXEC PGM and entered with the
-      *>     job's PARM behind a halfword length: 36 characters,
-      *>     positional.
+      *>   job's PARM behind a halfword length: 36 characters,
+      *>   positional.
       *>   idempotencyKey      X(36) (36)
+      *>   A PARM shorter than that ends the step with return code 12
+      *>   rather than reading past what was passed.
       *>
       *> FILES
       *>   ACCOUNTI input   sequential ACCOUNT-RECORD (26 bytes)
@@ -56,13 +58,14 @@ Every program opens with one, and it is generated rather than written:
       *> RETURN CODES
       *>   0   The work completed.
       *>   12  A failure the program named. BANK-FAILURE-CODE says
-      *>     which.
+      *>       which.
       *>   16  A sort or merge did not complete. SORT-RETURN says so.
       *>
       *> RESTART
       *>   Not restartable. Rerun from the top: the generated job
-      *>     deletes a half-written output dataset rather than
-      *>     cataloguing it.
+      *>   deletes a half-written output dataset rather than cataloguing
+      *>   it, so there is nothing for a second run to read as though it
+      *>   were complete.
       *> ---------------------------------------------------------------
 ```
 
@@ -140,8 +143,8 @@ See [numeric-model.md](numeric-model.md) for intermediate results and rounding.
 ## Why the bounds guard rather than `SSRANGE`
 
 COBOL does not check subscripts, and an index past the end of a table inside a
-record addresses the field after it, so an out-of-range _write_ does not fail,
-it quietly changes a different field of the same record.
+record addresses the field after it. An out-of-range _write_ therefore does not
+fail; it quietly changes a different field of the same record.
 
 The compiler emits an explicit check where the subscript is not provably in
 range:
@@ -292,9 +295,9 @@ afternoon closes it.
 
 ## Related pages
 
-- [generated-code-standards.md](generated-code-standards.md) (the house style as a contract
-- [target-conformance.md](target-conformance.md)) the rules the output obeys, with citations
-- [error-handling.md](error-handling.md) (the return-code contract
-- [numeric-model.md](numeric-model.md)) precision, scale and rounding
-- [jcl-model.md](jcl-model.md), the generated job
-- [divergences.md](divergences.md), GnuCOBOL against Enterprise COBOL
+- [generated-code-standards.md](generated-code-standards.md): the house style as a contract
+- [target-conformance.md](target-conformance.md): the rules the output obeys, with citations
+- [error-handling.md](error-handling.md): the return-code contract
+- [numeric-model.md](numeric-model.md): precision, scale and rounding
+- [jcl-model.md](jcl-model.md): the generated job
+- [divergences.md](divergences.md): GnuCOBOL against Enterprise COBOL

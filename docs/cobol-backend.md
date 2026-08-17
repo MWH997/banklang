@@ -1,4 +1,10 @@
-# COBOL Backend Specification
+# The COBOL backend
+
+The rules the emitter follows when it turns the compiler's internal
+representation into COBOL text: which dialect it targets, how it lays out a
+source line, and how each BankTS construct comes out the other side. For what
+the finished COBOL should look like to a reviewer, see
+[generated-code-standards.md](generated-code-standards.md).
 
 ## 1. Target
 

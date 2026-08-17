@@ -1,12 +1,12 @@
 module TaskFunc17;
 
 // Written from `spec.json`. Specification: read phone numbers from 'input.ps',
-// give each a country code from its first digit — '2' is India (+91), '1' is
-// the UK (+44) — and write them to 'output.ps' as `+XX (XXX) XXX XXXX`.
+// give each a country code from its first digit ('2' is India (+91), '1' is
+// the UK (+44)) and write them to 'output.ps' as `+XX (XXX) XXX XXXX`.
 
 // Twelve characters for a ten-digit number, and the two spare are the point.
 // `input.ps` ends without a newline, and GnuCOBOL loses an unterminated final
-// record whose length exactly fills the record area — divergence D23. A record
+// record whose length exactly fills the record area, which is divergence D23. A record
 // wider than the longest line is the documented way round it, and is what a
 // program reading somebody else's feed should declare anyway.
 record PhoneLine {

@@ -1,9 +1,8 @@
 /**
  * Build the whole site: landing page, playground, assets.
  *
- * The 2026-08-06 audit's central finding was that this project has no front
- * door — a visitor arriving from a link lands in a split-pane editor with no
- * context. This is that front door.
+ * The project had no front door for a long time: a visitor arriving from a
+ * link landed in a split-pane editor with no context. This is that front door.
  *
  * **Every claim on the page is generated, not written.** The diagnostics in the
  * refusal section come from running the compiler over the program printed
@@ -68,15 +67,15 @@ export const SITE_ORIGIN = "https://banklang.mwhassan.com";
  * Cloudflare Pages does not serve `.html`. A request for `/docs/glossary.html`
  * is answered with a 308 to `/docs/glossary`, and `/docs/index.html` with a 308
  * to `/docs/`. Everything this build writes lands on disk as `.html`, so the
- * path a file has and the URL it answers on are two different strings — and
+ * path a file has and the URL it answers on are two different strings, so
  * every canonical, `og:url`, sitemap entry and feed link has to use the second.
  *
- * F11 is what happens when they are written out by hand instead. Forty-seven of
- * fifty-one sitemap entries named the redirecting form, which Search Console
- * reports as "Page with redirect, not indexed", and the two indexes disagreed
- * with each other: the docs index declared `…/docs/index.html` canonical while
- * its own sitemap entry said `…/docs/`. One page, two URLs, and a search engine
- * choosing between them.
+ * Writing them out by hand went wrong exactly once and comprehensively.
+ * Forty-seven of fifty-one sitemap entries named the redirecting form, which
+ * Search Console reports as "Page with redirect, not indexed", and the two
+ * indexes disagreed with each other: the docs index declared
+ * `…/docs/index.html` canonical while its own sitemap entry said `…/docs/`.
+ * One page, two URLs, and a search engine choosing between them.
  *
  * Derived here so there is one rule. `tests/docs-site.test.ts` holds every
  * sitemap entry to the canonical of the page it names, which is the invariant
@@ -101,15 +100,16 @@ export function servedUrl(builtPath: string): string {
 /**
  * The theme control, which is a toggle button rather than an action.
  *
- * E5. It read `Theme` with an `aria-label` of "Switch between light and dark",
- * no `aria-pressed`, and a label that never changed — so neither a sighted nor
- * a screen-reader user could tell the current mode from the control.
+ * It used to read `Theme`, with an `aria-label` of "Switch between light and
+ * dark", no `aria-pressed`, and a label that never changed, so neither a
+ * sighted nor a screen-reader user could tell the current mode from the
+ * control.
  *
- * The label names what is being toggled and `aria-pressed` says whether it is
- * on. The ticket's other suggestion was a label naming the destination, "Dark"
- * while light and "Light" while dark, and the two cannot both be right: a
- * control whose label is where it takes you is an action, and `aria-pressed` on
- * an action announces a state its own label contradicts.
+ * The label now names what is being toggled and `aria-pressed` says whether it
+ * is on. The other candidate was a label naming the destination, "Dark" while
+ * light and "Light" while dark, and the two cannot both be right: a control
+ * whose label is where it takes you is an action, and `aria-pressed` on an
+ * action announces a state its own label contradicts.
  *
  * Held here and placed by `siteHeader`, so no page carries its own copy. The
  * playground is the one exception, because Vite builds its page rather than
@@ -280,9 +280,10 @@ export const NAV_SCRIPT = `    <script>
 /* ------------------------------------------------------------------ *
  * Syntax highlighting, at build time.
  *
- * L2: no runtime JavaScript beyond the theme toggle. A highlighter shipped to
- * the browser to colour four code blocks is 40 KB to do what a build can do
- * once. These are deliberately small — enough for the constructs on this page.
+ * The budget for this page is no runtime JavaScript beyond the theme toggle. A
+ * highlighter shipped to the browser to colour four code blocks is 40 KB to do
+ * what a build can do once. These two are deliberately small, covering the
+ * constructs that appear on this page and nothing else.
  * ------------------------------------------------------------------ */
 
 export const escapeHtml = (text: string): string =>
@@ -448,7 +449,7 @@ export function siteContent(): SiteContent {
     ).length,
     diagnosticCount: DIAGNOSTICS.filter((entry) => entry.implemented).length,
     // Both counts, because the sentence they appear in is about the banking
-    // safety rules and the page used the whole catalogue for it — 94 where the
+    // safety rules and the page used the whole catalogue for it: 94 where the
     // claim was 16. `isBankingSafetyRule` is what decides, next to the
     // catalogue, so a new diagnostic is classified by where it is filed.
     safetyRuleCount: DIAGNOSTICS.filter(
@@ -460,11 +461,11 @@ export function siteContent(): SiteContent {
 /**
  * Everything the original says about its four files, which is both halves.
  *
- * F29. This was six lines from `0000-MAIN.` — the `OPEN` — under a paragraph
- * arguing "no `FILE STATUS` field declared for any of them". A reader who has
- * written COBOL assumes the clauses are in the `FILE-CONTROL` paragraph that is
- * not being shown, because that is exactly where they would be. The argument
- * was sound and the exhibit did not support it.
+ * This used to be six lines from `0000-MAIN.`, the `OPEN` alone, under a
+ * paragraph arguing "no `FILE STATUS` field declared for any of them". A reader
+ * who has written COBOL assumes the clauses are in the `FILE-CONTROL` paragraph
+ * that is not being shown, because that is exactly where they would be. The
+ * argument was sound and the exhibit did not support it.
  *
  * So both are on screen: the `SELECT` statements, where a `FILE STATUS` would
  * be and is not, and the `OPEN` whose outcome nothing then tests. They are
@@ -601,18 +602,18 @@ ${siteHeader({ up: "/" })}
     <main>
       <h1>No page at this address</h1>
       <p>
-        The link is either older than the page it named, or the address is
-        mistyped. These are the places worth starting from:
+        Either the link is older than the page it pointed at, or the address is
+        mistyped. Good places to pick the thread back up:
       </p>
       <ul>
         <li><a href="/docs/getting-started">Getting started</a></li>
         <li><a href="/docs/">All of the documentation</a></li>
-        <li><a href="/playground/">The playground</a>, which compiles in the browser</li>
+        <li><a href="/playground/">The playground</a>, which compiles in your browser</li>
         <li><a href="/blog/">Writing</a></li>
       </ul>
       <p class="muted">
         The documentation moved here from GitHub, so a link written against the
-        repository may name a <code>.md</code> file. The same page is under
+        repository may end in <code>.md</code>. The same page lives under
         <a href="/docs/">/docs/</a> without the extension.
       </p>
     </main>
@@ -635,8 +636,8 @@ ${scripts.map((script) => `    ${script}`).join("\n")}
  * Every page this build writes, as the path it lands on disk.
  *
  * One list, so the sitemap cannot fall behind what is rendered. It already had:
- * `buildDocs` writes an index for `docs/language/` and `docs/adr/` — two real
- * pages a link can land on — and neither was in the sitemap, because the
+ * `buildDocs` writes an index for `docs/language/` and `docs/adr/`, two real
+ * pages a link can land on, and neither was in the sitemap, because the
  * sitemap held its own idea of what the site contains.
  *
  * `tests/docs-site.test.ts` walks `dist/site` and holds this list to the HTML
@@ -666,7 +667,7 @@ export function builtPages(): string[] {
  * The `'sha256-…'` sources that allow one page's inline scripts.
  *
  * A CSP hash is taken over the exact bytes between `<script>` and `</script>`
- * — leading and trailing whitespace included — so this reads the built page
+ * (leading and trailing whitespace included) so this reads the built page
  * rather than the template that produced it. Anything with a `src` is a file
  * and is already covered by `'self'`.
  */
@@ -697,7 +698,7 @@ export function responseHeaders(template: string, hashes: string[]): string {
    *
    * `String.replace` with a string pattern substitutes the *first* occurrence,
    * and the first draft of the comment above the policy named the placeholder
-   * while explaining it — so the hashes were written into a comment and the
+   * while explaining it, so the hashes were written into a comment and the
    * policy line shipped the literal token. A CSP source expression nothing
    * matches is not a loud failure: it is every inline script on all fifty-four
    * pages silently refusing to run, which is the theme on each of them and the
@@ -744,7 +745,7 @@ export function sitemap(): string {
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    // `servedUrl`, not the file path. F11: every one of these named the `.html`
+    // `servedUrl`, not the file path. Every one of these once named the `.html`
     // form, which the host answers with a redirect rather than with the page.
     //
     // The 404 page is the one page the build writes that belongs to no address,
@@ -774,7 +775,7 @@ function main(): void {
   cpSync(join(SITE, "docs.js"), join(OUT, "assets/docs.js"));
   cpSync(join(SITE, "blog.css"), join(OUT, "assets/blog.css"));
 
-  // D1: every document under `docs/`, rendered, with the sidebar grouped as the
+  // Every document under `docs/`, rendered, with the sidebar grouped as the
   // README groups it and a search index built from the same pass.
   const documents = buildDocs(OUT);
 
@@ -789,9 +790,9 @@ function main(): void {
   // `base: "./"` is what lets it work from `/playground/`.
   execFileSync("pnpm", ["playground:build"], { cwd: ROOT, stdio: "inherit" });
 
-  // D4's half that prevents recurrence. Vite has printed "(!) Some chunks are
-  // larger than 500 kB" on every build for as long as there has been a
-  // playground, and a warning nobody acts on is not a check. Before the copy,
+  // Vite has printed "(!) Some chunks are larger than 500 kB" on every build
+  // for as long as there has been a playground, and a warning nobody acts on is
+  // not a check. Before the copy,
   // so an over-budget bundle stops the build rather than being published and
   // then reported.
   const budget = checkPlaygroundBudget(ROOT);
@@ -843,7 +844,7 @@ function main(): void {
   // Response headers, which are the only part of the site nothing renders: a
   // security policy, the cache lifetimes, and `noindex` on the preview
   // hostname. Last, because the content policy names the sha256 of every inline
-  // script on the finished site — read off the built pages, including the
+  // script on the finished site, read off the built pages, including the
   // playground's, which Vite writes rather than this file.
   const pages = readdirSync(OUT, { recursive: true, encoding: "utf8" }).filter(
     (file) => file.endsWith(".html"),

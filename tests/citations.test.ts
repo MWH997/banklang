@@ -13,13 +13,13 @@ import { allCitations, landedOnFrontPage } from "../tools/check-citations";
  * is that a contributor "can check the terminology against IBM, GnuCOBOL,
  * TypeScript, SPDX or OpenSSF rather than against this page's own wording".
  *
- * The 2026-08-06 audit checked that claim for the first time and found nine
- * citations that resolved to nothing: a source-map specification 404 since it
+ * Checking that claim for the first time found nine citations that resolved to
+ * nothing: a source-map specification 404 since it
  * became an Ecma standard, an IBM topic for the FILE STATUS clause that does
  * not exist, one for the z/OS DD statement that does not exist, and six bare
  * product roots that answer with the IBM Documentation shell. Two more resolved
- * to the wrong product entirely — Db2 for Linux, UNIX and Windows cited for a
- * z/OS precompile — and seven cited Db2 12 for z/OS, out of service since
+ * to the wrong product entirely (Db2 for Linux, UNIX and Windows cited for a
+ * z/OS precompile) and seven cited Db2 12 for z/OS, out of service since
  * 31 December 2025.
  *
  * The live check is `pnpm docs:citations`, which needs the network. What runs
@@ -150,8 +150,8 @@ describe("the glossary", () => {
   it("still defines the mainframe terms it was cut down to", () => {
     // A floor, not a target, and it has moved once. The file held 98 entries
     // and 48 KB. Seven went because they defined this project's own model
-    // tooling — which one supervised which, and what each one's free-tier quota
-    // was — in the canonical glossary of a COBOL compiler. Forty-three
+    // tooling (which one supervised which, and what each one's free-tier quota
+    // was) in the canonical glossary of a COBOL compiler. Forty-three
     // more went under D3: how this repository is written, general computing a
     // reader of a compiler already knows, and adjacent IBM products that are
     // roadmap notes rather than terms. What is left is what a reader of the
@@ -250,7 +250,7 @@ describe("the glossary", () => {
  *
  * `redirect: "follow"` makes a dead citation look alive: the fetch succeeds,
  * the title parses, and the recorded entry says the source resolves. This is
- * how it was found — NIST's COBOL-85 test suite page,
+ * how it was found: NIST's COBOL-85 test suite page,
  * `itl.nist.gov/div897/ctg/cobol_form.htm`, now answers `302` to `nist.gov/itl`,
  * the laboratory's home page, which has nothing about COBOL on it. The checker
  * recorded it as fine.

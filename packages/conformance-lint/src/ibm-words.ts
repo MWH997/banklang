@@ -4,7 +4,7 @@
  * Generated from vendor-docs/cobol-language-reference.txt by tools/extract-ibm-words.ts.
  * Do not edit by hand: run the extractor, and review the diff.
  *
- * RESERVED_WORDS is the leftmost column of Appendix E, Table 83 — the words
+ * RESERVED_WORDS is the leftmost column of Appendix E, Table 83: the words
  * reserved for function Enterprise COBOL actually implements. It is not the
  * whole table. The 85 Standard words it does not implement and the words that
  * might be reserved in a future release are deliberately excluded, because a

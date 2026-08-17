@@ -9,7 +9,7 @@ export const CONFIG_FILE_NAME = "banklang.json";
  * `bankc init` writes it into every generated config, so it has to be a URL
  * that resolves: `pnpm build:site` writes `configJsonSchema()` to this path.
  * It previously named `banklang.dev`, which is not a domain this project owns
- * and has never served anything — an editor following it got nothing, and the
+ * and has never served anything: an editor following it got nothing, and the
  * project was pointing its users at somebody else's namespace.
  */
 export const SCHEMA_URL = "https://banklang.mwhassan.com/schema/banklang.json";
@@ -28,7 +28,7 @@ export interface BankLangConfig {
    * Whether record layouts are written into the program or copied into it.
    *
    * `inline` puts every `01` item in the program, which keeps the artifact
-   * self-contained and reviewable on its own — the default, and what the
+   * self-contained and reviewable on its own, which is the default, and what the
    * playground and the evidence bundles show.
    *
    * `copy` emits `COPY <NAME>.` instead, which is the shape a shop with a
@@ -41,9 +41,9 @@ export interface BankLangConfig {
   /**
    * `DECIMAL-POINT IS COMMA`.
    *
-   * Much of Europe writes 1.234,56. The convention is program-wide in COBOL —
+   * Much of Europe writes 1.234,56. The convention is program-wide in COBOL,
    * one `SPECIAL-NAMES` clause swaps the roles of the comma and the point in
-   * every picture and every literal — so it belongs to the project rather than
+   * covering every picture and every literal, so it belongs to the project rather than
    * to a field.
    */
   decimalPoint: DecimalPoint;
@@ -63,7 +63,7 @@ export interface BankLangConfig {
    *
    * The rest is a site's. A long-running batch that GETMAINs its way through a
    * large file wants `HEAP` and `STACK` sized for it, and the numbers depend on
-   * the region and the data rather than on anything the compiler can see — so
+   * the region and the data rather than on anything the compiler can see, so
    * this is the place to state them, and the compiler does not invent them.
    *
    * Each entry is written on its own card exactly as given.

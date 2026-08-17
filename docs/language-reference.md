@@ -1,4 +1,4 @@
-# BankTS Language Reference
+# BankTS language reference
 
 BankTS is a small banking language that compiles to COBOL. Its types are
 TypeScript's (`decimal<18, 2>`, `string<16>`, `record`, aliases), and its
@@ -7,12 +7,13 @@ statements are its own: `transaction`, `file … sequential input`, `cursor`,
 generation, not TypeScript compatibility; a BankTS module is not a TypeScript
 module and `tsc` cannot read one.
 
-This page is the contents. Every rule lives on one of the pages below.
+This page is the contents. Every rule lives on one of the pages below, one topic
+per page, and every diagnostic cites the page its rule comes from.
 
-Until 2026-08-06 all of it was one 108 KB file whose sections were numbered in a
-single sequence: a sequence that had gone wrong, with two sections numbered 14,
-two numbered 15, and 3a before 3c before 3b. The numbers are gone with the file
-they belonged to. Each page is a topic, and each diagnostic cites the page.
+New to the language? Read [Programs and modules](language/program.md), then
+[Types](language/types.md), then [Records](language/records.md). Those three
+cover any program that does arithmetic on money, and the rest of the pages are
+there when you reach a subsystem that needs them.
 
 ---
 
@@ -64,12 +65,12 @@ Every rule on these pages that can be broken has a diagnostic, and every
 diagnostic names the page it came from. `bankc explain BANK-LED-001` prints any
 of them with an explanation and a remediation.
 
-- [Diagnostics](diagnostics.md) (the full catalogue
-- [Generated code standards](generated-code-standards.md)) what the output
+- [Diagnostics](diagnostics.md): the full catalogue
+- [Generated code standards](generated-code-standards.md): what the output
   looks like, as a contract
-- [Target conformance](target-conformance.md) (the Enterprise COBOL rules the
+- [Target conformance](target-conformance.md): the Enterprise COBOL rules the
   output obeys, each with a manual citation
-- [Status and honest limits](status-and-limits.md)) what none of this claims
+- [Status and honest limits](status-and-limits.md): what none of this claims
 
 ## Trying it
 

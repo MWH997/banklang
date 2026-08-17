@@ -8,7 +8,7 @@ import { flowed } from "./helpers";
  *
  * A legacy copybook splits a date into year, month, and day and then wants to
  * move all three at once. `RENAMES` gives that run of fields a second name
- * without a second copy of the storage — which is what distinguishes it from
+ * without a second copy of the storage, which is what distinguishes it from
  * `redefines`, which is a new *reading* of the same bytes.
  */
 

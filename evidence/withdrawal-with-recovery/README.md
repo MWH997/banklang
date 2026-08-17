@@ -56,4 +56,4 @@ This example is also **executed**, alongside `online-enquiry` and
 GnuCOBOL 3.2.0 is not IBM Enterprise COBOL, and this bundle claims no IBM
 validation. The executed conformance run behind this example uses the reference
 runtime in `runtime/`, which is a set of small COBOL programs in this
-repository — not a bank ledger, not Db2, and not CICS.
+repository, and not a bank ledger, not Db2, and not CICS.

@@ -3,21 +3,21 @@
 **[banklang.mwhassan.com](https://banklang.mwhassan.com)**. The compiler runs
 in your browser at [/playground/](https://banklang.mwhassan.com/playground/).
 
-**A deterministic compiler from a small banking language to readable IBM
-Enterprise COBOL, with banking safety rules enforced at compile time.**
+**A compiler for banking programs.** You write BankTS; it emits IBM Enterprise
+COBOL that a mainframe engineer can read and sign off.
 
 [![CI](https://github.com/MWH997/banklang/actions/workflows/ci.yml/badge.svg)](https://github.com/MWH997/banklang/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
-BankLang compiles **BankTS** into COBOL a mainframe engineer can read and
-review. Its types are TypeScript's; its statements (`transaction`, `file`,
-`cursor`, `queue`) are its own. Everything it emits is decided by code you can
-read: no model is involved, and the same input always produces byte-identical
-output.
+BankTS borrows TypeScript's type syntax; its statements (`transaction`, `file`,
+`cursor`, `queue`) are its own. No model is involved anywhere, and the same
+input always produces byte-identical output.
 
-Translation is the ordinary part. What the compiler does beyond it is **refuse to
-build unsafe programs**.
+COBOL handles money itself well: amounts are packed decimal, exact to the penny.
+What it has no concept of is bookkeeping. A transaction whose debits and credits
+do not match is, to a COBOL compiler, correct arithmetic. This one **refuses to
+build it**.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -33,7 +33,8 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-Each is a compile error rather than a production incident.
+Three compile errors, so the build stops and writes nothing: a retry that could
+post twice, money moving unrecorded, and a total that does not add up.
 
 **Validated with GnuCOBOL, not IBM.** Every example compiles in CI under a
 GnuCOBOL configuration shaped to Enterprise COBOL 6.4 and under GnuCOBOL's own
@@ -41,8 +42,7 @@ default. No IBM Enterprise COBOL validation is claimed.
 
 **Built with AI assistance.** The design and the decisions are the author's;
 much of the implementation was written with an AI coding assistant under review.
-That describes how the compiler was built. Nothing inside it is a model, at
-build time or at run time.
+There is no model inside it, at build time or at run time.
 
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
@@ -57,8 +57,8 @@ to install, and nothing you write is sent anywhere.
 
 Click a line of BankTS and the COBOL it produced lights up, from the source map.
 Fill in the entry record or dataset on **Input**, then **Run** executes it
-against the reference runtime in [`runtime/`](runtime/README.md) and shows what
-it posted. Locally: `pnpm install && pnpm playground:dev`.
+against the reference runtime in [`runtime/`](runtime/README.md) and shows the
+postings. Locally: `pnpm install && pnpm playground:dev`.
 
 ## What it generates
 
@@ -74,11 +74,11 @@ function accrue(balance: MoneyBDT, rate: Rate): MoneyBDT {
 ```
 
 `MoneyBDT` is `decimal<18, 2>` and `Rate` is `decimal<9, 4>`, so the product has
-scale 6. Storing it as money discards four digits, which the compiler
-will not do silently: `round` with an explicit mode is required.
+scale 6. Storing it as money would discard four digits, so `round` with an
+explicit mode is required.
 
-Enterprise COBOL has **one** rounding phrase, and `ROUNDED` is half-up away from
-zero. Banker's rounding is arithmetic this compiler writes out:
+Enterprise COBOL offers **one** rounding phrase, and `ROUNDED` rounds a half
+away from zero. Banker's rounding has to be written out as arithmetic:
 
 ```cobol
            EVALUATE TRUE
@@ -128,7 +128,7 @@ pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 ```
 
 Add `--watch` to any command that reads a project to rerun it on save. The rest
-refuse the flag and name the ones that take it.
+refuse it and name the ones that take it.
 [The whole toolchain →](docs/toolchain.md)
 
 ## Examples
@@ -178,10 +178,10 @@ report over them.
 beside the BankTS it becomes.
 
 Every example is **run**, not only compiled. Three have hand-written expected
-balances; the rest are executed twice (by `cobc` and by an interpreter written
-against the same output), and a test fails on any disagreement. That is what
-catches a defect that compiles: the bounds guard once clamped an out-of-range
-subscript instead of refusing it, and every static check passed.
+balances; the rest are executed twice, by `cobc` and by an interpreter written
+against the same output, and a test fails on any disagreement. That catches a
+defect that compiles: the bounds guard once clamped an out-of-range subscript
+instead of refusing it, and every static check passed.
 
 That lane covers 27 of the 31 COBOL verbs the backend emits. The other four are
 a generated zUnit test case's entry points and a Report Writer section, neither

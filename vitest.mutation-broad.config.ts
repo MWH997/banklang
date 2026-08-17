@@ -14,7 +14,7 @@ import {
  * A blocklist, deliberately, and the opposite choice from
  * `vitest.mutation-emitter.config.ts`. That one lists the ten suites that read
  * generated COBOL, on the reasoning that the question has a short stable answer
- * — which is true, and it has the failure this file exists to avoid. A suite
+ * That is true, and it has the failure this file exists to avoid. A suite
  * written *for* a lane and not added to its list runs green in CI and
  * contributes nothing: `tests/cobol-ir-names.test.ts` was written to raise
  * `packages/cobol-ir/src/index.ts` off 44%, passed 21 assertions, and moved the

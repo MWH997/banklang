@@ -79,7 +79,7 @@ const SPACE = 0x20;
  *
  * `GO TO` leaves whatever statement nesting it is inside, and so does `GOBACK`
  * from three levels of `PERFORM`. An exception is the only mechanism that
- * unwinds arbitrary depth, so these are exceptions — and `Error` subclasses
+ * unwinds arbitrary depth, so these are exceptions, and `Error` subclasses
  * rather than bare objects, because a signal that escapes its handler by
  * mistake should arrive somewhere with a stack attached rather than as
  * `undefined`.
@@ -169,7 +169,7 @@ export interface RunOptions {
    * What a program's storage holds when it is entered is decided outside the
    * program on every real system: a dataset it reads, the PARM the step was
    * started with, a caller's communication area, a region. This is that, for a
-   * caller that has none of those — the playground's Input panel, and a test
+   * caller that has none of those: the playground's Input panel, and a test
    * that wants a program to run on a particular request without writing a
    * dataset for it.
    *
@@ -196,7 +196,7 @@ const RETURN_CODE_PICTURE: Picture = parsePicture("S9(4)");
  * `SORT-RETURN`, the other register every program has and none declares.
  *
  * The Language Reference gives it as `01 SORT-RETURN GLOBAL PICTURE S9(4)
- * USAGE BINARY VALUE ZERO`, global in the outermost program — so one register
+ * USAGE BINARY VALUE ZERO`, global in the outermost program, so one register
  * per machine, not one per program instance. It reads 0 after a sort or merge
  * that completed and 16 after one that did not, and a program may store 16
  * into it from an input or output procedure to stop the operation.
@@ -413,7 +413,7 @@ export class Machine {
           continue;
         }
         // An 01 with a REDEFINES describes the same bytes as the record it
-        // names, and every 01 used to get storage of its own instead — so
+        // names, and every 01 used to get storage of its own instead, so
         // writing through the redefinition and reading through the original
         // returned whatever the original had been initialised to. The two
         // agreeing is the whole reason a program writes one.
@@ -898,7 +898,7 @@ export class Machine {
           );
         }
         // Character for character, and the leftmost mapping wins where an
-        // operand repeats a character — the Language Reference forbids the
+        // operand repeats a character. The Language Reference forbids the
         // repeat rather than defining it, so this is a choice, made once and
         // stated, instead of whatever the last write happened to leave.
         const map = new Map<string, string>();
@@ -939,7 +939,7 @@ export class Machine {
           const open = this.fileOf(instance, name);
           // Closing a file that was never opened is status 42, not success.
           // Reporting `00` told a program that checks its status after every
-          // operation — which is what `BANK-FILE-001` exists to require — that
+          // operation, which is what `BANK-FILE-001` exists to require, that
           // a close it never had an open for had worked.
           if (open.mode === null) {
             this.setStatus(instance, open, "42");
@@ -979,7 +979,7 @@ export class Machine {
     // Unreachable while every statement kind is handled above, and a compile
     // error the moment one is not. `SORT` reached this switch as a parsed
     // statement with no case and was silently skipped for as long as it took to
-    // notice — a sort that does nothing leaves the output file empty and the
+    // notice: a sort that does nothing leaves the output file empty and the
     // program reports success.
     const unhandled: never = statement;
     throw new CobolRuntimeError(
@@ -1098,7 +1098,7 @@ export class Machine {
   }
 
   /**
-   * `USING` — the sort opens, reads, and closes the input files itself.
+   * `USING`: the sort opens, reads, and closes the input files itself.
    *
    * A record shorter than the work record is padded with spaces and a longer
    * one truncated, which is what moving it into the fixed record area does.
@@ -1178,7 +1178,7 @@ export class Machine {
     work.records.sort(compareRecords);
   }
 
-  /** `GIVING` — the sort opens, writes, and closes the output files itself. */
+  /** `GIVING`: the sort opens, writes, and closes the output files itself. */
   private writeFromWork(
     instance: Instance,
     statement: Extract<Statement, { kind: "sort" }>,
@@ -1212,7 +1212,7 @@ export class Machine {
     );
   }
 
-  /** `RELEASE` — one record from an input procedure into the work file. */
+  /** `RELEASE`: one record from an input procedure into the work file. */
   private executeRelease(
     instance: Instance,
     statement: Extract<Statement, { kind: "release" }>,
@@ -1256,7 +1256,7 @@ export class Machine {
     );
   }
 
-  /** `RETURN` — the next ordered record, into the work file's record area. */
+  /** `RETURN`: the next ordered record, into the work file's record area. */
   private executeReturn(
     instance: Instance,
     statement: Extract<Statement, { kind: "return" }>,
@@ -1420,14 +1420,14 @@ export class Machine {
       case "DIVIDE": {
         const left = operands[0] ?? { units: 0n, scale: 0 };
         if (statement.joiner === "BY") {
-          // `DIVIDE A BY B GIVING C` — A over B.
+          // `DIVIDE A BY B GIVING C`: A over B.
           const divisor = operands[1] ??
             rhs[0]?.value ?? { units: 1n, scale: 0 };
           division = { dividend: left, divisor };
           results.push({ targets: giving, value: divide(left, divisor) });
           break;
         }
-        // `DIVIDE A INTO B` — B over A.
+        // `DIVIDE A INTO B`: B over A.
         if (giving.length > 0) {
           const dividend = rhs[0]?.value ?? { units: 0n, scale: 0 };
           division = { dividend, divisor: left };
@@ -1460,13 +1460,13 @@ export class Machine {
      * The Language Reference works it out from the quotient *as stored*:
      * multiply the quotient by the divisor and subtract that product from the
      * dividend. So it has to be read back out of the receiving field, after the
-     * assignment above has truncated it to that field's picture — computing it
+     * assignment above has truncated it to that field's picture, since computing it
      * from the exact quotient would make it zero every time.
      *
      * Nothing here computed it at all, which left the field holding whatever it
      * held before. Every generated rounding mode this compiler emits reads that
-     * field to decide its final step, so `HALF_EVEN` — the one this project
-     * calls the usual choice for money — silently truncated instead: 100000
+     * field to decide its final step, so `HALF_EVEN`, the one this project
+     * calls the usual choice for money, silently truncated instead: 100000
      * divided by 7 came back 14285.7142 where `cobc` gives 14285.7143.
      */
     const remainder = statement.remainder;
@@ -1504,8 +1504,8 @@ export class Machine {
         );
       }
       // Performing a section performs every paragraph in it, not just the one
-      // the header names. `PERFORM A THRU A-EXIT` — what the emitter writes for
-      // every function — is unaffected, because a paragraph is its own extent.
+      // the header names. `PERFORM A THRU A-EXIT`, what the emitter writes for
+      // every function, is unaffected, because a paragraph is its own extent.
       const last = target.thru ?? target.from;
       const thru =
         instance.sectionEnd.get(last) ?? instance.paragraphIndex.get(last);
@@ -1637,8 +1637,8 @@ export class Machine {
    * `UNSTRING source DELIMITED BY d INTO a b c`.
    *
    * The sending field is scanned left to right. For each receiver in turn, the
-   * characters up to the next delimiter — or to the end of the field, when
-   * there is no next delimiter — are the one it gets; the delimiter itself is
+   * characters up to the next delimiter (or to the end of the field, when
+   * there is no next delimiter) are the one it gets; the delimiter itself is
    * discarded and the scan resumes after it. A receiver the scan never reaches
    * is left as it was, which is why the emitter writes `MOVE SPACES TO` in
    * front of every one of these.
@@ -2009,7 +2009,7 @@ export class Machine {
      * The length written is the *named record's*, not the record area's.
      *
      * Several 01 entries under one FD share an area as long as the longest of
-     * them, and `WRITE HEADING-RECORD` writes the heading's length — not the
+     * them, and `WRITE HEADING-RECORD` writes the heading's length, not the
      * area's, and not whatever the last, longer record left in the bytes past
      * its end. Writing the area instead produced `A0001   123.45 DUE`, where
      * ` DUE` is the tail of a heading written three statements earlier, and
@@ -2039,7 +2039,7 @@ export class Machine {
     // existing ones landed at the end, so the next sequential read returned the
     // file out of order and a `START` bisecting it positioned on the wrong
     // record. And a key that was already present was accepted silently, which
-    // put a duplicate primary key in the file — `cobc` reports status 22 and
+    // put a duplicate primary key in the file. `cobc` reports status 22 and
     // takes `INVALID KEY`, and so does z/OS VSAM.
     if (open.entry.organization === "indexed") {
       const keyName = open.entry.recordKey;
@@ -2137,7 +2137,7 @@ export class Machine {
     // one record qualified, which is why this survived.
     //
     // Reference: *Enterprise COBOL for z/OS Language Reference*, START
-    // statement — the file is positioned at the record with the highest key
+    // statement: the file is positioned at the record with the highest key
     // that satisfies a LESS THAN or LESS THAN OR EQUAL comparison.
     const backwards = statement.op === "<" || statement.op === "<=";
     const keyOf = (record: Uint8Array): string =>
@@ -2439,7 +2439,7 @@ export class Machine {
       case "function":
         // The alphanumeric intrinsics return characters, so a `MOVE FUNCTION
         // CHAR(n) TO item` has to produce text rather than be pushed through
-        // the arithmetic path — which threw "not implemented" for every one of
+        // the arithmetic path, which threw "not implemented" for every one of
         // them, including `TRIM`, outside the DISPLAY and STRING statements
         // that happened to ask for their text directly.
         return TEXT_FUNCTIONS.has(expr.name)
@@ -2562,7 +2562,7 @@ export class Machine {
         return textToNumber(this.displayText(instance, args[0]!), true);
       /**
        * `ORD` is the position of a character in the collating sequence, and
-       * the Language Reference numbers that sequence from 1 — so the ordinal
+       * the Language Reference numbers that sequence from 1, so the ordinal
        * of a byte is the byte plus one, and `CHAR` below is its inverse.
        */
       case "ORD": {
@@ -2597,7 +2597,7 @@ export class Machine {
   }
 
   /**
-   * `FUNCTION CURRENT-DATE(1:8)` — the characters of a value, sliced.
+   * `FUNCTION CURRENT-DATE(1:8)`: the characters of a value, sliced.
    *
    * A reference modification of something that is not an item, so there is no
    * storage to point into and the answer is the text. The bounds are checked as
@@ -2631,14 +2631,14 @@ export class Machine {
     if (expr.kind === "function") {
       switch (expr.name) {
         /**
-         * `FUNCTION CURRENT-DATE` — twenty-one characters of clock.
+         * `FUNCTION CURRENT-DATE`: twenty-one characters of clock.
          *
          * `YYYYMMDDhhmmsshh` then the offset from Greenwich as `±hhmm`, which
          * is the Language Reference's layout and the one the backend slices:
          * `today()` takes `(1:8)` and `now()` takes the pieces one at a time.
          *
          * This reads the real clock, so a program that writes the time into an
-         * output file is not differentially comparable — the two engines run at
+         * output file is not differentially comparable, because the two engines run at
          * different moments. That is a property of such a program rather than a
          * defect here, and it is why `today()`, which reaches only the date, is
          * the form the benchmark tasks use.
@@ -2671,7 +2671,7 @@ export class Machine {
           return this.displayText(instance, expr.args[0]!).toLowerCase();
         /**
          * The character at a position in the collating sequence, counting from
-         * one — the inverse of `ORD`. It yields a character rather than a
+         * one, the inverse of `ORD`. It yields a character rather than a
          * number, so it belongs here and not with the arithmetic functions.
          */
         case "CHAR": {
@@ -2690,7 +2690,7 @@ export class Machine {
   /**
    * `IS NUMERIC`, as the Language Reference defines it.
    *
-   * > NUMERIC — identifier-1 consists entirely of the characters 0 through 9,
+   * > NUMERIC: identifier-1 consists entirely of the characters 0 through 9,
    * > with or without an operational sign. If its PICTURE does not contain an
    * > operational sign, the identifier being tested is determined to be numeric
    * > only if the contents are numeric and an operational sign is not present.
@@ -2698,12 +2698,12 @@ export class Machine {
    * > tested is determined to be numeric only if the item is an elementary
    * > item, the contents are numeric, and a valid operational sign is present.
    *
-   * — *Enterprise COBOL for z/OS Language Reference*, "Class condition".
+   * From *Enterprise COBOL for z/OS Language Reference*, "Class condition".
    *
    * This was `/^[0-9]*$/` over the trimmed text, which is wrong in both
    * directions and in the direction that matters. It rejected the `+` on a
-   * `SIGN IS LEADING SEPARATE` item — the shape every numeric PARM parameter
-   * has — so a program refused a PARM that z/OS would have accepted. Trimming
+   * `SIGN IS LEADING SEPARATE` item, the shape every numeric PARM parameter
+   * has, so a program refused a PARM that z/OS would have accepted. Trimming
    * also made an all-blank field test numeric, since the empty string matches:
    * a PARM nobody filled in would pass the check written to catch it and be
    * computed on as zero.
@@ -2715,7 +2715,7 @@ export class Machine {
   ): boolean {
     const located = this.locationOf(instance, operand);
 
-    // Without a field to consult — a literal, or an expression — the most that
+    // Without a field to consult (a literal, or an expression) the most that
     // can be said is that the characters are digits.
     if (!located) {
       return /^[0-9]+$/.test(fallback);
@@ -2914,7 +2914,7 @@ function sized(record: Uint8Array, length: number): Uint8Array {
  * A record as the file holds it.
  *
  * A LINE SEQUENTIAL file holds text lines, so trailing blanks are not part of
- * the record — GnuCOBOL strips them before the newline, and a file written here
+ * the record: GnuCOBOL strips them before the newline, and a file written here
  * has to match one written there byte for byte or the differential test is
  * comparing two different things.
  */
@@ -2933,7 +2933,7 @@ function trimmedForOrganization(open: OpenFile, bytes: Uint8Array): Uint8Array {
  * A sort key, read out of a record that is not in the record area.
  *
  * The work file's records are bytes in a list, and `Field.offset` is measured
- * from the start of the record it belongs to — so the same field description
+ * from the start of the record it belongs to, so the same field description
  * reads the key out of any copy of that record.
  */
 function keyLocation(field: Field, record: Uint8Array): Location {
@@ -3008,7 +3008,7 @@ function displayNumber(value: Decimal): string {
  * `FUNCTION NUMVAL` and `FUNCTION NUMVAL-C`, which read a number out of text.
  *
  * `toNumber` lowers to NUMVAL-C, so this is on the path of every BankTS program
- * that parses a field, and it had no implementation here at all — the
+ * that parses a field, and it had no implementation here at all. The
  * interpreter refused the statement and the differential comparison silently
  * did not happen. The verb-level coverage matrix could not see it, because a
  * missing intrinsic is not a missing verb.

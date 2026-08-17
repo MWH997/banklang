@@ -7,7 +7,7 @@ import { defineConfig } from "vitest/config";
  * `stryker.config.json` mutates the rules that refuse a program;
  * `stryker.emitter.config.json` mutates the code that decides what the emitted
  * text looks like. Both of those are checked, in the end, by the conformance
- * linter — every claim of the form "the emitted COBOL does not do X" is a claim
+ * linter: every claim of the form "the emitted COBOL does not do X" is a claim
  * about a rule in `packages/conformance-lint`. Nothing was checking the
  * checker.
  *

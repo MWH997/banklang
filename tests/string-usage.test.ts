@@ -14,7 +14,7 @@ import {
  * one: 126 of the 130 are `NC218A.CBL`, the NIST CCVS85 conformance test for
  * `UNSTRING`, vendored into five language-tool repositories. Eleven distinct
  * files in 5,195 carry the clause at all, 99 of the statements also carry
- * `WITH POINTER`, and 133 have a single receiver — so what the corpus shows is
+ * `WITH POINTER`, and 133 have a single receiver, so what the corpus shows is
  * a scanning loop advancing a pointer, not a line being taken apart into
  * fields and counted.
  *

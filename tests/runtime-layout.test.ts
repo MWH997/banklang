@@ -20,14 +20,14 @@ import { checked } from "./helpers";
  * it from the IR on its way to writing a copybook, and `packages/cobol-runtime`
  * derives it from the emitted COBOL on its way to executing it. Both are
  * supposed to be the same rules out of the *Language Reference*, and neither is
- * evidence for the other unless they are actually compared — a disagreement is
+ * evidence for the other unless they are actually compared. A disagreement is
  * a field the playground reads from the wrong offset while every other test
  * passes, because both sides are internally consistent.
  *
  * `packages/cobol-runtime/src/data.ts` claimed this comparison already existed,
  * in a file that does not exist. It did not, and there was a live disagreement
  * to find: the runtime read `SIGN IS [LEADING|TRAILING] SEPARATE` and discarded
- * it, so every `zoned` field — one byte per digit plus a byte for the sign —
+ * it, so every `zoned` field, one byte per digit plus a byte for the sign,
  * was a byte narrower here than in the copybook, and every field after it in
  * the record was offset by one. No example uses `zoned`, so nothing noticed.
  */
@@ -75,7 +75,7 @@ function agree(
     // A nullable is one logical entry to the copybook and two items to COBOL:
     // `PIC X(20)` followed by its `PIC S9(4) COMP` indicator, reported together
     // as 22 bytes and declared as siblings. Both are right about their own
-    // subject, so the width is not comparable — the offset above still is, and
+    // subject, so the width is not comparable. The offset above still is, and
     // it is the offset that a disagreement would move.
     if (!entry.type.startsWith("nullable")) {
       // `length`, not `elementLength`: a table's entry in the report covers all
@@ -94,7 +94,7 @@ describe("the interpreter and the copybook reporter", () => {
    * Every field of every example that both sides name.
    *
    * A record the emitter puts behind a `COPY` statement is not in the text the
-   * interpreter parses, so it contributes nothing here rather than failing —
+   * interpreter parses, so it contributes nothing here rather than failing,
    * which is why the floor is on the total. An assertion that quietly stops
    * finding fields passes without comparing any.
    */
@@ -123,7 +123,7 @@ describe("the interpreter and the copybook reporter", () => {
    * The case the corpus does not cover.
    *
    * `zoned` is the one type whose picture carries a `SIGN` clause into a
-   * record, and no example declares one — so this is the fixture that keeps the
+   * record, and no example declares one, so this is the fixture that keeps the
    * two implementations honest about it. Twelve bytes: eleven digits and the
    * separate sign.
    */

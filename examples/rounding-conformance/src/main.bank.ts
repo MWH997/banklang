@@ -59,7 +59,7 @@ function downOf(amount: MoneyBDT, rate: Rate): MoneyBDT {
 }
 
 // Toward positive infinity. `UP` and `CEILING` agree on a positive value and
-// disagree on a negative one, which is why the run below does both signs — one
+// disagree on a negative one, which is why the run below does both signs: one
 // sample would make them look like synonyms.
 function ceilingOf(amount: MoneyBDT, rate: Rate): MoneyBDT {
   return round(amount * rate, "CEILING");
@@ -70,7 +70,7 @@ function floorOf(amount: MoneyBDT, rate: Rate): MoneyBDT {
 }
 
 // Returns the number of modes it filled in, because every routine in this
-// language returns something — there is no `void`, and a paragraph that falls
+// language returns something. There is no `void`, and a paragraph that falls
 // off its own end is the thing the single-exit rule exists to prevent.
 function allModes(sample: RoundingSample, answers: RoundedAnswers): unsigned<9, 0> {
   answers.halfUp = halfUpOf(sample.amount, sample.rate);
@@ -95,7 +95,7 @@ function allModes(sample: RoundingSample, answers: RoundedAnswers): unsigned<9, 
 entry transaction showRounding(sample: RoundingSample, answers: RoundedAnswers) {
   // One unit at a rate of 1.0050 is 1.005000 exactly: half a unit past the
   // second decimal place, which is the only place the seven modes disagree.
-  // The product is where the tie has to be made — a `round` of something
+  // The product is where the tie has to be made: a `round` of something
   // already at the receiver's scale has nothing to decide, and the compiler
   // would emit a plain MOVE.
   sample.amount = 1.00;

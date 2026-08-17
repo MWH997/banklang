@@ -17,20 +17,20 @@ import {
  * `tests/language-server.test.ts` calls `LanguageServer.handle` directly. That
  * is the right way to test the request handling and it covers it well, but it
  * never touches the two things between the class and VS Code: the framing, and
- * the process. The 2026-08-06 audit found a defect in each.
+ * the process. There was a defect in each.
  *
  * The framing counted `Content-Length` in bytes and then sliced the body by
  * character count, so any message carrying a non-ASCII character overran into
- * the next header and took both messages with it. Hover output is built as
- * `**BANK-LED-001** — Ledger postings must balance`, with an em dash, so
- * hovering a diagnostic broke the connection for the rest of the session. A
+ * the next header and took both messages with it. Hover output carried a
+ * multi-byte character at the time, so hovering a diagnostic broke the
+ * connection for the rest of the session. A
  * test named "counts content length in bytes, not characters" had passed over
  * that decoder for as long as it existed: it pushed one message and nothing
  * after it, and an overrunning `String.prototype.slice` clamps at the end of
  * the string rather than throwing.
  *
- * The process is the artifact the extension actually loads — `server/bin.js`,
- * built by `pnpm build:server` — not the TypeScript entry point. Before the
+ * The process is the artifact the extension actually loads, `server/bin.js`,
+ * built by `pnpm build:server`, rather than the TypeScript entry point. Before the
  * previous pass nothing built it, so the extension could not start at all.
  *
  * So this suite builds that bundle and holds a real conversation with it over
@@ -47,7 +47,7 @@ const URI = "file:///project/src/main.bank.ts";
  * A checked-in example, and the same example with its credit posting deleted.
  *
  * Taken from the corpus rather than written here, so a change to the language
- * cannot leave this file asserting against BankTS that no longer parses — which
+ * cannot leave this file asserting against BankTS that no longer parses, which
  * would fail for a reason that has nothing to do with the language server.
  */
 const BALANCED = readFileSync(
@@ -294,7 +294,10 @@ describe("the language server the extension loads", () => {
     ).result as { contents: { kind: string; value: string } };
     expect(hover.contents.kind).toBe("markdown");
     expect(hover.contents.value).toContain("BANK-LED-001");
-    expect(hover.contents.value).toContain("—");
+    // The catalogue title, so this is a hover that resolved rather than an
+    // identifier echoed back. Multi-byte framing has its own test in
+    // `tests/language-server.test.ts`, against a body of deliberate Unicode.
+    expect(hover.contents.value).toContain("balance");
 
     // 3. The replies queued behind the hover arrive too.
     const symbols = (
@@ -386,8 +389,8 @@ describe("the language server the extension loads", () => {
     // `Content-Length` counts bytes. A decoder that then slices the body by
     // character count overruns into the following header, which costs both
     // messages and every one after them, because the buffer never realigns.
-    // A message on its own survives the overrun — `String.prototype.slice`
-    // clamps — so the two have to arrive in one write, which is exactly how a
+    // A message on its own survives the overrun, because `String.prototype.slice`
+    // clamps, so the two have to arrive in one write, which is exactly how a
     // client sends a notification and the request that follows it.
     //
     // A non-ASCII path is not exotic: it is someone whose project lives under

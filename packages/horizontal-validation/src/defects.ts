@@ -58,8 +58,8 @@ function isComment(line: string): boolean {
 /**
  * A comment line with its comment markers removed.
  *
- * The suite is inconsistent about how many asterisks it uses — `**** `, `*** `,
- * `*****` and `****` with no space all appear — so the leading run of asterisks
+ * The suite is inconsistent about how many asterisks it uses (`**** `, `*** `,
+ * `*****` and `****` with no space all appear) so the leading run of asterisks
  * is stripped rather than a fixed prefix. The result is put back at column 8
  * so the recovered code is still reference format.
  */

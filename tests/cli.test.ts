@@ -62,7 +62,7 @@ describe("bankc cli", () => {
 
     /**
      * The line that must never become conditional. Nothing on this machine can
-     * detect IBM Enterprise COBOL, so the honest report is a constant — and a
+     * detect IBM Enterprise COBOL, so the honest report is a constant, and a
      * constant cannot be accidentally satisfied the way a probe can.
      */
     it("states that native IBM validation is not claimed", () => {
@@ -359,13 +359,13 @@ describe("bankc cli", () => {
  * Everything the compiler means to report comes back as a result with a
  * message and an exit code, and every test above reads one. The rest are
  * thrown, dozens of them across the packages, and `bin.ts` had no `try`/`catch`
- * at all — so a job whose two steps collapse to one load module, which the
+ * at all, so a job whose two steps collapse to one load module, which the
  * backend detects and explains well, reached the user as a source excerpt, a
  * caret, forty frames of `node:internal` and Node's own version banner. The
  * message was the fifth line.
  *
- * F3 then split those throws in two. This collision is the reader's own — two
- * project directories they can rename — so it now carries `BANK-JOB-005` and
+ * Those throws are classified in two now. This collision is the reader's own,
+ * two project directories they can rename, so it carries `BANK-JOB-005` and
  * points at `bankc explain`, which is the path a typechecker diagnostic takes.
  * The `--debug` stack is still there for the failures that have no identifier,
  * and the second block below is one of those.
@@ -444,7 +444,7 @@ describe("an error that escapes the compiler", () => {
   /**
    * A failure with no identifier, which is what `--debug` is still for.
    *
-   * F3 catalogued what the compiler knows about. What is left is the file
+   * The catalogue covers what the compiler knows about. What is left is the file
    * system and Node, and there is nothing to catalogue about those: the message
    * is already the whole of what happened, and the interesting question is
    * which of the compiler's own reads asked for it. So they keep the original
@@ -495,7 +495,7 @@ describe("an error that escapes the compiler", () => {
  *
  * This is one of the most-read lines the program has: it is what a first-time
  * user gets for a directory name they got wrong, and it used to be Node's
- * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'` — an errno,
+ * `ENOENT: no such file or directory, open '/…/src/main.bank.ts'`: an errno,
  * an absolute path, and no statement of what bankc had expected to find. A
  * convention worth having is worth naming.
  */
@@ -541,7 +541,7 @@ describe("a project path that names nothing", () => {
  * the command was: `bankc explain BANK-LED-001 --watch` took the diagnostic id
  * for a project path and died on
  * `ENOENT: no such file or directory, watch '/…/BANK-LED-001'`. `bankc doctor
- * --watch` was quieter and worse — it opened a recursive watch over the whole
+ * --watch` was quieter and worse. It opened a recursive watch over the whole
  * working directory to rerun a command that reads no BankTS at all, and said
  * "Watching for changes" while doing it.
  */

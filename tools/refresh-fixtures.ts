@@ -3,7 +3,7 @@
  *
  * A golden file is a claim that the compiler still emits exactly this. It is
  * only worth anything if a test compares it, and only honest if regenerating it
- * is a reviewable diff rather than a manual edit — `tests/fixtures/
+ * is a reviewable diff rather than a manual edit. `tests/fixtures/
  * batch-interest-accrual.cbl` held `IS-ELIGIBLE-FOR-INTEREST-RESULT`, a
  * 31-character COBOL word, and `tests/fixtures/interest-posting-batch.cbl` held
  * `ROUNDED MODE IS NEAREST-EVEN`, a phrase Enterprise COBOL does not have.

@@ -20,7 +20,7 @@ import { checked, compileExample, corpus, unpadded } from "./helpers";
 
 /**
  * COBOL reference format, which is the shape of the page rather than of the
- * program — and which z/OS enforces absolutely.
+ * program, and which z/OS enforces absolutely.
  *
  * Enterprise COBOL reads a 72-character line: columns 1-6 sequence number,
  * column 7 indicator, 8-11 Area A, 12-72 Area B. Columns 73-80 are the
@@ -29,14 +29,14 @@ import { checked, compileExample, corpus, unpadded } from "./helpers";
  *
  * Every generated program used to break both halves of this. The three header
  * comments started in column 1, which puts their fourth character in the
- * indicator area, and hundreds of lines ran past column 72 — where the compiler
+ * indicator area, and hundreds of lines ran past column 72, where the compiler
  * does not truncate with a diagnostic, it simply does not see the rest, so
  * `ACCOUNT-INPUT-STATUS` arrives as `ACCOUNT-INPUT-S` and the compile fails on a
  * name the source appears to define.
  *
  * None of it was caught because the local validator passed `-free`, and because
  * GnuCOBOL reading a file whose first line starts in column 1 switches to free
- * format on its own — where no column means anything. Every `cobc` invocation
+ * format on its own, where no column means anything. Every `cobc` invocation
  * in this repository is now `-fixed`.
  */
 
@@ -81,7 +81,7 @@ describe("the margin", () => {
       expect(wrappedLine.length).toBeLessThanOrEqual(COBOL_LAST_COLUMN);
     }
     // Area A of a continuation line must be blank, so every one of them starts
-    // in Area B — column 12, which is index 11.
+    // in Area B, column 12, which is index 11.
     for (const continuation of wrapped.slice(1)) {
       expect(continuation.search(/\S/)).toBeGreaterThanOrEqual(11);
     }
@@ -120,7 +120,7 @@ describe("the margin", () => {
  *
  * The rule is unforgiving: every column of a continued line through column 72
  * counts as part of the literal, so the line has to be filled to the margin
- * exactly — stopping one column short pads the value with a blank. The
+ * exactly, since stopping one column short pads the value with a blank. The
  * continuation carries a hyphen in the indicator area and reopens the literal
  * with a quote, and only the last one closes it. Without the hyphen the two
  * halves are two literals, and a `DISPLAY` prints the first and drops the rest.
@@ -180,7 +180,7 @@ describe("a literal that does not fit", () => {
 describe("JCL card images", () => {
   /**
    * A JOB card naming a long program runs past column 71, and what is lost is
-   * the tail — `NOTIFY=&SYSUID` disappearing is the mild case; an operand cut in
+   * the tail: `NOTIFY=&SYSUID` disappearing is the mild case; an operand cut in
    * half flushes the job with a JCL error before a step runs.
    */
   it("continues a JOB card after a complete parameter", () => {
@@ -309,7 +309,8 @@ describe("across the corpus", () => {
    * Every byte of every artifact is ASCII.
    *
    * Every program this compiler had ever generated carried exactly one
-   * non-ASCII byte: an em dash in the header comment, `ACCOUNTT — AccountTransfer`.
+   * non-ASCII byte, an em dash in the header comment separating the program
+   * name from the module it came from.
    * Nothing local noticed, because the file is read and written as UTF-8 from
    * end to end and `cobc` on a UTF-8 host does not care what is inside a
    * comment.

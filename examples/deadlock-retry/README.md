@@ -22,8 +22,8 @@ back is a no-op and leaving a -913 open is not.
 holding over lunch into a step that runs until an operator cancels it, and the
 cancel is the only record of what happened.
 
-**Telling contention from an error.** Anything else negative — an authorisation
-failure, a check constraint, a tablespace in recovery — will not come right on
+**Telling contention from an error.** Anything else negative (an authorisation
+failure, a check constraint, a tablespace in recovery) will not come right on
 the third attempt, so retrying it fails three times instead of once.
 
 **Telling both from a missing row.** An UPDATE that matched nothing returns
@@ -39,8 +39,8 @@ embedded SQL cannot be started by `EXEC PGM=`.
 
 ## Related
 
-- [docs/error-handling.md](../../docs/error-handling.md) — SQLCODE handling
+- [docs/error-handling.md](../../docs/error-handling.md): SQLCODE handling
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=deadlock-retry) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=deadlock-retry). It compiles in your browser, with the generated COBOL beside it.

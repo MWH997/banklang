@@ -37,7 +37,7 @@ const BROWSER_SAFE_PACKAGES = [
   "zunit",
   // The COBOL interpreter, which is the reason this rule matters most: it is
   // what lets the playground run what it compiled. A file system read anywhere
-  // in it would not fail here — it would fail as a blank Run tab in somebody
+  // in it would not fail here. It would fail as a blank Run tab in somebody
   // else's browser.
   "cobol-runtime",
 ];
@@ -47,7 +47,7 @@ const BROWSER_SAFE_PACKAGES = [
  *
  * `horizontal-validation` hashes corpus bytes with `node:crypto` and resolves
  * corpus-supplied paths with `node:path`, and it is measurement tooling rather
- * than compiler core — nothing the playground loads reaches it.
+ * than compiler core, and nothing the playground loads reaches it.
  */
 const NODE_PACKAGES = [
   "bankc-cli",
@@ -94,7 +94,7 @@ describe("compiler core is browser safe", () => {
    * Three directories under `packages/` hold no compiler.
    *
    * `playground` and `vscode-extension` are applications that consume it.
-   * `site` is the landing page's template, stylesheet and Open Graph card —
+   * `site` is the landing page's template, stylesheet and Open Graph card,
    * HTML, CSS and a PNG, with no TypeScript to be browser safe or otherwise.
    * Everything else is a package the compiler is made of, and every one of
    * those has to be classified here.

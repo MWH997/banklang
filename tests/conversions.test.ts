@@ -13,12 +13,12 @@ import { conversionDirectories, measure } from "../tools/refresh-conversions";
  * Each conversion's `generated` directory is checked in so a reader can see the output
  * without a toolchain, which makes it the one kind of artifact this project
  * says is dangerous: a file that claims to be generated and has drifted from
- * the generator. Two of the 2026-08-05 audit's findings were sitting in
- * `tests/fixtures/` exactly like that.
+ * the generator. Two real defects were sitting in `tests/fixtures/` exactly
+ * like that.
  *
  * So it is rebuilt here into a temporary directory and compared. A failure
  * means `pnpm conversions:refresh` has not been run, and the diff is what
- * changed about the compiler's output — which is the review.
+ * changed about the compiler's output, which is the review.
  */
 
 const CONVERSIONS = conversionDirectories();
@@ -53,7 +53,7 @@ describe("the conversions directory", () => {
       /**
        * Errors, not warnings. `03-db2-cursor-batch` warns that it posts inside
        * a loop with no checkpoint, which is true of the original too and is
-       * part of what that page says — silencing it here would be silencing the
+       * part of what that page says, and silencing it here would be silencing the
        * finding.
        */
       it("compiles with no errors", () => {
@@ -118,7 +118,7 @@ describe("the conversions directory", () => {
  *
  * Every source map and every audit report in `evidence/` named
  * `/Users/<somebody>/Code/banklang/...`, so none of it could be reproduced
- * byte for byte anywhere else — in a project whose first claim is that the same
+ * byte for byte anywhere else, in a project whose first claim is that the same
  * input always produces the same output, and whose evidence bundles are what a
  * reader is invited to check that claim against.
  *

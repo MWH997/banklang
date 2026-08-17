@@ -13,7 +13,7 @@ import { flowed, localCobol, parmDriver, unpadded } from "./helpers";
  * `JSON PARSE` and `XML PARSE`, executed.
  *
  * Enterprise COBOL implements both. GnuCOBOL 3.2.0 compiles either, warns it
- * has not implemented it, and then does nothing at run time — the record is
+ * has not implemented it, and then does nothing at run time: the record is
  * left untouched, no exception is raised, and a program reading a payload runs
  * clean and processes an empty record. That is the worst shape a divergence can
  * take, because every local signal says the program worked, and it is why both
@@ -123,7 +123,7 @@ describe("what the precompiler writes for a JSON parse", () => {
    * IBM's reason code 1: "One or more data items had no matching JSON
    * name/value pair, and thus were not changed." The record above declares an
    * idempotency key the document does not carry, so the parse is exactly the
-   * half-populated one the compiler's own `JSON-STATUS` test exists to report —
+   * half-populated one the compiler's own `JSON-STATUS` test exists to report,
    * and now that test is reached with a value it did not invent.
    */
   it.skipIf(!available)("reports a record the document did not fill", () => {
@@ -135,7 +135,7 @@ describe("what the precompiler writes for a JSON parse", () => {
   /**
    * JSON-CODE 101: "The JSON text was zero-length, or consisted only of
    * whitespace." An exception condition, so the handler the program wrote runs
-   * — which under GnuCOBOL alone it never did, for any document at all.
+   * which under GnuCOBOL alone it never did, for any document at all.
    */
   it.skipIf(!available)("takes the failure path on an empty document", () => {
     const ran = run(
@@ -156,7 +156,7 @@ describe("what the precompiler writes for an XML parse", () => {
 
   /**
    * `XML PARSE` calls the handler once per event, and a subprogram cannot
-   * `PERFORM` a section in its caller — so the loop stays in the program and
+   * `PERFORM` a section in its caller, so the loop stays in the program and
    * the runtime is one step of it. That is the statement's own control flow,
    * which is what makes running it worth anything.
    */
@@ -174,7 +174,7 @@ describe("what the precompiler writes for an XML parse", () => {
    * GnuCOBOL reserves the registers but only a real `XML PARSE` sets them:
    * `XML-TEXT` is a zero-length register and a `MOVE` to it ends the run with a
    * segmentation fault. The handler is pointed at fields of the translator's
-   * own, reference-modified by the length of the event — otherwise a `STRING
+   * own, reference-modified by the length of the event, since otherwise a `STRING
    * ... DELIMITED BY SIZE` would append a thousand spaces per fragment.
    */
   it("points the handler at its own fields rather than the registers", () => {
@@ -207,7 +207,7 @@ describe("what the precompiler writes for an XML parse", () => {
   /**
    * A document opening with an XML declaration is the ordinary case, and the
    * first version of the runtime reported the skipped declaration as the end of
-   * the document — so the handler was never entered and the record came out
+   * the document, so the handler was never entered and the record came out
    * empty, which is the very thing this exists to stop.
    */
   it.skipIf(!available)("reads past an XML declaration", () => {

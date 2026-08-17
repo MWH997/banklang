@@ -22,7 +22,7 @@ import { exampleProjects } from "./example-projects";
  * The project's standing limit is that everything ends at GnuCOBOL: no
  * generated program has been compiled by IBM Enterprise COBOL, precompiled by
  * DSNHPC, or run in a CICS region. That is not a defect this repository can fix
- * from here — it needs a machine nobody involved has.
+ * from here, because it needs a machine nobody involved has.
  *
  * What it can do is make the gap a bounded task rather than an open question.
  * This writes every artifact a z/OS run needs, in the member names the
@@ -43,7 +43,7 @@ interface Member {
    * The examples are independent programs rather than one application, and
    * seven of them declare an `AccountRecord`, a `TransferRequest` or a
    * `PostingLine` of their own with different fields. One flat copybook library
-   * would ship one program's record under another program's name — so each
+   * would ship one program's record under another program's name, so each
    * program's copybooks go to a library of its own, and the clash that is still
    * an error is two records inside one program.
    */
@@ -63,7 +63,7 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
 } {
   // Removed rather than overwritten. A member that was renamed leaves the old
   // one behind, and a bundle holding both is a library where two members claim
-  // to be the same program — which is exactly the failure the collision check
+  // to be the same program, which is exactly the failure the collision check
   // below exists to prevent, arriving by another route.
   rmSync(outputRoot, { recursive: true, force: true });
 
@@ -74,7 +74,7 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
   const jcl: Member[] = [];
   // A generated zUnit case: the driver goes to the COBOL library beside the
   // program it tests, and the configuration to a library of its own. It is the
-  // one part of this bundle nothing here has ever run — see divergence D20 —
+  // one part of this bundle nothing here has ever run (see divergence D20) and
   // so a run of it is worth more than a run of anything else in the folder.
   const bzucfg: Member[] = [];
   const skipped: { example: string; reason: string }[] = [];
@@ -231,7 +231,7 @@ function commit(): string {
  * One case per program, and the category is decided by what the program needs
  * rather than by hope. A program with `EXEC CICS`, `EXEC SQL` or `EXEC DLI` in
  * it cannot execute from a batch bundle without a region, a plan or a PSB that
- * this repository cannot ship — so it is a `compile` case, and saying so here
+ * this repository cannot ship, so it is a `compile` case, and saying so here
  * is what stops a compile-only run being read later as an execution.
  */
 export function bundleCases(
@@ -310,7 +310,7 @@ function renderManifest(
     "",
     "The COBOL is fixed reference format: sequence area 1-6 blank, the",
     "indicator in 7, Area A from 8, and nothing past column 72. Compile it",
-    "with the default SOURCE format. Do not set the free-format option — it",
+    "with the default SOURCE format. Do not set the free-format option; it",
     "reads columns 1-7 as code, and every line here begins with six blanks.",
     "",
     "A copybook member is named for its record, with the hyphens removed and",
@@ -344,7 +344,7 @@ function renderManifest(
       "BANKLEDG.",
       "",
       "Nothing here has ever been run. Two values in each configuration are",
-      "inferred rather than observed — divergences D20 and D21 — and one real",
+      "inferred rather than observed, in divergences D20 and D21, and one real",
       "run settles both.",
     );
   }

@@ -56,7 +56,7 @@ entry transaction updateMaster(
 
   // A balanced-line merge: one record ahead on each file, and the smaller key
   // is written and replaced. When a file ends its status stops being "00",
-  // which takes it out of the comparison without a sentinel key — the usual
+  // which takes it out of the comparison without a sentinel key. The usual
   // HIGH-VALUES trick fails the day an account number really is all nines.
   read taskInp1 into master;
   read taskInp2 into movement;

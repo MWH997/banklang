@@ -164,7 +164,7 @@ describe("a plain batch job", () => {
 
   /**
    * A load module written to a library the run step cannot see is a job that
-   * compiles, links, and then ends S806 — module not found — with nothing in
+   * compiles, links, and then ends S806, module not found, with nothing in
    * the log to say the build was fine.
    */
   it("puts the library it just wrote to on the run step's search order", () => {
@@ -196,7 +196,7 @@ describe("a plain batch job", () => {
    * A dataset name is at most 44 characters and each qualifier at most 8. The
    * emitter used to build one from the build path, so
    * `dist/cobol/BATCH-INTEREST-ACCRUAL.cbl` became
-   * `DIST.COBOL.BATCHINTERESTACCRUAL` — a 20-character qualifier, and a JCL
+   * `DIST.COBOL.BATCHINTERESTACCRUAL`, a 20-character qualifier, and a JCL
    * error before the compiler was ever reached.
    */
   it("writes dataset names z/OS accepts", () => {
@@ -333,8 +333,8 @@ entry transaction settle(account: Account) {
 /**
  * A step that runs after a step that failed is the way a broken build reaches
  * production: the compile fails, the link-edit is bypassed, and the run step
- * executes whatever load module the library already held — the previous
- * version — under a return code that says the job worked.
+ * executes whatever load module the library already held, the previous
+ * version, under a return code that says the job worked.
  */
 describe("what happens after a step fails", () => {
   it("bypasses the run step", () => {
@@ -346,7 +346,7 @@ describe("what happens after a step fails", () => {
 
   /**
    * Every step after the first carries a condition. The link-edit's is
-   * `(8,LT,COBOL)` — IGYWCL's own — because a compile that only warned still
+   * `(8,LT,COBOL)`, IGYWCL's own, because a compile that only warned still
    * produced an object module; the rest are `(4,LT)`.
    */
   it("bypasses every step after the first", () => {
@@ -381,7 +381,7 @@ describe("diagnosing a run that died", () => {
 
 /**
  * The sort product spills to work datasets, and three is the customary
- * allocation. A merge needs none — its inputs already arrive in order — so this
+ * allocation. A merge needs none, because its inputs already arrive in order, so this
  * is keyed on a real SORT rather than on "the program sorts or merges".
  */
 describe("a job whose program sorts", () => {
@@ -444,7 +444,7 @@ describe("a Db2 job", () => {
 
   /**
    * A package cannot be run. RUN names a plan, and a plan is what the package
-   * has to be listed in — binding only the package leaves the program with
+   * has to be listed in, because binding only the package leaves the program with
    * nothing to run under, which shows up at execution rather than at bind.
    */
   it("binds a plan as well as the package", () => {
@@ -458,7 +458,7 @@ describe("a Db2 job", () => {
    * thread to Db2, and what establishes one is the DSN command processor: the
    * step runs TSO in batch and DSN RUN attaches the program to the subsystem
    * under its plan. Started directly it has no thread and fails on its first
-   * SQL statement — which reads, from the job log, as a database problem.
+   * SQL statement, which reads, from the job log, as a database problem.
    */
   it("runs the program under the DSN command processor", () => {
     const jcl = jclFor(WITH_SQL);
@@ -521,9 +521,9 @@ describe("a CICS job", () => {
 /**
  * Which TSO entry point runs the program, which is not a cosmetic choice.
  *
- * Both return the program's code — DSN puts the highest value from the RUN
+ * Both return the program's code, since DSN puts the highest value from the RUN
  * subcommand in register 15, and terminates if the program gives a non-zero one
- * — but they differ on an abend. Under IKJEFT01 an abending program does not
+ * subcommand in register 15, but they differ on an abend. Under IKJEFT01 an abending program does not
  * abend the step: TSO catches it and the step ends *normally* with condition
  * code 12. A step that ended normally takes the normal disposition, so the
  * DELETE on the output datasets is never honoured and the half-written dataset

@@ -5,21 +5,21 @@ import { describe, expect, it } from "vitest";
 /**
  * Colour contrast, computed.
  *
- * E6 put `axe-core` over every page template and switched `color-contrast` off,
+ * `axe-core` runs over every page template with `color-contrast` switched off,
  * because that rule needs a layout engine jsdom does not have. The reasoning was
  * sound and the consequence was that the one accessibility property this site
  * makes a claim about was the one nothing checked. The launch checklist
  * recorded "every colour pair in both themes clears WCAG AA at worst 4.87:1",
- * measured by hand on 2026-08-06 — before the Input panel, the stacked code
- * figures, the theme toggle's pressed state and four stylesheet revisions. It
- * was already wrong when this file was written: the true worst pair is 4.57:1.
+ * measured by hand before the Input panel, the stacked code figures, the theme
+ * toggle's pressed state and four stylesheet revisions existed. It was already
+ * wrong when this file was written: the true worst pair is 4.57:1.
  *
  * A ratio does not need a layout engine. It needs the two colours, and both are
  * design tokens with names. So this reads the tokens out of the stylesheets and
  * computes, which holds the claim on every future change rather than on the day
  * somebody looked.
  *
- * What it does not do is discover which pairs are painted together — that does
+ * What it does not do is discover which pairs are painted together. That does
  * need layout. Instead it asserts the stronger thing the claim already says:
  * *every* foreground token clears AA on *every* background token, so any pairing
  * the CSS makes is covered whether or not this file knows about it.
@@ -97,7 +97,7 @@ const BACKGROUNDS = ["bg", "panel", "panel-2"];
  *
  * `--border` is the rule between two table cells and the line under the header.
  * WCAG 1.4.11 covers "visual information required to identify user interface
- * components", and a separator identifies nothing — holding it to 3:1 would be
+ * components", and a separator identifies nothing, so holding it to 3:1 would be
  * inventing a requirement and would darken every hairline on the site to satisfy
  * a test rather than a reader.
  */
@@ -151,7 +151,7 @@ describe("the palette", () => {
    * WCAG 2.2 SC 1.4.11, at 3:1, for the edge of a control.
    *
    * This is the one the hand measurement missed, and enabling `color-contrast`
-   * in axe would not have found it either — that rule reads text. The
+   * in axe would not have found it either, because that rule reads text. The
    * documentation search is an `<input>` with the page's own background and a
    * one-pixel `--border` outline: 1.45:1 in the light theme, on forty-five
    * pages, and the only thing on screen saying there is a search box there.
@@ -210,8 +210,8 @@ describe("the palette", () => {
   /**
    * The worst pair on the site, named.
    *
-   * P5's "at worst 4.87:1" was a number in a document that nothing recomputed,
-   * and it drifted. This prints the real one on failure, so the next person to
+   * "At worst 4.87:1" was a number in a document that nothing recomputed, and
+   * it drifted. This prints the real one on failure, so the next person to
    * quote a figure quotes one a test produced.
    */
   it("has a worst pair, and it is above the threshold", () => {

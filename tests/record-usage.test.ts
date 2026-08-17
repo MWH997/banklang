@@ -15,7 +15,7 @@ import {
  * descriptions declare more than one record, 2,663 of those are opened
  * `OUTPUT`, and 143 are opened `INPUT`. A published number that decides what
  * goes into a language has to be a number somebody can check, and the analyser
- * that produces it had no test at all — 318 mutants, none covered.
+ * that produces it had no test at all: 318 mutants, none covered.
  *
  * Detection rather than parsing, because these files do not compile without
  * copybooks nobody has, so what is asserted here is the shape of the detection:
@@ -243,7 +243,7 @@ describe("reading an FD's records", () => {
   });
 
   /**
-   * An FD can describe no records at all — 113 of X-COBOL's 6,451 do, where the
+   * An FD can describe no records at all. 113 of X-COBOL's 6,451 do, where the
    * layout arrives some other way. A subordinate entry with no `01` above it
    * belongs to no record, and attributing it to one turns a record area into a
    * structured record.
@@ -420,7 +420,7 @@ describe("the corpus totals", () => {
    * The same program vendored twice is one program.
    *
    * A corpus of 168 repositories is full of files that appear in several of
-   * them — the NIST CCVS85 suite is in four — and a count of file descriptions
+   * them, since the NIST CCVS85 suite is in four, and a count of file descriptions
    * counts each copy. 143 multi-record `INPUT` FDs are 51 distinct file
    * contents, and
    * the difference is what separates "an estate pattern" from "a conformance

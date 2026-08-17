@@ -143,6 +143,6 @@ page rather than at the bottom of a README.
 
 ## Related pages
 
-- [divergences.md](divergences.md) (what is known not to be proved
-- [verification.md](verification.md)) what is checked, and how
-- [for-mainframe-engineers.md](for-mainframe-engineers.md). The output, read construct by construct
+- [divergences.md](divergences.md): what is known not to be proved
+- [verification.md](verification.md): what is checked, and how
+- [for-mainframe-engineers.md](for-mainframe-engineers.md): the output, read construct by construct

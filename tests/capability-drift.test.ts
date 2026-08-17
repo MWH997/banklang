@@ -13,7 +13,7 @@ import {
  * The compiler against what the validator believes about the compiler.
  *
  * These exist because of one bug. The representability rules said `inspect` was
- * `unsupported-not-yet-implemented` with the note "No BankTS syntax" — while
+ * `unsupported-not-yet-implemented` with the note "No BankTS syntax", while
  * `countOf` lowered to `INSPECT ... TALLYING` and `replaceChars` to `INSPECT
  * ... CONVERTING`, and had done throughout. Correcting one word moved 182 of
  * X-COBOL's 5,195 files, without adding a line of compiler capability.
@@ -25,7 +25,7 @@ import {
  *
  * So each capability is now a claim that gets executed: a BankTS program, the
  * COBOL it must produce, and the corpus feature that construct corresponds to.
- * The test that matters is the last one — a feature a BankTS construct
+ * The test that matters is the last one: a feature a BankTS construct
  * demonstrably emits cannot be classified `unsupported`.
  */
 
@@ -81,8 +81,8 @@ describe("the validator against the compiler", () => {
    *
    * A construct BankTS demonstrably emits cannot be classified as something
    * BankTS has no way to say. `adaptation` remains available and is often
-   * right — `substring` takes constant bounds where COBOL takes computed ones,
-   * so a program using the computed form still has to be restructured — but
+   * right, since `substring` takes constant bounds where COBOL takes computed ones,
+   * so a program using the computed form still has to be restructured, but
    * `unsupported-not-yet-implemented` and `unsupported-by-design` are claims
    * about absence, and the probe above is evidence of presence.
    */
@@ -116,8 +116,8 @@ describe("the validator against the compiler", () => {
      * claim nobody exercises is how the line-sequential row came to say
      * `supported` on the strength of COBOL only the hand-written reference
      * modules contained. Features whose support is *structural* rather than a
-     * named construct are listed here rather than probed — `move` is
-     * assignment, `conditional` is `if` — because a probe for them would assert
+     * named construct are listed here rather than probed (`move` is
+     * assignment, `conditional` is `if`) because a probe for them would assert
      * that BankTS has statements.
      */
     const structural = new Set([
@@ -191,7 +191,7 @@ describe("the validator against the compiler", () => {
  * all.
  *
  * So each row says how far it has been executed, and a `differential` claim is
- * held to the interpreter's own dispatch table — the same source
+ * held to the interpreter's own dispatch table, the same source
  * `pnpm interpreter:coverage` reads, so a verb the interpreter loses stops
  * being a differential claim without anybody editing this file.
  */

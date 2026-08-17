@@ -1,8 +1,8 @@
 /**
  * Run the z/OS semantics pass over everything this repository ships.
  *
- * The same artifacts the conformance linter reads — fresh output from every
- * example, the checked-in fixtures and the evidence bundles — asked a different
+ * The same artifacts the conformance linter reads (fresh output from every
+ * example, the checked-in fixtures and the evidence bundles) asked a different
  * question. See `packages/zos-lint/src/index.ts` for which question and why it
  * needed its own lane.
  *

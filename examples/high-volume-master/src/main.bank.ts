@@ -6,7 +6,7 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 //
 // A five-million-record master and a bound of one million. Before the
 // exhaustion branch, this program read the first million records, closed its
-// files, wrote its audit event and ended with return code zero — a night that
+// files, wrote its audit event and ended with return code zero: a night that
 // posted a fifth of the book and reported success. The bound had been added
 // deliberately, with a comment saying it was what stopped a corrupt file
 // spinning the job until an operator cancelled it, and it gave the safe case

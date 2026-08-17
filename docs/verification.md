@@ -1,6 +1,10 @@
-# Verification Specification
+# Verification
 
-## 1. Verification goal
+What is tested here, how, and what each kind of test is worth. This is the
+longest page in the documentation, and the reason is that "the tests pass" is
+not evidence about a compiler whose target nobody here can run.
+
+## 1. The goal
 
 What this project has to show about its output, for the subset it supports: that
 the same input produces the same COBOL, that every generated construct can be
@@ -26,7 +30,7 @@ pnpm lint          # eslint, with type information
 pnpm format:check  # prettier
 ```
 
-Until 2026-08-06 `pnpm lint` was `prettier --check`, and calling a formatter a
+`pnpm lint` was `prettier --check` for a long time, and calling a formatter a
 linter is how the gap stayed invisible: TypeScript caught types, Prettier caught
 whitespace, and nothing looked at the space between them. A duplicate
 `case "RaiseStatement"` sat in the formatter until esbuild happened to mention
@@ -41,7 +45,7 @@ that had never been referenced since the commit that introduced it, a regex in a
 test superseded by a comment three lines below it, a flag in the typechecker
 written in three places and read in none, two unreachable functions in the
 emitter, and a call passing the working directory into a parameter named
-`commandName`. See the 2026-08-06 audit, §8.
+`commandName`.
 
 `noUncheckedIndexedAccess` and `no-unnecessary-condition` are both on. The
 compiler option makes an indexed read `T | undefined`, so the ESLint rule can
@@ -89,10 +93,10 @@ from `tools/generate-programs.ts` and asserts three things of each: it compiles
 with no errors, its COBOL and JCL pass the conformance linter, and `cobc`
 accepts it under `tools/banklang-ibm.conf`.
 
-The point is that every hand-written fixture is a shape somebody thought of, and
-the 2026-08-05 audit's most serious finding (a
-COBOL word one character over the limit) lived in a shape nobody had, because
-every fixture used short names. So the generator spends most of its budget on
+The point is that every hand-written fixture is a shape somebody thought of. The
+most serious defect an outside reader has found here, a COBOL word one character
+over the limit, lived in a shape nobody had, because every fixture used short
+names. So the generator spends most of its budget on
 boundaries: names at 29, 30 and 31 characters, every rounding mode, precisions
 and scales at the edge of what `ARITH(COMPAT)` allows, tables at one occurrence
 and at five hundred.
@@ -186,16 +190,17 @@ pnpm test:mutation:emitter
 A separate run, because it asks a different question of different tests.
 
 The emitter was out of scope on the grounds that its output is already held by
-golden fixtures, the conformance linter and `cobc`. The 2026-08-05 audit's F13 (
-`MOVE 'Y'` two lines under a `VALUE "N"`) shipped through all three: the golden
+golden fixtures, the conformance linter and `cobc`. A mixed pair of delimiters
+(`MOVE 'Y'` two lines under a `VALUE "N"`) shipped through all three: the golden
 fixture _contained_ the defect, the linter had no rule for it, and `cobc`
 accepts both delimiters. Three controls, named as sufficient, all passing.
 
 So the scope is the files that decide what emitted text looks like rather than
 what it says: `reference-format.ts`, `prologue.ts`, and the name and picture
 builders in `cobol-ir`. A surviving mutant in those is a house-style rule that
-nothing enforces, which is exactly F13's class. The 8,700-line backend index
-stays out: mutating it produces five figures of mutants, most about semantics,
+nothing enforces, which is exactly that class of defect. The 8,700-line backend
+index stays out: mutating it produces five figures of mutants, mostly about
+semantics,
 which the corpus assertions and `cobc` already answer.
 
 `vitest.mutation-emitter.config.ts` is an allowlist of the ten suites that read
@@ -216,12 +221,12 @@ Run on 2026-08-06, 667 mutants, 2 minutes 30 seconds:
 Read this as a finding rather than as a pass. It clears the 60 threshold by
 under a point, and **198 survivors means 198 places where the emitted text can
 change and nothing complains.** `cobol-ir` at 43.90 is the weakest: that file
-holds the name abbreviation and the picture builders, which is where F13's
+holds the name abbreviation and the picture builders, which is where its
 sibling defects (two spellings of one picture, a 31-character word) came from.
 
 The honest reading is that the emitter's _semantics_ are well covered by the
 corpus assertions, `cobc` and the oracle, and its _presentation_ is not. That is
-the same gap the audit found by hand, now with a number on it and a way to watch
+the same gap that was found by hand, now with a number on it and a way to watch
 it move.
 
 ### 2.3c Mutation tests over the conformance linter
@@ -247,14 +252,14 @@ Run on 2026-08-06. First run, before any test was written for it:
 | First                         | 61.10 | 63.02   | 418    | 247      | 21          |
 | After eleven tests were added | 68.65 | 70.70   | 470    | 196      | 20          |
 
-**It found a rule with no test at all.** `unreferenced-item` was added in the
-previous pass of the 2026-08-06 audit and shipped with none: every mutant
+**It found a rule with no test at all.** `unreferenced-item` was added in an
+earlier pass over the artifacts and shipped with none: every mutant
 survived, including replacing its collection condition with `if (true)` and
 emptying the loop that reports its findings. The rule works (it found six dead
 storage items the day it was written), and nothing in the suite would have
 noticed if it stopped.
 
-It also found that `literal-delimiter`, the rule written to close F13, could stop
+It also found that `literal-delimiter`, the rule written to close that gap, could stop
 reading at the first `EXEC SQL` and go on passing, because emptying
 `if (/END-EXEC/) { inExec = false }` survived. Most programs in this corpus have
 an `EXEC SQL` block near the top.
@@ -477,8 +482,8 @@ tests select. It establishes nothing about Db2, CICS, or any real ledger. See
 pnpm lint:zos
 ```
 
-The category the 2026-08-07 audit added, because it found two programs that
-passed every category above and could not do what they claimed on z/OS.
+This category exists because two programs passed every category above and still
+could not do what they claimed on z/OS.
 
 `examples/mq-request-reply` issued two `MQCONN` calls to one queue manager and
 abended the step with RC 12 on IBM's `MQRC_ALREADY_CONNECTED` warning before it
@@ -506,16 +511,15 @@ found that runs, and is wrong. See
 home, a documentation page, a blog post, and the playground) at WCAG 2.2 AA
 plus axe's best-practice set.
 
-The 2026-08-07 audit found five defects by hand (F15–F19): two unlabelled
-editors, an `h1` outside `<main>`, a docs sidebar whose group labels came before
-the page heading, stat chips reading `1records`, and a theme toggle with no
-state. Fixing five defects fixes five defects. This is what makes the sixth fail
-a build.
+Five defects were found here by hand: two unlabelled editors, an `h1` outside
+`<main>`, a docs sidebar whose group labels came before the page heading, stat
+chips reading `1records`, and a theme toggle with no state. Fixing five defects
+fixes five defects. This is what makes the sixth fail a build.
 
 jsdom rather than a browser, which is a deliberate narrowing: Playwright in
 `devDependencies` means a browser download in CI and an install script, and
-`pnpm-workspace.yaml` takes those one decision at a time. Every defect the audit
-found is structural (a name, a role, a heading order, a state), and jsdom sees
+`pnpm-workspace.yaml` takes those one decision at a time. Every one of those
+five is structural (a name, a role, a heading order, a state), and jsdom sees
 all of them. What it cannot see is `color-contrast`, which is switched off
 explicitly rather than left to report nothing, and the two CodeMirror editors,
 which do not exist until the page runs.

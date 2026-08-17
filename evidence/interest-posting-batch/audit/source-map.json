@@ -31,8 +31,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 87,
-      "targetEndLine": 92,
+      "targetStartLine": 89,
+      "targetEndLine": 94,
       "category": "record",
       "symbol": "AccrualFeedRow"
     },
@@ -47,8 +47,8 @@
         "column": 25
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 88,
-      "targetEndLine": 88,
+      "targetStartLine": 90,
+      "targetEndLine": 90,
       "category": "field",
       "symbol": "accountId"
     },
@@ -63,8 +63,8 @@
         "column": 25
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 89,
-      "targetEndLine": 89,
+      "targetStartLine": 91,
+      "targetEndLine": 91,
       "category": "field",
       "symbol": "branchCode"
     },
@@ -79,8 +79,8 @@
         "column": 21
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 90,
-      "targetEndLine": 90,
+      "targetStartLine": 92,
+      "targetEndLine": 92,
       "category": "field",
       "symbol": "balance"
     },
@@ -95,8 +95,8 @@
         "column": 29
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 91,
-      "targetEndLine": 91,
+      "targetStartLine": 93,
+      "targetEndLine": 93,
       "category": "field",
       "symbol": "accruedInterest"
     },
@@ -111,8 +111,8 @@
         "column": 30
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 92,
-      "targetEndLine": 92,
+      "targetStartLine": 94,
+      "targetEndLine": 94,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -127,8 +127,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 93,
-      "targetEndLine": 96,
+      "targetStartLine": 95,
+      "targetEndLine": 98,
       "category": "record",
       "symbol": "PostingAdvice"
     },
@@ -143,8 +143,8 @@
         "column": 25
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 94,
-      "targetEndLine": 94,
+      "targetStartLine": 96,
+      "targetEndLine": 96,
       "category": "field",
       "symbol": "accountId"
     },
@@ -159,8 +159,8 @@
         "column": 28
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 95,
-      "targetEndLine": 95,
+      "targetStartLine": 97,
+      "targetEndLine": 97,
       "category": "field",
       "symbol": "interestAmount"
     },
@@ -175,8 +175,8 @@
         "column": 30
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 96,
-      "targetEndLine": 96,
+      "targetStartLine": 98,
+      "targetEndLine": 98,
       "category": "field",
       "symbol": "idempotencyKey"
     },
@@ -191,8 +191,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 140,
-      "targetEndLine": 149,
+      "targetStartLine": 166,
+      "targetEndLine": 175,
       "category": "function",
       "symbol": "isEligible"
     },
@@ -207,8 +207,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 150,
-      "targetEndLine": 158,
+      "targetStartLine": 176,
+      "targetEndLine": 184,
       "category": "function",
       "symbol": "rateFor"
     },
@@ -223,8 +223,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 159,
-      "targetEndLine": 188,
+      "targetStartLine": 185,
+      "targetEndLine": 214,
       "category": "function",
       "symbol": "accrue"
     },
@@ -239,8 +239,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 189,
-      "targetEndLine": 197,
+      "targetStartLine": 215,
+      "targetEndLine": 223,
       "category": "function",
       "symbol": "feeFor"
     },
@@ -255,8 +255,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 198,
-      "targetEndLine": 262,
+      "targetStartLine": 224,
+      "targetEndLine": 288,
       "category": "transaction",
       "symbol": "postInterest"
     },
@@ -271,8 +271,8 @@
         "column": 2
       },
       "artifact": "cobol/INTEREST.cbl",
-      "targetStartLine": 263,
-      "targetEndLine": 353,
+      "targetStartLine": 289,
+      "targetEndLine": 383,
       "category": "transaction",
       "symbol": "runBatch"
     }

@@ -77,7 +77,7 @@ describe("synchronized alignment", () => {
     expect(offsets["MASTER.COUNTER"]).toBe(4);
     expect(offsets["MASTER.CODE-1"]).toBe(8);
     // Still a fullword. IBM's slack-byte algorithm divides by 2 for a binary
-    // item of four digits or fewer and by 4 for one of five or more — there is
+    // item of four digits or fewer and by 4 for one of five or more. There is
     // no eight for binary, which belongs to COMPUTATIONAL-2. So an eighteen
     // digit item takes eight bytes and aligns on four: two bytes of slack after
     // the code, not six.
@@ -113,7 +113,7 @@ entry transaction touch1(master: Master) {
  *
  * IBM's slack-byte algorithm divides the bytes so far by m, where m is 2 for a
  * binary item of four digits or fewer and 4 for one of five digits or more.
- * There is no m of 8 for a binary item — that is `COMPUTATIONAL-2`. So a
+ * There is no m of 8 for a binary item, which is `COMPUTATIONAL-2`. So a
  * doubleword binary occupies eight bytes and still aligns on a fullword.
  *
  * Aligning it to eight inserts slack Enterprise COBOL does not, and every field

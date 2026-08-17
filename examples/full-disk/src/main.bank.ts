@@ -4,8 +4,8 @@ type MoneyBDT = currency<"BDT", 18, 2>;
 
 // The failure that happens halfway through.
 //
-// A sequential dataset runs out of extents and the WRITE comes back status 34 —
-// boundary violation. Everything before it was written and is still there;
+// A sequential dataset runs out of extents and the WRITE comes back status 34,
+// a boundary violation. Everything before it was written and is still there;
 // everything after it was not. Without SMS the step usually ends B37 before the
 // program sees anything at all, which is why the message the operator gets from
 // here matters: it names the last record written, so the rerun can start from
@@ -54,7 +54,7 @@ entry transaction copyPostings(posting: PostingRecord, progress: WriteProgress) 
       // 34 is the boundary violation: the dataset has no room for another
       // record. 24 is the same thing on a VSAM file, where the key sequence
       // rather than the extent is what ran out. Neither is recoverable and
-      // both are silent — a WRITE that fails and is not tested loses the
+      // both are silent: a WRITE that fails and is not tested loses the
       // record and leaves the count agreeing with itself.
       if outputStatus == "34" {
         log "POSTINGOUTPUT OUT OF SPACE";

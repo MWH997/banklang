@@ -1,6 +1,6 @@
 # VSAM browse
 
-`START`, `READ NEXT`, and an alternate index — the most common thing a real
+`START`, `READ NEXT`, and an alternate index: the most common thing a real
 program does to a KSDS.
 
 ## Why
@@ -40,11 +40,11 @@ total, and the total still looks like a total.
 
 Three endings, told apart:
 
-| Status | Means                                                                                                     |
-| ------ | --------------------------------------------------------------------------------------------------------- |
-| `23`   | From the START: no record at or after that key. Not an error — a customer with no accounts is a customer. |
-| `10`   | End of file, which a walk that reached the last record gets legitimately                                  |
-| other  | The walk stopped early, and a total over some of a customer's accounts is worse than no total             |
+| Status | Means                                                                                                    |
+| ------ | -------------------------------------------------------------------------------------------------------- |
+| `23`   | From the START: no record at or after that key. Not an error; a customer with no accounts is a customer. |
+| `10`   | End of file, which a walk that reached the last record gets legitimately                                 |
+| other  | The walk stopped early, and a total over some of a customer's accounts is worse than no total            |
 
 ## Artifacts
 
@@ -54,8 +54,8 @@ nearly always why one exists.
 
 ## Related
 
-- [docs/language-reference.md](../../docs/language-reference.md) — file declarations
+- [docs/language-reference.md](../../docs/language-reference.md): file declarations
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=vsam-browse) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=vsam-browse). It compiles in your browser, with the generated COBOL beside it.

@@ -56,7 +56,7 @@ entry transaction transferWithRetry(request: TransferRequest, state: RetryState)
     execute debitAccount(request.fromAccountId, request.transferAmount);
 
     // Three outcomes, not two. Negative is an error, +100 is a row that was
-    // not there, and 0 is a row that was updated — and an UPDATE that matched
+    // not there, and 0 is a row that was updated, and an UPDATE that matched
     // nothing is the account not existing, which is not a lock problem and
     // will not come right on the third attempt.
     if sqlcode < 0 {
@@ -89,8 +89,8 @@ entry transaction transferWithRetry(request: TransferRequest, state: RetryState)
     // -911 arrives with the unit of work already rolled back, -913 with it
     // still open; the ROLLBACK above covers both, because rolling back
     // something Db2 has already rolled back is a no-op and leaving a -913 open
-    // is not. Both mean try again. Anything else negative is a real error — an
-    // authorisation failure, a check constraint, a tablespace in recovery —
+    // is not. Both mean try again. Anything else negative is a real error: an
+    // authorisation failure, a check constraint, a tablespace in recovery,
     // and retrying it just fails three times instead of once.
     if state.settled == "N" {
       if state.lastSqlcode == 0 - 911 {

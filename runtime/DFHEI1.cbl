@@ -22,7 +22,7 @@
       *>
       *> What running against this proves: the program links, reaches
       *> its CICS call sites in order, and takes the branch its RESP
-      *> test selects — so an error path is executed rather than
+      *> test selects, so an error path is executed rather than
       *> assumed.
       *>
       *> What it does NOT prove: any CICS behaviour. There is no task,

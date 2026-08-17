@@ -14,8 +14,8 @@
  *
  * That test named a file that did not exist until the disagreement it was
  * supposed to catch turned up: the `SIGN` clause below was parsed and thrown
- * away, so a `zoned` field — `SIGN IS TRAILING SEPARATE`, one byte wider than
- * its digits — was a byte narrower here than in the copybook, and every field
+ * away, so a `zoned` field (`SIGN IS TRAILING SEPARATE`, one byte wider than
+ * its digits) was a byte narrower here than in the copybook, and every field
  * after it in the record sat at the wrong offset. Two internally consistent
  * implementations disagreeing quietly is exactly what the comparison is for.
  */
@@ -230,7 +230,7 @@ export function parseDataEntries(
       // An 01 REDEFINES names another 01 of the same section, and the machine
       // binds the two to one area. A name that resolves to nothing would
       // quietly get storage of its own, which is the failure this whole clause
-      // exists to avoid — so it is refused here rather than discovered as two
+      // exists to avoid, so it is refused here rather than discovered as two
       // records that will not agree.
       if (
         field.redefines !== null &&
@@ -269,7 +269,7 @@ export function parseDataEntries(
 /**
  * Finishes a group once its children are known.
  *
- * A group's size is not stated anywhere — it is the sum of what is under it —
+ * A group's size is not stated anywhere. It is the sum of what is under it,
  * so it can only be settled on the way back out. The enclosing group's cursor
  * advances here rather than when the group was opened, which is why the running
  * offset lives on the stack and not on the field.
@@ -490,8 +490,8 @@ function parseEntry(cursor: Cursor, level: number, area: Area): Field {
  *
  * `SEPARATE` is what makes the sign a byte of its own; without it the sign is
  * overpunched onto the leading or trailing digit, and the item is exactly as
- * wide as its digits. Only the trailing overpunch is implemented — it is the
- * default, and the only one this compiler emits — so a leading overpunch says
+ * wide as its digits. Only the trailing overpunch is implemented, which is the
+ * default and the only one this compiler emits, so a leading overpunch says
  * so rather than reading the sign off the wrong end.
  */
 function readSignClause(cursor: Cursor, current: SignMode | null): SignMode {

@@ -5,7 +5,7 @@ one that assumes.
 
 ## Why
 
-A settlement run needs three things that are not in the data — which day, which
+A settlement run needs three things that are not in the data: which day, which
 branch, and the key that makes a rerun idempotent. Before this convention
 existed the compiler declared those parameters in working storage and nothing
 ever wrote to them, so `BANK-TXN-001` was satisfied by a field holding whatever
@@ -45,9 +45,9 @@ JCL.
 
 ## Related
 
-- [docs/jcl-model.md](../../docs/jcl-model.md) — the generated job
-- [docs/error-handling.md](../../docs/error-handling.md) — return codes
+- [docs/jcl-model.md](../../docs/jcl-model.md): the generated job
+- [docs/error-handling.md](../../docs/error-handling.md): return codes
 
 <!-- playground-link -->
 
-[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=parm-driven-batch) — it compiles in your browser, with the generated COBOL beside it.
+[Open this program in the playground](https://banklang.mwhassan.com/playground/#example=parm-driven-batch). It compiles in your browser, with the generated COBOL beside it.

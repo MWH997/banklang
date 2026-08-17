@@ -92,10 +92,10 @@ The calls to `BANKLEDG` and `BANKAUDT`, **in order**. The generated stub counts
 each call and compares it against the expectation for that position, so a debit
 then a credit is not a credit then a debit. Both directions of miscount fail:
 
-- fewer calls than expected (the driver reads the counter after the program
+- fewer calls than expected: the driver reads the counter after the program
   returns, because a stub that is never entered runs no code and could not
   notice its own absence
-- more calls than expected) the stub's `WHEN OTHER`
+- more calls than expected: the stub's `WHEN OTHER`
 
 ### What a test cannot say yet
 
@@ -241,8 +241,8 @@ kind of thing a single real run would settle.
 
 ## Related pages
 
-- [divergences.md](divergences.md) (D20 and D21, the inferred values
-- [verification.md](verification.md)) what each grade of evidence means
+- [divergences.md](divergences.md): D20 and D21, the inferred values
+- [verification.md](verification.md): what each grade of evidence means
 - [examples/zunit-tested-posting](../examples/zunit-tested-posting/README.md)
 - [ZUnit overview](https://www.ibm.com/docs/en/developer-for-zos/15.0.x?topic=applications-zos-automated-unit-testing-framework-zunit)
 - [Integrating IBM zUnit Testing into a CI/CD pipeline](https://www.ibm.com/support/pages/system/files/inline-files/Integrating%20IBM%20zUnit%20Testing%20into%20an%20open%20and%20modern%20CICD%20pipeline%20-%20v1.2_0.pdf)

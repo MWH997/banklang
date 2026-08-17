@@ -5,9 +5,9 @@
 | validated-with-gnucobol | yes |
 | backend-profile | gnucobol-local |
 | source-artifact | examples/online-enquiry/src/main.bank.ts |
-| source-artifact-sha256 | ae18dc58acab2d8521edaee85d0727e214a30c61302cf9ed7ea361c2c1708e89 |
+| source-artifact-sha256 | 5bad584888ff9f884296845682286d4cba144812f3d1405b9f3f66009ad45201 |
 | generated-artifact | evidence/online-enquiry/gnucobol/cobol/ONLINEEN.cbl |
-| generated-artifact-sha256 | a19d2481ba10901fd6aeae61ee2f2b4444c5ff3a940a9ea71b5cfb7a0e018f48 |
+| generated-artifact-sha256 | 5b186efdf984d708b574d2253c80104cadf2413a24fa56a9963e665caa177327 |
 | source-map-artifact | evidence/online-enquiry/gnucobol/maps/source-map.json |
 | source-map-artifact-sha256 | 8cfc9a0492064325109069d1a826258e7ed8dd01589935146c2204e08f2b2fdf |
 | compiler-executable | cobc |

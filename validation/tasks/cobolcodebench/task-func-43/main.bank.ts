@@ -1,6 +1,6 @@
 module TaskFunc43;
 
-// Written from `spec.json` — the task's prose, its input file and its expected
+// Written from `spec.json`: the task's prose, its input file and its expected
 // output file. The benchmark's own COBOL is in `validation/sealed/`, which is
 // gitignored and which the authoring path does not read.
 //
@@ -9,7 +9,7 @@ module TaskFunc43;
 
 // Five digits, which is the width the input file uses. `unsigned` rather than
 // `decimal`, because a line-sequential record may hold only DISPLAY items and
-// `decimal` is packed — `BANK-FILE-014` if you forget.
+// `decimal` is packed, and `BANK-FILE-014` fires if you forget.
 record NumberLine {
   numberValue: unsigned<5, 0>;
 }

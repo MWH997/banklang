@@ -34,7 +34,7 @@ entry transaction sortValidNames(
   idempotencyKey: string<36>,
 ) {
   // The sort reads the file, the input procedure sees each record, and only the
-  // names that pass are released — so the ordering happens over valid names
+  // names that pass are released, so the ordering happens over valid names
   // alone. `GIVING` writes the output file, which is why nothing opens it here.
   sort inputTxt into outputTxt on custName input line {
     counts.readNames = counts.readNames + 1;
