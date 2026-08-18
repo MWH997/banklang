@@ -169,9 +169,8 @@ The survivors cluster: 483 conditional expressions, 99 logical operators, 74
 block statements. A large share of those are in diagnostic construction (
 message text, hint text, `span` selection) where an inverted condition changes
 what a message says rather than whether the program is refused. That is a real
-limit of the measurement here rather than an excuse: it means the number
-understates how well the _rules_ are tested and overstates how much of the
-remainder is worth chasing.
+limit of the measurement: the number understates how well the _rules_ are
+tested, and overstates how much of the remainder is worth chasing.
 
 **It found a defect in a rule written an hour before it ran.** `BANK-SQL-008`
 tested `operation === "commit"`, and mutating that to `true` survived the entire
@@ -224,10 +223,9 @@ change and nothing complains.** `cobol-ir` at 43.90 is the weakest: that file
 holds the name abbreviation and the picture builders, which is where its
 sibling defects (two spellings of one picture, a 31-character word) came from.
 
-The honest reading is that the emitter's _semantics_ are well covered by the
-corpus assertions, `cobc` and the oracle, and its _presentation_ is not. That is
-the same gap that was found by hand, now with a number on it and a way to watch
-it move.
+So the emitter's _semantics_ are well covered by the corpus assertions, `cobc`
+and the oracle, and its _presentation_ is not. That is the same gap that was
+found by hand, now with a number on it and a way to watch it move.
 
 ### 2.3c Mutation tests over the conformance linter
 
@@ -399,10 +397,9 @@ equivalent" is the sentence that hides the ones that are not.
 
 ### 2.4 Fuzz tests
 
-There are none, and the generator in §2.3 is the reason rather than an
-oversight. Fuzzing a parser asks whether invalid input crashes it; what this
-compiler claims is about the output it produces from _valid_ input, and a
-rejected program produces none. So `tools/generate-programs.ts` generates
+There are none, and the generator in §2.3 is why. Fuzzing a parser asks whether
+invalid input crashes it; this compiler's claims are about the output it
+produces from _valid_ input, and a rejected program produces none. So `tools/generate-programs.ts` generates
 programs that compile clean by construction, and the assertions are on the
 COBOL that comes out.
 
@@ -433,7 +430,7 @@ A whole project through the whole pipeline, rather than a stage in isolation:
 account transfer, batch interest accrual, copybook import and export, and the
 declaration emission for Db2, CICS and VSAM. The examples in `examples/` are
 these tests. Each is a real project `bankc` builds, so a break in the seam
-between two stages fails here rather than in nothing.
+between two stages fails here, where a stage tested in isolation would miss it.
 
 ### 2.6a Executed conformance tests
 
@@ -644,7 +641,7 @@ A term a reader has to look up elsewhere belongs in
 [glossary.md](glossary.md), with a citation to primary documentation rather than
 to this project's own wording.
 
-That is held rather than asked for. `tests/citations.test.ts` fails when a
+A test enforces that. `tests/citations.test.ts` fails when a
 glossary entry has no reference, when an entry is missing one of its three
 parts, when the alphabetical order breaks, or when the file is trimmed past the
 terms a reader of the generated COBOL needs. `pnpm docs:citations` fetches every

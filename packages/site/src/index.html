@@ -6,7 +6,7 @@
     <title>BankLang: a banking language that compiles to IBM COBOL</title>
     <meta
       name="description"
-      content="COBOL handles money well and knows nothing about bookkeeping. BankLang is a compiler for banking programs: you write BankTS, it emits IBM Enterprise COBOL, and it refuses to build a program whose debits and credits do not match."
+      content="COBOL is good with money and knows nothing about bookkeeping. BankLang is a compiler for banking programs: you write BankTS, it produces IBM Enterprise COBOL, and it refuses to build a program whose debits and credits do not match."
     />
     <link rel="canonical" href="{{ORIGIN}}/" />
     <link
@@ -61,21 +61,22 @@
     <main>
       <!-- 1. What it is, in words anyone can follow. -->
       <section id="what" class="hero">
-        <h1>Write your banking logic. Get COBOL the mainframe team can read.</h1>
+        <h1>Banking programs, compiled to COBOL the mainframe team can read.</h1>
         <p class="lede">
           BankLang is a compiler. You write the program in
           <strong>BankTS</strong>, a small language that borrows TypeScript's
-          syntax, and it emits IBM Enterprise COBOL, a copybook for every
-          record, and the job that builds and runs it. No model is involved
-          anywhere in that: the same input produces byte-identical output every
-          time.
+          type syntax, and it produces IBM Enterprise COBOL, a copybook for
+          every record, and the job that builds and runs it. No AI is involved
+          at any point, and the same input always produces byte-identical
+          output.
         </p>
         <p class="lede lede--secondary">
-          COBOL handles money itself well: amounts are packed decimal, exact to
-          the penny. What it has no concept of is bookkeeping. A transfer that
-          debits one account and credits another a different amount is, to a
-          COBOL compiler, two perfectly correct statements. BankLang knows they
-          are the two halves of one posting, and refuses to build the program.
+          COBOL is good with money. Amounts are packed decimal, exact to the
+          penny, with none of the drift a floating-point number brings.
+          Bookkeeping is another matter. If a transfer debits one account and
+          credits another a different amount, a COBOL compiler sees two correct
+          statements. BankLang sees the two halves of one posting, and refuses
+          to build it.
         </p>
 
         <div class="cta">
@@ -89,15 +90,16 @@
 
         <p class="caveat">
           <strong>Tested against GnuCOBOL, not IBM's compiler.</strong> Every
-          example is compiled by GnuCOBOL, an open-source COBOL, set up to
-          imitate IBM Enterprise COBOL 6.4. Nothing here has run on a mainframe.
+          example is compiled by GnuCOBOL, an open-source COBOL compiler,
+          configured to match IBM Enterprise COBOL 6.4. Nothing here has run on
+          a mainframe.
           <a href="/docs/status-and-limits.html">What that leaves open →</a>
         </p>
       </section>
 
       <!-- 2. The refusal, which is the claim nobody else makes. -->
       <section class="band">
-        <h2>It refuses to compile unsafe programs</h2>
+        <h2>It refuses to build a program that mishandles money</h2>
         <p class="section-lede">
           This transfer has three things wrong with it. The build fails and
           writes no output, the way a type error would.
@@ -123,21 +125,20 @@
         </p>
 
         <p>
-          Those three complaints, in plain terms: nothing stops the transfer
-          being applied twice if the caller sends it again after a timeout;
-          nothing writes down that it happened; and the amount taken out does
-          not match the amount paid in. Each of these is caught today by a
-          person, when it is caught at all. A reviewer who knows to look, a
-          tester who thinks of the retry, an auditor reconciling at the end of
-          the month.
+          In plain terms: the transfer can be applied twice if the caller sends
+          it again after a timeout, nothing records that it happened, and the
+          amount taken out does not match the amount paid in. Today each of
+          these is caught by a person, if it is caught at all: a reviewer who
+          knows to look, a tester who thinks of the retry, or an auditor
+          reconciling at the end of the month.
         </p>
         <p>
-          There are <strong>{{SAFETY_RULE_COUNT}}</strong> rules of this kind,
-          out of <strong>{{DIAGNOSTIC_COUNT}}</strong> checks in all. Every one
+          There are <strong>{{SAFETY_RULE_COUNT}}</strong> rules of this kind
+          among <strong>{{DIAGNOSTIC_COUNT}}</strong> checks in all. Each one
           has a written explanation, a suggested fix, and at least one test that
-          provokes it. How well those tests would notice a rule being weakened
-          is measured with mutation testing rather than asserted, and the score
-          is published even though it is not yet high enough.
+          provokes it. Whether those tests would really notice a rule being
+          weakened is measured by mutation testing, and the score is published
+          even where it is still too low.
         </p>
       </section>
 
@@ -154,10 +155,10 @@
         </p>
         <p>
           Between keeping the COBOL forever and replacing it there is a duller
-          third option: keep producing COBOL, and change what produces it. The
-          mainframe goes on running COBOL. The people who sign the code off go
-          on reading COBOL. What changes is the language a developer writes in,
-          and whether the expensive mistakes are still possible in it.
+          third option: go on producing COBOL, and change what produces it. The
+          mainframe still runs COBOL, and whoever signs the change off still
+          reads COBOL. What changes is the language the developer writes in, and
+          which mistakes are possible in it.
         </p>
         <p class="more">
           <a href="/blog/why-banks-still-run-cobol.html"
@@ -195,12 +196,11 @@
           modes.
         </p>
         <p>
-          Scale is part of the type here, so the rounding is required rather
-          than available. A balance times a rate has six decimal places and
-          money holds two, which makes the product a different type from the
-          field it is going into. <code>round</code> is what converts it, and
-          naming the mode is how the program says what becomes of the other
-          four digits.
+          Scale is part of the type here, so the rounding is compulsory. A
+          balance times a rate has six decimal places and money holds two, so
+          the product is a different type from the field it is going into.
+          <code>round</code> converts it, and naming the mode is how the program
+          says what becomes of the other four digits.
         </p>
         <p>
           The <code>ON SIZE ERROR</code> branch answers a different question: a
@@ -247,11 +247,10 @@
         <p>
           The BankTS declares the same four files and gives each one a status
           the program has to handle. Record layouts are untouched, field for
-          field, so the same datasets are read under the same DD names, and
-          nothing about the data changes. What changes is that the step now
-          ends with 12 when a file failed and 4 when it applied nothing, so the
-          next step's <code>COND=</code> can tell those apart from a good
-          night.
+          field, so the same datasets are read under the same DD names and
+          nothing about the data changes. The step now ends with 12 when a file
+          failed and 4 when it applied nothing, so the next step's
+          <code>COND=</code> can tell both apart from a good night.
         </p>
         <p class="more">
           <a href="https://github.com/MWH997/banklang/tree/main/conversions" rel="noopener"
@@ -282,8 +281,8 @@
           </li>
           <li>
             <strong
-              >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are actually
-              run</strong
+              >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are executed,
+              not just compiled</strong
             >, against a reference runtime kept in the repository.
             {{ASSERTED_COUNT}} of those are checked against balances somebody
             worked out by hand. The rest are run twice, by two independent

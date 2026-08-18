@@ -26,7 +26,7 @@ type CustomerId = string<20>;
 type Amount = decimal<18, 2>;
 ```
 
-### 3a. Dates and times
+### Dates and times
 
 Banking is dates: a value date is not a posting date, an accrual runs between
 two of them, and a maturity is compared against today. They are separate types
@@ -39,11 +39,10 @@ or with a plain integer that happens to have eight digits.
 | `time`      | `PIC 9(6)`  | `HHMMSS`                     |
 | `timestamp` | `PIC X(26)` | the Db2 host variable format |
 
-`PIC 9(8)` as `YYYYMMDD` is the mainframe convention, and it is chosen for a
-reason that matters: in that layout, ordinary numeric comparison is also
-chronological comparison, and an ordinary sort is a chronological sort. A
-timestamp is stored in Db2's own host variable format so it can be read from and
-written to a `TIMESTAMP` column without conversion.
+`PIC 9(8)` as `YYYYMMDD` is the mainframe convention. In that layout, ordinary
+numeric comparison is also chronological comparison, and an ordinary sort is a
+chronological sort. A timestamp is stored in Db2's own host variable format so
+it can be read from and written to a `TIMESTAMP` column without conversion.
 
 Dates order with `<`, `<=`, `>`, `>=`, `==`, and `!=`, but only against the same
 kind: comparing a `date` with a `time`, or with an amount, is `BANK-TYPE-003`.
@@ -67,7 +66,7 @@ day is not a number of days (`BANK-TYPE-003`).
 hundredths of a second, so the last four digits of the microseconds are zeros
 rather than invented.
 
-### 3c. How a number is stored
+### How a number is stored
 
 `decimal<p, s>` is packed decimal, `COMP-3`, which is what a ledger amount is
 held in. The others exist because a real estate's copybooks are full of them,
@@ -230,7 +229,7 @@ The two hold different bytes for the same characters, and converting between the
 needs `NATIONAL-OF` or `DISPLAY-OF`, which GnuCOBOL does not implement. Rather
 than emit a move whose result differs between compilers, the compiler declines.
 
-#### The caveat, stated plainly
+#### The caveat
 
 **A national field is the one thing this compiler emits that its own validation
 does not cover**, and every such field carries a warning (`BANK-TYPE-024`) saying
@@ -256,7 +255,7 @@ it targets. Verify the record on z/OS before relying on the offsets;
 [`zos/README.md`](../../zos/README.md) records the divergence as the first thing to
 check.
 
-### 3b. Edited fields
+### Edited fields
 
 An amount held as `COMP-3` cannot be printed. `edited<T, "style">` declares the
 rendering, and assignment into it is the formatting step, which is exactly what

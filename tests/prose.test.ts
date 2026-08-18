@@ -9,9 +9,10 @@ import { isWorkingPaper } from "../tools/build-docs";
 /**
  * House style, applied to everything a reader reads.
  *
- * Four rules: a list of phrases that read as filler, two shapes of
- * self-answering negative, and no em dashes. All of them over the same
- * surfaces, which is the part that took the longest to get right.
+ * Five rules: a list of phrases that read as filler, a list of phrases that
+ * praise the page's own frankness, two shapes of self-answering negative, and
+ * no em dashes. All of them over the same surfaces, which is the part that took
+ * the longest to get right.
  *
  * The dash rule was held on the blog posts alone for a while, while the
  * documentation carried 620 of them and the site's own markup carried four.
@@ -92,6 +93,54 @@ const FORBIDDEN = [
   "bulletproof",
   "blazing",
   "effortless",
+];
+
+/**
+ * Prose that praises its own candour.
+ *
+ * A third group, from the 2026-08-18 sweep, and the one an outside reader
+ * actually named. The vocabulary rules above were already passing while the
+ * documentation kept stopping to point out how frank it was being: "the honest
+ * comparison", "the honest sample", "the honest first answer", "the honest
+ * reading", "the honest position", nine of them across the docs and the posts,
+ * plus a page titled "Status and honest limits" and a bullet ending "a project
+ * that only publishes its good numbers is telling you something else".
+ *
+ * Any one of those is unremarkable. Together they read as a document performing
+ * integrity, and the effect is the opposite of the one intended: a reader who
+ * is told five times that this paragraph is the frank one starts wondering
+ * about the other four.
+ *
+ * The fix in every case was to delete the flourish and leave the claim, which
+ * is shorter and says the same thing. "The honest comparison is that they solve
+ * opposite problems" became "They solve opposite problems."
+ *
+ * `honestly` as an adverb is deliberately not here: "what you can honestly
+ * claim" is a normal English sentence about the reader's position, not a
+ * compliment the page is paying itself.
+ */
+const SELF_PRAISE = [
+  "the honest",
+  "least honest",
+  "is the tell",
+  "telling you something",
+  "not a claim on a page",
+  "to its credit",
+  // A fourth group, from the 2026-08-18 read-through. The move above has a
+  // sibling that argues for the page's own trustworthiness before making a
+  // claim, and it turned up twice in the same shape: "Stated plainly, because a
+  // list like this is usually absent and its absence is the tell" opened the
+  // production checklist in for-decision-makers.md, and "Stated plainly,
+  // because a page that lists only advantages is one nobody believes" opened
+  // the drawbacks in comparison.md. Both headings already said it.
+  //
+  // "The second half is what makes the first half worth reading" opened
+  // comparison.md as a subtitle, telling a reader which half to trust before
+  // they had read either. That one is fixed but deliberately not listed: any
+  // phrase general enough to catch it also catches "the part worth reading is
+  // `zunit/`", which is an ordinary sentence pointing at a directory.
+  "stated plainly",
+  "nobody believes",
 ];
 
 /** Every Markdown file under one directory. */
@@ -188,6 +237,19 @@ describe("everything written for a reader", () => {
     expect(found).toEqual([]);
   });
 
+  it("does not compliment itself on being frank", () => {
+    const found: string[] = [];
+    for (const surface of SURFACES) {
+      const lower = surface.text.toLowerCase();
+      for (const phrase of SELF_PRAISE) {
+        if (lower.includes(phrase)) {
+          found.push(`${surface.name}: ${phrase}`);
+        }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
   /**
    * The two-beat negation, which is a tic rather than a phrase.
    *
@@ -197,7 +259,7 @@ describe("everything written for a reader", () => {
    * deliver the real claim in a second short sentence starting "It is".
    *
    * `FORBIDDEN` cannot catch it, because there is no phrase to list. Every
-   * instance is different words in the same shape, which is exactly why it
+   * instance is different words in the same shape, which is why it
    * reads as a mannerism. Twelve of them were spread across the README, the
    * landing page, four of the six blog posts and the documentation, and once
    * you have noticed one you notice all of them.

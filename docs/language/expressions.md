@@ -15,7 +15,7 @@ return
 ```
 
 Also supported: `for each` over bounded arrays, `switch` over enums, and
-`raise` with an `on failure` handler (section 10b).
+`raise` with an `on failure` handler (see [Transactions](transactions.md)).
 
 Never supported: `try`/`catch`, `throw`, `async`/`await`, `yield`. Failure is
 modelled as an abandoned unit of work rather than a thrown value, because COBOL

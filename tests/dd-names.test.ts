@@ -21,7 +21,7 @@ import {
  *
  * So the property under test is not "produces a legal name". It is "produces
  * *distinct* legal names for a set", which is a property of the set and cannot
- * be tested one name at a time, which is exactly why the defect existed.
+ * be tested one name at a time, which is why the defect existed.
  */
 
 describe("reducing a logical name", () => {

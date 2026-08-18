@@ -1,9 +1,10 @@
 # Roadmap
 
 Where the project has been, version by version, and what is still to come. Items
-marked **done** have shipped; the rest are plans, and one of them says it has
-not been started. The current release is 0.10.0. For what is missing today, and
-what each gap costs, read [status-and-limits.md](status-and-limits.md) instead.
+marked **done** have shipped; the rest are plans, and the last section lists
+four that were researched and never started. The current release is 0.10.0. For
+what is missing today, and what each gap costs, read
+[status-and-limits.md](status-and-limits.md) instead.
 
 ## v0.1: Compiler credibility
 
@@ -163,7 +164,7 @@ What has to be true before the interfaces stop moving:
 
 Four integrations were researched during planning and never started. They are
 here rather than as pages of their own, because a page describing something that
-does not exist reads as though it does. What is worth keeping is the reading.
+does not exist reads as though it does. The research is still worth keeping.
 
 **IBM Dependency Based Build.** DBB builds COBOL, PL/I and Assembler as part of
 a DevOps pipeline, and a generated program has to reach a real z/OS build rather

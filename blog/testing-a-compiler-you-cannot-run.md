@@ -40,7 +40,7 @@ This rules out a lot: undefined names, type mismatches, statements the target
 would reject. It is a much stronger check than a fixture, and it is where most
 projects stop.
 
-There is a trap in it, and it is worth naming because it is easy to fall into.
+There is a trap in it, and it is an easy one to fall into.
 
 GnuCOBOL is not IBM's compiler. It accepts a wider language, its defaults differ,
 and unless you tell it otherwise it will read a fixed format program as free
@@ -116,15 +116,13 @@ four looked like passing tests.
 
 ## What none of it establishes
 
-Being blunt about the ceiling.
-
 Everything above happens on a developer machine and in continuous integration.
 None of it is IBM Enterprise COBOL. A dialect configuration shaped towards the
 target is a serious effort to close the gap and it is not the same as closing it,
 because the gap is precisely the behaviour that only the real compiler defines.
 
-The honest position is to name the levels and say which one each claim sits at.
-Something that is compiled locally is not something that is executed. Something
+So name the levels, and say which one each claim sits at. Something that is
+compiled locally is not something that is executed. Something
 that is executed against a reference runtime is not something that has run in
 production. And nothing local is validation against the vendor's compiler.
 

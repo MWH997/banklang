@@ -1,8 +1,8 @@
-# Status and honest limits
+# Status and limits
 
 Every limit on this page is true of BankLang 0.10.0. Where one has a plan
 attached the plan is named; where it does not, it says so. Four states are kept
-apart throughout, because they are not the same thing:
+apart throughout, because each one closes in a different way:
 
 | State               | What it means                                          |
 | ------------------- | ------------------------------------------------------ |
@@ -92,9 +92,9 @@ production mainframe toolchain.
 - **Multi-record `INPUT` is refused** (`BANK-FILE-015`). A file may carry
   several record layouts on output (`settlement-bill-file` writes a header, a
   detail and a trailer), but a program may not read one. The recommended
-  alternative is one record, a type field and `REDEFINES`, and it is weaker than
-  it sounds: nothing forces the programmer to test the discriminator before
-  using the overlay. Refused on evidence rather than on taste: the 143
+  alternative is one record, a type field and `REDEFINES`, and it has a hole in
+  it: nothing forces the programmer to test the discriminator before using the
+  overlay. Refused on evidence rather than on taste: the 143
   occurrences in X-COBOL deduplicated to 51 distinct files, none of them an
   application program.
 - **Bounded split counting is refused.** `UNSTRING … TALLYING` has no BankTS
@@ -157,7 +157,7 @@ Programming Guide every citation in [target-conformance.md](target-conformance.m
 comes from, the level `tools/banklang-ibm.conf` is shaped to, and the version
 named in the generated `CBL` statement's options.
 
-## The two lists that matter more than this page
+## Two lists that go further
 
 - [divergences.md](divergences.md): every place GnuCOBOL and Enterprise COBOL
   are known or suspected to disagree, numbered so they can be cited. A finding
@@ -173,5 +173,4 @@ named in the generated `CBL` statement's options.
 [zos/README.md](../zos/README.md) is the procedure and `RESULTS-TEMPLATE.md` is
 what to fill in.
 
-Until `RESULTS.md` exists, every claim in this repository stops at GnuCOBOL, and
-every page says so.
+Until `RESULTS.md` exists, every claim in this repository stops at GnuCOBOL.

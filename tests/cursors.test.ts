@@ -159,7 +159,7 @@ describe("cursor loops", () => {
   /**
    * Leaving on any non-zero code rather than only on 100: an error treated as
    * end-of-data would process a partial result set as though it were the whole
-   * one, which is exactly how a batch silently under-posts.
+   * one, which is how a batch silently under-posts.
    */
   it("leaves the loop on any non-zero SQLCODE", () => {
     const result = txn(`    debit(row.rowAccountId, row.rowBalance);

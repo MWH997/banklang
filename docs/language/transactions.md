@@ -24,7 +24,7 @@ Rules:
 - rollback path must be representable in target backend
 - generated COBOL must expose transaction boundary in source map
 
-### 10a. Entry point
+### Entry point
 
 COBOL enters a program at the first statement of the `PROCEDURE DIVISION`.
 Without a designated entry that would be whichever declaration happened to be

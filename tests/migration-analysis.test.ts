@@ -261,7 +261,7 @@ describe("bankc analyse", () => {
  * Before any third-party COBOL could be converted, the analyser was run over a
  * benchmark corpus: AWS's CardDemo, Apache-2.0, thirty-one CICS and batch
  * programs. It got two things wrong on code nobody here had written. Both are shapes that never occur in this
- * repository's own conversions, which is exactly why they survived: every
+ * repository's own conversions, which is why they survived: every
  * original in `conversions/` was written by the author of the reader.
  *
  * The fragments below are the shapes, rewritten. Neither is CardDemo's text.

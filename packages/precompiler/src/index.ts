@@ -876,7 +876,7 @@ function isCursorDeclaration(body: string): boolean {
  * These mark the host variables for the precompiler and are not statements: Db2
  * removes them, leaving the declarations they surround. Translating one into a
  * call would put an executable statement in the DATA DIVISION, where none may
- * appear, which is exactly what happened when the section was first emitted.
+ * appear, which is what happened when the section was first emitted.
  */
 function isDeclareSectionMarker(body: string): boolean {
   return /^\s*(BEGIN|END)\s+DECLARE\s+SECTION\s*$/i.test(

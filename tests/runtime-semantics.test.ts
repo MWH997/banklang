@@ -24,7 +24,7 @@ function sysout(...sources: string[]): string[] {
  * Every 01 used to get storage of its own, `REDEFINES` or not, so a program
  * that wrote through one and read through the other got back whatever the
  * other had been initialised to. It is how a packed field is turned into bytes
- * a program can move around, which is exactly what `runtime/DSNHLI.cbl` needs
+ * a program can move around, which is what `runtime/DSNHLI.cbl` needs
  * to hand a fetched row to a caller.
  */
 describe("REDEFINES at the 01 level", () => {

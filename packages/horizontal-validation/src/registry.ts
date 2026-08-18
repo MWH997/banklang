@@ -63,7 +63,7 @@ export type CorpusCategory = "semantic" | "coverage" | "defect" | "conformance";
  * `redistributable` means the upstream licence permits it *and* this project
  * has determined the permission covers what would be copied. `derived-only`
  * means statistics, hashes and identifiers may be published while the source
- * may not, which is the honest answer for a dataset that aggregates 168 other
+ * may not, which is the right answer for a dataset that aggregates 168 other
  * people's repositories under a licence covering the *compilation* rather than
  * the contents. `none` means not even a hash goes in until somebody supplies
  * the corpus themselves.

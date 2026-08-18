@@ -10,7 +10,7 @@ import { flowed, unpadded } from "./helpers";
  * A statement whose amounts cannot be printed is not a statement. The picture is
  * generated from the value's own precision and scale rather than written out, so
  * nobody counts Z's, and assignment into the field is the formatting step,
- * which is exactly what a COBOL `MOVE` into a numeric-edited item does.
+ * which is what a COBOL `MOVE` into a numeric-edited item does.
  */
 
 const PREAMBLE = `module Edited;

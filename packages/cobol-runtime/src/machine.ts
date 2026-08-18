@@ -2996,7 +2996,7 @@ function displayItem(value: Decimal, picture: Picture): string {
  * exercised by the reference runtime rather than by the corpus. The digits are
  * shown without the assumed decimal point, which is what an unedited numeric
  * item holds; a program that wants a point moves the value to an edited item
- * first, which is exactly what `runtime/BANKLEDG.cbl` does.
+ * first, which is what `runtime/BANKLEDG.cbl` does.
  */
 function displayNumber(value: Decimal): string {
   const negative = value.units < 0n;

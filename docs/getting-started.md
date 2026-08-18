@@ -36,10 +36,9 @@ pnpm playground:dev
 ```
 
 The entire compiler runs in your browser: there is no compile server and
-nothing you write is sent anywhere. Click any
-line of BankTS and the COBOL it produced lights up, and the other way round.
-That cross-link is read straight from the emitted source map, so traceability is
-something you click rather than something the documentation claims.
+nothing you write is sent anywhere. Click any line of BankTS and the COBOL it
+produced lights up, and the other way round. That cross-link is read straight
+from the emitted source map, so you can check the traceability yourself.
 
 ---
 
@@ -67,8 +66,8 @@ Then read `dist/jcl/ACCOUNTF.jcl`. It is meant to be submittable.
 
 If you are a mainframe engineer, go to
 **[for-mainframe-engineers.md](for-mainframe-engineers.md)** now. It reads that
-program with you, construct by construct, and every question you are about to
-have is answered there.
+program with you, construct by construct, and answers most of what you are
+about to ask.
 
 ---
 
@@ -140,8 +139,9 @@ eight, and that every word in the program is one Enterprise COBOL has heard of.
 `pnpm lint:zos` reads the same artifacts and asks the other question: not
 whether the toolchain will accept the program, but whether z/OS will do what it
 says. Two programs once shipped that compiled, bound and verified, and then
-aborted on their second `MQCONN` or returned the caller's own request unchanged: neither of which is a syntax error, a style violation or a
-wrong number. Both are in [target-conformance.md](target-conformance.md).
+aborted on their second `MQCONN` or returned the caller's own request
+unchanged. Neither is a syntax error, a style violation or a wrong number.
+Both are in [target-conformance.md](target-conformance.md).
 
 ---
 

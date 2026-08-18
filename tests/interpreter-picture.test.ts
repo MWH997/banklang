@@ -20,7 +20,7 @@ import {
  * its digits sit. `tests/cobol-runtime-differential.test.ts` compares this
  * interpreter against `cobc` byte for byte, so a picture read one byte short
  * moves every field after it and the comparison fails somewhere else entirely,
- * which is exactly what happened when `SIGN IS LEADING SEPARATE` was ignored and
+ * which is what happened when `SIGN IS LEADING SEPARATE` was ignored and
  * every PARM parameter after the first amount was read from the wrong offset.
  */
 

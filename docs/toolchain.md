@@ -98,9 +98,9 @@ An absent `cobc` is a normal state, not a failure: the line says so and says
 what it costs, which is that `pnpm test:gnucobol` and the `cobc` tests skip.
 
 The last line is a constant. Nothing on a workstation can detect IBM Enterprise
-COBOL, and a line that is printed only when something is missing reads as an
-unasked question rather than an answered one, so it is always there, and it
-never becomes conditional on anything a machine could accidentally satisfy.
+COBOL, so printing it only on failure would leave a reader unsure whether a
+missing line meant success or no check at all. It is always there, and never
+conditional on something a machine could accidentally satisfy.
 
 ## Formatting
 

@@ -1862,7 +1862,7 @@ export function emitCobol(
 
   // A record parameter is a reference cell rather than storage of its own. The
   // caller points it at the record being passed, so one paragraph can run over
-  // any record whose layout begins with the declared one, which is exactly
+  // any record whose layout begins with the declared one, which is
   // what `extends` guarantees.
   const recordParameterCells = collectRecordParameterCells(program);
   const cicsTransactions = program.transactions.filter(

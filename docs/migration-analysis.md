@@ -10,7 +10,7 @@ pnpm bankc analyse path/to/programs --out dist/analysis
 
 This is the one part of the toolchain that generates nothing. Before a bank asks
 whether a compiler produces COBOL it likes, it asks what would happen to the two
-thousand programs it already has, and the honest first answer is a count.
+thousand programs it already has, and the first answer is a count.
 
 ---
 
@@ -141,7 +141,7 @@ one: a finding invented out of a message is the kind a reader checks, does not
 find, and stops trusting the rest of the report over.
 
 The reader is still what this page says it is (reference-format text, nothing
-compiled), so the honest expectation for a first run against an unfamiliar
+compiled), so the expectation for a first run against an unfamiliar
 estate is that something else is wrong in the same way, and that the report
 saying what it does not know is the part that matters most.
 

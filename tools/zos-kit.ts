@@ -63,7 +63,7 @@ export function buildZosKit(outputRoot = join("dist", "zos")): {
 } {
   // Removed rather than overwritten. A member that was renamed leaves the old
   // one behind, and a bundle holding both is a library where two members claim
-  // to be the same program, which is exactly the failure the collision check
+  // to be the same program, which is the failure the collision check
   // below exists to prevent, arriving by another route.
   rmSync(outputRoot, { recursive: true, force: true });
 

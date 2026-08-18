@@ -19,7 +19,7 @@ output and moves the safety earlier.
 BankTS is a small language with TypeScript's type syntax and statements of its
 own: `transaction`, `file`, `cursor`, `queue`. It compiles to COBOL a mainframe
 engineer can read in review, targeting IBM Enterprise COBOL 6.4. It is not a
-converter and there is no model anywhere in it: every byte of output comes from
+converter, and there is no AI anywhere in it: every byte of output comes from
 deterministic code, and the same input always produces byte-identical artifacts.
 
 ## The compiler refuses to build unsafe programs
@@ -114,7 +114,7 @@ whole-corpus, which is 19 of the 19 that BankTS can express at all; 20 executed
 tasks, 20 engine agreements, zero divergences; 5195 X-COBOL files analysed with
 zero analyser failures.
 
-And the denominators are the honest ones. The four verbs that are not executed
+The denominators include what failed. The four verbs that are not executed
 locally are named: a generated zUnit test case's entry points and a Report
 Writer section, neither of which has anywhere local to run. On the OpenCBS
 defect suite, nine of 41 defects have a BankTS program the compiler refuses;

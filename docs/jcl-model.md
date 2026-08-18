@@ -3,9 +3,9 @@
 What `bankc` emits alongside the COBOL, what in it is a placeholder, and what a
 site changes.
 
-The job is meant to be submittable rather than filled in, and every step, DD and
-parameter in it comes from IBM's own cataloged procedures as the Programming
-Guide prints them rather than from this compiler's memory of them. It did not
+The job is meant to be submittable, not a template to fill in. Every step, DD
+and parameter in it is taken from IBM's own cataloged procedures as the
+Programming Guide prints them. It did not
 always work that way: the compile step had no `STEPLIB` and none of
 the sixteen work files, the link-edit ran `PGM=IEWL` with no LE libraries, the
 run step had no `STEPLIB` at all (so a job that compiled and linked perfectly

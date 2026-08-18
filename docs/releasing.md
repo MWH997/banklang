@@ -125,7 +125,7 @@ with it.
 Pre-1.0, so a release that adds language surface, a diagnostic or a CLI command
 is a **minor** bump. `1.0` is not a function of the repository becoming public:
 there has been no native IBM Enterprise COBOL validation and no production
-ledger use, and a `1.0` claiming otherwise would be the least honest thing here.
+ledger use, and a `1.0` would claim otherwise.
 
 Read `## [Unreleased]` to decide which: a new file organisation, a diagnostic
 or a CLI command makes it a minor release rather than a patch.

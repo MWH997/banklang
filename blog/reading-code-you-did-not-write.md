@@ -7,10 +7,9 @@ related: why-banks-still-run-cobol, testing-a-compiler-you-cannot-run
 reading: generated-code-standards.md
 ---
 
-There is a moment that decides whether a code generator succeeds in an
-organisation, and it has nothing to do with the technology. It comes when
-somebody who did not choose the tool opens its output and decides whether they
-are willing to be responsible for it.
+The moment that decides whether a code generator gets used has nothing to do
+with the technology. Somebody who did not choose the tool opens its output and
+decides whether they are willing to be responsible for it.
 
 If the answer is no, nothing else matters. The generator can be correct, fast and
 well tested, and it will still be quietly not used, because being on call for
@@ -106,7 +105,7 @@ Saying no is cleaner and rarely survives contact with an incident. At two in the
 morning, with an outage running, somebody will edit the generated file, because
 that is the fastest way to stop the bleeding and it is the right call.
 
-The honest design accepts that. It means the generated code has to stand alone
+So the design should accept it. That means the generated code has to stand alone
 after the edit: readable, self contained, not dependent on a runtime library
 nobody has. It means a clear marker saying the file is generated and where the
 source lives, so the next person knows what they are looking at. And it means the

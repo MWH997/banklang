@@ -70,7 +70,7 @@ BANK-LED-001  Transaction postTransfer does not balance:
 The important word is refuse. These are not warnings. The build produces no
 artifact, and there is no flag to turn them off.
 
-That last part gets argued about, so it is worth being direct about why. A
+That last part gets argued about, so here is the reasoning. A
 warning that can be suppressed becomes a warning that is suppressed, usually by
 somebody in a hurry with a good reason. A rule that can be switched off is a rule
 that is off in the one build where it mattered. If a rule is wrong, it should be
@@ -102,8 +102,6 @@ Each of these has the same shape. The code is not wrong. The code is silent, and
 the silence has a default that nobody chose.
 
 ## What this costs
-
-Being honest about the price.
 
 A restricted language cannot express everything. Some programs will not
 translate, and no amount of cleverness fixes that, because the restrictions are

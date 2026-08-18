@@ -121,7 +121,7 @@ in the message descriptor: on a put that asks the queue manager for a new
 message identifier rather than reusing the last one, and on a get it means any
 message will do.
 
-#### What commits it, since no `MQCMIT` is emitted
+### What commits it, since no `MQCMIT` is emitted
 
 Nothing in the generated program calls `MQCMIT`, and that is deliberate. IBM MQ
 Application Programming Reference, MQDISC usage note 2a: where the unit of work
@@ -146,7 +146,7 @@ or a PCB's, so it is a number: `inReason` holds 2033 for an empty queue and 2085
 for a queue that is not there. The field is required for the same reason a
 file's status is (`BANK-MQ-001`).
 
-#### What a queue costs on z/OS
+### What a queue costs on z/OS
 
 MQ needs no precompiler (the MQI is plain `CALL`s), but the job needs three
 things it would not otherwise have, and the generated JCL asks for all of them:

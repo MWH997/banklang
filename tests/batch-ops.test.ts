@@ -157,7 +157,7 @@ entry transaction order(posting: Posting) {
    *
    * The record a sort moves is the one it *reads*. That used to be the
    * destination's record and every file had to hold it, including when an
-   * output procedure was present, which is exactly when the sort does not write
+   * output procedure was present, which is when the sort does not write
    * the destination at all. CobolCodeBench's task_func_37 was recorded as a
    * language gap on the strength of it.
    */

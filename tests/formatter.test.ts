@@ -229,7 +229,7 @@ function f(a: M): bool {
  * for the purpose: formatting must not change what the program means, and
  * formatting twice must equal formatting once. Round-tripping through the
  * parser is what catches a printer that emits something the parser cannot read
- * back, which is exactly what `database` did.
+ * back, which is what `database` did.
  */
 describe("formatting a construct no example contains", () => {
   const withoutSpans = (value: unknown): string =>

@@ -4,7 +4,7 @@
  * Asked for by the external audit, and the one thing on its missing list that
  * is not about generating anything. Before a bank asks whether a compiler produces
  * COBOL it likes, it asks what would happen to the two thousand programs it
- * already has, and the honest first answer is a count: how many, how big, what
+ * already has, and the first answer is a count: how many, how big, what
  * they touch, and which ones nobody can follow.
  *
  * This is deliberately a *reader*, not a converter. It parses nothing

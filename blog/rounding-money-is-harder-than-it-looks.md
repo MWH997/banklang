@@ -83,8 +83,8 @@ which happens about half the time in each direction. Over many calculations the
 errors cancel instead of accumulating.
 
 That is why it is the default in a lot of financial regulation and why the IEEE
-754 standard picked it as its default rounding mode. Far from being a quirk, it
-is the rule you reach for when the calculation runs a great many times.
+754 standard picked it as its default rounding mode. It is the rule you reach
+for when the calculation runs a great many times.
 
 ## Where COBOL makes this awkward
 
