@@ -25,7 +25,7 @@ function is emitted as a sibling `RECURSIVE` program with its locals in
 `LOCAL-STORAGE`, reached with `CALL` rather than `PERFORM`. Mutual recursion is
 detected through the call graph.
 
-Functions may take type parameters; see section 5b.
+Functions may take type parameters; see [Generics](records.md#generics).
 
 ### Nested functions
 
@@ -110,11 +110,11 @@ because COBOL pads a shorter alphanumeric with spaces. It will not truncate into
 a narrower one.
 
 `concat` and `now` build a value rather than name one, so they lower to a
-`STRING` statement rather than appearing inline; the target is cleared first,
-because `STRING` leaves whatever was past the end of the new value alone.
+`STRING` statement and never appear inline. The target is cleared first, because
+`STRING` leaves whatever was past the end of the new value alone.
 
 This is also what makes masking expressible, and therefore what the `sensitive`
-declassification rule in section 11 rests on:
+declassification rule in [Transactions](transactions.md) rests on:
 
 ```ts
 function maskPan(pan: string<19>): string<16> {
@@ -197,7 +197,7 @@ without a handler that is an abend rather than a rejected record, so a `call`
 without one is warned about.
 
 `cancel` drops the loaded module, so the next call gets its working storage as
-the compiler left it rather than as the last call left it. It takes no handler:
+the compiler left it, not as the last call left it. It takes no handler:
 nothing is being entered, so there is no failure to catch.
 
 ## Assignment

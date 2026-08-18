@@ -1846,7 +1846,7 @@ const WATCHABLE = new Set([
  *
  * Neither is a thing to make work. `explain`, `doctor`, `init`, `version`,
  * `copybook`, `dclgen` and `analyse` do not read a project's BankTS, and `analyse`
- * reads COBOL, so the honest response is to name the flag, name the command,
+ * reads COBOL, so the response names the flag, names the command,
  * and say which commands take it.
  */
 export function watchRefusal(argv: string[]): CliResult | null {

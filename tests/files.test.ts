@@ -370,7 +370,7 @@ file feed sequential update record AccountRecord status feedStatus;`,
  * Enterprise COBOL has no `DELETE` for a file with sequential organization: a
  * record is removed by leaving it out of the file the next program writes.
  *
- * GnuCOBOL compiles the statement, which is exactly why nothing local caught
+ * GnuCOBOL compiles the statement, which is why nothing local caught
  * it: the generated program passed every check here and would have been
  * rejected by IGYCRCTL.
  */

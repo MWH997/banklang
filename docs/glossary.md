@@ -32,7 +32,7 @@ concretely: a diagnostic, a generated construct, an example that runs it.
 
 **Definition:** A durable, named record that a business-significant action occurred, carrying a correlation value that ties it to the originating request.
 
-**Why it matters to BankLang:** `language-reference.md` section 11 requires every transaction to emit at least one audit event with a compile-time constant name. BankLang enforces this with `BANK-AUD-001` and `BANK-AUD-003`, and lowers the event to a call against the audit interface described in [ADR-0003](adr/0003-ledger-and-audit-calling-convention.md). A statically known event name keeps audit trails greppable and stable across releases.
+**Why it matters to BankLang:** [Transactions](language/transactions.md) requires every transaction to emit at least one audit event with a compile-time constant name. BankLang enforces this with `BANK-AUD-001` and `BANK-AUD-003`, and lowers the event to a call against the audit interface described in [ADR-0003](adr/0003-ledger-and-audit-calling-convention.md). A statically known event name keeps audit trails greppable and stable across releases.
 
 **References:**
 
@@ -141,7 +141,7 @@ needing more than a commarea holds cannot be written in BankTS today.
 `DFHCOMMAREA` in the `LINKAGE SECTION`, and how one CICS program passes data to
 the next.
 
-**Why it matters to BankLang:** It is the first record parameter of a `cics
+**Why it matters to BankLang:** The commarea is the first record parameter of a `cics
 transaction`, and it carries the reply as well as the request, because the
 caller reads back the same bytes it passed. The generated program tests
 `EIBCALEN` before touching it: reading a commarea shorter than the record
@@ -157,7 +157,7 @@ claims is IBM's own rule, not a nicety.
 written in, standardised since 1960 and still the language the overnight batch
 runs.
 
-**Why it matters to BankLang:** It is the output, and it stays the output. The
+**Why it matters to BankLang:** COBOL is the output, and it stays the output. The
 generated program is meant to be read and reviewed by the engineers who own the
 estate, which is why the house style is written down as a contract in
 [generated-code-standards.md](generated-code-standards.md) rather than left to
@@ -173,7 +173,7 @@ the emitter.
 **Definition:** A COBOL source fragment pulled in by `COPY`, holding a record
 layout that several programs share.
 
-**Why it matters to BankLang:** It is the interface between a generated program
+**Why it matters to BankLang:** A copybook is the interface between a generated program
 and everything already running. `bankc build` writes one copybook per record;
 `bankc copybook import` reads an existing one back into BankTS, and refuses a
 layout it cannot reproduce byte for byte rather than importing it at the wrong
@@ -218,7 +218,7 @@ the cases where the value really is whatever the platform put there.
 **Definition:** IBM COBOL packed-decimal storage: two decimal digits to a byte,
 with the sign in the low half of the last one.
 
-**Why it matters to BankLang:** It is how every amount is stored. `decimal<p, s>`
+**Why it matters to BankLang:** Packed decimal is how every amount is stored. `decimal<p, s>`
 emits `PIC S9(p-s)V9(s) COMP-3` and occupies `ceil((p+1)/2)` bytes, so a
 `decimal<18, 2>` is ten bytes and a copybook BankLang writes lines up with one
 it did not. Arithmetic stays exact, which is the reason not to use binary
@@ -251,7 +251,7 @@ against the copybook they have to match.
 **Definition:** IBM's relational database on z/OS, reached from COBOL through
 embedded SQL rather than a driver.
 
-**Why it matters to BankLang:** It is the database BankTS `sql` statements and
+**Why it matters to BankLang:** Db2 is the database BankTS `sql` statements and
 `cursor` declarations compile against. The program gets host variables, an
 `SQLCA` and `SQLCODE` tests it cannot skip, and the job gets the precompile and
 bind steps that make any of it run. [sql.md](language/sql.md) is the reference.
@@ -290,7 +290,7 @@ digits, so `BANK-DEC-002` refuses it until you round explicitly.
 
 **Definition:** An accounting method in which every financial event is recorded as equal and opposite debit and credit entries, so total debits always equal total credits.
 
-**Why it matters to BankLang:** `language-reference.md` section 10 requires debit and credit totals to balance for ledger-posting operations. BankLang checks this as `BANK-LED-001`. Because the compiler does not evaluate expressions, balance is proven structurally by comparing the multiset of debited and credited amount expressions. The check is conservative: it reports what it cannot prove rather than accepting it.
+**Why it matters to BankLang:** [Transactions](language/transactions.md) requires debit and credit totals to balance for ledger-posting operations. BankLang checks this as `BANK-LED-001`. Because the compiler does not evaluate expressions, balance is proven structurally by comparing the multiset of debited and credited amount expressions. The check is conservative: it reports what it cannot prove rather than accepting it.
 
 **References:**
 
@@ -334,7 +334,7 @@ bare number.
 `END-EXEC`, replaced by a precompiler with calls before the COBOL compiler sees
 it.
 
-**Why it matters to BankLang:** It is how a generated program talks to Db2. The
+**Why it matters to BankLang:** Embedded SQL is how a generated program talks to Db2. The
 SQL text itself is passed through rather than parsed and rebuilt, so what runs
 is what was written; what BankLang adds around it is the host variables, the
 `SQLCA`, and the `SQLCODE` tests `BANK-SQL-007` will not let you skip.
@@ -350,7 +350,7 @@ is what was written; what BankLang adds around it is the host variables, the
 
 **Definition:** A two-character COBOL data item that receives the outcome of each I/O operation on a file, set through the `FILE STATUS` clause of a `SELECT` entry.
 
-**Why it matters to BankLang:** `language-reference.md` section 13 requires file status to be checked. A BankTS `file` declaration binds a status field with its `status` clause, and BankLang reports `BANK-FILE-001` when one is missing, because without it the generated program has nowhere to observe an I/O result.
+**Why it matters to BankLang:** [Files](language/files.md) requires file status to be checked. A BankTS `file` declaration binds a status field with its `status` clause, and BankLang reports `BANK-FILE-001` when one is missing, because without it the generated program has nowhere to observe an I/O result.
 
 **References:**
 
@@ -361,7 +361,7 @@ is what was written; what BankLang adds around it is the host variables, the
 **Definition:** The COBOL source format in which columns carry meaning: 1–6 the
 sequence area, 7 the indicator, 8–11 Area A, 12–72 Area B, and nothing past 72.
 
-**Why it matters to BankLang:** It is what BankLang emits, always. Division,
+**Why it matters to BankLang:** Fixed format is what BankLang emits, always. Division,
 section and paragraph headers, `FD` entries and level 01 and 77 items go in
 Area A and everything else in Area B, and the conformance linter's
 `line-length`, `sequence-area`, `indicator-area` and `area-a` rules fail the
@@ -392,7 +392,7 @@ its neighbours would be harder to accept.
 **Definition:** A free COBOL compiler that translates COBOL to C and builds a
 native executable, on Linux, macOS and Windows.
 
-**Why it matters to BankLang:** It is the only compiler this project has ever
+**Why it matters to BankLang:** GnuCOBOL is the only compiler this project has ever
 run. Every example is compiled under a dialect configuration shaped towards
 Enterprise COBOL 6.4 and again under GnuCOBOL's own default, which is what makes
 the examples runnable in CI, and it is not IBM's compiler. A green `cobc` run
@@ -427,7 +427,7 @@ declarations are generated from the record, not written by hand, so the
 **Definition:** IBM's COBOL compiler for z/OS, currently at 6.4, and the compiler
 a bank's programs are actually built with.
 
-**Why it matters to BankLang:** It is the target the output is written for and
+**Why it matters to BankLang:** Enterprise COBOL is the target the output is written for and
 the compiler the output has never been run through.
 [ADR-0002](adr/0002-primary-target-ibm-enterprise-cobol.md) records why it is
 the primary target; [target-conformance.md](target-conformance.md) cites the
@@ -443,7 +443,7 @@ about it is read out of that manual, not observed.
 
 **Definition:** A caller-supplied value that uniquely identifies a request, so that repeating the request produces the same effect as performing it once.
 
-**Why it matters to BankLang:** `language-reference.md` section 10 requires every transaction to have an idempotency key, because retries are routine in payment and messaging infrastructure and an unkeyed retry can post an amount twice. BankLang reports `BANK-TXN-001` when a transaction has no parameter named `idempotencyKey` and no record parameter declaring that field.
+**Why it matters to BankLang:** [Transactions](language/transactions.md) requires every transaction to have an idempotency key, because retries are routine in payment and messaging infrastructure and an unkeyed retry can post an amount twice. BankLang reports `BANK-TXN-001` when a transaction has no parameter named `idempotencyKey` and no record parameter declaring that field.
 
 **References:**
 
@@ -586,7 +586,7 @@ and the copybook importer refuses a shape it cannot lay out
 **Definition:** A machine-readable record of which span of source produced which
 span of generated output.
 
-**Why it matters to BankLang:** It is what makes a review of the COBOL possible
+**Why it matters to BankLang:** The map is what makes a review of the COBOL possible
 without reading it as a whole: click a line of BankTS in the playground and the
 COBOL it produced lights up. It is also what an auditor needs to ask why a
 particular paragraph exists. `bankc build` writes one per module.
@@ -610,7 +610,7 @@ particular paragraph exists. `bankc build` writes one per module.
 **Definition:** The SQL Communication Area: the structure Db2 writes the outcome
 of each statement into, `SQLCODE` among its fields.
 
-**Why it matters to BankLang:** It is the only place a program learns whether an
+**Why it matters to BankLang:** The SQLCA is the only place a program learns whether an
 SQL statement worked, so a generated program that talks to Db2 always includes
 it. Nothing is inferred from a statement appearing to succeed.
 
@@ -691,7 +691,7 @@ not a unit of work.
 organisations, the useful one here being KSDS, a dataset keyed on a field in the
 record and readable in key order.
 
-**Why it matters to BankLang:** It is where a master file lives. A BankTS `file`
+**Why it matters to BankLang:** VSAM is where a master file lives. A BankTS `file`
 declared `indexed` becomes a KSDS with `RECORD KEY` and any alternate keys, and
 `examples/vsam-browse` walks one with `START` and `READ NEXT` on an alternate
 index. Every operation on it sets a file status, and `BANK-FILE-001` refuses a
@@ -708,7 +708,7 @@ declaration with nowhere to observe one.
 **Definition:** IBM's operating system for IBM Z, and where the Enterprise COBOL
 compiler, CICS, IMS, Db2, VSAM and JCL all live.
 
-**Why it matters to BankLang:** It is the platform everything generated here is
+**Why it matters to BankLang:** z/OS is the platform everything generated here is
 meant to run on, and the platform none of it has run on. `zos/` holds a
 conformance kit (programs, JCL and expected results) for somebody with access
 to submit; [RESULTS-TEMPLATE.md](../zos/RESULTS-TEMPLATE.md) is what comes back.
@@ -741,7 +741,7 @@ copied from a case IBM's own generator produced, and cited in
 **Definition:** A name declared at level 88 under a data item, true when the item
 holds one of the values it lists. It occupies no storage of its own.
 
-**Why it matters to BankLang:** It is how generated COBOL says what a value
+**Why it matters to BankLang:** An 88-level is how generated COBOL says what a value
 means. Each member of a BankTS enum emits one 88-level, so the program tests
 `IF ACCOUNT-DORMANT` rather than `IF STATUS = "D"`: the same comparison, with
 the meaning written down where a reviewer reads it.

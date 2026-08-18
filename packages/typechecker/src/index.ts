@@ -1779,7 +1779,7 @@ function resolveFile(
  * writing. The pattern is everywhere: 2,812 of the 6,451 file descriptions in
  * the X-COBOL corpus declare more than one record and 2,663 of those are opened
  * `OUTPUT`: a report whose heading line and detail lines are different shapes,
- * which is exactly what `task_func_25` and `task_func_34` describe.
+ * which is what `task_func_25` and `task_func_34` describe.
  *
  * Three rules keep it safe, and each of them is a thing COBOL will let you do
  * and BankTS will not:
@@ -1954,7 +1954,7 @@ function resolveTransaction(
 
   // The handler shares the transaction's scope, so it can report on the same
   // records the body was working with. It runs after the body has abandoned its
-  // work, which is exactly when those values matter.
+  // work, which is when those values matter.
   if (declaration.failureHandler) {
     validateFailureHandler(
       declaration.failureHandler,

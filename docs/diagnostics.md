@@ -242,7 +242,7 @@ Use a plain `search` to walk a table any other way.
 `call <name> using <record>` names its load module by a value rather than by a
 literal in the source, so the name has to be text and short enough to be one:
 eight characters, because a longer field is truncated to a name that does not
-exist and the failure then arrives as a missing module rather than as a length.
+exist, and the failure then arrives as a missing module instead of a bad length.
 
 What the compiler cannot check is whether the module is _there_. That is the
 nature of a dynamic call, and it is why a `call` with no `on error` is warned
@@ -272,10 +272,10 @@ work.rate = toNumber(built);
 An edited type renders a value rather than being one, so there is no storage for
 an instantiation to be made of. `Slot<edited<BDT, "credit">>` names no layout.
 
-The refusal is not new; saying it is. The type argument could not be rebuilt, so
-the field was dropped from the record and the program compiled clean: a
-declared field that produced no COBOL and no diagnostic, which is the one
-outcome a compiler must never have.
+The compiler never could build this. What is new is that it says so: the type
+argument could not be rebuilt, so the field was dropped from the record and the
+program compiled clean, leaving a declared field that produced no COBOL and no
+diagnostic.
 
 ```ts
 record Statement {
@@ -500,6 +500,24 @@ A report's names have to resolve, or the generated COBOL means nothing:
 - `generate` names a detail group, while `initiate` and `terminate` name the
   report itself.
 
+## 10a. IMS DL/I diagnostics
+
+### `BANK-DLI-001` invalid DL/I access
+
+A DL/I statement names a database that is not declared, moves a segment into a
+record of the wrong shape, looks for a key that is not text, or reaches a
+database with no status field.
+
+The segment and key names are eight bytes each, because that is what a search
+argument carries: a longer one is truncated into a name matching nothing in the
+DBD.
+
+The status field is the one that matters most. The two characters DL/I leaves in
+the PCB are the **entire** error model: spaces worked, `GE` found nothing, `GB`
+reached the end of the database. Without somewhere to read them, a `getUnique`
+that found nothing is indistinguishable from one that worked, and the program
+goes on to use whatever the segment area held last.
+
 ## 10b. IBM MQ diagnostics
 
 ### `BANK-MQ-001` invalid queue access
@@ -526,24 +544,6 @@ compiled instead.
 
 It also covers a message record of the wrong shape: the buffer is the record the
 queue declares, and MQ moves bytes without checking what they mean.
-
-## 10a. IMS DL/I diagnostics
-
-### `BANK-DLI-001` invalid DL/I access
-
-A DL/I statement names a database that is not declared, moves a segment into a
-record of the wrong shape, looks for a key that is not text, or reaches a
-database with no status field.
-
-The segment and key names are eight bytes each, because that is what a search
-argument carries: a longer one is truncated into a name matching nothing in the
-DBD.
-
-The status field is the one that matters most. The two characters DL/I leaves in
-the PCB are the **entire** error model: spaces worked, `GE` found nothing, `GB`
-reached the end of the database. Without somewhere to read them, a `getUnique`
-that found nothing is indistinguishable from one that worked, and the program
-goes on to use whatever the segment area held last.
 
 ## 11. Copybook diagnostics
 
@@ -716,7 +716,7 @@ file bills lineSequential output record BillHeading, BillDetail status billsStat
 For a file that is read, declare one record and interpret the bytes yourself: a
 field saying which kind of record it is, and a `redefines` for the rest.
 
-Note what that costs, because it is the honest half of this rule. A `redefines`
+Note what that costs. A `redefines`
 is COBOL's, so nothing checks that the type field was tested before the overlay
 was read: the compiler refuses to hand back a value whose type is a guess, and
 it cannot stop you making the guess by hand.
@@ -799,8 +799,8 @@ json payload.body from line; // …published
 ```
 
 A statement that _fills_ the record is not a use: a second `read into` it, a
-queue `getMessage into` it, a DL/I get. Those replace the stale bytes rather
-than trusting them, which is the fix rather than the defect.
+queue `getMessage into` it, a DL/I get. Those replace the stale bytes instead of trusting them, so they are the fix
+and not the defect.
 
 The walk reaches every block a statement runs, including the `on page` block of
 a write and the bodies of a sort's input and output procedures. A transaction's

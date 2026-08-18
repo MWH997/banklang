@@ -101,7 +101,7 @@ than COBOL, which allows one in any group; the reason is in `docs/diagnostics.md
 carry a `page ...` clause, since both decide where the page ends
 (`BANK-FILE-007`).
 
-#### What a report costs on z/OS
+### What a report costs on z/OS
 
 **Report Writer is not part of Enterprise COBOL.** The Language Reference says
 so: the Report Writer module of the standard "is supported with the optional IBM
@@ -121,7 +121,7 @@ since the expansion leaves external references to it.
 If your installation does not license 5798-DYR, do not use `report`: `page` on
 the file paginates with `LINAGE`, which is in the base compiler.
 
-#### Verifying one locally
+### Verifying one locally
 
 GnuCOBOL implements Report Writer and [the tests
 execute one](../../tests/report-writer.test.ts): headings, control breaks, and

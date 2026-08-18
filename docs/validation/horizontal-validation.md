@@ -215,7 +215,7 @@ So a callable program is a shape BankLang plausibly needs. Two reasons kept it
 out of this release. It amounts to a whole programme shape (parser, entry
 contract, ABI, JCL, zUnit) rather than a feature, and building it in the same phase that
 measured COBOLEval would be indistinguishable from building it _for_ COBOLEval.
-The honest zero stands, and the evidence that would justify the work is recorded
+The zero stands, and the evidence that would justify the work is recorded
 rather than spent.
 
 ## Where the string operations actually stand

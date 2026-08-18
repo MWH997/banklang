@@ -17,9 +17,9 @@ The rest of this page is why it looks the way it does.
 ## Read a whole program first
 
 `evidence/account-file-batch/cobol/ACCOUNTF.cbl` is a batch program that reads a
-sequential master, posts to the ledger and writes an advice file. It runs to a few hundred
-lines and it is the honest sample: not a hello-world, and not the biggest thing
-here either.
+sequential master, posts to the ledger and writes an advice file. It runs to a
+few hundred lines, which makes it a fair sample: not a hello-world, and not the
+biggest thing here either.
 
 Read it before reading any of the reasoning below. If something in it looks
 wrong, the reasoning is what you are checking.
@@ -69,9 +69,9 @@ Every program opens with one, and it is generated rather than written:
       *> ---------------------------------------------------------------
 ```
 
-Derived from the program, not maintained by editing, which is the failure mode
-of every prologue anybody has ever had to trust. If a DD name changes, this
-changes with it.
+Derived from the program, not maintained by editing. A prologue kept current by
+hand drifts away from the code it describes. If a DD name changes, this changes
+with it.
 
 ## `CBL` before anything else
 
@@ -80,15 +80,15 @@ CBL ARITH(COMPAT),TRUNC(STD),NUMPROC(NOPFD),NOSSRANGE
 CBL RENT,NODYNAM,QUOTE,PGMNAME(COMPAT)
 ```
 
-Every one of those is IBM's own default. Stating them is the point: your default
+Every one of those is IBM's own default. They are stated because your site's
 options module can change any of them, and several change what the program
 _computes_ rather than how it is compiled. `TRUNC(OPT)` does not truncate a
 binary receiver at all. `ARITH(EXTEND)` gives 31 digits where every generated
 picture is sized against 18.
 
 If your site forbids `CBL` statements, take them out and put the same options on
-the compile step's `PARM`. What must not happen is the program being compiled
-under options nobody wrote down.
+the compile step's `PARM`. The program must never be compiled under options
+nobody wrote down.
 
 ## Single exit, and one failure path
 
@@ -167,7 +167,7 @@ so a program built without it silently loses the checking. The guard is in the
 source, where it cannot be switched off by a JCL change.
 
 A literal subscript gets no guard: it was proved in range when it was compiled,
-and a branch that can never be taken is worse than no branch.
+and a branch that can never be taken is noise in a review.
 
 ## Names
 

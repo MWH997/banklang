@@ -16,7 +16,7 @@ import { checked, corpus } from "./helpers";
  * The external audit set the rule: "no feature may be represented by exactly
  * one fixture. Each needs at minimum a benign case, a boundary case, and a
  * failure case." A construct with one test has one shape proved, and the shape that was
- * chosen is the one the author already had in mind, which is exactly how
+ * chosen is the one the author already had in mind, which is how
  * `ROUNDED MODE IS NEAREST-EVEN` survived two years of a green suite.
  *
  * These are meta-tests: they read the suite rather than the compiler, and they

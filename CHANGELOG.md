@@ -28,6 +28,9 @@ earlier was tagged or released.
 
 ### Changed
 
+- Rewrite the site copy, the documentation and the posts to drop prose that
+  praises its own frankness, and hold it there:
+  [comparison](docs/comparison.md).
 - Fit the playground to the viewport above 900px and scroll the panes inside
   themselves, so the editor stays beside the COBOL it produced.
 - Seed the playground's Input panel from what the program tests a field against,
@@ -47,6 +50,15 @@ earlier was tagged or released.
   evidence accurately.
 - Correct stale public claims about migration analysis, sensitive values in job
   logs, strict TypeScript/lint settings, and relative-file representability.
+- Repoint documentation citations that named a retired spec file and
+  language-reference section numbers, neither of which still exists:
+  [language reference](docs/language-reference.md).
+- Show every section of [IBM MQ](docs/language/mq.md) and
+  [Reports](docs/language/reports.md) in the on-this-page navigation, which the
+  pages skipped by heading `h4` directly under `h2`.
+- Order the IMS and MQ sections by their own numbers, and drop the heading
+  numbers the language pages no longer share:
+  [diagnostics](docs/diagnostics.md).
 
 ## [0.10.0] — 2026-08-09
 

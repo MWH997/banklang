@@ -54,7 +54,7 @@ it four bytes along.
 A field really can be called `reserved`; what settles it is the token after.
 A slot is followed by its byte count, a field by the `:` before its type.
 
-### 5c. Variant records and variable-length tables
+### Variant records and variable-length tables
 
 Two clauses a real copybook is built on:
 
@@ -118,7 +118,7 @@ an offset no other record has, and a copybook that names a byte position
 nothing is at is worse than no copybook at all. GnuCOBOL refuses the shape
 outright, so such a program could not be executed locally either.
 
-### 5a. Inheritance
+### Inheritance
 
 A record may extend another. The base fields are laid out first, so the derived
 record's leading storage is the base record's storage byte for byte:
@@ -158,7 +158,7 @@ this.
 
 Redeclaring an inherited field is `BANK-TYPE-017`; a cycle is `BANK-TYPE-016`.
 
-### 5b. Generics
+### Generics
 
 Records and functions may take type parameters. There is no runtime
 polymorphism in COBOL and no boxing, so every instantiation is expanded into a

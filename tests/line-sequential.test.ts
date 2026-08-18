@@ -384,7 +384,7 @@ function unused(): bool {
  * every byte of the boundary is a decision: where a record ends, whether
  * trailing blanks survive, whether the last line has a delimiter. Both of those
  * disagreements actually happened the first time this ran, and both were in the
- * harness rather than the compiler, which is exactly what a differential lane
+ * harness rather than the compiler, which is what a differential lane
  * is for.
  */
 describe("executing a line-sequential program", () => {

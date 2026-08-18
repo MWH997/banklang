@@ -384,7 +384,7 @@ Required controls:
 
 Every generated COBOL paragraph, data item, copybook record and audit event maps
 back to the BankTS span that asked for it. `bankc verify` fails when one does
-not, which is what makes traceability a measurement rather than a claim.
+not, so the traceability is checked on every build.
 
 Source map should include:
 

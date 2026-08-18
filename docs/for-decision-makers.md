@@ -4,8 +4,7 @@
 has to accept the generated COBOL. This page is for whoever has to accept the
 risk.
 
-It is short on purpose, and it leads with what the project cannot do, because
-you will find that out anyway and finding it yourself is worse.
+It is short, and it leads with what the project cannot do.
 
 ---
 
@@ -16,9 +15,8 @@ types are TypeScript's and whose statements are its own), and it emits IBM
 Enterprise COBOL, a copybook for every record, the JCL to build and run it, and
 a source map tying every generated line back to the line that produced it.
 
-**No model decides what is generated.** The same input produces byte-identical
-output, every time, on any machine. That is a test in the suite, not a claim on
-a page.
+**No AI decides what is generated.** The same input produces byte-identical
+output, every time, on any machine. A test in the suite checks it.
 
 ## What it is not
 
@@ -36,10 +34,9 @@ against QSAM, VSAM and Db2, with a ledger and audit calling convention it
 defines itself. It does not do IMS DB beyond a bounded surface, does not do
 distributed transactions, and does not replace a core banking package.
 
-[status-and-limits.md](status-and-limits.md) is longer and blunter. Read it
-before anything else on this page persuades you.
+[status-and-limits.md](status-and-limits.md) is longer and blunter.
 
-## The one thing it does that nothing else does
+## What it does that other tools do not
 
 It refuses to compile financially unsafe programs.
 
@@ -67,11 +64,10 @@ by at least one test. Whether those tests would notice the rule itself being
 weakened is a different question, and the mutation scores below are what this
 project has to say about it.
 
-**Why this is the interesting part.** Every one of those defects is normally
-caught by a person: a reviewer who knows to look, a tester who thinks of the
-retry, an auditor who reconciles after the fact. The claim here is that a class
-of defect stops depending on whether somebody remembered, rather than that the
-COBOL is better.
+Each of those defects is normally caught by a person: a reviewer who knows to
+look, a tester who thinks of the retry, an auditor who reconciles after the
+fact. The claim is that this class of defect stops depending on whether somebody
+remembered, not that the generated COBOL is better than COBOL written by hand.
 
 ## What the evidence actually is
 
@@ -106,17 +102,16 @@ Beyond that:
   to catalogue.
 - **Rounding is checked against exact arithmetic**, over every boundary case, in
   both shapes and all seven modes. Enterprise COBOL has one rounding phrase;
-  banker's rounding is arithmetic this compiler writes out, and it is proved
-  rather than asserted.
+  banker's rounding is arithmetic this compiler writes out, and the tests
+  execute every case of it.
 - **Mutation testing**, which changes the compiler and asks whether any test
   notices. Current scores: the rules that refuse a program at 70%, the
-  conformance linter at 69%, the emitter's formatting at 61%. Those numbers are
-  published because they are not good enough yet, and because a project that
-  only publishes its good numbers is telling you something else.
+  conformance linter at 69%, the emitter's formatting at 61%. They are published
+  because they are not good enough yet.
 
 ## What it would cost you to find out
 
-The honest next step is small and it is not a procurement.
+The next step is small, and it is not a procurement.
 
 1. **Read one conversion.** [`conversions/`](../conversions/) puts existing COBOL,
    the BankTS it becomes, and the regenerated COBOL side by side, a sequential
@@ -138,8 +133,7 @@ None of that requires a licence, a contract, or a conversation.
 
 ## What would have to be true before it went near production
 
-Stated plainly, because a list like this is usually absent and its absence is
-the tell:
+All five of these, none of which is true today:
 
 - **It compiles under IBM Enterprise COBOL**, not a configuration shaped to
   look like it, and the divergences are known and closed.
@@ -153,14 +147,13 @@ the tell:
   5 August 2026: an adversarial read by a z/OS application engineer looking for
   a reason to say no. It found three defects behind a green test suite,
   including a rounding phrase Enterprise COBOL has never had. Every audit since
-  has been the project reading itself, which is worth something and is not the
-  same thing.
+  has been the project reading itself, which is not the same thing.
 
-Until all five, this is a serious piece of engineering to evaluate and not a
-system to run money through. The project says so everywhere, including here.
+Until all five are true, this is something to evaluate, not a system to run
+money through.
 
 ---
 
-**Read next:** [status and honest limits](status-and-limits.md) ·
+**Read next:** [status and limits](status-and-limits.md) ·
 [for mainframe engineers](for-mainframe-engineers.md) ·
 [what the verification actually proves](verification.md)

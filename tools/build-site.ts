@@ -7,9 +7,8 @@
  * **Every claim on the page is generated, not written.** The diagnostics in the
  * refusal section come from running the compiler over the program printed
  * beside them. The COBOL comes from compiling the BankTS printed beside it, cut
- * to the paragraph by name. The counts come from counting. Nothing on the page
- * is a string somebody typed and nobody checked again, which is the failure
- * mode a landing page has: it ages into a claim the software stopped making.
+ * to the paragraph by name. The counts come from counting. That keeps the page
+ * from ageing into claims the compiler no longer makes.
  *
  * `tests/site.test.ts` holds that: it builds the page and asserts the COBOL on
  * it is the COBOL the compiler emits today.
@@ -70,16 +69,15 @@ export const SITE_ORIGIN = "https://banklang.mwhassan.com";
  * path a file has and the URL it answers on are two different strings, so
  * every canonical, `og:url`, sitemap entry and feed link has to use the second.
  *
- * Writing them out by hand went wrong exactly once and comprehensively.
- * Forty-seven of fifty-one sitemap entries named the redirecting form, which
- * Search Console reports as "Page with redirect, not indexed", and the two
- * indexes disagreed with each other: the docs index declared
- * `…/docs/index.html` canonical while its own sitemap entry said `…/docs/`.
- * One page, two URLs, and a search engine choosing between them.
+ * Writing them out by hand went wrong once, across the whole build. Forty-seven
+ * of fifty-one sitemap entries named the redirecting form, which Search Console
+ * reports as "Page with redirect, not indexed", and the two indexes disagreed
+ * with each other: the docs index declared `…/docs/index.html` canonical while
+ * its own sitemap entry said `…/docs/`.
  *
  * Derived here so there is one rule. `tests/docs-site.test.ts` holds every
- * sitemap entry to the canonical of the page it names, which is the invariant
- * that was broken rather than a restatement of this function.
+ * sitemap entry to the canonical of the page it names, so it tests the
+ * invariant that broke instead of restating this function.
  */
 export function servedPath(builtPath: string): string {
   const path = builtPath.replace(/\\/g, "/").replace(/^\/+/, "");
@@ -98,7 +96,7 @@ export function servedUrl(builtPath: string): string {
 }
 
 /**
- * The theme control, which is a toggle button rather than an action.
+ * The theme control. It is a toggle button, not an action.
  *
  * It used to read `Theme`, with an `aria-label` of "Switch between light and
  * dark", no `aria-pressed`, and a label that never changed, so neither a
@@ -147,11 +145,10 @@ export const THEME_SCRIPT = `    <script>
  * Diagnostics and no Playground link, the 404's omitted the author's site, and
  * the landing page's ordered them differently again.
  *
- * Below `--nav-breakpoint` the links are behind a menu button. They used to
- * wrap onto a row of their own, which is the arrangement a header falls into
- * when nothing decides what should happen instead: on a 360px screen the five
- * links and the theme toggle took two full rows above the fold, so a third of
- * the first screen of every page was navigation.
+ * Below `--nav-breakpoint` the links are behind a menu button. They used to wrap
+ * onto a row of their own by default: on a 360px screen the five links and the
+ * theme toggle took two full rows above the fold, so a third of the first
+ * screen of every page was navigation.
  * ------------------------------------------------------------------ */
 
 /** Where a navigation item points, and what marks it as the current page. */
@@ -463,14 +460,14 @@ export function siteContent(): SiteContent {
  *
  * This used to be six lines from `0000-MAIN.`, the `OPEN` alone, under a
  * paragraph arguing "no `FILE STATUS` field declared for any of them". A reader
- * who has written COBOL assumes the clauses are in the `FILE-CONTROL` paragraph
- * that is not being shown, because that is exactly where they would be. The
- * argument was sound and the exhibit did not support it.
+ * who has written COBOL would assume the clauses are in the `FILE-CONTROL`
+ * paragraph that is not being shown, because that is where they would normally
+ * be, so the exhibit did not support the argument.
  *
  * So both are on screen: the `SELECT` statements, where a `FILE STATUS` would
  * be and is not, and the `OPEN` whose outcome nothing then tests. They are
- * forty lines apart in the file, and the elision is marked rather than closed
- * up, because a listing that silently joins two places is its own small lie.
+ * forty lines apart in the file, and the elision is marked so the listing does
+ * not appear to be one continuous passage.
  */
 function fileHandling(text: string): string {
   const lines = text.split("\n");
@@ -699,9 +696,9 @@ export function responseHeaders(template: string, hashes: string[]): string {
    * `String.replace` with a string pattern substitutes the *first* occurrence,
    * and the first draft of the comment above the policy named the placeholder
    * while explaining it, so the hashes were written into a comment and the
-   * policy line shipped the literal token. A CSP source expression nothing
-   * matches is not a loud failure: it is every inline script on all fifty-four
-   * pages silently refusing to run, which is the theme on each of them and the
+   * policy line shipped the literal token. That fails quietly: a CSP source
+   * expression nothing matches leaves every inline script on all fifty-four
+   * pages refusing to run, which is the theme on each of them and the
    * documentation search.
    */
   const occurrences = template.split(PLACEHOLDER).length - 1;
@@ -790,11 +787,9 @@ function main(): void {
   // `base: "./"` is what lets it work from `/playground/`.
   execFileSync("pnpm", ["playground:build"], { cwd: ROOT, stdio: "inherit" });
 
-  // Vite has printed "(!) Some chunks are larger than 500 kB" on every build
-  // for as long as there has been a playground, and a warning nobody acts on is
-  // not a check. Before the copy,
-  // so an over-budget bundle stops the build rather than being published and
-  // then reported.
+  // Vite prints "(!) Some chunks are larger than 500 kB" on every build, and
+  // nothing acts on it. This runs before the copy, so an over-budget bundle
+  // stops the build instead of being published and then reported.
   const budget = checkPlaygroundBudget(ROOT);
   process.stdout.write(budget.report);
   for (const note of budget.slack) {

@@ -70,10 +70,10 @@ of them with an explanation and a remediation.
   looks like, as a contract
 - [Target conformance](target-conformance.md): the Enterprise COBOL rules the
   output obeys, each with a manual citation
-- [Status and honest limits](status-and-limits.md): what none of this claims
+- [Status and limits](status-and-limits.md): what none of this claims
 
 ## Trying it
 
-[`examples/`](../examples/) carries twenty-three worked programs, each with its
+[`examples/`](../examples/) carries twenty-three worked examples, each with its
 generated COBOL, copybooks, JCL and verification report. The
 [playground](../packages/playground/) runs the whole compiler in a browser.

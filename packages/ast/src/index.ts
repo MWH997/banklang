@@ -1147,7 +1147,7 @@ export type ReportGroupType =
  *
  * A `detail` is printed by `generate`. Everything else the compiler prints on
  * its own: a page heading when the page turns, a control footing when the
- * named field changes, which is exactly the bookkeeping a hand-written report
+ * named field changes, which is the bookkeeping a hand-written report
  * gets wrong.
  */
 export interface ReportGroupNode extends NodeBase {

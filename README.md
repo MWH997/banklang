@@ -11,13 +11,13 @@ COBOL that a mainframe engineer can read and sign off.
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
 BankTS borrows TypeScript's type syntax; its statements (`transaction`, `file`,
-`cursor`, `queue`) are its own. No model is involved anywhere, and the same
-input always produces byte-identical output.
+`cursor`, `queue`) are its own. No AI is involved anywhere, and the same input
+always produces byte-identical output.
 
-COBOL handles money itself well: amounts are packed decimal, exact to the penny.
-What it has no concept of is bookkeeping. A transaction whose debits and credits
-do not match is, to a COBOL compiler, correct arithmetic. This one **refuses to
-build it**.
+COBOL is good with money: amounts are packed decimal, exact to the penny. It
+knows nothing about bookkeeping. A transaction whose debits and credits do not
+match is, to a COBOL compiler, correct arithmetic. This one **refuses to build
+it**.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -42,7 +42,7 @@ default. No IBM Enterprise COBOL validation is claimed.
 
 **Built with AI assistance.** The design and the decisions are the author's;
 much of the implementation was written with an AI coding assistant under review.
-There is no model inside it, at build time or at run time.
+There is no AI inside the compiler itself, at build time or at run time.
 
 **[Read this first →](docs/getting-started.md)** ·
 **[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
@@ -196,7 +196,7 @@ of which has anywhere local to run. [The grades →](evidence/GRADES.md)
 | [Getting started](docs/getting-started.md)                 | Thirty minutes from clone to reading COBOL   |
 | [For mainframe engineers](docs/for-mainframe-engineers.md) | The generated COBOL, construct by construct  |
 | [For the person deciding](docs/for-decision-makers.md)     | The risk, and what it would cost to find out |
-| [Status and honest limits](docs/status-and-limits.md)      | What this is not                             |
+| [Status and limits](docs/status-and-limits.md)             | What this is not                             |
 | [Comparison](docs/comparison.md)                           | Against converters, Micro Focus, and by hand |
 
 **The output**

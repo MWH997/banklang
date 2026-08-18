@@ -118,6 +118,91 @@ describe("every link in every document", () => {
   });
 
   /**
+   * The same rule, over the source a contributor reads.
+   *
+   * The check above walks Markdown only, so five comments in
+   * `packages/semantic-analyzer/src/index.ts` went on citing
+   * `language-spec.md` sections 10, 11 and 13 long after that file was replaced
+   * by `docs/language-reference.md` and its per-topic pages, which no longer
+   * number their sections at all. A contributor following the citation had
+   * nowhere to go, and the rule those checks implement is exactly the thing the
+   * comment existed to point at.
+   *
+   * Comments are outside the prose rules in `tests/prose.test.ts`, and
+   * deliberately so. This is not a style rule: a named file either exists or it
+   * does not.
+   *
+   * The exemption below is a file-and-name pair rather than a whole file. This
+   * file has to name a retired document to explain what the rule catches, and
+   * an earlier version of this test skipped the file entirely for that reason.
+   * That was too wide in the direction that matters: `language-spec.md` is the
+   * citation this rule exists to find, so a later stale reference added here
+   * would have gone unreported by the check written to report it.
+   */
+  it("names no missing document from the TypeScript sources", () => {
+    const known = new Set(FILES.map((file) => file.replace(/\\/g, "/")));
+    const missing: string[] = [];
+
+    const sources = (root: string): string[] =>
+      readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+        if (entry.name === "node_modules" || entry.name === "dist") {
+          return [];
+        }
+        const path = join(root, entry.name);
+        if (statSync(path).isDirectory()) {
+          return sources(path);
+        }
+        return entry.name.endsWith(".ts") ? [path] : [];
+      });
+
+    /**
+     * Retired documents a particular file is allowed to name, because it is
+     * describing their removal. Keyed by the file, so the same name stays
+     * reportable everywhere else.
+     */
+    const namedAsHistory = new Map<string, Set<string>>([
+      [
+        "tests/documentation.test.ts",
+        new Set([
+          // The four this file's own comments cite as the dead links that
+          // prompted the Markdown checks above.
+          "language-spec.md",
+          "banking-safety-spec.md",
+          "definitions.md",
+          "repo-conventions.md",
+          // Two renames the comments record: an intermediate changelog split,
+          // and the page the external audit asked to be renamed.
+          "before-2026-08-05.md",
+          "numeric-semantics.md",
+        ]),
+      ],
+    ]);
+
+    for (const file of ["packages", "tools", "tests"].flatMap(sources)) {
+      const path = file.replace(/\\/g, "/");
+      const allowed = namedAsHistory.get(path) ?? new Set<string>();
+      const text = readFileSync(file, "utf8");
+      for (const [, named = ""] of text.matchAll(/`([\w./-]+\.md)`/g)) {
+        const base = named.split("/").pop() as string;
+        if (
+          // Written by a z/OS run that has not happened, and named for that
+          // reason, the same way the Markdown check treats it.
+          base === "RESULTS.md" ||
+          allowed.has(base) ||
+          [...known].some(
+            (known) => known.endsWith(`/${base}`) || known === base,
+          )
+        ) {
+          continue;
+        }
+        missing.push(`${file} names ${named}`);
+      }
+    }
+
+    expect(missing).toEqual([]);
+  });
+
+  /**
    * The README must not link a working paper.
    *
    * This assertion is the reverse of the one it replaces. Links to
@@ -493,7 +578,7 @@ describe("what the Run tab was run on", () => {
 /**
  * The citation file, held to the rest of the repository.
  *
- * A `CITATION.cff` is metadata nobody reads while working, which is exactly why
+ * A `CITATION.cff` is metadata nobody reads while working, which is why
  * it rots: it names a version, a licence and a repository, and each of those is
  * stated somewhere else that does change. The failure is silent and it surfaces
  * in the worst place, in somebody else's bibliography, naming a release that

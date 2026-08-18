@@ -7,7 +7,7 @@
  * thirteen evidence bundles, and until now every one of those was a string
  * somebody had typed. A disclaimer that depends on an author remembering to
  * write it is not a control: the day somebody runs the bundle on real hardware,
- * the honest edit and the overstated one look identical in review, and the day
+ * a correct edit and an overstated one look identical in review, and the day
  * nobody runs it the disclaimer can be deleted by accident and nothing fails.
  *
  * So the claim is derived instead. `ibmValidationStatus` looks for imported

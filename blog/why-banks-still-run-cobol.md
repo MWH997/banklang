@@ -9,9 +9,9 @@ reading: status-and-limits.md
 
 Every few years somebody announces that a bank is finally getting off COBOL.
 Every few years the announcement is quietly followed by a smaller one saying the
-programme has been re-scoped. It happens often enough that it is worth asking
-what the actual obstacle is, because it is not that nobody has thought of
-rewriting the code.
+programme has been re-scoped. It happens often enough to be worth asking what
+the real obstacle is. Plenty of people have thought of rewriting the code, so
+that is not the hard part.
 
 ## What the code is really holding
 
@@ -42,10 +42,9 @@ is much better evidence than a test suite and much worse to work with. You
 cannot ask it what it does with an edge case; you can only look for a day when
 that case happened and see what it did.
 
-**Nobody can enumerate the behaviour.** Not because the people are not good, but
-because the behaviour is not written down anywhere except in the code, and the
-code is large. A team can read it. A team cannot read all of it and hold it at
-once, which is what a rewrite needs.
+**Nobody can enumerate the behaviour.** It is not written down anywhere except
+in the code, and the code is large. A team can read it. A team cannot read all
+of it and hold it at once, which is what a rewrite needs.
 
 **The two systems have to agree to the penny.** Not approximately. A rounding
 difference of one hundredth of a currency unit, on a few million accounts, on a
@@ -87,8 +86,8 @@ review meant nothing.
 
 ## What that buys you
 
-The interesting part is not the translation. Turning one language into another
-is well understood, and if that were all this was, it would be a curiosity.
+Translation is the well understood part. Turning one language into another has
+been done many times, and if that were all this was, it would be a curiosity.
 
 The interesting part is what a compiler can refuse.
 
@@ -108,7 +107,7 @@ that can actually be checked.
 
 ## Where this gets hard
 
-It would be dishonest to stop there, so here is the other side.
+Three things make this hard.
 
 A restricted language is restricted. It cannot express everything a general
 purpose language can, and that is the point, but it means some programs have no

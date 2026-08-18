@@ -43,8 +43,8 @@ export interface SemanticAnalysisResult {
  * Banking safety analysis over the lowered IR.
  *
  * These checks implement the transaction, ledger, and audit rules in
- * `language-spec.md` sections 10 and 11, using the diagnostic identifiers
- * catalogued in `banking-safety-spec.md`.
+ * `docs/language/transactions.md`, using the diagnostic identifiers catalogued
+ * in `docs/diagnostics.md`.
  */
 export function analyzeProgramSemantics(
   program: IRProgram,
@@ -260,7 +260,7 @@ function loopPosts(statement: IRStatement): boolean {
 }
 
 /**
- * `language-spec.md` section 13: file status must be checked. A declaration
+ * `docs/language/files.md`: file status must be checked. A declaration
  * without a `status` clause gives the generated COBOL no FILE STATUS field, so
  * the operation result would be unobservable.
  */
@@ -280,7 +280,7 @@ function checkFileStatus(file: IRFile): Diagnostic[] {
 }
 
 /**
- * `language-spec.md` section 10: a transaction must have an idempotency key.
+ * `docs/language/transactions.md`: a transaction must have an idempotency key.
  * The key is satisfied by a parameter named `idempotencyKey` or by a record
  * parameter that declares such a field.
  */
@@ -313,8 +313,8 @@ function checkIdempotencyKey(transaction: IRTransaction): Diagnostic[] {
 }
 
 /**
- * `language-spec.md` sections 10 and 11: a transaction must emit at least one
- * audit event, and audit event names must be compile-time constants.
+ * `docs/language/transactions.md`: a transaction must emit at least one audit
+ * event, and audit event names must be compile-time constants.
  */
 function checkAuditEvents(
   transaction: IRTransaction,
@@ -349,7 +349,7 @@ function checkAuditEvents(
 }
 
 /**
- * `language-spec.md` section 10: debit and credit totals must balance for
+ * `docs/language/transactions.md`: debit and credit totals must balance for
  * ledger-posting operations.
  *
  * The current subset has no runtime evaluation, so balance is proven
@@ -482,7 +482,7 @@ function diagnostic(
  *    and lose the rounding entirely, with nothing said.
  * 2. A rounded division is generated from `DIVIDE ... REMAINDER`, and the
  *    remainder has to fit a field. When it does not, the tie test would be run
- *    against a truncated remainder, which is exactly the class of silently
+ *    against a truncated remainder, which is the class of silently
  *    wrong answer this compiler exists to refuse.
  */
 function checkRoundingIsGeneratable(program: IRProgram): Diagnostic[] {

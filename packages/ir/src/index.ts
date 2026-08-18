@@ -1150,7 +1150,7 @@ export interface BoolIRType {
  * A date, time, or timestamp.
  *
  * Stored as the mainframe convention rather than as an opaque handle: a date is
- * `PIC 9(8)` holding YYYYMMDD, which is exactly why comparing and sorting dates
+ * `PIC 9(8)` holding YYYYMMDD, which is why comparing and sorting dates
  * is ordinary numeric comparison. A timestamp is `PIC X(26)`, the Db2 host
  * variable format, so it can be read from and written to a TIMESTAMP column.
  */

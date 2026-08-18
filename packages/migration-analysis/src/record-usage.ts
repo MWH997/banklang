@@ -103,7 +103,7 @@ export interface RecordUsage {
   openedIo: number;
   /**
    * None of the above: several named layouts, no overlay, no copybook, no
-   * shared leading field. The residue, and the honest size of "variants this
+   * shared leading field. The residue, and the true size of "variants this
    * analyser could not classify".
    */
   unclassified: number;

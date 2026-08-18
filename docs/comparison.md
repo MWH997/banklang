@@ -1,7 +1,6 @@
 # Comparison
 
-Where BankLang sits against the alternatives, and what it is worse at. The
-second half is what makes the first half worth reading.
+Where BankLang sits against the alternatives, and what it is worse at.
 
 ---
 
@@ -29,9 +28,8 @@ reviewer can miss and a test suite can pass.
 | What you can review | The output, once                             | The rule, once, and then every program  |
 | Failure mode        | A plausible program that is subtly different | A refusal, with a diagnostic identifier |
 
-The honest comparison is that they solve opposite problems. A converter is for
-an estate somebody wants to leave. BankLang is for writing new programs _into_
-an estate that is staying.
+They solve opposite problems. A converter is for an estate somebody wants to
+leave. BankLang is for writing new programs _into_ an estate that is staying.
 
 Where a converter wins outright: it transforms the code you already have.
 BankLang has copybook and DCLGEN import so a new program can share your records,
@@ -87,9 +85,6 @@ This is the real comparison, because it is the one an actual team faces.
 
 ## What BankLang is worse at
 
-Stated plainly, because a page that lists only advantages is one nobody
-believes.
-
 1. **It has never been compiled by IBM Enterprise COBOL.** Everything local runs
    under GnuCOBOL, which is a different compiler.
    [divergences.md](divergences.md) is the list of places they are known or
@@ -104,10 +99,10 @@ believes.
    the same thing.
 
 4. **The test framework for the source is thin.** `test <name> for <entry
-transaction>` becomes a zUnit case to run on z/OS, and what it can assert
-   is the PARM the step is started with and the calls the program makes: see
-   `docs/zunit.md`. Anything beyond that, you test the
-   generated program the way you test any COBOL program.
+transaction>` becomes a zUnit case to run on z/OS, and what it can assert is
+   the PARM the step is started with and the calls the program makes: see
+   `docs/zunit.md`. Anything beyond that, you test the generated program the way
+   you test any COBOL program.
 
 5. **Nobody on your team knows the language.** That is a real cost and it does
    not go away by writing a good language reference.
@@ -136,8 +131,7 @@ reported as success rather than a program that will not compile.
 An estate you are leaving. A program that needs the parts of COBOL this subset
 does not have. A team with nobody who wants to learn another language. Anything
 where "it has never been compiled by the target compiler" is not an acceptable
-sentence, which is a reasonable position, and is why that sentence is on this
-page rather than at the bottom of a README.
+sentence, which is a reasonable position.
 
 ---
 

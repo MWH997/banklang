@@ -390,7 +390,7 @@ describe("the language server the extension loads", () => {
     // character count overruns into the following header, which costs both
     // messages and every one after them, because the buffer never realigns.
     // A message on its own survives the overrun, because `String.prototype.slice`
-    // clamps, so the two have to arrive in one write, which is exactly how a
+    // clamps, so the two have to arrive in one write, which is how a
     // client sends a notification and the request that follows it.
     //
     // A non-ASCII path is not exotic: it is someone whose project lives under

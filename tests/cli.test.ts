@@ -461,7 +461,7 @@ describe("an error that escapes the compiler", () => {
    *   that failed to parse, also without a stack.
    *
    * A directory in a file's place satisfies `existsSync` and dies at
-   * `readFileSync` with `EISDIR`, which is exactly the boundary: a real errno
+   * `readFileSync` with `EISDIR`, which is the boundary: a real errno
    * from a read the compiler chose to make, with no rule behind it.
    */
   describe("with no identifier", () => {
