@@ -1,4 +1,4 @@
-# OpenCBS COBOL defects suite — horizontal coverage
+# OpenCBS COBOL defects suite: horizontal coverage
 
 **Upstream** https://github.com/PhaseChangeSoftware/cobol-defects-suite
 

@@ -166,6 +166,33 @@ describe("every Stryker config", () => {
     });
   }
 
+  /**
+   * The sandbox copy of an HTML file has to be the file.
+   *
+   * Stryker's `disableTypeChecks` defaults to `true`, which is every file it
+   * recognises, HTML included: it inserts `// @ts-nocheck` into each `<script>`
+   * and moves the closing tag to the start of a line. `packages/playground/
+   * index.html` carries the generated menu script, and `tests/site-layout.test`
+   * holds it to the generator's bytes, so the rules lane's dry run failed on a
+   * rewrite Stryker had done to the evidence. No mutant ran, no report was
+   * written, and the score the lane exists to produce was simply absent.
+   *
+   * One pattern for every lane, checked by equality. A lane that is written
+   * from the shape of another one and drops the key inherits the default and
+   * the same silent failure, which is how the missing `plugins` above happened.
+   */
+  const TYPE_CHECK_PATTERN = "**/*.{js,cjs,mjs,ts,cts,mts,jsx,tsx}";
+
+  for (const config of STRYKER) {
+    it(`leaves HTML out of the type-check rewrite: ${config}`, () => {
+      const lane = JSON.parse(readFileSync(config, "utf8")) as {
+        disableTypeChecks?: boolean | string;
+      };
+      expect(lane.disableTypeChecks).toBe(TYPE_CHECK_PATTERN);
+      expect(TYPE_CHECK_PATTERN).not.toMatch(/html|vue/);
+    });
+  }
+
   it("splits the interpreter and precompiler into bounded lanes", () => {
     const runtime = JSON.parse(source("stryker.runtime.config.json")) as {
       mutate: string[];

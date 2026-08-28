@@ -1,6 +1,6 @@
 {
-  "banklangVersion": "0.9.0",
-  "gitCommit": "d45f3c256a7decc5546553528846cc3a836c909b",
+  "banklangVersion": "0.10.0",
+  "gitCommit": "b0e81267038b0fc48baff75c54cb4b27507de352",
   "nodeVersion": "v24.18.0",
   "gnucobolVersion": "cobc (GnuCOBOL) 3.2.0",
   "platform": "darwin",
