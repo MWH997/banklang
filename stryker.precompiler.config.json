@@ -26,6 +26,8 @@
     "excludedMutations": ["StringLiteral", "Regex"]
   },
   "ignorePatterns": ["dist", "vendor-docs", ".stryker-tmp*"],
+  "disableTypeChecks": "**/*.{js,cjs,mjs,ts,cts,mts,jsx,tsx}",
+  "_disableTypeChecks_comment": "A pattern rather than the default `true`, which reaches HTML as well. Stryker inserts `// @ts-nocheck` into every `<script>` of a sandboxed .html file and moves its closing tag, so `packages/playground/index.html` arrived at the dry run with a mangled menu script and `tests/site-layout.test.ts` failed before a single mutant was tested. No lane mutates HTML, so no lane needs type checks disabled in it.",
   "ignoreStatic": true,
   "concurrency": 8,
   "incremental": false,

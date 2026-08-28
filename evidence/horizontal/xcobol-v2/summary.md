@@ -1,4 +1,4 @@
-# X-COBOL v2 — horizontal coverage
+# X-COBOL v2: horizontal coverage
 
 **Upstream** https://zenodo.org/records/14269462
 
@@ -6,7 +6,7 @@
 
 **Licence** CC-BY-4.0, redistribution: derived-only
 
-**What this establishes.** What constructs real COBOL actually contains, whether this toolchain's reader survives them, and which of them BankTS can and cannot represent — ranked by how often they really occur.
+**What this establishes.** What constructs real COBOL actually contains, whether this toolchain's reader survives them, and which of them BankTS can and cannot represent, ranked by how often they really occur.
 
 **What it does not.** No behavioural oracle. These are files, not tests: nothing here can establish that anything computes the right answer, and a representability figure is a statement about language scope rather than about correctness.
 

@@ -1,6 +1,6 @@
-# NIST COBOL-85 validation suite — local conformance
+# NIST COBOL-85 validation suite: local conformance
 
-**Status** not supplied — set BANKLANG_CCVS85_DIR to a local copy
+**Status** not supplied; set BANKLANG_CCVS85_DIR to a local copy
 
 **What this establishes.** Whether the COBOL implementation underneath this compiler behaves as the standard requires for the constructs the backend actually emits.
 

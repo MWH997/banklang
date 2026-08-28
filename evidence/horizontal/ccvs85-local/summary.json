@@ -1,6 +1,6 @@
 {
   "available": false,
-  "location": "not supplied — set BANKLANG_CCVS85_DIR to a local copy",
+  "location": "not supplied; set BANKLANG_CCVS85_DIR to a local copy",
   "corpusFingerprint": null,
   "discovered": 0,
   "applicable": 0,

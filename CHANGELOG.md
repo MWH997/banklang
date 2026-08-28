@@ -48,6 +48,12 @@ earlier was tagged or released.
 - Repair scheduled validation: pin GnuCOBOL for horizontal execution, exclude
   repository-only mutation tests, split runtime mutation, and report missing
   evidence accurately.
+- Keep Stryker's type-check rewrite off HTML, so the rules mutation lane stops
+  failing its dry run on a mangled copy of the playground's menu script:
+  [verification](docs/verification.md).
+- Regenerate the horizontal validation evidence the prose rewrite left stale,
+  and open an issue when that job fails rather than leaving a red weekly run
+  unread: [horizontal validation](docs/validation/horizontal-validation.md).
 - Correct stale public claims about migration analysis, sensitive values in job
   logs, strict TypeScript/lint settings, and relative-file representability.
 - Repoint documentation citations that named a retired spec file and

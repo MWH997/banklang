@@ -293,12 +293,20 @@ jobs:
       # measurement ran on, which differs from the commit the evidence was
       # committed in by construction. Comparing it would report every run as
       # stale, and a check that always fails is a check nobody reads.
+      #
+      # Written to a file as well as the log, so the issue below can carry the
+      # diff. `continue-on-error` keeps that issue reachable; the last step
+      # restores the failure.
       - name: Fail if the committed results are stale
+        id: stale
+        continue-on-error: true
         run: |
-          git diff --exit-code -- \
+          git diff -- \
             docs/validation \
             evidence/horizontal \
-            ':!evidence/horizontal/*/environment.json'
+            ':!evidence/horizontal/*/environment.json' > "$RUNNER_TEMP/stale.diff"
+          cat "$RUNNER_TEMP/stale.diff"
+          test ! -s "$RUNNER_TEMP/stale.diff"
 
       - name: Upload the evidence
         if: always()
@@ -307,6 +315,76 @@ jobs:
           name: horizontal-evidence
           path: evidence/horizontal
           retention-days: 90
+
+      # The mutation lanes have opened an issue on failure since they were
+      # written and this job did not, which is why a stale-evidence failure sat
+      # on `main` for a week while the mutation failure next to it was read the
+      # morning it happened. A weekly job nobody is told about is a job nobody
+      # reads.
+      #
+      # `failure()` covers the steps before this one, which fail the job on
+      # their own: a corpus that no longer matches the lock, an analyser that
+      # threw, a run that could not compile. The `stale` outcome is separate
+      # because that step continues on error so its diff can be reported.
+      - name: Open an issue when horizontal validation fails
+        if: failure() || steps.stale.outcome == 'failure'
+        uses: actions/github-script@v9
+        env:
+          STALE_OUTCOME: ${{ steps.stale.outcome }}
+        with:
+          script: |
+            const fs = require("node:fs");
+            const stale = process.env.STALE_OUTCOME === "failure";
+            const title = "Horizontal validation failed";
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const captured = `${process.env.RUNNER_TEMP}/stale.diff`;
+            const diff =
+              stale && fs.existsSync(captured)
+                ? fs.readFileSync(captured, "utf8")
+                : "";
+            const body = [
+              stale
+                ? "The committed results no longer match what the corpora produce. `docs/validation` and `evidence/horizontal` are generated, so this is a diff between what is in git and what the pinned corpora say today."
+                : "A step before the staleness check failed, so no comparison was made. The corpora are pinned by `validation/corpus-lock.json`: a fetch that disagrees with the lock, an analyser that threw, or a program that would not compile all land here.",
+              "",
+              `Run: ${url}`,
+              "",
+              ...(diff
+                ? ["```diff", diff.slice(0, 50000).trimEnd(), "```", ""]
+                : []),
+              stale
+                ? "Regenerate rather than edit the evidence by hand: `pnpm horizontal:fetch`, `horizontal:materialise`, `horizontal:analyse`, `horizontal:run`, `horizontal:ccvs85`, `horizontal:report`. A diff that moves a measured number is a different finding from one that only moves prose, and is worth reading before it is committed."
+                : "The evidence produced up to the failure is attached to that run as an artifact.",
+            ].join("\n");
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "validation",
+            });
+            const open = existing.data.find((issue) => issue.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["validation"],
+              });
+            }
+
+      # The staleness step continues only so its diff can be uploaded and
+      # written into the issue. Restore its failure as the job's conclusion.
+      - name: Fail a stale horizontal run
+        if: steps.stale.outcome == 'failure'
+        run: exit 1
 
   advisories:
     name: advisories

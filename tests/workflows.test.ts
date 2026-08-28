@@ -94,6 +94,29 @@ describe("the scheduled validation toolchain", () => {
     expect(scheduled).toContain('GNUCOBOL_VERSION: "3.2"');
   });
 
+  /**
+   * A red weekly job that tells nobody is a job that reports nothing.
+   *
+   * The mutation lanes have opened an issue on failure since they were written.
+   * This one did not, and on 2026-08-24 it went red because the evidence in git
+   * no longer matched what the corpora produce. The mutation failure in the same
+   * run was read that morning; the stale evidence sat on `main` for a week.
+   */
+  it("reports a failed horizontal run as an issue", () => {
+    const horizontal = job(scheduled, "horizontal");
+    expect(horizontal).toContain("id: stale");
+    expect(horizontal).toContain(
+      "if: failure() || steps.stale.outcome == 'failure'",
+    );
+    expect(horizontal).toContain('labels: ["validation"]');
+    // The staleness step continues on error so its diff can be reported, which
+    // makes restoring the failure the only thing that fails the job.
+    expect(horizontal).toContain("- name: Fail a stale horizontal run");
+    // Still excluded: it records the commit the measurement ran on, which
+    // differs from the commit the evidence was committed in by construction.
+    expect(horizontal).toContain("':!evidence/horizontal/*/environment.json'");
+  });
+
   it("keeps cache-hit dependencies and the version assertion in the setup", () => {
     expect(setup).toContain("uses: actions/cache@v6");
     expect(setup).toContain("libcjson-dev");
