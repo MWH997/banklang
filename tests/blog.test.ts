@@ -23,9 +23,8 @@ import { servedUrl } from "../tools/build-site";
  * `<h1>` somewhere else, a link that rotted when a page moved. All of it is
  * checkable, and none of it is checkable by reading the post again next year.
  *
- * The prose rules that used to live here are in `tests/prose.test.ts` now,
- * where they apply to the documentation and the site copy as well. That file's
- * header explains why.
+ * The checks here cover metadata, links, and the structure of the rendered
+ * pages. The post body remains authored Markdown.
  */
 
 const ALL = posts();
@@ -88,12 +87,7 @@ describe("the posts", () => {
 });
 
 /**
- * House style, the half that is specific to a post.
- *
- * The two prose rules used to live here and to apply to five files. Both moved
- * to `tests/prose.test.ts`, which applies them to the documentation and the
- * site copy as well, and the reasoning is written at the top of that file. What
- * is left here is what is about a post rather than about prose in general.
+ * Structural checks specific to a post.
  */
 describe("how the posts are written", () => {
   it("says something specific in the first paragraph", () => {
@@ -187,10 +181,9 @@ describe("the byline", () => {
     expect(about).toContain(AUTHOR.email);
     expect(about).toContain(AUTHOR.orcid);
     expect(about).toContain(AUTHOR.github);
-    // The page says the two things a reader arriving from a byline is owed and
-    // the rest of the site says elsewhere: how it was written, and what has
-    // never been done.
-    expect(about).toMatch(/AI coding assistant/);
+    // The page identifies the maintainer and states the current validation
+    // boundary for generated COBOL.
+    expect(about).toMatch(/does\s+not call a model/);
     expect(about).toMatch(/never run on z\/OS/);
   });
 });

@@ -1,7 +1,8 @@
 # Getting started
 
-Thirty minutes from clone to reading generated COBOL and understanding why it
-looks the way it does.
+Clone the repository, run the browser playground, and build an example. This
+guide ends with generated COBOL, JCL, copybooks, and verification reports on
+your machine.
 
 ## Requirements
 
@@ -14,7 +15,7 @@ cd banklang
 pnpm install
 ```
 
-Installing GnuCOBOL is worth the two minutes if you want the whole picture:
+Install GnuCOBOL if you want to compile and execute the generated programs:
 
 ```bash
 brew install gnu-cobol        # macOS, currently 3.2.0
@@ -29,26 +30,25 @@ your distribution ships 3.1, either build 3.2 or expect those lanes to fail.
 
 ---
 
-## Five minutes: see what it does
+## Run the playground
 
 ```bash
 pnpm playground:dev
 ```
 
-The entire compiler runs in your browser: there is no compile server and
-nothing you write is sent anywhere. Click any line of BankTS and the COBOL it
-produced lights up, and the other way round. That cross-link is read straight
-from the emitted source map, so you can check the traceability yourself.
+The compiler runs in your browser. There is no compile server, and editor
+content stays in the browser. Click a line of BankTS or COBOL to follow the
+source map between the two panes.
 
 ---
 
-## Ten minutes: compile something
+## Build an example
 
 ```bash
 pnpm bankc build examples/account-file-batch
 ```
 
-That writes `dist/`:
+That writes the following artifacts under `dist/`:
 
 ```
 dist/cobol/ACCOUNTF.cbl      the program
@@ -58,11 +58,11 @@ dist/maps/source-map.json    every module, record, field, function, transaction
 dist/audit/                  diagnostics, decimal analysis, layout report
 ```
 
-Read `dist/cobol/ACCOUNTF.cbl` from the top. The prologue tells you what the
-program is, how it is entered, which datasets it touches under which DD names,
-what modules it calls and what each return code means.
+Read `dist/cobol/ACCOUNTF.cbl` from the top. Its prologue describes the entry
+point, datasets, external calls, and return codes.
 
-Then read `dist/jcl/ACCOUNTF.jcl`. It is meant to be submittable.
+Then read `dist/jcl/ACCOUNTF.jcl`. It is a generated starting point that still
+needs the site's job-card, dataset, and procedure standards.
 
 If you are a mainframe engineer, go to
 **[for-mainframe-engineers.md](for-mainframe-engineers.md)** now. It reads that
@@ -71,9 +71,9 @@ about to ask.
 
 ---
 
-## Fifteen minutes: break something on purpose
+## See a diagnostic
 
-The compiler's whole claim is about what it refuses. Open
+Open
 `examples/account-posting/src/main.bank.ts` and try each of these:
 
 **Post a debit with no matching credit.**
@@ -103,17 +103,17 @@ type MoneyUSD = currency<"USD", 18, 2>;
 somebody has to supply and a compiler that invented one would be inventing an
 exchange rate.
 
-**Write an audit event with no idempotency key.**
+**Write a transaction with an audit event but no idempotency key.**
 
-`BANK-TXN-001`. An audit trail nobody can deduplicate is one nobody can
-reconcile.
+`BANK-TXN-001`. Retries need a caller-supplied key so the operation can be
+identified and deduplicated by the surrounding system.
 
 `pnpm bankc explain BANK-LED-001` prints the catalogue entry for any of them,
 and [diagnostics.md](diagnostics.md) is the whole list.
 
 ---
 
-## Thirty minutes: run the checks
+## Run the checks
 
 ```bash
 pnpm typecheck          # TypeScript
@@ -123,25 +123,19 @@ pnpm lint:conformance   # every artifact, against the target's rules
 pnpm lint:zos           # every artifact, against what z/OS will do with it
 ```
 
-`pnpm test:gnucobol` is the one worth understanding. It compiles each example
-twice: once under `tools/banklang-ibm.conf`, which is shaped to Enterprise COBOL
-6.4, and once under GnuCOBOL's default dialect, which is a superset of every
-COBOL it knows. A difference between the two is treated as a finding rather than
-as noise, because the default dialect accepting something the target rejects is
-exactly how a 31-character data name and a rounding phrase that does not exist
-both shipped.
+`pnpm test:gnucobol` compiles each runnable example twice: once under
+`tools/banklang-ibm.conf`, which is shaped to Enterprise COBOL 6.4, and once
+under GnuCOBOL's default dialect. Differences are reported because a permissive
+local dialect can accept a name or phrase the target does not.
 
-`pnpm lint:conformance` reads every emitted artifact, every checked-in fixture
-and every evidence bundle as text and asserts the target's rules: 30-character
-words, column 72, `ARITH(COMPAT)`'s eighteen digits, dataset qualifiers at
-eight, and that every word in the program is one Enterprise COBOL has heard of.
+`pnpm lint:conformance` reads emitted artifacts, fixtures, and evidence bundles
+as text and checks target rules such as 30-character words, column 72,
+`ARITH(COMPAT)`'s eighteen digits, dataset qualifiers at eight, and the
+Enterprise COBOL vocabulary used by the project.
 
-`pnpm lint:zos` reads the same artifacts and asks the other question: not
-whether the toolchain will accept the program, but whether z/OS will do what it
-says. Two programs once shipped that compiled, bound and verified, and then
-aborted on their second `MQCONN` or returned the caller's own request
-unchanged. Neither is a syntax error, a style violation or a wrong number.
-Both are in [target-conformance.md](target-conformance.md).
+`pnpm lint:zos` checks behaviors that can be identified from generated text but
+are not covered by syntax or formatting checks. The findings are documented in
+[target-conformance.md](target-conformance.md).
 
 ---
 
@@ -152,8 +146,8 @@ pnpm bankc init my-service
 pnpm bankc check my-service
 ```
 
-`bankc init` produces a project that compiles first try. `banklang.json` beside
-`src/` holds the settings: see [toolchain.md](toolchain.md).
+`bankc init` produces a starter project. `banklang.json` beside `src/` holds the
+settings; see [toolchain.md](toolchain.md).
 
 ---
 

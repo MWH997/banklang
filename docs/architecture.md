@@ -24,10 +24,8 @@ BankTS source
 The same source and the same configuration produce byte-identical artifacts.
 That is a property `bankc verify` checks rather than a goal.
 
-An AI coding assistant helped write this repository, and nothing in the compiler
-is a model. No generated artifact depends on one, at build time or at run time.
-Every decision about what COBOL comes out is code somebody can read in
-`packages/`.
+The compiler does not call a model at build time or at run time. Every decision
+about the generated COBOL is implemented in code under `packages/`.
 
 ## 2. Core packages
 
@@ -198,9 +196,10 @@ tokenizer, statement parser, and a machine with the picture, packed-decimal
 and edited-field model behind it, plus files, cursors, the ledger and the
 audit log.
 
-It exists to disagree. Every example is executed twice, once by `cobc` and
-once here, and a test fails on any difference, which is what catches a defect
-that compiles and passes every static check.
+It exists to disagree. The 23 runnable examples are executed twice, once by
+`cobc` and once here. Two examples are compile-only because their generated
+constructs have no local execution path. A test fails on any difference, which
+helps catch defects that pass static checks.
 
 ### `packages/verifier`
 

@@ -1,44 +1,46 @@
-# For the person deciding
+# Evaluating BankLang
 
-[for-mainframe-engineers.md](for-mainframe-engineers.md) is written for whoever
-has to accept the generated COBOL. This page is for whoever has to accept the
-risk.
-
-It is short, and it leads with what the project cannot do.
+This page summarises what BankLang does, what the current evidence covers, and
+what a technical evaluation would still need to establish.
 
 ---
 
-## What this is
+## What it is
 
-A compiler. You write a program in **BankTS** (a small banking language whose
-types are TypeScript's and whose statements are its own), and it emits IBM
-Enterprise COBOL, a copybook for every record, the JCL to build and run it, and
-a source map tying every generated line back to the line that produced it.
+BankLang is a deterministic source-to-source compiler. You write **BankTS**, a
+small statically typed language for banking workloads. `bankc` emits COBOL
+targeting IBM Enterprise COBOL for z/OS 6.4, record copybooks, JCL, a source
+map, and an audit bundle.
 
-**No AI decides what is generated.** The same input produces byte-identical
-output, every time, on any machine. A test in the suite checks it.
+The same compiler version and settings produce byte-identical artifacts. The
+compiler does not call a model when it builds or runs a program. That is a
+property of the toolchain, not evidence that IBM Enterprise COBOL has accepted
+the output.
 
 ## What it is not
 
-**It has never run on z/OS.** Not once. Every example is compiled with GnuCOBOL,
-under a dialect configured to Enterprise COBOL 6.4 and under GnuCOBOL's own
-default, and a difference between the two is treated as a finding. GnuCOBOL is
-not IBM's compiler. No IBM Enterprise COBOL validation has been performed and
-none is claimed.
+**It has not been validated with IBM Enterprise COBOL or run on z/OS.** Local
+checks use GnuCOBOL 3.2.0 under an IBM-shaped profile and its default dialect.
+The known and suspected differences are listed in
+[divergences](divergences.md).
 
-**No money has moved through it.** No institution has used it. There is no
-production deployment, no pilot, and no customer.
+**It has no production integration.** The repository contains no live ledger,
+bank deployment, or pilot.
 
-**It covers a narrow subset of what a bank does.** Batch and CICS programs
-against QSAM, VSAM and Db2, with a ledger and audit calling convention it
-defines itself. It does not do IMS DB beyond a bounded surface, does not do
-distributed transactions, and does not replace a core banking package.
+**It is a narrow language.** The implemented surface includes selected batch
+and online programs using files, decimal arithmetic, embedded SQL, CICS, IMS,
+MQ, and Report Writer constructs. The ledger, audit, and subsystem interfaces
+used by local tests are repository-defined interfaces, not bank services.
 
-[status-and-limits.md](status-and-limits.md) is longer and blunter.
+**It is not a COBOL-to-BankTS converter.** `bankc analyse` can inventory
+existing COBOL and draw paragraph and copybook dependency graphs, but it does
+not semantically convert an estate. See [status and limits](status-and-limits.md)
+for the full boundary list.
 
-## What it does that other tools do not
+## What it checks at compile time
 
-It refuses to compile financially unsafe programs.
+BankLang rejects selected failure modes that a general-purpose COBOL compiler
+does not know how to identify.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -54,46 +56,36 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-Those are compile errors, so the build stops and produces no artifact. A warning
-or a lint rule would leave somebody to decide whether to act on it.
+These are compile errors, so `bankc build` emits no artifact for this program.
+They represent an unkeyed retry, an unrecorded posting, and a debit that does
+not match its credit. They do not establish that a valid program is correct at
+runtime.
 
-The three above are a retry that posts twice, money moving with no audit trail,
-and a ledger that does not balance. There are more than a hundred diagnostics,
-each one documented with an explanation and a remediation, and each one provoked
-by at least one test. Whether those tests would notice the rule itself being
-weakened is a different question, and the mutation scores below are what this
-project has to say about it.
+The diagnostic catalogue currently contains more than one hundred implemented
+checks. Each entry has an explanation and remediation; the verification suite
+and published mutation results show how those checks are tested.
 
-Each of those defects is normally caught by a person: a reviewer who knows to
-look, a tester who thinks of the retry, an auditor who reconciles after the
-fact. The claim is that this class of defect stops depending on whether somebody
-remembered, not that the generated COBOL is better than COBOL written by hand.
+## Current evidence
 
-## What the evidence actually is
+The figures below describe BankLang 0.10.0. `pnpm evidence:grades` generates the
+underlying table from the checked-in evidence bundles.
 
-Grades are generated, not asserted: `pnpm evidence:grades` writes the table and
-a test fails if it drifts.
+| Grade        | Count | Meaning                                                                          |
+| ------------ | ----- | -------------------------------------------------------------------------------- |
+| **executed** | 23    | The example runs against the local reference runtime.                            |
+| **compiled** | 2     | The example compiles but has no local execution path for its generated features. |
+| **emitted**  | 0     | No example has this evidence grade.                                              |
 
-| Grade        | Count | What it rules out                                                                   |
-| ------------ | ----- | ----------------------------------------------------------------------------------- |
-| **executed** | 23    | A defect that compiles. The program runs and its balances and branches are checked. |
-| **compiled** | 2     | A program the target would reject. Says nothing about what it computes.             |
-| **emitted**  | 0     | Nothing local compiles it; the conformance linter is what checks it.                |
+Three executed examples have hand-written expected balances. The other twenty
+are run by GnuCOBOL and by an independent interpreter and compared. This tests
+the generated program against two implementations, but it cannot catch an
+error shared by both implementations.
 
-**"Executed" covers two strengths of evidence, and the difference matters.**
-Three of the twenty-three have expected balances somebody worked out by hand,
-which is the strongest thing this project has. The other twenty are run twice
-(once compiled by GnuCOBOL and once by a separate interpreter written against
-the same output), and required to agree. That catches a defect that compiles
-without anybody having to predict the answer, and it would not catch a program
-that is wrong in the same way twice. `evidence/GRADES.md` says which each one is.
+None of this is IBM Enterprise COBOL validation. The local runs use reference
+programs from this repository for the ledger, audit, SQL, CICS, IMS, and MQ
+interfaces. Those programs are not Db2, CICS, IMS, MQ, or a bank ledger.
 
-None of it is IBM Enterprise COBOL. The runs are against a reference runtime in
-this repository: programs that satisfy the ledger, audit, SQL and CICS
-interfaces well enough to run a generated program end to end. It is not Db2 and
-it is not CICS.
-
-Beyond that:
+Other evidence includes:
 
 - **A conformance linter** reads every emitted artifact as text and holds it to
   rules that each cite a page of an IBM manual. It catches what a compiler
@@ -107,33 +99,29 @@ Beyond that:
 - **Mutation testing**, which changes the compiler and asks whether any test
   notices. Current scores: the rules that refuse a program at 70%, the
   conformance linter at 69%, the emitter's formatting at 61%. They are published
-  because they are not good enough yet.
+  and are recorded in [verification](verification.md).
 
-## What it would cost you to find out
+## How to evaluate it
 
-The next step is small, and it is not a procurement.
+The repository supports a focused technical evaluation:
 
 1. **Read one conversion.** [`conversions/`](../conversions/) puts existing COBOL,
    the BankTS it becomes, and the regenerated COBOL side by side, a sequential
    master update, a CICS enquiry, a Db2 cursor batch, hand-written banker's
    rounding, and a copybook with `REDEFINES`, `FILLER` and `OCCURS DEPENDING ON`.
-   One engineer, one afternoon, and you will know whether the output is
-   reviewable by your people.
+   Use these to judge whether the generated output fits your review standards.
 2. **Point it at one of your copybooks.** `bankc copybook import ACCTMAST.cpy`
    reads a production copybook into a BankTS record and refuses an import that
    does not round-trip field for field. It either handles your layouts or it
    tells you exactly where it does not.
 3. **Compile one program on your own system.** `pnpm tsx tools/zos-kit.ts`
    writes every program, copybook and job in the member names the JCL expects,
-   with a procedure and a results template. This is the largest single piece of
-   evidence the project does not have, and somebody with a `IGYCRCTL` and an
-   hour can produce it.
+   with a procedure and a results template. A run with IBM Enterprise COBOL is
+   the missing evidence this repository cannot produce locally.
 
-None of that requires a licence, a contract, or a conversation.
+## Evidence required before production use
 
-## What would have to be true before it went near production
-
-All five of these, none of which is true today:
+The following evidence is still required:
 
 - **It compiles under IBM Enterprise COBOL**, not a configuration shaped to
   look like it, and the divergences are known and closed.
@@ -143,14 +131,13 @@ All five of these, none of which is true today:
   invented for itself. That is a real integration, and it is where the work is.
 - **The mutation scores are higher than they are now**, particularly for the
   code that decides what the emitted text looks like.
-- **It has been audited against a real estate.** One external audit exists, from
-  5 August 2026: an adversarial read by a z/OS application engineer looking for
-  a reason to say no. It found three defects behind a green test suite,
-  including a rounding phrase Enterprise COBOL has never had. Every audit since
-  has been the project reading itself, which is not the same thing.
+- **It has been audited against a real estate.** One external audit exists from
+  5 August 2026. It found three defects behind a green test suite, including a
+  rounding phrase Enterprise COBOL does not support. A repository review is not
+  a substitute for testing against a real application estate.
 
-Until all five are true, this is something to evaluate, not a system to run
-money through.
+Until that evidence exists, treat BankLang as a tool to evaluate, not a system
+to run production transactions through.
 
 ---
 

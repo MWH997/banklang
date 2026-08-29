@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>BankLang: a banking language that compiles to IBM COBOL</title>
+    <title>BankLang | Write banking logic, generate COBOL</title>
     <meta
       name="description"
-      content="COBOL is good with money and knows nothing about bookkeeping. BankLang is a compiler for banking programs: you write BankTS, it produces IBM Enterprise COBOL, and it refuses to build a program whose debits and credits do not match."
+      content="BankLang is a compiler for a small banking language. It generates IBM Enterprise COBOL, copybooks, JCL, source maps, and audit reports, with local validation through GnuCOBOL."
     />
     <link rel="canonical" href="{{ORIGIN}}/" />
     <link
@@ -26,20 +26,20 @@
     />
     <meta
       property="og:description"
-      content="A compiler that refuses to build a banking program whose debits and credits do not match, whose retry can post twice, or whose money moves with no audit trail."
+      content="Write BankTS, inspect the generated COBOL, and catch selected banking failure modes before code is emitted."
     />
     <meta property="og:image" content="{{ORIGIN}}/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="BankTS source on the left, the IBM COBOL it compiles to on the right."
+      content="BankTS source and generated COBOL shown side by side."
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="BankLang" />
     <meta
       name="twitter:description"
-      content="A deterministic compiler from BankTS, a small banking language with TypeScript's type syntax, to readable IBM Enterprise COBOL."
+      content="A compiler for BankTS that generates IBM Enterprise COBOL and related build artifacts."
     />
     <meta name="twitter:image" content="{{ORIGIN}}/og.png" />
 
@@ -61,48 +61,47 @@
     <main>
       <!-- 1. What it is, in words anyone can follow. -->
       <section id="what" class="hero">
-        <h1>Banking programs, compiled to COBOL the mainframe team can read.</h1>
+        <h1>Write banking logic in BankTS. Review the COBOL it generates.</h1>
         <p class="lede">
-          BankLang is a compiler. You write the program in
-          <strong>BankTS</strong>, a small language that borrows TypeScript's
-          type syntax, and it produces IBM Enterprise COBOL, a copybook for
-          every record, and the job that builds and runs it. No AI is involved
-          at any point, and the same input always produces byte-identical
-          output.
+          <strong>BankTS</strong> is a small, statically typed language designed
+          for banking workloads, and BankLang is its compiler. With consistent
+          compiler settings and versions, a module generates IBM Enterprise
+          COBOL, record copybooks, JCL, a source map, and an audit report. The
+          compiler does not call an AI model during a build or at runtime.
         </p>
         <p class="lede lede--secondary">
-          COBOL is good with money. Amounts are packed decimal, exact to the
-          penny, with none of the drift a floating-point number brings.
-          Bookkeeping is another matter. If a transfer debits one account and
-          credits another a different amount, a COBOL compiler sees two correct
-          statements. BankLang sees the two halves of one posting, and refuses
-          to build it.
+          BankTS makes selected rules explicit: decimal precision and scale,
+          rounding mode, idempotency keys, audit events, file status, and
+          selected SQL and CICS outcomes. BankLang rejects scenarios it can
+          prove unsafe. It is a narrow compiler, not a replacement for COBOL
+          or for a bank's core systems.
         </p>
 
         <div class="cta">
           <a class="button button--primary" href="/playground/"
-            >Try it in your browser</a
+            >Open the playground</a
           >
           <a class="button" href="/docs/for-mainframe-engineers.html"
-            >Read the COBOL it writes</a
+            >Inspect generated COBOL</a
           >
         </div>
 
         <p class="caveat">
-          <strong>Tested against GnuCOBOL, not IBM's compiler.</strong> Every
-          example is compiled by GnuCOBOL, an open-source COBOL compiler,
-          configured to match IBM Enterprise COBOL 6.4. Nothing here has run on
-          a mainframe.
+          <strong>Current validation uses GnuCOBOL, not IBM's compiler.</strong>
+          The examples are compiled and, where supported, executed locally
+          with GnuCOBOL 3.2.0 under an IBM-shaped profile. No IBM Enterprise
+          COBOL validation has been performed, and no generated output has run
+          on z/OS.
           <a href="/docs/status-and-limits.html">What that leaves open →</a>
         </p>
       </section>
 
-      <!-- 2. The refusal, which is the claim nobody else makes. -->
+      <!-- 2. The compile-time checks. -->
       <section class="band">
-        <h2>It refuses to build a program that mishandles money</h2>
+        <h2>Compile-time checks for selected banking risks</h2>
         <p class="section-lede">
-          This transfer has three things wrong with it. The build fails and
-          writes no output, the way a type error would.
+          This transfer contains three independent issues. BankLang reports
+          them before it emits COBOL.
         </p>
 
         <div class="split">
@@ -125,40 +124,36 @@
         </p>
 
         <p>
-          In plain terms: the transfer can be applied twice if the caller sends
-          it again after a timeout, nothing records that it happened, and the
-          amount taken out does not match the amount paid in. Today each of
-          these is caught by a person, if it is caught at all: a reviewer who
-          knows to look, a tester who thinks of the retry, or an auditor
-          reconciling at the end of the month.
+          In plain terms, a retry can apply the transfer twice, no audit event
+          records the movement, and the amount debited does not match the
+          amount credited. These are the kinds of omissions that otherwise
+          depend on a review or a test case noticing them.
         </p>
         <p>
-          There are <strong>{{SAFETY_RULE_COUNT}}</strong> rules of this kind
-          among <strong>{{DIAGNOSTIC_COUNT}}</strong> checks in all. Each one
-          has a written explanation, a suggested fix, and at least one test that
-          provokes it. Whether those tests would really notice a rule being
-          weakened is measured by mutation testing, and the score is published
-          even where it is still too low.
+          The compiler currently implements <strong>{{SAFETY_RULE_COUNT}}</strong>
+          rules in this category, alongside <strong>{{DIAGNOSTIC_COUNT}}</strong>
+          implemented diagnostics overall. The catalogue explains each rule,
+          and the test suite exercises the rules. Mutation results are tracked
+          separately in the verification documentation.
         </p>
       </section>
 
-      <!-- 3. Why a compiler at all. The part a non-technical reader needs. -->
+      <!-- 3. Why generate COBOL. -->
       <section class="band band--alt">
-        <h2>Why generate COBOL instead of replacing it</h2>
+        <h2>Why keep COBOL as the output</h2>
         <p>
-          Banks keep balances, interest and settlement in COBOL programs that
-          have been running for decades. The hard part of replacing them is
-          exactness: thirty years of small, specific rules live in that code and
-          in no other document, so a rewrite has to rediscover all of them
-          before it can switch over. That is where the big programmes usually
-          stall.
+          Existing systems often hold the rules for balances, interest, and
+          settlement in long-lived COBOL programs. Replacing them means
+          rediscovering those rules and proving that the new system behaves the
+          same way. That makes a full rewrite a large operational and
+          verification project.
         </p>
         <p>
-          Between keeping the COBOL forever and replacing it there is a duller
-          third option: go on producing COBOL, and change what produces it. The
-          mainframe still runs COBOL, and whoever signs the change off still
-          reads COBOL. What changes is the language the developer writes in, and
-          which mistakes are possible in it.
+          BankLang takes a narrower approach for new programs. Developers write
+          BankTS, while the reviewed and deployed artifact remains COBOL. The
+          source language adds types and compile-time checks for a selected
+          banking surface; it does not migrate an existing estate
+          automatically.
         </p>
         <p class="more">
           <a href="/blog/why-banks-still-run-cobol.html"
@@ -169,11 +164,11 @@
 
       <!-- 4. The output. Where a mainframe engineer decides. -->
       <section class="band">
-        <h2>The COBOL it produces</h2>
+          <h2>Generated arithmetic is explicit</h2>
         <p class="section-lede">
-          Interest is a balance times a rate, rounded. Which way you round
-          decides who ends up a penny short, so the compiler makes you say which
-          rule to apply and then writes the arithmetic out.
+          Money fields use decimal types with declared precision and scale. When
+          a result needs rounding, BankTS requires a named mode and the emitter
+          writes the corresponding arithmetic into COBOL.
         </p>
 
         <div class="split split--code">
@@ -188,39 +183,37 @@
         </div>
 
         <p>
-          Enterprise COBOL offers one rounding phrase, <code>ROUNDED</code>,
-          which rounds a half away from zero. Banker's rounding, where a half
-          goes to the even digit, has to be written out as arithmetic. Those
-          lines are executed and compared against exact arithmetic at every
-          boundary case, for a product and for a quotient, in all seven rounding
-          modes.
+          Enterprise COBOL's <code>ROUNDED</code> phrase uses half-up rounding.
+          Banker's rounding, where a tie goes to the even digit, needs explicit
+          arithmetic in the generated program. The test suite compares the
+          generated result with exact rational arithmetic across boundary cases,
+          products, quotients, and all seven supported modes.
         </p>
         <p>
-          Scale is part of the type here, so the rounding is compulsory. A
-          balance times a rate has six decimal places and money holds two, so
-          the product is a different type from the field it is going into.
-          <code>round</code> converts it, and naming the mode is how the program
-          says what becomes of the other four digits.
+          Scale is part of the type. A balance times a rate can have more
+          fractional places than a money field, so <code>round</code> makes the
+          conversion explicit instead of discarding digits silently.
         </p>
         <p>
-          The <code>ON SIZE ERROR</code> branch answers a different question: a
-          result too large for the field at all. COBOL discards the high-order
-          digits in that case, so an overflow arrives as a plausible small
-          number rather than an obviously wrong one. The generated branch ends
-          the step instead.
+          The generated <code>ON SIZE ERROR</code> branch handles a result that
+          does not fit in its receiving field. It reports the overflow and
+          leaves the step with a failure code instead of allowing a truncated
+          value to continue.
         </p>
         <p class="more">
           <a href="/docs/numeric-model.html">How the arithmetic is defined →</a>
         </p>
       </section>
 
-      <!-- 5. A conversion. The only question a bank actually asks. -->
+      <!-- 5. Conversion support and existing layouts. -->
       <section class="band band--alt">
-        <h2>What happens to the COBOL you already have</h2>
+        <h2>Work with existing layouts</h2>
         <p class="section-lede">
-          Nobody starts from nothing. This is the classic sequential master
-          update: read last night's transactions, apply each one, write out the
-          new balances and a file of the ones that failed.
+          BankLang is not a COBOL-to-BankTS converter. It can import selected
+          copybook and DCLGEN layouts, and the repository includes worked
+          conversions to show the boundary. This example is a sequential master
+          update that reads transactions, applies them, and writes balances and
+          rejects.
         </p>
 
         <div class="split split--code">
@@ -235,22 +228,15 @@
         </div>
 
         <p>
-          The original opens four files in one statement and never learns
-          whether any of them opened. Not one of the four
-          <code>SELECT</code> statements declares a <code>FILE STATUS</code>
-          field, so there is nowhere for a failure to be reported. A missing
-          input gives file status 35, the first read hits <code>AT END</code>,
-          and the step closes its files and ends with return code zero. A night
-          that applied nothing looks exactly like a night that had nothing to
-          apply.
+          The original opens four files but declares no <code>FILE STATUS</code>
+          fields. A missing input can therefore look like a clean run after the
+          first read reaches <code>AT END</code>.
         </p>
         <p>
-          The BankTS declares the same four files and gives each one a status
-          the program has to handle. Record layouts are untouched, field for
-          field, so the same datasets are read under the same DD names and
-          nothing about the data changes. The step now ends with 12 when a file
-          failed and 4 when it applied nothing, so the next step's
-          <code>COND=</code> can tell both apart from a good night.
+          The BankTS version declares the same layouts and gives each file a
+          status field with an error handler. In this example, the generated
+          step distinguishes a file failure from a run that had no records to
+          apply, so a following JCL step can make a different decision.
         </p>
         <p class="more">
           <a href="https://github.com/MWH997/banklang/tree/main/conversions" rel="noopener"
@@ -259,35 +245,36 @@
         </p>
       </section>
 
-      <!-- 6. What it is not. Leading with limits is what makes the rest believable. -->
+      <!-- 6. Scope and limits. -->
       <section class="band">
-        <h2>What it is not</h2>
+        <h2>Scope and limits</h2>
         <ul class="limits">
           <li>
-            <strong>It has never run on a mainframe.</strong> Every example
-            compiles with GnuCOBOL, under a dialect configured to Enterprise
-            COBOL 6.4 and under GnuCOBOL's own default. GnuCOBOL is a good
-            open-source compiler, and the places where it and IBM's disagree
-            are <a href="/docs/divergences.html">written down</a>.
+            <strong>IBM validation has not happened.</strong> Local examples
+            use GnuCOBOL under an IBM-shaped profile and GnuCOBOL's default
+            dialect. The known and suspected differences are documented in
+            <a href="/docs/divergences.html">the divergence list</a>.
           </li>
           <li>
-            <strong>No money has moved through it.</strong> No bank has used it.
-            There is no production deployment and no pilot.
+            <strong>It has no production integration.</strong> The repository
+            contains no live ledger, bank deployment, or pilot.
           </li>
           <li>
-            <strong>It covers a narrow subset.</strong> Batch and CICS programs
-            reading QSAM, VSAM and Db2, with a ledger and audit interface it
-            defines itself. It does not replace a core banking package.
+            <strong>The language covers a narrow subset.</strong> It generates
+            selected batch and online programs using QSAM, VSAM, embedded SQL,
+            CICS, IMS, MQ, and Report Writer constructs. The ledger, audit, and
+            subsystem interfaces used in local tests are repository-defined
+            interfaces, not IBM or bank services.
           </li>
           <li>
             <strong
               >{{EXECUTED_COUNT}} of {{EXAMPLE_COUNT}} examples are executed,
               not just compiled</strong
-            >, against a reference runtime kept in the repository.
-            {{ASSERTED_COUNT}} of those are checked against balances somebody
-            worked out by hand. The rest are run twice, by two independent
-            implementations, and compared: that catches a program that is wrong
-            and would not catch one that is wrong the same way twice.
+            > against the repository's reference runtime. {{ASSERTED_COUNT}} of
+            those have hand-written expected balances; the remainder are run by
+            GnuCOBOL and an independent interpreter and compared. Two examples
+            are compile-only because their generated constructs have no local
+            execution path.
           </li>
         </ul>
         <p class="more">
@@ -299,22 +286,22 @@
 
       <!-- 7. Three routes in, because three different people arrive here. -->
       <section class="band band--alt">
-        <h2>Where to start</h2>
+        <h2>Choose a starting point</h2>
         <ul class="routes">
           <li>
-            <a href="/docs/getting-started.html">Getting started</a> takes about
-            thirty minutes, from cloning the repository to reading generated
-            COBOL and knowing why it looks the way it does.
+            <a href="/docs/getting-started.html">Getting started</a> walks from
+            cloning the repository to compiling a sample and reading its
+            generated COBOL.
           </li>
           <li>
             <a href="/docs/for-mainframe-engineers.html">For mainframe engineers</a>
-            walks through a generated program construct by construct, for
-            whoever has to accept the output.
+            explains the generated program, its data layout, control flow, file
+            handling, and JCL.
           </li>
           <li>
-            <a href="/docs/for-decision-makers.html">For the person deciding</a>
-            sets out the risk, the evidence behind each claim, and what it would
-            cost to find out for yourself.
+            <a href="/docs/for-decision-makers.html">For evaluators</a> explains
+            the evidence, the limits, and a practical way to test the tool with
+            your own copybooks and compiler.
           </li>
         </ul>
       </section>
@@ -339,8 +326,8 @@
         >
       </p>
       <p class="muted">
-        Generated COBOL is compiled with GnuCOBOL in CI. No IBM Enterprise COBOL
-        validation is claimed. MIT licensed.
+        Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
+        Enterprise COBOL validation has been performed. MIT licensed.
       </p>
     </footer>
 

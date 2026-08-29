@@ -1,6 +1,6 @@
 ---
 title: Testing a compiler whose target you cannot run
-description: You can compare bytes against a fixture, but a fixture only proves the output has not changed. Here is how to find out whether it is right.
+description: How to test a compiler that targets an unavailable runtime, and what local evidence can and cannot show.
 date: 2026-08-03
 author: Md Wahid Hassan
 related: reading-code-you-did-not-write, rounding-money-is-harder-than-it-looks

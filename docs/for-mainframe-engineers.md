@@ -1,25 +1,25 @@
 # For mainframe engineers
 
-You are the person who has to accept this output. This page reads the generated
-COBOL with you, construct by construct, and explains why each part of it looks
-the way it does.
+This page walks through generated COBOL construct by construct and explains the
+choices a mainframe engineer will need to review.
 
 The short version: BankLang is a source-to-source compiler. It takes a
 restricted, statically typed language and emits IBM Enterprise COBOL for z/OS
 6.4 with the JCL to build and run it. There is no runtime, no framework and no
 interpreter: what ships is a `.cbl` member, `.cpy` members, and a `.jcl` job.
-If the compiler disappeared tomorrow, the COBOL would still be yours.
+The generated files remain ordinary COBOL assets that a team can review and
+own. Local validation uses GnuCOBOL; IBM Enterprise COBOL and z/OS validation
+has not been performed.
 
 The rest of this page is why it looks the way it does.
 
 ---
 
-## Read a whole program first
+## Start with a complete program
 
 `evidence/account-file-batch/cobol/ACCOUNTF.cbl` is a batch program that reads a
 sequential master, posts to the ledger and writes an advice file. It runs to a
-few hundred lines, which makes it a fair sample: not a hello-world, and not the
-biggest thing here either.
+few hundred lines, which makes it a useful sample of a real generated flow.
 
 Read it before reading any of the reasoning below. If something in it looks
 wrong, the reasoning is what you are checking.
@@ -288,10 +288,9 @@ No BankLang program has been compiled by IBM Enterprise COBOL, precompiled by
 `DSNHPC`, bound to a Db2 package, or started in a CICS region. Everything local
 runs under GnuCOBOL, which is a different compiler.
 
-That is the project's standing limit, [zos/README.md](../zos/README.md) is the
-kit for closing it, and [divergences.md](divergences.md) is the list of places
-the two compilers are known or suspected to disagree. If you have a machine, an
-afternoon closes it.
+That is the project's current limit. [zos/README.md](../zos/README.md) describes
+the validation procedure, and [divergences.md](divergences.md) lists places
+where GnuCOBOL and Enterprise COBOL may disagree.
 
 ## Related pages
 

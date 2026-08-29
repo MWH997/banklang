@@ -1,6 +1,6 @@
 ---
-title: A compiler that refuses to build
-description: Some bugs are omissions rather than mistakes, things the code failed to say. A compiler can notice that, and refusing to build is a reasonable response.
+title: Compile-time checks for missing banking invariants
+description: How compile-time checks can catch omitted invariants such as idempotency, audit events, and balanced postings.
 date: 2026-08-05
 author: Md Wahid Hassan
 related: why-banks-still-run-cobol, rounding-money-is-harder-than-it-looks
@@ -51,7 +51,7 @@ A careful reviewer catches all three. A tired reviewer catches two. A reviewer
 who does not know the house rules catches none, because nothing here is wrong in
 the ordinary sense. Every line is well typed and every line does what it says.
 
-## What "refuse" means
+## What a rejected program means
 
 Give the compiler enough vocabulary and each of these becomes a check.
 
@@ -67,15 +67,12 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-The important word is refuse. These are not warnings. The build produces no
-artifact, and there is no flag to turn them off.
+These are errors rather than warnings. The build produces no artifact, and
+there is no flag to turn them off.
 
-That last part gets argued about, so here is the reasoning. A
-warning that can be suppressed becomes a warning that is suppressed, usually by
-somebody in a hurry with a good reason. A rule that can be switched off is a rule
-that is off in the one build where it mattered. If a rule is wrong, it should be
-fixed or removed. Making it optional is how you get the cost of the rule without
-the benefit.
+The rules are mandatory because an optional check can be omitted from the build
+where it matters. If a rule is wrong, it should be fixed or removed rather than
+silently bypassed.
 
 ## Rules that are not about money
 

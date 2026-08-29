@@ -1,6 +1,6 @@
 ---
 title: Reading code you did not write, and did not want
-description: Generated code arrives on somebody else's desk to be reviewed and supported. What makes it acceptable has almost nothing to do with whether it works.
+description: What makes generated COBOL reviewable: stable output, useful comments, source maps, and clear ownership.
 date: 2026-08-04
 author: Md Wahid Hassan
 related: why-banks-still-run-cobol, testing-a-compiler-you-cannot-run

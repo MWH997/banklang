@@ -128,9 +128,8 @@ describe("every link in every document", () => {
    * nowhere to go, and the rule those checks implement is exactly the thing the
    * comment existed to point at.
    *
-   * Comments are outside the prose rules in `tests/prose.test.ts`, and
-   * deliberately so. This is not a style rule: a named file either exists or it
-   * does not.
+   * Comments are deliberately outside this check. This is not a style rule: a
+   * named file either exists or it does not.
    *
    * The exemption below is a file-and-name pair rather than a whole file. This
    * file has to name a retired document to explain what the rule catches, and
