@@ -536,10 +536,9 @@ ${all
         nobody will keep.
       -->
       <p class="post__cadence">
-        These went out together. Later ones will not: something gets written
-        here when it is finished and worth arguing about, which works out at a
-        few times a year. <a href="feed.xml">The feed</a> is how to hear about
-        the next one.
+        These posts introduce the project. New writing will appear when there
+        is a completed technical note; <a href="feed.xml">the feed</a> is the
+        best way to follow updates.
       </p>
     </main>`,
   });
@@ -625,9 +624,8 @@ export function renderAbout(): string {
         <p>
           It has never run on z/OS. Generated COBOL is compiled locally with
           GnuCOBOL, configured to look like Enterprise COBOL 6.4, and
-          <a href="../docs/status-and-limits.html">the limits are all written
-          down</a>
-          so that nobody has to discover them the hard way.
+          <a href="../docs/status-and-limits.html">the limits are documented</a>
+          alongside the implementation and its evidence.
         </p>
         <h2>Getting in touch</h2>
         <ul>
