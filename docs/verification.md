@@ -1,8 +1,8 @@
 # Verification
 
-What is tested here, how, and what each kind of test is worth. This is the
-longest page in the documentation, and the reason is that "the tests pass" is
-not evidence about a compiler whose target nobody here can run.
+This page describes what the project tests, how the tests work, and what each
+result does and does not establish. Passing tests are not evidence of IBM
+Enterprise COBOL behavior because that target has not been run here.
 
 ## 1. The goal
 
@@ -11,16 +11,11 @@ the same input produces the same COBOL, that every generated construct can be
 traced back to the source that asked for it, and that the COBOL means what the
 BankTS meant.
 
-None of that is established by the compiler agreeing with itself, which is the
-reason this page is as long as it is.
-
-Everything on this page is **vertical**: tests written for BankLang, run against
-BankLang. That is most of the evidence this project has and it has one blind
-spot: a misunderstanding shared between a test and the code it tests agrees
-with itself perfectly. [Horizontal
-validation](validation/horizontal-validation.md) is the other axis: the same
-compiler measured against independent COBOL corpora, benchmarks and defect
-suites that were not written for it, with the results in
+The current suite is mostly **vertical**: tests written for BankLang and run
+against BankLang. It can share misunderstandings with the implementation.
+[Horizontal validation](validation/horizontal-validation.md) is the other axis:
+the same compiler measured against independent COBOL corpora, benchmarks, and
+defect suites, with the results in
 [horizontal-validation-results.md](validation/horizontal-validation-results.md).
 
 ## 1a. Static analysis
@@ -409,9 +404,11 @@ a specific error, not from random bytes.
 
 ### 2.5 Differential tests
 
-Every example is executed twice, by two implementations that share no code: by
-`cobc`, and by the COBOL interpreter in `packages/cobol-runtime`, written
-against the same emitted output. A test fails on any disagreement between them.
+The 23 runnable examples are executed twice, by two implementations that share
+no code: by `cobc`, and by the COBOL interpreter in `packages/cobol-runtime`,
+written against the same emitted output. Two examples are compile-only because
+their generated constructs have no local execution path. A test fails on any
+disagreement between the two implementations.
 
 This is the lane that catches a defect which compiles. Static checks all passed
 on a bounds guard that clamped an out-of-range subscript instead of refusing it;
@@ -650,5 +647,4 @@ has not been through that check, one that landed on a product shell rather than
 a topic, and one naming a release this project does not support. Nine dead links
 and seven citations to an out-of-service Db2 were what prompted it.
 
-`tests/prose.test.ts` holds the house style over the same surfaces, and
 `tests/documentation.test.ts` fails on a link to a document that does not exist.

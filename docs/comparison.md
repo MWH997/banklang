@@ -1,43 +1,48 @@
 # Comparison
 
-Where BankLang sits against the alternatives, and what it is worse at.
+This page compares BankLang with the tools and workflows a team is most likely
+to consider. It describes the trade-offs as well as the cases where BankLang is
+not the right fit.
 
 ---
 
 ## What BankLang is
 
 A deterministic source-to-source compiler. A restricted, statically typed
-language in, IBM Enterprise COBOL for z/OS 6.4 and its JCL out. No runtime, no
-framework, no interpreter: what ships is a member you own.
+language goes in; IBM Enterprise COBOL for z/OS 6.4 and related JCL come out.
+There is no runtime, framework, or interpreter. The generated members are
+ordinary files that a team can review and own.
 
-The claim is narrow: **the compiler refuses programs whose failure modes are
-silent.** A debit with no matching credit, a division with no stated rounding
-mode, an audit event with no idempotency key, a `SQLCODE` test that cannot tell
-a deadlock from a missing row, a loop that stops on its bound and reports
-success. Those are the things it exists to stop, and they are all things a
-reviewer can miss and a test suite can pass.
+The compiler checks a defined set of failure modes that are easy to miss in
+review: an unbalanced debit and credit, a division with no stated rounding
+mode, an audit event with no idempotency key, a `SQLCODE` test that cannot
+distinguish a deadlock from a missing row, and a loop that reports success after
+stopping at its bound. These checks are a subset of the language's semantics,
+not a guarantee that every banking defect is found.
 
 ---
 
-## Against an AI COBOL converter
+## Against COBOL conversion tools
 
-|                     | AI converter                                 | BankLang                                |
+|                     | Conversion tool                              | BankLang                                |
 | ------------------- | -------------------------------------------- | --------------------------------------- |
 | Direction           | COBOL → something else                       | Something else → COBOL                  |
 | Output determinism  | Not guaranteed                               | Byte-identical, verified by re-emission |
 | What you can review | The output, once                             | The rule, once, and then every program  |
 | Failure mode        | A plausible program that is subtly different | A refusal, with a diagnostic identifier |
 
-They solve opposite problems. A converter is for an estate somebody wants to
-leave. BankLang is for writing new programs _into_ an estate that is staying.
+These tools address different workflows. A converter is for transforming an
+existing estate. BankLang is for writing new programs into an estate that will
+continue to run COBOL.
 
-Where a converter wins outright: it transforms the code you already have.
-BankLang has copybook and DCLGEN import so a new program can share your records,
-and `bankc analyse` reads existing COBOL to produce an inventory, paragraph
-graphs, and a copybook dependency graph. It does not semantically parse or
-convert that COBOL, and does not pretend to.
+If the goal is to transform existing COBOL, a conversion tool is the better
+fit. BankLang can import copybooks and DCLGEN members so a new program can
+share existing record layouts. `bankc analyse` can also inventory existing
+COBOL, produce paragraph and copybook dependency graphs, and extract selected
+files, SQL, CICS, IMS, MQ, and call information. It reads source text; it does
+not semantically parse or convert the COBOL.
 
-## Against Micro Focus, or any COBOL-on-another-platform product
+## Against COBOL runtime products
 
 |                        | Micro Focus                      | BankLang                    |
 | ---------------------- | -------------------------------- | --------------------------- |
@@ -45,13 +50,13 @@ convert that COBOL, and does not pretend to.
 | What you depend on     | A vendor's runtime, indefinitely | A `.cbl` member             |
 | Migration risk         | You are moving the platform      | You are not moving anything |
 
-Where they win outright: they are a complete, supported, decades-old product
-with a runtime, a debugger, a test framework and a support contract. BankLang is
-none of those things.
+These products provide a supported runtime, debugger, test framework, and
+support contract. BankLang does not provide those things; it generates COBOL
+for IBM Enterprise COBOL on z/OS.
 
 ## Against hand-writing COBOL
 
-This is the real comparison, because it is the one an actual team faces.
+For a new program, hand-written COBOL remains the direct alternative.
 
 **Where hand-written COBOL wins:**
 
@@ -68,7 +73,7 @@ This is the real comparison, because it is the one an actual team faces.
 - Fixing something at 3am. You will be reading the COBOL, and if the fix belongs
   in the source you have two files to change and a build to run.
 
-**Where BankLang wins:**
+**Where BankLang can help:**
 
 - The refusals. Every one of them is a defect a review has to catch by reading,
   every time, on every program.
@@ -83,13 +88,14 @@ This is the real comparison, because it is the one an actual team faces.
 
 ---
 
-## What BankLang is worse at
+## Trade-offs and limitations
 
 1. **It has never been compiled by IBM Enterprise COBOL.** Everything local runs
    under GnuCOBOL, which is a different compiler.
-   [divergences.md](divergences.md) is the list of places they are known or
-   suspected to disagree, and `zos/README.md` is the kit for closing it. Until
-   somebody runs that, every claim here stops at GnuCOBOL.
+   [divergences.md](divergences.md) lists places where the compilers may
+   disagree, and `zos/README.md` describes how to collect the missing evidence.
+   Until somebody runs it, claims about generated-program behavior stop at
+   GnuCOBOL.
 
 2. **The subset is small.** If your program needs something in the list above,
    BankLang cannot write it and you should not contort the program to fit.
@@ -101,8 +107,8 @@ This is the real comparison, because it is the one an actual team faces.
 4. **The test framework for the source is thin.** `test <name> for <entry
 transaction>` becomes a zUnit case to run on z/OS, and what it can assert is
    the PARM the step is started with and the calls the program makes: see
-   `docs/zunit.md`. Anything beyond that, you test the generated program the way
-   you test any COBOL program.
+   `docs/zunit.md`. Other behavior must be tested in the generated program, as
+   with any COBOL program.
 
 5. **Nobody on your team knows the language.** That is a real cost and it does
    not go away by writing a good language reference.
@@ -119,14 +125,14 @@ transaction>` becomes a zUnit case to run on z/OS, and what it can assert is
 
 ---
 
-## When to use it
+## When it may fit
 
 A new batch or online program, going into an existing z/OS estate, doing
 something arithmetic that has to be right: accruals, settlement, posting,
 reconciliation. Something where the failure that matters is a wrong number
 reported as success rather than a program that will not compile.
 
-## When not to
+## When it does not fit
 
 An estate you are leaving. A program that needs the parts of COBOL this subset
 does not have. A team with nobody who wants to learn another language. Anything

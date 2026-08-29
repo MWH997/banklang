@@ -14,8 +14,8 @@ edited by hand.
 Everything else in this repository is **vertical** validation: thousands of
 tests written for BankLang, run against BankLang, passing because the compiler
 does what the person who wrote the test expected. That includes the strongest
-checks here: the differential lane that executes every example twice, once
-through `cobc` and once through an independently written interpreter, and the
+checks here: the differential lane that executes the 23 runnable examples twice,
+once through `cobc` and once through an independently written interpreter, and the
 mutation lanes that ask whether the tests would notice if the code changed.
 
 They share one blind spot. A misunderstanding shared between a test and the

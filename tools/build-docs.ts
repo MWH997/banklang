@@ -626,18 +626,18 @@ ${group.entries
     file: "index.md",
     title: "Documentation",
     html: `<h1>Documentation</h1>
-<p class="lede">The language, the COBOL it generates, and the evidence behind
-every claim made on this site.</p>
-<p>Three places to start: <a href="getting-started.html">Getting started</a> if
-you want to run it, <a href="for-mainframe-engineers.html">For mainframe
-engineers</a> if you have to review the COBOL, and
-<a href="for-decision-makers.html">For the person deciding</a> if you have to
-sign off the risk.</p>
+<p class="lede">Language reference, generated artifacts, validation evidence, and
+project limits.</p>
+<p>Start with <a href="getting-started.html">Getting started</a> to run the
+compiler and build an example. Use <a href="for-mainframe-engineers.html">For
+mainframe engineers</a> to review generated COBOL, or
+<a href="for-decision-makers.html">Evaluating BankLang</a> to assess scope,
+evidence, and remaining validation work.</p>
 ${cards}`,
     text:
-      "The language, the COBOL it generates, and the evidence behind every " +
-      "claim: the generated code, the rules that refuse a program, the " +
-      "numeric model, and how each of them is verified.",
+      "Language reference, generated artifacts, validation evidence, and " +
+      "project limits, including the rules, numeric model, and verification " +
+      "results.",
     headings: [],
   };
 

@@ -179,8 +179,7 @@ export function classifyTask(
 ): ApplicabilityVerdict {
   const upper = text.toUpperCase();
   for (const rule of APPLICABILITY_RULES) {
-    // Tested against the upper-cased text for the COBOL constructs and the
-    // original for the prose rules, which are written case-insensitively.
+    // Test both forms because some rules are case-insensitive text patterns.
     if (rule.pattern.test(upper) || rule.pattern.test(text)) {
       return {
         applicability: rule.fundamental

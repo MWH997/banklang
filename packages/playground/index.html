@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <title>BankLang Playground · BankTS to COBOL, in your browser</title>
+    <title>BankLang Playground | Explore BankTS and generated COBOL</title>
     <meta
       name="description"
-      content="Write BankTS and watch it compile to readable IBM Enterprise COBOL, with banking safety diagnostics and a clickable source map. The real compiler, running client-side."
+      content="Edit BankTS in your browser, inspect generated COBOL, copybooks, diagnostics, source maps, and reference-runtime output."
     />
 
     <!--
@@ -35,24 +35,24 @@
     />
     <meta
       property="og:title"
-      content="BankLang Playground · BankTS to COBOL, in your browser"
+      content="BankLang Playground | Explore BankTS and generated COBOL"
     />
     <meta
       property="og:description"
-      content="The real compiler, running client-side. Edit a program, watch the COBOL change, then run it against the reference runtime."
+      content="Edit BankTS, inspect the generated COBOL and diagnostics, then run supported examples against the repository's reference runtime."
     />
     <meta property="og:image" content="https://banklang.mwhassan.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="BankTS source on the left, the IBM COBOL it compiles to on the right."
+      content="BankTS source and generated COBOL shown side by side."
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="BankLang Playground" />
     <meta
       name="twitter:description"
-      content="The real compiler, running client-side. Edit a program, watch the COBOL change, then run it."
+      content="Edit BankTS, inspect generated COBOL, and run supported examples in your browser."
     />
     <meta name="twitter:image" content="https://banklang.mwhassan.com/og.png" />
 
@@ -129,11 +129,12 @@
       <h1 class="sr-only">BankLang playground</h1>
 
       <p class="lede">
-        A deterministic compiler from <strong>BankTS</strong>, a small banking
-        language with TypeScript's type syntax, to readable IBM COBOL. The real
-        compiler runs here in your browser: there is no compile server, and
-        nothing you write is sent anywhere. Edit the program, watch the COBOL
-        change, then <strong>Run</strong> it.
+        Edit <strong>BankTS</strong>, a small banking language with TypeScript's
+        type syntax, and inspect the COBOL, copybooks, diagnostics, source map,
+        and analysis it produces. The compiler runs in your browser. There is no
+        compile server, and editor content stays in the browser. Use
+        <strong>Run</strong> to exercise supported examples against the
+        repository's reference runtime.
       </p>
 
       <div class="app">
@@ -161,7 +162,7 @@
               id="format"
               class="ghost"
               type="button"
-              title="Rewrite this program in the house style"
+              title="Format this program"
             >
               Format
             </button>
@@ -298,8 +299,9 @@
 
     <footer class="footer">
       <p>
-        Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
-        Enterprise COBOL validation is claimed.
+        Local examples are validated with GnuCOBOL in CI. No IBM Enterprise
+        COBOL validation has been performed here. This playground does not
+        connect to IBM Enterprise COBOL, Db2, CICS, IMS, or MQ.
       </p>
     </footer>
 

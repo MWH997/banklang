@@ -1,6 +1,6 @@
 ---
 title: Why banks still run COBOL, and why rewriting it keeps failing
-description: A bank's core systems are still COBOL for reasons of risk rather than nostalgia, and those reasons explain why the big rewrites keep stalling.
+description: Why long-lived COBOL systems are difficult to replace, and where a compiler that still emits COBOL fits.
 date: 2026-08-07
 author: Md Wahid Hassan
 related: a-compiler-that-refuses-to-build, reading-code-you-did-not-write

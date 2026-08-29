@@ -1,23 +1,26 @@
 # BankLang
 
-**[banklang.mwhassan.com](https://banklang.mwhassan.com)**. The compiler runs
-in your browser at [/playground/](https://banklang.mwhassan.com/playground/).
+**[banklang.mwhassan.com](https://banklang.mwhassan.com)** is the project site.
+The compiler also runs in your browser at
+[/playground/](https://banklang.mwhassan.com/playground/).
 
-**A compiler for banking programs.** You write BankTS; it emits IBM Enterprise
-COBOL that a mainframe engineer can read and sign off.
+**A compiler for a small banking language.** You write BankTS; `bankc` emits
+COBOL targeting IBM Enterprise COBOL for z/OS, together with copybooks, JCL,
+source maps, and audit reports.
 
 [![CI](https://github.com/MWH997/banklang/actions/workflows/ci.yml/badge.svg)](https://github.com/MWH997/banklang/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen.svg)](https://nodejs.org)
 
-BankTS borrows TypeScript's type syntax; its statements (`transaction`, `file`,
-`cursor`, `queue`) are its own. No AI is involved anywhere, and the same input
-always produces byte-identical output.
+BankTS borrows TypeScript's type syntax, but it is a separate language. Its
+banking statements include `transaction`, `file`, `cursor`, `queue`, SQL, CICS,
+IMS, MQ, and reports. With the same compiler version and settings, the same
+input produces byte-identical output.
 
-COBOL is good with money: amounts are packed decimal, exact to the penny. It
-knows nothing about bookkeeping. A transaction whose debits and credits do not
-match is, to a COBOL compiler, correct arithmetic. This one **refuses to build
-it**.
+Decimal types map to packed decimal fields, with precision and scale carried in
+the type. BankLang also checks selected transaction invariants that a general
+COBOL compiler cannot infer. For example, a transaction whose debits and
+credits do not match is rejected before COBOL is emitted.
 
 ```ts
 transaction postTransfer(request: TransferRequest) {
@@ -33,37 +36,33 @@ BANK-LED-001  Transaction postTransfer does not balance:
               debited request.amount against credited request.fee.
 ```
 
-Three compile errors, so the build stops and writes nothing: a retry that could
-post twice, money moving unrecorded, and a total that does not add up.
-
 **Validated with GnuCOBOL, not IBM.** Every example compiles in CI under a
 GnuCOBOL configuration shaped to Enterprise COBOL 6.4 and under GnuCOBOL's own
 default. No IBM Enterprise COBOL validation is claimed.
 
-**Built with AI assistance.** The design and the decisions are the author's;
-much of the implementation was written with an AI coding assistant under review.
-There is no AI inside the compiler itself, at build time or at run time.
-
-**[Read this first →](docs/getting-started.md)** ·
-**[If you have to accept the output →](docs/for-mainframe-engineers.md)** ·
-**[What it does not do →](docs/status-and-limits.md)**
+**[Getting started →](docs/getting-started.md)** ·
+**[Review generated COBOL →](docs/for-mainframe-engineers.md)** ·
+**[Status and limits →](docs/status-and-limits.md)**
 
 ---
 
 ## Try it
 
-**[Open the playground](https://banklang.mwhassan.com/playground/)**: nothing
-to install, and nothing you write is sent anywhere.
+**[Open the playground](https://banklang.mwhassan.com/playground/)** to inspect
+BankTS and generated artifacts without installing anything. The playground
+runs the compiler client-side; editor content is not sent to a compile server.
 
-Click a line of BankTS and the COBOL it produced lights up, from the source map.
-Fill in the entry record or dataset on **Input**, then **Run** executes it
-against the reference runtime in [`runtime/`](runtime/README.md) and shows the
-postings. Locally: `pnpm install && pnpm playground:dev`.
+Click a line of BankTS or COBOL to follow the source map. Fill in the entry
+record or dataset on **Input**, then **Run** executes supported examples against
+the reference runtime in [`runtime/`](runtime/README.md). Locally:
+`pnpm install && pnpm playground:dev`.
 
 ## What it generates
 
 From one BankTS module, `bankc build` emits a COBOL program, a copybook per
-record, the JCL to build and run it, a source map, and an audit bundle.
+record, a JCL job, a source map, and an audit bundle. The generated JCL is a
+starting point for the target site's standards; it is not a ready-made
+production job.
 
 Interest accrual, in full:
 
@@ -95,7 +94,7 @@ That sequence is executed against exact arithmetic over every boundary case, for
 a product and a quotient, in all seven modes.
 [The numeric model →](docs/numeric-model.md)
 
-## Safety rules the compiler enforces
+## Selected compile-time checks
 
 | Diagnostic      | Rule                                                        |
 | --------------- | ----------------------------------------------------------- |
@@ -107,8 +106,8 @@ a product and a quotient, in all seven modes.
 | `BANK-CICS-004` | A CICS response must be tested against its condition name   |
 | `BANK-AUD-002`  | A `sensitive` field must not reach an audit event or ledger |
 
-`bankc explain BANK-LED-001` prints any of them, and no diagnostic can be
-emitted without a catalogue entry. [The full catalogue →](docs/diagnostics.md)
+`bankc explain BANK-LED-001` prints a diagnostic's explanation and suggested
+remediation. [The full catalogue →](docs/diagnostics.md)
 
 ## Quick start
 
@@ -127,8 +126,7 @@ pnpm bankc analyse  legacy/                   # inventory + dependency graphs
 pnpm bankc copybook import ACCTMAST.cpy       # your record, as BankTS
 ```
 
-Add `--watch` to any command that reads a project to rerun it on save. The rest
-refuse it and name the ones that take it.
+Project-reading commands accept `--watch` to rerun on save.
 [The whole toolchain →](docs/toolchain.md)
 
 ## Examples
@@ -177,11 +175,12 @@ report over them.
 **And five conversions** in [`conversions/`](conversions/): existing COBOL
 beside the BankTS it becomes.
 
-Every example is **run**, not only compiled. Three have hand-written expected
-balances; the rest are executed twice, by `cobc` and by an interpreter written
-against the same output, and a test fails on any disagreement. That catches a
-defect that compiles: the bounds guard once clamped an out-of-range subscript
-instead of refusing it, and every static check passed.
+Of the 25 example projects, 23 are executed locally. Three have hand-written
+expected balances; the other 20 are run twice, by `cobc` and by an interpreter
+written against the same output, and a test fails on disagreement. Two examples
+are compile-only because their generated constructs have no local execution
+path. This has caught defects that passed static checks, including a bounds
+guard that once clamped an out-of-range subscript instead of refusing it.
 
 That lane covers 27 of the 31 COBOL verbs the backend emits. The other four are
 a generated zUnit test case's entry points and a Report Writer section, neither
@@ -191,13 +190,13 @@ of which has anywhere local to run. [The grades →](evidence/GRADES.md)
 
 **Start here**
 
-| Document                                                   | Contents                                     |
-| ---------------------------------------------------------- | -------------------------------------------- |
-| [Getting started](docs/getting-started.md)                 | Thirty minutes from clone to reading COBOL   |
-| [For mainframe engineers](docs/for-mainframe-engineers.md) | The generated COBOL, construct by construct  |
-| [For the person deciding](docs/for-decision-makers.md)     | The risk, and what it would cost to find out |
-| [Status and limits](docs/status-and-limits.md)             | What this is not                             |
-| [Comparison](docs/comparison.md)                           | Against converters, Micro Focus, and by hand |
+| Document                                                   | Contents                                       |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| [Getting started](docs/getting-started.md)                 | Run the compiler and read generated COBOL      |
+| [For mainframe engineers](docs/for-mainframe-engineers.md) | Review generated COBOL, construct by construct |
+| [Evaluating BankLang](docs/for-decision-makers.md)         | Scope, evidence, and remaining validation      |
+| [Status and limits](docs/status-and-limits.md)             | Current boundaries and open validation         |
+| [Comparison](docs/comparison.md)                           | Against converters, Micro Focus, and by hand   |
 
 **The output**
 

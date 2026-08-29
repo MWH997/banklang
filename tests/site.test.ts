@@ -107,8 +107,8 @@ describe("the landing page's code is the compiler's code", () => {
     expect(CONTENT.safetyRuleCount).toBe(safety.length);
     expect(CONTENT.safetyRuleCount).toBeGreaterThanOrEqual(10);
     expect(CONTENT.safetyRuleCount).toBeLessThan(CONTENT.diagnosticCount / 2);
-    expect(PAGE).toContain(
-      `<strong>${CONTENT.safetyRuleCount}</strong> rules of this kind`,
+    expect(PAGE.replace(/\s+/g, " ")).toContain(
+      `<strong>${CONTENT.safetyRuleCount}</strong> rules in this category`,
     );
 
     // The families it is and is not drawn from, named rather than counted, so

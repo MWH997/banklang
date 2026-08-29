@@ -1,6 +1,6 @@
 ---
 title: Rounding money is harder than it looks
-description: Half of one penny has to go somewhere, and the choice you make is worth real money. Here is why floating point is the wrong tool and what banks actually do instead.
+description: Why decimal scale and explicit rounding matter for financial arithmetic, and how BankLang generates and tests them.
 date: 2026-08-06
 author: Md Wahid Hassan
 related: a-compiler-that-refuses-to-build, testing-a-compiler-you-cannot-run

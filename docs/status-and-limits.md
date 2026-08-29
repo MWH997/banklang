@@ -1,35 +1,32 @@
 # Status and limits
 
-Every limit on this page is true of BankLang 0.10.0. Where one has a plan
-attached the plan is named; where it does not, it says so. Four states are kept
-apart throughout, because each one closes in a different way:
+This page describes the current boundary of BankLang 0.10.0. It separates the
+language's design decisions from features that are not implemented, not
+validated, or require an environment the project does not have.
 
 | State               | What it means                                          |
 | ------------------- | ------------------------------------------------------ |
 | Design decision     | BankTS will not grow this. The exclusion is the point. |
 | Not implemented     | It belongs in the language and is not written yet.     |
 | Not validated       | It is implemented, and nothing has confirmed it works. |
-| Environment missing | It can only be confirmed on hardware nobody here has.  |
+| Environment missing | It requires an environment the project does not have.  |
 
-This is a working compiler for a **deliberately narrow subset**, not a
+BankLang is a working compiler for a **deliberately narrow subset**. It is not a
 production mainframe toolchain.
 
 ## Target and validation
 
 - **Validated with GnuCOBOL, not IBM.** Every example compiles with GnuCOBOL in
-  CI. No IBM Enterprise COBOL validation has been performed, and none is
-  claimed. [`zos/`](../zos/README.md) makes that a bounded task rather than an open
-  question: `pnpm tsx tools/zos-kit.ts` writes every program, copybook, and job
-  in the member names the JCL expects, with a procedure and a results template.
-  Nothing there has been run either, and the README says so.
-- **Not production-ready.** It has never run against a real ledger, and no
+  CI. No IBM Enterprise COBOL validation has been performed. The
+  [`zos/`](../zos/README.md) directory contains a bundle and procedure for a
+  team with z/OS access to perform that validation.
+- **No production integration.** It has never run against a real ledger, and no
   institution's money has moved through it.
 - **The full mutation suite was not run for this release.** The current
-  scheduled matrix has ten lanes; the targeted safety lane is the one 0.10.0
-  ran, at 90.03% total and 92.67% of covered code, with every surviving mutant
-  in it classified individually in [verification](verification.md). The other
-  nine lanes are scheduled current-development measurements, not
-  release-0.10.0 claims.
+  scheduled matrix has ten lanes. The targeted safety lane is the one 0.10.0
+  ran, at 90.03% total and 92.67% of covered code, with surviving mutants
+  classified in [verification](verification.md). The other nine lanes are
+  current-development measurements, not release-0.10.0 claims.
 
 ## Runtime validation
 
@@ -133,18 +130,17 @@ production mainframe toolchain.
   the source, not an estimate of what a conversion costs, and
   [migration-analysis.md](migration-analysis.md) lists what it cannot see.
 
-## What may be claimed, and what may not
+## Claims the current evidence supports
 
-The wording is fixed in advance, so that the question "is this overstated?" has
-an answer written before there is any incentive to answer it loosely.
+While no generated output has been run through IBM Enterprise COBOL, describe
+the current evidence this way:
 
 Allowed while no IBM compiler has run this output:
 
 > BankLang emits artifacts targeting IBM Enterprise COBOL for z/OS 6.4.
 
-Not allowed:
-
-> Validated with IBM Enterprise COBOL. IBM-compatible. Production-ready on z/OS.
+Avoid describing the output as IBM-validated, IBM-compatible, or production-ready
+on z/OS. None of those claims is supported by the current evidence.
 
 Allowed once a real validation exists, and only for what it covered:
 
@@ -157,15 +153,15 @@ Programming Guide every citation in [target-conformance.md](target-conformance.m
 comes from, the level `tools/banklang-ibm.conf` is shaped to, and the version
 named in the generated `CBL` statement's options.
 
-## Two lists that go further
+## Related evidence
 
 - [divergences.md](divergences.md): every place GnuCOBOL and Enterprise COBOL
   are known or suspected to disagree, numbered so they can be cited. A finding
   there is a real defect in this compiler.
-- [comparison.md](comparison.md): what BankLang is worse at than an AI
-  converter, than Micro Focus, and than hand-writing COBOL.
+- [comparison.md](comparison.md): how BankLang compares with conversion tools,
+  runtime products, and hand-written COBOL.
 
-## Closing the biggest one
+## Preparing IBM validation
 
 `pnpm zos:kit` writes every generated program, copybook and job into
 `dist/zos/`, in the eight-character member names the JCL already expects, with
@@ -173,4 +169,5 @@ named in the generated `CBL` statement's options.
 [zos/README.md](../zos/README.md) is the procedure and `RESULTS-TEMPLATE.md` is
 what to fill in.
 
-Until `RESULTS.md` exists, every claim in this repository stops at GnuCOBOL.
+Until a completed `RESULTS.md` exists, claims about generated program behavior
+stop at the GnuCOBOL and reference-runtime evidence described above.

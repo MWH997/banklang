@@ -1,28 +1,27 @@
 ---
 title: A banking language that compiles to COBOL
-description: BankLang 0.10.0 compiles a small banking language to readable IBM Enterprise COBOL, refuses unsafe financial programs at compile time, and publishes what it has not validated.
+description: An overview of BankLang 0.10.0, its compile-time checks, generated COBOL, local evidence, and unvalidated IBM boundary.
 date: 2026-08-09
 author: Md Wahid Hassan
 related: a-compiler-that-refuses-to-build, testing-a-compiler-you-cannot-run
 reading: validation/horizontal-validation.md
 ---
 
-The obvious thing to do about COBOL is to get rid of it. Every few years
-somebody announces a tool that reads a mainframe estate and writes Java, and the
-result is a codebase nobody wrote, nobody reviewed, and nobody can point at when
-the overnight batch posts the wrong number. The output is the problem: it is
-correct or it is not, and the only way to find out is production.
+Replacing COBOL is often presented as a straightforward modernization project.
+In practice, a rewrite has to recover the rules embedded in an existing estate,
+then demonstrate that the new system behaves the same way. The generated code
+is only part of that problem; the missing evidence is the larger risk.
 
-BankLang 0.10.0, released today, does the opposite. It keeps COBOL as the
-output and moves the safety earlier.
+BankLang 0.10.0 takes a narrower approach: it keeps COBOL as the output and
+performs selected checks before code generation.
 
 BankTS is a small language with TypeScript's type syntax and statements of its
 own: `transaction`, `file`, `cursor`, `queue`. It compiles to COBOL a mainframe
-engineer can read in review, targeting IBM Enterprise COBOL 6.4. It is not a
-converter, and there is no AI anywhere in it: every byte of output comes from
-deterministic code, and the same input always produces byte-identical artifacts.
+engineer can review, targeting IBM Enterprise COBOL 6.4. It is not a converter.
+The compiler is deterministic, so the same input and settings produce
+byte-identical artifacts.
 
-## The compiler refuses to build unsafe programs
+## Compile-time checks for selected risks
 
 Here is a transfer. It has three defects, and none of them is a syntax error:
 
@@ -101,11 +100,12 @@ repositories. A number is not evidence until you have looked at what it counts.
 
 ## What has been validated, and what has not
 
-Every example is executed, not merely compiled: by `cobc` and by an independent
-interpreter written against the same emitted output, with any disagreement
-failing the build. That is what catches the defect that compiles: a bounds guard
-once clamped an out-of-range subscript instead of refusing it, and every static
-check passed.
+Of the 25 example projects, 23 have a local execution path and are run by
+`cobc` and an independent interpreter written against the same emitted output.
+Two are compile-only because their generated constructs have no local execution
+path. Three executed examples use hand-written expected balances; the other 20
+are compared between the two engines. That comparison caught a bounds guard
+that once clamped an out-of-range subscript instead of reporting a failure.
 
 The numbers, all generated from committed evidence rather than typed: 3217
 tests; 25 example projects; 27 of the 31 emitted COBOL verbs executed by both
@@ -137,7 +137,6 @@ form to fill in. Somebody with z/OS access can run it without reverse-
 engineering this repository, and the report generator will not print an IBM
 validation claim unless a real result file has been imported.
 
-The compiler runs entirely in your browser at
+The compiler also runs in your browser at
 [the playground](https://banklang.mwhassan.com/playground/). There is no
-compile server, and nothing you write is sent anywhere. AI assisted the writing
-of this compiler. It is not part of it.
+compile server, and editor content is not sent to one.

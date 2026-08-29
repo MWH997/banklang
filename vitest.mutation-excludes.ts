@@ -9,7 +9,6 @@ export const MUTATION_REPOSITORY_HYGIENE_TESTS = [
   "tests/conversions.test.ts",
   "tests/documentation.test.ts",
   "tests/blog.test.ts",
-  "tests/prose.test.ts",
   "tests/contrast.test.ts",
   "tests/workflows.test.ts",
   "tests/browser-safety.test.ts",

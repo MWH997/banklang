@@ -19,11 +19,8 @@
  * - `BlogPosting` structured data with the publication date;
  * - every post in `sitemap.xml`, and the index linked from the site header.
  *
- * `tests/blog.test.ts` holds all of it, including a description short enough for
- * a search result. The house prose rules are in `tests/prose.test.ts`, which
- * applies them to the documentation and the site copy too. For a while they
- * were enforced on these files and on nothing else, which taught a reader the
- * opposite of what the rule was for.
+ * `tests/blog.test.ts` holds the page-level checks, including a description
+ * short enough for a search result.
  *
  * Usage: `pnpm build:blog`, or `pnpm build:site`, which calls it.
  */
@@ -393,7 +390,7 @@ ${options.body}
       </p>
       <p class="muted">
         Generated COBOL is validated locally with GnuCOBOL in CI. No IBM
-        Enterprise COBOL validation is claimed. MIT licensed.
+        Enterprise COBOL validation has been performed. MIT licensed.
       </p>
     </footer>
 
@@ -508,15 +505,15 @@ export function renderIndex(all: Post[]): string {
   return shell({
     title: "Writing · BankLang",
     description:
-      "Notes on compiling to COBOL, rounding money correctly, and testing a compiler whose target you cannot run.",
+      "Notes on compiling banking logic to COBOL, modelling money and failure, and evaluating the evidence.",
     canonical: servedUrl("blog/index.html"),
     ogType: "website",
     up: "../",
     body: `    <main class="post" id="post">
       <h1>Writing</h1>
       <p class="lede">
-        Why a compiler for banking logic looks the way it does, and what the
-        problems underneath it actually are.
+        Notes on compiling banking logic to COBOL, modelling money and failure,
+        and evaluating the evidence.
       </p>
       <ul class="post__list">
 ${all
@@ -588,7 +585,7 @@ export function renderFeed(all: Post[]): string {
     <title>BankLang · Writing</title>
     <link>${servedUrl("blog/index.html")}</link>
     <atom:link href="${self}" rel="self" type="application/rss+xml" />
-    <description>Why a compiler for banking logic looks the way it does, and what the problems underneath it actually are.</description>
+    <description>Notes on compiling banking logic to COBOL, modelling money and failure, and evaluating the evidence.</description>
     <language>en</language>
     <managingEditor>${escapeHtml(author.email)} (${escapeHtml(author.name)})</managingEditor>
 ${items.join("\n")}
@@ -620,11 +617,10 @@ export function renderAbout(): string {
       </p>
       <div class="post__body">
         <p>
-          It compiles BankTS, a small banking language, into IBM Enterprise
-          COBOL. The design and the decisions are mine. Much of the
-          implementation was written with an AI coding assistant, under review.
-          That describes how the compiler was built; there is no model inside
-          it, at build time or at run time.
+          BankLang is a compiler for BankTS, a small language for writing
+          banking logic and generating IBM Enterprise COBOL. The compiler does
+          not call a model at build time or at run time. I maintain the project
+          and document its behavior, evidence, and limits here.
         </p>
         <p>
           It has never run on z/OS. Generated COBOL is compiled locally with
