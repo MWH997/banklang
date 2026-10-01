@@ -94,6 +94,6 @@
     "esbuild": "^0.25.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^10.1.0"
+    "vscode-languageclient": "^10.1.2"
   }
 }
